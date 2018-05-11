@@ -1,0 +1,603 @@
+//------------------------------------------------------------------------------
+
+#include "P_builder.h"
+#include "P_task.h"
+#include "P_box.h"
+#include "P_board.h"
+#include "P_core.h"
+#include "P_thread.h"
+#include "P_port.h"
+#include "P_link.h"
+#include "P_devtyp.h"
+#include "P_device.h"
+#include "build_defs.h"
+#include <cstdlib>
+#include <sstream>
+#include <algorithm>
+#include <set>
+
+#ifdef __BORLANDC__
+
+//==============================================================================
+
+P_builder::P_builder(int argc, char** argv, OrchBase * _p):par(_p) //, def(NULL), app(argc, argv)
+{
+//def = new I_Graph(par, &app);
+}
+
+//------------------------------------------------------------------------------
+
+P_builder::~P_builder()
+{
+// if (def != 0) delete def;   // get rid of Qt objects
+}
+
+//------------------------------------------------------------------------------
+
+void P_builder::Build(P_task * pT)
+// Generates the application binaries - virtually mapped to a single board.
+{
+if (!pT) pT = par->P_taskm.begin()->second;
+par->Post(801,pT->Name(),pT->filename);
+//Preplace(pT, par->pVB);
+//GenFiles(par->pVB);
+//MakeFiles(par->pVB);
+//CompileBins(par->pVB);
+}
+
+//------------------------------------------------------------------------------
+
+void P_builder::Dump(FILE * fp)
+{
+fprintf(fp,"P_builder+++++++++++++++++++++++++++++++++++\n");
+fprintf(fp,"Parent         %#08p\n",par);
+if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
+
+fprintf(fp,"P_builder-----------------------------------\n");
+fflush(fp);
+}
+
+//------------------------------------------------------------------------------
+
+void P_builder::Load(const string& name, const string& filename)
+{
+//def->translate(QString::fromStdString(filename), QString::fromStdString(name), par);
+}
+
+//------------------------------------------------------------------------------
+#else
+//==============================================================================
+
+P_builder::P_builder(int argc, char** argv, OrchBase * _p):par(_p), defs(), app(argc, argv)
+{
+
+}
+
+//------------------------------------------------------------------------------
+
+P_builder::~P_builder()
+{
+for (map<string, I_Graph*>::iterator d = defs.begin(); d != defs.end(); d++) delete d->second;   // get rid of Qt objects
+}
+
+//------------------------------------------------------------------------------
+
+void P_builder::Build(P_task * pT)
+// Generates the application binaries - virtually mapped to a single board.
+{
+if (!pT) pT = par->P_taskm.begin()->second; // default to the first task
+par->Post(801,pT->Name(),pT->filename);
+Preplace(pT);                               // Map to the system if necessary
+GenFiles(pT);
+CompileBins(pT);
+}
+
+//------------------------------------------------------------------------------
+
+void P_builder::Dump(FILE * fp)
+{
+fprintf(fp,"P_builder+++++++++++++++++++++++++++++++++++\n");
+fprintf(fp,"Parent         %#08p\n",par);
+if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
+
+fprintf(fp,"P_builder-----------------------------------\n");
+fflush(fp);
+}
+
+//------------------------------------------------------------------------------
+
+void P_builder::Load(const string& filename)
+{
+if (defs.find(filename)!=defs.end()) par->Post(809,filename);                 // already imported file?
+defs[filename] = new I_Graph(QString::fromStdString(filename), par, &app);    // no: then do it here.
+if (defs[filename]->translate(QString::fromStdString(filename), par) != I_Graph::SUCCESS) par->Post(808,filename);
+}
+
+//------------------------------------------------------------------------------
+
+void P_builder::Preplace(P_task* task)
+{
+     // this first naive preplace will sort everything out according to device type.
+     if (!task->linked)
+     {
+        if (par->pP == 0) // no topology?
+	{
+	   // we will set up a virtual topology. Compute how many virtual boxes would
+	   // be needed.
+	   unsigned numCores = 0;
+           for (vector<P_devtyp*>::iterator dev_typ = task->pP_typdcl->P_devtypv.begin(); dev_typ != task->pP_typdcl->P_devtypv.end(); dev_typ++)
+	   {
+	       unsigned int deviceMem = (*dev_typ)->MemPerDevice();
+               if (deviceMem > BYTES_PER_THREAD)
+               {
+		  par->Post(810, (*dev_typ)->Name(), int2str(deviceMem), int2str(BYTES_PER_THREAD));
+                  return;
+               }
+               // chunk through devices in blocks equal to the thread size
+               unsigned int devicesPerThread = min(BYTES_PER_THREAD/deviceMem, MAX_DEVICES_PER_THREAD);
+	       unsigned int numDevices = task->pD->DevicesOfType(*dev_typ).size();
+	       numCores += numDevices/(devicesPerThread*THREADS_PER_CORE);
+	       if (numDevices%(devicesPerThread*THREADS_PER_CORE)) ++numCores;
+	   }
+	   unsigned numBoxes = numCores/(CORES_PER_BOARD*BOARDS_PER_BOX); // number of boxes
+	   if (numCores%(CORES_PER_BOARD*BOARDS_PER_BOX)) ++numBoxes;     // one more if needed
+	   par->pP = new P_graph(par,"VirtualSystem");                    // initialise the topology
+       par->Post(138,par->pP->Name());
+	   par->pP->SetN(numBoxes, true); // and create a virtual topology
+	}
+	if (!par->pPlace->Place(task)) task->LinkFlag(); // then preplace on the real or virtual board. 
+     }
+     // if we need to we could aggregate some threads here to achieve maximum packing by merging partially-full threads.	 
+}
+
+//------------------------------------------------------------------------------
+
+// creates the files that have to be generated from data rather than be pre-existing
+void P_builder::GenFiles(P_task* task)
+{
+  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+GENERATED_PATH))->str().c_str());
+  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+GENERATED_H_PATH))->str().c_str());
+  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+GENERATED_CPP_PATH))->str().c_str());
+  unsigned int coreNum = 0;
+  if (!task->linked)
+  {
+    par->Post(811, task->Name());
+    return;
+  }
+  WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,par->pP->G,boxNode)
+  {
+  WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+  {
+  for (unsigned int core = 0; core < (*board)->P_corev.size(); core++)
+  {
+  if ((*board)->P_corev[core]->P_threadv[0]->P_devicel.size()) // only for cores which have something placed on them
+  {
+      // these consist of the declarations and definitions of variables and the handler functions.
+      fstream vars_h(static_cast<stringstream*>(&(stringstream(par->taskpath+GENERATED_H_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".h"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
+      fstream vars_cpp(static_cast<stringstream*>(&(stringstream(par->taskpath+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
+      fstream handlers_h(static_cast<stringstream*>(&(stringstream(par->taskpath+GENERATED_H_PATH, ios_base::out | ios_base::ate)<<"/handlers_"<<coreNum<<".h"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
+      fstream handlers_cpp(static_cast<stringstream*>(&(stringstream(par->taskpath+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/handlers_"<<coreNum<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
+
+      // conveniently since so far we have arranged it so that each core has a monolithic device type looking up its vars is
+      // easy. Later this will need smoother access. It would be nice if we could define this as a const P_devtyp* but
+      // unfortunately none of its member functions are const-qualified which hampers usability.
+      P_devtyp* c_devtyp = (*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->pP_devtyp;
+      // for some reason the seemingly-innocuous commented line below doesn't work as expected. Apparently devtyp_name becomes volatile even though
+      // we aren't accessing the Name() field later in any way that might invalidate the pointer. Mysterious.
+      // const char* devtyp_name = c_devtyp->Name().c_str();
+      vars_h << "#include <cstdint>\n";
+      vars_h << "#include \"softswitch_common.h\"\n\n";
+      handlers_cpp << "#include \"vars_" << coreNum << ".h\"\n";
+      handlers_cpp << "#include \"handlers_" << coreNum << ".h\"\n\n";
+      vars_cpp << "#include \"vars_" << coreNum << ".h\"\n";
+      // assemble a typedef for each of the fragments. If the enclosing class doesn't provide a struct {} enclosure for data objects with more
+      //  than one member this can be easily inserted here as well. We copy the string from the definition to avoid inavertent in-place modification.
+      //
+      // globals first
+      if (c_devtyp->par->pPropsD)
+      {
+         vars_h << "typedef " << string(c_devtyp->par->pPropsD->c_src).erase(c_devtyp->par->pPropsD->c_src.length()-2).c_str() << " global_props_t;\n\n";
+         vars_h << "extern const global_props_t GraphProperties;\n";
+         string global_init("");
+         if ((*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->par->pPropsI) global_init = (*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->par->pPropsI->c_src;
+         else if (c_devtyp->par->pPropsI) global_init = c_devtyp->par->pPropsI->c_src;
+         vars_cpp << "const global_props_t GraphProperties = " << global_init.c_str() << ";\n";
+      }
+      for (vector<CFrag*>::iterator g_code = c_devtyp->par->General.begin(); g_code != c_devtyp->par->General.end(); g_code++)
+          handlers_cpp << (*g_code)->c_src.c_str() << "\n"; // newline assumes general code fragments are unrelated and don't expect back-to-back concatenation
+      // messages. Note that for all objects with properties and state, both these values are optional so we need to check for their existence.
+      for (vector<P_message*>::iterator msg = c_devtyp->par->P_messagev.begin(); msg != c_devtyp->par->P_messagev.end(); msg++)
+          if ((*msg)->pPropsD) vars_h << "typedef " << string((*msg)->pPropsD->c_src).erase((*msg)->pPropsD->c_src.length()-2).c_str() << " msg_" <<(*msg)->Name().c_str() << "_pyld_t;\n";
+      vars_h << "\n";
+      // device handlers	
+      handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_RTS_handler (const void* graphProps, void* device, uint32_t* readyToSend, void** msg_buf);\n";
+      if (c_devtyp->pOnIdle) handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OnIdle_handler (const void* graphProps, void* device);\n";
+      handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OnCtl_handler (const void* graphProps, void* device, const void* msg);\n\n";
+      for (vector<CFrag*>::iterator d_code = c_devtyp->pHandlv.begin(); d_code != c_devtyp->pHandlv.end(); d_code++)
+          handlers_cpp << (*d_code)->c_src.c_str() << "\n";
+      // this preamble is common to all the handlers.
+      stringstream handl_pre_strm("{\n", ios_base::out | ios_base::ate);
+      if (c_devtyp->par->pPropsD) handl_pre_strm << "   const global_props_t* graphProperties = static_cast<const global_props_t*>(graphProps);\n";
+      handl_pre_strm << "   PDeviceInstance* deviceInstance = static_cast<PDeviceInstance*>(device);\n";
+      // device variables
+      if (c_devtyp->pPropsD)
+      {
+          vars_h << "typedef " << string(c_devtyp->pPropsD->c_src).erase(c_devtyp->pPropsD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_props_t;\n";
+          handl_pre_strm << "   const devtyp_" << c_devtyp->Name().c_str() << "_props_t* deviceProperties = static_cast<const devtyp_" << c_devtyp->Name().c_str() << "_props_t*>(deviceInstance->properties);\n";
+      }
+      if (c_devtyp->pStateD)
+      {
+          vars_h << "typedef " << string(c_devtyp->pStateD->c_src).erase(c_devtyp->pStateD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_state_t;\n\n";
+          handl_pre_strm << "   devtyp_" << c_devtyp->Name().c_str() << "_state_t* deviceState = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_state_t*>(deviceInstance->state);\n";
+      }
+      // same thing with this: clearly stream strings are moved about in memory! Seems daft.
+      // const char* handl_pre = handl_pre_strm.str().c_str();
+      // end preamble
+      const char* handl_post = "}\n\n";
+      handlers_cpp << "\n";
+      // stub OnCtl handler until this can be resolved with DBT
+      handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OnCtl_handler (const void* graphProps, void* device, const void* msg) {return 0;}\n\n";
+      handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_RTS_handler (const void* graphProps, void* device, uint32_t* readyToSend, void** msg_buf)\n";
+      handlers_cpp << handl_pre_strm.str().c_str();
+      handlers_cpp << c_devtyp->pOnRTS->c_src.c_str() << "\n";
+      handlers_cpp << "   return *readyToSend;\n"; // we assume here the return value is intended to be an RTS bitmap.
+      handlers_cpp << handl_post;
+      // input pin variables and handlers
+      for (vector<P_pintyp*>::iterator I_pin = c_devtyp->P_pintypIv.begin(); I_pin != c_devtyp->P_pintypIv.end(); I_pin++)
+      {
+          const char* Ipin_name = (*I_pin)->Name().c_str();
+          handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_Recv_handler (const void* graphProps, void* device, void* edge, const void* msg);\n";
+          handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_Recv_handler (const void* graphProps, void* device, void* edge, const void* msg)\n";
+          handlers_cpp << handl_pre_strm.str().c_str();
+          handlers_cpp << "   PInPinSrc* edgeInstance = static_cast<PInPinSrc*>(edge);\n";
+          if ((*I_pin)->pPropsD)
+          {
+              vars_h << "typedef " << string((*I_pin)->pPropsD->c_src).erase((*I_pin)->pPropsD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t;\n";
+              handlers_cpp << "   const devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t* edgeProperties = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_ipin_" << Ipin_name << "_props_t*>(edgeInstance->properties);\n";
+          }
+          if ((*I_pin)->pStateD)
+          {
+              vars_h << "typedef " << string((*I_pin)->pStateD->c_src).erase((*I_pin)->pStateD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t;\n";
+              handlers_cpp << "   devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t* edgeState = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_ipin_" << Ipin_name << "_state_t*>(edgeInstance->state);\n";
+          }
+          if ((*I_pin)->pMsg->pPropsD) handlers_cpp << "   msg_" << (*I_pin)->pMsg->Name().c_str() << "_pyld_t* message = static_cast<msg_" <<  (*I_pin)->pMsg->Name().c_str() << "_pyld_t*>(msg);\n";
+          handlers_cpp << (*I_pin)->pHandl->c_src.c_str() << "\n";
+          // return type is indicated as uint32_t yet in the handlers we see from DBT no return value is set. Is something expected here?
+          handlers_cpp << handl_post;
+      }
+      vars_h << "\n";
+      handlers_h << "\n";
+      // output pin handlers
+      for (vector<P_pintyp*>::iterator O_pin = c_devtyp->P_pintypOv.begin(); O_pin != c_devtyp->P_pintypOv.end(); O_pin++)
+      {
+          const char* Opin_name = (*O_pin)->Name().c_str();
+          handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OutPin_" << Opin_name << "_Send_handler (const void* graphProps, void* device, void* msg, uint32_t buffered);\n";
+          handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OutPin_" << Opin_name << "_Send_handler (const void* graphProps, void* device, void* msg, uint32_t buffered)\n";
+          handlers_cpp << handl_pre_strm.str().c_str();
+          if ((*O_pin)->pMsg->pPropsD) handlers_cpp << "   msg_" << (*O_pin)->pMsg->Name().c_str() << "_pyld_t* message = static_cast<msg_" <<  (*O_pin)->pMsg->Name().c_str() << "_pyld_t*>(msg);\n";
+          handlers_cpp << (*O_pin)->pHandl->c_src.c_str() << "\n";
+          // same thing: what is this function expected to return?
+          handlers_cpp << handl_post;
+      }
+      for (unsigned int thread = 0; thread < (*board)->P_corev[core]->P_threadv.size(); thread++) if ((*(*board)->P_corev[core]->P_threadv[thread]).P_devicel.size()) WriteThreadVars(coreNum, thread, (*board)->P_corev[core]->P_threadv[thread], vars_h);
+      vars_h.close();
+      vars_cpp.close();
+      handlers_h.close();
+      handlers_cpp.close();
+      ++coreNum;
+  }
+  }
+  }
+  }
+}
+
+//------------------------------------------------------------------------------
+
+void P_builder::WriteThreadVars(unsigned int core_num, unsigned int thread_num, P_thread* thread, fstream& vars_h)
+{
+     // a trivial bit more overhead, perhaps, then passing this as an argument. The *general* method would extract the number of device types from the thread's device list.
+     P_devtyp* t_devtyp = (*thread->P_devicel.begin())->pP_devtyp;
+     // we could choose to create separate .h files for each thread giving the externs but it seems simpler
+     // and arguably more flexible to put all the external declarations in a single .h
+     // The actual data definitions go one file per thread so we can load the resultant data files individually.
+     fstream vars_cpp(static_cast<stringstream*>(&(stringstream(par->taskpath+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<core_num<<"_"<<thread_num<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
+     vars_h << "\n";
+     vars_h << "//-------------------- Core " << core_num << " Thread " << thread_num << " variables --------------------\n";
+     // At the bottom of the memory structure is the ThreadContext
+     vars_h << "extern ThreadCtxt_t Thread_" << thread_num << "_Context;\n";
+     vars_cpp << "#include \"vars_" << core_num << ".h\"\n";
+     vars_cpp << "#include \"handlers_" << core_num << ".h\"\n\n";
+     vars_cpp << "//-------------------- Core " << core_num << " Thread " << thread_num << " variables --------------------\n";
+     vars_cpp << "ThreadCtxt_t Thread_" << thread_num <<"_Context = {&Thread_" << thread_num << "_Context,1,Thread_" << thread_num << "_DeviceTypes," << thread->P_devicel.size() <<  ",Thread_" << thread_num << "_Devices,";
+     if (t_devtyp->par->pPropsD) vars_cpp << "&GraphProperties,0,0,0,1,0};\n";
+     else vars_cpp << "0,0,0,0,1,0};\n";
+     vars_h << "extern struct PDeviceType Thread_" << thread_num << "_DeviceTypes[1];\n";
+     // how should these and subsequent arrays be initialised?
+     vars_h << "//------------------------------ Device Type Tables ------------------------------\n";
+     // to build the input pin map a complex series of operations has to be carried out. The first step is to get a list of unique message types.
+     // this needs to be done far in advance because the counts will be placed in the device type table.
+     set<P_message*> dev_in_msg_types;
+     set<P_message*> dev_out_msg_types;
+     for (vector<P_pintyp*>::iterator ipin = t_devtyp->P_pintypIv.begin(); ipin != t_devtyp->P_pintypIv.end(); ipin++) dev_in_msg_types.insert((*ipin)->pMsg);
+     for (vector<P_pintyp*>::iterator opin = t_devtyp->P_pintypOv.begin(); opin != t_devtyp->P_pintypOv.end(); opin++) dev_out_msg_types.insert((*opin)->pMsg);
+     vars_cpp << "devTyp_t Thread_" << thread_num << "_DeviceTypes[1] = {&devtyp_" << t_devtyp->Name().c_str() << "_RTS_handler,";
+     if (t_devtyp->pOnIdle) vars_cpp << "&devtyp_" << t_devtyp->Name().c_str() << "_OnIdle_handler,";
+     else vars_cpp << "0,";
+     vars_cpp << "&devtyp_" << t_devtyp->Name().c_str() << "_OnCtl_handler,";
+     if (t_devtyp->pPropsD) vars_cpp << "sizeof(devtyp_" << t_devtyp->Name().c_str() << "_props_t),";
+     else vars_cpp << "0,";
+     if (t_devtyp->pStateD) vars_cpp << "sizeof(devtyp_" << t_devtyp->Name().c_str() << "_state_t),";
+     else vars_cpp << "0,";
+     // more partial streams because pin lists may or may not exist for a given device. By not using ios_base::ate we ensure that actual values for these initialisers override the 0 default.
+     stringstream inpinlist("");
+     stringstream outpinlist("");
+     stringstream initialiser("", ios_base::out | ios_base::ate);
+     if (t_devtyp->P_pintypIv.size())
+     {
+        vars_cpp << t_devtyp->P_pintypIv.size() << ",Thread_" << thread_num << "_DevTyp_0_InputPins,";
+        vars_h << "extern in_pintyp_t Thread_" << thread_num << "_DevTyp_0_InputPins[" << t_devtyp->P_pintypIv.size() << "];\n";
+        initialiser.str("{");
+        for (vector<P_pintyp*>::iterator ipin = t_devtyp->P_pintypIv.begin(); ipin != t_devtyp->P_pintypIv.end(); ipin++)
+        {
+            initialiser << "{&devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << (*ipin)->Name().c_str() << "_Recv_handler,";
+            if ((*ipin)->pMsg->pPropsD) initialiser << "sizeof(msg_" << (*ipin)->pMsg->Name().c_str() << "_pyld_t),";
+            else initialiser << "0,";
+            initialiser << (*ipin)->pMsg->MsgType;
+            if ((*ipin)->pPropsD) initialiser << ",sizeof(devtyp_" << t_devtyp->Name().c_str() << "_ipin_" << (*ipin)->Name().c_str() << "_props_t),";
+            else initialiser << ",0,";
+            if ((*ipin)->pStateD) initialiser << "sizeof(devtyp_" << t_devtyp->Name().c_str() << "_ipin_" << (*ipin)->Name().c_str() << "_state_t)},";
+            else initialiser << "0},";
+        }
+        initialiser.seekp(-1,ios_base::cur);
+        initialiser << "};\n";
+        inpinlist << "in_pintyp_t Thread_" << thread_num << "_DevTyp_0_InputPins[" << t_devtyp->P_pintypIv.size() << "] = " << initialiser.str().c_str();
+     }
+     else vars_cpp << "0,0,";  // no input pins
+     if (t_devtyp->P_pintypOv.size())
+     {
+        vars_cpp << t_devtyp->P_pintypOv.size() << ",Thread_" << thread_num << "_DevTyp_0_OutputPins};\n";
+        vars_h << "//------------------------------ Pin Type Tables ------------------------------\n";
+        vars_h << "extern out_pintyp_t Thread_" << thread_num << "_DevTyp_0_OutputPins[" << t_devtyp->P_pintypOv.size() << "];\n";
+        initialiser.str("{");
+        for (vector<P_pintyp*>::iterator opin = t_devtyp->P_pintypOv.begin(); opin != t_devtyp->P_pintypOv.end(); opin++)
+        {
+            initialiser << "{&devtyp_" << t_devtyp->Name().c_str() << "_OutPin_" << (*opin)->Name().c_str() << "_Send_handler,";
+            if ((*opin)->pMsg->pPropsD) initialiser << "sizeof(msg_" << (*opin)->pMsg->Name().c_str() << "_pyld_t),";
+            else initialiser << "0,";
+            initialiser << (*opin)->pMsg->MsgType << "},";
+        }
+        initialiser.seekp(-1,ios_base::cur);
+        initialiser << "};\n";
+        outpinlist << "out_pintyp_t Thread_" << thread_num << "_DevTyp_0_OutputPins[" << t_devtyp->P_pintypOv.size() << "] = " << initialiser.str().c_str();
+     }
+     else vars_cpp << "0,0};\n"; // no output pins
+     vars_cpp << inpinlist.str().c_str();
+     vars_cpp <<outpinlist.str().c_str();
+     vars_cpp << "\n";
+     vars_h << "//------------------------------ Device Instance Tables ------------------------------\n";
+     vars_h << "extern devInst_t Thread_" << thread_num << "_Devices[" << thread->P_devicel.size() << "];\n\n";
+     initialiser.str("{");
+     uint32_t index = 0;
+     stringstream initialiser_2("", ios_base::out | ios_base::ate);
+     stringstream initialiser_4("{", ios_base::out | ios_base::ate);
+     stringstream initialiser_5("{", ios_base::out | ios_base::ate);
+     vector<unsigned int>in_pin_idxs;
+     vector<unsigned int>out_pin_idxs;
+     for (list<P_device*>::iterator device = thread->P_devicel.begin(); device != thread->P_devicel.end(); device++)
+     {
+         // device index should be replaced by a GetHardwareAddress(...) call.
+         initialiser << "{&Thread_" << thread_num << "_Context,&Thread_" << thread_num << "_DeviceTypes[0]," << (*device)->idx << ",";
+         // need to descend into the pins and set them up before setting up the device
+         if (t_devtyp->P_pintypIv.size())
+         {
+             initialiser_2.str("{");
+             // structures to build up the associative input pin tables
+             // this is a map indexed first by message type, next by source device, and finally by edge index
+             map<unsigned int, map <unsigned int, pair<unsigned int, P_pin*>>> pins_by_msgtyp;
+             vector<unsigned int> in_conns;
+             vector<unsigned int> src_devs;
+             vector<unsigned int> src_dev_pins;
+             vector<unsigned int> tgt_dev_pins;
+             // get the (unarranged) fan-in vectors
+             if ((*device)->par->G.DrivingNodes((*device)->idx,src_dev_pins,in_conns,tgt_dev_pins,src_devs))
+             {
+                // now rearrange into the map
+                unsigned int src, tgt;
+                // rearrangement happens by edge (arc) index
+                for (vector<unsigned int>::iterator in_conn = in_conns.begin(); in_conn != in_conns.end(); in_conn++)
+                {
+                    (*device)->par->G.FindNodes(*in_conn, src, tgt);
+                    // insert into the associative map. The map's outer key is the message type, which is found by
+                    // retrieving the edge's associated message type. The inner key is the source device index.
+                    // The value is the target pin, found by indexing the graph's edge data, retrieving the
+                    // iterator to its target, then extracting the value from the element. Hopefully this will index
+                    // the right object!
+                    // bodgey: need to use find to index the edge. Using ...G.index_a[(*in_conn)] fails because pdigraph
+                    // doesn't define a default constructor for an arc. (I think this should be fixed in pdigraph)
+                    P_pin* target_pin = (*((*device)->par->G.index_a.find(*in_conn)->second.to_p)).second.data;
+                    pins_by_msgtyp[(*(*device)->par->G.FindArc(*in_conn))->MsgType][src].first = (*in_conn);
+                    pins_by_msgtyp[(*(*device)->par->G.FindArc(*in_conn))->MsgType][src].second = target_pin;
+                    if (target_pin->pP_pintyp->pPropsD) vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << target_pin->pP_pintyp->Name().c_str() << "_props_t Device_" << (*device)->Name().c_str() << "_InEdge_" << (*in_conn) << "_Properties;\n";
+                    if (target_pin->pP_pintyp->pStateD) vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << target_pin->pP_pintyp->Name().c_str() << "_state_t Device_" << (*device)->Name().c_str() << "_InEdge_" << (*in_conn) << "_State;\n";
+                }
+             }
+             initialiser << pins_by_msgtyp.size() << ",Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_InPinMsgMap,";
+             // now assemble the source lines by going through the map.
+             stringstream initialiser_3("", ios_base::out | ios_base::ate);
+             vars_h << "//------------------------------ Input Pin (Associative) Tables ------------------------------\n";
+             vars_h << "extern inPinMsg_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_InPinMsgMap[" << pins_by_msgtyp.size() << "];\n";
+             for (map<unsigned int, map<unsigned int, pair<unsigned int, P_pin*>>>::iterator msg_typ = pins_by_msgtyp.begin(); msg_typ != pins_by_msgtyp.end(); msg_typ++)
+             {
+                 vars_h << "extern inPinSrc_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Msg_" << t_devtyp->par->P_messagev[msg_typ->first]->Name().c_str() << "_InPinSrcMap[" << msg_typ->second.size() << "];\n";
+                 initialiser_2 << "{&Thread_" << thread_num << "_Devices[" << index << "]," << msg_typ->first << "," << msg_typ->second.size() << ",Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Msg_" << t_devtyp->par->P_messagev[msg_typ->first]->Name().c_str() << "_InPinSrcMap},";
+                 initialiser_3.str("{");
+                 for (map<unsigned int, pair< unsigned int, P_pin*>>::iterator msg_src = msg_typ->second.begin(); msg_src != msg_typ->second.end(); msg_src++)
+                 {
+                     // properties and state for pins are done as individual variables because the arrangement in the associative lookup makes
+                     // grouping them into arrays (which would be by pin type) awkward for no gain.
+                     // another complex use of find to identify the destination ID (which should actually be an input to GetHardwareAddress!)
+                     // msg_src->first (the source device) should be replaced here by a function GetHardwareAddress((*device)->par->G.FindNode(msg_src->first))
+                     initialiser_3 << "{" << (*((*device)->par->G.index_a.find(msg_src->second.first)->second.to_n)).first << "," << msg_src->first << ",&Thread_" << thread_num << "_DevTyp_0_InputPins[" << msg_src->second.second->pP_pintyp->idx << "],";
+                     if (msg_src->second.second->pP_pintyp->PinPropsSize)
+                     {
+                        vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << msg_src->second.second->pP_pintyp->Name().c_str() << "_props_t Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_Properties;\n";
+                        initialiser_3 << "&Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_Properties,";
+                        vars_cpp << "devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << msg_src->second.second->pP_pintyp->Name().c_str() << "_props_t Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_Properties = ";
+                        // use the set properties if available,
+                        if (msg_src->second.second->pPropsI) vars_cpp << msg_src->second.second->pPropsI->c_src.c_str() << ";\n";
+                        // or defaults if not.
+                        else vars_cpp << msg_src->second.second->pP_pintyp->pPropsI->c_src.c_str() << ";n";
+                     }
+                     else initialiser_3 << "0,";
+                     if (msg_src->second.second->pP_pintyp->PinStateSize)
+                     {
+                        vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << msg_src->second.second->pP_pintyp->Name().c_str() << "_state_t Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_State;\n";
+                        initialiser_3 << "&Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_State},";
+                        vars_cpp << "devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << msg_src->second.second->pP_pintyp->Name().c_str() << "_state_t Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_State = ";
+                        if (msg_src->second.second->pStateI) vars_cpp << msg_src->second.second->pStateI->c_src.c_str() << ";\n";
+                        else vars_cpp << msg_src->second.second->pP_pintyp->pStateI->c_src.c_str() << ";\n";
+                     }
+                     else initialiser_3 << "0},";
+
+                 }
+                 initialiser_3.seekp(-1,ios_base::cur);
+                 initialiser_3 << "};\n";
+                 vars_cpp << "inPinSrc_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Msg_" << t_devtyp->par->P_messagev[msg_typ->first]->Name().c_str() << "_InPinSrcMap[" << msg_typ->second.size() << "] = " << initialiser_3.str().c_str();
+             }
+             initialiser_2.seekp(-1,ios_base::cur);
+             initialiser_2 << "};\n";
+             vars_cpp << "inPinMsg_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_InPinMsgMap[" << pins_by_msgtyp.size() << "] = " << initialiser_2.str().c_str();
+         }
+         else initialiser << "0,0,";
+         if (t_devtyp->P_pintypOv.size())
+         {
+             initialiser << t_devtyp->P_pintypOv.size() << ",Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutputPins,";
+             vars_h << "//------------------------------ Output Pin Tables ------------------------------\n";
+             stringstream initialiser_3("", ios_base::out | ios_base::ate);
+             vars_h << "extern outPin_t Thread_" << thread_num << "_Device_" << (*device)->Name() << "_OutputPins[" << t_devtyp->P_pintypOv.size() << "];\n";
+             initialiser_2.str("{");
+             for (vector<P_pintyp*>::iterator pin = t_devtyp->P_pintypOv.begin(); pin != t_devtyp->P_pintypOv.end(); pin++)
+             {
+                 initialiser_2 << "{&Thread_" << thread_num << "_Devices[" << (*device)->idx << "],&Thread_" << thread_num << "_DevTyp_0_OutputPins[" << (*pin)->idx << "],{},0,0,";
+                 if (!(*device)->par->G.FindArcs((*device)->idx,(*pin)->idx,in_pin_idxs,out_pin_idxs)) initialiser_2 << "0,0},";
+                 else
+                 {
+                    vars_h << "extern uint32_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutPin_" << (*pin)->Name().c_str() << "_Tgts[" << out_pin_idxs.size() << "];\n";
+                    initialiser_2 << out_pin_idxs.size() << ",Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutPin_" << (*pin)->Name().c_str() << "_Tgts,0,0},";
+                    // insert target list generation here
+                    initialiser_3.str("{");
+                    for (vector<unsigned int>::iterator tgt = out_pin_idxs.begin(); tgt != out_pin_idxs.end(); tgt++)
+                    {
+                        // as for the case of inputs, the target device should be replaced by GetHardwareAddress(...)
+                        initialiser_3 << (*((*device)->par->G.index_a.find(*tgt)->second.to_n)).first << ",";
+                    }
+                    initialiser_3.seekp(-1,ios_base::cur);
+                    initialiser_3 << "};\n";
+                    vars_cpp << "uint32_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutPin_" << (*pin)->Name().c_str() << "_Tgts[" << out_pin_idxs.size() << "] = " << initialiser_3.str().c_str();
+                 }
+             }
+             initialiser_2.seekp(-1,ios_base::cur);
+             initialiser_2 << "};\n";
+             vars_cpp << "outPin_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutputPins[" << t_devtyp->P_pintypOv.size() << "] = " << initialiser_2.str().c_str();
+         }
+         else initialiser << "0,0,";
+         if (t_devtyp->pPropsD)
+         {
+            initialiser << "&Thread_" << thread_num << "_DeviceProperties[" << index << "],";
+            if ((*device)->pPropsI) initialiser_4 << ((*device)->pPropsI->c_src.c_str()) << ",";
+            else initialiser_4 << (t_devtyp->pPropsI->c_src.c_str()) << ",";
+         }
+         else initialiser << "0,";
+         if (t_devtyp->pStateD)
+         {
+            initialiser << "&Thread_" << thread_num << "_DeviceState[" << index << "],";
+            if ((*device)->pStateI) initialiser_5 << ((*device)->pStateI->c_src.c_str()) << ",";
+            else initialiser_5 << (t_devtyp->pStateI->c_src.c_str()) <<",";
+         }
+         else initialiser << "0,";
+         initialiser << "0,0,0,0,0},";
+         ++index;
+     }
+     initialiser.seekp(-1,ios_base::cur);
+     initialiser << "};\n";
+     vars_cpp << "devInst_t Thread_" << thread_num << "_Devices[" << thread->P_devicel.size() << "] = " << initialiser.str().c_str();
+     if (t_devtyp->pPropsD)
+     {
+        vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_props_t Thread_" << thread_num << "_DeviceProperties[" << thread->P_devicel.size() << "];\n";
+        initialiser_4.seekp(-1,ios_base::cur);
+        initialiser_4 << "};\n";
+        vars_cpp << "devtyp_" << t_devtyp->Name().c_str() << "_props_t Thread_" << thread_num << "_DeviceProperties[" << thread->P_devicel.size() << "] = " << initialiser_4.str().c_str();
+     }
+     if (t_devtyp->pStateD)
+     {
+         vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_state_t Thread_" << thread_num << "_DeviceState[" << thread->P_devicel.size() << "];\n";
+         initialiser_5.seekp(-1,ios_base::cur);
+         initialiser_5 << "};\n";
+         vars_cpp << "devtyp_" << t_devtyp->Name().c_str() << "_state_t Thread_" << thread_num << "_DeviceState[" << thread->P_devicel.size() << "] = " << initialiser_5.str().c_str();
+     }
+     vars_cpp.close();
+}
+
+//------------------------------------------------------------------------------
+
+void P_builder::CompileBins(P_task * task)
+{
+     if (!task->linked)
+     {
+        par->Post(811, task->Name());
+        return;
+     }
+     // create all the necessary build directories
+     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+COMMON_PATH))->str().c_str());
+     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+TINSEL_PATH))->str().c_str());
+     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+BIN_PATH))->str().c_str());
+     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+BUILD_PATH))->str().c_str());
+     // copy static files to their relevant places: softswitch sources,
+     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+COMMON_SRC_PATH<<"/* "<<RECURSIVE_CPY<<" "<<par->taskpath+COMMON_PATH))->str().c_str()))
+     {
+        par->Post(807, (par->taskpath+COMMON_PATH).c_str());
+        return;
+     }
+     // Tinsel code
+     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+TINSEL_SRC_PATH<<"/* "<<RECURSIVE_CPY<<" "<<par->taskpath+TINSEL_PATH))->str().c_str()))
+     {
+         par->Post(807, (par->taskpath+TINSEL_SRC_PATH).c_str());
+         return;
+     }
+     // Makefile
+     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+STATIC_SRC_PATH<<"Makefile "<<par->taskpath+BUILD_PATH))->str().c_str()))
+     {
+         par->Post(807, (par->taskpath+BUILD_PATH).c_str());
+         return;
+     }
+     // kludgey line for C++98; this can be greatly simplified in C++11 using to_string.
+     // the makefile will have a target "softswitch_%.elf" which will produce a binary with the
+     // (virtual) core number appended. Build failures generate a fatal error as expected.
+     // if (system(string(COREMAKE_BASE).append(static_cast<ostringstream*>(&(ostringstream()<<c))->str()).c_str()))
+     if (system(static_cast<stringstream*>(&(stringstream("(cd ", ios_base::out | ios_base::ate)<<par->taskpath+BUILD_PATH<<";"<<COREMAKE_BASE<<")"))->str().c_str()))
+     {
+        par->Post(805);
+        return;
+     }
+     unsigned int coreNum = 0;
+     WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,par->pP->G,boxNode)
+     {
+     WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+     {
+     for (unsigned int c = 0; c < (*board)->P_corev.size(); c++)
+     {
+         // a failure to read the generated binary may not be absolutely fatal; this could be retrieved later if
+         // there was a transient read error (e.g. reading over a network connection)
+         string binary_name(static_cast<stringstream*>(&(stringstream(COREBIN_BASE, ios_base::out | ios_base::ate)<<coreNum<<".elf"))->str());
+         if (!((*board)->P_corev[c]->pCoreBin->Binary = fopen(binary_name.c_str(),"r")))
+            par->Post(806, binary_name);
+         ++coreNum;
+     }
+     }
+     }
+}
+
+//==============================================================================
+#endif
+
+

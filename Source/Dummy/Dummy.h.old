@@ -1,0 +1,26 @@
+#ifndef __DummyH__H
+#define __DummyH__H
+
+#include "CommonBase.h"
+
+//==============================================================================
+
+class Dummy : public CommonBase
+{
+
+public:
+                    Dummy(int,char **,string);
+virtual ~           Dummy();
+
+private:
+#include            "Decode.cpp"
+void                Dump(FILE * = stdout);
+
+typedef unsigned    (Dummy::*pMeth)(Msg_p *);
+map<unsigned,pMeth> FnMapx;
+
+};
+
+//==============================================================================
+   
+#endif

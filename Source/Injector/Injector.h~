@@ -1,0 +1,32 @@
+#ifndef __InjectorH__H
+#define __InjectorH__H
+
+#include "CommonBase.h"
+//#include "PMsg_p.hpp"
+
+//==============================================================================
+
+class Injector : public CommonBase
+{
+
+public:
+                    Injector(int,char **,string);
+virtual ~           Injector();
+
+typedef unsigned    (Injector::*pMeth)(PMsg_p *,unsigned);
+typedef map<unsigned,Injector::pMeth> FnMap_t;
+
+private:
+int                 Connect(int,string);
+#include            "Decode.cpp"
+void                Dump(FILE * = stdout);
+unsigned            OnInjectAck (PMsg_p *,unsigned);
+unsigned            OnInjectFlag(PMsg_p *,unsigned);
+
+vector<FnMap_t*>    FnMapx;
+};
+
+//==============================================================================
+
+#endif
+

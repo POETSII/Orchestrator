@@ -1,0 +1,123 @@
+
+[maintenance]
+date = "5 August 2008"
+author = ADB
+title = "Ze Buggerings the Wunth"
+
+[neurolist]
+"neuro01.nnl"
+"neuro02.nnl"
+"neuro03.nnl"
+
+[spinnlist]
+"spinn01.scf"
+"spinn02.scf"
+
+[results(APR)]
+SDRAM = "ramfile.ini"(all_in_one)   ; One file for all the SDRAM images
+routes = "routefile.ini"(separate)  ; Separate files for each routing table
+
+[control]
+Hff(0) = 34; Complicated heuristic random numbers, of as yet unknown efficacy ...
+Hff(6) =   ; These are known as 'heuristic fiddle factors' throughout this document
+log    = "stuff.log" ; The whole gory story
+erroes = "errors.log"
+
+
+[builtin]
+nrn : output(1),input(*)
+in  : output(1)
+out : input(1)
+
+["FLATneuroJKFF.nnl"]
+defaults = syn(w1),nrn(t1),out(o1)
+J:in = n1
+K:in = n5
+Ck:in = n1,n5,n9
+Pr:in = n2((wx))
+Cl:in = n6((wx))
+Q:out
+nQ:out
+n1:nrn     = n2(synapse_x())
+n2:nrn     = n3,n6(synapse_y(wy))
+n3:nrn     = n4
+n4:nrn     = n8,n5,Q
+n5:nrn     = n6
+n6:nrn     = n7,n2
+n7:nrn     = n8
+n8:nrn     = n4,n1,nQ
+n9:nrn(t0) = n7,n3
+
+["HIERARCHYneuroJKFF.nnl"]
+defaults = syn(w1),nrn(t1),out(o1)
+J  : in = n1
+K  : in = n5
+Ck : in = n1,n5,n9
+Pr : in = FFM(inP)
+Cl : in = FFM(inC)
+Q  : out
+nQ : out
+n1 : nrn     = FFM(inA)
+n5 : nrn     = FFM(inB)
+n9 : nrn(t0) = _1(in1),_0(in1)
+FFM: FF = >_0(in0), >_1(in1)
+FFS: FF = >Q,n5,>nQ,n1
+_0 : S0 = >FFS(inA)
+_1 : S1 = >FFS(inB)
+
+[FF]
+inA: in = n2
+inB: in = n6
+inP: in = n2(wx)
+inC: in = n6(wx)
+QA : out
+nQA: out
+n2 : nrn = n6,QA
+n6 : nrn = n2,nQA
+
+[S0]
+in0  : in  = n3
+in1  : in  = n3
+out0 : out
+n3   : nrn = out0
+
+[S1]
+in1  : in  = n7
+out1 : out
+n7   : nrn = out1
+
+
+; The '>' notation may not be to everyones' taste: we 
+; could instead use ever more levels of parentheses - thus
+
+FFM: FF = >_0(in0), >_1(in1)
+FFS: FF = >Q,n5,>nQ,n1
+
+; would become
+
+FFM: FF = (_0(in0)),(_1(in1))
+FFS: FF = (Q,n5),(nQ,n1)
+
+;Less contentious, I think, is the observation that 
+
+_0 : S0 = >FFS(inA)
+
+[parameters(neuro)]
+t1(nrn) =   ; What sort of neurone ...
+w1(syn) =   ; Synapse weight ...
+
+
+["spinn02"]
+defaults = spin(s1),link(pp)
+s01:spin = L2,L6,L1         { xy=(00,10); z=bd1 }
+s11:spin = L4,L7,L3,L6      { xy=(10,10); z=bd1 }
+s21:spin = L0,  ,L5,L7      { xy=(20,10); z=bd1 }
+s00:spin = L1,L8,L0         { xy=(00,00); z=bd2 }
+s10:spin = L3,L9,L2,L8      { xy=(10,00); z=bd2 }
+s20:spin = L5,  ,L4,L9      { xy=(20,00); z=bd2 }
+
+[parameters(spinn)]
+s1(spin) = 4,...  ; Chip parameters ...
+pp(link) = ..... 
+
+

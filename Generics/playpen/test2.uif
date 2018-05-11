@@ -1,0 +1,78 @@
+				; Blank section contains one blank record
+[named_section_head]	; Line 2 comment
+record1			; Line 3 comment
+record2
+
+
+[sectionA]
+body_label : body_variable = body_value
+label : variable {attribute_label: attribute:variable = expression}
+L : = Val {atl1:atv1 = 98; at2 = 8*7; at3 = (6*aa/(bb^cc))}
+
+[sectionB]
+L1 :                   ; Just a label			Tree1
+      Var2             ; Just a variable		Tree2
+            = Val3     ; Just a value			Tree3
+L4  : Var4             ; A label and a variable	Tree4
+L5  :       = Val5     ; A label and a value		Tree5
+      Var6  = Val6     ; A variable and a value	Tree6
+L7  :       =          ; Just a label			Tree7
+      Var8  =          ; Just a variable		Tree8
+L9  : Var9  =          ; A label and a variable	Tree9
+L10 : Var10 = Val10....; Everything			Tree10
+
+: anything   ; A record starting with a colon
+
+L : VAL = VAR						;	Tree11
+L : VAL = +VAR1,-VAR2,*VAR3				;	Tree12
+a,b,c : d,e,f = g,h,i					;	Tree13
+1,2,3 : 4,,5 = ,,7	; Everything is a string		Tree14
+-1(%2(!3(~4,*5),&6),^7) : = A,B(C,D),E(F(G,H),I		)	;	Tree15
+file = "e:\\stuff\other.stuff\more.stuff\a.b" + "squeak.txt"	;	Tree16
+
+  {  k    = p- - - - q}                ; Tree 17
+  {  x    = a+b/c}                     ; Tree 18
+d {  k    = (-8)|\+9}                  ; Tree 19
+  {  j    = ((9)+(-a--b))}             ; Tree 20
+  {f:       3.4e-10 == p+q ? goat : 0} ; Tree 21
+  {  q    = 3.4e-10+3.2e-11}           ; Tree 22
+  {  ic   = (x)/(y^z)}                 ; Tree 23
+  {  th   = ((a+b))/(((((c)))))}       ; Tree 24
+  {  a(0) = z+sin(y)}                  ; Tree 25
+  {  a(1) = sin(cos(x))}               ; Tree 26
+  {  b(c) = cos(sin(a,b),3,tan(7))}    ; Tree 27
+  {x:y    = -sin(cos(y))-*tan(+x)}     ; Tree 28
+
+a,a : b,b = c,c {d,d : e,e = expr1 ; f,f : g,g = expr2 ; h,h : i,i = expr3} ;	Tree29
+
+		; Stuff
+a=b		; More stuff
+a=b {c=d}	;.Even more stuff
+
+"A", "B" \
+"C", "D" \
+: \
+\
+"E" \
+=\
+F
+X=Y ; \ --- *not* a continuation character
+5 = 6,6 \	; Not stored
+,7,7		; Stored							Tree30
+
+
+[SimpleSectionHead]
+(0,1,2,3) : 00,11 = a(b(c(d)))						;	Tree31
+(a(!b,c),d(e,*f)) : (^00,(-11),(66,77(#88,99))) = @a,(b),((c))		;	Tree32
+[f(1)]									;	Tree33
+[f,g]									;	Tree34
+[f(2),*g]								;	Tree35
+[f,g(-3)]								;	Tree36
+[f(4),g(5)]								;	Tree37
+[f(g(6))]								;	Tree38
+[f(g(7(8(9))))]								;	Tree39
+[f(g(h(1,2,+3(-4,*5,6,(!7,8,9(0))))),z)]				;	Tree40
+{a1;b1:;c1:d1;:;:e1}							;	Tree41
+{a2=11;b2:=22;c2:d2=33;:=44;:e2=55};					;	Tree42
+
+
