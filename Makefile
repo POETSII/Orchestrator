@@ -4,13 +4,13 @@ INCDIR    = /usr/include
 BUILDDIR  = build
 BINDIR    = bin
 QTLIBDIR     = /home/adr1r17/Local_prg/Qt.5/Qt5.6/5.6.3/gcc_64/lib
-QTINCDIR     = /home/adr1r17/Local_prg/Qt.5/Qt5.6/5.6.3/gcc_64/include
+QTINCDIR     = /home/adr1r17/Local_prg/Qt.5/Qt5.6/5.6.3/gcc_64/include/QtCore
 
 CC        = $(MPICHDIR)/bin/mpicc
 CXX       = $(MPICHDIR)/bin/mpicxx
 
 CPPFLAGS += -I Generics -I Source/Common -std=c++98 -I $(INCDIR) -I $(QTINCDIR) -include string.h -fpermissive
-ORCHFLAGS := -I Source/OrchBase
+ORCHFLAGS := -I Source/OrchBase -I Source/Injector -I Source/Parser
 #-I /usr/include/mpi
 
 LDFLAGS += -lpthread -L$(LIBDIR) -L$(QTLIBDIR)
@@ -21,9 +21,12 @@ COMMON_SRC := $(filter-out Source/Common/Decode.cpp, $(COMMON_SRC))
 COMMON_SRC += Generics/Msg_p.cpp Generics/flat.cpp Generics/rand.cpp Generics/Cli.cpp  Generics/lex.cpp Generics/dfprintf.cpp
 COMMON_SRC += Generics/jnj.cpp Generics/uif.cpp 
 
-ORCH_SRC := $(wildcard Source/OrchBase/*.cpp)
-ORCH_SRC += $(wildcard ../Qt/OrchestratorFrontEnd_Builder/*.cpp)
+ORCH_SRC := $(wildcard Source/Root/*.cpp)
+ORCH_SRC += $(wildcard Source/OrchBase/*.cpp)
+ORCH_SRC += $(wildcard Source/Parser/*.cpp)
 ORCH_SRC += $(COMMON_SRC)
+ORCH_NOT_TRANS_U := Source/OrchBase/OrchBaseTask.cpp Source/OrchBase/OrchBaseLink.cpp Source/OrchBase/OrchBaseTopo.cpp Source/OrchBase/OrchBaseOwner.cpp
+ORCH_SRC := $(filter-out $(ORCH_NOT_TRANS_U), $(ORCH_SRC))
 ORCH_DIROBJ := $(subst .cpp,.o,$(ORCH_SRC))
 ORCH_OBJ = $(addprefix $(BUILDDIR)/,$(notdir $(ORCH_DIROBJ)))
 ORCH_TGT = $(BINDIR)/orchestrator
@@ -74,8 +77,8 @@ Injector: $(INJECTOR_TGT)
 
 #Nameserver: $(NAMESERVER_TGT)
 
-#$(ORCH_DIROBJ) : $(ORCH_SRC)
-#	$(CXX) $(ORCHFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+$(ORCH_DIROBJ) : $(ORCH_SRC)
+	$(CXX) $(ORCHFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
 $(ORCH_TGT) : $(ORCH_DIROBJ)
 	mkdir -p $(BINDIR)
@@ -111,4 +114,5 @@ $(INJECTOR_TGT) : $(INJECTOR_DIROBJ)
 #	$(CXX) $(ORCHFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
 clean :
-	rm -rf $(ORCH_TGT) $(DUMMY1_TGT) $(LOGSERVER_TGT) $(RTCL_TGT) $(INJECTOR_TGT) $(ORCH_OBJ) $(DUMMY1_OBJ) $(LOGSERVER_OBJ) $(RTCL_OBJ) $(INJECTOR_OBJ) $(ORCH_DIROBJ) $(DUMMY1_DIROBJ) $(LOGSERVER_DIROBJ) $(RTCL_DIROBJ) $(INJECTOR_DIROBJ) #$(NAMESERVER_TGT) $(NAMESERVER_OBJ) $(NAMESERVER_DIROBJ)
+	rm -rf $(ORCH_TGT) $(DUMMY1_TGT) $(LOGSERVER_TGT) $(RTCL_TGT) $(INJECTOR_TGT) $(ORCH_OBJ) $(DUMMY1_OBJ) $(LOGSERVER_OBJ) $(RTCL_OBJ) $(INJECTOR_OBJ) $(ORCH_DIROBJ) $(DUMMY1_DIROBJ) $(LOGSERVER_DIROBJ) $(RTCL_DIROBJ) $(INJECTOR_DIROBJ)
+#$(NAMESERVER_TGT) $(NAMESERVER_OBJ) $(NAMESERVER_DIROBJ)

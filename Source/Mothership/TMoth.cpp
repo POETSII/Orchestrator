@@ -363,7 +363,62 @@ unsigned TMoth::CmStop(string task)
    }
    Post(811,task,"stopped",taskStatus);
    return 2;                              
- }
+}
+
+//------------------------------------------------------------------------------
+
+bool TMoth::CmSystPing(Cli::Cl_t * pCl)
+//
+{
+if (pCl->Pa_v.size()==0) return (Post(48,"ping","system","1"));
+for(unsigned k=0;k<4;k++) {
+//Post(27,uint2str(k));
+  WALKVECTOR(Cli::Pa_t,pCl->Pa_v,i) {  // Walk the parameter (ping) list
+//    printf("%s\n",(*i).Val.c_str()); fflush(stdout);
+    string tgt = (*i).Val;             // Class name to be pinged
+    if (Cli::StrEq(tgt,Sderived)) continue;           // Can't ping yourself
+    WALKVECTOR(ProcMap::ProcMap_t,pPmap->vPmap,j) {   // Walk the process list
+      if (Cli::StrEq((*j).P_class,Sderived)) continue;// Still can't ping self
+      if ((Cli::StrEq(tgt,(*j).P_class))||(tgt=="*")) {
+        /* Qt whinges about the following 2 lines - doesn't like taking the
+           address of a temporary. Presumably it is being more strict about
+           compliance with standards. In any case, this means annoyingly creating
+           2 silly extra string objects just to get their addresses.
+           Pkt.Put(2,&string(GetDate())); // Never actually used these
+           Pkt.Put(3,&string(GetTime()));
+        */
+        string tD(GetDate());
+        string tT(GetTime());
+        PMsg_p Pkt;
+        Pkt.Put(1,&((*j).P_class));    // Target process name
+        Pkt.Put(2,&tD); // Never actually used these
+        Pkt.Put(3,&tT);
+        Pkt.Put<unsigned>(4,&k);       // Ping attempt
+        Pkt.Src(Urank);                // Sending rank
+        Pkt.Key(Q::SYST,Q::PING,Q::REQ);
+        Pkt.Send((*j).P_rank);
+      }
+    }
+  }
+}
+return true;                              // Legitimate command exit
+}
+
+//------------------------------------------------------------------------------
+
+bool TMoth::CmSystShow(Cli::Cl_t * pCl)
+// Monkey wants the list of processes
+{
+vector<ProcMap::ProcMap_t> vprocs;
+if (pPmap!=0) pPmap->GetProcs(vprocs);
+Post(29,uint2str(vprocs.size()));
+Post(30,Sproc);
+printf("\n");
+WALKVECTOR(ProcMap::ProcMap_t,vprocs,i) printf("Rank %d: %s\n",(*i).P_rank, (*i).P_proc.c_str());
+printf("\n");
+fflush(stdout);
+return true;                              // Legitimate command exit
+}
 
 //------------------------------------------------------------------------------
 
@@ -379,7 +434,7 @@ return 0;
 
 void TMoth::Dump(FILE * fp)
 {
-fprintf(fp,"Root dump+++++++++++++++++++++++++++++++++++\n");
+fprintf(fp,"Mothership dump+++++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"Event handler table:\n");
 fprintf(fp,"Key        Method\n");
 WALKMAP(unsigned,pMeth,FnMapx,i)
@@ -446,36 +501,17 @@ void* TMoth::LoadBoard(void* par)
 
 //------------------------------------------------------------------------------
 
-unsigned TMoth::MPISpinLoop()
+unsigned TMoth::NameDist()
 {
-   P_Pkt tinsel_packet;
-   unsigned numFlits = 0;
-   while (canRecv())
-   {
-     while (numFlits < ((sizeof(P_Pkt)>>TinselLogBytesPerFlit)) + ((sizeof(P_Pkt) & ~((~0) << TinselLogBytesPerFlit)) ? 1 : 0)) 
-   }
-}  
+      return 0;
+}
 
 //------------------------------------------------------------------------------
 
-unsigned TMoth::NameDist()
-// Handler for a task command sent (probably) from the user.
+unsigned TMoth::NameTdir(const string& task, const string& dir)
 {
-switch (Z->Key())
-{
-// get the task that the command is going to operate on 
-string task;
-Z->get(0,task);
-case PMsg_p::KEY(Q::CMND,Q::LOAD        ):
-return CmLoad(task);
-case PMsg_p::KEY(Q::CMND,Q::RUN         ):
-return CmRun(task);
-case PMsg_p::KEY(Q::CMND,Q::STOP        ):
-return CmStop(task);
-default:
-Post(510,"nameserver",int2str(Urank));
-return 0;
-}
+      BinPath[task] = dir;
+      return 0;
 }
 
 //------------------------------------------------------------------------------
@@ -485,7 +521,7 @@ unsigned TMoth::OnCmnd(PMsg_p * Z, unsigned cIdx)
 {
 // get the task that the command is going to operate on 
 string task;
-Z->get(0,task);  
+Z->get(0,task);
 switch (Z->Key())
 {
 case PMsg_p::KEY(Q::CMND,Q::LOAD        ):
@@ -495,9 +531,30 @@ return CmRun(task);
 case PMsg_p::KEY(Q::CMND,Q::STOP        ):
 return CmStop(task);
 default:
-Post(510,"task", int2str(Urank));
+Post(510,"Control",int2str(Urank));
 return 0;
 }
+}
+
+//------------------------------------------------------------------------------
+void TMoth::OnIdle()
+// idle processing deals with receiving packets from the managed Tinsel cores.
+{
+     const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
+     P_Pkt_t recv_buf; // buffer for one packet at a time
+     char* recv_b_pos = static_cast<char*>(&recv_buf);
+     // receive all available traffic. Should this be done or only one packet
+     // and then try again for MPI? We don't expect MPI traffic to be intensive
+     // and tinsel messsages 
+     while (canRecv)
+     {
+           recv(recv_b_pos);
+	   recv_b_pos+= szFlit;
+	   uint32_t len = static_cast<uint32_t>(recv_buf.housekeeping[P_LEN_OS]);
+	   if (len > szFlit && (len < sizeof(P_Pkt_t))) recvMsg(recv_b_pos, (len-szFlit)); // get the whole message
+	   if (OnTinsel(recv_buf,0)) Post(530, int2str(Urank)); // may need to change if OnTinsel responds to MPI
+	   recv_b_pos = static_cast<char*>(&recv_buf);
+     }
 }
 
 //------------------------------------------------------------------------------
@@ -506,18 +563,19 @@ unsigned TMoth::OnName(PMsg_p * Z, unsigned cIdx)
 // This handles what happens when the NameServer dumps a name subblock to the
 // mothership
 {
-   if (Z->Key() == PMsg_p::KEY(Q::NAME,Q::TDIR))
-   {
-      string task, dir;
-      Z->get(0,task);
-      Z->get(1,dir);
-      BinPath[task]=dir;
-   }
-   else if (Z->Key() == PMsg_p::KEY(Q::NAME,Q::DIST))
-   {
-   }
-   else Post(510,"nameserver",int2str(Urank));
-   return 0;
+switch (Z->Key())
+{
+case PMsg_p::KEY(Q::NAME,Q::DIST         ):
+return NameDist();
+case PMsg_p::KEY(Q::NAME,Q::TDIR         ):
+string task,dir;
+Z->get(0,task);
+Z->get(1,dir);
+return NameTdir(task,dir)
+default:
+Post(510,"Name",int2str(Urank));
+return 0;
+}
 }
 
 //------------------------------------------------------------------------------
@@ -526,7 +584,7 @@ unsigned TMoth::OnExit(PMsg_p * Z, unsigned cIdx)
 // This is what happens when a user command to stop happens 
 {
 // We are going away. Shut down any active tasks.  
-WALKMAP(string, unsigned char, TaskMap, Tsk)
+WALKMAP(string, unsigned char, TaskMap, tsk)
 {
        if ((tsk->second->status == TASK_BOOT) || (tsk->second->status == TASK_END)) continue;
        if (tsk->second->status == TASK_BARR) CmRun(tsk->first);
@@ -544,7 +602,7 @@ unsigned TMoth::OnSuper(PMsg_p * Z, unsigned cIdx)
 PMsg_p W(Comms[cIdx]);
 W.Key(Q::SUPR);
 W.Src(Z.Tgt());
-if (SupervisorCall(Z,&W) < 0) W.Send(Z.Src()); // Execute. Send a reply if one is expected
+if (SupervisorCall(this,Z,&W) < 0) W.Send(Z.Src()); // Execute. Send a reply if one is expected
 return 0;
 }
 
@@ -579,58 +637,63 @@ return 0;
 case PMsg_p::KEY(Q::SYST,Q::TOPO        ):
 return 0;
 default:
-Post(510,"system",in2str(Urank));
+Post(524,int2str(Z->Key()));
 return 0;
 }
 }
 
 //------------------------------------------------------------------------------
 
-unsigned TMoth::OnTinsel(PMsg_p * Z, unsigned cIdx)
-// Handler for an expanded full posted message back from the LogServer
-//      LOG|FULL|   -|   - (1:int)message_id,
-//                         (2:char)message_type,
-//                         (3:string)full_message
+unsigned TMoth::OnTinsel(void * M, unsigned cIdx)
+// Deals with what happens when a Tinsel message is received. Generally we
+// repack the message for delivery to the Supervisor handler and deal with
+// it there. The Supervisor can do one of 2 things: A) process it itself,
+// possibly generating another message; B) immediately export it over MPI to
+// the user Executive or other external process.
 {
-string sfull;                          // Full message
-Z->Get(3,sfull);
-int id = 0;                            // Message id
-int * pid = 0;
-int cnt;
-pid = Z->Get<int>(1,cnt);
-if (pid!=0) id = *pid;
-char ty = 0;                           // Message type
-char * pty = 0;
-pty = Z->Get<char>(2,cnt);
-if (pty!=0) ty = *pty;
-string t = GetTime();
-printf(" %s: %3d(%c) %s\n",t.c_str(),id,ty,sfull.c_str());
-fflush(stdout);
-Prompt();
+PMsg_p W(Comms[NameSCIdx()]);   // return packets to be routed via the NameServer's comm
+W.Key(Q::SUPR);                 // it'll be a Supervisor packet
+W.Src(pPmap->U.NameServer);     // coming from the NameServer
+W.Tgt(Urank);                   // and directed at us
+W.Put<P_Pkt_t>(0,M)             // stuff the Tinsel message into the packet
+return OnSuper(W, NameSCIdx());
+}
+
+//------------------------------------------------------------------------------
+
+unsigned TMoth::SystHW(const vector<string>& args)
+// Execute some command directly on the Mothership itself. Unlike a Supervisor
+// message, which triggers the Supervisor function but doesn't change the
+// functionality of the Mothership, this can directly interact with the
+// running Mothership to do certain tasks
+{
 return 0;
 }
 
 //------------------------------------------------------------------------------
 
-unsigned TMoth::ProcCmnd(Cli * pC)
-// Take the monkey command and point it to the right place
-// All known monkey input is tabulated in Pglobals.h,
-// (along with all known message layouts).
+unsigned TMoth::SystKill(unsigned rank)
+// Kill some process in the local MPI universe. We had better be sure there is
+// no traffic destined for this process after such a brutal command!
 {
-if (pC==0) return 1;                   // Paranoia
-pC->Trim();
-string scmnd = pC->Co;                 // Pull out the command string
-// Note you can't use .size() here, because some strings have been resized to 4,
-// so for them the size includes the '\0', whereas the others, it doesn't.....
-if (strcmp(scmnd.c_str(),"exit")==0) return CmExit(pC);
-if (strcmp(scmnd.c_str(),"test")==0) return CmTest(pC);
-if (strcmp(scmnd.c_str(),"syst")==0) return CmSyst(pC);
-if (strcmp(scmnd.c_str(),"rtcl")==0) return CmRTCL(pC);
-if (strcmp(scmnd.c_str(),"topo")==0) return CmTopo(pC);
-if (strcmp(scmnd.c_str(),"task")==0) return CmTask(pC);
-return CmDrop(pC);
+return 0;
 }
 
+//------------------------------------------------------------------------------
+
+unsigned TMoth::SystShow()
+// Report the list of processes (active Motherships) on this comm
+{
+return 0;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned TMoth::SystTopo()
+// Report this Mothership's local topology information (boards/cores/connections)
+{
+return 0;
+}
 //==============================================================================
 
 

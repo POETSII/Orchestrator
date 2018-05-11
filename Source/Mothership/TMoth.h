@@ -9,6 +9,8 @@
 
 //==============================================================================
 
+extern int SupervisorCall(TMoth*, PMsg_p*, PMsg_p*); // entry point for the Supervisor
+
 class TMoth : public CommonBase, private HostLink
 {
 
@@ -26,15 +28,15 @@ unsigned            CmStop(string);
 virtual string      Dname(){ return typeid(*this).name(); }
 void                Dump(FILE * = stdout);
 void*               LoadBoard(void*);
-unsigned            MPISpinLoop();
 unsigned            NameDist();
+unsigned            NameTdir(const string&, const string&);
 unsigned            OnCmnd(PMsg_p *,unsigned);
 unsigned            OnExit(PMsg_p *,unsigned);
+void                OnIdle();
 unsigned            OnName(PMsg_p *,unsigned);
 unsigned            OnSuper(PMsg_p *,unsigned);
 unsigned            OnSyst(PMsg_p *,unsigned);
 unsigned            OnTinsel(void *,unsigned);
-unsigned            ProcCmnd(Cli *);
 unsigned            SystHW(const vector<string>&);
 unsigned            SystKill(unsigned);
 unsigned            SystShow();
@@ -62,7 +64,7 @@ map<unsigned, coreMap_t*> BoardMap;              // which board has which cores
 map<unsigned, pthread_t*> BootMap;               // which booter is starting which board
 map<string, string> BinPath;                     // which directory has which task's binaries
 vector<FnMap_t*>    FnMapx;
-char                Port[MPI_MAX_PORT_NAME]; // MPI port for this mothership
+char                Port[MPI_MAX_PORT_NAME];     // MPI port for this mothership
 
 
 static const int           NumBoards = TinselMeshXLen*TinselMeshYLen;
