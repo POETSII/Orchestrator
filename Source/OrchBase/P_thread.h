@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "NameBase.h"
+#include "Bin.h"
 #include "P_device.h"
 #include <list>
 using namespace std;
@@ -21,7 +22,6 @@ void                Dump(FILE * = stdout);
 list<P_device *>    P_devicel;
 P_core *            par;
 P_addr              addr;
-
 
 };
 

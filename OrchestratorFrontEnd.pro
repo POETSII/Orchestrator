@@ -179,7 +179,8 @@ HEADERS += \
     Source/OrchBase/P_super.h \
     Source/Injector/Injector.h \
     Source/NameServer/Ns_el.h \
-    Source/OrchBase/P_owner.h
+    Source/OrchBase/P_owner.h \
+    Generics/dumpchan.h
 
 LIBS += "-L/usr/lib" -lmpi
 

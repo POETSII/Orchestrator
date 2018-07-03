@@ -55,7 +55,6 @@ return NULL;
 Root::Root(int argc,char * argv[],string d) :
   OrchBase(argc,argv,d,string(__FILE__))
 {
-
 echo         = false;                  // Batch subsystem opaque
 injData.flag = 0;                      // Clear injector controls
 
@@ -199,6 +198,7 @@ if (!stack.empty()) {
   return 0;
 }
 int p, pL, tpL, lIdx;
+pL = -1;                               // maybe we have no LogServer?
 PMsg_p Pkt;                            // Burst closedown command to all ranks
 Pkt.Src(Urank);
 Pkt.Key(Q::EXIT);
@@ -228,10 +228,13 @@ else
    }
 }
 }
-Post(50,pPmap[lIdx]->M[pL],int2str(pL));     // Ensure LogServer goes last
 Post(50,Sderived,int2str(Urank));            // Root is going anyway
+if (pL >= 0)                                 // a Logserver existed?
+{
+Post(50,pPmap[lIdx]->M[pL],int2str(pL));     // Ensure LogServer goes last
 Pkt.comm = Comms[lIdx];                      // Set LogServer's comm for the packet
 Pkt.Send(pL);
+}
 return 1;                                    // Return closedown flag
 }
 
@@ -536,6 +539,10 @@ void Root::SystConn(Cli::Cl_t Cl)
 if (Cl.Pa_v.size()==0) {
   Post(47,"conn","system","1"); // need to be given a service to connect to
   return;
+}
+if (pPmap[0]->vPmap.size() != Usize[0])
+{
+  Post(62); // can't connect to another universe before we know the size of our own.
 }
 string svc = Cl.Pa_v[0].Val; // get the service name
 // connection is collective, so we have to organise everyone

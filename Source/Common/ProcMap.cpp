@@ -56,7 +56,7 @@ fprintf(fp,"\n- - - - - - - - - - - - - - - - - - - "
 
 int * io_chan;
 int   io_flag;
-MPI_Attr_get(MPI_COMM_WORLD,MPI_IO,&io_chan,&io_flag);
+MPI_Comm_get_attr(MPI_COMM_WORLD,MPI_IO,&io_chan,&io_flag); // replaces deprecated MPI_attr_get
 
 if (io_flag==0) fprintf(fp,"Rank %d asserts:"
                            " No MPI IO attribute found ?\n",par->Urank);

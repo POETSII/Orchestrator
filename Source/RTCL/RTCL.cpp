@@ -62,6 +62,14 @@ if(pthread_create(&rtcl_thread,NULL,rtcl_func,args))
 MPISpinner();                          // Spin on *all* messages: exit on DIE
 comms.l_kill = true;                   // Kill the clock thread
                                        // pthread_cancel() doesn't seem to work?
+                                       // possibly because pthread_setcanceltype()
+                                       // defaults to deferred, which waits until
+                                       // the thread reaches a cancellation point,
+                                       // and both printf and fflush MAY be
+                                       // cancellation points but are not required
+                                       // to be. Setting the cancel type to asynchronous
+                                       // could avoid this, with possibly nasty
+                                       // side effects.
 printf("********* RTC rank %d on the way out\n",Urank); fflush(stdout);
 }
 

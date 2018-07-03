@@ -30,6 +30,7 @@ const byte Q::STOP;
 const byte Q::TOPO;
 const byte Q::DIST;
 const byte Q::TDIR;
+const byte Q::SHOW;
 // Level 2 subkeys
 const byte Q::REQ;
 const byte Q::ACK;

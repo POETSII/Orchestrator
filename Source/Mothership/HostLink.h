@@ -94,7 +94,7 @@ class HostLink {
   void start();
 
   // both load the code/data and startup the application
-  inline void boot(const char* codeFilename, const char* dataFilename) {load(codeFilename,dataFileName); start();};
+  inline void boot(const char* codeFilename, const char* dataFilename) {load(codeFilename,dataFilename); start();};
 
   // Trigger to start application execution
   void go();

@@ -1,6 +1,7 @@
 #include "pedgeinstance.h"
 #include "pigraphinstance.h"
 #include "pidatavalue.h"
+#include "build_defs.h"
 
 PEdgeInstance::PEdgeInstance(const QString& name, PIGraphObject *parent) : PConcreteInstance(name, "EdgeI", QVector<int>({STATE}), parent), containing_graph(NULL)
 {
@@ -73,7 +74,11 @@ void PEdgeInstance::elaborateEdge(D_graph* graph_rep)
            if (numSubObjects(STATE)) dst_pin->pStateI = static_cast<PIDataValue*>(subObject(STATE, 0))->elaborateDataValue();
            // pin indices are keys into a multimap, so duplicates are OK.
            src_pin->idx = path_index.opin_i = src_pin->pP_pintyp->idx;
-           dst_pin->idx = path_index.ipin_i = dst_pin->pP_pintyp->idx;
+           // the destination index needs to capture both the pin number and what will be the local array index for the edge at the pin.
+           // searching the pin lists would be wildly inefficient, so we store a value in the DeviceInstance for each pin giving the
+           // current count of internal edges.
+           P_device* dest_device = path.dst.device->getDevice();
+           dst_pin->idx = path_index.ipin_i = ((dst_pin->pP_pintyp->idx << PIN_POS) | dest_device->ipin_idxs[dst_pin->pP_pintyp->idx]++);
            //src_pin->idx = path_index.opin_i = 2*path_index.msg_i;
            //dst_pin->idx = path_index.ipin_i = 2*path_index.msg_i+1;
            // now we are ready to insert into the graph, updating the internal representation if the insertion succeeds.

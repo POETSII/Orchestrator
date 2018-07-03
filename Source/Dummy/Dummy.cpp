@@ -25,7 +25,7 @@ for(int i=0;i<10;i++) {
   int len = strlen(buf)+1;             // Include the terminal '\0'
   Pkt.Put<char>(1,buf,len);
   Pkt.Key(Q::TEST);
-  Pkt.Send(Q::ROOT);
+  Pkt.Send(Q::ROOT); // dangerous: sending to a literal rank before procmap is loaded
   buf[0]++;
 }
 

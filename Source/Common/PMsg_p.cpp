@@ -31,18 +31,18 @@ void PMsg_p::Bcast()
 if (comm==MPI_COMM_NULL) return;   // no communicator associated with this message?
 int flag, sflag;
 MPI_Finalized(&flag);
-if (flag!=0) return;   // MPI closed down already?
+if (flag) return;   // MPI closed down already?
 int Usize,Urank;
-MPI_Comm_test_inter(comm,&flag);
-if (flag==0)
+MPI_Comm_test_inter(comm,&flag); // sending over an intercomm?
+if (flag)
+{
+   MPI_Comm_remote_size(comm,&Usize);  // MPI remote Universe size
+   MPI_Comm_rank(MPI_COMM_WORLD,&Urank);  // My place in my local Universe
+}
+else
 {
    MPI_Comm_size(comm,&Usize);  // MPI Universe size
    MPI_Comm_rank(comm,&Urank);  // My place within it
-}
-else
-{ 
-   MPI_Comm_remote_size(comm,&Usize);  // MPI remote Universe size
-   MPI_Comm_rank(MPI_COMM_WORLD,&Urank);  // My place in my local Universe
 }
 Src(Urank);
 byte * bs = Stream();                  // Turn the message into a unified stream
@@ -64,10 +64,14 @@ for (int i=0;i<Usize;i++) {            // Send a copy everywhere
 void PMsg_p::Send(int dest)
 {
 if (comm==MPI_COMM_NULL) return;   // no communicator associated with this message?
-int flag;
-if (MPI_Finalized(&flag)!=0) return;   // MPI closed down already?
-Tgt(dest);                             // In case it's not there
-Ztime(0,MPI_Wtime());                  // Timestamp departure
+int flag,Usize;
+if (MPI_Finalized(&flag)!=0) return;          // MPI closed down already?
+MPI_Comm_test_inter(comm,&flag);              // Sending over an intercomm?
+if (flag) MPI_Comm_remote_size(comm,&Usize);  // MPI remote Universe size
+else MPI_Comm_size(comm,&Usize);              // MPI Universe size
+if (dest < 0 || dest >= Usize) return;        // Invalid rank?
+Tgt(dest);                                    // In case it's not there
+Ztime(0,MPI_Wtime());                         // Timestamp departure
 MPI_Request request;
 MPI_Status status;
 //printf("& Byte stream = %#010x, length = %d\n",Stream(),Length()); fflush(stdout);

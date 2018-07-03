@@ -20,7 +20,8 @@ void               Dump(FILE * = stdout);
 
 P_addr             addr;
 vector<P_thread *> P_threadv;
-Bin *              pCoreBin;
+Bin *              pCoreBin; // instruction binary for this core
+Bin*               pDataBin;  // data binary for this core
 P_board *          par;
 
 };

@@ -78,13 +78,12 @@ EXIT |-    |-    |-    | (None)
 NAME |DIST |-    |-    | ()
 NAME |TDIR |-    |-    | (0:string)Task name
                          (1:string)File directory
-SUPR |-    |-    |-    | (0:vector<string>)Args
+SUPR |-    |-    |-    | (0:vector<P_Sup_Msg_t>)Args
 SYST |HARD |-    |-    | (0:vector<string>)Args
-SYST |KILL |-    |-    | (0:unsigned)Rank of proc to kill
+SYST |KILL |-    |-    | (None)
 SYST |SHOW |-    |-    | (None)
 SYST |TOPO |-    |-    | (None)
-TINS |-    |-    |-    | (0:vector<int>)Device ids
-                         (1:vector<pkt_t>)Packet(s) to deliver
+TINS |-    |-    |-    | (0:vector<P_Msg_t>) Packet(s) to deliver
 
 */
 
@@ -127,6 +126,7 @@ static const byte STOP  = 0x4a;
 static const byte TOPO  = 0x4b;
 static const byte DIST  = 0x4c;
 static const byte TDIR  = 0x4d;
+static const byte SHOW  = 0x4e;
 // Level 2 subkeys
 static const byte REQ   = 0x80;
 static const byte ACK   = 0x81;
@@ -148,6 +148,7 @@ static const byte ROOT  = 0x00;
 #define csINJECTORproc   "Injector:CommonBase"
 #define csNAMESERVERproc "NameServer:CommonBase"
 #define csMONITORproc    "Monitor:CommonBase"
+#define csMOTHERSHIPproc "TMoth:CommonBase"
 
 };
 

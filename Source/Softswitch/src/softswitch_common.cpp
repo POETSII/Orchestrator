@@ -5,24 +5,6 @@
 #include <algorithm>
 using namespace std;
 
-InputPinLookup::InputPinLookup(const devInst_t* device) : target_device(device)
-{
-}
-
-inPinSrc_t* InputPinLookup::find_inputPin(uint32_t msgType, uint32_t srcID)
-{
-   // slightly bodgey way of getting quick lookups
-  inPinMsg_t msgKeyType;
-  msgKeyType.device = target_device;
-  msgKeyType.msgType = msgType;
-  inPinSrc_t srcKeyType;
-  srcKeyType.src = srcID;
-  pair<inPinMsg_t*, inPinMsg_t*> matching_msgs;
-  // pair<inPinSrc_t*, inPinSrc_t*> matching_srcs;
-  matching_msgs = equal_range(target_device->inputPins, (target_device->inputPins+target_device->numInputs), msgKeyType, msg_key_compare);
-  return equal_range(matching_msgs.first->sources, (matching_msgs.first->sources+matching_msgs.first->numSrcs), srcKeyType, src_key_compare).first;
-}
-
 template<class T> T offset_ptr(ThreadCtxt_t* base, T offset)
 {
   // dangerous but necessary - we have no idea how large data structures are and the best that can be done in the loaded context
@@ -47,7 +29,7 @@ template<class T> T offset_ptr(ThreadCtxt_t* base, T offset)
 
 void softswitch_init(ThreadCtxt_t* thr_ctxt)
 {
-     for (uint32_t i=1; i < (1<<TinselLogMsgsPerThread); i++) tinselAlloc(tinselSlot(i)); // allocate receive slots.
+     for (uint32_t i=5; i < (1<<TinselLogMsgsPerThread); i++) tinselAlloc(tinselSlot(i)); // allocate receive slots.
      // we are going to pack the structures together as tightly as we can, obeying any alignment restrictions
      thr_ctxt->devTyps = offset_ptr<devTyp_t*>(thr_ctxt, thr_ctxt->devTyps);
      thr_ctxt->devInsts = offset_ptr<devInst_t*>(thr_ctxt, thr_ctxt->devInsts);
@@ -56,7 +38,7 @@ void softswitch_init(ThreadCtxt_t* thr_ctxt)
      for (uint32_t device = 0; device < thr_ctxt->numDevInsts; device++) device_init(&thr_ctxt->devInsts[device], thr_ctxt);
 }
 
-void softswitch_finalize(ThreadCtxt_t* thr_ctxt, volatile void** send_buf, volatile void** recv_buf)
+void softswitch_finalize(ThreadCtxt_t* thr_ctxt, volatile void** send_buf, volatile void** recv_buf, volatile void** super_buf)
 {
      // basic shutdown processing: clear buffers
      for (uint32_t device = 0; device < thr_ctxt->numDevInsts; device++)
@@ -68,6 +50,7 @@ void softswitch_finalize(ThreadCtxt_t* thr_ctxt, volatile void** send_buf, volat
 	 while (softswitch_popRTSPin(&thr_ctxt->devInsts[device]));    	 
      }
      while (softswitch_popRTS(thr_ctxt));
+     for (uint32_t b = 0; b < NUM_SUP_BUFS; b++) super_buf[b] = 0;
      *send_buf = *recv_buf = 0;
      // free mailbox slots
      for (uint32_t i = 0; i < (1<<TinselLogMsgsPerThread); i++) tinselAlloc(tinselSlot(i));
@@ -77,13 +60,12 @@ void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatil
 {
      // first phase of barrier: set up a standard message to send to the supervisor
      uint32_t this_thread = tinselId();
-     uint32_t supervisor =  (this_thread & (P_BOX_MASK | P_BOARD_MASK)) | P_SUP_MASK;
      // block until we can send it,
      while (!tinselCanSend());
-     encode_pkt_hdr(this_thread, supervisor, P_PKT_MSGTYP_BARRIER, const_cast<void*>(send_buf));
-     tinselSetLen(P_PKT_HDR_SIZE);
+     set_super_hdr(tinselId(), P_PKT_MSGTYP_BARRIER, P_SUP_PIN_SYS, sizeof(P_Sup_Hdr_t), 0, static_cast<P_Sup_Hdr_t*>(const_cast<void*>(send_buf)));
+     tinselSetLen(sizeof(P_Sup_Hdr_t));
      // and then issue the message indicating this thread's startup is complete.
-     tinselSend(supervisor, send_buf);
+     tinselSend(tinselHostId(), send_buf);
      // second phase of barrier: now wait for the supervisor's response
      thr_ctxt->ctlEnd = 1;
      while (thr_ctxt->ctlEnd)
@@ -91,9 +73,9 @@ void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatil
            // by blocking awaiting a receive 
            while (!tinselCanRecv());
 	   recv_buf = tinselRecv();
-	   Ppkt_hdr_t* rcv_pkt = static_cast<Ppkt_hdr_t*>(const_cast<void*>(recv_buf));
-	   // ignore any traffic from non-supervisor devices,
-	   if (rcv_pkt->src & P_SUP_MASK)
+	   P_Msg_t* rcv_pkt = static_cast<P_Msg_t*>(const_cast<void*>(recv_buf));
+	   // look for barrier message
+	   if (rcv_pkt->header.messageTag == P_MSG_TAG_INIT)
 	   {
 	      // and once it's been received, process it as a startup message
 	      softswitch_onReceive(thr_ctxt, recv_buf);
@@ -125,17 +107,18 @@ void device_init(devInst_t* device, ThreadCtxt_t* thr_ctxt)
      device->properties = offset_ptr<const void*>(thr_ctxt, device->properties);
      device->state = offset_ptr<void*>(thr_ctxt, device->state);
      device->outputPins = offset_ptr<outPin_t*>(thr_ctxt, device->outputPins);
-     device->inputPins = offset_ptr<inPinMsg_t*>(thr_ctxt, device->inputPins);
-     for (uint32_t out = 0; out < device->numOutputs; out++) outPinTgt_init(out, device, thr_ctxt); 
+     device->inputPins = offset_ptr<inPin_t*>(thr_ctxt, device->inputPins);
+     for (uint32_t out = 0; out < device->numOutputs; out++) outPin_init(out, device, thr_ctxt); 
      for (uint32_t msg_typ = 0; msg_typ < device->numInputs; msg_typ++) inPin_init(msg_typ, device, thr_ctxt);
 }
 
-void outPinTgt_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt)
+void outPin_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt)
 {
      outPin_t* o_pin = &device->outputPins[pin];
      o_pin->device = device;
      o_pin->pinType = offset_ptr<out_pintyp_t*>(thr_ctxt, o_pin->pinType);
-     o_pin->targets = offset_ptr<const uint32_t*>(thr_ctxt, o_pin->targets);
+     o_pin->targets = offset_ptr<outEdge_t*>(thr_ctxt, o_pin->targets);
+     for (int tgt = 0; tgt < o_pin->numTgts; tgt++) outPinTgt_init(tgt, o_pin, thr_ctxt);
      // initialise the message queue circular buffers. Buffer size 0 implies no initialisation.
      for (int buf = 0; buf < P_MSG_Q_MAXCOUNT; buf++)
      { 
@@ -146,18 +129,25 @@ void outPinTgt_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt)
      }
 }
 
+void outPinTgt_init(uint32_t tgt, outPin_t* pin, ThreadCtxt_t* thr_ctxt)
+{
+     outEdge_t* i_tgt = &pin->targets[tgt];
+     i_tgt->pin = pin;
+}
+
 void inPin_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt)
 {
-     inPinMsg_t* i_pin = &device->inputPins[pin];
-     i_pin->device = offset_ptr<const devInst_t*>(thr_ctxt, i_pin->device);
-     i_pin->sources = offset_ptr<inPinSrc_t*>(thr_ctxt, i_pin->sources);
+     inPin_t* i_pin = &device->inputPins[pin];
+     i_pin->device = device;
+     i_pin->pinType = offset_ptr<in_pintyp_t*>(thr_ctxt, i_pin->pinType);
+     i_pin->sources = offset_ptr<inEdge_t*>(thr_ctxt, i_pin->sources);
      for (int src = 0; src < i_pin->numSrcs; src++) inPinSrc_init(src, i_pin, thr_ctxt);
 }
 
-void inPinSrc_init(uint32_t src, inPinMsg_t* pin, ThreadCtxt_t* thr_ctxt)
+void inPinSrc_init(uint32_t src, inPin_t* pin, ThreadCtxt_t* thr_ctxt)
 {
-     inPinSrc_t* i_src = &pin->sources[src];
-     i_src->pinType = offset_ptr<const in_pintyp_t*>(thr_ctxt, i_src->pinType);
+     inEdge_t* i_src = &pin->sources[src];
+     i_src->pin = pin;
      i_src->properties = offset_ptr<const void*>(thr_ctxt, i_src->properties);
      i_src->state = offset_ptr<void*>(thr_ctxt, i_src->state);
 }
@@ -170,14 +160,14 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
     // set up OnSend with the first address   
     if (cur_device->currTgt == 0)
     {
-       encode_pkt_hdr(tinselId() | cur_device->deviceID, 0, cur_pin->pinType->msgType, const_cast<void*>(send_buf));
-       tinselSetLen(P_PKT_HDR_SIZE + cur_pin->pinType->sz_msg);
+       tinselSetLen(sizeof(P_Msg_Hdr_t) + cur_pin->pinType->sz_msg);
        // if we are buffering, is there a message in the buffer?
        if (cur_pin->msg_q_head)
        {
 	  // if so, move its contents into the hardware mailbox
-	  Pmsg_t* msg = softswitch_popMsg(cur_pin);
-	  memcpy(static_cast<char*>(const_cast<void*>(send_buf))+P_PKT_HDR_SIZE, &msg->msg, cur_pin->pinType->sz_msg);
+	  P_Msg_Q_t* msg = softswitch_popMsg(cur_pin);
+	  // offset the copy location by the header length to space for header to be inserted.
+	  memcpy(static_cast<char*>(const_cast<void*>(send_buf))+sizeof(P_Msg_Hdr_t), &msg->msg, cur_pin->pinType->sz_msg);
 	  buffered = 1;
        }
        // then run the application's OnSend (which, if we are buffering, may alter the buffer again)
@@ -185,7 +175,11 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
     }
     // send the message (to as many destinations as possible before the network blocks).
     while (tinselCanSend() && cur_device->currTgt < cur_pin->numTgts)
-          tinselSend(cur_pin->targets[cur_device->currTgt++], send_buf);
+    {
+          const outEdge_t* target = &cur_pin->targets[cur_device->currTgt++];
+          set_msg_hdr(target->tgt, target->tgtEdge, target->tgtPin, cur_pin->pinType->sz_msg, cur_pin->pinType->msgType, static_cast<P_Msg_Hdr_t*>(const_cast<void*>(send_buf)));
+          tinselSend(target->tgt, send_buf);
+    }   
     // then update the RTS list as necessary
     softswitch_onRTS(thr_ctxt, cur_device);
     return cur_device->currTgt;
@@ -194,25 +188,23 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
 void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
 {
      // first need to do some basic decode of the packet:
-     Ppkt_hdr_t* rcv_pkt = static_cast<Ppkt_hdr_t*>(const_cast<void*>(recv_buf));
+     P_Msg_Hdr_t* recv_pkt = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(recv_buf));
      devInst_t* recv_device_begin = thr_ctxt->devInsts;
      devInst_t* recv_device_end = thr_ctxt->devInsts+thr_ctxt->numDevInsts;
      // device in range? A Supervisor packet may target the entire group by sending a device number above the max.
-     if (((rcv_pkt->hdw & P_DEVICE_MASK) >> P_DEVICE_OS) < thr_ctxt->numDevInsts)
-        recv_device_end = (recv_device_begin =  &thr_ctxt->devInsts[(rcv_pkt->hdw & P_DEVICE_MASK) >> P_DEVICE_OS]) + 1;
-     else if (!(rcv_pkt->hdw & P_SUP_MASK)) return; // exit and dump packet if the device is out of range.
-     uint32_t msg_type, RTS_updated;
-     // what message type does it contain?
-     memcpy(&msg_type, &rcv_pkt->housekeeping[P_PKT_MSGTYP_OS], sizeof(uint32_t));
+     if (((recv_pkt->destDeviceAddr & P_DEVICE_MASK) >> P_DEVICE_OS) < thr_ctxt->numDevInsts)
+        recv_device_end = (recv_device_begin =  &thr_ctxt->devInsts[(recv_pkt->destDeviceAddr & P_DEVICE_MASK) >> P_DEVICE_OS]) + 1;
+     else if (!(recv_pkt->destDeviceAddr & P_SUP_MASK)) return; // exit and dump packet if the device is out of range.
+     uint32_t RTS_updated;
      // go through the devices (usually only 1)
      for (devInst_t* recv_device = recv_device_begin; recv_device != recv_device_end; recv_device++)
      {
         // which pin will receive the message?
-        inPinSrc_t* recv_pin = find_inputPin(recv_device, msg_type, rcv_pkt->src);
+        inPin_t* recv_pin = &recv_device->inputPins[recv_pkt->destPin];
 	// source was a supervisor? Run OnCtl. We assume here full context (thread, device) should be passed.
-	if (rcv_pkt->hdw & P_SUP_MASK) RTS_updated = recv_device->devType->OnCtl_Handler(thr_ctxt, recv_device, const_cast<const void*>(recv_buf)+sizeof(Ppkt_hdr_t));
+	if (recv_pkt->destDeviceAddr & P_SUP_MASK) RTS_updated = recv_device->devType->OnCtl_Handler(thr_ctxt, recv_device, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+sizeof(P_Msg_Hdr_t));
         // otherwise handle as a normal device through the appropriate receive handler.
-        else RTS_updated = recv_pin->pinType->Recv_handler(thr_ctxt->properties, recv_device, recv_pin, const_cast<const void*>(recv_buf)+sizeof(Ppkt_hdr_t));
+        else RTS_updated = recv_pin->pinType->Recv_handler(thr_ctxt->properties, recv_device, &recv_pin->sources[recv_pkt->destEdgeIndex], static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+sizeof(P_Msg_Hdr_t));
 	// finally, run the RTS handler for the device.
 	softswitch_onRTS(thr_ctxt, recv_device);
      }
@@ -300,7 +292,7 @@ void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device)
 	     {
 	        // yes. Push the various queues. 
 	        outPin_t* output_pin = &device->outputPins[32*pin_grp + pin];
-	        Pmsg_t* msg_buf;
+	        P_Msg_Q_t* msg_buf;
 	        // try to get a buffer for the message and append if we succeed.
 	        if (msg_buf = softswitch_nextMsg(output_pin)) softswitch_pushMsg(output_pin, msg_buf);
 	        // pin not already active. Insert into the queue.
@@ -359,22 +351,22 @@ outPin_t* softswitch_popRTSPin(devInst_t* device)
    by simply appending the next available one. If the next one is also
    the head of the active list, the buffer is exhausted.
  */
-void softswitch_pushMsg(outPin_t* pin, Pmsg_t* msg)
+void softswitch_pushMsg(outPin_t* pin, P_Msg_Q_t* msg)
 {
      pin->msg_q_tail = msg; // can always insert; no need for pointer juggling. 
      if (!pin->msg_q_head) pin->msg_q_head = msg; // if this is the first member it should be the head as well.
 }
 
-Pmsg_t* softswitch_popMsg(outPin_t* pin)
+P_Msg_Q_t* softswitch_popMsg(outPin_t* pin)
 {
-     Pmsg_t* popped = pin->msg_q_head;
+     P_Msg_Q_t* popped = pin->msg_q_head;
      // if this is the last active member then zero the list.
      if (pin->msg_q_head == pin->msg_q_tail) pin->msg_q_head = pin->msg_q_tail = 0;
      else pin->msg_q_head = popped->next;
      return popped;
 }
 
-Pmsg_t* softswitch_nextMsg(outPin_t* pin)
+P_Msg_Q_t* softswitch_nextMsg(outPin_t* pin)
 {
      // no buffer available. 
      if (!pin->msg_q_buf) return 0;
@@ -384,37 +376,4 @@ Pmsg_t* softswitch_nextMsg(outPin_t* pin)
      if (pin->msg_q_tail->next == pin->msg_q_head) return 0;
      else return pin->msg_q_tail->next; // otherwise give us a message.
 }
-	 
-uint32_t encode_address(const address_t* addr)
-{
-      // some basic bounds checking: return 0 if the address is out of range. 
-      if ((addr->PBox > (P_BOX_MASK >> P_BOX_OS)) || (addr->PBoard > (P_BOARD_MASK >> P_BOARD_OS)) || (addr->PCore > (P_CORE_MASK >> P_CORE_OS)) || (addr->PThread > (P_THREAD_MASK >> P_THREAD_OS)) || (addr->PDevice > (P_DEVICE_MASK >> P_DEVICE_OS))) return 0;
-      // otherwise concatenate subfields.
-      return (addr->PBox << P_BOX_OS) | (addr->PBoard << P_BOARD_OS) | (addr->PCore << P_CORE_OS) | (addr->PThread << P_THREAD_OS) | (addr->PDevice << P_DEVICE_OS) | (addr->Supervisor ? P_SUP_MASK : 0);
-}
- 
-address_t decode_address(uint32_t hw_addr)
-{
-      address_t decoded;
-      decoded.PBox = (hw_addr & P_BOX_MASK) >> P_BOX_OS;
-      decoded.PBoard = (hw_addr & P_BOARD_MASK) >> P_BOARD_OS;
-      decoded.PCore = (hw_addr & P_CORE_MASK) >> P_CORE_OS;
-      decoded.PThread = (hw_addr & P_THREAD_MASK) >> P_THREAD_OS;
-      decoded.PDevice = (hw_addr & P_DEVICE_MASK) >> P_DEVICE_OS;
-      decoded.Supervisor = (hw_addr & P_SUP_MASK); 
-      return decoded;
-}
 
-void encode_pkt_hdr(uint32_t src, uint32_t dst, uint32_t msgtyp, void* buf)
-{
-     Ppkt_hdr_t* pkt = static_cast<Ppkt_hdr_t*>(buf);
-     pkt->hdw = dst;
-     pkt->src = src;
-     memcpy(&pkt->housekeeping[P_PKT_MSGTYP_OS], &msgtyp, sizeof(uint32_t));
-}
-
-void encode_pkt_dst(uint32_t dst, void* buf)
-{
-     Ppkt_hdr_t* pkt = static_cast<Ppkt_hdr_t*>(buf);
-     pkt->hdw = dst;
-}

@@ -383,7 +383,13 @@ bool CommonBase::Post(int i,vector<string> & varg)
 if (Urank==Q::NAP)              throw (Unrec_t(1,Sderived,"Post"));
 if (pPmap.size()==0)            throw (Unrec_t(2,Sderived,"Post"));
 int cIdx=LogSCIdx();
-if (cIdx < 0)                   throw (Unrec_t(2,Sderived,"Post"));
+if (cIdx < 0)
+{
+   // No LogServer. Best we can do is hope we are the Root process and can output a message.
+   // Later this might become more sophisticated and attempt to send a message to Root.
+   if (Urank == pPmap[0]->U.Root) printf("Error: attempted to Post a message %d without a LogServer\n");
+   return false;
+}
 PMsg_p Pkt;
 Pkt.PutX(1,&varg);
 Pkt.Put<int>(1,&i);

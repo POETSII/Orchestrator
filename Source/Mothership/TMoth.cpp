@@ -2,53 +2,52 @@
 
 #include "TMoth.h"
 #include <stdio.h>
-#include <stream>
+#include <sstream>
 #include "Pglobals.h"
 #include "flat.h"
 #include "string.h"
-#include "softswitch_common.h"
 #include "limits.h"
 
-const char* TMoth::MPISvc;
+const char* TMoth::MPISvc = "POETS_Box_Master";
 const int   TMoth::MPISrv;
 const int   TMoth::NumBoards;
-const unsigned char TMoth::TASK_BOOT;
-const unsigned char TMoth::TASK_RDY;
-const unsigned char TMoth::TASK_RUN;
-const unsigned char TMoth::TASK_STOP;
-const unsigned char TMoth::TASK_END;
-const unsigned char TMoth::TASK_ERR;
 
 //==============================================================================
 
 TMoth::TMoth(int argc,char * argv[],string d) :
-  OrchBase(argc,argv,d,string(__FILE__)), HostLink()
+  CommonBase(argc,argv,d,string(__FILE__)), HostLink()
 {
                                        // Load the incoming event map
 (*FnMapx[0])[PMsg_p::KEY(Q::CMND        )] = &TMoth::OnCmnd;
 (*FnMapx[0])[PMsg_p::KEY(Q::NAME        )] = &TMoth::OnName;
 (*FnMapx[0])[PMsg_p::KEY(Q::SUPR        )] = &TMoth::OnSuper;
 (*FnMapx[0])[PMsg_p::KEY(Q::SYST        )] = &TMoth::OnSyst;
-(*FnMapx[0])[PMsg_p::KEY(Q::TEST        )] = &TMoth::OnTest;
 (*FnMapx[0])[PMsg_p::KEY(Q::TINS        )] = &TMoth::OnTinsel;
 
-// mothership's address in POETS space will be its MPI rank for the box number,
-// then the max board/core/thread ID and the supervisor flag.
-PAddress = (Urank << P_BOX_OS) | P_BOARD_MASK | P_CORE_MASK | P_THREAD_MASK | P_SUP_MASK;
+// mothership's address in POETS space is the host thread ID: X coordinate 0,
+// Y coordinate max.
+PAddress = TinselMeshYLen << (TinselMeshXBits+TinselLogCoresPerBoard+TinselLogThreadsPerCore);
 strcpy(MPIPort, "PORT_NULL");         // non-zero ranks don't have a port
-if (!Urank)
-{
-   MPI_Open_port(MPI_INFO_NULL,MPIPort);   // Announce to MPI that we are open for business
-   MPI_Publish_name(MPISvc,MPI_INFO_NULL,MPIPort); // and make us publicly available
-}
 
 void* args = this;             // spin off a thread to accept MPI connections
 pthread_t MPI_accept_thread;   // from other universes
+AcceptConns = true;
 if (pthread_create(&MPI_accept_thread,NULL,Accept,args))
 {
    // if this fails, the mothership will have to be contacted 'the hard way':
    // via direct SSH.
-   fprintf(stdout,"Error creating thread to accept MPI connections\n");
+   AcceptConns = false;
+   printf("Error creating thread to accept MPI connections\n");
+   fflush(stdout);
+}
+// and create a thread (later will be a process) to deal with packets from
+// tinsel cores.
+pthread_t Twig_thread;
+ForwardMsgs = true;
+if (pthread_create(&Twig_thread,NULL,Twig,args))
+{
+   ForwardMsgs = false;
+   printf("Couldn't create Twig thread on Mothership rank %d. Communication from POETS processors to external is disabled\n", Urank);
    fflush(stdout);
 }
 MPISpinner();                          // Spin on *all* messages; exit on DIE
@@ -59,8 +58,15 @@ MPISpinner();                          // Spin on *all* messages; exit on DIE
 
 TMoth::~TMoth()
 {
-//printf("********* Root rank %d destructor\n",Urank); fflush(stdout);
-
+//printf("********* Mothership rank %d destructor\n",Urank); fflush(stdout);
+WALKMAP(uint32_t,PinBuf_t*,TwigMap,D)
+{
+  WALKMAP(uint16_t,char*,(*(D->second)),P)
+    delete[] P->second;
+  delete D->second;
+}
+WALKMAP(string,TaskInfo_t*,TaskMap,T)
+  delete T->second;
 }
 
 //------------------------------------------------------------------------------
@@ -71,14 +77,25 @@ void* TMoth::Accept(void* par)
 // connection
 {
 TMoth* parent=static_cast<TMoth*>(par);
-if (parent->URank==0) // set up the intercommunicator's leader on rank 0
+if (!parent->Urank) // set up the intercommunicator's leader on rank 0
 {
-MPI_Open_port(MPI_INFO_NULL,parent->MPIPort);
-MPI_Publish_name(parent->MPISvc.c_str(),MPI_INFO_NULL,parent->MPIPort);
+MPI_Open_port(MPI_INFO_NULL,parent->MPIPort); // Announce to MPI that we are open for business
+MPI_Publish_name(parent->MPISvc,MPI_INFO_NULL,parent->MPIPort); // and make us publicly available
 }
-int* accepted = new int(parent->Connect(MPISrv,MPISvc));
-pthread_exit(accepted)
-return accepted;
+while (parent->AcceptConns)
+{
+if (!parent->Connect(parent->MPISrv,parent->MPISvc))
+{
+   // Might try Post() but failure could indicate an unreliable MPI universe
+   // so all bets are off about whether any MPI communication would actually succeed.
+   printf("Error: attempt to connect to another MPI universe failed\n");
+   parent->AcceptConns = false;
+}
+}
+MPI_Unpublish_name(parent->MPISvc,MPI_INFO_NULL,parent->MPIPort);
+MPI_Close_port(parent->MPIPort);
+pthread_exit(par);
+return par;
 }
 
 //------------------------------------------------------------------------------
@@ -90,131 +107,147 @@ unsigned TMoth::Boot(string task)
        Post(107,task);
        return 1;
    }
-   string taskStatus;
    switch(TaskMap[task]->status)
    {
-   case TASK_BOOT:
-   taskStatus = "TASK_BOOT";
-   Post(513, task, taskStatus);
-   return 2
-   case TASK_RDY:
+   case TaskInfo_t::TASK_BOOT:
+   {
+   Post(513, task, TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
+   TaskMap[task]->status = TaskInfo_t::TASK_ERR;
+   return 2;
+   }
+   case TaskInfo_t::TASK_RDY:
+   {
    uint32_t mX, mY, core, thread;
    // create a response bitmap to receive the various startup barrier messages.
    // do this before running 'go' so that we can receive the responses in one block.
    map<unsigned, vector<unsigned>*> t_start_bitmap;
-   WALKMAP(unsigned,coreMap_t*,*(TaskMap[task]->boards),B)
+   vector<P_core*> taskCores = TaskMap[task]->CoresForTask();
+   WALKVECTOR(P_core*,taskCores,C)
    {
-     WALKMAP(unsigned,unsigned,*(B->second),C)
-     {
-       t_start_bitmap[C->first] = new vector<unsigned>(ThreadMap[C->first]/(8*sizeof(unsigned)),UINT_MAX);
-       unsigned remainder = ThreadMap[C->first]%(8*sizeof(unsigned));
-       if (remainder) t_start_bitmap[C->first]->push_back(UINT_MAX >> ((8*sizeof(unsigned))-remainder));
-     }
+       unsigned numThreads = (*C)->P_threadv.size();
+       t_start_bitmap[TMoth::GetHWAddr((*C)->addr)] = new vector<unsigned>(numThreads/(8*sizeof(unsigned)),UINT_MAX);
+       unsigned remainder = numThreads%(8*sizeof(unsigned));
+       if (remainder) t_start_bitmap[TMoth::GetHWAddr((*C)->addr)]->push_back(UINT_MAX >> ((8*sizeof(unsigned))-remainder));
    }
    // actually boot the cores
-   WALKMAP(unsigned,coreMap_t*,*(TaskMap[task]->boards),B)
+   WALKVECTOR(P_core*,taskCores,C)
    {
-     WALKMAP(unsigned,unsigned,*(B->second),C)
+     for (vector<P_thread*>::iterator R = (*C)->P_threadv.begin(); R != (*C)->P_threadv.end(); R++)
      {
-       fromAddr(C->first,&mX,&mY,&core,&thread);
-       startOneCore(mX,mY,core,ThreadMap[C->first]);
+       fromAddr(TMoth::GetHWAddr((*R)->addr),&mX,&mY,&core,&thread);
+       startOneCore(mX,mY,core,(*C)->P_threadv.size());
        goOne(mX,mY,core);
      }
    }
-   Ppkt_hdr_t barrier_msg;
+   P_Sup_Msg_t barrier_msg;
    while (!t_start_bitmap.empty())
    {
-     recvMsg(&barrier_msg, sizeof(Ppkt_hdr_t));
-     if (barrier_msg.housekeeping[P_PKT_MSGTYP_OS] == P_PKT_MSGTYP_BARRIER)
+     recvMsg(&barrier_msg, sizeof(P_Sup_Hdr_t));
+     if (barrier_msg.header.command == P_PKT_MSGTYP_BARRIER)
      {
-        fromAddr(barrier_msg.src,&mX,&mY,&core,&thread);
-	unsigned core = toAddr(mx,mY,core,0);
+        fromAddr(barrier_msg.header.sourceDeviceAddr,&mX,&mY,&core,&thread);
+	unsigned core = toAddr(mX,mY,core,0);
 	if (t_start_bitmap.find(core) != t_start_bitmap.end())
 	{
 	   (*t_start_bitmap[core])[thread/(8*sizeof(unsigned))] &= (~(1 << (thread%(8*sizeof(unsigned)))));
-	   vector<unsigned>::iterator R;
-	   for (R=t_start_bitmap[core]->begin(); R != t_start_bitmap[core]->end(); R++) if (*R) break;
-	   if (R == t_start_bitmap[core]->end())
+	   vector<unsigned>::iterator S;
+	   for (S = t_start_bitmap[core]->begin(); S != t_start_bitmap[core]->end(); S++) if (*S) break;
+	   if (S == t_start_bitmap[core]->end())
 	   {
 	      t_start_bitmap[core]->clear();
 	      delete t_start_bitmap[core];
-	      t_start_bitmap[core].erase();
 	   }
 	}
      }
    }
    MPI_Barrier(Comms[0]);         // barrier on the mothercore side
-   TaskMap[task]->status = TASK_BARR; // now at barrier on the tinsel side.
+   TaskMap[task]->status = TaskInfo_t::TASK_BARR; // now at barrier on the tinsel side.
    return 0;
-   case TASK_RUN:
-   taskStatus = "TASK_RUN";
-   break;
-   case TASK_STOP:
-   taskStatus = "TASK_STOP";
-   break;
-   case TASK_END:
-   taskStatus = "TASK_END";
-   default:
-   taskStatus = "TASK_ERR";
    }
-   Post(511,task,"loaded",taskStatus);
+   case TaskInfo_t::TASK_RUN:
+   case TaskInfo_t::TASK_STOP:
+   case TaskInfo_t::TASK_END:
+   break;
+   default:
+   TaskMap[task]->status = TaskInfo_t::TASK_ERR;
+   }
+   Post(511,task,"booted",TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
    return 3;     
 }
-
+  
 //------------------------------------------------------------------------------
 
 unsigned TMoth::CmLoad(string task)
 // Load a task to the system
 {
-   if (TaskMap.find(task) = TaskMap.end())
+   if (TaskMap.find(task) == TaskMap.end())
    {
       Post(515, task, int2str(Urank));
       return 0;
    }
-   if (TaskMap.find(task) != TaskMap.end())
+   WALKMAP(string,TaskInfo_t*,TaskMap,T)
    {
-      Post(511, task,"loaded",TaskMap[task]->status);
+     // only one task can be active at a time (for the moment. Later we may want more sophisticated task mapping
+     // that allows multiple active tasks on non-overlapping board sets)
+     if ((T->first != task) && (T->second->status & (TaskInfo_t::TASK_BOOT | TaskInfo_t::TASK_RDY | TaskInfo_t::TASK_BARR | TaskInfo_t::TASK_RUN | TaskInfo_t::TASK_STOP | TaskInfo_t::TASK_ERR)))
+     {
+        map<unsigned char,string>::const_iterator othStatus = TaskInfo_t::Task_Status.find(T->second->status);
+        if (othStatus == TaskInfo_t::Task_Status.end())
+	T->second->status = TaskInfo_t::TASK_ERR;
+	Post(508,T->first);
+	return 2;
+        Post(509,task,T->first,othStatus->second);
+	return 0;
+     }
+   }
+   if (!((TaskMap[task]->status == TaskInfo_t::TASK_IDLE) || (TaskMap[task]->status == TaskInfo_t::TASK_END)))
+   {
+      Post(511,task,"loaded to hardware",TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
       return 0;
    }
-   TaskMap[task]->status = TASK_BOOT;
-   vector<pthread_t*> boot_threads;
+   TaskMap[task]->status = TaskInfo_t::TASK_BOOT;
    int coresThisTask = 0;
    int coresLoaded = 0;
-   int coresPerBoard;
-   int* pCoresPerBoard = &coresPerBoard;
+   void* pCoresPerBoard;
    bool tOK = true;
+   if (BootMap.size()) BootMap.clear(); // clear any detritus (danger: possible memory leak)
    // for each board mapped to the task,
-   WALKMAP(unsigned,coreMap_t*,*(TaskMap[task]->boards),B)
+   WALKVECTOR(P_board*,TaskMap[task]->BoardsForTask(),B)
    {
-      coresThisTask += B->second->size();
+      // less work to compute as we go along than to call CoresForTask.size()
+      coresThisTask += (*B)->P_corev.size();
       // as long as threads can be successfully forked,
       if (tOK) 
       {
          // fork a thread to load the board 
-         boot_threads.push_back(new pthread_t);
-         if (pthread_create(boot_threads.back(),NULL,LoadBoard,this))
+         BootMap.push_back(new pthread_t);
+         if (pthread_create(BootMap.back(),NULL,LoadBoard,this))
          {
 	    // abort the load if a thread couldn't be forked 
-	    delete boot_threads.back();
-	    boot_threads.pop_back();
+	    delete BootMap.back();
+	    BootMap.pop_back();
+	    Post(516,int2str((*B)->addr.A_board),task);
 	    tOK = false;
          }
       }
    }
-   // wait for everyone to finish
-   WALKVECTOR(pthread_t*,boot_threads,H)
+   // wait for everyone to finish. 
+   WALKVECTOR(pthread_t*,BootMap,H)
    {
       pthread_join(**H,&pCoresPerBoard);
-      coresLoaded += coresPerBoard;
+      int* iPCoresPerBoard = static_cast<int*>(pCoresPerBoard);
+      coresLoaded += *iPCoresPerBoard;
+      delete iPCoresPerBoard;
+      
    }
    // abandoning the boot if load failed
    if (coresLoaded < coresThisTask)
    {
-      TaskMap[task]->status = TASK_ERR;
-      Post(516,int2str(B->first),task,int2str(coresLoaded));
+      TaskMap[task]->status = TaskInfo_t::TASK_ERR;
+      Post(518,task,int2str(coresLoaded),int2str(coresThisTask));
       return 1;
    }
-   TaskMap[task]->status = TASK_RDY;
+   TaskMap[task]->status = TaskInfo_t::TASK_RDY;
    // boot the board (which has to be done from the main thread as it is not
    // thread-safe)
    return Boot(task);
@@ -234,60 +267,47 @@ unsigned TMoth::CmRun(string task)
    string taskStatus = "TASK_RDY";
    switch(TaskMap[task]->status)
    {
-   case TASK_BOOT:
-   taskStatus = "TASK_BOOT";
-   case TASK_RDY:
-   Post(513, task, taskStatus);
+   case TaskInfo_t::TASK_BOOT:
+   case TaskInfo_t::TASK_RDY:
+   {
+   Post(513, task, TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
+   TaskMap[task]->status = TaskInfo_t::TASK_ERR;
    return 1;
-   case TASK_STOP:
-   taskStatus = "TASK_STOP";
+   }
+   case TaskInfo_t::TASK_STOP:
+   case TaskInfo_t::TASK_END:
    break;
-   case TASK_END:
-   taskStatus = "TASK_END";
-   break;
-   case TASK_RUN:
+   case TaskInfo_t::TASK_RUN:
    Post(511, task,"run","TASK_RUN");
    return 0;
-   case TASK_BARR:
+   case TaskInfo_t::TASK_BARR:
+   {
    uint32_t mX, mY, core, thread;
-   Ppkt_hdr_t barrier_msg;
-   barrier_msg.src = PAddress;
-   barrier_msg.housekeeping[P_PKT_MSGTYP_OS] = P_PKT_MSGTYP_BARRIER;
+   P_Msg_Hdr_t barrier_msg;
+   barrier_msg.messageLenBytes = sizeof(P_Msg_Hdr_t); // barrier is only a header. No payload.
+   barrier_msg.destEdgeIndex = 0;                     // no edge index necessary.
+   barrier_msg.destPin = P_SUP_PIN_SYS;               // it goes to the system pin
+   barrier_msg.messageTag = P_MSG_TAG_INIT;           // and is of message type __init__.
    const unsigned barrier_base = (Urank << P_BOX_OS) | P_DEVICE_MASK;
    uint8_t flit[4 << TinselLogWordsPerFlit];
    // build a list of the threads in this task (that should be released from barrier)
-   vector<pair<unsigned,unsigned>> threadsToRelease;
-   // going through by board,
-   WALKMAP(unsigned, coreMap_t*, *(TaskMap[task]->boards), B)
-   {
-      // core (assigned to the task),
-      WALKMAP(unsigned, unsigned, *(B->second), C)
-      {
-         fromAddr(C->first,&mX,&mY,&core,&thread)
-	 // and thread
-	 for (thread = 0; thread < ThreadMap[C->first]; thread++)
-	 {
-	     threadsToRelease.push_back(pair(toAddr(mX,mY,core,thread),
-		   barrier_base | (B->first << P_BOARD_OS) & P_BOARD_MASK |
-		   (C->first << P_CORE_OS) & P_CORE_MASK |
-		   (thread << P_THREAD_OS) & P_THREAD_MASK))
-	 }  
-      }
-   }  					   
+   vector<unsigned> threadsToRelease;
+   WALKVECTOR(P_thread*,TaskMap[task]->ThreadsForTask(),R)
+     threadsToRelease.push_back(TMoth::GetHWAddr((*R)->addr));  					   
    while (!canSend()) if (canRecv()) recv(flit); // discard unexpected messages
    // and then issue the barrier release to the threads.
-   WALKVECTOR(pair<unsigned,unsigned>, threadsToRelease, R)
+   WALKVECTOR(unsigned,threadsToRelease,R)
    {
-     barrier_msg.hdw = R->second;
-     send(R->first,(sizeof(Ppkt_hdr_t)/(4 << TinselLogWordsPerFlit) + sizeof(Ppkt_hdr_t)%(4 << TinselLogWordsPerFlit) ? 1 : 0), &barrier_msg);
+     barrier_msg.destDeviceAddr = *R; // might be *R | P_SUP_MASK to identify a supervisor message
+     send(*R,(sizeof(P_Msg_Hdr_t)/(4 << TinselLogWordsPerFlit) + sizeof(P_Msg_Hdr_t)%(4 << TinselLogWordsPerFlit) ? 1 : 0), &barrier_msg);
    }
-   TaskMap[task]->status = TASK_RUN;
+   TaskMap[task]->status = TaskInfo_t::TASK_RUN;
    return 0;
-   default:
-   taskStatus = "TASK_ERR";
-   break;
    }
-   Post(511,task,"run",taskStatus);
+   default:
+   TaskMap[task]->status = TaskInfo_t::TASK_ERR;
+   }
+   Post(511,task,"run",TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
    return 2;
 }
 
@@ -301,133 +321,59 @@ unsigned TMoth::CmStop(string task)
       Post(107, task);
       return 0;
    }
-   string taskStatus = "TASK_RDY";
    switch(TaskMap[task]->status)
    {
-   case TASK_IDLE:
-   taskStatus = "TASK_IDLE";
+   case TaskInfo_t::TASK_IDLE:
+   case TaskInfo_t::TASK_BOOT:
    break;
-   case TASK_BOOT:
-   taskStatus = "TASK_BOOT";
-   break;
-   case TASK_RDY:
-   Post(813, task, taskStatus);
+   case TaskInfo_t::TASK_RDY:
+   {
+   Post(813, task, "TASK_RDY");
    return 1;
-   case TASK_BARR:
+   }
+   case TaskInfo_t::TASK_BARR:
+   {
    // if we are at the barrier the simplest approach to
    // stop cleanly is simply to start and immediately stop.
    // thus as long as starting doesn't error, fall through
    // to the running condition immediately below.
    if (CmRun(task))
    {
-      taskStatus = "TASK_ERR";
+      TaskMap[task]->status = TaskInfo_t::TASK_ERR;
       break;
    }
-   case TASK_RUN:
-   TaskMap[task]->status = TASK_STOP;
+   }
+   case TaskInfo_t::TASK_RUN:
+   {
+   TaskMap[task]->status = TaskInfo_t::TASK_STOP;
    // set up for shutdown by creating a global stop message
    uint32_t mX, mY, core, thread;
-   Ppkt_hdr_t stop_msg;
-   stop_msg.src = PAddress;
-   stop_msg.housekeeping[P_PKT_MSGTYP_OS] = P_PKT_MSGTYP_STOP;
+   P_Msg_Hdr_t stop_msg;
+   stop_msg.destEdgeIndex = 0;           // ignore edge index. Unused.
+   stop_msg.destPin = P_SUP_PIN_SYS;     // goes to the system pin 
+   stop_msg.messageTag = P_MSG_TAG_STOP; // with a stop message type
    uint8_t flit[4 << TinselLogWordsPerFlit];
-   // go through each board,
-   WALKMAP(unsigned, coreMap_t*, *(TaskMap[task]->boards), B)
+   // go through each thread of the task,
+   WALKVECTOR(P_thread*, TaskMap[task]->ThreadsForTask(),R)
    {
-      // core (assigned to the task),
-      WALKMAP(unsigned, unsigned, *(B->second), C)
-      {
-         fromAddr(C->first,&mX,&mY,&core,&thread)
-	 // and thread
-	 for (thread = 0; thread < ThreadMap[C->first]; thread++)
-	 {
-	     stop_msg.hdw = toAddr(mX,mY,core,thread);
-	     // swallow any stray packets
-	     while (canRecv()) recv(flit);
-	     while (!canSend()) if (canRecv()) recv(flit);
-	     // then issue the stop packet
-	     send(stop_msg.hdw,(sizeof(Ppkt_hdr_t)/(4 << TinselLogWordsPerFlit) + sizeof(Ppkt_hdr_t)%(4 << TinselLogWordsPerFlit) ? 1 : 0),&stop_msg);
-	 }
-      }
+     stop_msg.destDeviceAddr = TMoth::GetHWAddr((*R)->addr); // see note under cmRun about possible | with P_SUP_MASK
+     // swallow any stray packets
+     while (canRecv()) recv(flit);
+     while (!canSend()) if (canRecv()) recv(flit);
+     // then issue the stop packet
+     send(stop_msg.destDeviceAddr,(sizeof(P_Msg_Hdr_t)/(4 << TinselLogWordsPerFlit) + sizeof(P_Msg_Hdr_t)%(4 << TinselLogWordsPerFlit) ? 1 : 0),&stop_msg);
    }
-   TaskMap[task]->status = TASK_END;
+   TaskMap[task]->status = TaskInfo_t::TASK_END;
    return 0;
-   case TASK_STOP:
-   taskStatus = "TASK_STOP";
-   break;
-   case TASK_END:
-   taskStatus = "TASK_END";
+   }
+   case TaskInfo_t::TASK_STOP:
+   case TaskInfo_t::TASK_END:
    break;
    default:
-   taskStatus = "TASK_ERR";
+   TaskMap[task]->status = TaskInfo_t::TASK_ERR;
    }
-   Post(811,task,"stopped",taskStatus);
+   Post(811,task,"stopped",TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
    return 2;                              
-}
-
-//------------------------------------------------------------------------------
-
-bool TMoth::CmSystPing(Cli::Cl_t * pCl)
-//
-{
-if (pCl->Pa_v.size()==0) return (Post(48,"ping","system","1"));
-for(unsigned k=0;k<4;k++) {
-//Post(27,uint2str(k));
-  WALKVECTOR(Cli::Pa_t,pCl->Pa_v,i) {  // Walk the parameter (ping) list
-//    printf("%s\n",(*i).Val.c_str()); fflush(stdout);
-    string tgt = (*i).Val;             // Class name to be pinged
-    if (Cli::StrEq(tgt,Sderived)) continue;           // Can't ping yourself
-    WALKVECTOR(ProcMap::ProcMap_t,pPmap->vPmap,j) {   // Walk the process list
-      if (Cli::StrEq((*j).P_class,Sderived)) continue;// Still can't ping self
-      if ((Cli::StrEq(tgt,(*j).P_class))||(tgt=="*")) {
-        /* Qt whinges about the following 2 lines - doesn't like taking the
-           address of a temporary. Presumably it is being more strict about
-           compliance with standards. In any case, this means annoyingly creating
-           2 silly extra string objects just to get their addresses.
-           Pkt.Put(2,&string(GetDate())); // Never actually used these
-           Pkt.Put(3,&string(GetTime()));
-        */
-        string tD(GetDate());
-        string tT(GetTime());
-        PMsg_p Pkt;
-        Pkt.Put(1,&((*j).P_class));    // Target process name
-        Pkt.Put(2,&tD); // Never actually used these
-        Pkt.Put(3,&tT);
-        Pkt.Put<unsigned>(4,&k);       // Ping attempt
-        Pkt.Src(Urank);                // Sending rank
-        Pkt.Key(Q::SYST,Q::PING,Q::REQ);
-        Pkt.Send((*j).P_rank);
-      }
-    }
-  }
-}
-return true;                              // Legitimate command exit
-}
-
-//------------------------------------------------------------------------------
-
-bool TMoth::CmSystShow(Cli::Cl_t * pCl)
-// Monkey wants the list of processes
-{
-vector<ProcMap::ProcMap_t> vprocs;
-if (pPmap!=0) pPmap->GetProcs(vprocs);
-Post(29,uint2str(vprocs.size()));
-Post(30,Sproc);
-printf("\n");
-WALKVECTOR(ProcMap::ProcMap_t,vprocs,i) printf("Rank %d: %s\n",(*i).P_rank, (*i).P_proc.c_str());
-printf("\n");
-fflush(stdout);
-return true;                              // Legitimate command exit
-}
-
-//------------------------------------------------------------------------------
-
-unsigned TMoth::CmTopo(Cli * pC)
-{
-pP->Cm(pC);                            // Hand the command line to node graph
-
-
-return 0;
 }
 
 //------------------------------------------------------------------------------
@@ -436,12 +382,16 @@ void TMoth::Dump(FILE * fp)
 {
 fprintf(fp,"Mothership dump+++++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"Event handler table:\n");
+unsigned cIdx = 0;
+WALKVECTOR(FnMap_t*,FnMapx,F)
+{
+fprintf(fp,"Function table for comm %d:\n", cIdx++);
 fprintf(fp,"Key        Method\n");
-WALKMAP(unsigned,pMeth,FnMapx,i)
+WALKMAP(unsigned,pMeth,(**F),i)
   fprintf(fp,"%#010x 0x%#010p\n",(*i).first,(*i).second);
-fprintf(fp,"prompt    = %s\n",prompt);
+}
 
-fprintf(fp,"Root dump-----------------------------------\n");
+fprintf(fp,"Mothership dump-----------------------------------\n");
 fflush(fp);
 CommonBase::Dump(fp);
 }
@@ -451,48 +401,38 @@ CommonBase::Dump(fp);
 void* TMoth::LoadBoard(void* par)
 {
       TMoth* parent = static_cast<TMoth*>(par);
-      unsigned BIdx = NumBoards;
+      unsigned BIdx;
       int* numLoaded = new int(0);
       string task;
-      WALKVECTOR(string,unsigned char,parent->TaskMap,K) // find our task
+      WALKMAP(string,TaskInfo_t*,parent->TaskMap,K) // find our task
       {
-	if (K->second->status == TASK_BOOT) task = K->first;
+	if (K->second->status == TaskInfo_t::TASK_BOOT) task = K->first;
 	break;
       }
       if (!task.empty()) // anything to do?
       {
-         WALKMAP(unsigned,pthread_t*,parent->BootMap,B) // find our thread
+	 TaskInfo_t* task_map = parent->TaskMap[task];
+	 for (BIdx = 0; BIdx < task_map->BoardsForTask().size(); BIdx++) // find our thread
          {
-	    if (*(B->second) == pthread_self())
-	    {
-	       BIdx = B->first;
-	       break;
-	    }
+	     // only one task can be booted at once, and its bootloader indices correspond to the
+	     // boards mapped to the box.
+	     if (*(parent->BootMap[BIdx]) == pthread_self()) break;
          }
-         if (BIdx >= NumBoards) // thread out of range
+         if ((BIdx >= task_map->BoardsForTask().size()) || (BIdx >= NumBoards)) // thread out of range
          {
-	    Post(701,int2str(BIdx));
-	    *numLoaded = -1;
+	    parent->Post(501,int2str(BIdx));
          }
-	 else if (parent->BoardMap.find(BIdx) == parent->BoardMap.end()) // board out of range
-         {
-	    Post(702,int2str(BIdx));
-	    *numLoaded = -2;
-         }
-         if (*numLoaded < 0) // if we or some other thread errored, abandon the boot.
+         else
 	 {
-	    if (parent->TaskMap[task]->boards->find(BIdx) != parent->TaskMap[task]->boards->end()) // is this board mapped to this task?
-	    {
-	       WALKMAP(unsigned,unsigned,*((*parent->TaskMap[task]->boards)[BIdx]),C) // grab each core's code and data file
-               {
-		  string code_f(parent->BinPath[task] + "softswitch_code_" + int2str(C->second) + ".v");
-	          string data_f(parent->BinPath[task] + "softswitch_data_" + int2str(C->second) + ".v");
-	          uint32_t mX, mY, core, thread;
-	          fromAddr(C->first, &mX, &mY, &core, &thread);
-	          loadOne(code_f.c_str(), data_f.c_str(),mX, mY, core); // and boot the core
-	          ++(*numLoaded);
-               }
-	    }
+	    WALKVECTOR(P_core*,task_map->BoardsForTask()[BIdx]->P_corev,C) // grab each core's code and data file
+            {
+	       string code_f(task_map->BinPath + "softswitch_code_" + int2str((*(task_map->CoreMap))[*C]) + ".v");
+	       string data_f(task_map->BinPath + "softswitch_data_" + int2str((*(task_map->CoreMap))[*C]) + ".v");
+	       uint32_t mX, mY, core, thread;
+	       parent->fromAddr(TMoth::GetHWAddr((*C)->addr), &mX, &mY, &core, &thread);
+	       parent->loadOne(code_f.c_str(), data_f.c_str(),mX, mY, core); // and boot the core
+	       ++(*numLoaded);
+            }
 	 }
       }
       pthread_exit(numLoaded);
@@ -510,7 +450,7 @@ unsigned TMoth::NameDist()
 
 unsigned TMoth::NameTdir(const string& task, const string& dir)
 {
-      BinPath[task] = dir;
+      TaskMap[task]->BinPath = dir;
       return 0;
 }
 
@@ -521,39 +461,106 @@ unsigned TMoth::OnCmnd(PMsg_p * Z, unsigned cIdx)
 {
 // get the task that the command is going to operate on 
 string task;
-Z->get(0,task);
-switch (Z->Key())
-{
-case PMsg_p::KEY(Q::CMND,Q::LOAD        ):
+Z->Get(0,task);
+unsigned key = Z->Key();
+if (key == PMsg_p::KEY(Q::CMND,Q::LOAD         ))
 return CmLoad(task);
-case PMsg_p::KEY(Q::CMND,Q::RUN         ):
+if (key ==  PMsg_p::KEY(Q::CMND,Q::RUN         ))
 return CmRun(task);
-case PMsg_p::KEY(Q::CMND,Q::STOP        ):
+if (key ==  PMsg_p::KEY(Q::CMND,Q::STOP        ))
 return CmStop(task);
-default:
+else
 Post(510,"Control",int2str(Urank));
 return 0;
 }
+
+//------------------------------------------------------------------------------
+
+void* TMoth::Twig(void* par)
+// the Twig processing deals with receiving packets from the managed Tinsel cores.
+// Ideally, Twig, OnIdle, and OnTinselOut would reside in a separate *process*.
+// For the moment we run Twig in a separate *thread* because to run a separate
+// process would require identifying the matching Branch's rank, which could be
+// done, using a variety of methods, but none of them trivial, and so that's
+// 'for later'.
+{
+     TMoth* parent = static_cast<TMoth*>(par);
+     const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
+     char recv_buf[sizeof(P_Msg_t)]; // buffer for one packet at a time
+     void* p_recv_buf = static_cast<void*>(recv_buf);
+     while (parent->ForwardMsgs) // until told otherwise,
+     {
+           // receive all available traffic. Should this be done or only one packet
+           // and then try again for MPI? We don't expect MPI traffic to be intensive
+           // and tinsel messsages might be time-critical.
+           while (parent->canRecv())
+           {
+                 parent->recv(recv_buf);
+	         uint32_t* device = static_cast<uint32_t*>(p_recv_buf);
+	         if (*device != (parent->PAddress & (~P_BOX_MASK))) // bound for an external?
+	         {
+	            P_Msg_Hdr_t* m_hdr = static_cast<P_Msg_Hdr_t*>(p_recv_buf);
+	            if (parent->TwigExtMap[m_hdr->destDeviceAddr] == 0)
+		       parent->TwigExtMap[m_hdr->destDeviceAddr] = new deque<P_Msg_t>;
+	            if (m_hdr->messageLenBytes > szFlit)
+		       parent->recvMsg(recv_buf+szFlit, m_hdr->messageLenBytes-szFlit);
+	            parent->TwigExtMap[m_hdr->destDeviceAddr]->push_back(*(static_cast<P_Msg_t*>(p_recv_buf)));
+		 }
+	         else
+                 {
+	            P_Sup_Hdr_t* s_hdr = static_cast<P_Sup_Hdr_t*>(p_recv_buf);
+	            if (parent->TwigMap[s_hdr->sourceDeviceAddr] == 0) // new device talking?
+		       parent->TwigMap[s_hdr->sourceDeviceAddr] = new PinBuf_t;
+	            if ((*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin] == 0) // inactive pin for the device?
+                       (*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin] = new char[s_hdr->cmdLenBytes]();
+                    P_Sup_Msg_t* recvdMsg = static_cast<P_Sup_Msg_t*>(static_cast<void*>((*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin])); 
+	            memcpy(recvdMsg+s_hdr->seq,s_hdr,sizeof(P_Sup_Hdr_t)); // stuff header into the persistent buffer
+                    uint32_t len = s_hdr->seq == s_hdr->cmdLenBytes/sizeof(P_Sup_Msg_t) ?  s_hdr->cmdLenBytes%sizeof(P_Sup_Msg_t) : sizeof(P_Sup_Msg_t); // more message to receive?
+	            if (len > szFlit) parent->recvMsg(((recvdMsg+s_hdr->seq)->data), len-szFlit); // get the whole message
+	            if (super_buf_recvd(recvdMsg))
+	            {
+		       if (parent->OnTinselOut(recvdMsg))
+		          parent->Post(530, int2str(parent->Urank));
+		       super_buf_clr(recvdMsg);
+	            }
+                 }
+           }
+     }
+     pthread_exit(par);
+     return par;
 }
 
 //------------------------------------------------------------------------------
+
 void TMoth::OnIdle()
-// idle processing deals with receiving packets from the managed Tinsel cores.
+// idle processing deals with forwarding packets from the managed Tinsel cores.
 {
-     const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
-     P_Pkt_t recv_buf; // buffer for one packet at a time
-     char* recv_b_pos = static_cast<char*>(&recv_buf);
-     // receive all available traffic. Should this be done or only one packet
-     // and then try again for MPI? We don't expect MPI traffic to be intensive
-     // and tinsel messsages 
-     while (canRecv)
+     // queues may be changing but we can deal with a static snapshot of the actual
+     // queue because OnIdle will execute periodically.
+     WALKMAP(uint32_t,deque<P_Msg_t>*,TwigExtMap,D)
      {
-           recv(recv_b_pos);
-	   recv_b_pos+= szFlit;
-	   uint32_t len = static_cast<uint32_t>(recv_buf.housekeeping[P_LEN_OS]);
-	   if (len > szFlit && (len < sizeof(P_Pkt_t))) recvMsg(recv_b_pos, (len-szFlit)); // get the whole message
-	   if (OnTinsel(recv_buf,0)) Post(530, int2str(Urank)); // may need to change if OnTinsel responds to MPI
-	   recv_b_pos = static_cast<char*>(&recv_buf);
+        int NameSrvComm = NameSCIdx();
+        PMsg_p W(Comms[NameSrvComm]);   // return packets to be routed via the NameServer's comm
+        W.Key(Q::TINS);                 // it'll be a Tinsel packet
+        W.Tgt(pPmap[NameSrvComm]->U.NameServer);     // directed to the NameServer (or UserIO, when we have it)
+        W.Src(Urank);                   // coming from us
+	/* well, this is awkward: the PMsg_p type has a Put method for vectors of objects, 
+           which is what we want. Our packet should have a vector of P_Msg_t's. But as things
+           stand, the messages are trapped in a deque (because we want our twig process to
+           be able to append to the vector of things to send). Which means copying them out
+           into a vector. Again, this would be fine if we could copy them directly into a
+           vector in the PMsg_p, but the interface doesn't allow it - it expects to copy
+           from vector to vector. So we seem to be stuck with this silly bucket brigade
+           approach. NOT the most efficient way to move messages.
+	 */
+	vector<P_Msg_t> packet;         
+	while (D->second->size())
+	{
+	      packet.push_back(D->second->front());
+	      D->second->pop_front();
+	}
+        W.Put<P_Msg_t>(0,&packet);      // stuff the Tinsel messages into the packet
+	W.Send();                       // and away it goes.
      }
 }
 
@@ -563,19 +570,19 @@ unsigned TMoth::OnName(PMsg_p * Z, unsigned cIdx)
 // This handles what happens when the NameServer dumps a name subblock to the
 // mothership
 {
-switch (Z->Key())
-{
-case PMsg_p::KEY(Q::NAME,Q::DIST         ):
+unsigned key = Z->Key();
+if (key == PMsg_p::KEY(Q::NAME,Q::DIST         ))
 return NameDist();
-case PMsg_p::KEY(Q::NAME,Q::TDIR         ):
-string task,dir;
-Z->get(0,task);
-Z->get(1,dir);
-return NameTdir(task,dir)
-default:
+if (key ==  PMsg_p::KEY(Q::NAME,Q::TDIR         ))
+{
+   string task,dir;
+   Z->Get(0,task);
+   Z->Get(1,dir);
+   return NameTdir(task,dir);
+}
+else
 Post(510,"Name",int2str(Urank));
 return 0;
-}
 }
 
 //------------------------------------------------------------------------------
@@ -584,12 +591,15 @@ unsigned TMoth::OnExit(PMsg_p * Z, unsigned cIdx)
 // This is what happens when a user command to stop happens 
 {
 // We are going away. Shut down any active tasks.  
-WALKMAP(string, unsigned char, TaskMap, tsk)
+WALKMAP(string, TaskInfo_t*, TaskMap, tsk)
 {
-       if ((tsk->second->status == TASK_BOOT) || (tsk->second->status == TASK_END)) continue;
-       if (tsk->second->status == TASK_BARR) CmRun(tsk->first);
-       if (tsk->second->status == TASK_RUN) CmStop(tsk->first);       
+       if ((tsk->second->status == TaskInfo_t::TASK_BOOT) || (tsk->second->status == TaskInfo_t::TASK_END)) continue;
+       if (tsk->second->status == TaskInfo_t::TASK_BARR) CmRun(tsk->first);
+       if (tsk->second->status == TaskInfo_t::TASK_RUN) CmStop(tsk->first);       
 }
+// stop accepting new MPI connections and Tinsel messages
+AcceptConns = false;
+ForwardMsgs = false;
 return 1;
 }
 
@@ -601,8 +611,8 @@ unsigned TMoth::OnSuper(PMsg_p * Z, unsigned cIdx)
 // set up a return message if we are going to send some reply back
 PMsg_p W(Comms[cIdx]);
 W.Key(Q::SUPR);
-W.Src(Z.Tgt());
-if (SupervisorCall(this,Z,&W) < 0) W.Send(Z.Src()); // Execute. Send a reply if one is expected
+W.Src(Z->Tgt());
+if (SupervisorCall(Z,&W) < 0) W.Send(Z->Src()); // Execute. Send a reply if one is expected
 return 0;
 }
 
@@ -611,52 +621,73 @@ return 0;
 unsigned TMoth::OnSyst(PMsg_p * Z, unsigned cIdx)
 // Handler for system commands sent by the user or operator
 {
-switch (Z->Key())
+unsigned key = Z->Key();
+if (key == PMsg_p::KEY(Q::SYST,Q::HARD        ))
 {
-case PMsg_p::KEY(Q::SYST,Q::HARD        ):
 vector<string> args;
-Z->Get<vector<string>>(0,args);
-if (SystHW(args))
+Z->Get<string>(0,args);
+if (SystHW(args)) // A system hardware command executes an external process.
 {
    string cmd;
    WALKVECTOR(string,args,arg)
    {
-     cmd+=(arg);
+     cmd+=(*arg);
      cmd+=(' ');    
    }
    Post(520,int2str(Urank),cmd);
    return 0;
 }
 return 0;
-case PMsg_p::KEY(Q::SYST,Q::KILL        ):
-int kr;
-Z->Get<int>(0,kr);
-return 0;  
-case PMsg_p::KEY(Q::SYST,Q::SHOW        ):
-return 0;
-case PMsg_p::KEY(Q::SYST,Q::TOPO        ):
-return 0;
-default:
+}
+if (key == PMsg_p::KEY(Q::SYST,Q::KILL        ))
+return SystKill(); // Kill brutally shuts us down by exiting immediately 
+if (key == PMsg_p::KEY(Q::SYST,Q::SHOW        ))
+return SystShow();
+if (key == PMsg_p::KEY(Q::SYST,Q::TOPO        ))
+return SystTopo();
+else
 Post(524,int2str(Z->Key()));
 return 0;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned TMoth::OnTinsel(PMsg_p * Z, unsigned cIdx)
+// Handler for direct packets to be injected into the network from an external source
+{ 
+vector<P_Msg_t> msgs; // messages are packed in Tinsel message format
+Z->Get(0, msgs);      // We assume they're directly placed in the message
+WALKVECTOR(P_Msg_t, msgs, msg) // and they're sent blindly
+{
+   uint32_t Len = static_cast<uint32_t>(msg->header.messageLenBytes);  
+   uint32_t FlitLen = Len >> TinselLogBytesPerFlit;
+   if (Len << (32-TinselLogBytesPerFlit)) ++FlitLen;
+   while (!canSend()); // if we have to we can run OnIdle to empty receive buffers
+   send(msg->header.destDeviceAddr, FlitLen, &(*msg));  
 }
 }
 
 //------------------------------------------------------------------------------
 
-unsigned TMoth::OnTinsel(void * M, unsigned cIdx)
+unsigned TMoth::OnTinselOut(P_Sup_Msg_t * packet)
 // Deals with what happens when a Tinsel message is received. Generally we
 // repack the message for delivery to the Supervisor handler and deal with
 // it there. The Supervisor can do one of 2 things: A) process it itself,
 // possibly generating another message; B) immediately export it over MPI to
 // the user Executive or other external process.
 {
-PMsg_p W(Comms[NameSCIdx()]);   // return packets to be routed via the NameServer's comm
-W.Key(Q::SUPR);                 // it'll be a Supervisor packet
-W.Src(pPmap->U.NameServer);     // coming from the NameServer
-W.Tgt(Urank);                   // and directed at us
-W.Put<P_Pkt_t>(0,M)             // stuff the Tinsel message into the packet
-return OnSuper(W, NameSCIdx());
+// handle the kill request from a tinsel core, which generally means an assert failed.
+if ((packet->header.command == P_SUP_MSG_KILL)) return SystKill();
+int NameSComm = NameSCIdx();
+PMsg_p W(Comms[NameSComm]);   // return packets to be routed via the NameServer's comm
+W.Key(Q::SUPR);                            // it'll be a Supervisor packet
+W.Src(pPmap[NameSComm]->U.NameServer);     // coming from the NameServer
+W.Tgt(Urank);                              // and directed at us
+unsigned last_index = packet->header.cmdLenBytes/sizeof(P_Sup_Msg_t) + (packet->header.cmdLenBytes%sizeof(P_Sup_Msg_t) ? 1 : 0);
+vector<P_Sup_Msg_t> pkt_v(packet,&packet[last_index]); // maybe slightly more efficient using the constructor
+W.Put<P_Sup_Msg_t>(0,&pkt_v);    // stuff the Tinsel message into the packet
+W.Send();                       // away it goes.
+return 0;
 }
 
 //------------------------------------------------------------------------------
@@ -667,16 +698,19 @@ unsigned TMoth::SystHW(const vector<string>& args)
 // functionality of the Mothership, this can directly interact with the
 // running Mothership to do certain tasks
 {
-return 0;
+stringstream cmd(ios_base::out | ios_base::ate);
+WALKCVECTOR(string, args, arg)
+  cmd << *arg;
+return system(cmd.str().c_str());
 }
 
 //------------------------------------------------------------------------------
 
-unsigned TMoth::SystKill(unsigned rank)
+unsigned TMoth::SystKill()
 // Kill some process in the local MPI universe. We had better be sure there is
 // no traffic destined for this process after such a brutal command!
 {
-return 0;
+return 1;
 }
 
 //------------------------------------------------------------------------------

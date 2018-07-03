@@ -13,11 +13,16 @@
 LogServer::LogServer(int argc,char * argv[],string d):
   CommonBase(argc,argv,d,string(__FILE__))
 {
-string txt = "OrchestratorMessages.txt";
-LoadMessages(txt);                     // Load message templates
-logfn = "POETS_Logfile.log";           // Output log file name
-Mcount['I']=0;                         // Initialise message type counts:
-Mcount['W']=0;                         // Not sure why this is necessary
+logfn = "POETS_Logfile.log";                 // Output log file name
+if ((logfp = fopen(logfn.c_str(),"w")) == 0) // Open the log file
+{
+   logfp = stderr; // Unable to open logfile, so just output to error console 
+   printf("Error: could not open logfile %s for writing\n", logfn.c_str()); 
+}
+string txt = "OrchestratorMessages.txt";     // Could be a startup parameter
+LoadMessages(txt);                           // Load message templates
+Mcount['I']=0;                               // Initialise message type counts:
+Mcount['W']=0;                               // Not sure why this is necessary
 Mcount['E']=0;
 Mcount['S']=0;
 Mcount['F']=0;
@@ -31,7 +36,6 @@ FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
 // Load the message map
 (*FnMapx[0])[PMsg_p::KEY(Q::LOG,Q::POST,Q::N000,Q::N000)] = &LogServer::OnLogP;
 
-
 MPISpinner();                          // Spin on MPI messages; exit only on DIE
 
 printf("********* LogServer rank %d on the way out\n",Urank); fflush(stdout);
@@ -40,6 +44,9 @@ printf("********* LogServer rank %d on the way out\n",Urank); fflush(stdout);
 //------------------------------------------------------------------------------
 
 LogServer::~LogServer()
+{
+// don't need to tear anything down if MPI_COMM_WORLD never initialised correctly 
+if (RootCIdx() >= 0) 
 {
 WALKVECTOR(FnMap_t*, FnMapx, F)
     delete *F;
@@ -57,11 +64,12 @@ c='D'; fprintf(logfp,"%4u (%c)ebug         messages\n",Mcount[c],c);
 unsigned total = 0;
 WALKMAP(char,unsigned,Mcount,i)total += (*i).second;
 fprintf(logfp,"     Total %3u       messages\n",total);
+}
 
 fprintf(logfp,"\nPOETS execution log closed at %s\n"
               "======================================"
               "======================================\n",GetTime());
-fclose(logfp);                         // Close the logfile
+if (logfp != stderr) fclose(logfp);       // Close the logfile
 }
 
 //------------------------------------------------------------------------------
@@ -124,16 +132,12 @@ CommonBase::Dump(fp);
 void LogServer::InitFile()
 // Write all the header stuff into the logfile
 {
-logfp = fopen(logfn.c_str(),"w");
 if (logfp==0) return;                  // Paranoia
 fprintf(logfp,"\nPOETS execution log\n"
               "======================================"
               "======================================\n");
 fprintf(logfp,"Created by %s\nFile %s opened at %s on %s\n",
                Sbinary.c_str(),logfn.c_str(),GetTime(),GetDate());
-//pPmap->Dump(logfp);
-
-
 }
 
 //------------------------------------------------------------------------------
@@ -146,20 +150,10 @@ if (!Msgs.empty()) return;             // It's static; maybe another instance
 JNJ P;                                 // Parser for message file
 P.Add(smessage);                       // Do it
 if (P.ErrCnt()!=0) {                   // Find out if the message file loaded OK
-  // look for the comm with the root
-  int cIdx=RootCIdx();
-  if (cIdx < 0)
-  {
-     // bad initialisation 
-     fprintf(logfp,"Error: no Root process running\n");
-     return;
-  }
-  PMsg_p Z;                            // No; talk to the console the hard way
-  Z.comm = Comms[cIdx];
-  Z.Key(Q::LOG,Q::FULL,Q::N000,Q::N000);
-  string m = "Logserver message file " + smessage + " corrupt or inaccessible";
-  Z.Put(1,&m);
-  Z.Send(pPmap[cIdx]->U.Root);
+  // no; best we can do is write a message to the logfile and hope the user
+  // sees it, because at this point we don't have the process map loaded to
+  // send a message to the Root.
+  fprintf(logfp, "Logserver message file %s corrupt or inaccessible\n", smessage.c_str());
   return;
 }
                                        // OK, here if we're clear to go
@@ -208,11 +202,6 @@ unsigned LogServer::OnLogP(PMsg_p * Z,unsigned cIdx)
 // LOG|POST|   -|   - (1:int)message_id,(1:vector<string>)arguments
 {
 int rIdx=RootCIdx();
-if (rIdx < 0)
-{
-   fprintf(logfp,"Error: no Root process running\n");
-   return -1;
-}
 int cnt;                               // Unpack message id
 int * pid = Z->Get<int>(1,cnt);
 int id = -1;
@@ -223,17 +212,25 @@ char typ = Msgs[id].typ;               // Unpack message type
 //printf("LogServer::OnLogP id=%d\n",id);
 //WALKVECTOR(string,vstr,i) printf("||%s||\n",(*i).c_str());
 string sfull = Assemble(id,vstr);
+if (rIdx < 0)
+{
+   fprintf(logfp,"Error: no Root process registered when log message requested.\n");
+   fprintf(logfp,"The following message will never have appeared on the console.\n");
+}
+else
+{
 PMsg_p Z2;                             // Build the full message
 Z2.comm = Comms[rIdx];
 Z2.Key(Q::LOG,Q::FULL,Q::N000,Q::N000);
 Z2.Put<int>(1,&id);                    // Message id
 Z2.Put<char>(2,&typ);                  // Message type
 Z2.Put(3,&sfull);                      // Load assembled full string
-Z2.Send(pPmap[cIdx]->U.Root);          // Send it back to the console
+Z2.Send(pPmap[rIdx]->U.Root);          // Send it back to the console
+}
                                        // And write it into the log file.....
 fprintf(logfp,"%s: %3d(%c) %s\n\n",GetTime(),id,typ,sfull.c_str());
 Mcount[typ]++;                         // Increment the type counter
-return 0;
+return (rIdx < 0);
 }
 
 //==============================================================================

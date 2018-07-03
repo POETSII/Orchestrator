@@ -121,31 +121,31 @@ void P_builder::Preplace(P_task* task)
      if (!task->linked)
      {
         if (par->pP == 0) // no topology?
-	{
-	   // we will set up a virtual topology. Compute how many virtual boxes would
-	   // be needed.
-	   unsigned numCores = 0;
+        {
+           // we will set up a virtual topology. Compute how many virtual boxes would
+           // be needed.
+           unsigned numCores = 0;
            for (vector<P_devtyp*>::iterator dev_typ = task->pP_typdcl->P_devtypv.begin(); dev_typ != task->pP_typdcl->P_devtypv.end(); dev_typ++)
-	   {
-	       unsigned int deviceMem = (*dev_typ)->MemPerDevice();
+           {
+               unsigned int deviceMem = (*dev_typ)->MemPerDevice();
                if (deviceMem > BYTES_PER_THREAD)
                {
-		  par->Post(810, (*dev_typ)->Name(), int2str(deviceMem), int2str(BYTES_PER_THREAD));
+                  par->Post(810, (*dev_typ)->Name(), int2str(deviceMem), int2str(BYTES_PER_THREAD));
                   return;
                }
                // chunk through devices in blocks equal to the thread size
                unsigned int devicesPerThread = min(BYTES_PER_THREAD/deviceMem, MAX_DEVICES_PER_THREAD);
-	       unsigned int numDevices = task->pD->DevicesOfType(*dev_typ).size();
-	       numCores += numDevices/(devicesPerThread*THREADS_PER_CORE);
-	       if (numDevices%(devicesPerThread*THREADS_PER_CORE)) ++numCores;
-	   }
-	   unsigned numBoxes = numCores/(CORES_PER_BOARD*BOARDS_PER_BOX); // number of boxes
-	   if (numCores%(CORES_PER_BOARD*BOARDS_PER_BOX)) ++numBoxes;     // one more if needed
-	   par->pP = new P_graph(par,"VirtualSystem");                    // initialise the topology
-       par->Post(138,par->pP->Name());
-	   par->pP->SetN(numBoxes, true); // and create a virtual topology
-	}
-	if (!par->pPlace->Place(task)) task->LinkFlag(); // then preplace on the real or virtual board. 
+               unsigned int numDevices = task->pD->DevicesOfType(*dev_typ).size();
+               numCores += numDevices/(devicesPerThread*THREADS_PER_CORE);
+               if (numDevices%(devicesPerThread*THREADS_PER_CORE)) ++numCores;
+           }
+           unsigned numBoxes = numCores/(CORES_PER_BOARD*BOARDS_PER_BOX); // number of boxes
+           if (numCores%(CORES_PER_BOARD*BOARDS_PER_BOX)) ++numBoxes;     // one more if needed
+           par->pP = new P_graph(par,"VirtualSystem");                    // initialise the topology
+           par->Post(138,par->pP->Name());
+           par->pP->SetN(numBoxes, true); // and create a virtual topology
+        }
+        if (!par->pPlace->Place(task)) task->LinkFlag(); // then preplace on the real or virtual board.
      }
      // if we need to we could aggregate some threads here to achieve maximum packing by merging partially-full threads.	 
 }
@@ -222,7 +222,7 @@ void P_builder::GenFiles(P_task* task)
       // device variables
       if (c_devtyp->pPropsD)
       {
-          vars_h << "typedef " << string(c_devtyp->pPropsD->c_src).erase(c_devtyp->pPropsD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_props_t;\n";
+          vars_h << "typedef " << string(c_devtyp->pPropsD->c_src).erase(c_devtyp->pPropsD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_props_t;\n\n";
           handl_pre_strm << "   const devtyp_" << c_devtyp->Name().c_str() << "_props_t* deviceProperties = static_cast<const devtyp_" << c_devtyp->Name().c_str() << "_props_t*>(deviceInstance->properties);\n";
       }
       if (c_devtyp->pStateD)
@@ -249,15 +249,15 @@ void P_builder::GenFiles(P_task* task)
           handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_Recv_handler (const void* graphProps, void* device, void* edge, const void* msg);\n";
           handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_Recv_handler (const void* graphProps, void* device, void* edge, const void* msg)\n";
           handlers_cpp << handl_pre_strm.str().c_str();
-          handlers_cpp << "   PInPinSrc* edgeInstance = static_cast<PInPinSrc*>(edge);\n";
+          handlers_cpp << "   inEdge_t* edgeInstance = static_cast<inEdge_t*>(edge);\n";
           if ((*I_pin)->pPropsD)
           {
-              vars_h << "typedef " << string((*I_pin)->pPropsD->c_src).erase((*I_pin)->pPropsD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t;\n";
+              vars_h << "typedef " << string((*I_pin)->pPropsD->c_src).erase((*I_pin)->pPropsD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t;\n\n";
               handlers_cpp << "   const devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t* edgeProperties = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_ipin_" << Ipin_name << "_props_t*>(edgeInstance->properties);\n";
           }
           if ((*I_pin)->pStateD)
           {
-              vars_h << "typedef " << string((*I_pin)->pStateD->c_src).erase((*I_pin)->pStateD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t;\n";
+              vars_h << "typedef " << string((*I_pin)->pStateD->c_src).erase((*I_pin)->pStateD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t;\n\n";
               handlers_cpp << "   devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t* edgeState = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_ipin_" << Ipin_name << "_state_t*>(edgeInstance->state);\n";
           }
           if ((*I_pin)->pMsg->pPropsD) handlers_cpp << "   msg_" << (*I_pin)->pMsg->Name().c_str() << "_pyld_t* message = static_cast<msg_" <<  (*I_pin)->pMsg->Name().c_str() << "_pyld_t*>(msg);\n";
@@ -379,8 +379,11 @@ void P_builder::WriteThreadVars(unsigned int core_num, unsigned int thread_num, 
      initialiser.str("{");
      uint32_t index = 0;
      stringstream initialiser_2("", ios_base::out | ios_base::ate);
+     stringstream initialiser_3("", ios_base::out | ios_base::ate);
      stringstream initialiser_4("{", ios_base::out | ios_base::ate);
      stringstream initialiser_5("{", ios_base::out | ios_base::ate);
+     stringstream initialiser_6("", ios_base::out | ios_base::ate);
+     stringstream initialiser_7("", ios_base::out | ios_base::ate);
      vector<unsigned int>in_pin_idxs;
      vector<unsigned int>out_pin_idxs;
      for (list<P_device*>::iterator device = thread->P_devicel.begin(); device != thread->P_devicel.end(); device++)
@@ -390,106 +393,96 @@ void P_builder::WriteThreadVars(unsigned int core_num, unsigned int thread_num, 
          // need to descend into the pins and set them up before setting up the device
          if (t_devtyp->P_pintypIv.size())
          {
-             initialiser_2.str("{");
-             // structures to build up the associative input pin tables
-             // this is a map indexed first by message type, next by source device, and finally by edge index
-             map<unsigned int, map <unsigned int, pair<unsigned int, P_pin*>>> pins_by_msgtyp;
-             vector<unsigned int> in_conns;
-             vector<unsigned int> src_devs;
-             vector<unsigned int> src_dev_pins;
-             vector<unsigned int> tgt_dev_pins;
-             // get the (unarranged) fan-in vectors
-             if ((*device)->par->G.DrivingNodes((*device)->idx,src_dev_pins,in_conns,tgt_dev_pins,src_devs))
-             {
-                // now rearrange into the map
-                unsigned int src, tgt;
-                // rearrangement happens by edge (arc) index
-                for (vector<unsigned int>::iterator in_conn = in_conns.begin(); in_conn != in_conns.end(); in_conn++)
-                {
-                    (*device)->par->G.FindNodes(*in_conn, src, tgt);
-                    // insert into the associative map. The map's outer key is the message type, which is found by
-                    // retrieving the edge's associated message type. The inner key is the source device index.
-                    // The value is the target pin, found by indexing the graph's edge data, retrieving the
-                    // iterator to its target, then extracting the value from the element. Hopefully this will index
-                    // the right object!
-                    // bodgey: need to use find to index the edge. Using ...G.index_a[(*in_conn)] fails because pdigraph
-                    // doesn't define a default constructor for an arc. (I think this should be fixed in pdigraph)
-                    P_pin* target_pin = (*((*device)->par->G.index_a.find(*in_conn)->second.to_p)).second.data;
-                    pins_by_msgtyp[(*(*device)->par->G.FindArc(*in_conn))->MsgType][src].first = (*in_conn);
-                    pins_by_msgtyp[(*(*device)->par->G.FindArc(*in_conn))->MsgType][src].second = target_pin;
-                    if (target_pin->pP_pintyp->pPropsD) vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << target_pin->pP_pintyp->Name().c_str() << "_props_t Device_" << (*device)->Name().c_str() << "_InEdge_" << (*in_conn) << "_Properties;\n";
-                    if (target_pin->pP_pintyp->pStateD) vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << target_pin->pP_pintyp->Name().c_str() << "_state_t Device_" << (*device)->Name().c_str() << "_InEdge_" << (*in_conn) << "_State;\n";
-                }
-             }
-             initialiser << pins_by_msgtyp.size() << ",Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_InPinMsgMap,";
-             // now assemble the source lines by going through the map.
-             stringstream initialiser_3("", ios_base::out | ios_base::ate);
+             initialiser << t_devtyp->P_pintypIv.size() << ",Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_InputPins,";
              vars_h << "//------------------------------ Input Pin (Associative) Tables ------------------------------\n";
-             vars_h << "extern inPinMsg_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_InPinMsgMap[" << pins_by_msgtyp.size() << "];\n";
-             for (map<unsigned int, map<unsigned int, pair<unsigned int, P_pin*>>>::iterator msg_typ = pins_by_msgtyp.begin(); msg_typ != pins_by_msgtyp.end(); msg_typ++)
+             vars_h << "extern inPin_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_InputPins[" << t_devtyp->P_pintypIv.size() << "];\n";
+             initialiser_2.str("{");
+             for (unsigned int pin_num = 0; pin_num < t_devtyp->P_pintypIv.size(); pin_num++)
              {
-                 vars_h << "extern inPinSrc_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Msg_" << t_devtyp->par->P_messagev[msg_typ->first]->Name().c_str() << "_InPinSrcMap[" << msg_typ->second.size() << "];\n";
-                 initialiser_2 << "{&Thread_" << thread_num << "_Devices[" << index << "]," << msg_typ->first << "," << msg_typ->second.size() << ",Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Msg_" << t_devtyp->par->P_messagev[msg_typ->first]->Name().c_str() << "_InPinSrcMap},";
+                 // within the pin, build the internal edge information (the pin's source list)
                  initialiser_3.str("{");
-                 for (map<unsigned int, pair< unsigned int, P_pin*>>::iterator msg_src = msg_typ->second.begin(); msg_src != msg_typ->second.end(); msg_src++)
+                 initialiser_6.str("{");
+                 initialiser_7.str("{");
+                 //multimap<unsigned int, pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::pin>::iterator next_pin = (*device)->par->G.index_n[(*device)->idx].fani.upper_bound(pin_num << PIN_POS | 0xFFFFFFFF >> (32-PIN_POS));
+                 //for (multimap<unsigned int, pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::pin>::iterator p_edge = (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS); p_edge != next_pin; p_edge++)
+                 pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it next_pin = (*device)->par->G.index_n[(*device)->idx].fani.upper_bound(pin_num << PIN_POS | 0xFFFFFFFF >> (32-PIN_POS));
+                 for (pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it p_edge = (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS); p_edge != next_pin; p_edge++)
                  {
-                     // properties and state for pins are done as individual variables because the arrangement in the associative lookup makes
-                     // grouping them into arrays (which would be by pin type) awkward for no gain.
-                     // another complex use of find to identify the destination ID (which should actually be an input to GetHardwareAddress!)
-                     // msg_src->first (the source device) should be replaced here by a function GetHardwareAddress((*device)->par->G.FindNode(msg_src->first))
-                     initialiser_3 << "{" << (*((*device)->par->G.index_a.find(msg_src->second.first)->second.to_n)).first << "," << msg_src->first << ",&Thread_" << thread_num << "_DevTyp_0_InputPins[" << msg_src->second.second->pP_pintyp->idx << "],";
-                     if (msg_src->second.second->pP_pintyp->PinPropsSize)
+                     initialiser_3 << "{0," << (*device)->idx << "," << p_edge->second.iArc->second.fr_n->first << ",";
+                     // if the pin has properties,
+                     if (p_edge->second.data->pP_pintyp->PinPropsSize)
                      {
-                        vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << msg_src->second.second->pP_pintyp->Name().c_str() << "_props_t Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_Properties;\n";
-                        initialiser_3 << "&Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_Properties,";
-                        vars_cpp << "devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << msg_src->second.second->pP_pintyp->Name().c_str() << "_props_t Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_Properties = ";
-                        // use the set properties if available,
-                        if (msg_src->second.second->pPropsI) vars_cpp << msg_src->second.second->pPropsI->c_src.c_str() << ";\n";
-                        // or defaults if not.
-                        else vars_cpp << msg_src->second.second->pP_pintyp->pPropsI->c_src.c_str() << ";n";
+                        // set them up in the edge list
+                        initialiser_3 << "&Device_" << (*device)->Name().c_str() << "_InEdge_" << (p_edge->first >> PIN_POS) << "_Properties[" << (p_edge->first & (0xFFFFFFFF >> (32-PIN_POS))) << "],";
+                        // using the set properties if available
+                        if (p_edge->second.data->pPropsI) initialiser_6 << p_edge->second.data->pPropsI->c_src.c_str() << ",";
+                        // or defaults if not. (should this be pPropsD rather than pPropsI?)
+                        else initialiser_6 << p_edge->second.data->pP_pintyp->pPropsI->c_src.c_str() << ",";
                      }
                      else initialiser_3 << "0,";
-                     if (msg_src->second.second->pP_pintyp->PinStateSize)
+                     if (p_edge->second.data->pP_pintyp->PinStateSize)
                      {
-                        vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << msg_src->second.second->pP_pintyp->Name().c_str() << "_state_t Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_State;\n";
-                        initialiser_3 << "&Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_State},";
-                        vars_cpp << "devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << msg_src->second.second->pP_pintyp->Name().c_str() << "_state_t Device_" << (*device)->Name().c_str() << "_InEdge_" << msg_src->second.first << "_State = ";
-                        if (msg_src->second.second->pStateI) vars_cpp << msg_src->second.second->pStateI->c_src.c_str() << ";\n";
-                        else vars_cpp << msg_src->second.second->pP_pintyp->pStateI->c_src.c_str() << ";\n";
+                        initialiser_3 << "&Device_" << (*device)->Name().c_str() << "_InEdge_" << (p_edge->first >> PIN_POS) << "_State[" << (p_edge->first & (0xFFFFFFFF >> (32-PIN_POS))) << "]},";
+                        if (p_edge->second.data->pStateI) initialiser_7 << p_edge->second.data->pStateI->c_src.c_str() << ",";
+                        else initialiser_7 << "0,";
                      }
                      else initialiser_3 << "0},";
-
                  }
-                 initialiser_3.seekp(-1,ios_base::cur);
+                 initialiser_3.seekp(-1, ios_base::cur);
+                 initialiser_6.seekp(-1, ios_base::cur);
+                 initialiser_7.seekp(-1, ios_base::cur);
                  initialiser_3 << "};\n";
-                 vars_cpp << "inPinSrc_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Msg_" << t_devtyp->par->P_messagev[msg_typ->first]->Name().c_str() << "_InPinSrcMap[" << msg_typ->second.size() << "] = " << initialiser_3.str().c_str();
+                 initialiser_6 << "};\n";
+                 initialiser_7 << "};\n";
+                 if (next_pin != (*device)->par->G.index_n[(*device)->idx].fani.begin())
+                 {
+                    // create input edge data structures
+                    --next_pin;
+                    vars_h << "extern inEdge_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Pin_" << next_pin->second.data->pP_pintyp->Name().c_str() << "_InEdges[" << (next_pin->first & (0xFFFFFFFF >> (32-PIN_POS)))+1 << "];\n";
+                    vars_cpp << "inEdge_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Pin_" << next_pin->second.data->pP_pintyp->Name().c_str() << "_InEdges[" << (next_pin->first & (0xFFFFFFFF >> (32-PIN_POS)))+1 << "] = " << initialiser_3.str().c_str();
+                    // with associated properties if they exist
+                    if (next_pin->second.data->pP_pintyp->PinPropsSize)
+                    {
+                       vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << next_pin->second.data->pP_pintyp->Name().c_str() << "_props_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Pin_" << next_pin->second.data->pP_pintyp->Name().c_str() << "_InEdgeProps[" << (next_pin->first & (0xFFFFFFFF >> (32-PIN_POS)))+1 << "];\n";
+                       vars_cpp << "devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << next_pin->second.data->pP_pintyp->Name().c_str() << "_props_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Pin_" << next_pin->second.data->pP_pintyp->Name().c_str() << "_InEdgeProps[" << (next_pin->first & (0xFFFFFFFF >> (32-PIN_POS)))+1 << "] = " << initialiser_6.str().c_str();
+                    }
+                    // and associated state (again, if it exists)
+                    if (next_pin->second.data->pP_pintyp->PinStateSize)
+                    {
+                       vars_h << "extern devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << next_pin->second.data->pP_pintyp->Name().c_str() << "_state_t  Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Pin_" << next_pin->second.data->pP_pintyp->Name().c_str() << "_InEdgeStates[" << (next_pin->first & (0xFFFFFFFF >> (32-PIN_POS)))+1 << "];\n";
+                       vars_cpp << "devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << next_pin->second.data->pP_pintyp->Name().c_str() << "_state_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Pin_" << next_pin->second.data->pP_pintyp->Name().c_str() << "_InEdgeStates[" << (next_pin->first & (0xFFFFFFFF >> (32-PIN_POS)))+1 << "] = " << initialiser_7.str().c_str();
+                    }
+                    // once the edges have been built, build up the input pin list itself.
+                    initialiser_2 << "{0,&Thread_" << thread_num << "_DevTyp_0_InputPins[" << pin_num << "]," << (next_pin->first & (0xFFFFFFFF >> (32-PIN_POS)))+1 << ",Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_Pin_" << next_pin->second.data->pP_pintyp->Name().c_str() << "_InEdges},";
+                 }
+                 else initialiser_2 << "{0,&Thread_" << thread_num << "_DevTyp_0_InputPins[" << pin_num << "],0,0},";
              }
-             initialiser_2.seekp(-1,ios_base::cur);
+             initialiser_2.seekp(-1, ios_base::cur);
              initialiser_2 << "};\n";
-             vars_cpp << "inPinMsg_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_InPinMsgMap[" << pins_by_msgtyp.size() << "] = " << initialiser_2.str().c_str();
+             vars_cpp << "inPin_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_InputPins[" << t_devtyp->P_pintypIv.size() << "] = " << initialiser_2.str().c_str();
          }
          else initialiser << "0,0,";
          if (t_devtyp->P_pintypOv.size())
          {
              initialiser << t_devtyp->P_pintypOv.size() << ",Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutputPins,";
              vars_h << "//------------------------------ Output Pin Tables ------------------------------\n";
-             stringstream initialiser_3("", ios_base::out | ios_base::ate);
              vars_h << "extern outPin_t Thread_" << thread_num << "_Device_" << (*device)->Name() << "_OutputPins[" << t_devtyp->P_pintypOv.size() << "];\n";
              initialiser_2.str("{");
              for (vector<P_pintyp*>::iterator pin = t_devtyp->P_pintypOv.begin(); pin != t_devtyp->P_pintypOv.end(); pin++)
              {
-                 initialiser_2 << "{&Thread_" << thread_num << "_Devices[" << (*device)->idx << "],&Thread_" << thread_num << "_DevTyp_0_OutputPins[" << (*pin)->idx << "],{},0,0,";
+                 initialiser_2 << "{0,&Thread_" << thread_num << "_DevTyp_0_OutputPins[" << (*pin)->idx << "],{},0,0,";
                  if (!(*device)->par->G.FindArcs((*device)->idx,(*pin)->idx,in_pin_idxs,out_pin_idxs)) initialiser_2 << "0,0},";
                  else
                  {
-                    vars_h << "extern uint32_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutPin_" << (*pin)->Name().c_str() << "_Tgts[" << out_pin_idxs.size() << "];\n";
+                    vars_h << "extern outEdge_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutPin_" << (*pin)->Name().c_str() << "_Tgts[" << out_pin_idxs.size() << "];\n";
                     initialiser_2 << out_pin_idxs.size() << ",Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutPin_" << (*pin)->Name().c_str() << "_Tgts,0,0},";
                     // insert target list generation here
                     initialiser_3.str("{");
                     for (vector<unsigned int>::iterator tgt = out_pin_idxs.begin(); tgt != out_pin_idxs.end(); tgt++)
                     {
                         // as for the case of inputs, the target device should be replaced by GetHardwareAddress(...)
-                        initialiser_3 << (*((*device)->par->G.index_a.find(*tgt)->second.to_n)).first << ",";
+                        unsigned int tgt_idx = ((*device)->par->G.index_a.find(*tgt)->second.to_p)->first;
+                        initialiser_3 << "{0," << ((*device)->par->G.index_a.find(*tgt)->second.to_n)->first << "," << (tgt_idx >> PIN_POS) << "," << (tgt_idx & (0xFFFFFFFF >> (32-PIN_POS))) << "},";
                     }
                     initialiser_3.seekp(-1,ios_base::cur);
                     initialiser_3 << "};\n";

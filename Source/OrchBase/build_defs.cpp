@@ -19,6 +19,7 @@ const unsigned int THREADS_PER_CORE = 0x1 << TinselLogThreadsPerCore;
 const unsigned int CORES_PER_BOARD = 0x1 << TinselLogCoresPerBoard;
 const unsigned int BOARDS_PER_BOX = TinselMeshXLen*TinselMeshYLen;
 const unsigned int MEM_PER_BOARD = (0x1 << TinselLogBytesPerDRAM) * TinselDRAMsPerBoard;
+const unsigned int PIN_POS = 24;
 const string STATIC_SRC_PATH = "../";
 const string COMMON_PATH = "Softswitch";
 const string TINSEL_PATH = "Tinsel";

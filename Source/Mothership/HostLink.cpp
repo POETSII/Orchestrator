@@ -493,7 +493,7 @@ void HostLink::loadOne(const char* codeFilename, const char* dataFilename, uint3
   addrReg = 0;
   while (data.getWord(&addr, &word)) {
     // Use active core to initialise each DRAM
-    uint32_t dest = toAddr(meshX, meshY, coreID/coresPerDRAM, 0);
+    uint32_t dest = toAddr(meshX, meshY, coreId/coresPerDRAM, 0);
     if (addr != addrReg) {
        req.cmd = SetAddrCmd;
        req.numArgs = 1;
@@ -508,11 +508,12 @@ void HostLink::loadOne(const char* codeFilename, const char* dataFilename, uint3
   }
 }
 
-void HostLink::startOneCore(const char* dataFilename, uint32_t meshX, uint32_t meshY, uint32_t coreId, uint32_t numThreads)
+void HostLink::startOneCore(uint32_t meshX, uint32_t meshY, uint32_t coreId, uint32_t numThreads)
 {
   // Start core
   // -------------------
 
+  BootReq req;
   // Send start command
   uint32_t coreStarted = 1<<TinselLogCoresPerBoard; // set core beyond usable range
   uint8_t flit[4 << TinselLogWordsPerFlit];
@@ -520,6 +521,7 @@ void HostLink::startOneCore(const char* dataFilename, uint32_t meshX, uint32_t m
   while (!canSend()) if (canRecv()) recv(flit);
   uint32_t dest = toAddr(meshX, meshY, coreId, 0);
   req.cmd = StartCmd;
+  req.numArgs = 1;
   // start as many threads as we can.
   req.args[0] = numThreads > (1<<TinselLogThreadsPerCore) ? (1<<TinselLogThreadsPerCore)-1 : numThreads-1;
   send(dest, 1, &req);

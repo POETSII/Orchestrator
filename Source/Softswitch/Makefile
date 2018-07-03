@@ -72,7 +72,13 @@ THREADVARS := $(patsubst $(GENSRC)/%.cpp,%.o,$(wildcard $(GENSRC)/vars_*_*.cpp))
 all : $(TARGETS)
 	$(foreach TARGET,$<,cp $(TARGET) $(BIN_DIR)/$(TARGET))
 
-softswitch_%.o : softswitch_%.cpp softswitch_common.h tinsel.h $(TINSELINC)/config.h
+softswitch_%.o : softswitch_%.cpp softswitch_common.h softswitch.h poets_msg.h poets_hardware.h tinsel.h $(TINSELINC)/config.h
+	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
+
+softswitch.o : softswitch.cpp softswitch.h poets_msg.h poets_hardware.h tinsel.h $(TINSELINC)/config.h
+	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
+
+poets_msg.o : poets_msg.cpp poets_msg.h poets_hardware.h $(TINSELINC)/config.h
 	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
 
 io.o : io.c io.h tinsel.h $(TINSELINC)/config.h 
@@ -80,7 +86,7 @@ io.o : io.c io.h tinsel.h $(TINSELINC)/config.h
 
 ## the pattern substitution should find all vars_x_y.o created from vars_x_y.cpp
 .SECONDEXPANSION:
-$(BIN_DIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link.ld entry.o libc.a libgcc.a
+$(BIN_DIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o softswitch.o poets_msg.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link.ld entry.o libc.a libgcc.a
 	$(RV_LD) $(LDFLAGS) -T link.ld -o $@ $(filter-out link.ld, $^)
 
 # this convoluted rule (we hope) will establish as a prerequisite for any file

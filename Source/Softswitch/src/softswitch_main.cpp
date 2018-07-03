@@ -8,10 +8,12 @@ void softswitch_main()
   // can these slot assignments be done in softswitch_init?
   volatile void *recvBuffer=0;
   volatile void *sendBuffer=tinselSlot(0); // hardware send buffer is dedicated to the first tinsel slot
+  volatile void *superBuffer[NUM_SUP_BUFS];           // 4 buffers allocated for supervisor messages.
+  for (uint32_t sb = 0; sb < NUM_SUP_BUFS-1; sb++) superBuffer[sb] = tinselSlot(sb+1);
   softswitch_init(ThreadContext);
   // send a message to the local supervisor saying we are ready;
   // then wait for the __init__ message to return by interrogating tinselCanRecv(). 
-  softswitch_barrier(ThreadContext, sendBuffer, recvBuffer); 
+  softswitch_barrier(ThreadContext, superBuffer[0], recvBuffer); 
   /* endless main loop. It would be nice to have some stop variable here
      that can be set by a command. The problem is, it's not technically
      safe to stop until all messages that should have been expected are
@@ -49,7 +51,7 @@ void softswitch_main()
     }
     else if (!softswitch_onIdle(ThreadContext)) tinselWaitUntil(TINSEL_CAN_RECV); // thread is idle.
   }
-  softswitch_finalize(ThreadContext, &sendBuffer, &recvBuffer); // shut down once the end signal has been received.
+  softswitch_finalize(ThreadContext, &sendBuffer, &recvBuffer, superBuffer); // shut down once the end signal has been received.
 }
 
 int main(int argc, char** argv)
