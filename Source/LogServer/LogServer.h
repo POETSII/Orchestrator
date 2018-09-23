@@ -17,7 +17,7 @@ typedef map<unsigned,pMeth> FnMap_t;
 
 private:
 string              Assemble(int,vector<string> &);
-unsigned            Connect(bool,string);
+unsigned            Connect(string);
 #include            "Decode.cpp"
 void                Dump(FILE * = stdout);
 void                InitFile();

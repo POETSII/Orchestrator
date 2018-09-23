@@ -9,6 +9,8 @@
 #include "string.h"
 #include "limits.h"
 
+const char* TMoth::MPISvc = "POETS_Box_Master";
+const int   TMoth::MPISrv;
 const int   TMoth::NumBoards;
 
 //==============================================================================
@@ -38,15 +40,26 @@ FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
 // mothership's address in POETS space is the host thread ID: X coordinate 0,
 // Y coordinate max.
 PAddress = TinselMeshYLen << (TinselMeshXBits+TinselLogCoresPerBoard+TinselLogThreadsPerCore);
+MPIPort.store(MPI_Port,std::memory_order_seq_cst);  // thread-safe reference to MPI port
+Trank.store(Urank,std::memory_order_relaxed);       // thread-safe copy of MPI rank.
+// watch for side effects on the next line: we are accessing a pointer atomically for a non-const operation.
+strcpy(MPIPort.load(std::memory_order_seq_cst),"PORT_NULL");  // non-zero ranks don't have a port
 
-twig_running = false;
-ForwardMsgs.store(false,std::memory_order_relaxed); // don't forward tinsel traffic yet
+void* args = this;             // spin off a thread to accept MPI connections
+AcceptConns.store(true,std::memory_order_relaxed); // from other universes
+if (pthread_create(&MPI_accept_thread,NULL,Accept,args))
+{
+   // if this fails, the mothership will have to be contacted 'the hard way':
+   // via direct SSH.
+   AcceptConns.store(false,std::memory_order_relaxed);
+   printf("Error creating thread to accept MPI connections\n");
+   fflush(stdout);
+}
+ForwardMsgs.store(false,std::memory_order_relaxed);                   // don't forward tinsel traffic yet
   
 MPISpinner();                          // Spin on *all* messages; exit on DIE
-// printf("Exiting Mothership. Closedown flags: AcceptConns: %s, ForwardMsgs: %s\n", AcceptConns.load(std::memory_order_relaxed) ? "true" : "false", ForwardMsgs.load(std::memory_order_relaxed) ? "true" : "false");
-// fflush(stdout);
-if (twig_running) pthread_join(Twig_thread,NULL); // wait for the twig thread, if it started.
-twig_running = false;
+pthread_join(MPI_accept_thread,NULL); // wait for accept thread to exit
+if (Twig_thread) pthread_join(Twig_thread,NULL); // and the twig thread, if it started.
 printf("********* Mothership rank %d on the way out\n",Urank); fflush(stdout);
 }
 
@@ -66,6 +79,40 @@ WALKMAP(uint32_t,PinBuf_t*,TwigMap,D)
 }
 WALKMAP(string,TaskInfo_t*,TaskMap,T)
   delete T->second;
+}
+
+//------------------------------------------------------------------------------
+
+void* TMoth::Accept(void* par)
+// Blocking routine to connect to another MPI universe by publishing a port.
+// The group of motherships is always considered the server side of the
+// connection
+{
+TMoth* parent=static_cast<TMoth*>(par);
+if (!parent->Trank.load(std::memory_order_relaxed)) // set up the intercommunicator's leader on rank 0
+{
+char MPort[MPI_MAX_PORT_NAME];
+MPI_Open_port(MPI_INFO_NULL,parent->MPIPort.load(std::memory_order_seq_cst)); // Announce to MPI that we are open for business
+MPI_Publish_name(parent->MPISvc,MPI_INFO_NULL,parent->MPIPort.load(std::memory_order_seq_cst)); // and make us publicly available
+}
+while (parent->AcceptConns.load(std::memory_order_relaxed))
+{
+if (!parent->Connect(parent->MPISrv,parent->MPIPort.load(std::memory_order_seq_cst)))
+{
+   // Might try Post() but failure could indicate an unreliable MPI universe
+   // so all bets are off about whether any MPI communication would actually succeed.
+   printf("Error: attempt to connect to another MPI universe failed\n");
+   parent->AcceptConns.store(false,std::memory_order_relaxed);
+}
+}
+printf("Exiting Accept thread\n");
+if (!parent->Trank.load(std::memory_order_relaxed)) // close down name/port if we are rank 0
+{
+MPI_Unpublish_name(parent->MPISvc,MPI_INFO_NULL,parent->MPIPort.load(std::memory_order_seq_cst));
+MPI_Close_port(parent->MPIPort.load(std::memory_order_seq_cst));
+}
+pthread_exit(par);
+return par;
 }
 
 //------------------------------------------------------------------------------
@@ -182,11 +229,9 @@ unsigned TMoth::Boot(string task)
    ForwardMsgs.store(true,std::memory_order_relaxed); // set forwarding on so thread doesn't immediately exit
    if (pthread_create(&Twig_thread,NULL,Twig,args))
    {
-      twig_running = false;
       ForwardMsgs.store(false,std::memory_order_relaxed);
       Post(531, int2str(Urank));
    }
-   else twig_running =true;
    TaskMap[task]->status = TaskInfo_t::TASK_BARR; // now at barrier on the tinsel side.
    return 0;
    }
@@ -781,9 +826,17 @@ WALKMAP(string, TaskInfo_t*, TaskMap, tsk)
        if (tsk->second->status == TaskInfo_t::TASK_BARR) CmRun(tsk->first);
        if (tsk->second->status == TaskInfo_t::TASK_RUN)  CmStop(tsk->first);       
 }
-// stop accepting Tinsel messages
+// stop accepting new MPI connections and Tinsel messages
+AcceptConns.store(false,std::memory_order_relaxed);
 ForwardMsgs.store(false,std::memory_order_relaxed);
-return CommonBase::OnExit(Z,cIdx); // exit through CommonBase handler
+// REALLY silly: have to close the Accept thread via a matching MPI_Comm_connect
+// because the MPI interface has made no provision for a nonblocking accept, thus
+// otherwise the Accept thread will block forever waiting for a process that will
+// never come because we are shutting down. See Gropp, et al. "Using Advanced MPI"
+MPI_Comm dcomm;
+MPI_Comm_connect(MPIPort.load(std::memory_order_seq_cst),MPI_INFO_NULL,0,MPI_COMM_WORLD,&dcomm);
+printf("Exiting Mothership. Closedown flags: AcceptConns: %s, ForwardMsgs: %s\n", AcceptConns.load(std::memory_order_relaxed) ? "true" : "false", ForwardMsgs.load(std::memory_order_relaxed) ? "true" : "false");
+return 1;
 }
 
 //------------------------------------------------------------------------------

@@ -19,6 +19,7 @@ struct ProcMap_t {
            ProcMap_t();
   int      P_rank;                     // Process rank
   string   P_proc;                     // Machine on which we run
+  string   P_user;                     // Username
   string   P_class;                    // Parent object (derived) class name
   unsigned P_BPW;                      // Compiled bits per word
   string   P_OS;                       // Compiled operating system
@@ -52,6 +53,7 @@ struct U_t {                           // Special ranks
   int         Injector;
   int         NameServer;
   vector<int> Monitor;
+  vector<int> Mothership;
 } U;
 map<int,string> M;                     // Names of special ranks
 

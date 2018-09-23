@@ -4,7 +4,7 @@
 
 //==============================================================================
 
-Constraints::Constraints()
+Constraints::Constraints() : Constraintm()
 {
 
 }

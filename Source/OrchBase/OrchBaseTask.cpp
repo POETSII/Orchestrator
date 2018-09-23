@@ -7,13 +7,16 @@ void OrchBase::ClearDcls()
 // Clear out all the graph declaration blocks that are not used (i.e. have no
 // corresponding graph instance)
 {
+vector<string> dclsToDelete;           // need to build a list of declares to delete
 WALKMAP(string,P_typdcl *,P_typdclm,i){// Walk the declaration blocks
   P_typdcl * p = (*i).second;          // Back reference vector empty?
   if (p->P_taskl.empty()) {            // If so, no-one wants this declare block
     delete p;
-    P_typdclm.erase(i);
+    dclsToDelete.push_back((*i).first);
   }
 }
+WALKVECTOR(string, dclsToDelete, d)    // get rid of the declares
+  P_typdclm.erase(*d);
 }
 
 //------------------------------------------------------------------------------
@@ -21,7 +24,7 @@ WALKMAP(string,P_typdcl *,P_typdclm,i){// Walk the declaration blocks
 void OrchBase::ClearDcls(string sb)
 // Clear out a named declare block PLUS any instances that depend upon it.
 // There exists a pathology here: if an instance that is cleared also depends
-// on a declare block tat has itself no other dependencies, that declare block
+// on a declare block that has itself no other dependencies, that declare block
 // will be left hanging (orphaned). The monkey can get it with a /clear = !,
 // so just flag it as a warning.
 {
@@ -100,14 +103,14 @@ void OrchBase::ClearTasks(char tt)
                                        // Enumerated types?
                                        // Hah! We spit on enumerated types.
 if ((tt!='T')&&(tt!='P')) Post(902,string(tt,1));
+vector<string> tasksToDelete;          // have to build a list of tasks to delete
 WALKMAP(string,P_task *,P_taskm,i) {
   P_task * p = (*i).second;            // Get the task pointer
   char t = p->IsPoL() ? 'P' : 'T';     // Task or POL?
-  if (t==tt) {
-    ClearTasks(p->Name());             // Kill it
-    P_taskm.erase(i);                 // Remove map element
-  }
+  if (t==tt) tasksToDelete.push_back((*i).first); // add matching type to the delete list
 }
+WALKVECTOR(string,tasksToDelete,k)     // now traverse the delete list
+  ClearTasks(*k);                      // Kill the task
 
 }
 
@@ -135,13 +138,21 @@ if (p->pD!=0) WALKPDIGRAPHNODES
   P_thread * pt = pd->pP_thread;       // Corresponding thread (if any)
   if (pt!=0)                           // If there's a thread.....
     WALKLIST(P_device *,pt->P_devicel,it)      // Look for the backlink...
-      if ((*it)==pd) pt->P_devicel.erase(it);  // ..and remove it
+      if ((*it)==pd)
+      {
+         pt->P_devicel.erase(it);      // ..and remove it
+         break;
+      }
 }
                                        // Now disconnect from the declare block
 P_typdcl * pdcl = p->pP_typdcl;        // This is the declare block
 if (pdcl!=0)
   WALKLIST(P_task *,pdcl->P_taskl,i)   // Look for the back pointer...
-    if ((*i)==p) pdcl->P_taskl.erase(i);       // ...and remove it
+    if ((*i)==p)
+    {
+       pdcl->P_taskl.erase(i);         // ...and remove it
+       break;
+    }
 delete p;                              // Remove the task itself
 P_taskm.erase(st);                     // Remove pointer from map
 
@@ -158,9 +169,14 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
   if (strcmp(cs,"geom")==0) { TaskGeom(*i);  continue; }
   if (strcmp(cs,"load")==0) { TaskLoad(*i);  continue; }
   if (strcmp(cs,"buil")==0) { TaskBuild(*i); continue; }
+  if (strcmp(cs,"depl")==0) { TaskDeploy(*i);continue; }
+  if (strcmp(cs,"reca")==0) { TaskRecall(*i);continue; }
   if (strcmp(cs,"path")==0) { TaskPath(*i);  continue; }
   if (strcmp(cs,"pol" )==0) { TaskPol(*i);   continue; }
+  if (strcmp(cs,"init")==0) { TaskMCmd(*i,"init"); continue; }
   if (strcmp(cs,"clea")==0) { TaskClear(*i); continue; }
+  if (strcmp(cs,"run" )==0) { TaskMCmd(*i,"run");   continue; }
+  if (strcmp(cs,"stop")==0) { TaskMCmd(*i,"stop");  continue; }
   if (strcmp(cs,"show")==0) { TaskShow(*i);  continue; }
   if (strcmp(cs,"dump")==0) { TaskDump(*i);  continue; }
   Post(25,(*i).Cl,"task");
@@ -307,6 +323,183 @@ pB->Build(task->second);                      // Build the thing
 
 //------------------------------------------------------------------------------
 
+void OrchBase::TaskDeploy(Cli::Cl_t Cl)
+{
+// Send the process map in simplified form to the Motherships, and the location of
+// binaries. Argument is the task name, which needs to exist and be mapped to hardware.
+// In large systems, there is a chance the user may ask to deploy the task before
+// all available hardware has registered itself in the process map. In such a situation,
+// a large task may not be able to be deployed yet. This isn't a fatal error; the user
+// can try again and hope for success.
+if (Cl.Pa_v.size()>1) {                       // Command make sense?
+  Post(47,Cl.Cl,"task","1");
+  return;
+}
+if (!P_taskm.size()){                          // Some tasks exist?
+  Post(107,"definitions");
+  return;
+}
+map<string, P_task*>::iterator task = P_taskm.begin(); // Default to first task
+if (Cl.Pa_v.size()){
+string name = Cl.Pa_v[0].Val;                 // Unpack task name
+if ((task=P_taskm.find(name))==P_taskm.end()){// Is the task there?
+  Post(107,name);
+  return;
+}
+}
+if (!task->second->linked){                   // task mapped?
+  Post(157,task->first);
+  return;
+}
+
+unsigned coreNum = 0;                     // virtual core number counter
+unsigned cIdx = 0;                        // comm number to look for Motherships. Start from local MPI_COMM_WORLD.
+
+vector<pair<unsigned,P_addr_t>> coreVec;  // core map container to send
+vector<ProcMap::ProcMap_t>::iterator currBox = pPmap[cIdx]->vPmap.begin(); // process map for the Mothership being deployed to
+
+
+CMsg_p PktC;
+PMsg_p PktD;
+//PMsg_p PktC, PktD;                      // messages to send to each participating box
+PktC.Key(Q::NAME,Q::DIST);                // distributing the core mappings
+PktD.Key(Q::NAME,Q::TDIR);                // and the data directory
+PktC.Src(Urank);
+string taskname = task->first;
+PktC.Put(0, &taskname);                    // first field in the packet is the task name
+PktD.Put(0, &taskname);                
+taskname+="/";                             // for the moment the binary directory will be fixed
+taskname+=BIN_PATH;                        // later we could make this user-settable.
+// duplicate P_builder's iteration through the task
+WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,pP->G,boxNode)
+{
+while (cIdx < Comms.size()) // grab the next available mothership
+{
+      while ((currBox != pPmap[cIdx]->vPmap.end()) && (currBox->P_class != csMOTHERSHIPproc)) ++currBox;
+      if (currBox != pPmap[cIdx]->vPmap.end()) break;
+      ++cIdx;
+}
+taskname.insert(0,string("/home/")+currBox->P_user+"/");
+PktD.Put(1,&taskname);
+coreVec.clear();   // reset the packet content
+WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+{
+WALKVECTOR(P_core*,(*board)->P_corev,core)
+{
+if ((*core)->P_threadv[0]->P_devicel.size() && ((*core)->P_threadv[0]->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
+{
+   // core lists here indicate the available hardware rather than the placed hardware, so we have
+   // to search for the last placed thread.
+   unsigned t_i = 1;
+   while (t_i < (*core)->P_threadv.size() && (*core)->P_threadv[t_i]->P_devicel.size()) ++t_i;
+   coreVec.push_back(pair<unsigned,P_addr_t>(coreNum++, *(dynamic_cast<P_addr_t*>(&((*core)->P_threadv[--t_i]->addr))))); // add it to the core list to be sent (may need to cast (*core)->addr to P_addr_t)
+}
+}
+}
+if ((cIdx >= Comms.size()) && coreVec.size()) // not enough Motherships have reported to deploy this task
+{
+   Post(164,task->first, int2str(cIdx), int2str(coreVec.size()));
+   return;
+}
+
+// same machine running Root and Mothership? (Tediously this requires searching the
+// process maps linearly because there is no method within a ProcMap to get the
+// index of the entry which is Root)
+int RootIndex = RootCIdx();
+vector<ProcMap::ProcMap_t>::iterator RootProcMapI = pPmap[RootIndex]->vPmap.begin();
+while (RootProcMapI->P_rank != pPmap[RootIndex]->U.Root) RootProcMapI++;
+if (RootProcMapI->P_proc == currBox->P_proc)
+{
+   // then copy locally (inefficient, wasteful, using the files in place would be better but this would require
+   // different messages to be sent to different Motherships. For a later revision.
+   system((string("mkdir ~/")+task->first).c_str());
+   system((string("cp -r ")+taskpath+task->first+"/"+BIN_PATH+" "+taskname).c_str());
+}
+else
+{
+   // otherwise copy binaries to the Mothership using SCP. This assumes ssh-agent has been run for the user.
+   system((string("ssh ")+currBox->P_user+"@"+currBox->P_proc+ "\"mkdir "+task->first+"\"").c_str());
+   system((string("scp -r ")+taskpath+task->first+"/"+BIN_PATH+" "+currBox->P_user+"@"+currBox->P_proc+":"+taskname).c_str());
+}
+PktD.comm = PktC.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
+printf("Sending a distribution message to mothership with %d cores\n", coreVec.size());
+PktC.Put(&coreVec); // place the core map in the packet to this Mothership
+/*
+printf("Sending a single-core distribution message to mothership cores\n");
+PktC.Put<unsigned>(1,&(coreVec[0].first),1);
+PktC.Put<P_addr_t>(2,&(coreVec[0].second),1);
+*/
+PktC.Send(currBox->P_rank);                    // Send to the target Mothership
+PktD.Send(currBox->P_rank);
+}                                              // Next Mothership
+}
+
+//------------------------------------------------------------------------------
+
+void OrchBase::TaskRecall(Cli::Cl_t Cl)
+{
+// Remove (recall) a given task from Motherships to which it is deployed.
+// Argument is the task name, which needs to exist and be mapped to hardware.
+if (Cl.Pa_v.size()>1) {                       // Command make sense?
+  Post(47,Cl.Cl,"task","1");
+  return;
+}
+if (!P_taskm.size()){                          // Some tasks exist?
+  Post(107,"definitions");
+  return;
+}
+map<string, P_task*>::iterator task = P_taskm.begin(); // Default to first task
+if (Cl.Pa_v.size()){
+string name = Cl.Pa_v[0].Val;                 // Unpack task name
+if ((task=P_taskm.find(name))==P_taskm.end()){// Is the task there?
+  Post(107,name);
+  return;
+}
+}
+if (!task->second->linked){                   // task mapped?
+  Post(157,task->first);
+  return;
+}
+
+unsigned cIdx = 0;                        // comm number to look for Motherships. Start from local MPI_COMM_WORLD.
+
+vector<ProcMap::ProcMap_t>::iterator currBox = pPmap[cIdx]->vPmap.begin(); // process map for the Mothership being deployed to
+
+
+PMsg_p PktD;                              // message to send to each mapped box
+PktD.Key(Q::NAME,Q::RECL);                // telling it to remove its entries for the task
+PktD.Src(Urank);
+string taskname = task->first;
+PktD.Put(0, &taskname);                    // first field in the packet is the task name
+// duplicate P_builder's iteration through the task
+WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,pP->G,boxNode)
+{
+while (cIdx < Comms.size()) // grab the next available mothership
+{
+      while ((currBox != pPmap[cIdx]->vPmap.end()) && (currBox->P_class != csMOTHERSHIPproc)) ++currBox;
+      if (currBox != pPmap[cIdx]->vPmap.end()) break;
+      ++cIdx;
+}
+PktD.comm = 0; // reset the comm for the recall packet
+// inefficient way to detect which boxes have this task mapped. In future the NameServer will hold this table and we should just be able to look it up.
+WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+{
+WALKVECTOR(P_core*,(*board)->P_corev,core)
+{
+if ((*core)->P_threadv[0]->P_devicel.size() && ((*core)->P_threadv[0]->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
+{
+   PktD.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
+   PktD.Send(currBox->P_rank);        // Send to the target Mothership
+}
+if (PktD.comm) break;                 // exit the search loop once any core mapped to the Mothership's box has been found.
+}
+if (PktD.comm) break;
+}
+}                                     // Next Mothership
+}
+
+//------------------------------------------------------------------------------
+
 void OrchBase::TaskPath(Cli::Cl_t Cl)
 // Change the default path extension for task files
 {
@@ -347,6 +540,83 @@ for (unsigned i=2;i<Cl.Pa_v.size();i++)pT->PoL.params.push_back(Cl.Pa_v[i].Val);
 
 pTG->Build(pT);                        // Build the thing
 
+}
+
+//------------------------------------------------------------------------------
+
+void OrchBase::TaskMCmd(Cli::Cl_t Cl,string cmd)
+{
+// Sends commands to the Motherships to control operation. At present the
+// possible commands are "init", "run" and "stop". Also for this version,
+// commands are sent sequentially to each Mothership, but future versions
+// will multicast (this needs an extension to the PMsg_p interface)
+if (Cl.Pa_v.size()>1) {                       // Command make sense?
+  Post(47,Cl.Cl,"task","1");
+  return;
+}
+if (!P_taskm.size()){                          // Some tasks exist?
+  Post(107,"definitions");
+  return;
+}
+map<string, P_task*>::iterator task = P_taskm.begin(); // Default to first task
+if (Cl.Pa_v.size()){
+string name = Cl.Pa_v[0].Val;                 // Unpack task name
+if ((task=P_taskm.find(name))==P_taskm.end()){// Is the task there?
+Post(107,name);
+return;
+}
+}
+if (!task->second->linked){                   // task mapped?
+  Post(157,task->first);
+  return;
+}
+
+// set up the message
+PMsg_p Pkt;                              // message to send to each participating box
+if (cmd == "init")
+Pkt.Key(Q::CMND,Q::LOAD);                // distributing the core mappings
+else if (cmd == "run")
+Pkt.Key(Q::CMND,Q::RUN);
+else if (cmd == "stop")
+Pkt.Key(Q::CMND,Q::STOP);
+else
+{
+  Post(25,cmd,"task");                   // invalid command to Mothership
+  return;
+}
+Pkt.Src(Urank);
+string taskname = task->first;
+Pkt.Put(0, &taskname);                    // first field in the packet is the task name
+
+unsigned cIdx = 0;                        // comm number to look for Motherships. Start from local MPI_COMM_WORLD.
+vector<ProcMap::ProcMap_t>::iterator currBox = pPmap[cIdx]->vPmap.begin(); // process map for the Mothership being deployed to
+
+// search for boxes assigned to the task. For the future, it would be more efficient to build a map
+// rather than redo the search.
+WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,pP->G,boxNode)
+{
+while (cIdx < Comms.size()) // grab the next available mothership
+{
+      while ((currBox != pPmap[cIdx]->vPmap.end()) && (currBox->P_class != csMOTHERSHIPproc)) ++currBox;
+      if (currBox != pPmap[cIdx]->vPmap.end()) break;
+      ++cIdx;
+}
+bool UsedByTask = false;
+WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+{
+WALKVECTOR(P_core*,(*board)->P_corev,core)
+{
+if ((*core)->P_threadv[0]->P_devicel.size() && ((*core)->P_threadv[0]->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
+{
+   Pkt.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
+   Pkt.Send(currBox->P_rank);        // to the target Mothership. This will work for now, but it would be far better to broadcast the send (so everyone gets it synchronously)
+   UsedByTask = true;
+   break;
+}
+}
+if (UsedByTask) break;               // only need to send once to each box
+}
+}
 }
 
 //------------------------------------------------------------------------------

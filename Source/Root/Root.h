@@ -31,7 +31,7 @@ unsigned              CmInje(Cli *);
 unsigned              CmRTCL(Cli *);
 unsigned              CmSyst(Cli *);
 unsigned              CmTest(Cli *);
-unsigned              Connect(bool,string);
+unsigned              Connect(string);
 #include              "Decode.cpp"
 virtual string        Dname(){ return typeid(*this).name(); }
 void                  Dump(FILE * = stdout);

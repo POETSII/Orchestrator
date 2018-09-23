@@ -57,19 +57,19 @@ pConfig = pCfg;                        // Save configuration backpointer
 for (unsigned iboard=0;iboard<pCfg->GetBoards();iboard++) {
   P_board * pB = new P_board(this);
   pB->AutoName("Bo");                  // Derive the name off the uid
-  pB->addr.SetBoard(iboard+1);         // Ordinal address number
+  pB->addr.SetBoard(iboard);         // Ordinal address number
   pB->addr |= addr;                    // Inherit parent box address field
   P_boardv.push_back(pB);
   for (unsigned icore=0;icore<pCfg->GetCores();icore++) {
     P_core * pC = new P_core(pB);
     pC->AutoName("Co");                // Derive the name off the uid
-    pC->addr.SetCore(icore+1);         // Ordinal address number
+    pC->addr.SetCore(icore);         // Ordinal address number
     pC->addr |= pB->addr;              // Inherit parent board address field(s)
     pB->P_corev.push_back(pC);
     for (unsigned ithread=0;ithread<pCfg->GetThreads();ithread++) {
       P_thread * pT = new P_thread(pC);
       pT->AutoName("Th");              // Derive the name off the uid
-      pT->addr.SetThread(ithread+1);   // Ordinal address number
+      pT->addr.SetThread(ithread);   // Ordinal address number
       pT->addr |= pC->addr;            // Inherit parent core address field(s)
       pC->P_threadv.push_back(pT);
     }

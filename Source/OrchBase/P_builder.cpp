@@ -10,8 +10,6 @@
 #include "P_link.h"
 #include "P_devtyp.h"
 #include "P_device.h"
-#include "build_defs.h"
-#include <cstdlib>
 #include <sstream>
 #include <algorithm>
 #include <set>
@@ -155,28 +153,34 @@ void P_builder::Preplace(P_task* task)
 // creates the files that have to be generated from data rather than be pre-existing
 void P_builder::GenFiles(P_task* task)
 {
-  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+GENERATED_PATH))->str().c_str());
-  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+GENERATED_H_PATH))->str().c_str());
-  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+GENERATED_CPP_PATH))->str().c_str());
+  string task_dir(par->taskpath+task->Name());
+  system((MAKEDIR+" "+ task_dir).c_str());
+  task_dir += "/";
+  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_PATH))->str().c_str());
+  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_H_PATH))->str().c_str());
+  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_CPP_PATH))->str().c_str());
   unsigned int coreNum = 0;
   if (!task->linked)
   {
     par->Post(811, task->Name());
     return;
   }
+  // build a core map visible to the make script (as a shell script)
+  fstream cores_sh((task_dir+GENERATED_PATH+"/cores.sh").c_str(), fstream::in | fstream::out | fstream::trunc);
   WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,par->pP->G,boxNode)
   {
   WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
   {
   for (unsigned int core = 0; core < (*board)->P_corev.size(); core++)
   {
-  if ((*board)->P_corev[core]->P_threadv[0]->P_devicel.size()) // only for cores which have something placed on them
+  if ((*board)->P_corev[core]->P_threadv[0]->P_devicel.size() && ((*board)->P_corev[core]->P_threadv[0]->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
   {
+      cores_sh << "cores[" << coreNum << "]=" << (*board)->P_corev[core]->addr.A_core << "\n";
       // these consist of the declarations and definitions of variables and the handler functions.
-      fstream vars_h(static_cast<stringstream*>(&(stringstream(par->taskpath+GENERATED_H_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".h"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
-      fstream vars_cpp(static_cast<stringstream*>(&(stringstream(par->taskpath+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
-      fstream handlers_h(static_cast<stringstream*>(&(stringstream(par->taskpath+GENERATED_H_PATH, ios_base::out | ios_base::ate)<<"/handlers_"<<coreNum<<".h"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
-      fstream handlers_cpp(static_cast<stringstream*>(&(stringstream(par->taskpath+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/handlers_"<<coreNum<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
+      fstream vars_h(static_cast<stringstream*>(&(stringstream(task_dir+GENERATED_H_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".h"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
+      fstream vars_cpp(static_cast<stringstream*>(&(stringstream(task_dir+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
+      fstream handlers_h(static_cast<stringstream*>(&(stringstream(task_dir+GENERATED_H_PATH, ios_base::out | ios_base::ate)<<"/handlers_"<<coreNum<<".h"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
+      fstream handlers_cpp(static_cast<stringstream*>(&(stringstream(task_dir+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/handlers_"<<coreNum<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
 
       // conveniently since so far we have arranged it so that each core has a monolithic device type looking up its vars is
       // easy. Later this will need smoother access. It would be nice if we could define this as a const P_devtyp* but
@@ -211,7 +215,7 @@ void P_builder::GenFiles(P_task* task)
       vars_h << "\n";
       // device handlers	
       handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_RTS_handler (const void* graphProps, void* device, uint32_t* readyToSend, void** msg_buf);\n";
-      if (c_devtyp->pOnIdle) handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OnIdle_handler (const void* graphProps, void* device);\n";
+      handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OnIdle_handler (const void* graphProps, void* device);\n";
       handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OnCtl_handler (const void* graphProps, void* device, const void* msg);\n\n";
       for (vector<CFrag*>::iterator d_code = c_devtyp->pHandlv.begin(); d_code != c_devtyp->pHandlv.end(); d_code++)
           handlers_cpp << (*d_code)->c_src.c_str() << "\n";
@@ -242,6 +246,11 @@ void P_builder::GenFiles(P_task* task)
       handlers_cpp << c_devtyp->pOnRTS->c_src.c_str() << "\n";
       handlers_cpp << "   return *readyToSend;\n"; // we assume here the return value is intended to be an RTS bitmap.
       handlers_cpp << handl_post;
+      handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OnIdle_handler (const void* graphProps, void* device)\n";
+      handlers_cpp << handl_pre_strm.str().c_str() << "\n";
+      if (c_devtyp->pOnIdle) handlers_cpp << c_devtyp->pOnIdle->c_src.c_str() << "\n"; // insert the OnIdle handler if there is one
+      else handlers_cpp << "   return 0;\n"; // or a stub if not
+      handlers_cpp << handl_post;
       // input pin variables and handlers
       for (vector<P_pintyp*>::iterator I_pin = c_devtyp->P_pintypIv.begin(); I_pin != c_devtyp->P_pintypIv.end(); I_pin++)
       {
@@ -260,9 +269,10 @@ void P_builder::GenFiles(P_task* task)
               vars_h << "typedef " << string((*I_pin)->pStateD->c_src).erase((*I_pin)->pStateD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t;\n\n";
               handlers_cpp << "   devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t* edgeState = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_ipin_" << Ipin_name << "_state_t*>(edgeInstance->state);\n";
           }
-          if ((*I_pin)->pMsg->pPropsD) handlers_cpp << "   msg_" << (*I_pin)->pMsg->Name().c_str() << "_pyld_t* message = static_cast<msg_" <<  (*I_pin)->pMsg->Name().c_str() << "_pyld_t*>(msg);\n";
+          if ((*I_pin)->pMsg->pPropsD) handlers_cpp << "   const msg_" << (*I_pin)->pMsg->Name().c_str() << "_pyld_t* message = static_cast<const msg_" <<  (*I_pin)->pMsg->Name().c_str() << "_pyld_t*>(msg);\n";
           handlers_cpp << (*I_pin)->pHandl->c_src.c_str() << "\n";
           // return type is indicated as uint32_t yet in the handlers we see from DBT no return value is set. Is something expected here?
+          handlers_cpp << "   return 0;\n";
           handlers_cpp << handl_post;
       }
       vars_h << "\n";
@@ -277,9 +287,10 @@ void P_builder::GenFiles(P_task* task)
           if ((*O_pin)->pMsg->pPropsD) handlers_cpp << "   msg_" << (*O_pin)->pMsg->Name().c_str() << "_pyld_t* message = static_cast<msg_" <<  (*O_pin)->pMsg->Name().c_str() << "_pyld_t*>(msg);\n";
           handlers_cpp << (*O_pin)->pHandl->c_src.c_str() << "\n";
           // same thing: what is this function expected to return?
+          handlers_cpp << "   return 0;\n";
           handlers_cpp << handl_post;
       }
-      for (unsigned int thread = 0; thread < (*board)->P_corev[core]->P_threadv.size(); thread++) if ((*(*board)->P_corev[core]->P_threadv[thread]).P_devicel.size()) WriteThreadVars(coreNum, thread, (*board)->P_corev[core]->P_threadv[thread], vars_h);
+      for (unsigned int thread = 0; thread < (*board)->P_corev[core]->P_threadv.size(); thread++) if ((*(*board)->P_corev[core]->P_threadv[thread]).P_devicel.size()) WriteThreadVars(task_dir, coreNum, thread, (*board)->P_corev[core]->P_threadv[thread], vars_h);
       vars_h.close();
       vars_cpp.close();
       handlers_h.close();
@@ -289,18 +300,19 @@ void P_builder::GenFiles(P_task* task)
   }
   }
   }
+  cores_sh.close();
 }
 
 //------------------------------------------------------------------------------
 
-void P_builder::WriteThreadVars(unsigned int core_num, unsigned int thread_num, P_thread* thread, fstream& vars_h)
+void P_builder::WriteThreadVars(string& task_dir, unsigned int core_num, unsigned int thread_num, P_thread* thread, fstream& vars_h)
 {
      // a trivial bit more overhead, perhaps, then passing this as an argument. The *general* method would extract the number of device types from the thread's device list.
      P_devtyp* t_devtyp = (*thread->P_devicel.begin())->pP_devtyp;
      // we could choose to create separate .h files for each thread giving the externs but it seems simpler
      // and arguably more flexible to put all the external declarations in a single .h
      // The actual data definitions go one file per thread so we can load the resultant data files individually.
-     fstream vars_cpp(static_cast<stringstream*>(&(stringstream(par->taskpath+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<core_num<<"_"<<thread_num<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
+     fstream vars_cpp(static_cast<stringstream*>(&(stringstream(task_dir+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<core_num<<"_"<<thread_num<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
      vars_h << "\n";
      vars_h << "//-------------------- Core " << core_num << " Thread " << thread_num << " variables --------------------\n";
      // At the bottom of the memory structure is the ThreadContext
@@ -308,7 +320,7 @@ void P_builder::WriteThreadVars(unsigned int core_num, unsigned int thread_num, 
      vars_cpp << "#include \"vars_" << core_num << ".h\"\n";
      vars_cpp << "#include \"handlers_" << core_num << ".h\"\n\n";
      vars_cpp << "//-------------------- Core " << core_num << " Thread " << thread_num << " variables --------------------\n";
-     vars_cpp << "ThreadCtxt_t Thread_" << thread_num <<"_Context = {&Thread_" << thread_num << "_Context,1,Thread_" << thread_num << "_DeviceTypes," << thread->P_devicel.size() <<  ",Thread_" << thread_num << "_Devices,";
+     vars_cpp << "ThreadCtxt_t Thread_" << thread_num <<"_Context __attribute__ ((section (\".thr" << thread_num << "_base\"))) = {&Thread_" << thread_num << "_Context,1,Thread_" << thread_num << "_DeviceTypes," << thread->P_devicel.size() <<  ",Thread_" << thread_num << "_Devices,";
      if (t_devtyp->par->pPropsD) vars_cpp << "&GraphProperties,0,0,0,1,0};\n";
      else vars_cpp << "0,0,0,0,1,0};\n";
      vars_h << "extern struct PDeviceType Thread_" << thread_num << "_DeviceTypes[1];\n";
@@ -321,8 +333,7 @@ void P_builder::WriteThreadVars(unsigned int core_num, unsigned int thread_num, 
      for (vector<P_pintyp*>::iterator ipin = t_devtyp->P_pintypIv.begin(); ipin != t_devtyp->P_pintypIv.end(); ipin++) dev_in_msg_types.insert((*ipin)->pMsg);
      for (vector<P_pintyp*>::iterator opin = t_devtyp->P_pintypOv.begin(); opin != t_devtyp->P_pintypOv.end(); opin++) dev_out_msg_types.insert((*opin)->pMsg);
      vars_cpp << "devTyp_t Thread_" << thread_num << "_DeviceTypes[1] = {&devtyp_" << t_devtyp->Name().c_str() << "_RTS_handler,";
-     if (t_devtyp->pOnIdle) vars_cpp << "&devtyp_" << t_devtyp->Name().c_str() << "_OnIdle_handler,";
-     else vars_cpp << "0,";
+     vars_cpp << "&devtyp_" << t_devtyp->Name().c_str() << "_OnIdle_handler,";
      vars_cpp << "&devtyp_" << t_devtyp->Name().c_str() << "_OnCtl_handler,";
      if (t_devtyp->pPropsD) vars_cpp << "sizeof(devtyp_" << t_devtyp->Name().c_str() << "_props_t),";
      else vars_cpp << "0,";
@@ -486,7 +497,7 @@ void P_builder::WriteThreadVars(unsigned int core_num, unsigned int thread_num, 
                     }
                     initialiser_3.seekp(-1,ios_base::cur);
                     initialiser_3 << "};\n";
-                    vars_cpp << "uint32_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutPin_" << (*pin)->Name().c_str() << "_Tgts[" << out_pin_idxs.size() << "] = " << initialiser_3.str().c_str();
+                    vars_cpp << "outEdge_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutPin_" << (*pin)->Name().c_str() << "_Tgts[" << out_pin_idxs.size() << "] = " << initialiser_3.str().c_str();
                  }
              }
              initialiser_2.seekp(-1,ios_base::cur);
@@ -535,39 +546,40 @@ void P_builder::WriteThreadVars(unsigned int core_num, unsigned int thread_num, 
 
 void P_builder::CompileBins(P_task * task)
 {
+     string task_dir(par->taskpath+task->Name()+"/");
      if (!task->linked)
      {
         par->Post(811, task->Name());
         return;
      }
      // create all the necessary build directories
-     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+COMMON_PATH))->str().c_str());
-     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+TINSEL_PATH))->str().c_str());
-     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+BIN_PATH))->str().c_str());
-     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<par->taskpath+BUILD_PATH))->str().c_str());
+     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+COMMON_PATH))->str().c_str());
+     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+TINSEL_PATH))->str().c_str());
+     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+BIN_PATH))->str().c_str());
+     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+BUILD_PATH))->str().c_str());
      // copy static files to their relevant places: softswitch sources,
-     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+COMMON_SRC_PATH<<"/* "<<RECURSIVE_CPY<<" "<<par->taskpath+COMMON_PATH))->str().c_str()))
+     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+COMMON_SRC_PATH<<"/* "<<PERMISSION_CPY<<" "<<RECURSIVE_CPY<<" "<<task_dir+COMMON_PATH))->str().c_str()))
      {
-        par->Post(807, (par->taskpath+COMMON_PATH).c_str());
+        par->Post(807, (task_dir+COMMON_PATH).c_str());
         return;
      }
      // Tinsel code
-     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+TINSEL_SRC_PATH<<"/* "<<RECURSIVE_CPY<<" "<<par->taskpath+TINSEL_PATH))->str().c_str()))
+     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+TINSEL_SRC_PATH<<"/* "<<PERMISSION_CPY<<" "<<RECURSIVE_CPY<<" "<<task_dir+TINSEL_PATH))->str().c_str()))
      {
-         par->Post(807, (par->taskpath+TINSEL_SRC_PATH).c_str());
+         par->Post(807, (task_dir+TINSEL_SRC_PATH).c_str());
          return;
      }
      // Makefile
-     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+STATIC_SRC_PATH<<"Makefile "<<par->taskpath+BUILD_PATH))->str().c_str()))
+     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+STATIC_SRC_PATH<<"Makefile "<<task_dir+BUILD_PATH))->str().c_str()))
      {
-         par->Post(807, (par->taskpath+BUILD_PATH).c_str());
+         par->Post(807, (task_dir+BUILD_PATH).c_str());
          return;
      }
      // kludgey line for C++98; this can be greatly simplified in C++11 using to_string.
      // the makefile will have a target "softswitch_%.elf" which will produce a binary with the
      // (virtual) core number appended. Build failures generate a fatal error as expected.
      // if (system(string(COREMAKE_BASE).append(static_cast<ostringstream*>(&(ostringstream()<<c))->str()).c_str()))
-     if (system(static_cast<stringstream*>(&(stringstream("(cd ", ios_base::out | ios_base::ate)<<par->taskpath+BUILD_PATH<<";"<<COREMAKE_BASE<<")"))->str().c_str()))
+     if (system(static_cast<stringstream*>(&(stringstream("(cd ", ios_base::out | ios_base::ate)<<task_dir+BUILD_PATH<<";"<<COREMAKE_BASE<<")"))->str().c_str()))
      {
         par->Post(805);
         return;
@@ -579,12 +591,15 @@ void P_builder::CompileBins(P_task * task)
      {
      for (unsigned int c = 0; c < (*board)->P_corev.size(); c++)
      {
-         // a failure to read the generated binary may not be absolutely fatal; this could be retrieved later if
-         // there was a transient read error (e.g. reading over a network connection)
-         string binary_name(static_cast<stringstream*>(&(stringstream(COREBIN_BASE, ios_base::out | ios_base::ate)<<coreNum<<".elf"))->str());
-         if (!((*board)->P_corev[c]->pCoreBin->Binary = fopen(binary_name.c_str(),"r")))
-            par->Post(806, binary_name);
-         ++coreNum;
+         if ((*board)->P_corev[c]->P_threadv[0]->P_devicel.size() && ((*board)->P_corev[c]->P_threadv[0]->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
+         {
+            // a failure to read the generated binary may not be absolutely fatal; this could be retrieved later if
+            // there was a transient read error (e.g. reading over a network connection)
+            string binary_name(static_cast<stringstream*>(&(stringstream(task_dir+BIN_PATH, ios_base::out | ios_base::ate)<<"/"<<COREBIN_BASE<<coreNum<<".elf"))->str());
+            if (!((*board)->P_corev[c]->pCoreBin->Binary = fopen(binary_name.c_str(),"r")))
+               par->Post(806, binary_name);
+            ++coreNum;
+         }
      }
      }
      }

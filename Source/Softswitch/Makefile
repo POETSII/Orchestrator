@@ -27,6 +27,11 @@ ifndef BIN_DIR
 BIN_DIR := ../bin
 endif
 
+ifdef TRIVIAL_LOG_HANDLER
+SOFTSWITCH_DEPS = handler_log_t.h
+LH_CFLAGS = -D TRIVIAL_LOG_HANDLER 
+endif
+
 # RISC-V tools
 RV_ARCH     = rv32imf
 RV_CC       = riscv32-unknown-elf-gcc
@@ -57,7 +62,7 @@ vpath libgcc.a $(RV_GCC_LIBS)
 VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC)
 
 # Local compiler flags
-CFLAGS = $(RV_CFLAGS) -O2 -I $(TINSELINC) -I $(SOFTSWINC) -I $(GENINC)
+CFLAGS = $(RV_CFLAGS) $(LH_CFLAGS) -O2 -I $(TINSELINC) -I $(SOFTSWINC) -I $(GENINC)
 LDFLAGS = -melf32lriscv -G 0 -L$(RV_LIBS) -L$(RV_GCC_LIBS) -lgcc -lc
 
 SECEXPCPPS := $(GENSRC)/%.cpp
@@ -65,17 +70,28 @@ SECEXPOS := %.o
 
 # binary targets
 TARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_%.elf,$(wildcard $(GENINC)/vars_*.h))
+VCTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_code_%.v,$(wildcard $(GENINC)/vars_*.h))
+VDTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_data_%.v,$(wildcard $(GENINC)/vars_*.h))
 # targets for thread-local variables 
 THREADVARS := $(patsubst $(GENSRC)/%.cpp,%.o,$(wildcard $(GENSRC)/vars_*_*.cpp))
 
 .PHONY: all clean printvars
-all : $(TARGETS)
-	$(foreach TARGET,$<,cp $(TARGET) $(BIN_DIR)/$(TARGET))
+all : $(TARGETS) $(VCTARGETS) $(VDTARGETS)
 
-softswitch_%.o : softswitch_%.cpp softswitch_common.h softswitch.h poets_msg.h poets_hardware.h tinsel.h $(TINSELINC)/config.h
+# This line can be given a target/prerequisite (tgt : $(TARGETS)) if needed
+#	$(foreach TARGET,$<,cp $(TARGET) $(BIN_DIR)/$(TARGET))
+
+$(BIN_DIR)/softswitch_code_%.v: $(BIN_DIR)/softswitch_%.elf
+	$(TINSELBIN)/checkelf.sh $<
+	$(RV_OBJCOPY) -O verilog --only-section=.text $< $@
+
+$(BIN_DIR)/softswitch_data_%.v: $(BIN_DIR)/softswitch_%.elf
+	$(RV_OBJCOPY) -O verilog --remove-section=.text --set-section-flags .bss=alloc,load,contents $< $@
+
+softswitch_%.o : softswitch_%.cpp softswitch_common.h softswitch.h poets_msg.h poets_hardware.h tinsel.h $(TINSELINC)/config.h $(SOFTSWITCH_DEPS)
 	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
 
-softswitch.o : softswitch.cpp softswitch.h poets_msg.h poets_hardware.h tinsel.h $(TINSELINC)/config.h
+softswitch.o : softswitch.cpp softswitch.h poets_msg.h poets_hardware.h tinsel.h $(TINSELINC)/config.h $(SOFTSWITCH_DEPS)
 	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
 
 poets_msg.o : poets_msg.cpp poets_msg.h poets_hardware.h $(TINSELINC)/config.h
@@ -86,8 +102,8 @@ io.o : io.c io.h tinsel.h $(TINSELINC)/config.h
 
 ## the pattern substitution should find all vars_x_y.o created from vars_x_y.cpp
 .SECONDEXPANSION:
-$(BIN_DIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o softswitch.o poets_msg.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link.ld entry.o libc.a libgcc.a
-	$(RV_LD) $(LDFLAGS) -T link.ld -o $@ $(filter-out link.ld, $^)
+$(BIN_DIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o softswitch.o poets_msg.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link_%.ld entry.o libc.a libgcc.a
+	$(RV_LD) $(LDFLAGS) -T link_$(notdir $*).ld -o $@ $(filter-out link_$(notdir $*).ld, $^)
 
 # this convoluted rule (we hope) will establish as a prerequisite for any file
 # vars_x_y.cpp to be compiled to vars_x_y.o a header file vars_x.h. We do this
@@ -109,8 +125,8 @@ handlers_%.o : handlers_%.cpp handlers_%.h vars_%.h
 entry.o : entry.S
 	$(RV_CC) $(CFLAGS) -Wall -c -o $@ $<
 
-link.ld : genld.sh
-	$< > link.ld
+link_%.ld : genld.sh
+	$< $(notdir $*) > link_$(notdir $*).ld
 
 $(TINSELINC)/config.h : $(CONFIG)
 	make -C $(TINSELINC)

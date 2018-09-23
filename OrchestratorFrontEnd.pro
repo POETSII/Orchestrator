@@ -3,8 +3,9 @@ QT -= gui
 
 CONFIG += c++11
 
-QMAKE_CC = mpicc
-QMAKE_CXX = mpicxx
+# these were originally without path.
+QMAKE_CC = /home/adr1r17/Prg/mpich-3.2.1/bin/mpicc
+QMAKE_CXX = /home/adr1r17/Prg/mpich-3.2.1/bin/mpicxx
 
 TARGET = root
 CONFIG += console
@@ -88,7 +89,8 @@ SOURCES += \
     Source/OrchBase/P_super.cpp \
     Source/NameServer/Ns_el.cpp \
     Source/OrchBase/P_owner.cpp \
-    Source/OrchBase/build_defs.cpp
+    Source/OrchBase/build_defs.cpp \
+    Source/OrchBase/CMsg_p.cpp
 
 
 # The following define makes your compiler emit warnings if you use
@@ -180,15 +182,21 @@ HEADERS += \
     Source/Injector/Injector.h \
     Source/NameServer/Ns_el.h \
     Source/OrchBase/P_owner.h \
-    Generics/dumpchan.h
+    Generics/dumpchan.h \
+    Source/OrchBase/CMsg_p.h \
+    Source/Parser/pconcretedef.h
 
-LIBS += "-L/usr/lib" -lmpi
+# mpich common install directory added
+LIBS += "-L/home/adr1r17/Prg/mpich-3.2.1/lib" "-L/usr/lib" -lmpi
 
+# mpi include path changed
 INCLUDEPATH += ./Source/Common \
     ./Source/OrchBase \
     ./Source/Parser \
     ./Source/NameServer \
     ./Source/Injector \
     ./Generics \
+    /home/adr1r17/Prg/mpich-3.2.1/include
     /usr/include \
-    /usr/include/mpi
+    #/usr/include/mpi
+

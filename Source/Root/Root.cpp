@@ -235,7 +235,8 @@ Post(50,pPmap[lIdx]->M[pL],int2str(pL));     // Ensure LogServer goes last
 Pkt.comm = Comms[lIdx];                      // Set LogServer's comm for the packet
 Pkt.Send(pL);
 }
-return 1;                                    // Return closedown flag
+return CommonBase::OnExit(&Pkt,0);           // Run the base class exit handler
+// return 1;                                 // Return closedown flag
 }
 
 //------------------------------------------------------------------------------
@@ -356,9 +357,9 @@ return 0;
 
 //------------------------------------------------------------------------------
 
-unsigned Root::Connect(bool server,string svc)
+unsigned Root::Connect(string svc)
 {
-if (unsigned err = CommonBase::Connect(server,svc)) return err;
+if (unsigned err = CommonBase::Connect(svc)) return err;
 FnMapx.push_back(new FnMap_t); // insert another function table
 
 // Root doesn't have to sit in the same local universe as the LogServer,
@@ -555,7 +556,7 @@ WALKVECTOR(ProcMap::ProcMap_t,pPmap[0]->vPmap,j) {   // Walk the local process l
   Pkt.Key(Q::SYST,Q::CONN);      // It's a connection request
   Pkt.Send((*j).P_rank);
 }
-if (Connect(MPICli,svc))
+if (Connect(svc))
    Post(60,svc.c_str());
 }
 //------------------------------------------------------------------------------

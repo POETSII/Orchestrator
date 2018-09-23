@@ -12,6 +12,8 @@ public:
                     Constraints();
 virtual ~           Constraints();
 
+map<string, unsigned> Constraintm;
+
 void                Dump(FILE * = stdout);
 
 };

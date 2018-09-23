@@ -117,7 +117,7 @@ for (unsigned B = 0; B < numBoxes; B++)
 P_box * pB = new P_box(this);          // New box
 pB->Npar(this);                        // Namebase parent
 pB->AutoName("Bx");                    // Derive the name off the uid
-pB->addr.SetBox(B+1);                  // Ordinal address number
+pB->addr.SetBox(B);                  // Ordinal address number
 pB->vBox=vSys;                         // Is this box real hardware?
 pB->Build(*pConfigl.begin());          // Assemble the hardware (model)
 G.InsertNode(pB->Id(),pB);             // Insert the box

@@ -29,7 +29,7 @@ P_addr             addr;
 vector<P_board *>  P_boardv;
 Bin *              pMothBin;
 P_graph *          par;
-Config_t *         pConfig;            // HW configuration object
+Config_t *         pConfig;         // HW configuration object
 bool               vBox;            // not a detected hardware box.
 
 };

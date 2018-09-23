@@ -1,16 +1,12 @@
 #ifndef _SOFTSWITCH_COMMON_H_
 #define _SOFTSWITCH_COMMON_H_
 
-#include <string>
-#include <map>
-#include <vector>
 #include "softswitch.h"
 
 #define P_MAX_OPINS_PER_DEVICE 32
 #define P_MSG_Q_MAXCOUNT 1
 #define P_ONIDLE_CHANGE 0x80000000
 #define IDLE_SWEEP_CHUNK_SIZE 128
-#define NUM_SUP_BUFS 4
 
 struct PDeviceInstance;
 struct PThreadContext;
@@ -175,9 +171,10 @@ typedef struct PThreadContext
    5) place any initial messages in the RTS queues.
    6) go into barrier and await other cores in the application.
 */
-template<class T> T offset_ptr(ThreadCtxt_t* base, T offset);
+// template<class T> T offset_ptr(ThreadCtxt_t* base, T offset);
 void softswitch_init(ThreadCtxt_t* thr_ctxt);
 void softswitch_finalize(ThreadCtxt_t* thr_ctxt, volatile void** send_buf, volatile void** recv_buf, volatile void** super_buf);
+void softswitch_alive(volatile void* send_buf); // debug: send alive message to host
 void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatile void* recv_buf);
 void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt);
 // handlers should reside in instruction memory and thus shouldn't need setup.

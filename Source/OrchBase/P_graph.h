@@ -26,7 +26,7 @@ void               Cm(Cli *);
 void               Dump(FILE * = stdout);
 bool               IsEmpty();
 inline void        Set1(bool vSys = true) {SetN(1, vSys);};
-inline void        Set2(bool vSys = true) {SetN(1, vSys);};
+inline void        Set2(bool vSys = true) {SetN(2, vSys);};
 void               SetN(unsigned, bool = false);
                                        // The hardware graph
 pdigraph<unsigned,P_box *,unsigned,P_link *,unsigned,P_port *> G;

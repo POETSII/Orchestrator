@@ -9,6 +9,7 @@ const string RECURSIVE_CPY = "";
 #elif (defined __GNUC__)
 const string SYS_COPY = "cp";
 const string RECURSIVE_CPY = "-r";
+const string PERMISSION_CPY = "-p";
 const string MAKEDIR = "mkdir";
 #endif
 

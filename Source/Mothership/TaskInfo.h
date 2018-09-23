@@ -10,6 +10,7 @@
 
 //typedef map<unsigned, unsigned> hardMap_t;    // physical->virtual mapping tables
 typedef map<P_core*,unsigned> hardMap_t;        // physical->virtual mapping tables
+typedef map<unsigned, P_core*> softMap_t;       // virtual->physical mapping tables
 typedef struct BinPair
 {
         Bin* instr;
@@ -20,19 +21,27 @@ class TaskInfo_t
 {
 public:
 
-  TaskInfo_t();
+  TaskInfo_t(string=string());
   virtual ~TaskInfo_t();
-  
+
+  string TaskName;            // task name
   unsigned char status;       // task runtime state
   P_box* VirtualBox;          // which boards/cores does this task use?
-  hardMap_t* CoreMap;         // which threads are on which board/core
   string BinPath;             // which directory has which task's binaries
 
-  inline vector<P_board*>& BoardsForTask() {return VirtualBox->P_boardv;};
+  inline vector<P_board*>& BoardsForTask() {return VirtualBox->P_boardv;}
+  inline P_core* getCore(uint32_t vCore) {return VCoreMap.find(vCore)->second;}
+  inline uint32_t getCore(P_core* Core) {return CoreMap.find(Core)->second;}
+  bool setCore(uint32_t, P_core*);
+  bool setCore(P_core*, uint32_t);
+  void insertCore(uint32_t, P_addr_t);
+  void deleteCore(uint32_t);
+  void deleteCore(P_core*);
   vector<P_core*>& CoresForTask();
   vector<P_thread*>& ThreadsForTask();
   vector<P_device*>& DevicesForTask();
   vector<BinPair_t>& BinariesForBoard(P_board*);
+
 
   static const unsigned char TASK_IDLE = 0x0;
   static const unsigned char TASK_BOOT = 0x1;
@@ -57,6 +66,12 @@ private:
   vector<P_device*> devices;
   
   map<P_board*,vector<BinPair_t>*> binaries;
+
+  // paired core maps
+  hardMap_t CoreMap;         // which physical core is which virtual core
+  softMap_t VCoreMap;        // which virtual core is which physical core
+
+  void removeCore(P_core*);   // takes the core out of the VirtualBox object.
   
 };
 

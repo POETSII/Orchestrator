@@ -20,12 +20,12 @@ class TMoth : public CommonBase, public HostLink
 public:
                       TMoth(int,char **,string);
 virtual ~             TMoth();
- 
+static void*          Accept(void*);
 // somewhat bodgey function to return the hardware address from the composite; needed because of
 // the actual hardware mappings; this is the Orchestrator-side equivalent of toAddr.
 static inline unsigned GetHWAddr(P_addr& VAddr) {return (VAddr.A_box << P_BOX_HWOS) | (VAddr.A_board << P_BOARD_HWOS) | (VAddr.A_core << P_CORE_HWOS) | (VAddr.A_thread << P_THREAD_HWOS);};
 // static void*          LoadBoard(void*); // threaded version of bootloader
-static void*          Twig(void*); // thread to handle Tinsel messages
+static void*          Twig(void*);
 
 private:
 unsigned              Boot(string);
@@ -53,9 +53,16 @@ unsigned              SystKill();
 unsigned              SystShow();
 unsigned              SystTopo();
 
+char                  MPI_Port[MPI_MAX_PORT_NAME]; // only access the port name through an atomic pointer
+
 public:
-unsigned              PAddress; // address of this mothership in POETS-space
-atomic<bool>          ForwardMsgs;
+unsigned            PAddress; // address of this mothership in POETS-space
+atomic<bool>        AcceptConns;
+atomic<bool>        ForwardMsgs;
+atomic<int>         Trank;
+atomic<char*>       MPIPort;
+static const char*  MPISvc;
+static const int    MPISrv = 1; // Mothercores are servers
  
 typedef unsigned (TMoth::*pMeth)(PMsg_p *,unsigned);
 typedef map<unsigned,pMeth> FnMap_t;
@@ -66,8 +73,8 @@ map<uint32_t,PinBuf_t*> TwigMap;              // dynamic buffer state for each d
 map<string, TaskInfo_t*> TaskMap;             // which tasks are mapped to the machine
 vector<pair<pthread_t*,int*>> BootMap;        // which booter is starting which board
 vector<FnMap_t*>    FnMapx;
-pthread_t           Twig_thread;              // thread for processing tinsel connections
-bool                twig_running;             // flag to show twig thread is active
+char                Port[MPI_MAX_PORT_NAME];  // MPI port for this mothership
+pthread_t           Twig_thread, MPI_accept_thread; // threads for accepting MPI connections and tinsel connections
 
 static const int    NumBoards = NUM_BOARDS_PER_BOX;
  

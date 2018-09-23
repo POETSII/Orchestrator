@@ -21,18 +21,18 @@ virtual unsigned Decode(PMsg_p * pPkt, unsigned cIdx)
 // class) member. If it's not in the derived class map, try the base class map.
 // If it's not there either, it gets junked.
 {
-//printf("%s::Decode ",Sderived.c_str());
+//  printf("%s::Decode ",Sderived.c_str());
                                        // Handler in the derived class?
 if (FnMapx[cIdx]->find(pPkt->Key())!=FnMapx[cIdx]->end()) {
-//  printf(".. derived\n"); fflush(stdout);
+//  printf(".. derived, key 0x%x\n", pPkt->Key()); fflush(stdout);
   return (this->*(*FnMapx[cIdx])[pPkt->Key()])(pPkt,cIdx);
 }
                                        // Nope. Base class?
 if (CommonBase::FnMapx[cIdx]->find(pPkt->Key())!=CommonBase::FnMapx[cIdx]->end()) {
-//  printf(".. base\n"); fflush(stdout);
+//  printf(".. base, key 0x%x\n", pPkt->Key()); fflush(stdout);
   return (this->*(*CommonBase::FnMapx[cIdx])[pPkt->Key()])(pPkt,cIdx);
 }
-//printf(".. dropped\n"); fflush(stdout);
+// printf(".. dropped, key 0x%x\n", pPkt->Key()); fflush(stdout);
                                        // Nope. Kick.
                                        // Pull out the unknown key and post what
                                        // little we know to the LogServer

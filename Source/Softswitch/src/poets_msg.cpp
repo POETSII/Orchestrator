@@ -1,18 +1,15 @@
 #include "poets_msg.h"
-#include <cstdio>
-#include <assert.h>
+#include <cstring>
 
 // bodgey declaration as a short-term hack to get around the problem of
 // this TU not linking when building non-Tinsel targets. Proper fix
 // is to separate tinsel.h into tinsel.h and tinsel.cpp.
-extern int tinselId(); 
+extern int tinselId();
 
 void set_msg_hdr(uint32_t dst, uint32_t edge, uint8_t pin, uint8_t len, uint16_t tag, P_Msg_Hdr_t* hdr)
 {
-        assert(len <= p_msg_pyld_size);               // die if the message is too big (in debug mode)
-	P_Msg_Hdr_t r_hdr;                            // can build a new header if we want
-	if (!hdr) hdr = &r_hdr;                       // or reuse the user-supplied one
-	hdr->destDeviceAddr = dst;                    // then pack all the header information
+        if (len > p_msg_pyld_size) return;            // die if the message is too big
+	hdr->destDeviceAddr = dst;                    // pack all the header information
 	hdr->destEdgeIndex = edge;
 	hdr->destPin = pin;
 	hdr->messageLenBytes = len+sizeof(P_Msg_Hdr_t);
@@ -21,17 +18,13 @@ void set_msg_hdr(uint32_t dst, uint32_t edge, uint8_t pin, uint8_t len, uint16_t
 
 void pack_msg(uint32_t dst, uint32_t pin, uint32_t edge, uint8_t len, uint16_t tag, void* pyld, P_Msg_t* msg)
 {
-	P_Msg_t r_msg;                                       // can build a new message if we want
-	if (!msg) msg = &r_msg;                              // or reuse the user-supplied one
 	set_msg_hdr(dst, pin, edge, len, tag, &msg->header); // pack up the header
 	memcpy(msg->payload, pyld, len);                     // and the payload 
 }
 
 void set_super_hdr(uint32_t src, uint16_t command, uint16_t pin, uint32_t len, uint32_t seq, P_Sup_Hdr_t* hdr)
 {
-        P_Sup_Hdr_t rs_hdr;
-	if (!hdr) hdr = &rs_hdr;
-        hdr->sourceDeviceAddr = src;
+        hdr->sourceDeviceAddr = src | P_SUP_MASK;            // messages to Supervisor have a flag to indicate this fact. 
         hdr->command = command;
         hdr->destPin = pin;
         hdr->cmdLenBytes = len;
@@ -72,8 +65,9 @@ bool super_buf_recvd(const P_Sup_Msg_t* msg)
 // sequence numbers have been filled.
      uint32_t len = msg->header.cmdLenBytes;
      if (len == 0) return false; // no length in seq 0 => seq 0 not received.
-     while ((len -= sizeof(P_Sup_Msg_t)) > 0)
+     while (len > sizeof(P_Sup_Msg_t))
      {
+        len -= sizeof(P_Sup_Msg_t);
         if ((++msg)->header.seq == 0) return false; // any zero seq anywhere else => not done.
      }
      return true;

@@ -2,11 +2,11 @@
 #include "tinsel.h"
 #include <cstring>
 #include "stdint.h"
-#include <algorithm>
-using namespace std;
 
+/*
 template<class T> T offset_ptr(ThreadCtxt_t* base, T offset)
 {
+  if (offset == 0) return 0; // any NULL pointer should not be reinterpreted!
   // dangerous but necessary - we have no idea how large data structures are and the best that can be done in the loaded context
   // is to give them as a pointer referenced to a reliable base address. There is little we can count on here.
   uintptr_t offset_addr = reinterpret_cast<uintptr_t>(offset);
@@ -26,14 +26,15 @@ template<class T> T offset_ptr(ThreadCtxt_t* base, T offset)
      else return reinterpret_cast<T>(base_addr+physical_offset);
   }
 }
+*/
 
 void softswitch_init(ThreadCtxt_t* thr_ctxt)
 {
-     for (uint32_t i=5; i < (1<<TinselLogMsgsPerThread); i++) tinselAlloc(tinselSlot(i)); // allocate receive slots.
+     for (uint32_t i=1+NUM_SUP_BUFS+MAX_LOG_MSG_BUFS; i < (1<<TinselLogMsgsPerThread); i++) tinselAlloc(tinselSlot(i)); // allocate receive slots.
      // we are going to pack the structures together as tightly as we can, obeying any alignment restrictions
-     thr_ctxt->devTyps = offset_ptr<devTyp_t*>(thr_ctxt, thr_ctxt->devTyps);
-     thr_ctxt->devInsts = offset_ptr<devInst_t*>(thr_ctxt, thr_ctxt->devInsts);
-     thr_ctxt->properties = offset_ptr<const void*>(thr_ctxt, thr_ctxt->properties);
+     //thr_ctxt->devTyps = offset_ptr<devTyp_t*>(thr_ctxt, thr_ctxt->devTyps);
+     //thr_ctxt->devInsts = offset_ptr<devInst_t*>(thr_ctxt, thr_ctxt->devInsts);
+     //thr_ctxt->properties = offset_ptr<const void*>(thr_ctxt, thr_ctxt->properties);
      for (uint32_t deviceType = 0; deviceType < thr_ctxt->numDevTyps; deviceType++) deviceType_init(deviceType, thr_ctxt);
      for (uint32_t device = 0; device < thr_ctxt->numDevInsts; device++) device_init(&thr_ctxt->devInsts[device], thr_ctxt);
 }
@@ -56,13 +57,23 @@ void softswitch_finalize(ThreadCtxt_t* thr_ctxt, volatile void** send_buf, volat
      for (uint32_t i = 0; i < (1<<TinselLogMsgsPerThread); i++) tinselAlloc(tinselSlot(i));
 }
 
+void softswitch_alive(volatile void* send_buf)
+{
+     // very simple message to say I'm alive.
+     set_super_hdr(tinselId() << P_THREAD_OS, P_PKT_MSGTYP_ALIVE, P_SUP_PIN_SYS, sizeof(P_Sup_Hdr_t), 0, static_cast<P_Sup_Hdr_t*>(const_cast<void*>(send_buf)));
+     // block until we can send it,
+     while (!tinselCanSend());
+     tinselSetLen(sizeof(P_Sup_Hdr_t));
+     // and then indicate to the host that we are here.
+     tinselSend(tinselHostId(), send_buf);
+}
+
 void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatile void* recv_buf)
 {
      // first phase of barrier: set up a standard message to send to the supervisor
-     uint32_t this_thread = tinselId();
+     set_super_hdr(tinselId() << P_THREAD_OS, P_PKT_MSGTYP_BARRIER, P_SUP_PIN_SYS, sizeof(P_Sup_Hdr_t), 0, static_cast<P_Sup_Hdr_t*>(const_cast<void*>(send_buf)));
      // block until we can send it,
      while (!tinselCanSend());
-     set_super_hdr(tinselId(), P_PKT_MSGTYP_BARRIER, P_SUP_PIN_SYS, sizeof(P_Sup_Hdr_t), 0, static_cast<P_Sup_Hdr_t*>(const_cast<void*>(send_buf)));
      tinselSetLen(sizeof(P_Sup_Hdr_t));
      // and then issue the message indicating this thread's startup is complete.
      tinselSend(tinselHostId(), send_buf);
@@ -70,13 +81,15 @@ void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatil
      thr_ctxt->ctlEnd = 1;
      while (thr_ctxt->ctlEnd)
      {
-           // by blocking awaiting a receive 
+           // by blocking awaiting a receive. 
            while (!tinselCanRecv());
 	   recv_buf = tinselRecv();
 	   P_Msg_t* rcv_pkt = static_cast<P_Msg_t*>(const_cast<void*>(recv_buf));
 	   // look for barrier message
 	   if (rcv_pkt->header.messageTag == P_MSG_TAG_INIT)
 	   {
+	      // *Debug: send packet out to show we have passed the barrier* 
+	      // softswitch_alive(send_buf);
 	      // and once it's been received, process it as a startup message
 	      softswitch_onReceive(thr_ctxt, recv_buf);
 	      thr_ctxt->ctlEnd = 0;
@@ -94,8 +107,8 @@ void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt)
      deviceType->OnIdle_Handler = OnIdle_Handlers[thr_ctxt->threadID.PThread][deviceType_num];
      deviceType->OnCtl_Handler = OnCtl_Handlers[thr_ctxt->threadID.PThread][deviceType_num]; // OnCtl_Handler should amongst other things handle monitoring.
      */
-     deviceType->outputTypes = offset_ptr<out_pintyp_t*>(thr_ctxt, deviceType->outputTypes);
-     deviceType->inputTypes = offset_ptr<in_pintyp_t*>(thr_ctxt, deviceType->inputTypes);
+     //deviceType->outputTypes = offset_ptr<out_pintyp_t*>(thr_ctxt, deviceType->outputTypes);
+     //deviceType->inputTypes = offset_ptr<in_pintyp_t*>(thr_ctxt, deviceType->inputTypes);
      // for (uint32_t o = 0; o < deviceType->numOutputTypes; o++) outputPinType_init(o, deviceType_num, thr_ctxt);
      // for (uint32_t i = 0; i < deviceType->numInputTypes; i++) inputPinType_init(i, deviceType_num, thr_ctxt);
 }
@@ -103,11 +116,11 @@ void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt)
 void device_init(devInst_t* device, ThreadCtxt_t* thr_ctxt)
 {
      device->thread = thr_ctxt;
-     device->devType = offset_ptr<const devTyp_t*>(thr_ctxt, device->devType);
-     device->properties = offset_ptr<const void*>(thr_ctxt, device->properties);
-     device->state = offset_ptr<void*>(thr_ctxt, device->state);
-     device->outputPins = offset_ptr<outPin_t*>(thr_ctxt, device->outputPins);
-     device->inputPins = offset_ptr<inPin_t*>(thr_ctxt, device->inputPins);
+     //device->devType = offset_ptr<const devTyp_t*>(thr_ctxt, device->devType);
+     //device->properties = offset_ptr<const void*>(thr_ctxt, device->properties);
+     //device->state = offset_ptr<void*>(thr_ctxt, device->state);
+     //device->outputPins = offset_ptr<outPin_t*>(thr_ctxt, device->outputPins);
+     //device->inputPins = offset_ptr<inPin_t*>(thr_ctxt, device->inputPins);
      for (uint32_t out = 0; out < device->numOutputs; out++) outPin_init(out, device, thr_ctxt); 
      for (uint32_t msg_typ = 0; msg_typ < device->numInputs; msg_typ++) inPin_init(msg_typ, device, thr_ctxt);
 }
@@ -116,11 +129,11 @@ void outPin_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt)
 {
      outPin_t* o_pin = &device->outputPins[pin];
      o_pin->device = device;
-     o_pin->pinType = offset_ptr<out_pintyp_t*>(thr_ctxt, o_pin->pinType);
-     o_pin->targets = offset_ptr<outEdge_t*>(thr_ctxt, o_pin->targets);
-     for (int tgt = 0; tgt < o_pin->numTgts; tgt++) outPinTgt_init(tgt, o_pin, thr_ctxt);
+     //o_pin->pinType = offset_ptr<out_pintyp_t*>(thr_ctxt, o_pin->pinType);
+     //o_pin->targets = offset_ptr<outEdge_t*>(thr_ctxt, o_pin->targets);
+     for (uint32_t tgt = 0; tgt < o_pin->numTgts; tgt++) outPinTgt_init(tgt, o_pin, thr_ctxt);
      // initialise the message queue circular buffers. Buffer size 0 implies no initialisation.
-     for (int buf = 0; buf < P_MSG_Q_MAXCOUNT; buf++)
+     for (uint32_t buf = 0; buf < P_MSG_Q_MAXCOUNT; buf++)
      { 
          if (buf+1 != P_MSG_Q_MAXCOUNT) o_pin->msg_q_buf[buf].next = &o_pin->msg_q_buf[buf+1];
          else o_pin->msg_q_buf[P_MSG_Q_MAXCOUNT-1].next = &o_pin->msg_q_buf[0];
@@ -139,17 +152,17 @@ void inPin_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt)
 {
      inPin_t* i_pin = &device->inputPins[pin];
      i_pin->device = device;
-     i_pin->pinType = offset_ptr<in_pintyp_t*>(thr_ctxt, i_pin->pinType);
-     i_pin->sources = offset_ptr<inEdge_t*>(thr_ctxt, i_pin->sources);
-     for (int src = 0; src < i_pin->numSrcs; src++) inPinSrc_init(src, i_pin, thr_ctxt);
+     //i_pin->pinType = offset_ptr<in_pintyp_t*>(thr_ctxt, i_pin->pinType);
+     //i_pin->sources = offset_ptr<inEdge_t*>(thr_ctxt, i_pin->sources);
+     for (uint32_t src = 0; src < i_pin->numSrcs; src++) inPinSrc_init(src, i_pin, thr_ctxt);
 }
 
 void inPinSrc_init(uint32_t src, inPin_t* pin, ThreadCtxt_t* thr_ctxt)
 {
      inEdge_t* i_src = &pin->sources[src];
      i_src->pin = pin;
-     i_src->properties = offset_ptr<const void*>(thr_ctxt, i_src->properties);
-     i_src->state = offset_ptr<void*>(thr_ctxt, i_src->state);
+     //i_src->properties = offset_ptr<const void*>(thr_ctxt, i_src->properties);
+     //i_src->state = offset_ptr<void*>(thr_ctxt, i_src->state);
 }
 
 int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
@@ -166,19 +179,19 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
        {
 	  // if so, move its contents into the hardware mailbox
 	  P_Msg_Q_t* msg = softswitch_popMsg(cur_pin);
-	  // offset the copy location by the header length to space for header to be inserted.
+	  // offsetting the copy location by the header length to space for header to be inserted.
 	  memcpy(static_cast<char*>(const_cast<void*>(send_buf))+sizeof(P_Msg_Hdr_t), &msg->msg, cur_pin->pinType->sz_msg);
 	  buffered = 1;
        }
        // then run the application's OnSend (which, if we are buffering, may alter the buffer again)
-       uint32_t RTS_updated = cur_pin->pinType->Send_Handler(thr_ctxt->properties, cur_device, const_cast<void*>(send_buf), buffered);
+       uint32_t RTS_updated = cur_pin->pinType->Send_Handler(thr_ctxt->properties, cur_device, static_cast<char*>(const_cast<void*>(send_buf))+sizeof(P_Msg_Hdr_t), buffered);
     }
     // send the message (to as many destinations as possible before the network blocks).
     while (tinselCanSend() && cur_device->currTgt < cur_pin->numTgts)
     {
           const outEdge_t* target = &cur_pin->targets[cur_device->currTgt++];
           set_msg_hdr(target->tgt, target->tgtEdge, target->tgtPin, cur_pin->pinType->sz_msg, cur_pin->pinType->msgType, static_cast<P_Msg_Hdr_t*>(const_cast<void*>(send_buf)));
-          tinselSend(target->tgt, send_buf);
+          tinselSend((target->tgt >> P_THREAD_OS), send_buf);
     }   
     // then update the RTS list as necessary
     softswitch_onRTS(thr_ctxt, cur_device);
@@ -191,18 +204,38 @@ void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
      P_Msg_Hdr_t* recv_pkt = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(recv_buf));
      devInst_t* recv_device_begin = thr_ctxt->devInsts;
      devInst_t* recv_device_end = thr_ctxt->devInsts+thr_ctxt->numDevInsts;
-     // device in range? A Supervisor packet may target the entire group by sending a device number above the max.
-     if (((recv_pkt->destDeviceAddr & P_DEVICE_MASK) >> P_DEVICE_OS) < thr_ctxt->numDevInsts)
-        recv_device_end = (recv_device_begin =  &thr_ctxt->devInsts[(recv_pkt->destDeviceAddr & P_DEVICE_MASK) >> P_DEVICE_OS]) + 1;
-     else if (!(recv_pkt->destDeviceAddr & P_SUP_MASK)) return; // exit and dump packet if the device is out of range.
+     // device in range? A Supervisor packet may target the entire group by sending a broadcast address.    
+     if (recv_pkt->destDeviceAddr != DEST_BROADCAST)
+     {
+        if (((recv_pkt->destDeviceAddr & P_DEVICE_MASK) >> P_DEVICE_OS) < thr_ctxt->numDevInsts)
+           recv_device_end = (recv_device_begin =  &thr_ctxt->devInsts[(recv_pkt->destDeviceAddr & P_DEVICE_MASK) >> P_DEVICE_OS]) + 1;
+        else return; // exit and dump packet if the device is out of range.
+     }
      uint32_t RTS_updated;
+     // stop message ends the simulation and exits the update loop at the earliest possible opportunity
+     if ((recv_pkt->messageTag == P_MSG_TAG_STOP) && (recv_pkt->destPin == P_SUP_PIN_SYS))
+     {
+        thr_ctxt->ctlEnd = 1;
+	return;
+     }
      // go through the devices (usually only 1)
      for (devInst_t* recv_device = recv_device_begin; recv_device != recv_device_end; recv_device++)
      {
         // which pin will receive the message?
         inPin_t* recv_pin = &recv_device->inputPins[recv_pkt->destPin];
 	// source was a supervisor? Run OnCtl. We assume here full context (thread, device) should be passed.
-	if (recv_pkt->destDeviceAddr & P_SUP_MASK) RTS_updated = recv_device->devType->OnCtl_Handler(thr_ctxt, recv_device, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+sizeof(P_Msg_Hdr_t));
+	if (recv_pkt->destDeviceAddr & P_SUP_MASK)
+	{
+	   // **BODGE BODGE BODGE** *Very* temporary handler for dealing with __init__. This works ONLY because
+	   // the __init__ pin on all devices that have it in existing XML happens to be pin 0 (which means that
+	   // a Supervisor can guess what the pin number is supposed to be). In any case, this should route it
+	   // through the __init__ handler. Luckily message types are globally unique, or likewise this wouldn't
+	   // work if the device had no __init__ pin. This test should be removed as soon as __init__ pins lose
+	   // any special meaning in existing XML!
+	   if ((recv_pkt->messageTag == P_MSG_TAG_INIT) && (recv_pin->pinType->msgType == recv_pkt->messageTag))
+	      RTS_updated = recv_pin->pinType->Recv_handler(thr_ctxt->properties, recv_device, 0, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+sizeof(P_Msg_Hdr_t));
+	   else RTS_updated = recv_device->devType->OnCtl_Handler(thr_ctxt, recv_device, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+sizeof(P_Msg_Hdr_t));
+	}
         // otherwise handle as a normal device through the appropriate receive handler.
         else RTS_updated = recv_pin->pinType->Recv_handler(thr_ctxt->properties, recv_device, &recv_pin->sources[recv_pkt->destEdgeIndex], static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+sizeof(P_Msg_Hdr_t));
 	// finally, run the RTS handler for the device.
@@ -248,16 +281,15 @@ bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt)
 
 void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device)
 {
-  uint32_t rts[P_MAX_OPINS_PER_DEVICE>>5];
-  void* rts_buf[P_MAX_OPINS_PER_DEVICE];
-  uint32_t num_grps = device->numOutputs >> 5;
+  uint32_t rts[P_MAX_OPINS_PER_DEVICE>>5]; // flags for new ready-to-send pins
+  void* rts_buf[P_MAX_OPINS_PER_DEVICE] = {}; // send buffers for the RTS handler, using default zero-initialisation
+  uint32_t num_grps = (31+device->numOutputs) >> 5;
   uint32_t pin_grp, pin, pins_this_grp;
   // first need to deal with the active sending device. If it's finished sending
   // a message, we remove it from the queue before handling new insertions.
-  outPin_t* cur_pin = 0;
+  outPin_t* cur_pin = device->RTSPinHead;
   if (device == thr_ctxt->RTSHead)
   {
-     cur_pin = device->RTSPinHead;
      if (device->currTgt >= cur_pin->numTgts)
      {
         // all targets for the current message have been sent to. Go to next target group. 
@@ -275,7 +307,9 @@ void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device)
       pins_this_grp = (pin_grp == num_grps-1 ? (device->numOutputs - 32*pin_grp) : 32);
       for (pin = 0; pin < pins_this_grp; pin++)
       {
-	  rts_buf[32*pin_grp + pin] = &device->outputPins[32*pin_grp + pin].msg_q_tail->msg;
+	  // any pin that still has message buffers available can provide one to the RTS handler.
+	  if (P_Msg_Q_t* pin_nextMsg = softswitch_nextMsg(&device->outputPins[32*pin_grp + pin]))
+	     rts_buf[32*pin_grp + pin] = &pin_nextMsg->msg;	  
       } 	  
   }
   // run the application's RTS handler
@@ -292,9 +326,15 @@ void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device)
 	     {
 	        // yes. Push the various queues. 
 	        outPin_t* output_pin = &device->outputPins[32*pin_grp + pin];
-	        P_Msg_Q_t* msg_buf;
-	        // try to get a buffer for the message and append if we succeed.
-	        if (msg_buf = softswitch_nextMsg(output_pin)) softswitch_pushMsg(output_pin, msg_buf);
+		if (rts_buf[32*pin_grp + pin]) // pin has an available message buffer?
+		{
+	           // append to the pin's message queue.
+		   // if we can't append, the message will be silently dropped. This
+		   // *could* be fixed with a while(!softswitch_nextMsg) loop and update
+		   // of the buffer until it could be buffered, but this could be complicated
+		   // and may introduce the possibility of deadlock.
+	           softswitch_pushMsg(output_pin, softswitch_nextMsg(output_pin));
+		}
 	        // pin not already active. Insert into the queue.
 	        if (!(output_pin->RTSPinPrev || output_pin->RTSPinNext)) softswitch_pushRTSPin(device, output_pin);
 	     }
@@ -302,7 +342,7 @@ void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device)
      }
   }
   // rotate the currently active pin round to the back of the device's list if it still has messages to send
-  if (cur_pin && cur_pin->msg_q_head) softswitch_pushRTSPin(device, cur_pin);
+  if (cur_pin && (cur_pin != device->RTSPinHead) && cur_pin->msg_q_head) softswitch_pushRTSPin(device, cur_pin);
   // device not already active. Insert into the queue, or rotate the device round to the back of the thread's RTS list if it's still RTS.
   if (!(device->RTSPrev || device->RTSNext || (device == thr_ctxt->RTSHead)) && device->RTSPinHead) softswitch_pushRTS(thr_ctxt, device); 
 }
@@ -323,7 +363,8 @@ devInst_t* softswitch_popRTS(PThreadContext* thr_ctxt)
       devInst_t* popped = thr_ctxt->RTSHead;
       // single = in the if-conditional is correct here: we are setting and then testing for 0 having set.
       if (thr_ctxt->RTSHead = popped->RTSNext) thr_ctxt->RTSHead->RTSPrev = 0;
-      popped->RTSNext = 0; // zero out the popped device's linked-list pointer to remove it entirely from the list.
+      else thr_ctxt->RTSTail = 0; // may not be necessary since softswitch_pushRTS always overwrites RTSTail and queue empty checks look at RTSHead
+      popped->RTSNext = popped->RTSPrev = 0; // zero out the popped device's linked-list pointers to remove it entirely from the list.
       return popped;
 }
 
@@ -332,7 +373,7 @@ void softswitch_pushRTSPin(devInst_t* device, outPin_t* new_pin)
      new_pin->RTSPinNext = 0;
      new_pin->RTSPinPrev = device->RTSPinTail;
      // need to test head because it will have to be set independently if it is null.
-     if (!device->RTSPinTail) device->RTSPinHead = new_pin;
+     if (!device->RTSPinHead) device->RTSPinHead = new_pin;
      // only if head is nonzero will tail have a meaningful value to set.
      else device->RTSPinTail->RTSPinNext = new_pin;
      device->RTSPinTail = new_pin;
@@ -343,6 +384,8 @@ outPin_t* softswitch_popRTSPin(devInst_t* device)
       outPin_t* popped = device->RTSPinHead;
       // single = in the if-conditional is correct here: we are setting and then testing for 0 having set.
       if (device->RTSPinHead = popped->RTSPinNext) device->RTSPinHead->RTSPinPrev = 0;
+      else device->RTSPinTail = 0;
+      popped->RTSPinNext = popped->RTSPinPrev = 0;
       return popped;
 }
 

@@ -11,24 +11,36 @@
 
 #define DEST_BROADCAST 0xFFFFFFFF
 
-#define P_CORE_OS (LOG_THREADS_PER_CORE)
+#define MAX_P_SUP_MSG_BYTES 256
+#define LOG_DEVICES_PER_THREAD 10
+#define P_DEVICE_OS 0
+#define P_THREAD_OS (LOG_DEVICES_PER_THREAD)
+#define P_CORE_OS (LOG_THREADS_PER_CORE+P_THREAD_OS)
 #define P_BOARD_OS (LOG_CORES_PER_BOARD+P_CORE_OS)
 #define P_BOX_OS (LOG_BOARDS_PER_BOX+P_BOARD_OS)
-#define P_THREAD_OS 0
 #define P_SUP_OS 31
-#define P_DEVICE_OS 0
+#define P_SUP_MASK (0x1 << P_SUP_OS)
+#define P_BOX_MASK ((0x1 << P_SUP_OS) - (0x1 << P_BOX_OS))
 #define P_BOARD_MASK ((0x1 << P_BOX_OS) - (0x1 << P_BOARD_OS)) 
 #define P_CORE_MASK ((0x1 << P_BOARD_OS) - (0x1 << P_CORE_OS))
-#define P_THREAD_MASK ((0x1 << LOG_THREADS_PER_CORE) - 1)
-#define P_SUP_MASK 0x80000000
-#define P_BOX_MASK (0xFFFFFFFF ^ (P_BOARD_MASK | P_CORE_MASK | P_THREAD_MASK | P_SUP_MASK))
-#define P_DEVICE_MASK 0x2FF
+#define P_THREAD_MASK ((0x1 << P_CORE_OS) - (0x1 << P_THREAD_OS))
+#define P_DEVICE_MASK ((0x1 << P_THREAD_OS) - (0x1 << P_DEVICE_OS))
+#define P_THREAD_HWOS 0
+#define P_CORE_HWOS (LOG_THREADS_PER_CORE+P_THREAD_HWOS)
+#define P_BOARD_HWOS (LOG_CORES_PER_BOARD+P_CORE_HWOS)
+#define P_BOX_HWOS (LOG_BOARDS_PER_BOX+P_BOARD_HWOS)
+#define P_BOX_HWMASK ((0x1 << P_SUP_OS) - (0x1 << P_BOX_HWOS))
+#define P_BOARD_HWMASK ((0x1 << P_BOX_HWOS) - (0x1 << P_BOARD_HWOS)) 
+#define P_CORE_HWMASK ((0x1 << P_BOARD_HWOS) - (0x1 << P_CORE_HWOS))
+#define P_THREAD_HWMASK ((0x1 << P_CORE_HWOS) - (0x1 << P_THREAD_HWOS))
 #define P_PKT_MSGTYP_OS 10
 #define P_PKT_MSGTYP_BARRIER 0x1000
 #define P_PKT_MSGTYP_SUPER 0x2000
-#define P_MSG_TAG_INIT 0xFFFF // could also be 0x0
+#define P_PKT_MSGTYP_ALIVE 0x4000
+#define P_MSG_TAG_INIT 0x0 // could also be 0xFFFF
 #define P_MSG_TAG_STOP 0x8000 
 #define P_SUP_PIN_SYS 0xFFFF
+#define P_SUP_PIN_INIT 0 // very temporary bodge for __init__ pins
 #define P_SUP_MSG_BARR 0x0
 #define P_SUP_MSG_KILL 0x1
 #define P_SUP_MSG_LOG  0x2

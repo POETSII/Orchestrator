@@ -96,9 +96,9 @@ return text;                           // Simples.
 
 //------------------------------------------------------------------------------
 
-unsigned LogServer::Connect(bool server,string svc)
+unsigned LogServer::Connect(string svc)
 {
-unsigned err = CommonBase::Connect(server,svc);
+unsigned err = CommonBase::Connect(svc);
 FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
 // Logserver should be able to log messages from remote groups as well.
 (*FnMapx[FnMapx.size()-1])[PMsg_p::KEY(Q::LOG,Q::POST,Q::N000,Q::N000)] = &LogServer::OnLogP;

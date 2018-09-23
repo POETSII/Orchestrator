@@ -7,13 +7,14 @@ void softswitch_main()
   PThreadContext* ThreadContext = static_cast<PThreadContext*>(tinselHeapBase()); // softswitch_pThreadContexts + tinselID();
   // can these slot assignments be done in softswitch_init?
   volatile void *recvBuffer=0;
-  volatile void *sendBuffer=tinselSlot(0); // hardware send buffer is dedicated to the first tinsel slot
-  volatile void *superBuffer[NUM_SUP_BUFS];           // 4 buffers allocated for supervisor messages.
+  volatile void *sendBuffer=tinselSlot(0);   // hardware send buffer is dedicated to the first tinsel slot
+  volatile void *superBuffer[NUM_SUP_BUFS];  // buffers allocated for supervisor messages.
   for (uint32_t sb = 0; sb < NUM_SUP_BUFS-1; sb++) superBuffer[sb] = tinselSlot(sb+1);
   softswitch_init(ThreadContext);
   // send a message to the local supervisor saying we are ready;
   // then wait for the __init__ message to return by interrogating tinselCanRecv(). 
-  softswitch_barrier(ThreadContext, superBuffer[0], recvBuffer); 
+  softswitch_barrier(ThreadContext, superBuffer[0], recvBuffer);
+  //softswitch_alive(superBuffer[0]); // *debug: say that we have passed initialisation*
   /* endless main loop. It would be nice to have some stop variable here
      that can be set by a command. The problem is, it's not technically
      safe to stop until all messages that should have been expected are
@@ -25,9 +26,11 @@ void softswitch_main()
   */
   while (!ThreadContext->ctlEnd)
   {
+    // softswitch_alive(superBuffer[0]); // *debug: send periodic message to host*
     // handle the receive case first as the highest priority.
     if ((ThreadContext->receiveHasPriority || !softswitch_IsRTSReady(ThreadContext)) && tinselCanRecv())
     {
+       // softswitch_alive(superBuffer[0]); // *debug: send periodic message to host*
        recvBuffer=tinselRecv();
        softswitch_onReceive(ThreadContext, recvBuffer); // decode the receive and handle
        tinselAlloc(recvBuffer); // return control of the receive buffer to the hardware
@@ -38,14 +41,15 @@ void softswitch_main()
     {
          // something to send, but channel is blocked. Do whatever idle
          // processing can be achieved; if literally nothing can be done
-         // wait until there is someting to do.
+         // wait until there is something to do.
          if (!tinselCanSend())
 	 {
 	    if (!softswitch_onIdle(ThreadContext)) tinselWaitUntil(TINSEL_CAN_SEND | TINSEL_CAN_RECV);
 	 }
 	 // otherwise deal with messages to send.
 	 else
-	 {   
+	 {
+	    // softswitch_alive(superBuffer[0]); // *debug: send periodic message to host*
 	    softswitch_onSend(ThreadContext, sendBuffer);
 	 }
     }

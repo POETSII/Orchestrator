@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
 
 #include "Placement.h"
+#include "Constraints.h"
 #include "OrchBase.h"
 #include "P_core.h"
 #include "P_super.h"
@@ -95,11 +96,14 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
        par->Post(810, (*dT)->Name(), int2str(devMem), int2str(BYTES_PER_THREAD));
        return true;
     }
-    unsigned int devsPerThread = min(BYTES_PER_THREAD/devMem, MAX_DEVICES_PER_THREAD);
+    // place according to constraints found
+    if (!pCon) pCon = new Constraints();
+    if (pCon->Constraintm.find("DevicesPerThread") == pCon->Constraintm.end()) pCon->Constraintm["DevicesPerThread"] = min(BYTES_PER_THREAD/devMem, MAX_DEVICES_PER_THREAD);
+    if (pCon->Constraintm.find("ThreadsPerCore") == pCon->Constraintm.end()) pCon->Constraintm["ThreadsPerCore"] = THREADS_PER_CORE;
     for (unsigned devIdx = 0; devIdx < dVs.size(); devIdx++) // For each device.....
     {
         // if we have packed the existing thread,
-        if (!(devIdx%devsPerThread))
+        if (!(devIdx%pCon->Constraintm["DevicesPerThread"]))
         {
            // ...get a thread, checking to see that we don't run out of room
            // - i.e. that we increment past box space and this isn't the last
@@ -112,16 +116,25 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
         }
         Xlink(dVs[devIdx],pTh);            // And link thread and device
     }
+
     // jump to the next core: each core will only have one device type. We do not
     // need to jump if the devices exactly fit on an integral number of cores because in
     // that situation the previous GetNext() function will have incremented the core for us.
-    if (dVs.size()%(devsPerThread*THREADS_PER_CORE))
+    if (dVs.size()%(pCon->Constraintm["DevicesPerThread"]*pCon->Constraintm["ThreadsPerCore"]))
     {
        if (((dT+1) != pT->pP_typdcl->P_devtypv.end()) && GetNext(pTh,Placement::core))
        {
           par->Post(163, pT->Name()); // out of room. Abandon placement.
           return true;
        }
+    }
+    // current tinsel architecture shares I-memory between pairs of cores, so
+    // for a new device type, if the postincremented core number is odd, we
+    // need to increment again to get an even boundary.
+    if (((*Nco)->addr.A_core & 0x1) && GetNext(pTh,Placement::core))
+    {
+       par->Post(163, pT->Name()); // out of room. Abandon placement.
+       return true;
     }
 }
 return false;

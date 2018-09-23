@@ -40,6 +40,7 @@ WALKVECTOR(ProcMap_t,vPmap,i) {
   fprintf(fp,"at   %s on %s\n",
              (*i).P_TIME.c_str(),(*i).P_DATE.c_str());
   fprintf(fp,"executing on %s\n",(*i).P_proc.c_str());
+  fprintf(fp,"as user %s\n", (*i).P_user.c_str());
   fprintf(fp,"\nMPI hybrid programming model: ");
   switch ((*i).P_ttype) {
     case MPI_THREAD_MULTIPLE   : fprintf(fp,"Thread-multiple\n");   break;
@@ -81,7 +82,9 @@ fprintf(fp,"LogServer rank  : %d\n",U.LogServer);
 fprintf(fp,"RTCL rank       : %d\n",U.RTCL);
 fprintf(fp,"Injector rank   : %d\n",U.Injector);
 fprintf(fp,"NameServer rank : %d\n",U.NameServer);
-fprintf(fp,"Monitor ranks   : ");
+fprintf(fp,"Mothership ranks: ");
+WALKVECTOR(int,U.Mothership,i) fprintf(fp,"%d ",*i);
+fprintf(fp,"\nMonitor ranks   : ");
 WALKVECTOR(int,U.Monitor,i) fprintf(fp,"%d ",*i);
 fprintf(fp,"\nDummy ranks     : ");
 WALKVECTOR(int,U.Dummy,i) fprintf(fp,"%d ",*i);
@@ -114,16 +117,17 @@ int cnt;                               // Unload the message
 int * pi = Z->Get<int>(1,cnt);         // ... rank
 if (pi!=0) rec.P_rank = *pi;
 Z->Get(2,rec.P_proc);                  // ... machine name
-Z->Get(3,rec.P_class);                 // ... C++ class
-unsigned * pu = Z->Get<unsigned>(4,cnt);
+Z->Get(3,rec.P_user);                  // ... user name on machine
+Z->Get(4,rec.P_class);                 // ... C++ class
+unsigned * pu = Z->Get<unsigned>(5,cnt);
 if (pu!=0) rec.P_BPW = *pu;            // ... bits per word
-Z->Get(5,rec.P_compiler);              // ... compiler
-Z->Get(6,rec.P_OS);                    // ... operating system
-Z->Get(7,rec.P_source);                // ... source file
-Z->Get(8,rec.P_binary);                // ... binary file
-Z->Get(9,rec.P_TIME);                  // ... compilation time
-Z->Get(10,rec.P_DATE);                 // ... compilation date
-pi = Z->Get<int>(11,cnt);              // ... *provided* MPI thread class
+Z->Get(6,rec.P_compiler);              // ... compiler
+Z->Get(7,rec.P_OS);                    // ... operating system
+Z->Get(8,rec.P_source);                // ... source file
+Z->Get(9,rec.P_binary);                // ... binary file
+Z->Get(10,rec.P_TIME);                  // ... compilation time
+Z->Get(11,rec.P_DATE);                 // ... compilation date
+pi = Z->Get<int>(12,cnt);              // ... *provided* MPI thread class
 if (pi!=0) rec.P_ttype = *pi;
 rec.P_tig = (bool)MPI_WTIME_IS_GLOBAL; // Are we synchronised?
 rec.P_tick = MPI_Wtick();              // Timer resolution
@@ -137,6 +141,7 @@ if (rec.P_class==string(csRTCLproc))        U.RTCL       = rec.P_rank;
 if (rec.P_class==string(csINJECTORproc))    U.Injector   = rec.P_rank;
 if (rec.P_class==string(csNAMESERVERproc))  U.NameServer = rec.P_rank;
 if (rec.P_class==string(csMONITORproc))     U.Monitor.push_back(rec.P_rank);
+if (rec.P_class==string(csMOTHERSHIPproc))  U.Mothership.push_back(rec.P_rank);
 }
 
 //==============================================================================

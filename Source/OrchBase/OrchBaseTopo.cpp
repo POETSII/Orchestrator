@@ -33,6 +33,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
   const char * cs = (*i).Cl.c_str();
   if (strcmp(cs,"clea")==0) { TopoClea(*i);  continue; }
   if (strcmp(cs,"conf")==0) { TopoConf(*i);  continue; }
+  if (strcmp(cs,"cons")==0) { TopoCons(*i);  continue; }
   if (strcmp(cs,"dump")==0) { TopoDump(*i);  continue; }
   if (strcmp(cs,"disc")==0) { TopoDisc(*i);  continue; }
   if (strcmp(cs,"load")==0) { TopoLoad(*i);  continue; }
@@ -77,6 +78,22 @@ WALKVECTOR(Cli::Pa_t,Cl.Pa_v,i) {      // Loop through parameters
 }
 
 //------------------------------------------------------------------------------
+
+
+void OrchBase::TopoCons(Cli::Cl_t Cl)
+// Apply constraints
+{
+if (Cl.Pa_v.size()<2) {               // Command make sense?
+    Post(48,Cl.Cl,"topology","2");
+    return;
+}
+string constraint = Cl.Pa_v[0].Val;     // Unpack constraint name
+if (!pPlace->pCon) pPlace->pCon = new Constraints();
+pPlace->pCon->Constraintm[constraint] = str2uint(Cl.Pa_v[1].Val);
+}
+
+//------------------------------------------------------------------------------
+
 
 void OrchBase::TopoDump(Cli::Cl_t Cl)
 {

@@ -25,6 +25,7 @@ PMAP |-    |-    |-    | (1:int)urank
                          (10:string)Date
                          (11:int)Thread_type
 SYST |CONN |-    |-    | (0:string)Service name
+SYST |ACPT |-    |-    |
 SYST |PING |ACK  |-    | (0:double)Request send MPI time
                          (1:double)Request arrival MPI time
                          (1:string)Target (foldback) class
@@ -75,7 +76,9 @@ CMND |LOAD |-    |-    | (0:string)Task name
 CMND |RUN  |-    |-    | (0:string)Task name
 CMND |STOP |-    |-    | (0:string)Task name
 EXIT |-    |-    |-    | (None)
-NAME |DIST |-    |-    | ()
+NAME |DIST |-    |-    | (0:string)Task name
+                         (1:vector<pair<uint32_t,P_addr_t>>) Core list for Mothership
+NAME |RECL |-    |-    | (0:string)Task name
 NAME |TDIR |-    |-    | (0:string)Task name
                          (1:string)File directory
 SUPR |-    |-    |-    | (0:vector<P_Sup_Msg_t>)Args
@@ -125,8 +128,10 @@ static const byte LOAD  = 0x49;
 static const byte STOP  = 0x4a;
 static const byte TOPO  = 0x4b;
 static const byte DIST  = 0x4c;
-static const byte TDIR  = 0x4d;
-static const byte SHOW  = 0x4e;
+static const byte RECL  = 0x4d;
+static const byte TDIR  = 0x4e;
+static const byte SHOW  = 0x4f;
+static const byte ACPT  = 0x50;
 // Level 2 subkeys
 static const byte REQ   = 0x80;
 static const byte ACK   = 0x81;

@@ -5,6 +5,8 @@
 #include "OrchBase.h"
 #include <fstream>
 #include <string>
+#include <cstdlib>
+#include "build_defs.h"
 using namespace std;
 
 #ifndef __BORLANDC__
@@ -35,7 +37,7 @@ private:
 void Preplace(P_task*);
 void GenFiles(P_task*);
 void CompileBins(P_task*);
-void WriteThreadVars(unsigned int, unsigned int, P_thread*, fstream&);
+void WriteThreadVars(string&, unsigned int, unsigned int, P_thread*, fstream&);
 
 #endif
 };

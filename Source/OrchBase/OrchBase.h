@@ -32,13 +32,16 @@ void                   ClearTasks();
 void                   ClearTasks(char);
 void                   ClearTasks(string);
 unsigned               CmTask(Cli *);  // Handle task command from monkey
+void                   TaskBuild(Cli::Cl_t);
 void                   TaskClear(Cli::Cl_t);
+void                   TaskDeploy(Cli::Cl_t);
 void                   TaskDump(Cli::Cl_t);
 void                   TaskGeom(Cli::Cl_t);
 void                   TaskLoad(Cli::Cl_t);
-void                   TaskBuild(Cli::Cl_t);
 void                   TaskPath(Cli::Cl_t);
 void                   TaskPol(Cli::Cl_t);
+void                   TaskRecall(Cli::Cl_t);
+void                   TaskMCmd(Cli::Cl_t,string);
 void                   TaskShow(Cli::Cl_t);
 
 // These bodies are in OrchBaseTopo.cpp:
@@ -48,6 +51,7 @@ void                   ClearTopo();
 unsigned               CmTopo(Cli *);
 void                   TopoClea(Cli::Cl_t);
 void                   TopoConf(Cli::Cl_t);
+void                   TopoCons(Cli::Cl_t);
 void                   TopoDump(Cli::Cl_t);
 void                   TopoDisc(Cli::Cl_t);
 void                   TopoLoad(Cli::Cl_t);
