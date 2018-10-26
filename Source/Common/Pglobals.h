@@ -132,6 +132,11 @@ static const byte RECL  = 0x4d;
 static const byte TDIR  = 0x4e;
 static const byte SHOW  = 0x4f;
 static const byte ACPT  = 0x50;
+// temporary use: for MPI testing ------------------------------------------
+static const byte M0    = 0x60;
+static const byte M1    = 0x61;
+static const byte MN    = 0x62;
+//--------------------------------------------------------------------------
 // Level 2 subkeys
 static const byte REQ   = 0x80;
 static const byte ACK   = 0x81;
@@ -154,6 +159,11 @@ static const byte ROOT  = 0x00;
 #define csNAMESERVERproc "NameServer:CommonBase"
 #define csMONITORproc    "Monitor:CommonBase"
 #define csMOTHERSHIPproc "TMoth:CommonBase"
+#define csMPITESTproc    "MPITest:CommonBase"
+
+// tag defined as a directive because MPI libraries are c-based, have no concept
+// of const, and thus calls to them would whinge with a const-qualified argument
+#define POETS_TAG 0x1234
 
 };
 

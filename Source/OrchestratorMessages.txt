@@ -99,6 +99,7 @@
 811(W) : "P_builder: tried to generate files for task %s, but it's not linked"
 812(E) : "Error: task %s is in an unexpected state"
 813(E) : "Error: task %s could not be %s. State on Mothership is %s"
+814(W) : "P_builder: no task found with source file %s"
 901(U) : "%s: %s corrupt ?"
 902(U) : "OrchBase::ClearTasks(tt=%s)" 
 903(U) : "OrchBase::ClearDcls: Null pointer to %s in P_typdclm"

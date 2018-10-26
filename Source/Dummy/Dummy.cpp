@@ -19,7 +19,7 @@ FnMapx.push_back(new FnMap_t);  // create a new function table in the derived cl
 
 PMsg_p Pkt;                            // Send out a bunch of random packets
 Pkt.Src(Urank);
-Pkt.comm = MPI_COMM_WORLD;
+Pkt.comm = Comms[0];
 char buf[512] = "Ooogle";
 for(int i=0;i<10;i++) {
   int len = strlen(buf)+1;             // Include the terminal '\0'

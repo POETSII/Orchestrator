@@ -16,7 +16,7 @@ typedef unsigned    (Injector::*pMeth)(PMsg_p *,unsigned);
 typedef map<unsigned,Injector::pMeth> FnMap_t;
 
 private:
-unsigned            Connect(bool,string);
+unsigned            Connect(string);
 #include            "Decode.cpp"
 void                Dump(FILE * = stdout);
 unsigned            OnInjectAck (PMsg_p *,unsigned);

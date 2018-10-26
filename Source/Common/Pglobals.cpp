@@ -32,6 +32,11 @@ const byte Q::DIST;
 const byte Q::TDIR;
 const byte Q::SHOW;
 const byte Q::ACPT;
+// temporary use: for MPI testing ------------------------------------------
+const byte Q::M0;
+const byte Q::M1;
+const byte Q::MN;
+//--------------------------------------------------------------------------
 // Level 2 subkeys
 const byte Q::REQ;
 const byte Q::ACK;
