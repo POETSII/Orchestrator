@@ -19,14 +19,14 @@ public:
       pair<unsigned,P_addr_t> *               Get(int &);
       inline void                             Get(int k,string & s) {if (!k) PMsg_p::Get(k,s);};
       template <class T> inline void          Get(int k,vector<T> & vT) {return;};
-      void                                    Get(vector<pair<unsigned,P_addr_t>> &);
+      void                                    Get(vector<pair<unsigned,P_addr_t> > &);
       inline void                             GetX(int k,vector<string> & vs) {return;};
       template <class T> inline int           Put() {return -1;};
       template <class T> void                 Put(int k,T * data,int cnt=1) {return;};
       void                                    Put(pair<unsigned,P_addr_t> *,int=1);
       inline void                             Put(int k,string * data) {if (!k) PMsg_p::Put(k,data);};
       template <class T> inline void          Put(int k,vector<T> * data) {return;};
-      void                                    Put(vector<pair<unsigned,P_addr_t>> *);
+      void                                    Put(vector<pair<unsigned,P_addr_t> > *);
       inline void                             PutX(int k,vector<string> * data) {return;};
 
 };
