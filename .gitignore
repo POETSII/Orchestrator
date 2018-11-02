@@ -1,3 +1,7 @@
+*.d
 *.so
+*.temp.d
 *.o
 bin/*
+Build/gcc/Objects
+Build/gcc/Dependency_lists
