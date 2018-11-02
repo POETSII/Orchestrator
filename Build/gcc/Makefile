@@ -131,17 +131,19 @@ $(MOTHERSHIP_EXECUTABLE):
         -ljtag_atlantic -ljtag_client -lSupervisor
 
 # Object generation.
-$(OBJECT_DIR)/%.o: $(ROOT_DIR)/%.cpp
-$(OBJECT_DIR)/%.o: $(ROOT_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
-	@mkdir --parents $$(dirname $@)
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-    # Installs the assembled dependency file (see *Note 1*). The touch updates
-    # the timestamp on the target (to avoid pointless rebuilds).
-	@mv --force $(DEPENDENCY_DIR)/$*.temp.d $(DEPENDENCY_DIR)/$*.d && touch $@
+define build-object =
+@mkdir --parents $$(dirname $@)
+$(CXX) $(CXXFLAGS) -c -o $@ $<
+# Installs the assembled dependency file (see *Note 1*). The touch updates the
+# timestamp on the target (to avoid pointless rebuilds).
+@mv --force $(DEPENDENCY_DIR)/$*.temp.d $(DEPENDENCY_DIR)/$*.d && touch $@
+endef
 
-$(HOSTLINK_OBJECT_DIR)/%.o: $(TINSEL_HOSTLINK_DIR)/%.cpp
-	@mkdir --parents $$(dirname $@)
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+$(OBJECT_DIR)/%.o: $(ROOT_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
+	$(build-object)
+
+$(HOSTLINK_OBJECT_DIR)/%.o: $(TINSEL_HOSTLINK_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
+	$(build-object)
 
 # Supervisor generation.
 $(STUB_SUPERVISOR): $(STUB_SUPERVISOR_OBJECTS)
