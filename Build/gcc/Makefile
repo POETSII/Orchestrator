@@ -25,11 +25,11 @@ SOURCE_DIR = $(ROOT_DIR)/Source
 
 # Objects constructed from Orchestrator sources are placed in here. Objects are
 # placed in a directory structure that mimics the source directory structure.
-OBJECT_DIR = ./Orchestrator_Objects
+OBJECT_DIR = ./Objects
 
 # We also compile some hostlink sources for the Mothership component of the
 # Orchestrator.
-HOSTLINK_OBJECT_DIR = ./Hostlink_Objects
+HOSTLINK_OBJECT_DIR = ./Objects/Hostlink
 
 # Supervisors are placed in here. Supervisors (.so) are shared object library
 # files that are generated from supervisor object files (.o), which are in turn
@@ -134,9 +134,11 @@ $(MOTHERSHIP_EXECUTABLE):
 define build-object =
 @mkdir --parents $$(dirname $@)
 $(CXX) $(CXXFLAGS) -c -o $@ $<
-# Installs the assembled dependency file (see *Note 1*). The touch updates the
-# timestamp on the target (to avoid pointless rebuilds).
-@mv --force $(DEPENDENCY_DIR)/$*.temp.d $(DEPENDENCY_DIR)/$*.d && touch $@
+@# This move command installs the assembled dependency file (see *Note 1*). The
+@# touch updates the timestamp on the target (to avoid pointless rebuilds), and
+@# is predicated on the move command succeeding.
+@mv --force $(DEPENDENCY_DIR)/$*.temp.d $(DEPENDENCY_DIR)/$*.d
+@touch $@
 endef
 
 $(OBJECT_DIR)/%.o: $(ROOT_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
