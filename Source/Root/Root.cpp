@@ -19,6 +19,7 @@ void * kb_func(void * pPar)
 // the MPI spinner.
 {
 //printf("\nRoot::kb_func: thread starting\n\n"); fflush(stdout);
+Root* parent = static_cast<Root*>(pPar);
 int len = 0;                           // Characters in buffer
 for(;;) {
   if (len==0) Root::Prompt();          // Console prompt
@@ -32,7 +33,7 @@ for(;;) {
   if (len==0) continue;                // Hard to see how
   if (buf[len]=='\n')buf[len]='\0';    // Replace trailing newline
   PMsg_p Pkt;
-  Pkt.comm = MPI_COMM_WORLD;           // comm is always our local one (index 0)
+  Pkt.comm = parent->Comms[0];         // comm is always our local one (index 0)
   Pkt.Put<char>(1,buf,len+2);          // Put it in a packet
   Pkt.Key(Q::KEYB);
 

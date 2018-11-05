@@ -2,7 +2,6 @@
 #define __TMothH__H
 
 #include <deque>
-#include <atomic>
 #include "CommonBase.h"
 #include "PMsg_p.hpp"
 #include "Cli.h"
@@ -55,7 +54,7 @@ unsigned              SystTopo();
 
 public:
 unsigned              PAddress; // address of this mothership in POETS-space
-atomic<bool>          ForwardMsgs;
+bool                  ForwardMsgs;
  
 typedef unsigned (TMoth::*pMeth)(PMsg_p *,unsigned);
 typedef map<unsigned,pMeth> FnMap_t;

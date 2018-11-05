@@ -92,6 +92,24 @@ CompileBins(pT);
 
 //------------------------------------------------------------------------------
 
+void P_builder::Clear(P_task * pT)
+// Clears imported task definitions
+{
+if (!pT) // default to all tasks
+{
+   for (map<string, I_Graph*>::iterator T = defs.begin(); T != defs.end(); T++) delete T->second;
+   defs.clear();
+}
+else if (defs.find(pT->filename) != defs.end())
+{
+   delete defs[pT->filename];
+   defs.erase(pT->filename);
+}
+else par->Post(814,pT->filename);
+}
+
+//------------------------------------------------------------------------------
+
 void P_builder::Dump(FILE * fp)
 {
 fprintf(fp,"P_builder+++++++++++++++++++++++++++++++++++\n");

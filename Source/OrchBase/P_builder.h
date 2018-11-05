@@ -23,6 +23,7 @@ public:
 virtual ~           P_builder();
 
 void                Build(P_task * = 0);
+void                Clear(P_task * = 0);
 void                Dump(FILE * = stdout);
 void                Load(const string&);
 

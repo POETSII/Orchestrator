@@ -81,6 +81,7 @@ if (pP!=0) {
   }
 }
 
+
 // Kill the supervisors
 WALKMAP(string,P_super *,P_superm,i) delete (*i).second;
 P_superm.clear();
@@ -92,6 +93,9 @@ P_taskm.clear();
 // Kill the declares
 WALKMAP(string,P_typdcl *,P_typdclm,i) delete (*i).second;
 P_typdclm.clear();
+
+// Kill the xml import
+pB->Clear();
 
 }
 
@@ -147,12 +151,15 @@ if (p->pD!=0) WALKPDIGRAPHNODES
                                        // Now disconnect from the declare block
 P_typdcl * pdcl = p->pP_typdcl;        // This is the declare block
 if (pdcl!=0)
+{
   WALKLIST(P_task *,pdcl->P_taskl,i)   // Look for the back pointer...
     if ((*i)==p)
     {
        pdcl->P_taskl.erase(i);         // ...and remove it
        break;
     }
+}
+if (p->filename.length() > 0) pB->Clear(p); // clear out xml import
 delete p;                              // Remove the task itself
 P_taskm.erase(st);                     // Remove pointer from map
 

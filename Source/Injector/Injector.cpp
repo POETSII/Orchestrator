@@ -38,9 +38,9 @@ WALKVECTOR(FnMap_t*, FnMapx, F)
 
 //------------------------------------------------------------------------------
 
-unsigned Injector::Connect(bool server,string svc)
+unsigned Injector::Connect(string svc)
 {
-unsigned err = CommonBase::Connect(server,svc);
+unsigned err = CommonBase::Connect(svc);
 FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
 // set up the function map for the Injector.
 (*FnMapx[FnMapx.size()-1])[PMsg_p::KEY(Q::INJCT,Q::ACK )] = &Injector::OnInjectAck;

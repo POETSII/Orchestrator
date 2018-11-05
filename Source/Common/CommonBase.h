@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <string>
 #include <cstring>
-#include <atomic>
 using namespace std;
 #include "PMsg_p.hpp"
 #include "ProcMap.h"
@@ -74,22 +73,15 @@ vector<ProcMap *>      pPmap;
 int                    MPI_provided;
 
 pthread_t              MPI_accept;
-bool                   acpt_running;
 static const char*     MPISvc;
-
-// atomically-accessible copy of Urank. Later Urank itself might be made atomic,
-// but this involves significant modifications to large amounts of code.
-atomic<int>            Trank;
-atomic<int>            Lrank;       // rank of the local leader for accept/connect.
-atomic<bool>           AcceptConns; // allow external universes to connect.
-atomic<char*>          MPIPort;     // port name
-atomic<MPI_Comm*>      Tcomm;       // New comm set up by an MPI_Comm_accept
+bool                   AcceptConns; // allow external universes to connect.
+int                    Lrank;       // rank of the local leader for accept/connect.
+char                   MPIPort[MPI_MAX_PORT_NAME];     // port name
+MPI_Comm               Tcomm;       // New comm set up by an MPI_Comm_accept
 
 private:
 char *                 MPI_Buf;
-char                   MPI_Port[MPI_MAX_PORT_NAME]; // only access the port name through an atomic pointer
 int                    Msgbufsz;
-MPI_Comm               T_Comm;       // comm to pass from Accept to Connect
 const int              LOG_MSGBUF_BLK_SZ = 14;
 const int              MSGBUF_BLK_MASK = (1<<LOG_MSGBUF_BLK_SZ)-1;
 

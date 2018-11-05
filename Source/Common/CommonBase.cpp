@@ -23,16 +23,19 @@ CommonBase::CommonBase(int argc,char ** argv,string d,string src)
 //MPI_Init(&argc,&argv);               // Start up MPI
 MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&MPI_provided);
 
-acpt_running=false;
+AcceptConns = false;
 const int SNDBUFSIZ = 1000000000;      // MPI immediate message send buffer size
 char * SNDBUF = (char *)malloc(SNDBUFSIZ);             // Pull it off the heap
 if (SNDBUF!=0) MPI_Buffer_attach(SNDBUF,SNDBUFSIZ);    // Attach it to MPI
 Msgbufsz = 2 << LOG_MSGBUF_BLK_SZ;
 MPI_Buf = new char[Msgbufsz];            // and set up a receive buffer
-Comms.push_back(MPI_COMM_WORLD);         // Set up the default comm
+MPI_Comm POETS_COMM_WORLD;
+MPI_Comm_dup(MPI_COMM_WORLD, &POETS_COMM_WORLD);
+Comms.push_back(POETS_COMM_WORLD);       // Set up the default comm
+// Comms.push_back(MPI_COMM_WORLD);         // Set up the default comm
 pPmap.push_back(new ProcMap(this));      // Create default universe process map
 int lUsize;
-MPI_Comm_size(MPI_COMM_WORLD, &lUsize);
+MPI_Comm_size(Comms[0], &lUsize);
 Usize.push_back(lUsize);                // record the size of the local universe
 
 Sderived = d;                          // Derived class name
@@ -71,6 +74,7 @@ WALKVECTOR(FnMap_t*,FnMapx,F)          // WALKVECTOR and WALKMAP are in macros.h
 // the seemingly daft argument to MPI_Comm_disconnect: &(*C) is correct here because
 // MPI_Comm_disconnect can't work with an iterator.
 for (vector<MPI_Comm>::iterator C = ++Comms.begin(); C != Comms.end(); C++) MPI_Comm_disconnect(&(*C)); // and comms other than MPI_COMM_WORLD
+MPI_Comm_free(&(Comms[0]));            // free the shadow MPI_COMM_WORLD connector
 MPI_Buffer_detach(&SNDBUF,&idummy);    // (Blocks until exhausted)
 free(SNDBUF);                          // Now we can kill it
 delete [] MPI_Buf;                     // as well as the receive buffer
@@ -88,31 +92,31 @@ CommonBase* parent=static_cast<CommonBase*>(par);
 // The leader of the intercomm will be the lowest-ranking Mothership, if there is one,
 // or the zero-rank process otherwise.
 /*
-bool leader = (parent->Trank.load(std::memory_order_relaxed) == parent->Lrank.load(std::memory_order_relaxed));
+bool leader = (parent->Urank == parent->Lrank);
 if (leader) // The leader needs to set up the comms port.
 {
-MPI_Open_port(MPI_INFO_NULL,parent->MPIPort.load(std::memory_order_seq_cst)); // Announce to MPI that we are open for business
-MPI_Publish_name(parent->MPISvc,MPI_INFO_NULL,parent->MPIPort.load(std::memory_order_seq_cst)); // and make us publicly available
+MPI_Open_port(MPI_INFO_NULL,parent->MPIPort); // Announce to MPI that we are open for business
+MPI_Publish_name(parent->MPISvc,MPI_INFO_NULL,parent->MPIPort); // and make us publicly available
 }
 */
 MPI_Group MPI_Group_world, MPI_Group_remote;
-MPI_Comm_group(MPI_COMM_WORLD,&MPI_Group_world);
-int LocalRank = parent->Trank.load(std::memory_order_relaxed);
-while (parent->AcceptConns.load(std::memory_order_relaxed))
+MPI_Comm_group(parent->Comms[0],&MPI_Group_world);
+// MPI_Comm_group(MPI_COMM_WORLD,&MPI_Group_world);
+while (parent->AcceptConns)
 {
 // run the blocking accept itself.
-if (MPI_Comm_accept(parent->MPIPort.load(std::memory_order_seq_cst),MPI_INFO_NULL,parent->Lrank.load(std::memory_order_relaxed),MPI_COMM_WORLD,parent->Tcomm.load(std::memory_order_seq_cst)))
+if (MPI_Comm_accept(parent->MPIPort,MPI_INFO_NULL,parent->Lrank,MPI_COMM_WORLD,&(parent->Tcomm)))
 {
    // Might try Post() but failure could indicate an unreliable MPI universe
    // so all bets are off about whether any MPI communication would actually succeed.
    printf("Error: attempt to connect to another MPI universe failed\n");
-   parent->AcceptConns.store(false,std::memory_order_relaxed);
+   parent->AcceptConns = false;
    break;
 }
 int RemoteSize, RemoteRank; // detect if this is an exit by looking for a self-connection
 int RootRank = 0;
-MPI_Comm_remote_size(*parent->Tcomm.load(std::memory_order_seq_cst),&RemoteSize);
-MPI_Comm_remote_group(*parent->Tcomm.load(std::memory_order_seq_cst),&MPI_Group_remote);
+MPI_Comm_remote_size(parent->Tcomm,&RemoteSize);
+MPI_Comm_remote_group(parent->Tcomm,&MPI_Group_remote);
 MPI_Group_translate_ranks(MPI_Group_world,1,&RootRank,MPI_Group_remote,&RemoteRank);
 // printf("Connected to remote group of size %d, leader rank %d\n",RemoteSize,RemoteRank==MPI_UNDEFINED? -1 : RemoteRank);
 // fflush(stdout);
@@ -123,26 +127,29 @@ if ((RemoteSize>1) || (RemoteRank == MPI_UNDEFINED)) // as long as we aren't shu
    string N("");              // zero-length string indicates a server-side connection
    Creq.Put(0,&N);
    Creq.Key(Q::SYST,Q::CONN);
-   Creq.Src(LocalRank);
-   Creq.comm = MPI_COMM_WORLD;
-   Creq.Send(LocalRank);
-   // printf("AcceptConns waiting to complete connection\n");
+   Creq.Src(parent->Urank);
+   Creq.comm = parent->Comms[0];
+   // Creq.comm = MPI_COMM_WORLD;
+   Creq.Send(parent->Urank);
+   // printf("Accept waiting to complete connection\n");
    // fflush(stdout);
-   while (*(parent->Tcomm.load(std::memory_order_seq_cst)) != MPI_COMM_NULL); // block until connect has succeeded
-   // printf("AcceptConns completed connection\n");
+   while (parent->Tcomm != MPI_COMM_NULL); // block until connect has succeeded
+   // printf("Accept completed connection\n");
    // fflush(stdout);
 }
 else
 {
-   *(parent->Tcomm.load(std::memory_order_seq_cst)) = MPI_COMM_NULL; // for completeness, though we are exiting.
+   printf("Process rank %d received a shutdown connect message\n", parent->Urank);
+   fflush(stdout);
+   MPI_Comm_disconnect(&(parent->Tcomm)); // for completeness, though we are exiting.
    break;
 }
 }
 /*
 if (leader) // close down name/port if we are the local intercomm leader
 {
-MPI_Unpublish_name(parent->MPISvc,MPI_INFO_NULL,parent->MPIPort.load(std::memory_order_seq_cst));
-MPI_Close_port(parent->MPIPort.load(std::memory_order_seq_cst));
+MPI_Unpublish_name(parent->MPISvc,MPI_INFO_NULL,parent->MPIPort);
+MPI_Close_port(parent->MPIPort);
 }
 */
 pthread_exit(par);
@@ -197,7 +204,7 @@ unsigned CommonBase::Connect(string svc)
 {    
 int error = MPI_SUCCESS;
 // a server has its port already so can just open a comm
-if (svc=="") Comms.push_back(*Tcomm.load(std::memory_order_seq_cst));
+if (svc=="") Comms.push_back(Tcomm);
 else // clients need to look up the service name
 {
    MPI_Comm newcomm;
@@ -207,7 +214,8 @@ else // clients need to look up the service name
    // initialised yet (we can always retry).
    if (error = MPI_Lookup_name(svc.c_str(),MPI_INFO_NULL,port)) return error;
    // now try to establish the connection itself. Again, we can always retry.
-   if (error = MPI_Comm_connect(port,MPI_INFO_NULL,0,MPI_COMM_WORLD,&newcomm)) return error;
+   // if (error = MPI_Comm_connect(port,MPI_INFO_NULL,0,MPI_COMM_WORLD,&newcomm)) return error;
+   if (error = MPI_Comm_connect(port,MPI_INFO_NULL,0,Comms[0],&newcomm)) return error;
    Comms.push_back(newcomm); // as long as we succeeded, add to the list of comms
 }
 int rUsize;
@@ -224,7 +232,7 @@ int fIdx=FnMapx.size()-1;
 (*FnMapx[fIdx])[Msg_p::KEY(Q::SYST,Q::PING,Q::ACK )] = &CommonBase::OnSystPingAck;
 (*FnMapx[fIdx])[Msg_p::KEY(Q::SYST,Q::PING,Q::REQ )] = &CommonBase::OnSystPingReq;
 (*FnMapx[fIdx])[Msg_p::KEY(Q::TEST,Q::FLOO        )] = &CommonBase::OnTestFloo;
-if (svc=="") *Tcomm.load(std::memory_order_seq_cst) = MPI_COMM_NULL;  // release any Accept comm.
+if (svc=="") Tcomm = MPI_COMM_NULL;  // release any Accept comm.
 return error;
 }
 
@@ -286,7 +294,7 @@ for (;;) {
 //  printf("MPISpinner: waiting...\n");  fflush(stdout);
     int i=0;
     do { i++; MPI_Test(&request,&flag,&status); } while (flag==0);
-//  printf("MPISpinner: after %d, %s has landed\n",i,&buf[0]);  fflush(stdout);
+//  printf("MPISpinner: after %d, %s has landed\n",i,&MPI_Buf[0]);  fflush(stdout);
     PMsg_p Pkt((byte *)&MPI_Buf[0],count);// Turn it into a packet
     Pkt.Ztime(1,MPI_Wtime());            // Timestamp arrival
     if (Decode(&Pkt,cIdx)!=0) return;    // Do it, possibly leaving afterwards
@@ -303,12 +311,12 @@ for (;;) {
 unsigned CommonBase::OnExit(PMsg_p * Z,unsigned cIdx)
 // Do not post anything further here - the LogServer may have already gone
 {
-//printf("(%s)::CommonBase::OnExit \n",Sderived.c_str());    fflush(stdout);
-AcceptConns.store(false,std::memory_order_relaxed); // stop accepting connections
-if (acpt_running)
+WALKVECTOR(MPI_Comm,Comms,C) MPI_Barrier(*C);
+// printf("(%s)::CommonBase::OnExit \n",Sderived.c_str());    fflush(stdout);
+if (AcceptConns) // Accept thread running?
 {
-   //printf("(%s)::CommonBase::OnExit closing down Accept MPI request\n",Sderived.c_str());
-   //fflush(stdout);
+   // printf("(%s)::CommonBase::OnExit closing down Accept MPI request on rank %d\n",Sderived.c_str(),Urank);
+   // fflush(stdout);
    // REALLY silly: have to close the Accept thread via a matching MPI_Comm_connect
    // because the MPI interface has made no provision for a nonblocking accept, thus
    // otherwise the Accept thread will block forever waiting for a message that will
@@ -316,19 +324,21 @@ if (acpt_running)
    if (!Urank)
    {
    MPI_Comm dcomm;
-   MPI_Comm_connect(MPIPort.load(std::memory_order_seq_cst),MPI_INFO_NULL,0,MPI_COMM_SELF,&dcomm);
+   // printf("Accept port name: %s\n", MPIPort);
+   // fflush(stdout);
+   MPI_Comm_connect(MPIPort,MPI_INFO_NULL,0,MPI_COMM_SELF,&dcomm);
    }
    // printf("(%s)::CommonBase::OnExit waiting for Accept thread to exit\n",Sderived.c_str());
    // fflush(stdout);
    pthread_join(MPI_accept,NULL);
+   AcceptConns = false; // stop accepting connections
    // printf("(%s)::CommonBase::OnExit shutting down\n",Sderived.c_str());
    // fflush(stdout);
-   acpt_running = false;
 }
-if (Urank == Lrank.load(std::memory_order_relaxed))
+if (Urank == Lrank)
 {
-   MPI_Unpublish_name(MPISvc,MPI_INFO_NULL,MPIPort.load(std::memory_order_seq_cst));
-   MPI_Close_port(MPIPort.load(std::memory_order_seq_cst));
+   MPI_Unpublish_name(MPISvc,MPI_INFO_NULL,MPIPort);
+   MPI_Close_port(MPIPort);
 }
 return 1;
 }
@@ -348,22 +358,25 @@ pPmap[cIdx]->Register(Z);                    // Load one element into the proces
 if ((cIdx == 0) && (pPmap[0]->vPmap.size() == Usize[0])) // once we have everybody local
 {
    // we can decide who the leader will be for any intercomms.
-   if (pPmap[0]->U.Mothership.size()) Lrank.store(*min_element(pPmap[0]->U.Mothership.begin(),pPmap[0]->U.Mothership.end()),std::memory_order_relaxed);
-   else Lrank.store(0,std::memory_order_relaxed); // intercomm leader (lowest-rank mothership or 0)
-   if (Urank == Lrank.load(std::memory_order_relaxed)) // and if we are the leader,
+   if (pPmap[0]->U.Mothership.size()) Lrank = *min_element(pPmap[0]->U.Mothership.begin(),pPmap[0]->U.Mothership.end());
+   else Lrank = 0; // intercomm leader (lowest-rank mothership or 0)
+   // printf("Accept intercomm leader rank: %d, for process at rank %d\n",Lrank,Urank);
+   // fflush(stdout);
+   if (Urank == Lrank) // and if we are the leader,
    {
-       MPI_Open_port(MPI_INFO_NULL,MPIPort.load(std::memory_order_seq_cst)); // Announce to MPI that we are open for business
-       MPI_Publish_name(MPISvc,MPI_INFO_NULL,MPIPort.load(std::memory_order_seq_cst)); // and make us publicly available
-       string port_name(MPIPort.load(std::memory_order_seq_cst));
+       MPI_Open_port(MPI_INFO_NULL,MPIPort); // Announce to MPI that we are open for business
+       MPI_Publish_name(MPISvc,MPI_INFO_NULL,MPIPort); // and make us publicly available
+       string port_name(MPIPort); // all local processes should get the port name
 
        // start up the Accept thread everywhere.
        PMsg_p Areq;
        Areq.Key(Q::SYST,Q::ACPT);
        Areq.Src(Urank);
-       Areq.comm = MPI_COMM_WORLD;
+       Areq.comm = Comms[0];
        Areq.Put(0,&port_name);
-       Areq.Bcast();
-       OnSystAcpt(&Areq,0); // including ourselves.
+       // Disable Accept thread until MPI issue with collectives on MPI_THREAD_MULTIPLE can be resolved
+       // Areq.Bcast();
+       // return OnSystAcpt(&Areq,0); // including ourselves.
    }
 }
 return 0;
@@ -378,18 +391,19 @@ if (cIdx) // Accept is only valid on the process' native comm.
 Post(61, uint2str(cIdx));
 return 1;
 }
-AcceptConns.store(true,std::memory_order_relaxed); // set the flag enabling accepts
 string port_name;
 Z->Get(0,port_name);
-strcpy(MPIPort.load(std::memory_order_seq_cst),port_name.c_str());
+strcpy(MPIPort,port_name.c_str());
+// printf("Accept port name for process rank %d: %s\n", Urank, MPIPort);
+// fflush(stdout);
+AcceptConns = true; // set the flag enabling accepts
 void* args = this;                   // spin off a thread to accept MPI connections
 if (pthread_create(&MPI_accept,NULL,Accept,args))  // from other universes
 {
-AcceptConns.store(false,std::memory_order_relaxed);
+AcceptConns = false;
 Post(63, uint2str(Urank));                         // failure is fatal
 return 1;
 }
-acpt_running=true;                                 // otherwise we are in business
 return 0;
 }
 
@@ -558,23 +572,24 @@ void CommonBase::Prologue(int argc,char ** argv)
 // Startup code for EVERY orchestrator process.
 {
 int tUsize;
-MPI_Comm_size(MPI_COMM_WORLD,&tUsize); // Universe size
+MPI_Comm_size(Comms[0],&tUsize); // Universe size
 Usize.push_back(tUsize);
-MPI_Comm_rank(MPI_COMM_WORLD,&Urank);  // My place within it
-Trank.store(Urank,std::memory_order_relaxed); // thread-safe copy of MPI rank.
+MPI_Comm_rank(Comms[0],&Urank);  // My place within it
 char Uname[MPI_MAX_PROCESSOR_NAME];
 MPI_Get_processor_name(Uname,&Ulen);   // Machine name
 Sproc = string(Uname);                 // Translated from the original FORTRAN
 Suser = getenv("USER");                // User name as seen by the process
-strcpy(MPI_Port,"PORT_NULL");          // Default MPI port
-MPIPort.store(MPI_Port,std::memory_order_seq_cst); // thread-safe reference to MPI port
+strcpy(MPIPort,"PORT_NULL");           // Default MPI port
+
+// ---------- THIS DOES NOT APPEAR TO SET ANYTHING PERSISTENT ------------------
 
 int * io_chan;
 int   io_flag;                         // Establish who has IO
-MPI_Comm_get_attr(MPI_COMM_WORLD,MPI_IO,&io_chan,&io_flag); // replaces deprecated MPI_Attr_get
+MPI_Comm_get_attr(Comms[0],MPI_IO,&io_chan,&io_flag); // replaces deprecated MPI_Attr_get
 
-T_Comm = MPI_COMM_NULL;                // initialise the Accept intercommunicator
-Tcomm.store(&T_Comm,std::memory_order_seq_cst);
+//------------------------------------------------------------------------------
+
+Tcomm = MPI_COMM_NULL;                 // initialise the Accept intercommunicator
 
 UBPW = BPW();                          // ... bits per word
 Scompiler = GetCompiler();             // ... compiler
@@ -584,10 +599,10 @@ STIME = string(__TIME__);              // ... compilation time
 SDATE = string(__DATE__);              // ... compilation date
 
 PMsg_p Pkt;
-SendPMap(MPI_COMM_WORLD, &Pkt);        // Send our data to everybody else
+SendPMap(Comms[0], &Pkt);        // Send our data to everybody else
 pPmap[0]->Register(&Pkt);              // Need to put ourselves in seperately
 //printf("%s:CommonBase at barrier\n",Sderived.c_str()); fflush(stdout);
-MPI_Barrier(MPI_COMM_WORLD);           // Wait until everyone has told everyone
+MPI_Barrier(Comms[0]);           // Wait until everyone has told everyone
 //printf("%s:CommonBase through barrier\n",Sderived.c_str()); fflush(stdout);
 }
 

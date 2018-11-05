@@ -40,10 +40,10 @@ FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
 PAddress = TinselMeshYLen << (TinselMeshXBits+TinselLogCoresPerBoard+TinselLogThreadsPerCore);
 
 twig_running = false;
-ForwardMsgs.store(false,std::memory_order_relaxed); // don't forward tinsel traffic yet
+ForwardMsgs = false; // don't forward tinsel traffic yet
   
 MPISpinner();                          // Spin on *all* messages; exit on DIE
-// printf("Exiting Mothership. Closedown flags: AcceptConns: %s, ForwardMsgs: %s\n", AcceptConns.load(std::memory_order_relaxed) ? "true" : "false", ForwardMsgs.load(std::memory_order_relaxed) ? "true" : "false");
+// printf("Exiting Mothership. Closedown flags: AcceptConns: %s, ForwardMsgs: %s\n", AcceptConns ? "true" : "false", ForwardMsgs ? "true" : "false");
 // fflush(stdout);
 if (twig_running) pthread_join(Twig_thread,NULL); // wait for the twig thread, if it started.
 twig_running = false;
@@ -179,11 +179,11 @@ unsigned TMoth::Boot(string task)
    // tinsel cores. Have to do it here, after all the initial setup is complete,
    // otherwise setup barrier communications may fail.
    void* args = this;
-   ForwardMsgs.store(true,std::memory_order_relaxed); // set forwarding on so thread doesn't immediately exit
+   ForwardMsgs = true; // set forwarding on so thread doesn't immediately exit
    if (pthread_create(&Twig_thread,NULL,Twig,args))
    {
       twig_running = false;
-      ForwardMsgs.store(false,std::memory_order_relaxed);
+      ForwardMsgs = false;
       Post(531, int2str(Urank));
    }
    else twig_running =true;
@@ -606,7 +606,7 @@ void* TMoth::Twig(void* par)
         fsetpos(OutFile, &readPos);
 	fsetpos(OutFile, &writePos);
      }
-     while (parent->ForwardMsgs.load(std::memory_order_relaxed)) // until told otherwise,
+     while (parent->ForwardMsgs) // until told otherwise,
      {
            // receive all available traffic. Should this be done or only one packet
            // and then try again for MPI? We don't expect MPI traffic to be intensive
@@ -667,7 +667,7 @@ void* TMoth::Twig(void* par)
 		          // printf("Entire Supervisor message received of length %d\n", s_hdr->cmdLenBytes);
 		          // fflush(stdout);	
 		          if (parent->OnTinselOut(recvdMsg))
-			     parent->Post(530, int2str(parent->Trank.load(std::memory_order_relaxed)));
+			     parent->Post(530, int2str(parent->Urank));
 		          super_buf_clr(recvdMsg);
 	               }
 		    }
@@ -782,7 +782,7 @@ WALKMAP(string, TaskInfo_t*, TaskMap, tsk)
        if (tsk->second->status == TaskInfo_t::TASK_RUN)  CmStop(tsk->first);       
 }
 // stop accepting Tinsel messages
-ForwardMsgs.store(false,std::memory_order_relaxed);
+ForwardMsgs = false;
 return CommonBase::OnExit(Z,cIdx); // exit through CommonBase handler
 }
 
