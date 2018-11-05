@@ -1,4 +1,5 @@
 # Orchestrator
+<<<<<<< HEAD
 The Orchestrator is the configuration and run-time management system for POETS platforms.
 
 ## PREREQUISITES
@@ -87,3 +88,11 @@ system /svcn = {service name}
 Once connected you should be able to execute all commands seamlessly and the Orchestrator will work out where to direct the result.
 
 None of this functionality has been tested in more than a rudimentary way yet!
+=======
+The Orchestrator is the configuration and run-time management system for POETS
+platforms.
+
+Be sure to take a look at the user documentation at
+https://github.com/POETSII/orchestrator-documentation for building and running
+instructions.
+>>>>>>> bc2db889da562d78fbf6637325d1b89daa31553d
