@@ -93,7 +93,7 @@ RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
 STUB_SUPERVISOR = $(SUPERVISOR_LIB_DIR)/libSupervisor.so
-all: root dummy logserver rtcl
+all: root dummy logserver rtcl injector mothership
 root: $(ROOT_EXECUTABLE)
 dummy: $(DUMMY_EXECUTABLE)
 logserver: $(LOGSERVER_EXECUTABLE)
