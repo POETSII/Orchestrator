@@ -667,7 +667,7 @@ void* TMoth::Twig(void* par)
 		          // printf("Entire Supervisor message received of length %d\n", s_hdr->cmdLenBytes);
 		          // fflush(stdout);	
 		          if (parent->OnTinselOut(recvdMsg))
-			     parent->Post(530, int2str(parent->Trank.load(std::memory_order_relaxed)));
+			     parent->Post(530, int2str(parent->Urank));
 		          super_buf_clr(recvdMsg);
 	               }
 		    }

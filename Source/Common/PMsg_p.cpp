@@ -80,7 +80,7 @@ MPI_Ibsend(Stream(),Length(),MPI_CHAR,dest,tag,comm,&request);
 //printf("PMsg_p::Send, waiting\n"); fflush(stdout);
 int i=0;
 do { i++; MPI_Test(&request,&flag,&status); } while (flag==0);
-MPI_Wait(&request,&status);
+// MPI_Wait(&request,&status);
 //printf("PMsg_p::Send(key=%#010x,dest=%d), returning after %d tests\n",
 //        Key(),dest,i);
 //fflush(stdout);

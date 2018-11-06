@@ -201,7 +201,7 @@ fflush(fp);
 unsigned CommonBase::Connect(string svc)
 // connects this process' MPI universe to a remote universe that has published
 // a name to access it by.
-{    
+{
 int error = MPI_SUCCESS;
 // a server has its port already so can just open a comm
 if (svc=="") Comms.push_back(Tcomm);
@@ -245,7 +245,7 @@ for (; cIdx < pPmap.size(); cIdx++)
   if (pPmap[cIdx]->U.LogServer!=Q::NAP) return cIdx;
 return -1;
 }
-  
+
 //------------------------------------------------------------------------------
 
 int CommonBase::NameSCIdx()
@@ -298,7 +298,7 @@ for (;;) {
     PMsg_p Pkt((byte *)&MPI_Buf[0],count);// Turn it into a packet
     Pkt.Ztime(1,MPI_Wtime());            // Timestamp arrival
     if (Decode(&Pkt,cIdx)!=0) return;    // Do it, possibly leaving afterwards
-  }                                    
+  }
 }
 //printf("********* CommonBase MPIspinner rank %d on the way out\n",Urank); fflush(stdout);
 // Here iff Decode() found an "exit" command
@@ -359,7 +359,7 @@ if ((cIdx == 0) && (pPmap[0]->vPmap.size() == Usize[0])) // once we have everybo
 {
    // we can decide who the leader will be for any intercomms.
    if (pPmap[0]->U.Mothership.size()) Lrank = *min_element(pPmap[0]->U.Mothership.begin(),pPmap[0]->U.Mothership.end());
-   else Lrank = 1; // intercomm leader (lowest-rank mothership or 0)
+   else Lrank = 0; // intercomm leader (lowest-rank mothership or 0)
    // printf("Accept intercomm leader rank: %d, for process at rank %d\n",Lrank,Urank);
    // fflush(stdout);
    if (Urank == Lrank) // and if we are the leader,
@@ -374,8 +374,9 @@ if ((cIdx == 0) && (pPmap[0]->vPmap.size() == Usize[0])) // once we have everybo
        Areq.Src(Urank);
        Areq.comm = Comms[0];
        Areq.Put(0,&port_name);
-       Areq.Bcast();
-       OnSystAcpt(&Areq,0); // including ourselves.
+       // Disable Accept thread until MPI issue with collectives on MPI_THREAD_MULTIPLE can be resolved
+       // Areq.Bcast();
+       // return OnSystAcpt(&Areq,0); // including ourselves.
    }
 }
 return 0;
@@ -580,9 +581,13 @@ Sproc = string(Uname);                 // Translated from the original FORTRAN
 Suser = getenv("USER");                // User name as seen by the process
 strcpy(MPIPort,"PORT_NULL");           // Default MPI port
 
+// ---------- THIS DOES NOT APPEAR TO SET ANYTHING PERSISTENT ------------------
+
 int * io_chan;
 int   io_flag;                         // Establish who has IO
 MPI_Comm_get_attr(Comms[0],MPI_IO,&io_chan,&io_flag); // replaces deprecated MPI_Attr_get
+
+//------------------------------------------------------------------------------
 
 Tcomm = MPI_COMM_NULL;                 // initialise the Accept intercommunicator
 
@@ -638,5 +643,3 @@ Pkt->Bcast();                           // via a broadcast
 }
 
 //==============================================================================
-
-

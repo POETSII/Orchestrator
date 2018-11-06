@@ -1,6 +1,7 @@
 QT += core
 QT -= gui
 
+#CONFIG += c++98
 CONFIG += c++11
 
 # these were originally without path.
