@@ -130,15 +130,14 @@ $(MOTHERSHIP_EXECUTABLE):
         -lQt5Core -lmpi -lpthread \
         -ljtag_atlantic -ljtag_client -lSupervisor
 
-# Object generation.
-define build-object =
-@mkdir --parents $$(dirname $@)
-$(CXX) $(CXXFLAGS) -c -o $@ $<
-@# This move command installs the assembled dependency file (see *Note 1*). The
-@# touch updates the timestamp on the target (to avoid pointless rebuilds), and
-@# is predicated on the move command succeeding.
-@mv --force $(DEPENDENCY_DIR)/$*.temp.d $(DEPENDENCY_DIR)/$*.d
-@touch $@
+# Object generation. Note: The move command installs the assembled dependency
+# file (see *Note 1*). The touch updates the timestamp on the target (to avoid
+# pointless rebuilds), and is predicated on the move command succeeding.
+define build-object
+    @mkdir --parents $$(dirname $@)
+    $(CXX) $(CXXFLAGS) -c -o $@ $<
+    @mv --force $(DEPENDENCY_DIR)/$*.temp.d $(DEPENDENCY_DIR)/$*.d
+    @touch $@
 endef
 
 $(OBJECT_DIR)/%.o: $(ROOT_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d

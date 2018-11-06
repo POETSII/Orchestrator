@@ -7,12 +7,30 @@
 # because the object lists, which are generated from the source lists, are
 # passed to the linker.
 
+# Sources in /Source/Common are used repeatedly, so we define them preemptively
+# for elegance. Note that we don't include the entire directory of sources,
+# because there are files in that directory that are not needed to build every
+# object.
+#
+# These common sources also require some sources from /Generics.
+TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
+                       $(SOURCE_DIR)/Common/Environment.cpp \
+                       $(SOURCE_DIR)/Common/Pglobals.cpp \
+                       $(SOURCE_DIR)/Common/PMsg_p.cpp \
+                       $(SOURCE_DIR)/Common/ProcMap.cpp \
+                       $(SOURCE_DIR)/Common/NameBase.cpp \
+                       $(SOURCE_DIR)/Common/Unrec_t.cpp \
+                       $(GENERICS_DIR)/flat.cpp \
+                       $(GENERICS_DIR)/Msg_p.cpp
+
 # The root component consists of:
 #
 #  - The "main" file (/Source/Root/RootMain.cpp) and its dependencies in
 #    /Source/Root.
 #
-#  - A set of common (/Source/Common) and "generics" (/Generics)sources.
+#  - Some "generics" (/Generics) sources.
+#
+#  - The truly common sources.
 #
 #  - A nameserver definition, from /Source/NameServer
 #
@@ -23,22 +41,15 @@
 # Add the first three items of this bulleted list:
 ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(SOURCE_DIR)/Root/Root.cpp \
-               $(SOURCE_DIR)/Common/CommonBase.cpp \
-               $(SOURCE_DIR)/Common/Environment.cpp \
-               $(SOURCE_DIR)/Common/Pglobals.cpp \
-               $(SOURCE_DIR)/Common/PMsg_p.cpp \
-               $(SOURCE_DIR)/Common/ProcMap.cpp \
-               $(SOURCE_DIR)/Common/NameBase.cpp \
-               $(SOURCE_DIR)/Common/Unrec_t.cpp \
                $(GENERICS_DIR)/Cli.cpp \
                $(GENERICS_DIR)/dfprintf.cpp \
                $(GENERICS_DIR)/dumpchan.cpp \
                $(GENERICS_DIR)/filename.cpp \
-               $(GENERICS_DIR)/flat.cpp \
                $(GENERICS_DIR)/lex.cpp \
-               $(GENERICS_DIR)/Msg_p.cpp \
                $(GENERICS_DIR)/rand.cpp \
                $(SOURCE_DIR)/NameServer/Ns_el.cpp
+
+ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
 
 # Add (almost) all of the sources from OrchBase and Parser.
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)
@@ -47,7 +58,7 @@ ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/Parser/*.cpp)
 # These four files are not translation units, so they cannot be compiled into
 # objects and are included by OrchBase.cpp (this was done to reduce the size of
 # the file). Since we're collecting OrchBase sources using a wildcard, we must
-# exploicitly exclude these four items from the source list.
+# explicitly exclude these four items from the source list.
 ROOT_SOURCE_EXCEPTIONS = $(addprefix $(SOURCE_DIR)/OrchBase/, \
     OrchBaseTask.cpp OrchBaseLink.cpp OrchBaseTopo.cpp OrchBaseOwner.cpp)
 ROOT_SOURCES := $(filter-out $(ROOT_SOURCE_EXCEPTIONS), \
@@ -58,86 +69,64 @@ ROOT_SOURCES := $(filter-out $(ROOT_SOURCE_EXCEPTIONS), \
 # - The "main" file (/Source/Dummy/DummyMain.cpp) and its dependencies in
 #   /Source/Dummy.
 #
-#  - A set of common (/Source/Common) and "generics" (/Generics)sources.
+# - The truly common sources.
 #
 DUMMY_SOURCES = $(SOURCE_DIR)/Dummy/DummyMain.cpp \
-                $(SOURCE_DIR)/Dummy/Dummy.cpp \
-                $(SOURCE_DIR)/Common/CommonBase.cpp \
-                $(SOURCE_DIR)/Common/Environment.cpp \
-                $(SOURCE_DIR)/Common/Pglobals.cpp \
-                $(SOURCE_DIR)/Common/PMsg_p.cpp \
-                $(SOURCE_DIR)/Common/ProcMap.cpp \
-                $(SOURCE_DIR)/Common/NameBase.cpp \
-                $(SOURCE_DIR)/Common/Unrec_t.cpp \
-                $(GENERICS_DIR)/flat.cpp \
-                $(GENERICS_DIR)/Msg_p.cpp
+                $(SOURCE_DIR)/Dummy/Dummy.cpp
+
+DUMMY_SOURCES += $(TRULY_COMMON_SOURCES)
 
 # The logserver component consists of:
 #
 # - The "main" file (/Source/LogServer/LogServerMain.cpp) and its dependencies
 #   in /Source/LogServer.
 #
-#  - A set of common (/Source/Common) and "generics" (/Generics)sources.
+# - The truly common sources.
+#
+# - Some "generics" (/Generics) sources.
 #
 LOGSERVER_SOURCES = $(SOURCE_DIR)/LogServer/LogServerMain.cpp \
                     $(SOURCE_DIR)/LogServer/LogServer.cpp \
-                    $(SOURCE_DIR)/Common/CommonBase.cpp \
-                    $(SOURCE_DIR)/Common/Environment.cpp \
-                    $(SOURCE_DIR)/Common/Pglobals.cpp \
-                    $(SOURCE_DIR)/Common/PMsg_p.cpp \
-                    $(SOURCE_DIR)/Common/ProcMap.cpp \
-                    $(SOURCE_DIR)/Common/NameBase.cpp \
-                    $(SOURCE_DIR)/Common/Unrec_t.cpp \
                     $(GENERICS_DIR)/dfprintf.cpp \
-                    $(GENERICS_DIR)/Msg_p.cpp \
-                    $(GENERICS_DIR)/flat.cpp \
                     $(GENERICS_DIR)/jnj.cpp \
                     $(GENERICS_DIR)/lex.cpp \
                     $(GENERICS_DIR)/uif.cpp
+
+LOGSERVER_SOURCES += $(TRULY_COMMON_SOURCES)
 
 # The rtcl (real-time clock) component consists of:
 #
 # - The "main" file (/Source/RTCL/RTCL.cpp) and its dependencies in
 #   /Source/RTCL.
 #
-#  - A set of common (/Source/Common) and "generics" (/Generics)sources.
+# - The truly common sources.
+#
+# - Some "generics" (/Generics) sources.
 #
 RTCL_SOURCES = $(SOURCE_DIR)/RTCL/RTCLMain.cpp \
                $(SOURCE_DIR)/RTCL/RTCL.cpp \
-               $(SOURCE_DIR)/Common/CommonBase.cpp \
-               $(SOURCE_DIR)/Common/Environment.cpp \
-               $(SOURCE_DIR)/Common/Pglobals.cpp \
-               $(SOURCE_DIR)/Common/PMsg_p.cpp \
-               $(SOURCE_DIR)/Common/ProcMap.cpp \
-               $(SOURCE_DIR)/Common/NameBase.cpp \
-               $(SOURCE_DIR)/Common/Unrec_t.cpp \
                $(GENERICS_DIR)/Cli.cpp \
                $(GENERICS_DIR)/dfprintf.cpp \
-               $(GENERICS_DIR)/flat.cpp \
-               $(GENERICS_DIR)/lex.cpp \
-               $(GENERICS_DIR)/Msg_p.cpp
+               $(GENERICS_DIR)/lex.cpp
+
+RTCL_SOURCES += $(TRULY_COMMON_SOURCES)
 
 # The injector component consists of:
 #
 # - The "main" file (/Source/Injector/Injector.cpp) and its dependencies in
 #   /Source/Injector.
 #
-#  - A set of common (/Source/Common) and "generics" (/Generics)sources.
+# - The truly common sources.
+#
+# - Some "generics" (/Generics) sources.
 #
 INJECTOR_SOURCES = $(SOURCE_DIR)/Injector/InjectorMain.cpp \
                    $(SOURCE_DIR)/Injector/Injector.cpp \
-                   $(SOURCE_DIR)/Common/CommonBase.cpp \
-                   $(SOURCE_DIR)/Common/Environment.cpp \
-                   $(SOURCE_DIR)/Common/Pglobals.cpp \
-                   $(SOURCE_DIR)/Common/PMsg_p.cpp \
-                   $(SOURCE_DIR)/Common/ProcMap.cpp \
-                   $(SOURCE_DIR)/Common/NameBase.cpp \
-                   $(SOURCE_DIR)/Common/Unrec_t.cpp \
                    $(GENERICS_DIR)/Cli.cpp \
                    $(GENERICS_DIR)/dfprintf.cpp \
-                   $(GENERICS_DIR)/flat.cpp \
-                   $(GENERICS_DIR)/lex.cpp \
-                   $(GENERICS_DIR)/Msg_p.cpp
+                   $(GENERICS_DIR)/lex.cpp
+
+INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 
 # The mothership component consists of:
 #
@@ -149,9 +138,12 @@ INJECTOR_SOURCES = $(SOURCE_DIR)/Injector/InjectorMain.cpp \
 #
 # - Parts of the HostLink, taken from the tinsel set of software dependencies.
 #
-# - A set of common (/Source/Common) and "generics" (/Generics)sources.
+# - The truly common sources.
+#
+# - Some "generics" (/Generics) sources.
 #
 # - A set of base Orchestrator (/Source/OrchBase) sources.
+#
 MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/TaskInfo.cpp \
                      $(SOURCE_DIR)/Mothership/TMoth.cpp \
@@ -161,16 +153,7 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(TINSEL_HOSTLINK_DIR)/PowerLink.cpp \
                      $(TINSEL_HOSTLINK_DIR)/UART.cpp \
                      $(SOURCE_DIR)/Softswitch/src/poets_msg.cpp \
-                     $(SOURCE_DIR)/Common/CommonBase.cpp \
-                     $(SOURCE_DIR)/Common/Environment.cpp \
-                     $(SOURCE_DIR)/Common/Pglobals.cpp \
-                     $(SOURCE_DIR)/Common/PMsg_p.cpp \
-                     $(SOURCE_DIR)/Common/ProcMap.cpp \
-                     $(SOURCE_DIR)/Common/NameBase.cpp \
-                     $(SOURCE_DIR)/Common/Unrec_t.cpp \
                      $(GENERICS_DIR)/dumpchan.cpp \
-                     $(GENERICS_DIR)/flat.cpp \
-                     $(GENERICS_DIR)/Msg_p.cpp \
                      $(GENERICS_DIR)/rand.cpp \
                      $(SOURCE_DIR)/OrchBase/Bin.cpp \
                      $(SOURCE_DIR)/OrchBase/build_defs.cpp \
@@ -188,12 +171,16 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/OrchBase/P_task.cpp \
                      $(SOURCE_DIR)/OrchBase/P_thread.cpp
 
+MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
+
 # The example supervisor, which is not a component but is a shared object
 # library, consists of a single stub source file.
 STUB_SUPERVISOR_SOURCES = $(SOURCE_DIR)/Mothership/Supervisor.cpp
 
 # Convert these lists of sources into a list of objects to define a dependency
 # system for the linker.
+#
+# Anyone know a good way to avoid code duplication here?
 ROOT_OBJECTS := $(patsubst $(ROOT_DIR)/%.cpp,\
                            $(OBJECT_DIR)/%.o,\
                            $(ROOT_SOURCES))
