@@ -9,10 +9,11 @@ SHELL = /bin/sh
 #
 # If you are a user, you should modify the Makefile.dependencies file in this
 # directory to correctly path to the dependencies required to build the
-# components of the Orchestrator. You should not need to modify this file.
+# components of the Orchestrator. You should not need to modify this particular
+# file.
 #
-# If you are a developer, you may also need to modify this file to incorporate
-# your additional sources.
+# If you are a developer, you may also need to modify the following file to
+# incorporate your additional sources:
 include Makefile.dependencies
 
 # Path to the root directory of the Orchestrator (not to be confused with the
