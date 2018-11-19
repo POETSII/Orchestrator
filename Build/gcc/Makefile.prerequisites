@@ -94,6 +94,10 @@ LOGSERVER_SOURCES = $(SOURCE_DIR)/LogServer/LogServerMain.cpp \
 
 LOGSERVER_SOURCES += $(TRULY_COMMON_SOURCES)
 
+# The logserver also needs OrchestratorMessages.txt to exist in the directory
+# from which the Orchestrator is started.
+LOGSERVER_MESSAGE_FILE_ORIGIN = $(SOURCE_DIR)/OrchestratorMessages.txt
+
 # The rtcl (real-time clock) component consists of:
 #
 # - The "main" file (/Source/RTCL/RTCL.cpp) and its dependencies in

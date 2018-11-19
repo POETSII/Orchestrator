@@ -90,6 +90,7 @@ CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
 ROOT_EXECUTABLE = $(EXECUTABLE_DIR)/root
 DUMMY_EXECUTABLE = $(EXECUTABLE_DIR)/dummy
 LOGSERVER_EXECUTABLE = $(EXECUTABLE_DIR)/logserver
+LOGSERVER_MESSAGE_FILE = $(EXECUTABLE_DIR)/OrchestratorMessages.txt
 RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
@@ -97,7 +98,7 @@ STUB_SUPERVISOR = $(SUPERVISOR_LIB_DIR)/libSupervisor.so
 all: root dummy logserver rtcl injector mothership
 root: $(ROOT_EXECUTABLE)
 dummy: $(DUMMY_EXECUTABLE)
-logserver: $(LOGSERVER_EXECUTABLE)
+logserver: $(LOGSERVER_EXECUTABLE) $(LOGSERVER_MESSAGE_FILE)
 rtcl: $(RTCL_EXECUTABLE)
 injector: $(INJECTOR_EXECUTABLE)
 mothership: $(MOTHERSHIP_EXECUTABLE)
@@ -150,7 +151,13 @@ $(HOSTLINK_OBJECT_DIR)/%.o: $(TINSEL_HOSTLINK_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
 # Supervisor generation.
 $(STUB_SUPERVISOR): $(STUB_SUPERVISOR_OBJECTS)
 	@mkdir --parents $$(dirname $@)
-	$(CXX) -shared -Wl,-soname,$$(basename $@) -o $@ $<
+	$(CXX) -shared -L$(MPICH_LIB_DIR) -Wl,-soname,$$(basename $@) -o $@ $<
+
+# Miscellaneous files to be copied to the build directory in order for various
+# components of the Orchestrator to function.
+$(LOGSERVER_MESSAGE_FILE): $(LOGSERVER_MESSAGE_FILE_ORIGIN)
+	@mkdir --parents $$(dirname $@)
+	cp $< $@
 
 # Dependency files have no build instructions (Make must not fall over if the
 # dependency file is not there), because they are created from the compilation
