@@ -95,13 +95,16 @@ RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
 STUB_SUPERVISOR = $(SUPERVISOR_LIB_DIR)/libSupervisor.so
+JTAG_ATLANTIC_LOCAL = $(EXECUTABLE_DIR)/libjtag_atlantic.so
+JTAG_CLIENT_LOCAL = $(EXECUTABLE_DIR)/libjtag_client.so
 all: root dummy logserver rtcl injector mothership
 root: $(ROOT_EXECUTABLE)
 dummy: $(DUMMY_EXECUTABLE)
 logserver: $(LOGSERVER_EXECUTABLE) $(LOGSERVER_MESSAGE_FILE)
 rtcl: $(RTCL_EXECUTABLE)
 injector: $(INJECTOR_EXECUTABLE)
-mothership: $(MOTHERSHIP_EXECUTABLE)
+mothership: $(MOTHERSHIP_EXECUTABLE) \
+            $(JTAG_ATLANTIC_LOCAL) $(JTAG_CLIENT_LOCAL)
 stub_supervisor: $(STUB_SUPERVISOR)
 
 # Prerequisites (objects) for building executables are defined here:
@@ -153,9 +156,12 @@ $(STUB_SUPERVISOR): $(STUB_SUPERVISOR_OBJECTS)
 	@mkdir --parents $$(dirname $@)
 	$(CXX) -shared -L$(MPICH_LIB_DIR) -Wl,-soname,$$(basename $@) -o $@ $<
 
-# Miscellaneous files to be copied to the build directory in order for various
-# components of the Orchestrator to function.
+# Miscellaneous files to be copied to the execution directory in order for
+# various components of the Orchestrator to function.
 $(LOGSERVER_MESSAGE_FILE): $(LOGSERVER_MESSAGE_FILE_ORIGIN)
+$(JTAG_ATLANTIC_LOCAL): $(JTAG_LIB_DIR)/libjtag_atlantic.so
+$(JTAG_CLIENT_LOCAL): $(JTAG_LIB_DIR)/libjtag_client.so
+$(LOGSERVER_MESSAGE_FILE) $(JTAG_ATLANTIC_LOCAL) $(JTAG_CLIENT_LOCAL):
 	@mkdir --parents $$(dirname $@)
 	cp $< $@
 
