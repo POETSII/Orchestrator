@@ -8,13 +8,6 @@
 #
 # In Mark's case, it looks like this:
 ORCHESTRATOR_DEPENDENCIES_DIR ?= /home/mv1g18/orchestrator_dependencies
-#
-# This is a generic solution (hack), but will not work in all cases. It
-# requires a variety of tools that are certainly not be available on every
-# system.
-ORCHESTRATOR_DEPENDENCIES_DIR ?= $((locate orchestrator_dependencies | \
-                                    awk '{print length($1), $1}' | \
-                                    sort -nk 1 | head -1 | cut -d" " -f2))
 
 # If you're using the "orchestrator_dependencies" tarball, you shouldn't need
 # to do anything more. If you aren't, you'll need to configure the following to
