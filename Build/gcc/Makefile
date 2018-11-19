@@ -32,14 +32,14 @@ OBJECT_DIR = ./Objects
 # Orchestrator.
 HOSTLINK_OBJECT_DIR = ./Objects/Hostlink
 
-# Supervisors are placed in here. Supervisors (.so) are shared object library
-# files that are generated from supervisor object files (.o), which are in turn
-# generated from source files (.cpp).
-SUPERVISOR_LIB_DIR = ./Supervisors
-
 # Executable binaries are built to here (directory is created as executable
 # binaries are built):
 EXECUTABLE_DIR = $(ROOT_DIR)/bin
+
+# Supervisors are placed in here. Supervisors (.so) are shared object library
+# files that are generated from supervisor object files (.o), which are in turn
+# generated from source files (.cpp).
+SUPERVISOR_LIB_DIR = $(EXECUTABLE_DIR)
 
 # A note on dependency handling: we couple gcc's various -M flags with Make's
 # ability to import dependency files to manage build dependencies. For more
