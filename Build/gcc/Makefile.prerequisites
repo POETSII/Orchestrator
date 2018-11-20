@@ -140,22 +140,18 @@ INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 #
 # - An interface source file from the softswitch, in /Source/Softswitch/src.
 #
-# - Parts of the HostLink, taken from the tinsel set of software dependencies.
-#
 # - The truly common sources.
 #
 # - Some "generics" (/Generics) sources.
 #
 # - A set of base Orchestrator (/Source/OrchBase) sources.
 #
+# - Parts of the HostLink, taken from the tinsel set of software
+#   dependencies (these are bound to a different variable).
+#
 MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/TaskInfo.cpp \
                      $(SOURCE_DIR)/Mothership/TMoth.cpp \
-                     $(TINSEL_HOSTLINK_DIR)/DebugLink.cpp \
-                     $(TINSEL_HOSTLINK_DIR)/HostLink.cpp \
-                     $(TINSEL_HOSTLINK_DIR)/MemFileReader.cpp \
-                     $(TINSEL_HOSTLINK_DIR)/PowerLink.cpp \
-                     $(TINSEL_HOSTLINK_DIR)/UART.cpp \
                      $(SOURCE_DIR)/Softswitch/src/poets_msg.cpp \
                      $(GENERICS_DIR)/dumpchan.cpp \
                      $(GENERICS_DIR)/rand.cpp \
@@ -177,41 +173,49 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 
+HOSTLINK_SOURCES = $(TINSEL_HOSTLINK_DIR)/DebugLink.cpp \
+                   $(TINSEL_HOSTLINK_DIR)/HostLink.cpp \
+                   $(TINSEL_HOSTLINK_DIR)/MemFileReader.cpp \
+                   $(TINSEL_HOSTLINK_DIR)/PowerLink.cpp \
+                   $(TINSEL_HOSTLINK_DIR)/UART.cpp \
+
 # The example supervisor, which is not a component but is a shared object
 # library, consists of a single stub source file.
 STUB_SUPERVISOR_SOURCES = $(SOURCE_DIR)/Mothership/Supervisor.cpp
 
 # Convert these lists of sources into a list of objects to define a dependency
 # system for the linker.
+
+# Macro to convert source files in one directory to object files in
+# another directory. Arguments:
 #
-# Anyone know a good way to avoid code duplication here?
-ROOT_OBJECTS := $(patsubst $(ROOT_DIR)/%.cpp,\
-                           $(OBJECT_DIR)/%.o,\
-                           $(ROOT_SOURCES))
+#  - $1: Directory containing source (.cpp) files.
+#  - $2: Directory to contain object files (.o) to build from these source
+#        files.
+#  - $3: Space-delimited list of source file basenames, with extension.
+#
+# Returns a space-delimited list of absolute object files to create from the
+# source file arguments.
+sources_to_objects = $(patsubst $(strip $(1)/%.cpp),\
+                                $(strip $(2)/%.o),\
+                                $(3))
 
-INJECTOR_OBJECTS := $(patsubst $(ROOT_DIR)/%.cpp,\
-                               $(OBJECT_DIR)/%.o,\
-                               $(INJECTOR_SOURCES))
+# Another macro to reduce argument count for compiling sources from the
+# Orchestrator, where $1 is a list of sources to convert into a list of
+# objects.
+orch_sources_to_objects = $(call sources_to_objects, $(ROOT_DIR),\
+                                                     $(OBJECT_DIR),\
+                                                     $(1))
 
-DUMMY_OBJECTS := $(patsubst $(ROOT_DIR)/%.cpp,\
-                            $(OBJECT_DIR)/%.o,\
-                            $(DUMMY_SOURCES))
-
-LOGSERVER_OBJECTS := $(patsubst $(ROOT_DIR)/%.cpp,\
-                                $(OBJECT_DIR)/%.o,\
-                                $(LOGSERVER_SOURCES))
-
-RTCL_OBJECTS := $(patsubst $(ROOT_DIR)/%.cpp,\
-                           $(OBJECT_DIR)/%.o,\
-                           $(RTCL_SOURCES))
-
-MOTHERSHIP_OBJECTS := $(patsubst $(ROOT_DIR)/%.cpp,\
-                                 $(OBJECT_DIR)/%.o,\
-                                 $(MOTHERSHIP_SOURCES))
-MOTHERSHIP_OBJECTS := $(patsubst $(TINSEL_HOSTLINK_DIR)/%.cpp,\
-                                 $(HOSTLINK_OBJECT_DIR)/%.o,\
-                                 $(MOTHERSHIP_OBJECTS))
-
-STUB_SUPERVISOR_OBJECTS := $(patsubst $(ROOT_DIR)/%.cpp,\
-                           $(OBJECT_DIR)/%.o,\
-                           $(STUB_SUPERVISOR_SOURCES))
+# Apply these macros to each set of sources.
+ROOT_OBJECTS := $(call orch_sources_to_objects, $(ROOT_SOURCES))
+INJECTOR_OBJECTS := $(call orch_sources_to_objects, $(INJECTOR_SOURCES))
+DUMMY_OBJECTS := $(call orch_sources_to_objects, $(DUMMY_SOURCES))
+LOGSERVER_OBJECTS := $(call orch_sources_to_objects, $(LOGSERVER_SOURCES))
+RTCL_OBJECTS := $(call orch_sources_to_objects, $(RTCL_SOURCES))
+STUB_SUPERVISOR_OBJECTS := $(call orch_sources_to_objects,\
+                                  $(STUB_SUPERVISOR_SOURCES))
+MOTHERSHIP_OBJECTS := $(call orch_sources_to_objects, $(MOTHERSHIP_SOURCES))
+HOSTLINK_OBJECTS := $(call sources_to_objects, $(TINSEL_HOSTLINK_DIR),\
+                                               $(HOSTLINK_OBJECT_DIR),\
+                                               $(HOSTLINK_SOURCES))
