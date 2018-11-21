@@ -1,7 +1,10 @@
 # This Makefile builds the various components of the Orchestrator using gcc. It
 # assumes you are running GNU/Linux, and have certain commonly-available GNU
 # utilities installed (you'll know if you don't).
-SHELL = /bin/sh
+
+# Bash is used over sh for hashtables when building orchestrate (and probably
+# other reasons).
+SHELL = /bin/bash
 
 # Software dependencies (MPI, Qt, etc.) are largely hardcoded, because I'm too
 # short on time to write an autoconf wrapper or some other dependency
@@ -85,8 +88,11 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
 CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
            -std=c++11 -Wall -fPIC -pthread
 
-# Handy aliases for building executables. Order doesn't matter, but I build
-# root first out of tradition.
+# Handy aliases for building executables, scripts, and libraries. Order doesn't
+# matter.
+ORCHESTRATE_BASENAME = orchestrate.sh
+ORCHESTRATE_SCRIPT = $(ROOT_DIR)/$(ORCHESTRATE_BASENAME)
+
 ROOT_EXECUTABLE = $(EXECUTABLE_DIR)/root
 DUMMY_EXECUTABLE = $(EXECUTABLE_DIR)/dummy
 LOGSERVER_EXECUTABLE = $(EXECUTABLE_DIR)/logserver
@@ -97,7 +103,9 @@ MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
 STUB_SUPERVISOR = $(SUPERVISOR_LIB_DIR)/libSupervisor.so
 JTAG_ATLANTIC_LOCAL = $(EXECUTABLE_DIR)/libjtag_atlantic.so
 JTAG_CLIENT_LOCAL = $(EXECUTABLE_DIR)/libjtag_client.so
-all: root dummy logserver rtcl injector mothership
+
+all: orchestrate root dummy logserver rtcl injector mothership
+orchestrate: $(ORCHESTRATE_SCRIPT)
 root: $(ROOT_EXECUTABLE)
 dummy: $(DUMMY_EXECUTABLE)
 logserver: $(LOGSERVER_EXECUTABLE) $(LOGSERVER_MESSAGE_FILE)
@@ -166,6 +174,40 @@ $(LOGSERVER_MESSAGE_FILE) $(JTAG_ATLANTIC_LOCAL) $(JTAG_CLIENT_LOCAL):
 	@mkdir --parents $$(dirname $@)
 	cp "$<" "$@"
 
+# Building the orchestrate script, used to setup the runtime environment for
+# the Orchestrator, and to start it. The build process is largely
+# templating. This build target uses a target-specific variable to determine
+# the temporary path for building the orchestrate script.
+#
+# This logic assumes Bash 4 for the SUBSTITUTIONS hashtable, but that's not too
+# unrealistic in this day and age.
+$(ORCHESTRATE_SCRIPT): ORCHESTRATE_TMP:=$(shell mktemp --directory)/$(ORCHESTRATE_BASENAME)
+$(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
+	@# Create staging file space for subtitutions.
+	cp "$<" "$(ORCHESTRATE_TMP)"
+
+	echo $(GCC_LIB_DIR)
+
+	@# Create hashtable and perform substitutions, all in the same shell.
+	declare -A SUBSTITUTIONS=(\
+        ["MPICH_DIR"]="$(realpath $(MPICH_DIR))" \
+		["MPICH_LIB_DIR"]="$(realpath $(MPICH_LIB_DIR))" \
+		["QT_LIB_DIR"]="$(realpath $(QT_LIB_DIR))" \
+		["JTAG_LIB_DIR"]="$(realpath $(JTAG_LIB_DIR))" \
+		["SUPERVISOR_LIB_DIR"]="$(realpath $(SUPERVISOR_LIB_DIR))" \
+		["GCC_LIB_DIR"]="$(realpath $(GCC_LIB_DIR))" \
+		["EXECUTABLE_DIR"]="$(realpath $(EXECUTABLE_DIR))");\
+	for KEY in "$${!SUBSTITUTIONS[@]}"; do \
+		sed -i "s|{{ $$KEY }}|$${SUBSTITUTIONS[$$KEY]}|" "$(ORCHESTRATE_TMP)";\
+	done
+
+	@# Deploy
+	cp "$(ORCHESTRATE_TMP)" "$@"
+
+	@# Remove staging file and directory, carefully.
+	rm "$(ORCHESTRATE_TMP)"
+	rmdir "$(dir $(ORCHESTRATE_TMP))"
+
 # Dependency files have no build instructions (Make must not fall over if the
 # dependency file is not there), because they are created from the compilation
 # process. However, the directory structure for dependency files must be
@@ -181,4 +223,5 @@ clean:
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
 
 # Non-builtin targets that do not explicitly represent files that are created.
-.PHONY: all clean root dummy logserver rtcl injector mothership stub_supervisor
+.PHONY: all clean orchestrate root dummy logserver rtcl injector mothership \
+stub_supervisor

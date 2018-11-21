@@ -5,3 +5,4 @@
 bin/*
 Build/gcc/Objects
 Build/gcc/Dependency_lists
+orchestrate.sh

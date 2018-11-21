@@ -23,6 +23,9 @@ TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
                        $(GENERICS_DIR)/flat.cpp \
                        $(GENERICS_DIR)/Msg_p.cpp
 
+# The orchestrate execution script uses a template.
+ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
+
 # The root component consists of:
 #
 #  - The "main" file (/Source/Root/RootMain.cpp) and its dependencies in
