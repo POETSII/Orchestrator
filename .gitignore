@@ -2,6 +2,7 @@
 *.so
 *.temp.d
 *.o
+*.log
 bin/*
 Build/gcc/Objects
 Build/gcc/Dependency_lists
