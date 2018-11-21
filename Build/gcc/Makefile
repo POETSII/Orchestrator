@@ -192,9 +192,9 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 		["MPICH_LIB_DIR"]="$(realpath $(MPICH_LIB_DIR))" \
 		["QT_LIB_DIR"]="$(realpath $(QT_LIB_DIR))" \
 		["JTAG_LIB_DIR"]="$(realpath $(JTAG_LIB_DIR))" \
-		["SUPERVISOR_LIB_DIR"]="$(realpath $(SUPERVISOR_LIB_DIR))" \
 		["GCC_LIB_DIR"]="$(realpath $(GCC_LIB_DIR))" \
-		["EXECUTABLE_DIR"]="$(realpath $(EXECUTABLE_DIR))");\
+		["SUPERVISOR_LIB_DIR"]="$$(realpath -m $(SUPERVISOR_LIB_DIR))" \
+		["EXECUTABLE_DIR"]="$$(realpath -m $(EXECUTABLE_DIR))");\
 	for KEY in "$${!SUBSTITUTIONS[@]}"; do \
 		sed -i "s|{{ $$KEY }}|$${SUBSTITUTIONS[$$KEY]}|" "$(ORCHESTRATE_TMP)";\
 	done
