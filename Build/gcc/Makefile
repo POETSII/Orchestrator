@@ -186,8 +186,6 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 	@# Create staging file space for subtitutions.
 	cp "$<" "$(ORCHESTRATE_TMP)"
 
-	echo $(GCC_LIB_DIR)
-
 	@# Create hashtable and perform substitutions, all in the same shell.
 	declare -A SUBSTITUTIONS=(\
         ["MPICH_DIR"]="$(realpath $(MPICH_DIR))" \
