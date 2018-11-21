@@ -21,25 +21,25 @@ include Makefile.dependencies
 ROOT_DIR = ../..
 
 # Where sources live.
-GENERICS_DIR = $(ROOT_DIR)/Generics
-SOURCE_DIR = $(ROOT_DIR)/Source
+GENERICS_DIR := $(ROOT_DIR)/Generics
+SOURCE_DIR := $(ROOT_DIR)/Source
 
 # Objects constructed from Orchestrator sources are placed in here. Objects are
 # placed in a directory structure that mimics the source directory structure.
-OBJECT_DIR = ./Objects
+OBJECT_DIR := ./Objects
 
 # We also compile some hostlink sources for the Mothership component of the
 # Orchestrator.
-HOSTLINK_OBJECT_DIR = ./Objects/Hostlink
+HOSTLINK_OBJECT_DIR := ./Objects/Hostlink
 
 # Executable binaries are built to here (directory is created as executable
 # binaries are built):
-EXECUTABLE_DIR = $(ROOT_DIR)/bin
+EXECUTABLE_DIR := $(ROOT_DIR)/bin
 
 # Supervisors are placed in here. Supervisors (.so) are shared object library
 # files that are generated from supervisor object files (.o), which are in turn
 # generated from source files (.cpp).
-SUPERVISOR_LIB_DIR = $(EXECUTABLE_DIR)
+SUPERVISOR_LIB_DIR := $(EXECUTABLE_DIR)
 
 # A note on dependency handling: we couple gcc's various -M flags with Make's
 # ability to import dependency files to manage build dependencies. For more
@@ -164,7 +164,7 @@ $(JTAG_ATLANTIC_LOCAL): $(JTAG_LIB_DIR)/libjtag_atlantic.so
 $(JTAG_CLIENT_LOCAL): $(JTAG_LIB_DIR)/libjtag_client.so
 $(LOGSERVER_MESSAGE_FILE) $(JTAG_ATLANTIC_LOCAL) $(JTAG_CLIENT_LOCAL):
 	@mkdir --parents $$(dirname $@)
-	cp $< $@
+	cp "$<" "$@"
 
 # Dependency files have no build instructions (Make must not fall over if the
 # dependency file is not there), because they are created from the compilation
@@ -175,7 +175,7 @@ $(DEPENDENCY_DIR)/%.d:
 
 clean:
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
-    $(SUPERVISOR_LIB_DIR) $(HOSTLINK_OBJECT_DIR)
+	$(SUPERVISOR_LIB_DIR) $(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT)
 
 # Dependency files must not be removed by Make (unless explicitly cleaned).
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
