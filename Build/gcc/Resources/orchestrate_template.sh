@@ -12,12 +12,45 @@
 # substitute in variable names to create the executable. There should be no
 # double-curly braces in the output version of this file.
 
-# Determine whether or not we are running on a POETS box, trivially.
+# Parse input arguments to determine mothership behaviour. This clears the
+# argument list.
+NUMBER_OF_MOTHERSHIPS=1  # By default, start one mothership if running on a
+                         # POETS box.
+MOTHERSHIP_ARG_SET=0
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --motherships)
+            # Test input argument.
+            NATURAL_REGEXP='^[1-9][[:digit:]]*$'
+            if [ -z "$2" ]; then
+                >&2 echo "No input argument provided for --motherships. Pass \
+a non-zero natural number with no leading zeroes."
+                exit 1
+            elif ! [[ "$2" =~ $NATURAL_REGEXP ]]; then
+                >&2 echo "Invalid input argument for --motherships: \"$2\". \
+It should be a non-zero natural number with no leading zeroes."
+                exit 1
+            fi
+
+            NUMBER_OF_MOTHERSHIPS="$2"
+            MOTHERSHIP_ARG_SET=1
+            shift; shift;;
+    esac
+done
+
+# Determine whether or not we are running on a POETS box.
 QUARTUS_SETUP_SCRIPT="/local/ecad/setup-quartus17v0.bash"
 if [ -f "$QUARTUS_SETUP_SCRIPT" ]; then
     ON_POETS_BOX=1  # True
 else
     ON_POETS_BOX=0
+fi
+
+# Warn if the user set the number of motherships, and if we're not running
+# on a POETS box.
+if [ $MOTHERSHIP_ARG_SET -eq 1 -a $ON_POETS_BOX -eq 0 ]; then
+    >&2 echo "WARNING: Mothership argument was provided, but this script was \
+not run on a POETS box. Continuing without spawning any motherships."
 fi
 
 # Setup
@@ -49,8 +82,8 @@ COMMAND='mpiexec.hydra -genv LD_LIBRARY_PATH "$INTERNAL_LIB_PATH" \
 # we are running on a POETS box.
 pushd "{{ EXECUTABLE_DIR }}" > /dev/null
 if [ $ON_POETS_BOX -eq 1 ]; then
-    echo "$COMMAND -n 1 ./mothership"
+    $COMMAND -n $NUMBER_OF_MOTHERSHIPS ./mothership
 else
-    echo "$COMMAND"
+    $COMMAND
 fi
 popd > /dev/null
