@@ -29,6 +29,9 @@ INTERNAL_LIB_PATH=./:"$QT_LIB_DIR":"$MPI_LIB_DIR":\
 
 # Running the Orchestrator from the build directory.
 pushd "{{ EXECUTABLE_DIR }}" > /dev/null
-mpirun -genv LD_LIBRARY_PATH "$INTERNAL_LIB_PATH" \
-    ./root : ./logserver : ./rtcl : ./injector : ./mothership
+mpiexec.hydra -genv LD_LIBRARY_PATH "$INTERNAL_LIB_PATH" \
+    -n 1 ./root : \
+    -n 1 ./logserver : \
+    -n 1 ./rtcl : \
+    -n 1 ./mothership
 popd > /dev/null
