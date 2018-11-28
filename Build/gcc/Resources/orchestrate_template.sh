@@ -19,7 +19,7 @@ NUMBER_OF_MOTHERSHIPS=1  # By default, start one mothership if running on a
 MOTHERSHIP_ARG_SET=0
 while [ $# -gt 0 ]; do
     case "$1" in
-        --motherships)
+        --motherships|-m)
             # Test input argument.
             NATURAL_REGEXP='^[1-9][[:digit:]]*$'
             if [ -z "$2" ]; then
