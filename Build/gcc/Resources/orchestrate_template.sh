@@ -11,6 +11,21 @@
 # mechanism. The double-curly braces indicate where the build process will
 # substitute in variable names to create the executable. There should be no
 # double-curly braces in the output version of this file.
+#
+# Call with the --help argument for usage, or just read this string:
+
+HELP=\
+"Usage: $(basename "$0") [-h] [-m] N
+
+Starts the Orchestrator.
+
+Will only start mothership process(es) if called on a POETS box.
+
+Optional arguments:
+    -h, --help: Prints this help text.
+    -m, --motherships N: Defines the number of mothership processes to spawn. \
+Only works if called on a POETS box. N must be a non-zero natural number with \
+no leading zeroes."
 
 # Parse input arguments to determine mothership behaviour. This clears the
 # argument list.
@@ -19,6 +34,10 @@ NUMBER_OF_MOTHERSHIPS=1  # By default, start one mothership if running on a
 MOTHERSHIP_ARG_SET=0
 while [ $# -gt 0 ]; do
     case "$1" in
+        --help|-h)
+            # Write help and exit.
+            echo "$HELP"
+            exit 0;;
         --motherships|-m)
             # Test input argument.
             NATURAL_REGEXP='^[1-9][[:digit:]]*$'
