@@ -6,6 +6,8 @@
 # the project to build an individual component. Note that the order matters,
 # because the object lists, which are generated from the source lists, are
 # passed to the linker.
+#
+# Note that some definitions are used in Makefile.test_prerequisites.
 
 # Sources in /Source/Common are used repeatedly, so we define them preemptively
 # for elegance. Note that we don't include the entire directory of sources,
@@ -22,6 +24,22 @@ TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
                        $(SOURCE_DIR)/Common/Unrec_t.cpp \
                        $(GENERICS_DIR)/flat.cpp \
                        $(GENERICS_DIR)/Msg_p.cpp
+
+# Sources used by executables that need to address hardware.
+HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cpp \
+                           $(SOURCE_DIR)/Common/HardwareModel/HardwareAddressFormat.cpp \
+
+# Sources used by executables that require the hardware model.
+HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/PoetsBox.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/PoetsBoard.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/PoetsMailbox.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/PoetsCore.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/PoetsThread.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/PoetsEngine.cpp \
+                         $(SOURCE_DIR)/Common/NameBase.cpp \
+                         $(GENERICS_DIR)/dumpchan.cpp \
+                         $(GENERICS_DIR)/rand.cpp \
+                         $(HARDWARE_ADDRESS_SOURCES)
 
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh

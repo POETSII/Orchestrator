@@ -26,6 +26,7 @@ ROOT_DIR = ../..
 # Where sources live.
 GENERICS_DIR := $(ROOT_DIR)/Generics
 SOURCE_DIR := $(ROOT_DIR)/Source
+TESTS_DIR := $(ROOT_DIR)/Tests
 
 # Objects constructed from Orchestrator sources are placed in here. Objects are
 # placed in a directory structure that mimics the source directory structure.
@@ -38,6 +39,9 @@ HOSTLINK_OBJECT_DIR := ./Objects/Hostlink
 # Executable binaries are built to here (directory is created as executable
 # binaries are built):
 EXECUTABLE_DIR := $(ROOT_DIR)/bin
+
+# Test binaries are built to here:
+TEST_EXECUTABLE_DIR := $(ROOT_DIR)/test_bin
 
 # Supervisors are placed in here. Supervisors (.so) are shared object library
 # files that are generated from supervisor object files (.o), which are in turn
@@ -71,6 +75,7 @@ include $(shell find $(DEPENDENCY_DIR) -name "*.d" ! -name "*.temp.d")
 # objects:
 INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/Common \
+                -I$(SOURCE_DIR)/Common/HardwareModel \
                 -I$(SOURCE_DIR)/OrchBase \
                 -I$(SOURCE_DIR)/Injector \
                 -I$(SOURCE_DIR)/Parser \
@@ -118,6 +123,10 @@ stub_supervisor: $(STUB_SUPERVISOR)
 # Prerequisites (objects) for building executables are defined here:
 include Makefile.executable_prerequisites
 
+# Prerequisites for building tests are defined here:
+include Makefile.test_prerequisites
+tests: $(ALL_TESTS)
+
 # Linking targets (to generate executables)
 $(ROOT_EXECUTABLE): $(ROOT_OBJECTS)
 $(DUMMY_EXECUTABLE): $(DUMMY_OBJECTS)
@@ -128,8 +137,8 @@ $(MOTHERSHIP_EXECUTABLE): $(MOTHERSHIP_OBJECTS) $(HOSTLINK_OBJECTS) \
                           $(STUB_SUPERVISOR)
 
 $(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) $(LOGSERVER_EXECUTABLE) \
-$(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
-	@$(shell mkdir --parents $(EXECUTABLE_DIR))
+$(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE) $(ALL_TESTS):
+	@mkdir --parents $$(dirname $@)
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
         -L$(MPICH_LIB_DIR) -L/usr/lib -L$(QT_LIB_DIR) \
         -o $@ $^ \
@@ -215,11 +224,12 @@ $(DEPENDENCY_DIR)/%.d:
 
 clean:
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
-	$(SUPERVISOR_LIB_DIR) $(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT)
+	$(SUPERVISOR_LIB_DIR) $(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT) \
+    $(TEST_EXECUTABLE_DIR)
 
 # Dependency files must not be removed by Make (unless explicitly cleaned).
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
 
 # Non-builtin targets that do not explicitly represent files that are created.
-.PHONY: all clean orchestrate root dummy logserver rtcl injector mothership \
-stub_supervisor
+.PHONY: all tests clean orchestrate root dummy logserver rtcl injector \
+mothership stub_supervisor
