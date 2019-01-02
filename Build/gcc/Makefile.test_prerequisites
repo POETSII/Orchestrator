@@ -28,6 +28,6 @@ $(TEST_EXECUTABLE_DIR)/$(1).test: $(call orch_sources_to_objects,\
                                          $(TESTS_DIR)/$(1).cpp $($(1)_SOURCES))
 endef
 
-$(foreach testname,\
+$(foreach test_name,\
           $(ALL_TEST_NAMES),\
-          $(eval $(call TEST_RULE_TEMPLATE,$(testname))))
+          $(eval $(call TEST_RULE_TEMPLATE,$(test_name))))
