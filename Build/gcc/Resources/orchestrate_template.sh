@@ -92,16 +92,16 @@ INTERNAL_LIB_PATH=./:"$QT_LIB_DIR":"$MPI_LIB_DIR":\
 "$GCC_LIB_DIR":"$SUPERVISOR_LIB_DIR":"$JTAG_LIB_DIR"
 
 # Define general MPI execution command.
-COMMAND='mpiexec.hydra -genv LD_LIBRARY_PATH "$INTERNAL_LIB_PATH" \
+COMMAND="mpiexec.hydra -genv LD_LIBRARY_PATH \"$INTERNAL_LIB_PATH\" \
     -n 1 ./root : \
     -n 1 ./logserver : \
-    -n 1 ./rtcl :'
+    -n 1 ./rtcl"
 
 # Running the Orchestrator from the build directory. Only start a mothership if
 # we are running on a POETS box.
 pushd "{{ EXECUTABLE_DIR }}" > /dev/null
 if [ $ON_POETS_BOX -eq 1 ]; then
-    $COMMAND -n $NUMBER_OF_MOTHERSHIPS ./mothership
+    $COMMAND : -n $NUMBER_OF_MOTHERSHIPS ./mothership
 else
     $COMMAND
 fi
