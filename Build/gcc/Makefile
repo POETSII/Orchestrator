@@ -127,15 +127,9 @@ include Makefile.executable_prerequisites
 include Makefile.test_prerequisites
 tests: $(ALL_TESTS)
 
-# Linking targets (to generate executables)
-$(ROOT_EXECUTABLE): $(ROOT_OBJECTS)
-$(DUMMY_EXECUTABLE): $(DUMMY_OBJECTS)
-$(LOGSERVER_EXECUTABLE): $(LOGSERVER_OBJECTS)
-$(RTCL_EXECUTABLE): $(RTCL_OBJECTS)
-$(INJECTOR_EXECUTABLE): $(INJECTOR_OBJECTS)
-$(MOTHERSHIP_EXECUTABLE): $(MOTHERSHIP_OBJECTS) $(HOSTLINK_OBJECTS) \
-                          $(STUB_SUPERVISOR)
-
+# Linking targets (to generate executables). See
+# Makefile.executable_prerequisites for the prerequisites of these executables
+# (obviously...)
 $(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) $(LOGSERVER_EXECUTABLE) \
 $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE) $(ALL_TESTS):
 	@mkdir --parents $$(dirname $@)

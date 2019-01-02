@@ -228,15 +228,35 @@ orch_sources_to_objects = $(call sources_to_objects, $(ROOT_DIR),\
                                                      $(OBJECT_DIR),\
                                                      $(1))
 
-# Apply these macros to each set of sources.
-ROOT_OBJECTS := $(call orch_sources_to_objects, $(ROOT_SOURCES))
-INJECTOR_OBJECTS := $(call orch_sources_to_objects, $(INJECTOR_SOURCES))
-DUMMY_OBJECTS := $(call orch_sources_to_objects, $(DUMMY_SOURCES))
-LOGSERVER_OBJECTS := $(call orch_sources_to_objects, $(LOGSERVER_SOURCES))
-RTCL_OBJECTS := $(call orch_sources_to_objects, $(RTCL_SOURCES))
-STUB_SUPERVISOR_OBJECTS := $(call orch_sources_to_objects,\
-                                  $(STUB_SUPERVISOR_SOURCES))
-MOTHERSHIP_OBJECTS := $(call orch_sources_to_objects, $(MOTHERSHIP_SOURCES))
+# Define object lists. OBJECT_TEMPLATE defines the substitutions made in the
+# foreach loop below.
+#
+# Hostlink objects are defined separately, because the substitution is
+# different.
+define OBJECT_TEMPLATE
+$(1)_OBJECTS := $(call orch_sources_to_objects, $($(1)_SOURCES))
+endef
+
+$(foreach object_set,\
+          ROOT INJECTOR DUMMY LOGSERVER RTCL STUB_SUPERVISOR MOTHERSHIP,\
+          $(eval $(call OBJECT_TEMPLATE,$(object_set))))
+
 HOSTLINK_OBJECTS := $(call sources_to_objects, $(TINSEL_HOSTLINK_DIR),\
                                                $(HOSTLINK_OBJECT_DIR),\
                                                $(HOSTLINK_SOURCES))
+
+# Define executable prerequisites. RULE_TEMPLATE defines the substitutions made
+# in the foreach loop below.
+#
+# The mothership executable prerequisites do not match the pattern of the
+# others, so that is defined separately.
+define RULE_TEMPLATE
+$($(1)_EXECUTABLE): $($(1)_OBJECTS)
+endef
+
+$(foreach executable_name,\
+          ROOT DUMMY LOGSERVER RTCL INJECTOR,\
+          $(eval $(call RULE_TEMPLATE,$(executable_name))))
+
+$(MOTHERSHIP_EXECUTABLE): $(MOTHERSHIP_OBJECTS) $(HOSTLINK_OBJECTS) \
+                          $(STUB_SUPERVISOR)
