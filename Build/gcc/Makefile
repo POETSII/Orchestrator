@@ -116,7 +116,7 @@ mothership: $(MOTHERSHIP_EXECUTABLE) \
 stub_supervisor: $(STUB_SUPERVISOR)
 
 # Prerequisites (objects) for building executables are defined here:
-include Makefile.prerequisites
+include Makefile.executable_prerequisites
 
 # Linking targets (to generate executables)
 $(ROOT_EXECUTABLE): $(ROOT_OBJECTS)
