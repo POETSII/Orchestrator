@@ -30,6 +30,10 @@ class PoetsCore: public NameBase, protected DumpChan
 public:
     PoetsCore(std::string name);
 
+    /* Destruction */
+    ~PoetsCore();
+    void clear();
+
     /* Cores live in mailboxes; this is the mailbox that this core lives in. */
     PoetsMailbox* parent = NULL;
     void on_being_contained_hook(PoetsMailbox* container);

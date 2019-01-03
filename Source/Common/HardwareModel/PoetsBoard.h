@@ -32,6 +32,10 @@ class PoetsBoard: public NameBase, protected DumpChan
 public:
     PoetsBoard(std::string name);
 
+    /* Destruction */
+    ~PoetsBoard();
+    void clear();
+
     /* Boards live in boxes; this is the box that this board lives in. Note
        that boards also live in the engine by direct reference, but this is
        not captured in the board construct.

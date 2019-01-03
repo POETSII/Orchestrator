@@ -11,6 +11,21 @@ PoetsMailbox::PoetsMailbox(std::string name)
     Name(name);
 }
 
+PoetsMailbox::~PoetsMailbox(){clear();}
+
+/* Clears the dynamically-allocated elements of the data structure of this
+   mailbox, deleting all contained components recursively.
+*/
+void PoetsMailbox::clear()
+{
+    /* Clear all cores that this mailbox knows about. This should clear
+       recursively. */
+    WALKMAP(AddressComponent,PoetsCore*,PoetsCores,iterator)
+    {
+        delete iterator->second;
+    }
+}
+
 /* Donates an uncontained core to this mailbox. Arguments:
 
    - addressComponent: Used to index the core in this mailbox.

@@ -11,6 +11,21 @@ PoetsBox::PoetsBox(std::string name)
     Name(name);
 }
 
+PoetsBox::~PoetsBox(){clear();}
+
+/* Clears the dynamically-allocated elements of the data structure of this
+   box, deleting all contained components recursively.
+*/
+void PoetsBox::clear()
+{
+    /* Clear all boards that this box knows about. This should clear
+       recursively. */
+    WALKMAP(AddressComponent,PoetsBoard*,PoetsBoards,iterator)
+    {
+        delete iterator->second;
+    }
+}
+
 /* Donates an uncontained board to this box. Arguments:
 
    - addressComponent: Used to index the board in this box.

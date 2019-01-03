@@ -29,6 +29,10 @@ class PoetsBox: public NameBase, protected DumpChan
 public:
     PoetsBox(std::string name);
 
+    /* Destruction */
+    ~PoetsBox();
+    void clear();
+
     /* Boxes are contained by a POETS Engine. */
     PoetsEngine* parent = NULL;
     void on_being_contained_hook(PoetsEngine* container);

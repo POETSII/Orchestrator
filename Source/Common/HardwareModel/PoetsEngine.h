@@ -15,6 +15,7 @@
 #include "HardwareAddress.h"
 #include "dumpchan.h"
 #include "NameBase.h"
+#include "OrchBase.h"
 #include "OwnershipException.h"
 #include "PoetsBox.h"
 #include "PoetsBoard.h"
@@ -24,6 +25,7 @@
 #define CALLBACK static void
 
 /* Facilitate out-of-order includes. */
+struct OrchBase;
 struct PoetsBox;
 struct PoetsBoard;
 
@@ -31,6 +33,10 @@ class PoetsEngine: public NameBase, protected DumpChan
 {
 public:
     PoetsEngine(std::string name);
+
+    /* Destruction */
+    ~PoetsEngine();
+    void clear();
 
     /* Engines are not contained by anything, but are have OrchBase as a
        namebase parent. */

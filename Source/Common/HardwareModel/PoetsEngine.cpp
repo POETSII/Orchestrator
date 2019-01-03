@@ -30,6 +30,27 @@ PoetsEngine::PoetsEngine(std::string name)
     PoetsBoards.SetAD_CB(GraphCallbacks::arc);
 }
 
+PoetsEngine::~PoetsEngine(){clear();}
+
+/* Clears the dynamically-allocated elements of the data structure of this
+   engine, deleting all contained components recursively.
+*/
+void PoetsEngine::clear()
+{
+    /* Clear all boxes that this engine knows about. This should clear
+       recursively. Since the engine cannot contain boards that are not
+       contained by its boxes, the graph of boards does not need to be
+       cleared in this way. */
+    WALKMAP(AddressComponent,PoetsBox*,PoetsBoxes,iterator)
+    {
+        delete iterator->second;
+    }
+
+    /* But we do want to clear the graph object itself, even though the boards
+       inside it have been freed by this point. */
+    PoetsBoards.Clear();
+}
+
 /* Donates an uncontained box to this engine. Arguments:
 
    - addressComponent: Used to index the box in this engine.

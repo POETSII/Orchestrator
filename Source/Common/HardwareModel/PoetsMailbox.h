@@ -30,6 +30,10 @@ class PoetsMailbox: public NameBase, protected DumpChan
 public:
     PoetsMailbox(std::string name);
 
+    /* Destruction */
+    ~PoetsMailbox();
+    void clear();
+
     /* Mailboxes live in boards; this is the board that this mailbox lives
        in. */
     PoetsBoard* parent = NULL;

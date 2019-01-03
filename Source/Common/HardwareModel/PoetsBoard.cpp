@@ -28,6 +28,30 @@ PoetsBoard::PoetsBoard(std::string name)
     PoetsMailboxes.SetAD_CB(GraphCallbacks::arc);
 }
 
+PoetsBoard::~PoetsBoard(){clear();}
+
+/* Clears the dynamically-allocated elements of the data structure of this
+   board, deleting all contained components recursively.
+*/
+void PoetsBoard::clear()
+{
+    /* Clear all mailboxes that this board knows about. This in turn will clear
+       structures lower in the hierarchy recursively. */
+    WALKPDIGRAPHNODES(AddressComponent, PoetsMailbox*,
+                      unsigned int, float,
+                      unsigned int, unsigned int,
+                      PoetsMailboxes, iterator)
+    {
+        if (iterator != PoetsMailboxes.NodeEnd())
+        {
+            delete PoetsMailboxes.NodeData(iterator);
+        }
+    }
+
+    /* Clear the graph object itself. */
+    PoetsMailboxes.Clear();
+}
+
 /* Donates an uncontained mailbox to this board. Arguments:
 
    - addressComponent: Used to index the mailbox in this board.

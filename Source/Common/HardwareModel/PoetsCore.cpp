@@ -12,6 +12,21 @@ PoetsCore::PoetsCore(std::string name)
     /* <!> About binaries */
 }
 
+PoetsCore::~PoetsCore(){clear();}
+
+/* Clears the dynamically-allocated elements of the data structure of this
+   core, deleting all contained components recursively.
+*/
+void PoetsCore::clear()
+{
+    /* Clear all threads that this core knows about. This should clear
+       recursively. */
+    WALKMAP(AddressComponent,PoetsThread*,PoetsThreads,iterator)
+    {
+        delete iterator->second;
+    }
+}
+
 /* Donates an uncontained thread to this core. Arguments:
 
    - addressComponent: Used to index the thread in this core.
