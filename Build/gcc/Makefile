@@ -77,6 +77,7 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/Common \
                 -I$(SOURCE_DIR)/Common/HardwareModel \
                 -I$(SOURCE_DIR)/OrchBase \
+                -I$(SOURCE_DIR)/OrchBase/HardwareFileManager \
                 -I$(SOURCE_DIR)/Injector \
                 -I$(SOURCE_DIR)/Parser \
                 -I$(SOURCE_DIR)/NameServer \
