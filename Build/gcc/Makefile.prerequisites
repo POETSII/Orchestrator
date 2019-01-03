@@ -1,0 +1,244 @@
+# This Makefile defines the prerequisites required to build the individual
+# components (the executable binaries) of the Orchestrator.
+#
+# As a user you should not need to change this Makefile. As a developer, you
+# may need to change this Makefile to include new files you have contributed to
+# the project to build an individual component. Note that the order matters,
+# because the object lists, which are generated from the source lists, are
+# passed to the linker.
+
+# Sources in /Source/Common are used repeatedly, so we define them preemptively
+# for elegance. Note that we don't include the entire directory of sources,
+# because there are files in that directory that are not needed to build every
+# object.
+#
+# These common sources also require some sources from /Generics.
+TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
+                       $(SOURCE_DIR)/Common/Environment.cpp \
+                       $(SOURCE_DIR)/Common/Pglobals.cpp \
+                       $(SOURCE_DIR)/Common/PMsg_p.cpp \
+                       $(SOURCE_DIR)/Common/ProcMap.cpp \
+                       $(SOURCE_DIR)/Common/NameBase.cpp \
+                       $(SOURCE_DIR)/Common/Unrec_t.cpp \
+                       $(GENERICS_DIR)/flat.cpp \
+                       $(GENERICS_DIR)/Msg_p.cpp
+
+# The orchestrate execution script uses a template.
+ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
+
+# The root component consists of:
+#
+#  - The "main" file (/Source/Root/RootMain.cpp) and its dependencies in
+#    /Source/Root.
+#
+#  - Some "generics" (/Generics) sources.
+#
+#  - The truly common sources.
+#
+#  - A nameserver definition, from /Source/NameServer
+#
+#  - All of the XML parsing logic, in /Source/Parser.
+#
+#  - All of the base Orchestrator logic, in /Source/OrchBase.
+#
+# Add the first three items of this bulleted list:
+ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
+               $(SOURCE_DIR)/Root/Root.cpp \
+               $(GENERICS_DIR)/Cli.cpp \
+               $(GENERICS_DIR)/dfprintf.cpp \
+               $(GENERICS_DIR)/dumpchan.cpp \
+               $(GENERICS_DIR)/filename.cpp \
+               $(GENERICS_DIR)/lex.cpp \
+               $(GENERICS_DIR)/rand.cpp \
+               $(SOURCE_DIR)/NameServer/Ns_el.cpp
+
+ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
+
+# Add (almost) all of the sources from OrchBase and Parser.
+ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)
+ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/Parser/*.cpp)
+
+# These four files are not translation units, so they cannot be compiled into
+# objects and are included by OrchBase.cpp (this was done to reduce the size of
+# the file). Since we're collecting OrchBase sources using a wildcard, we must
+# explicitly exclude these four items from the source list.
+ROOT_SOURCE_EXCEPTIONS = $(addprefix $(SOURCE_DIR)/OrchBase/, \
+    OrchBaseTask.cpp OrchBaseLink.cpp OrchBaseTopo.cpp OrchBaseOwner.cpp)
+ROOT_SOURCES := $(filter-out $(ROOT_SOURCE_EXCEPTIONS), \
+                             $(ROOT_SOURCES))
+
+# The dummy component consists of:
+#
+# - The "main" file (/Source/Dummy/DummyMain.cpp) and its dependencies in
+#   /Source/Dummy.
+#
+# - The truly common sources.
+#
+DUMMY_SOURCES = $(SOURCE_DIR)/Dummy/DummyMain.cpp \
+                $(SOURCE_DIR)/Dummy/Dummy.cpp
+
+DUMMY_SOURCES += $(TRULY_COMMON_SOURCES)
+
+# The logserver component consists of:
+#
+# - The "main" file (/Source/LogServer/LogServerMain.cpp) and its dependencies
+#   in /Source/LogServer.
+#
+# - The truly common sources.
+#
+# - Some "generics" (/Generics) sources.
+#
+LOGSERVER_SOURCES = $(SOURCE_DIR)/LogServer/LogServerMain.cpp \
+                    $(SOURCE_DIR)/LogServer/LogServer.cpp \
+                    $(GENERICS_DIR)/dfprintf.cpp \
+                    $(GENERICS_DIR)/jnj.cpp \
+                    $(GENERICS_DIR)/lex.cpp \
+                    $(GENERICS_DIR)/uif.cpp
+
+LOGSERVER_SOURCES += $(TRULY_COMMON_SOURCES)
+
+# The logserver also needs OrchestratorMessages.txt to exist in the directory
+# from which the Orchestrator is started.
+LOGSERVER_MESSAGE_FILE_ORIGIN = $(SOURCE_DIR)/OrchestratorMessages.txt
+
+# The rtcl (real-time clock) component consists of:
+#
+# - The "main" file (/Source/RTCL/RTCL.cpp) and its dependencies in
+#   /Source/RTCL.
+#
+# - The truly common sources.
+#
+# - Some "generics" (/Generics) sources.
+#
+RTCL_SOURCES = $(SOURCE_DIR)/RTCL/RTCLMain.cpp \
+               $(SOURCE_DIR)/RTCL/RTCL.cpp \
+               $(GENERICS_DIR)/Cli.cpp \
+               $(GENERICS_DIR)/dfprintf.cpp \
+               $(GENERICS_DIR)/lex.cpp
+
+RTCL_SOURCES += $(TRULY_COMMON_SOURCES)
+
+# The injector component consists of:
+#
+# - The "main" file (/Source/Injector/Injector.cpp) and its dependencies in
+#   /Source/Injector.
+#
+# - The truly common sources.
+#
+# - Some "generics" (/Generics) sources.
+#
+INJECTOR_SOURCES = $(SOURCE_DIR)/Injector/InjectorMain.cpp \
+                   $(SOURCE_DIR)/Injector/Injector.cpp \
+                   $(GENERICS_DIR)/Cli.cpp \
+                   $(GENERICS_DIR)/dfprintf.cpp \
+                   $(GENERICS_DIR)/lex.cpp
+
+INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
+
+# The mothership component consists of:
+#
+# - The "main" file (/Source/Mothership/MothershipMain.cpp) and its
+#   dependencies in /Source/Mothership, but not
+#   /Source/Mothership/Supervisor.cpp.
+#
+# - An interface source file from the softswitch, in /Source/Softswitch/src.
+#
+# - The truly common sources.
+#
+# - Some "generics" (/Generics) sources.
+#
+# - A set of base Orchestrator (/Source/OrchBase) sources.
+#
+# - Parts of the HostLink, taken from the tinsel set of software
+#   dependencies (these are bound to a different variable).
+#
+MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
+                     $(SOURCE_DIR)/Mothership/TaskInfo.cpp \
+                     $(SOURCE_DIR)/Mothership/TMoth.cpp \
+                     $(SOURCE_DIR)/Softswitch/src/poets_msg.cpp \
+                     $(GENERICS_DIR)/dumpchan.cpp \
+                     $(GENERICS_DIR)/rand.cpp \
+                     $(SOURCE_DIR)/OrchBase/Bin.cpp \
+                     $(SOURCE_DIR)/OrchBase/build_defs.cpp \
+                     $(SOURCE_DIR)/OrchBase/CFrag.cpp \
+                     $(SOURCE_DIR)/OrchBase/CMsg_p.cpp \
+                     $(SOURCE_DIR)/OrchBase/Config_t.cpp \
+                     $(SOURCE_DIR)/OrchBase/D_graph.cpp \
+                     $(SOURCE_DIR)/OrchBase/P_addr.cpp \
+                     $(SOURCE_DIR)/OrchBase/P_board.cpp \
+                     $(SOURCE_DIR)/OrchBase/P_box.cpp \
+                     $(SOURCE_DIR)/OrchBase/P_core.cpp \
+                     $(SOURCE_DIR)/OrchBase/P_device.cpp \
+                     $(SOURCE_DIR)/OrchBase/P_message.cpp \
+                     $(SOURCE_DIR)/OrchBase/P_pin.cpp \
+                     $(SOURCE_DIR)/OrchBase/P_task.cpp \
+                     $(SOURCE_DIR)/OrchBase/P_thread.cpp
+
+MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
+
+HOSTLINK_SOURCES = $(TINSEL_HOSTLINK_DIR)/DebugLink.cpp \
+                   $(TINSEL_HOSTLINK_DIR)/HostLink.cpp \
+                   $(TINSEL_HOSTLINK_DIR)/MemFileReader.cpp \
+                   $(TINSEL_HOSTLINK_DIR)/PowerLink.cpp \
+                   $(TINSEL_HOSTLINK_DIR)/UART.cpp \
+
+# The example supervisor, which is not a component but is a shared object
+# library, consists of a single stub source file.
+STUB_SUPERVISOR_SOURCES = $(SOURCE_DIR)/Mothership/Supervisor.cpp
+
+# Convert these lists of sources into a list of objects to define a dependency
+# system for the linker.
+
+# Macro to convert source files in one directory to object files in
+# another directory. Arguments:
+#
+#  - $1: Directory containing source (.cpp) files.
+#  - $2: Directory to contain object files (.o) to build from these source
+#        files.
+#  - $3: Space-delimited list of source file basenames, with extension.
+#
+# Returns a space-delimited list of absolute object files to create from the
+# source file arguments.
+sources_to_objects = $(patsubst $(strip $(1)/%.cpp),\
+                                $(strip $(2)/%.o),\
+                                $(3))
+
+# Another macro to reduce argument count for compiling sources from the
+# Orchestrator, where $1 is a list of sources to convert into a list of
+# objects.
+orch_sources_to_objects = $(call sources_to_objects, $(ROOT_DIR),\
+                                                     $(OBJECT_DIR),\
+                                                     $(1))
+
+# Define object lists. OBJECT_TEMPLATE defines the substitutions made in the
+# foreach loop below.
+#
+# Hostlink objects are defined separately, because the substitution is
+# different.
+define OBJECT_TEMPLATE
+$(1)_OBJECTS := $(call orch_sources_to_objects, $($(1)_SOURCES))
+endef
+
+$(foreach object_set,\
+          ROOT INJECTOR DUMMY LOGSERVER RTCL STUB_SUPERVISOR MOTHERSHIP,\
+          $(eval $(call OBJECT_TEMPLATE,$(object_set))))
+
+HOSTLINK_OBJECTS := $(call sources_to_objects, $(TINSEL_HOSTLINK_DIR),\
+                                               $(HOSTLINK_OBJECT_DIR),\
+                                               $(HOSTLINK_SOURCES))
+
+# Define executable prerequisites. RULE_TEMPLATE defines the substitutions made
+# in the foreach loop below.
+#
+# The mothership executable prerequisites do not match the pattern of the
+# others, so that is defined separately.
+define RULE_TEMPLATE
+$($(1)_EXECUTABLE): $($(1)_OBJECTS)
+endef
+
+$(foreach executable_name,\
+          ROOT DUMMY LOGSERVER RTCL INJECTOR,\
+          $(eval $(call RULE_TEMPLATE,$(executable_name))))
+
+$(MOTHERSHIP_EXECUTABLE): $(MOTHERSHIP_OBJECTS) $(HOSTLINK_OBJECTS) \
+                          $(STUB_SUPERVISOR)

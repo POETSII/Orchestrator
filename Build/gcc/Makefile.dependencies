@@ -1,0 +1,41 @@
+# This Makefile defines the software dependencies required to build the
+# Orchestrator.
+#
+# As a user, you will need to change the contents of this file to match your
+# installation. If you are using the distributed "orchestrator_dependencies"
+# tarball, you'll only need to change ORCHESTRATOR_DEPENDENCIES_DIR to point to
+# where you have extracted it to.
+#
+# In Mark's case, it looks like this:
+ORCHESTRATOR_DEPENDENCIES_DIR ?= /home/mv1g18/orchestrator_dependencies-2
+
+# If you're using the "orchestrator_dependencies" tarball, you shouldn't need
+# to do anything more. If you aren't, you'll need to configure the following to
+# match your setup however...
+
+# MPI (mpich here)
+MPICH_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/mpich
+MPICH_LIB_DIR := $(MPICH_DIR)/lib
+MPICH_INC_DIR := $(MPICH_DIR)/include
+
+# Consequently, our C and C++ compilers are:
+CC = $(MPICH_DIR)/bin/mpicc
+CXX = $(MPICH_DIR)/bin/mpicxx
+
+# Qt (one that is out of date)
+QT_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/Qt5.6.3/5.6.3/gcc_64
+QT_LIB_DIR = $(QT_DIR)/lib
+QT_INC_DIR = $(QT_DIR)/include
+
+# jtag library paths
+JTAG_LIB_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/jtag_libs
+
+# Tinsel (must be out of date, for now)
+TINSEL_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/tinsel
+TINSEL_INC_DIR = $(TINSEL_DIR)/include
+TINSEL_LIB_DIR = $(TINSEL_DIR)/lib
+TINSEL_HOSTLINK_DIR = $(TINSEL_DIR)/hostlink
+
+# GCC, not used for building the Orchestrator, but necessary for the
+# Mothership. Immediate-set, because it's used by the shell.
+GCC_LIB_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/gcc-7.3.0/lib64

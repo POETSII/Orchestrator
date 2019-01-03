@@ -7,7 +7,7 @@ CMsg_p::CMsg_p(PMsg_p & r):PMsg_p(r){}
 CMsg_p::~CMsg_p(void){}
 
 
-template <> void CMsg_p::Dump<pair<unsigned,P_addr_t>>(FILE * fp)
+template <> void CMsg_p::Dump<pair<unsigned,P_addr_t> >(FILE * fp)
 {
 
 }
@@ -37,7 +37,7 @@ pair<unsigned,P_addr_t> * CMsg_p::Get(int & cnt)
     return pRetCores;
 }
 
-void CMsg_p::Get(vector<pair<unsigned,P_addr_t>> & vP)
+void CMsg_p::Get(vector<pair<unsigned,P_addr_t> > & vP)
 {
     vP.clear();
     int len[6];
@@ -84,7 +84,7 @@ void CMsg_p::Put(pair<unsigned,P_addr_t> * data,int cnt)
      delete[] pDevice;
 }
 
-void CMsg_p::Put(vector<pair<unsigned,P_addr_t>> * data)
+void CMsg_p::Put(vector<pair<unsigned,P_addr_t> > * data)
 {
      int cnt = data->size();
      unsigned* pCIdx = new unsigned[cnt];
@@ -94,7 +94,7 @@ void CMsg_p::Put(vector<pair<unsigned,P_addr_t>> * data)
      unsigned* pThread = new unsigned[cnt];
      unsigned* pDevice = new unsigned[cnt];
      int idx = 0;
-     for (vector<pair<unsigned,P_addr_t>>::iterator core = data->begin(); core != data->end(); core++)
+     for (vector<pair<unsigned,P_addr_t> >::iterator core = data->begin(); core != data->end(); core++)
      {
           pCIdx[idx] = core->first;
           pBox[idx] = core->second.A_box;
