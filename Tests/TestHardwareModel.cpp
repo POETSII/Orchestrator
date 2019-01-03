@@ -8,78 +8,101 @@
 
 TEST_CASE("A full stack of hardware can be connected", "[Items]")
 {
-    PoetsEngine myEngine("Engine000");
-    PoetsBox myBox("Box000");
-    PoetsBoard myBoard0("Board000");
-    PoetsMailbox myMailbox0("Mailbox000");
-    PoetsMailbox myMailbox1("Mailbox001");
-    PoetsCore myCore("Core000");
-    PoetsThread myThread("Thread000");
+    PoetsEngine engine("Engine000");
+    PoetsBox* box;
+    PoetsBoard* board;
+    PoetsMailbox* firstMailbox;
+    PoetsMailbox* secondMailbox;
+    PoetsCore* core;
+    PoetsThread* thread;
 
-    myEngine.contain(4, &myBox);
-    myBox.contain(17, &myBoard0);
-    myEngine.contain(17, &myBoard0);
-    myBoard0.contain(0, &myMailbox0);
-    myBoard0.contain(1, &myMailbox1);
-    myBoard0.connect(0, 1, 10);
-    myMailbox0.contain(10, &myCore);
-    myCore.contain(123, &myThread);
+    box = new PoetsBox("Box000");
+    board = new PoetsBoard("Board000");
+    firstMailbox = new PoetsMailbox("Mailbox000");
+    secondMailbox = new PoetsMailbox("Mailbox001");
+    core = new PoetsCore("Core000");
+    thread = new PoetsThread("Thread000");
+
+    engine.contain(4, box);
+    box->contain(17, board);
+    engine.contain(17, board);
+    board->contain(0, firstMailbox);
+    board->contain(1, secondMailbox);
+    board->connect(0, 1, 10);
+    firstMailbox->contain(10, core);
+    core->contain(123, thread);
 }
 
 TEST_CASE("Threads cannot be claimed multiple times", "[Items]")
 {
-    PoetsCore myCore("Core000");
-    PoetsThread myThread("Thread000");
-    myCore.contain(123, &myThread);
-    REQUIRE_THROWS_AS(myCore.contain(124, &myThread), OwnershipException&);
+    PoetsCore core("Core000");
+    PoetsThread* thread;
+    thread = new PoetsThread("Thread000");
+
+    core.contain(123, thread);
+    REQUIRE_THROWS_AS(core.contain(124, thread), OwnershipException&);
 }
 
 TEST_CASE("Cores cannot be claimed multiple times", "[Items]")
 {
-    PoetsMailbox myMailbox0("Mailbox000");
-    PoetsCore myCore("Core000");
-    myMailbox0.contain(10, &myCore);
-    REQUIRE_THROWS_AS(myMailbox0.contain(124, &myCore), OwnershipException&);
+    PoetsMailbox mailbox("Mailbox000");
+    PoetsCore* core;
+    core = new PoetsCore("Core000");
+
+    mailbox.contain(10, core);
+    REQUIRE_THROWS_AS(mailbox.contain(124, core), OwnershipException&);
 }
 
 TEST_CASE("Mailboxes cannot be claimed multiple times", "[Items]")
 {
-    PoetsBoard myBoard0("Board000");
-    PoetsMailbox myMailbox0("Mailbox000");
-    myBoard0.contain(0, &myMailbox0);
-    REQUIRE_THROWS_AS(myBoard0.contain(124, &myMailbox0), OwnershipException&);
+    PoetsBoard board("Board000");
+    PoetsMailbox* mailbox;
+    mailbox = new PoetsMailbox("Mailbox000");
+
+    board.contain(0, mailbox);
+    REQUIRE_THROWS_AS(board.contain(124, mailbox), OwnershipException&);
 }
 
 TEST_CASE("Boards cannot be claimed multiple times by boxes", "[Items]")
 {
-    PoetsBox myBox("Box000");
-    PoetsBoard myBoard0("Board000");
-    myBox.contain(17, &myBoard0);
-    REQUIRE_THROWS_AS(myBox.contain(124, &myBoard0), OwnershipException&);
+    PoetsBox box("Box000");
+    PoetsBoard* board;
+    board = new PoetsBoard("Board000");
+
+    box.contain(17, board);
+    REQUIRE_THROWS_AS(box.contain(124, board), OwnershipException&);
 }
 
 TEST_CASE("Boards cannot be claimed multiple times by engines", "[Items]")
 {
-    PoetsEngine myEngine("Engine000");
-    PoetsBox myBox("Box000");
-    PoetsBoard myBoard0("Board000");
-    myEngine.contain(4, &myBox);
-    myBox.contain(17, &myBoard0);
-    myEngine.contain(17, &myBoard0);
-    REQUIRE_THROWS_AS(myEngine.contain(17, &myBoard0), OwnershipException&);
+    PoetsEngine engine("Engine000");
+    PoetsBox* box;
+    PoetsBoard* board;
+    box = new PoetsBox("Box000");
+    board = new PoetsBoard("Board000");
+
+    engine.contain(4, box);
+    box->contain(17, board);
+    engine.contain(17, board);
+    REQUIRE_THROWS_AS(engine.contain(17, board), OwnershipException&);
 }
 
 TEST_CASE("Boards that are not contained in boxes in the engine cannot be claimed", "[Items]")
 {
-    PoetsEngine myEngine("Engine000");
-    PoetsBoard myBoard0("Board000");
-    REQUIRE_THROWS_AS(myEngine.contain(2, &myBoard0), OwnershipException&);
+    PoetsEngine engine("Engine000");
+    PoetsBoard* board;
+    board = new PoetsBoard("Board000");
+
+    REQUIRE_THROWS_AS(engine.contain(2, board), OwnershipException&);
+    delete board;  /* Otherwise we're leaking. */
 }
 
 TEST_CASE("Boxes cannot be claimed multiple times", "[Items]")
 {
-    PoetsEngine myEngine("Engine000");
-    PoetsBox myBox("Box000");
-    myEngine.contain(4, &myBox);
-    REQUIRE_THROWS_AS(myEngine.contain(124, &myBox), OwnershipException&);
+    PoetsEngine engine("Engine000");
+    PoetsBox* box;
+    box = new PoetsBox("Box000");
+
+    engine.contain(4, box);
+    REQUIRE_THROWS_AS(engine.contain(124, box), OwnershipException&);
 }
