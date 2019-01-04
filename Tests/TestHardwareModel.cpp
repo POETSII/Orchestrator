@@ -106,3 +106,28 @@ TEST_CASE("Boxes cannot be claimed multiple times", "[Items]")
     engine.contain(4, box);
     REQUIRE_THROWS_AS(engine.contain(124, box), OwnershipException&);
 }
+
+TEST_CASE("Engines are empty when initialised", "[Emptiness]")
+{
+    PoetsEngine engine("Engine000");
+    REQUIRE(engine.is_empty());
+}
+
+TEST_CASE("Engines are not empty when populated", "[Emptiness]")
+{
+    PoetsEngine engine("Engine000");
+    PoetsBox* box;
+    box = new PoetsBox("Box000");
+    engine.contain(0, box);
+    REQUIRE(engine.is_empty() == false);
+}
+
+TEST_CASE("Engines are empty when populated and then cleared", "[Emptiness]")
+{
+    PoetsEngine engine("Engine000");
+    PoetsBox* box;
+    box = new PoetsBox("Box000");
+    engine.contain(0, box);
+    engine.clear();
+    REQUIRE(engine.is_empty());
+}

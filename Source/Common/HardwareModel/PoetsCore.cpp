@@ -25,6 +25,7 @@ void PoetsCore::clear()
     {
         delete iterator->second;
     }
+    PoetsThreads.clear();
 }
 
 /* Donates an uncontained thread to this core. Arguments:

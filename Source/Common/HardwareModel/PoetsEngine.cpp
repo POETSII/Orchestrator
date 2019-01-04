@@ -45,6 +45,7 @@ void PoetsEngine::clear()
     {
         delete iterator->second;
     }
+    PoetsBoxes.clear();
 
     /* But we do want to clear the graph object itself, even though the boards
        inside it have been freed by this point. */
@@ -194,3 +195,11 @@ void PoetsEngine::dump(FILE* file)
     fprintf(file, "%s", breaker);
     fflush(file);
 }
+
+/* Defines whether or not the engine is empty.
+
+   An engine is empty if it contains no boxes. Engines cannot contain boards
+   without first containing boxes, and since the only way to remove boxes and
+   boards from an engine is by clearing it completely, checking for boxes alone
+   is enough. */
+bool PoetsEngine::is_empty(){return PoetsBoxes.empty();}

@@ -24,6 +24,7 @@ void PoetsBox::clear()
     {
         delete iterator->second;
     }
+    PoetsBoards.clear();
 }
 
 /* Donates an uncontained board to this box. Arguments:

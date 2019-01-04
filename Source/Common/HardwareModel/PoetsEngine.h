@@ -44,6 +44,7 @@ public:
     /* Engines contain boxes, mapped by their hardware address component. */
     void contain(AddressComponent addressComponent, PoetsBox* box);
     std::map<AddressComponent, PoetsBox*> PoetsBoxes;
+    bool is_empty();
 
     /* Engines also contain a graph of boards, again mapped by their hardware
        components. */
@@ -54,7 +55,6 @@ public:
     void connect(AddressComponent start, AddressComponent end, float weight);
 
     float costExternalBox;
-
     void dump(FILE* = stdout);
 
 private:

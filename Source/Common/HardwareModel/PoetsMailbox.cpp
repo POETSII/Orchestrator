@@ -24,6 +24,7 @@ void PoetsMailbox::clear()
     {
         delete iterator->second;
     }
+    PoetsCores.clear();
 }
 
 /* Donates an uncontained core to this mailbox. Arguments:
