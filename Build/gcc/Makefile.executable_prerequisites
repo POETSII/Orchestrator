@@ -38,6 +38,7 @@ HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/PoetsBox.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/PoetsThread.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/PoetsEngine.cpp \
                          $(SOURCE_DIR)/Common/NameBase.cpp \
+                         $(SOURCE_DIR)/OrchBase/Bin.cpp \
                          $(GENERICS_DIR)/dumpchan.cpp \
                          $(GENERICS_DIR)/rand.cpp \
                          $(HARDWARE_ADDRESS_SOURCES)

@@ -12,8 +12,9 @@
 
 #include <sstream>
 
-#include "HardwareAddress.h"
+#include "Bin.h"
 #include "dumpchan.h"
+#include "HardwareAddress.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
 #include "PoetsMailbox.h"
@@ -42,8 +43,12 @@ public:
     std::map<AddressComponent, PoetsThread*> PoetsThreads;
     void contain(AddressComponent addressComponent, PoetsThread* thread);
 
+    /* Instruction and data binaries are loaded onto cores. */
+    Bin* dataBinary;
+    Bin* instructionBinary;
     unsigned int dataMemory;
     unsigned int instructionMemory;
+
     float costCoreThread;
     float costThreadThread;
 

@@ -9,7 +9,8 @@
 PoetsCore::PoetsCore(std::string name)
 {
     Name(name);
-    /* <!> About binaries */
+    dataBinary = new Bin();
+    instructionBinary = new Bin();
 }
 
 PoetsCore::~PoetsCore(){clear();}
@@ -26,6 +27,10 @@ void PoetsCore::clear()
         delete iterator->second;
     }
     PoetsThreads.clear();
+
+    /* Clear binaries. */
+    if (dataBinary != 0) delete dataBinary;
+    if (instructionBinary != 0) delete instructionBinary;
 }
 
 /* Donates an uncontained thread to this core. Arguments:
@@ -83,6 +88,27 @@ void PoetsCore::dump(FILE* file)
     breaker[MAXIMUM_BREAKER_LENGTH] = '\0';
     fprintf(file, "%s", breaker);
     NameBase::Dump(file);
+
+    /* Dump information about binaries. */
+    if (dataBinary != 0)
+    {
+        fprintf(file, "No data binary assigned to this core.\n");
+    }
+    else
+    {
+        fprintf(file, "Data binary:\n");
+        dataBinary->Dump(file);
+    }
+
+    if (instructionBinary != 0)
+    {
+        fprintf(file, "No instruction binary assigned to this core.\n");
+    }
+    else
+    {
+        fprintf(file, "Instruction binary:\n");
+        instructionBinary->Dump(file);
+    }
 
     /* About contained items, if any. */
     fprintf(file, "Threads in this core %s\n", std::string(58, '+').c_str());
