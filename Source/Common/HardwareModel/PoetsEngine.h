@@ -54,6 +54,13 @@ public:
     void contain(AddressComponent addressComponent, PoetsBoard* board);
     void connect(AddressComponent start, AddressComponent end, float weight);
 
+    /* Engines may be created from a configuration file. If so, some portion of
+       their metadata will be set. */
+    std::string author;
+    long datetime;
+    std::string version;
+    std::string fileOrigin;
+
     float costExternalBox;
     void dump(FILE* = stdout);
 

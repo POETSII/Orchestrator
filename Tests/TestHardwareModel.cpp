@@ -203,3 +203,12 @@ TEST_CASE("Addresses can be assigned to threads", "[Address Assignment]")
     address->set_thread(5);
     REQUIRE(thread.get_hardware_address()->get_thread() == 5);
 }
+
+TEST_CASE("Metadata can be assigned to POETS engines", "[Metadata]")
+{
+    PoetsEngine engine("Engine000");
+    engine.author = "Some Body";
+    engine.datetime = 20190107162455;
+    engine.version = "0.3.1~sandwich";
+    engine.fileOrigin = "TestHardwareModel.cpp fake";
+}

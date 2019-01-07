@@ -28,6 +28,11 @@ PoetsEngine::PoetsEngine(std::string name)
     PoetsBoards.SetND_CB(GraphCallbacks::node);
     PoetsBoards.SetAK_CB(GraphCallbacks::arc_key);
     PoetsBoards.SetAD_CB(GraphCallbacks::arc);
+
+    /* Set up default metadata information. If these are unchanged, the engine
+       will not print them when dump is called (strings are initialised
+       empty). */
+    datetime = 0;
 }
 
 PoetsEngine::~PoetsEngine(){clear();}
@@ -147,7 +152,7 @@ void PoetsEngine::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
 
-    /* About this object and its parent, if any. */
+    /* About this object. */
     char breaker[MAXIMUM_BREAKER_LENGTH + 1];
     int breakerLength = sprintf(breaker, "PoetsEngine %s ", fullName.c_str());
     for(int index=breakerLength; index<MAXIMUM_BREAKER_LENGTH - 1;
@@ -156,6 +161,25 @@ void PoetsEngine::dump(FILE* file)
     breaker[MAXIMUM_BREAKER_LENGTH] = '\0';
     fprintf(file, "%s", breaker);
     NameBase::Dump(file);
+
+    /* Metadata from a configuration file, if set. */
+    if (!author.empty())
+    {
+        fprintf(file, "Author: %s\n", author.c_str());
+    }
+    if (datetime > 0)
+    {
+        fprintf(file, "Configuration datetime (YYYYMMDDHHmmss): %ld\n",
+                datetime);
+    }
+    if (!version.empty())
+    {
+        fprintf(file, "Written for parser version: %s\n", version.c_str());
+    }
+    if (!fileOrigin.empty())
+    {
+        fprintf(file, "Read from file: %s\n", fileOrigin.c_str());
+    }
 
     /* About the board graph. */
     fprintf(file, "Board connectivity in this engine %s\n",
