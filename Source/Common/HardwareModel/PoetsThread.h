@@ -12,6 +12,7 @@
 
 #include <list>
 
+#include "AddressableItem.h"
 #include "dumpchan.h"
 #include "macros.h"
 #include "NameBase.h"
@@ -23,7 +24,7 @@
 /* Facilitate out-of-order includes. */
 struct PoetsCore;
 
-class PoetsThread: public NameBase, protected DumpChan
+class PoetsThread: public AddressableItem, public NameBase, protected DumpChan
 {
 public:
     PoetsThread(std::string name);

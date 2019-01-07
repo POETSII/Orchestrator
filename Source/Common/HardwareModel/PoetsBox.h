@@ -11,7 +11,7 @@
 
 #include <sstream>
 
-#include "HardwareAddress.h"
+#include "AddressableItem.h"
 #include "dumpchan.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
@@ -24,7 +24,7 @@
 struct PoetsEngine;
 struct PoetsBoard;
 
-class PoetsBox: public NameBase, protected DumpChan
+class PoetsBox: public AddressableItem, public NameBase, protected DumpChan
 {
 public:
     PoetsBox(std::string name);

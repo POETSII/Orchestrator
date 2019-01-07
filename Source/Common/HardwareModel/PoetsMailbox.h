@@ -12,7 +12,7 @@
 
 #include <sstream>
 
-#include "HardwareAddress.h"
+#include "AddressableItem.h"
 #include "dumpchan.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
@@ -25,7 +25,7 @@
 struct PoetsBoard;
 struct PoetsCore;
 
-class PoetsMailbox: public NameBase, protected DumpChan
+class PoetsMailbox: public AddressableItem, public NameBase, protected DumpChan
 {
 public:
     PoetsMailbox(std::string name);

@@ -31,7 +31,8 @@ HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cp
                            $(GENERICS_DIR)/dfprintf.cpp
 
 # Sources used by executables that require the hardware model.
-HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/PoetsBox.cpp \
+HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/PoetsBox.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/PoetsBoard.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/PoetsMailbox.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/PoetsCore.cpp \

@@ -4,6 +4,8 @@
 
 #include "catch.hpp"
 
+#include "HardwareAddressFormat.h"
+#include "HardwareAddress.h"
 #include "HardwareModel.h"
 
 TEST_CASE("A full stack of hardware can be connected", "[Items]")
@@ -130,4 +132,74 @@ TEST_CASE("Engines are empty when populated and then cleared", "[Emptiness]")
     engine.contain(0, box);
     engine.clear();
     REQUIRE(engine.is_empty());
+}
+
+TEST_CASE("Addresses can be assigned to boxes", "[Address Assignment]")
+{
+    PoetsBox box("quack");
+    HardwareAddressFormat myFormat(4, 5, 6, 8, 9);
+    HardwareAddress* address = new HardwareAddress(&myFormat);
+    box.set_hardware_address(address);
+    REQUIRE(box.get_hardware_address() == address);
+
+    /* A change in the address object should be reflected in the box's
+       address. */
+    address->set_box(1);
+    REQUIRE(box.get_hardware_address()->get_box() == 1);
+}
+
+TEST_CASE("Addresses can be assigned to boards", "[Address Assignment]")
+{
+    PoetsBoard board("quack");
+    HardwareAddressFormat myFormat(4, 5, 6, 8, 9);
+    HardwareAddress* address = new HardwareAddress(&myFormat);
+    board.set_hardware_address(address);
+    REQUIRE(board.get_hardware_address() == address);
+
+    /* A change in the address object should be reflected in the board's
+       address. */
+    address->set_board(2);
+    REQUIRE(board.get_hardware_address()->get_board() == 2);
+}
+
+TEST_CASE("Addresses can be assigned to mailboxes", "[Address Assignment]")
+{
+    PoetsMailbox mailbox("quack");
+    HardwareAddressFormat myFormat(4, 5, 6, 8, 9);
+    HardwareAddress* address = new HardwareAddress(&myFormat);
+    mailbox.set_hardware_address(address);
+    REQUIRE(mailbox.get_hardware_address() == address);
+
+    /* A change in the address object should be reflected in the mailbox's
+       address. */
+    address->set_mailbox(3);
+    REQUIRE(mailbox.get_hardware_address()->get_mailbox() == 3);
+}
+
+TEST_CASE("Addresses can be assigned to cores", "[Address Assignment]")
+{
+    PoetsCore core("quack");
+    HardwareAddressFormat myFormat(4, 5, 6, 8, 9);
+    HardwareAddress* address = new HardwareAddress(&myFormat);
+    core.set_hardware_address(address);
+    REQUIRE(core.get_hardware_address() == address);
+
+    /* A change in the address object should be reflected in the core's
+       address. */
+    address->set_core(4);
+    REQUIRE(core.get_hardware_address()->get_core() == 4);
+}
+
+TEST_CASE("Addresses can be assigned to threads", "[Address Assignment]")
+{
+    PoetsThread thread("quack");
+    HardwareAddressFormat myFormat(4, 5, 6, 8, 9);
+    HardwareAddress* address = new HardwareAddress(&myFormat);
+    thread.set_hardware_address(address);
+    REQUIRE(thread.get_hardware_address() == address);
+
+    /* A change in the address object should be reflected in the thread's
+       address. */
+    address->set_thread(5);
+    REQUIRE(thread.get_hardware_address()->get_thread() == 5);
 }
