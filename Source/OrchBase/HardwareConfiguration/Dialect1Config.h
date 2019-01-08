@@ -68,8 +68,11 @@ private:
     /* Assignment and population methods used during deployment. */
     void assign_metadata_to_engine(PoetsEngine* engine);
     void assign_sizes_to_address_format(HardwareAddressFormat* format);
+    void connect_boards_in_engine(
+        std::map<AddressComponent, PoetsBoard*>* boards,
+        PoetsEngine* engine);
     AddressComponent flatten_address(std::vector<AddressComponent> address);
-    void populate_boxes_evenly_with_boards(\
+    void populate_boxes_evenly_with_boards(
         std::map<AddressComponent, PoetsBox*>* boxMap,
         std::map<AddressComponent, PoetsBoard*>* boardMap);
     void populate_engine_with_boxes_and_their_costs(PoetsEngine* engine);

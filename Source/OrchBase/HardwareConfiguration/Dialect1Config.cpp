@@ -40,8 +40,91 @@ void Dialect1Config::deploy(PoetsEngine* engine,
 
     /* Divide up the boards between the boxes naively, and assign them. */
     populate_boxes_evenly_with_boards(&(engine->PoetsBoxes), &boards);
+
+    /* Connect the boards in a graph for the engine. */
+    connect_boards_in_engine(&boards, engine);
 }
 
+/* Assigns all metadata defined in this config to the engine. Arguments:
+
+    - engine: the PoetsEngine to assign metadata to.
+*/
+void Dialect1Config::assign_metadata_to_engine(PoetsEngine* engine)
+{
+    engine->author = author;
+    engine->datetime = datetime;
+    engine->version = version;
+    engine->fileOrigin = fileOrigin;
+}
+
+/* Assigns all sizes to an address format object. Arguments
+
+    - format: the HardwareAddressObject to assign sizes to.
+*/
+void Dialect1Config::assign_sizes_to_address_format(
+    HardwareAddressFormat* format)
+{
+    format->boxWordLength = boxWordLength;
+    format->coreWordLength = coreWordLength;
+    format->threadWordLength = threadWordLength;
+
+    /* Sum-reduce the formats that are defined as vectors. */
+    format->boardWordLength = std::accumulate(boardWordLengths.begin(),
+                                              boardWordLengths.end(), 0);
+    format->mailboxWordLength = std::accumulate(mailboxWordLengths.begin(),
+                                                mailboxWordLengths.end(), 0);
+}
+
+/* Donates all boards in the map to the engine, and connects them
+   up. Arguments:
+
+    - boards: Map of boards, given their address components.
+    - engine: Engine to populate.
+*/
+void Dialect1Config::connect_boards_in_engine(
+    std::map<AddressComponent, PoetsBoard*>* boards,
+    PoetsEngine* engine)
+{
+    /* The connection behaviour depends on whether or not the hypercube
+       argument was specified. If a hypercube, connect them in a hypercube
+       (obviously). If not a hypercube, connect them all-to-all
+       (not-so-obviously). */
+    if (boardsAsHypercube)
+    {
+        ; // <!>
+    }
+    else  /* All-to-all */
+    {
+        ;  // <!>
+    }
+}
+
+/* Flattens a multidimensional address (or a vector-address with one
+   dimension), and returns it. Arguments:
+
+    - address: address to flatten.
+    - wordLengths: word lengths of each component of the address
+
+   address and wordLengths must have the same number of dimensions.
+
+   Examples:
+
+    1. address is (0,0,0), wordLengths is (3,2,1), returns 0b000000 = 0.
+    2. address is (3,1,1), wordLengths is (3,2,1), returns 0b011011 = 27.
+    3. address is (7,3,1), wordLengths is (3,2,1), returns 0b111111 = 63.
+*/
+AddressComponent Dialect1Config::flatten_address(
+    std::vector<AddressComponent> address,
+    std::vector<unsigned> wordLengths)
+{
+    AddressComponent returnValue = 0;
+    for (unsigned dimension=0; dimension<address.size; dimension++)
+    {
+        returnValue |= address[dimension];
+        returnValue << wordLengths[dimension];
+    }
+    return returnValue;
+}
 
 /* Distributes all boards in a map to all boxes evenly, arbitrarily. Assumes
    that the number of boards divides into the number of boxes without
@@ -77,63 +160,6 @@ void Dialect1Config::populate_boxes_evenly_with_boards(
             boardIterator++;
         }
     }
-}
-
-/* Assigns all metadata defined in this config to the engine. Arguments:
-
-    - engine: the PoetsEngine to assign metadata to.
-*/
-void Dialect1Config::assign_metadata_to_engine(PoetsEngine* engine)
-{
-    engine->author = author;
-    engine->datetime = datetime;
-    engine->version = version;
-    engine->fileOrigin = fileOrigin;
-}
-
-/* Assigns all sizes to an address format object. Arguments
-
-    - format: the HardwareAddressObject to assign sizes to.
-*/
-void Dialect1Config::assign_sizes_to_address_format(
-    HardwareAddressFormat* format)
-{
-    format->boxWordLength = boxWordLength;
-    format->coreWordLength = coreWordLength;
-    format->threadWordLength = threadWordLength;
-
-    /* Sum-reduce the formats that are defined as vectors. */
-    format->boardWordLength = std::accumulate(boardWordLengths.begin(),
-                                              boardWordLengths.end(), 0);
-    format->mailboxWordLength = std::accumulate(mailboxWordLengths.begin(),
-                                                mailboxWordLengths.end(), 0);
-}
-
-/* Flattens a multidimensional address (or a vector-address with one
-   dimension), and returns it. Arguments:
-
-    - address: address to flatten.
-    - wordLengths: word lengths of each component of the address
-
-   address and wordLengths must have the same number of dimensions.
-
-   Examples:
-
-    1. address is (0,0,0), wordLengths is (3,2,1), returns 0b000000 = 0.
-    2. address is (3,1,1), wordLengths is (3,2,1), returns 0b011011 = 27.
-    3. address is (7,3,1), wordLengths is (3,2,1), returns 0b111111 = 63.
-*/
-AddressComponent Dialect1Config::flatten_address(
-    std::vector<AddressComponent> address,
-    std::vector<unsigned> wordLengths)
-{
-    AddressComponent returnValue = 0;
-    for (unsigned dimension=0; dimension<address.size; dimension++)
-    {
-        returnValue |= address[dimension];
-        returnValue << wordLengths[dimension];
-    }
-    return returnValue;
 }
 
 /* Populates a PoetsEngine with boxes, and defines the box-board costs in those
