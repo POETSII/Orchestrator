@@ -795,7 +795,9 @@ unsigned TMoth::OnSuper(PMsg_p * Z, unsigned cIdx)
 PMsg_p W(Comms[cIdx]);
 W.Key(Q::SUPR);
 W.Src(Z->Tgt());
-if (SupervisorCall(Z,&W) < 0) W.Send(Z->Src()); // Execute. Send a reply if one is expected
+if (SupervisorCall(Z,&W) > 0) // Execute. Send a reply if one is expected
+  if (!cidx && (Z->Tgt() == Urank) && (Z->Src() == Urank)) OnTinsel(Z, 0); // either to Tinsels,
+  else W.Send(Z->Src());  // or to some external or internal process.
 return 0;
 }
 
@@ -848,6 +850,7 @@ WALKVECTOR(P_Msg_t, msgs, msg) // and they're sent blindly
    while (!canSend()); // if we have to we can run OnIdle to empty receive buffers
    send(msg->header.destDeviceAddr, FlitLen, &(*msg));
 }
+return 0;
 }
 
 //------------------------------------------------------------------------------

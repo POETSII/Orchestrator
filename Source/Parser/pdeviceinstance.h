@@ -17,8 +17,8 @@ public:
     P_device* elaborateDeviceInstance(D_graph* graph_instance = NULL);
     P_super* elaborateSupervisorInstance(D_graph* graph_instance = NULL);
     inline P_device* getDevice() const {return device;};
-    inline bool isSupervisorInstance() {return xmlName() == "PDevI";};
-    inline const PIGraphBranch* deviceType() const {return xmlName() == "PDevI" ? static_cast<const PIGraphBranch*>(supervisor_type) : static_cast<const PIGraphBranch*>(device_type);};
+    inline bool isSupervisorInstance() {return xmlName() == "SDevI";};
+    inline const PIGraphBranch* deviceType() const {return xmlName() == "SDevI" ? static_cast<const PIGraphBranch*>(supervisor_type) : static_cast<const PIGraphBranch*>(device_type);};
     inline void setPropsDataType(const PIDataType* data_type = 0) {PConcreteInstance::setPropsDataType(xmlName() == "PDevI" ? NULL : device_type->properties());};
 
 private:

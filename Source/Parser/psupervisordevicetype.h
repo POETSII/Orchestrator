@@ -21,7 +21,7 @@ public:
     enum vld_elem_types {OTHER, INPIN, OUTPIN, CODE};
 
 private:
-
+    P_devtyp* device_type;
     const QHash<QString, vld_elem_types> valid_elements = {{"InputPin", INPIN}, {"OutputPin", OUTPIN}, {"Code", CODE}};
 };
 
