@@ -796,7 +796,7 @@ PMsg_p W(Comms[cIdx]);
 W.Key(Q::SUPR);
 W.Src(Z->Tgt());
 if (SupervisorCall(Z,&W) > 0) // Execute. Send a reply if one is expected
-  if (!cidx && (Z->Tgt() == Urank) && (Z->Src() == Urank)) OnTinsel(Z, 0); // either to Tinsels,
+  if (!cIdx && (Z->Tgt() == Urank) && (Z->Src() == Urank)) OnTinsel(Z, 0); // either to Tinsels,
   else W.Send(Z->Src());  // or to some external or internal process.
 return 0;
 }
