@@ -35,7 +35,7 @@ void Dialect1Deployer::deploy(PoetsEngine* engine,
 
     /* Create a series of boards, storing them in a map address by their
        address component. */
-    std::map<AddressComponent, PoetsBoard*> boards;
+    std::map<MultiAddressComponent, PoetsBoard*> boards;
     populate_map_with_boards(&boards);
 
     /* Divide up the boards between the boxes naively, and assign them. */
@@ -88,14 +88,41 @@ void Dialect1Deployer::connect_boards_in_engine(
     /* The connection behaviour depends on whether or not the hypercube
        argument was specified. If a hypercube, connect them in a hypercube
        (obviously). If not a hypercube, connect them all-to-all
-       (not-so-obviously). */
+       (not-so-obviously).
+
+       Whatever we do, we'll need these declarations however. */
+    std::map<AddressComponent, PoetsBoard*>::iterator innerBoardIterator;
+    std::map<AddressComponent, PoetsBoard*>::iterator outerBoardIterator;
+    AddressComponent innerFlatAddress;
+    AddressComponent outerFlatAddress;
+
     if (boardsAsHypercube)
     {
         ; // <!>
     }
     else  /* All-to-all */
     {
-        ;  // <!>
+        /* Donate the board to the engine, then connect that board to every
+           board in the engine so far (handshaking problem). */
+        for (outerBoardIterator=boards->begin();
+             outerBoardIterator!=boards->end(); outerBoardIterator++)
+        {
+            /* Donation, making sure to flatten the address first. */
+            outerFlatAddress = flatten_address(outerBoardIterator->first,
+                                               boardWordLengths);
+            engine->contain(outerFlatAddress, outerBoardIterator->second);
+
+            /* Connection to the previously-donated boards, again flattening
+               the inner address. */
+            for (innerBoardIterator=boards->begin();
+                 innerBoardIterator!=outerBoardIterator; innerBoardIterator++)
+            {
+                innerFlatAddress = flatten_address(innerBoardIterator->first,
+                                                   boardWordLengths);
+                engine.connect(outerFlatAddress, innerFlatAddress,
+                               costBoardBoard);
+            }
+        }
     }
 }
 
@@ -114,8 +141,7 @@ void Dialect1Deployer::connect_boards_in_engine(
     3. address is (7,3,1), wordLengths is (3,2,1), returns 0b111111 = 63.
 */
 AddressComponent Dialect1Deployer::flatten_address(
-    std::vector<AddressComponent> address,
-    std::vector<unsigned> wordLengths)
+    MultiAddressComponent address, std::vector<unsigned> wordLengths)
 {
     AddressComponent returnValue = 0;
     for (unsigned dimension=0; dimension<address.size; dimension++)
@@ -132,31 +158,34 @@ AddressComponent Dialect1Deployer::flatten_address(
 
     - boxMap: Boxes, mapped by their address components.
     - boardMap: All boards (previously uncontained), mapped by their address
-      components.
+      components. The address components should not have been flattened.
 
    Modifies the boxes inplace.
 */
 void Dialect1Deployer::populate_boxes_evenly_with_boards(
     std::map<AddressComponent, PoetsBox*>* boxMap,
-    std::map<AddressComponent, PoetsBoard*>* boardMap);
+    std::map<MultiAddressComponent, PoetsBoard*>* boardMap);
 {
     /* An even distribution (we hope). */
     unsigned boardsPerBox = boardMap.size() / boxMap.size();
+    AddressComponent flatAddress;
 
     /* We iterate through the map of boxes and boards, distributing all boards
        up to a given amount, such that an even distribution is maintained. */
     std::map<AddressComponent, PoetsBox*>::iterator \
         boxIterator = boxMap->begin();
-    std::map<AddressComponent, PoetsBoard*>::iterator \
+    std::map<MultiAddressComponent, PoetsBoard*>::iterator  \
         boardIterator = boardMap->begin();
     for (boxIterator=boxMap->begin(); boxIterator!=boxMap->end();
          boxIterator++)
     {
-        /* Contain 'boardsPerBox' boards in this box. */
+        /* Contain 'boardsPerBox' boards in this box, making sure to flatten
+           the address first. */
         for (unsigned boardIndex=0; boardIndex<boardsPerBox; boardIndex++)
         {
-            boxIterator->second->contain(boardIterator->first,
-                                         boardIterator->second);
+            flatAddress = flatten_address(boardIterator->first,
+                                          boardWordLengths);
+            boxIterator->second->contain(flatAddress, boardIterator->second);
             boardIterator++;
         }
     }
@@ -181,19 +210,18 @@ void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
 /* Populates a map passed as an argument with dynamically-allocated
    PoetsBoards. Arguments:
 
-    - boards: Map containing poetsboards, mapped by (flat) address components.
-
- */
+    - boards: Map containing poetsboards, mapped by non-flat address
+      components.
+*/
 void Dialect1Deployer::populate_map_with_boards(
-    std::map<AddressComponent, PoetsBoard*>* boardMap)
+    std::map<MultiAddressComponent, PoetsBoard*>* boardMap)
 {
-    AddressComponent flatAddress;
     unsigned boardDimensions = boardsInEngine.size();
 
     /* A temporary address, one for each created board in the map. A vector is
        used over a std::array here to make the reduction operation in
        flatten_address easier to write. */
-    std::vector<AddressComponent> boardAddress(boardDimensions, 0);
+    MultiAddressComponent boardAddress(boardDimensions, 0);
 
     /* We loop until we have created all of the boards that we need to. */
     unsigned boardIndex = 0;  /* Increases monotonically. */
@@ -207,12 +235,9 @@ void Dialect1Deployer::populate_map_with_boards(
         for (boardAddress[0]=0; boardAddress[0]<boardsInEngine[0];
              boardAddress[0]++)
         {
-            /* Create a flattened address. */
-            flatAddress = flatten_address(boardAddress, boardWordLengths);
-
             /* Store */
-            *boardMap[flatAddress] = new Board(dformat("Board%06d",
-                                                       boardIndex));
+            *boardMap[boardAddress] = new Board(dformat("Board%06d",
+                                                        boardIndex));
             index++;
         }
 

@@ -12,6 +12,10 @@
 #include "dfprintf.h"
 #include "HardwareModel.h"
 
+/* Address components that are multidimensional (to support hypercubes), that
+   have not been flattened, are vectors of address components. */
+typedef std::vector<AddressComponent> MultiAddressComponent;
+
 class Dialect1Deployer
 {
 public:
@@ -37,6 +41,7 @@ public:
                                               equally between the number of
                                               boxes. */
     bool boardsAsHypercube;
+    std::vector<bool> boardHypercubePeriodicity;
     float costExternalBox;
 
     /* Box properties */
@@ -47,6 +52,7 @@ public:
     /* Board properties */
     std::vector<unsigned> mailboxesInBoard;
     bool mailboxesAsHypercube;
+    std::vector<bool> mailboxHypercubePeriodicity;
     float costBoardMailbox;
     float costMailboxMailbox;
     int supervisorMemory;
@@ -71,14 +77,13 @@ private:
     void connect_boards_in_engine(
         std::map<AddressComponent, PoetsBoard*>* boards,
         PoetsEngine* engine);
-    AddressComponent flatten_address(std::vector<AddressComponent> address);
+    AddressComponent flatten_address(MultiAddressComponent address);
     void populate_boxes_evenly_with_boards(
         std::map<AddressComponent, PoetsBox*>* boxMap,
-        std::map<AddressComponent, PoetsBoard*>* boardMap);
+        std::map<MultiAddressComponent, PoetsBoard*>* boardMap);
     void populate_engine_with_boxes_and_their_costs(PoetsEngine* engine);
-    void populate_map_with_boards(std::map<std::array<AddressComponent>,
+    void populate_map_with_boards(std::map<MultiAddressComponent,
                                   PoetsBoard*>* boardMap);
-
 }
 
 #endif
