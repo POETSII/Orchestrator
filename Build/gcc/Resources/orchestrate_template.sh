@@ -90,7 +90,10 @@ SUPERVISOR_LIB_DIR="{{ SUPERVISOR_LIB_DIR }}"
 GCC_LIB_DIR="{{ GCC_LIB_DIR }}"
 CR_LIB_DIR="{{ CR_LIB_DIR }}"
 INTERNAL_LIB_PATH=./:"$QT_LIB_DIR":"$MPI_LIB_DIR":\
-"$GCC_LIB_DIR":"$SUPERVISOR_LIB_DIR":"$JTAG_LIB_DIR":"$CR_LIB_DIR":
+"$GCC_LIB_DIR":"$SUPERVISOR_LIB_DIR":"$JTAG_LIB_DIR":
+
+# Paths for dynamically-linked libraries required by MPI.
+export LD_LIBRARY_PATH="$CR_LIB_DIR":"$LD_LIBRARY_PATH"
 
 # Define general MPI execution command.
 COMMAND="mpiexec.hydra -genv LD_LIBRARY_PATH \"$INTERNAL_LIB_PATH\" \
