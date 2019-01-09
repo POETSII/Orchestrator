@@ -58,13 +58,6 @@ void PEdgeInstance::elaborateEdge(D_graph* graph_rep)
      if (containing_graph == NULL) // no need to do anything if the edge has already been elaborated
      {
         PIGraphInstance* parent_instance = dynamic_cast<PIGraphInstance*>(parent());
-        /* don't elaborate the edge if it's to/from a Supervisor. Note that there is an issue
-           with message types, edge properties, and edge state if these reside on the softswitch-side
-           device because the graph requires devices on both ends, no supervisor device is inserted
-           into the problem graph in the Orchestrator, and the problem graph is the container that
-           has the pin and message type holders.
-        */
-        if (path.dst.device == parent_instance->supervisor || path.src.device == parent_instance->supervisor) return;
         if (parent_instance) // no parent instance would be a serious elaboration error
         {
            // generate or retrieve all the objects required to insert the node into the graph

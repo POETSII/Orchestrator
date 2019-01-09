@@ -117,15 +117,17 @@ P_task* PIGraphInstance::elaborateGraphInstance(OrchBase* orch_root)
              device->idx = dev_inst;
              graph_instance->pD->G.InsertNode(dev_inst, device);
          }
-         // and then add all the edge instances
-         for (QVector<PIGraphObject*>::iterator edge = beginSubObjects(EDGEINSTS); edge < endSubObjects(EDGEINSTS); edge++)
-             static_cast<PEdgeInstance*>(*edge)->elaborateEdge(graph_instance->pD);
          // insert a supervisor if one is available
          if (supervisor != NULL)
          {
              graph_instance->pSup = static_cast<P_super*>(const_cast<PDeviceInstance*>(supervisor)->elaborateSupervisorInstance(graph_instance->pD));
+             graph_instance->pSup->idx = P_device::super_idx;
+             graph_instance->pD->G.InsertNode(P_device::super_idx, graph_instance->pSup);
              orch_root->P_superm[graph_instance->pSup->Name()] = graph_instance->pSup;
          }
+         // and then add all the edge instances
+         for (QVector<PIGraphObject*>::iterator edge = beginSubObjects(EDGEINSTS); edge < endSubObjects(EDGEINSTS); edge++)
+             static_cast<PEdgeInstance*>(*edge)->elaborateEdge(graph_instance->pD);
          graph_instance->PoL.IsPoL = false; // set the flag to indicate non-proof-of-life
       }
       return graph_instance;
