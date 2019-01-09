@@ -1,9 +1,9 @@
 #ifndef __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWARECONFIGURATION_DIALECT1CONFIG_H
 #define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWARECONFIGURATION_DIALECT1CONFIG_H
 
-/* Defines a intermediate configuration format for dialect 1-style files. This
-   data structure holds configuration so that it can be deployed to a given
-   engine and address format. */
+/* Defines how dialect-1 style files are deployed to define PoetsEngine
+   configurations. This data structure holds configuration information, so that
+   it can be deployed to a given engine and address format. */
 
 #include <array>
 #include <map>
@@ -12,7 +12,7 @@
 #include "dfprintf.h"
 #include "HardwareModel.h"
 
-class Dialect1Config
+class Dialect1Deployer
 {
 public:
 

@@ -5,17 +5,17 @@
 
     - addressFormat: Address format to populate.
 
-   Configurations are deployed statically, but dynamically create objects
-   within the static objects. Your engine and addressFormat should be
+   Configurations are deployed statically, but the deployer dynamically creates
+   objects within the static objects. Your engine and addressFormat should be
    constructed by your containing object, and passed in by reference.
 
-   Validation must be performed by the logic that populates these configuration
+   Validation must be performed by the logic that populates deployer
    objects. If you don't validate your input, your deployment will fall over.
 
    See accompanying header for the set of variables that are used during
    deployment. */
-void Dialect1Config::deploy(PoetsEngine* engine,
-                            HardwareAddressFormat* addressFormat)
+void Dialect1Deployer::deploy(PoetsEngine* engine,
+                              HardwareAddressFormat* addressFormat)
 {
     /* Temporary staging variables for items, which are allocated
        dynamically. */
@@ -45,11 +45,11 @@ void Dialect1Config::deploy(PoetsEngine* engine,
     connect_boards_in_engine(&boards, engine);
 }
 
-/* Assigns all metadata defined in this config to the engine. Arguments:
+/* Assigns all metadata defined in this deployer to the engine. Arguments:
 
     - engine: the PoetsEngine to assign metadata to.
 */
-void Dialect1Config::assign_metadata_to_engine(PoetsEngine* engine)
+void Dialect1Deployer::assign_metadata_to_engine(PoetsEngine* engine)
 {
     engine->author = author;
     engine->datetime = datetime;
@@ -61,7 +61,7 @@ void Dialect1Config::assign_metadata_to_engine(PoetsEngine* engine)
 
     - format: the HardwareAddressObject to assign sizes to.
 */
-void Dialect1Config::assign_sizes_to_address_format(
+void Dialect1Deployer::assign_sizes_to_address_format(
     HardwareAddressFormat* format)
 {
     format->boxWordLength = boxWordLength;
@@ -81,7 +81,7 @@ void Dialect1Config::assign_sizes_to_address_format(
     - boards: Map of boards, given their address components.
     - engine: Engine to populate.
 */
-void Dialect1Config::connect_boards_in_engine(
+void Dialect1Deployer::connect_boards_in_engine(
     std::map<AddressComponent, PoetsBoard*>* boards,
     PoetsEngine* engine)
 {
@@ -113,7 +113,7 @@ void Dialect1Config::connect_boards_in_engine(
     2. address is (3,1,1), wordLengths is (3,2,1), returns 0b011011 = 27.
     3. address is (7,3,1), wordLengths is (3,2,1), returns 0b111111 = 63.
 */
-AddressComponent Dialect1Config::flatten_address(
+AddressComponent Dialect1Deployer::flatten_address(
     std::vector<AddressComponent> address,
     std::vector<unsigned> wordLengths)
 {
@@ -136,7 +136,7 @@ AddressComponent Dialect1Config::flatten_address(
 
    Modifies the boxes inplace.
 */
-void Dialect1Config::populate_boxes_evenly_with_boards(
+void Dialect1Deployer::populate_boxes_evenly_with_boards(
     std::map<AddressComponent, PoetsBox*>* boxMap,
     std::map<AddressComponent, PoetsBoard*>* boardMap);
 {
@@ -166,7 +166,7 @@ void Dialect1Config::populate_boxes_evenly_with_boards(
    boxes. Arguments:
 
     - engine: PoetsEngine to populate. */
-void Dialect1Config::populate_engine_with_boxes_and_their_costs(
+void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
     PoetsEngine* engine)
 {
     for (AddressComponent addressComponent=0; addressComponent < boxesInEngine;
@@ -184,7 +184,7 @@ void Dialect1Config::populate_engine_with_boxes_and_their_costs(
     - boards: Map containing poetsboards, mapped by (flat) address components.
 
  */
-void Dialect1Config::populate_map_with_boards(
+void Dialect1Deployer::populate_map_with_boards(
     std::map<AddressComponent, PoetsBoard*>* boardMap)
 {
     AddressComponent flatAddress;
