@@ -227,7 +227,7 @@ AddressComponent Dialect1Deployer::flatten_address(
     MultiAddressComponent address, std::vector<unsigned> wordLengths)
 {
     AddressComponent returnValue = 0;
-    for (unsigned dimension=0; dimension<address.size; dimension++)
+    for (unsigned dimension=0; dimension<address.size(); dimension++)
     {
         returnValue |= address[dimension];
         returnValue << wordLengths[dimension];
