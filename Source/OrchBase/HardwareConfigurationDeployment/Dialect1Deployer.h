@@ -78,7 +78,8 @@ private:
         PoetsEngine* engine,
         std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
         std::map<MultiAddressComponent, AddressComponent>* addressMap);
-    AddressComponent flatten_address(MultiAddressComponent address);
+    AddressComponent flatten_address(MultiAddressComponent address,
+                                     std::vector<unsigned> wordLengths);
     void populate_boxes_evenly_with_boards(
         std::map<AddressComponent, PoetsBox*>* boxMap,
         std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
