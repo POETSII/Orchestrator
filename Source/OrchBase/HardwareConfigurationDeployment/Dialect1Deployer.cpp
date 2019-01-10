@@ -97,8 +97,9 @@ void Dialect1Deployer::connect_boards_in_engine(
        (not-so-obviously).
 
        Whatever we do, we'll need these declarations however. */
-    std::map<AddressComponent, PoetsBoard*>::iterator outerBoardIterator;
+    std::map<MultiAddressComponent, PoetsBoard*>::iterator outerBoardIterator;
     AddressComponent outerFlatAddress;
+    AddressComponent innerFlatAddress;
 
     if (boardsAsHypercube)
     {
@@ -106,34 +107,94 @@ void Dialect1Deployer::connect_boards_in_engine(
         for (outerBoardIterator=boardMap->begin();
              outerBoardIterator!=boardMap->end(); outerBoardIterator++)
         {
-            outerFlatAddress = flatten_address(outerBoardIterator->first,
-                                               boardWordLengths);
+            outerFlatAddress = *addressMap[outerBoardIterator->first];
             engine->contain(outerFlatAddress, outerBoardIterator->second);
         }
 
         /* For each board, connect that board to its neighbours. Note that this
            loop is not rolled with the other loop because a board must first be
            donated before it is connected, and try/catching for duplicate
-           containment operations is (probably) more expensive than doing it
-           this way. */
+           containment operations is (probably) more expensive than keeping the
+           loops separate. */
+        unsigned boardDimensions = boardsInEngine.size();
+
+        /* Variables in the loop to determine whether or not to connect ahead
+           or behind a given board in a given dimension. */
+        bool isAnyoneAhead;
+        bool isAnyoneBehind;
+
+        /* Variable in the loop to hold our hierarchical address, and the
+           computed hierarchical address of a neighbour. */
+        MultiAddressComponent outerHierarchicalAddress;
+        MultiAddressComponent innerHierarchicalAddress;
+
         for (outerBoardIterator=boardMap->begin();
              outerBoardIterator!=boardMap->end(); outerBoardIterator++)
-            {;// <!>
-            }
+        {
+            /* For each dimension, connect to the neighbour ahead and
+               behind (if there is one). */
+            outerHierarchicalAddress = outerBoardIterator->first;
+            outerFlatAddress = *addressMap[outerHierarchicalAddress];
+            for (unsigned dimension=0; dimension<boardDimensions; dimension++)
+            {
+                /* Handle edge-cases if the hypercube is not periodic. */
+                isAnyoneAhead = true;
+                isAnyoneBehind = true;
+                if (!boardHypercubePeriodicity[dimension])
+                {
+                    if (outerHierarchicalAddress[dimension] == 0)
+                    {
+                        isAnyoneBehind = false;
+                    }
+                    else if (outerHierarchicalAddress[dimension] ==
+                             boardsInEngine[dimension] - 1)
+                    {
+                        isAnyoneAhead = false;
+                    }
+                }
+
+                /* Prepare to compute the address of the neighbour. */
+                innerHierarchicalAddress =
+                    *addressMap[outerHierarchicalAddress];
+
+                /* Yay nesting. */
+                if (isAnyoneAhead)
+                {
+                    /* Compute the address of the neighbour. */
+                    innerHierarchicalAddress[dimension] += 1;
+                    innerFlatAddress = flatten_address(
+                        innerHierarchicalAddress, boardWordLengths);
+
+                    /* Do the actual connecting. This connection happens
+                       one-way, because we are iterating through each board. */
+                    engine.connect(outerFlatAddress, innerFlatAddress,
+                                   costBoardBoard, true);
+                }
+
+                /* As previous, but for boards behind us. */
+                if (isAnyoneBehind)
+                {
+                    innerHierarchicalAddress[dimension] -= 1;
+                    innerFlatAddress = flatten_address(
+                        innerHierarchicalAddress, boardWordLengths);
+                    engine.connect(outerFlatAddress, innerFlatAddress,
+                                   costBoardBoard, true);
+                }
+            }  /* End for each dimension. */
+        }  /* End for each board. */
     }
     else  /* All-to-all */
     {
         /* For each board, donate that board to the engine, then connect that
            board to every board in the engine so far (handshaking problem). */
-        std::map<AddressComponent, PoetsBoard*>::iterator innerBoardIterator;
-        AddressComponent innerFlatAddress;
+        std::map<MultiAddressComponent, PoetsBoard*>::iterator
+            innerBoardIterator;
 
         for (outerBoardIterator=boardMap->begin();
              outerBoardIterator!=boardMap->end(); outerBoardIterator++)
         {
-            /* Donation, making sure to flatten the address first. */
-            outerFlatAddress = flatten_address(outerBoardIterator->first,
-                                               boardWordLengths);
+            /* Donation. */
+            outerFlatAddress = *addressMap[outerBoardIterator->first];
             engine->contain(outerFlatAddress, outerBoardIterator->second);
 
             /* Connection between the previously-donated boards, again
@@ -141,8 +202,7 @@ void Dialect1Deployer::connect_boards_in_engine(
             for (innerBoardIterator=boardMap->begin();
                  innerBoardIterator!=outerBoardIterator; innerBoardIterator++)
             {
-                innerFlatAddress = flatten_address(innerBoardIterator->first,
-                                                   boardWordLengths);
+                innerFlatAddress = *addressMap[innerBoardIterator->first];
                 engine.connect(outerFlatAddress, innerFlatAddress,
                                costBoardBoard);
             }
