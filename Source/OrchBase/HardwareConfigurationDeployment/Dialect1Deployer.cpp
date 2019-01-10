@@ -230,7 +230,7 @@ AddressComponent Dialect1Deployer::flatten_address(
     for (unsigned dimension=0; dimension<address.size(); dimension++)
     {
         returnValue |= address[dimension];
-        returnValue << wordLengths[dimension];
+        returnValue <<= wordLengths[dimension];
     }
     return returnValue;
 }
