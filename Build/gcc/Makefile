@@ -187,6 +187,7 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 		["QT_LIB_DIR"]="$(realpath $(QT_LIB_DIR))" \
 		["JTAG_LIB_DIR"]="$(realpath $(JTAG_LIB_DIR))" \
 		["GCC_LIB_DIR"]="$(realpath $(GCC_LIB_DIR))" \
+		["CR_LIB_DIR"]="$(realpath $(CR_LIB_DIR))" \
 		["SUPERVISOR_LIB_DIR"]="$$(realpath -m $(SUPERVISOR_LIB_DIR))" \
 		["EXECUTABLE_DIR"]="$$(realpath -m $(EXECUTABLE_DIR))");\
 	for KEY in "$${!SUBSTITUTIONS[@]}"; do \
