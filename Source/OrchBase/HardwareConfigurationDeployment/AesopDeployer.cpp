@@ -15,12 +15,12 @@ AesopDeployer::AesopDeployer()
                                           be used! */
 
     boxWordLength = 0;  /* There's only one box! */
-    boardWordLength.clear();
-    boardWordLength.push_back(2);
-    boardWordLength.push_back(2);
-    mailboxWordLength.clear();
-    mailboxWordLength.push_back(2);
-    mailboxWordLength.push_back(2);
+    boardWordLengths.clear();
+    boardWordLengths.push_back(2);
+    boardWordLengths.push_back(2);
+    mailboxWordLengths.clear();
+    mailboxWordLengths.push_back(2);
+    mailboxWordLengths.push_back(2);
     coreWordLength = 2;
     threadWordLength = 4;
 
