@@ -36,7 +36,7 @@ public:
     unsigned threadWordLength;
 
     /* Engine properties */
-    int boxesInEngine;
+    unsigned boxesInEngine;
     std::vector<unsigned> boardsInEngine;  /* NB: Number of boards must divide
                                               equally between the number of
                                               boxes. */
@@ -59,16 +59,16 @@ public:
     int dram;
 
     /* Mailbox properties */
-    int coresInMailbox;
+    unsigned coresInMailbox;
     float costMailboxCore;
     float costCoreCore;
 
     /* Core properties */
-    int threadsInCore;
+    unsigned threadsInCore;
     float coreThreadCost;
     float threadThreadCost;
-    int dataMemory;
-    int instructionMemory;
+    unsigned dataMemory;
+    unsigned instructionMemory;
 
 private:
     /* Assignment and population methods used during deployment. */
