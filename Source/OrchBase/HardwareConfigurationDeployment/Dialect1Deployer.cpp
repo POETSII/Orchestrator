@@ -192,7 +192,8 @@ void Dialect1Deployer::connect_boards_in_engine(
              outerBoardIterator!=boardMap->end(); outerBoardIterator++)
         {
             /* Donation. */
-            engine->contain(outerBoardIterator->second->address,
+            outerFlatAddress = outerBoardIterator->second->address;
+            engine->contain(outerFlatAddress,
                             outerBoardIterator->second->poetsItem);
 
             /* Connection between the previously-donated boards, again
