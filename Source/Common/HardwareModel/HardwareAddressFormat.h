@@ -21,6 +21,7 @@ public:
                           unsigned mailboxWordLength,
                           unsigned coreWordLength,
                           unsigned threadWordLength);
+    HardwareAddressFormat();
 
     unsigned boxWordLength;
     unsigned boardWordLength;

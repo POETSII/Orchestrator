@@ -33,6 +33,11 @@ HardwareAddressFormat::HardwareAddressFormat(unsigned boxWordLength,
     */
 }
 
+/* Constructs without populating. You really don't want to use this without
+   populating it first (either by passing it to a deployer, or setting the
+   values yourself later). */
+HardwareAddressFormat::HardwareAddressFormat(){}
+
 /* Write debug and diagnostic information using dumpchan. Arguments:
 
    - file: File to dump to.
