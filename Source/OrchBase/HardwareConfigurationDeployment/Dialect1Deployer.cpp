@@ -35,16 +35,16 @@ void Dialect1Deployer::deploy(PoetsEngine* engine,
     /* Create a series of boards, storing them in a map, addressed by their
        hierarchical address components. Also store the flattened addresses
        in a second map. */
-    std::map<MultiAddressComponent, PoetsBoard*> boards;
-    std::map<MultiAddressComponent, AddressComponent> boardAddresses;
-    populate_map_with_boards(&boards, &boardAddresses);
+    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*> boards;
+    populate_map_with_boards(&boards); // <!>
 
     /* Divide up the boards between the boxes naively, and assign them. */
-    populate_boxes_evenly_with_boards(&(engine->PoetsBoxes), &boards,
-                                      &boardAddresses);
+    populate_boxes_evenly_with_boards(&(engine->PoetsBoxes), &boards);
 
     /* Connect the boards in a graph for the engine. */
-    connect_boards_in_engine(engine, &boards, &boardAddresses);
+    connect_boards_in_engine(engine, &boards);
+
+    /* Free itemAndAddress<PoetsBoard*>* objects in boards <!> */
 }
 
 /* Assigns all metadata defined in this deployer to the engine. Arguments:
@@ -81,14 +81,13 @@ void Dialect1Deployer::assign_sizes_to_address_format(
    up. Arguments:
 
     - engine: Engine to populate.
+
     - boardMap: Map of boards, given their hierarchical addresses.
-    - addressMap: Map of flat board addresses, given their hierarchical
-      addresses.
 */
 void Dialect1Deployer::connect_boards_in_engine(
     PoetsEngine* engine,
-    std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
-    std::map<MultiAddressComponent, AddressComponent>* addressMap)
+    std::map<MultiAddressComponent,
+             itemAndAddress<PoetsBoard*>*>* boardMap)
 {
     /* The connection behaviour depends on whether or not the hypercube
        argument was specified. If a hypercube, connect them in a hypercube
@@ -96,7 +95,8 @@ void Dialect1Deployer::connect_boards_in_engine(
        (not-so-obviously).
 
        Whatever we do, we'll need these declarations however. */
-    std::map<MultiAddressComponent, PoetsBoard*>::iterator outerBoardIterator;
+    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*>::iterator \
+        outerBoardIterator;
     AddressComponent outerFlatAddress;
     AddressComponent innerFlatAddress;
 
@@ -106,8 +106,8 @@ void Dialect1Deployer::connect_boards_in_engine(
         for (outerBoardIterator=boardMap->begin();
              outerBoardIterator!=boardMap->end(); outerBoardIterator++)
         {
-            outerFlatAddress = *addressMap[outerBoardIterator->first];
-            engine->contain(outerFlatAddress, outerBoardIterator->second);
+            engine->contain(outerBoardIterator->second->address,
+                            outerBoardIterator->second->poetsItem);
         }
 
         /* For each board, connect that board to its neighbours. Note that this
@@ -133,7 +133,7 @@ void Dialect1Deployer::connect_boards_in_engine(
             /* For each dimension, connect to the neighbour ahead and
                behind (if there is one). */
             outerHierarchicalAddress = outerBoardIterator->first;
-            outerFlatAddress = *addressMap[outerHierarchicalAddress];
+            outerFlatAddress = outerBoardIterator->second->address;
             for (unsigned dimension=0; dimension<boardDimensions; dimension++)
             {
                 /* Handle edge-cases if the hypercube is not periodic. */
@@ -153,8 +153,7 @@ void Dialect1Deployer::connect_boards_in_engine(
                 }
 
                 /* Prepare to compute the address of the neighbour. */
-                innerHierarchicalAddress =
-                    *addressMap[outerHierarchicalAddress];
+                innerHierarchicalAddress = outerHierarchicalAddress;
 
                 /* Yay nesting. */
                 if (isAnyoneAhead)
@@ -186,22 +185,22 @@ void Dialect1Deployer::connect_boards_in_engine(
     {
         /* For each board, donate that board to the engine, then connect that
            board to every board in the engine so far (handshaking problem). */
-        std::map<MultiAddressComponent, PoetsBoard*>::iterator
-            innerBoardIterator;
+        std::map<MultiAddressComponent,
+                 itemAndAddress<PoetsBoard*>*>::iterator innerBoardIterator;
 
         for (outerBoardIterator=boardMap->begin();
              outerBoardIterator!=boardMap->end(); outerBoardIterator++)
         {
             /* Donation. */
-            outerFlatAddress = *addressMap[outerBoardIterator->first];
-            engine->contain(outerFlatAddress, outerBoardIterator->second);
+            engine->contain(outerBoardIterator->second->address,
+                            outerBoardIterator->second->poetsItem);
 
             /* Connection between the previously-donated boards, again
                flattening the inner address. */
             for (innerBoardIterator=boardMap->begin();
                  innerBoardIterator!=outerBoardIterator; innerBoardIterator++)
             {
-                innerFlatAddress = *addressMap[innerBoardIterator->first];
+                innerFlatAddress = innerBoardIterator->second->address;
                 engine->connect(outerFlatAddress, innerFlatAddress,
                                 costBoardBoard);
             }
@@ -244,14 +243,11 @@ AddressComponent Dialect1Deployer::flatten_address(
     - boardMap: All boards (previously uncontained), mapped by their
       hierarchical addresses.
 
-    - addressMap: Map of hierarchical addresses to flattened addresses.
-
    Modifies the boxes inplace.
 */
 void Dialect1Deployer::populate_boxes_evenly_with_boards(
     std::map<AddressComponent, PoetsBox*>* boxMap,
-    std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
-    std::map<MultiAddressComponent, AddressComponent>* addressMap)
+    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*>* boardMap)
 {
     /* An even distribution (we hope). */
     unsigned boardsPerBox = boardMap->size() / boxMap->size();
@@ -260,17 +256,17 @@ void Dialect1Deployer::populate_boxes_evenly_with_boards(
        up to a given amount, such that an even distribution is maintained. */
     std::map<AddressComponent, PoetsBox*>::iterator \
         boxIterator = boxMap->begin();
-    std::map<MultiAddressComponent, PoetsBoard*>::iterator  \
+    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*>::iterator \
         boardIterator = boardMap->begin();
     for (boxIterator=boxMap->begin(); boxIterator!=boxMap->end();
          boxIterator++)
     {
         /* Contain 'boardsPerBox' boards in this box, using the flattened
-           address in the address map. */
+           address. */
         for (unsigned boardIndex=0; boardIndex<boardsPerBox; boardIndex++)
         {
-            boxIterator->second->contain(*addressMap[boardIterator->first],
-                                         boardIterator->second);
+            boxIterator->second->contain(boardIterator->second->address,
+                                         boardIterator->second->poetsItem);
             boardIterator++;
         }
     }
@@ -288,22 +284,20 @@ void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
     for (AddressComponent addressComponent=0; addressComponent < boxesInEngine;
          addressComponent++)
     {
-        temporaryBox = new Box(dformat("Box%06d", addressComponent));
+        temporaryBox = new PoetsBox(dformat("Box%06d", addressComponent));
         temporaryBox->costBoxBoard = costBoxBoard;
         engine->contain(addressComponent, temporaryBox);
     }
 }
 
 /* Populates a map passed as an argument with dynamically-allocated
-   PoetsBoards. Also populates a second map with precomputed flattened
-   addresses. Arguments:
+   PoetsBoards. Also defines their addresses, and includes that information in
+   the map. Arguments:
 
     - boardMap: Maps hierarchical addresses onto POETS boards.
-    - addressMap: Maps hierarchical addresses onto flat addresses.
 */
 void Dialect1Deployer::populate_map_with_boards(
-    std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
-    std::map<MultiAddressComponent, AddressComponent>* addressMap)
+    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*>* boardMap)
 {
     unsigned boardDimensions = boardsInEngine.size();
 
@@ -311,6 +305,9 @@ void Dialect1Deployer::populate_map_with_boards(
        used over a std::array here to make the reduction operation in
        flatten_address easier to write. */
     MultiAddressComponent boardAddress(boardDimensions, 0);
+
+    /* A temporary board-address pair for populating the map. */
+    itemAndAddress<PoetsBoard*>* boardAndAddress;
 
     /* We loop until we have created all of the boards that we need to. */
     unsigned boardIndex = 0;  /* Increases monotonically. */
@@ -325,10 +322,12 @@ void Dialect1Deployer::populate_map_with_boards(
              boardAddress[0]++)
         {
             /* Store */
-            *boardMap[boardAddress] = new Board(dformat("Board%06d",
-                                                        boardIndex));
-            *addressMap[boardAddress] = flatten_address(boardAddress,
-                                                        boardWordLengths);
+            boardAndAddress = new itemAndAddress<PoetsBoard*>;
+            boardAndAddress->address = flatten_address(boardAddress,
+                                                       boardWordLengths);
+            boardAndAddress->poetsItem = new PoetsBoard(dformat("Board%06d",
+                                                                boardIndex));
+            boardMap->insert(std::make_pair(boardAddress, boardAndAddress));
             boardIndex++;
         }
 

@@ -16,6 +16,14 @@
    have not been flattened, are vectors of address components. */
 typedef std::vector<AddressComponent> MultiAddressComponent;
 
+/* Simple container for storing items with their flattened addresses, so they
+   can be indexed in maps by the hierarchical addresses. */
+template <typename PoetsItem>
+struct itemAndAddress {
+    PoetsItem poetsItem;  /* E.g. PoetsBoard*, or PoetsMailbox*. */
+    AddressComponent address;
+};
+
 class Dialect1Deployer
 {
 public:
@@ -76,18 +84,18 @@ private:
     void assign_sizes_to_address_format(HardwareAddressFormat* format);
     void connect_boards_in_engine(
         PoetsEngine* engine,
-        std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
-        std::map<MultiAddressComponent, AddressComponent>* addressMap);
+        std::map<MultiAddressComponent,
+                 itemAndAddress<PoetsBoard*>*>* boardMap);
     AddressComponent flatten_address(MultiAddressComponent address,
                                      std::vector<unsigned> wordLengths);
     void populate_boxes_evenly_with_boards(
         std::map<AddressComponent, PoetsBox*>* boxMap,
-        std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
-        std::map<MultiAddressComponent, AddressComponent>* addressMap);
+        std::map<MultiAddressComponent,
+                 itemAndAddress<PoetsBoard*>*>* boardMap);
     void populate_engine_with_boxes_and_their_costs(PoetsEngine* engine);
     void populate_map_with_boards(
-        std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
-        std::map<MultiAddressComponent, AddressComponent>* addressMap);
+        std::map<MultiAddressComponent,
+                 itemAndAddress<PoetsBoard*>*>* boardMap);
 };
 
 #endif
