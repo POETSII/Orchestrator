@@ -75,15 +75,18 @@ private:
     void assign_metadata_to_engine(PoetsEngine* engine);
     void assign_sizes_to_address_format(HardwareAddressFormat* format);
     void connect_boards_in_engine(
-        std::map<AddressComponent, PoetsBoard*>* boards,
-        PoetsEngine* engine);
+        PoetsEngine* engine,
+        std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
+        std::map<MultiAddressComponent, AddressComponent>* addressMap);
     AddressComponent flatten_address(MultiAddressComponent address);
     void populate_boxes_evenly_with_boards(
         std::map<AddressComponent, PoetsBox*>* boxMap,
-        std::map<MultiAddressComponent, PoetsBoard*>* boardMap);
+        std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
+        std::map<MultiAddressComponent, AddressComponent>* addressMap);
     void populate_engine_with_boxes_and_their_costs(PoetsEngine* engine);
-    void populate_map_with_boards(std::map<MultiAddressComponent,
-                                  PoetsBoard*>* boardMap);
+    void populate_map_with_boards(
+        std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
+        std::map<MultiAddressComponent, AddressComponent>* addressMap);
 }
 
 #endif
