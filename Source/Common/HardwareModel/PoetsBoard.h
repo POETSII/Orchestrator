@@ -50,7 +50,8 @@ public:
         unsigned int, float,
         unsigned int, unsigned int> PoetsMailboxes;
     void contain(AddressComponent addressComponent, PoetsMailbox* mailbox);
-    void connect(AddressComponent start, AddressComponent end, float weight);
+    void connect(AddressComponent start, AddressComponent end, float weight,
+                 bool oneWay=false);
 
     unsigned int dram;
     unsigned int supervisorMemory;

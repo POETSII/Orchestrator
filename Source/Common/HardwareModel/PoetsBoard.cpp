@@ -92,18 +92,22 @@ void PoetsBoard::contain(AddressComponent addressComponent,
     PoetsMailboxes.InsertNode(addressComponent, mailbox);
 }
 
-/* Connects two mailboxes together that are owned by this board. The connection
-   is bidirectional. Arguments:
+/* Connects two mailboxes together that are owned by this board. Arguments:
 
    - start, end: Pointers to two mailbox objects to connect. Must be owned by
      this board.
    - weight: Edge weight for the connection.
+   - oneWay: If false, the connection is bidirectional, otherwise is
+     unidirectional, from start to end.
 */
 void PoetsBoard::connect(AddressComponent start, AddressComponent end,
-                      float weight)
+                         float weight, bool oneWay)
 {
     PoetsMailboxes.InsertArc(arcKey++, start, end, weight);
-    PoetsMailboxes.InsertArc(arcKey++, end, start, weight);
+    if (!oneWay)
+    {
+        PoetsMailboxes.InsertArc(arcKey++, end, start, weight);
+    }
 }
 
 /* Write debug and diagnostic information about the POETS board, recursively,

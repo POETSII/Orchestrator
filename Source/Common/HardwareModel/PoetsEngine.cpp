@@ -130,17 +130,22 @@ void PoetsEngine::contain(AddressComponent addressComponent, PoetsBoard* board)
 }
 
 /* Connects two boards together that are owned by boxes that this engine
-   owns. The connection is bidirectional. Arguments:
+   owns. Arguments:
 
    - start, end: Pointers to two board objects to connect. Must be owned by
      boxes that this engine owns.
    - weight: Edge weight for the connection.
+   - oneWay: If false, the connection is bidirectional, otherwise is
+     unidirectional, from start to end.
 */
 void PoetsEngine::connect(AddressComponent start, AddressComponent end,
-                      float weight)
+                          float weight, bool oneWay)
 {
     PoetsBoards.InsertArc(arcKey++, start, end, weight);
-    PoetsBoards.InsertArc(arcKey++, end, start, weight);
+    if (!oneWay)
+    {
+        PoetsBoards.InsertArc(arcKey++, end, start, weight);
+    }
 }
 
 /* Write debug and diagnostic information about the POETS engine, recursively,

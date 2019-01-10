@@ -52,7 +52,8 @@ public:
         unsigned int, float,
         unsigned int, unsigned int> PoetsBoards;
     void contain(AddressComponent addressComponent, PoetsBoard* board);
-    void connect(AddressComponent start, AddressComponent end, float weight);
+    void connect(AddressComponent start, AddressComponent end, float weight,
+                 bool oneWay=false);
 
     /* Engines may be created from a configuration file. If so, some portion of
        their metadata will be set. */
