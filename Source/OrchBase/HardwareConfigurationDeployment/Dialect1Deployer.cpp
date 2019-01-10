@@ -20,10 +20,6 @@
 void Dialect1Deployer::deploy(PoetsEngine* engine,
                               HardwareAddressFormat* addressFormat)
 {
-    /* Temporary staging variables for items, which are allocated
-       dynamically. */
-    PoetsBox* temporaryBox;
-
     /* Assign metadata to the engine. */
     assign_metadata_to_engine(engine);
 
@@ -259,7 +255,6 @@ void Dialect1Deployer::populate_boxes_evenly_with_boards(
 {
     /* An even distribution (we hope). */
     unsigned boardsPerBox = boardMap.size() / boxMap.size();
-    AddressComponent flatAddress;
 
     /* We iterate through the map of boxes and boards, distributing all boards
        up to a given amount, such that an even distribution is maintained. */
@@ -288,6 +283,8 @@ void Dialect1Deployer::populate_boxes_evenly_with_boards(
 void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
     PoetsEngine* engine)
 {
+    PoetsBox* temporaryBox;  /* Staging variable for boxes. */
+
     for (AddressComponent addressComponent=0; addressComponent < boxesInEngine;
          addressComponent++)
     {
@@ -332,7 +329,7 @@ void Dialect1Deployer::populate_map_with_boards(
                                                         boardIndex));
             *addressMap[boardAddress] = flatten_address(boardAddress,
                                                         boardWordLengths);
-            index++;
+            boardIndex++;
         }
 
         /* If there are higher dimensions, increment to the next one
