@@ -1,3 +1,6 @@
+
+#include "Dialect1Deployer.h"
+
 /* Defines logic for deploying a dialect 1-style configuration to an engine and
    address format. Arguments:
 

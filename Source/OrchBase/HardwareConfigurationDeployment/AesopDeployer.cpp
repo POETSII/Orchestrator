@@ -1,5 +1,7 @@
 /* Defines a configuration for deploying "an Aesop engine". */
 
+#include "AesopDeployer.h"
+
 AesopDeployer::AesopDeployer()
 {
     /* Properties defined in order in Dialect1Deployer.h (good luck maintaining

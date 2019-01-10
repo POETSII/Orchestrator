@@ -5,8 +5,8 @@
    configurations. This data structure holds configuration information, so that
    it can be deployed to a given engine and address format. */
 
-#include <array>
 #include <map>
+#include <numeric>
 #include <vector>
 
 #include "dfprintf.h"
