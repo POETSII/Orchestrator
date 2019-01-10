@@ -166,8 +166,8 @@ void Dialect1Deployer::connect_boards_in_engine(
 
                     /* Do the actual connecting. This connection happens
                        one-way, because we are iterating through each board. */
-                    engine.connect(outerFlatAddress, innerFlatAddress,
-                                   costBoardBoard, true);
+                    engine->connect(outerFlatAddress, innerFlatAddress,
+                                    costBoardBoard, true);
                 }
 
                 /* As previous, but for boards behind us. */
@@ -176,8 +176,8 @@ void Dialect1Deployer::connect_boards_in_engine(
                     innerHierarchicalAddress[dimension] -= 1;
                     innerFlatAddress = flatten_address(
                         innerHierarchicalAddress, boardWordLengths);
-                    engine.connect(outerFlatAddress, innerFlatAddress,
-                                   costBoardBoard, true);
+                    engine->connect(outerFlatAddress, innerFlatAddress,
+                                    costBoardBoard, true);
                 }
             }  /* End for each dimension. */
         }  /* End for each board. */
@@ -202,8 +202,8 @@ void Dialect1Deployer::connect_boards_in_engine(
                  innerBoardIterator!=outerBoardIterator; innerBoardIterator++)
             {
                 innerFlatAddress = *addressMap[innerBoardIterator->first];
-                engine.connect(outerFlatAddress, innerFlatAddress,
-                               costBoardBoard);
+                engine->connect(outerFlatAddress, innerFlatAddress,
+                                costBoardBoard);
             }
         }
     }
@@ -254,7 +254,7 @@ void Dialect1Deployer::populate_boxes_evenly_with_boards(
     std::map<MultiAddressComponent, AddressComponent>* addressMap)
 {
     /* An even distribution (we hope). */
-    unsigned boardsPerBox = boardMap.size() / boxMap.size();
+    unsigned boardsPerBox = boardMap->size() / boxMap->size();
 
     /* We iterate through the map of boxes and boards, distributing all boards
        up to a given amount, such that an even distribution is maintained. */
@@ -290,7 +290,7 @@ void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
     {
         temporaryBox = new Box(dformat("Box%06d", addressComponent));
         temporaryBox->costBoxBoard = costBoxBoard;
-        engine->contain(addressComponent, &temporaryBox);
+        engine->contain(addressComponent, temporaryBox);
     }
 }
 
