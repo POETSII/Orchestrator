@@ -88,6 +88,6 @@ private:
     void populate_map_with_boards(
         std::map<MultiAddressComponent, PoetsBoard*>* boardMap,
         std::map<MultiAddressComponent, AddressComponent>* addressMap);
-}
+};
 
 #endif
