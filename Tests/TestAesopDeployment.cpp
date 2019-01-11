@@ -64,6 +64,17 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         REQUIRE(uniqueBoards.size() == boardCount);
     }
 
+    SECTION("Check each box contains the correct number of boards")
+    {
+        unsigned boardsPerBox = boardCount / engine.PoetsBoxes.size();
+        std::map<AddressComponent, PoetsBox*>::iterator boxIterator;
+        for (boxIterator=engine.PoetsBoxes.begin();
+             boxIterator!=engine.PoetsBoxes.end(); boxIterator++)
+        {
+            REQUIRE(boxIterator->second->PoetsBoards.size() == boardsPerBox);
+        }
+    }
+
     SECTION("Dump for fun")
     {
         engine.dump();
