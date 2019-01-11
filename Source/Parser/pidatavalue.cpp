@@ -149,7 +149,7 @@ QString PIDataValue::elaborateSubValue(const QJsonObject& in_obj, const PIDataTy
     // build an object from which the recursive descent can extract the value to set.
     in_subobj.insert(sub_member_name, in_val);
     // retrieve the submember
-    const PIDataType* sub_member = dynamic_cast<const PIDataType*>(sub_type->subObject(PIDataType::DTYPE, sub_member_name));
+    const PIDataType* sub_member = dynamic_cast<const PIDataType*>(sub_type->constSubObject(PIDataType::DTYPE, sub_member_name));
     if (sub_type->numElements() > 0)
     {
         // expand the array as above.

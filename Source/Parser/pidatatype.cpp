@@ -160,7 +160,7 @@ const QString& PIDataType::defaultValue() const
     if (base_type == "union")
     {
        // so get that first member
-       def_subobject = dynamic_cast<const PIDataType*>(subObject(DTYPE, 0));
+       def_subobject = dynamic_cast<const PIDataType*>(constSubObject(DTYPE, 0));
        // and then descend into the member to retrieve the default, repeating as necessary for an array
        // annoyingly the chop function is an in-place operation returning a void. chopped is only available in Qt 5.10 onwards.
        // this necessitates several sequential string-building functions with additional static intermediates.

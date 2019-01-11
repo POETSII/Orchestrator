@@ -3,6 +3,8 @@
 #include "pidatavalue.h"
 #include "build_defs.h"
 
+#include "stdio.h"
+
 PEdgeInstance::PEdgeInstance(const QString& name, PIGraphObject *parent) : PConcreteInstance(name, "EdgeI", QVector<int>({STATE}), parent), containing_graph(NULL)
 {
 
@@ -34,8 +36,8 @@ const PIGraphObject* PEdgeInstance::appendSubObject(QXmlStreamReader* xml_def)
        // set the name to the hierarchical ID chain if available.
        if (path.dst.pin && path.dst.pin->numSubObjects(PIInputPin::STATE))
        {
-           sub_object = insertSubObject(STATE, new PIDataValue(QString("%1_EdgeInst_%2_%3_val").arg(static_cast<PIGraphObject*>(parent())->name()).arg(name()).arg(path.dst.pin->subObject(PIInputPin::STATE, 0)->name()), this));
-           static_cast<PIDataValue*>(sub_object)->data_type = static_cast<const PIDataType*>(path.dst.pin->subObject(PIInputPin::STATE, 0));
+           sub_object = insertSubObject(STATE, new PIDataValue(QString("%1_EdgeInst_%2_%3_val").arg(static_cast<PIGraphObject*>(parent())->name()).arg(name()).arg(path.dst.pin->constSubObject(PIInputPin::STATE, 0)->name()), this));
+           static_cast<PIDataValue*>(sub_object)->data_type = static_cast<const PIDataType*>(path.dst.pin->constSubObject(PIInputPin::STATE, 0));
        }
        // otherwise the default name is DevInst_{DeviceInstanceID}_state_t_val
        else sub_object = insertSubObject(STATE, new PIDataValue(QString("DevInst_%1_state_t_val").arg(name()), this));
@@ -61,6 +63,8 @@ void PEdgeInstance::elaborateEdge(D_graph* graph_rep)
         if (parent_instance) // no parent instance would be a serious elaboration error
         {
            // generate or retrieve all the objects required to insert the node into the graph
+           QString src_pin_name;
+           QString dst_pin_name;
            P_pin* src_pin = new P_pin(graph_rep, path.src.pin->name().toStdString());
            P_pin* dst_pin = new P_pin(graph_rep, path.dst.pin->name().toStdString());
            P_message* msg_type = const_cast<PMessageType*>(path.src.pin->msgType())->elaborateMessage();
@@ -101,16 +105,16 @@ void PEdgeInstance::parsePath()
             if (path.dst.device)
             {
                const PSupervisorDeviceType* supervisor_device = dynamic_cast<const PSupervisorDeviceType*>(path.dst.device->deviceType());
-               if (supervisor_device) path.dst.pin = static_cast<const PIInputPin*>(supervisor_device->subObject(PSupervisorDeviceType::INPIN, dst_id_pin[1].toString()));
+               if (supervisor_device) path.dst.pin = static_cast<const PIInputPin*>(supervisor_device->constSubObject(PSupervisorDeviceType::INPIN, dst_id_pin[1].toString()));
             }
         }
         else
         {
-            path.dst.device = static_cast<const PDeviceInstance*>(parent_instance->subObject(PIGraphInstance::DEVINSTS, dst_id_pin[0].toString()));
+            path.dst.device = static_cast<const PDeviceInstance*>(parent_instance->constSubObject(PIGraphInstance::DEVINSTS, dst_id_pin[0].toString()));
             if (path.dst.device)
             {
                 const PDeviceType* dst_devicetype = dynamic_cast<const PDeviceType*>(path.dst.device->deviceType());
-                if (dst_devicetype) path.dst.pin = static_cast<const PIInputPin*>(dst_devicetype->subObject(PDeviceType::INPIN, dst_id_pin[1].toString()));
+                if (dst_devicetype) path.dst.pin = static_cast<const PIInputPin*>(dst_devicetype->constSubObject(PDeviceType::INPIN, dst_id_pin[1].toString()));
             }
         }
         if (src_id_pin[0].isEmpty())
@@ -119,16 +123,16 @@ void PEdgeInstance::parsePath()
             if (path.src.device)
             {
                 const PSupervisorDeviceType* supervisor_device = dynamic_cast<const PSupervisorDeviceType*>(path.src.device->deviceType());
-                if (supervisor_device) path.src.pin = static_cast<const PIOutputPin*>(supervisor_device->subObject(PSupervisorDeviceType::OUTPIN, src_id_pin[1].toString()));
+                if (supervisor_device) path.src.pin = static_cast<const PIOutputPin*>(supervisor_device->constSubObject(PSupervisorDeviceType::OUTPIN, src_id_pin[1].toString()));
             }
         }
         else
         {
-            path.src.device = static_cast<const PDeviceInstance*>(parent_instance->subObject(PIGraphInstance::DEVINSTS, src_id_pin[0].toString()));
+            path.src.device = static_cast<const PDeviceInstance*>(parent_instance->constSubObject(PIGraphInstance::DEVINSTS, src_id_pin[0].toString()));
             if (path.src.device)
             {
                 const PDeviceType* src_devicetype = dynamic_cast<const PDeviceType*>(path.src.device->deviceType());
-                if (src_devicetype) path.src.pin = static_cast<const PIOutputPin*>(src_devicetype->subObject(PDeviceType::OUTPIN, src_id_pin[1].toString()));
+                if (src_devicetype) path.src.pin = static_cast<const PIOutputPin*>(src_devicetype->constSubObject(PDeviceType::OUTPIN, src_id_pin[1].toString()));
             }
         }
     }
