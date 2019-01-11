@@ -15,6 +15,10 @@
    Validation must be performed by the logic that populates deployer
    objects. If you don't validate your input, your deployment will fall over.
 
+   There is some code duplication between populate_map_with_boards and
+   populate_map_with_mailboxes, but the function-template solution became quite
+   obtuse to read, which is why I have kept them separate here.
+
    See accompanying header for the set of variables that are used during
    deployment. */
 void Dialect1Deployer::deploy(PoetsEngine* engine,
@@ -33,8 +37,7 @@ void Dialect1Deployer::deploy(PoetsEngine* engine,
     populate_engine_with_boxes_and_their_costs(engine);
 
     /* Create a series of boards, storing them in a map, addressed by their
-       hierarchical address components. Also store the flattened addresses
-       in a second map. */
+       hierarchical address components. */
     std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*> boards;
     populate_map_with_boards(&boards);
 
@@ -43,6 +46,11 @@ void Dialect1Deployer::deploy(PoetsEngine* engine,
 
     /* Connect the boards in a graph for the engine. */
     connect_boards_in_engine(engine, &boards);
+
+    /* Create a series of mailboxes, storing them in a map, addressed by their
+       hierarchical address components. */
+    std::map<MultiAddressComponent, itemAndAddress<PoetsMailbox*>*> mailboxes;
+    populate_map_with_mailboxes(&mailboxes);
 
     /* Free dynamically-allocated itemAndAddress<PoetsBoard*>* objects in
      * boards. */
@@ -385,6 +393,76 @@ void Dialect1Deployer::populate_map_with_boards(
     }
 }
 
+/* Populates a map passed as an argument with dynamically-allocated
+   PoetsMailboxes. Also defines their addresses, and includes that information
+   in the map. Arguments:
+
+    - mailboxMap: Maps hierarchical addresses onto POETS mailboxes.
+*/
+void Dialect1Deployer::populate_map_with_mailboxes(
+    std::map<MultiAddressComponent,
+             itemAndAddress<PoetsMailbox*>*>* mailboxMap)
+{
+    unsigned mailboxDimensions = mailboxesInBoard.size();
+
+    /* A temporary address, one for each created mailbox in the map. A vector
+       is used over a std::array here to make the reduction operation in
+       flatten_address easier to write. */
+    MultiAddressComponent mailboxAddress(mailboxDimensions, 0);
+
+    /* A temporary mailbox-address pair for populating the map. */
+    itemAndAddress<PoetsMailbox*>* mailboxAndAddress;
+
+    /* We loop until we have created all of the mailboxes that we need to. */
+    bool looping = true;
+    while(looping)
+    {
+        looping = false;
+
+        /* Create and store a mailbox in the map. Assign simple properties to
+         * the mailbox while we're here.*/
+        mailboxAndAddress = new itemAndAddress<PoetsMailbox*>;
+        mailboxAndAddress->address = flatten_address(mailboxAddress,
+                                                     mailboxWordLengths);
+        mailboxAndAddress->poetsItem = create_mailbox();
+        mailboxMap->insert(std::make_pair(mailboxAddress, mailboxAndAddress));
+
+        /* Increment hierarchical address.
+
+           If there are higher dimensions, increment to the next one
+           recursively until there are no more addresses to use.
+
+           Examples:
+
+            1. If mailboxAddress is (3,0,0) and mailboxesInBoard is (4,2,2),
+               then mailboxAddress would become (3,1,0), which would be set to
+               (0,1,0) when the next mailbox is created.
+
+            2. If mailboxAddress is (3,1,0) and mailboxesInBoard is (4,2,2),
+               then mailboxAddress would become (3,0,1), because the second
+               dimension addition is carried over into the third
+               dimension. This address would then be set to (0,0,1) when the
+               next mailbox is created.
+
+            3. If mailboxAddress is (3,1,1) and mailboxesInBoard is (4,2,2),
+               then iteration stops, and no more mailboxes are created. */
+        for (unsigned dimension=0; dimension<mailboxDimensions; dimension++)
+        {
+            if (mailboxAddress[dimension] == mailboxesInBoard[dimension] - 1)
+            {
+                mailboxAddress[dimension] = 0;
+                continue;
+            }
+            else
+            {
+                mailboxAddress[dimension]++;
+                looping = true;
+                break;
+            }
+        }
+    }
+}
+
 /* Dynamically creates a new POETS board, and populates it with it's common
    parameters. Does not define contained items. */
 PoetsBoard* Dialect1Deployer::create_board()
@@ -393,5 +471,16 @@ PoetsBoard* Dialect1Deployer::create_board()
     returnAddress = new PoetsBoard(dformat("Board%06d", boardIndex++));
     returnAddress->dram = dram;
     returnAddress->supervisorMemory = boardSupervisorMemory;
+    return returnAddress;
+}
+
+/* Dynamically creates a new POETS mailbox, and populates it with it's common
+   parameters. Does not define contained items. */
+PoetsMailbox* Dialect1Deployer::create_mailbox()
+{
+    PoetsMailbox* returnAddress;
+    returnAddress = new PoetsMailbox(dformat("Mailbox%06d", mailboxIndex++));
+    returnAddress->costCoreCore = costCoreCore;
+    returnAddress->costMailboxCore = costMailboxCore;
     return returnAddress;
 }
