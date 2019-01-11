@@ -149,12 +149,10 @@ void Dialect1Deployer::connect_boards_in_engine(
                     isAnyoneAhead = false;
                 }
 
-                /* Prepare to compute the address of the neighbour. */
-                innerHierarchicalAddress = outerHierarchicalAddress;
-
                 /* Connect to the neighbour ahead, if any. */
                 if (isAnyoneAhead || boardHypercubePeriodicity[dimension])
                 {
+                    innerHierarchicalAddress = outerHierarchicalAddress;
                     if (isAnyoneAhead)
                     {
                         /* Compute the address of the neighbour. */
@@ -177,6 +175,7 @@ void Dialect1Deployer::connect_boards_in_engine(
                 /* As previous, but for boards behind us. */
                 if (isAnyoneBehind || boardHypercubePeriodicity[dimension])
                 {
+                    innerHierarchicalAddress = outerHierarchicalAddress;
                     if (isAnyoneBehind)
                     {
                         /* Compute the address of the neighbour. */
