@@ -16,7 +16,7 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
     AesopDeployer deployer;
     deployer.deploy(&engine, &addressFormat);
 
-    SECTION("Check engine contains the correct number of boxes")
+    SECTION("Check engine contains the correct number of boxes", "[Aesop]")
     {
         /* Check there is a value for each logical address component. */
         REQUIRE(engine.PoetsBoxes.size() == deployer.boxesInEngine);
@@ -28,7 +28,7 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Check each box is unique")
+    SECTION("Check each box is unique", "[Aesop]")
     {
         std::set<PoetsBox*> uniqueBoxes;
         std::map<AddressComponent, PoetsBox*>::iterator boxIterator;
@@ -40,18 +40,18 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         REQUIRE(uniqueBoxes.size() == deployer.boxesInEngine);
     }
 
-    /* Compute number of boards total in the engine. This accumulation assumes
-     * there is at least one board... */
+    /* Compute number of boards total in the engine according to the
+     * deployer. This accumulation assumes there is at least one board... */
     unsigned boardCount = std::accumulate(deployer.boardsInEngine.begin(),
                                           deployer.boardsInEngine.end(), 1,
                                           std::multiplies<unsigned>());
 
-    SECTION("Check engine contains the correct number of boards")
+    SECTION("Check engine contains the correct number of boards", "[Aesop]")
     {
         REQUIRE(engine.PoetsBoards.SizeNodes() == boardCount);
     }
 
-    SECTION("Check each board is unique")
+    SECTION("Check each board is unique", "[Aesop]")
     {
         std::set<PoetsBoard*> uniqueBoards;
         WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
@@ -59,12 +59,12 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
                           unsigned int, unsigned int,
                           engine.PoetsBoards, boardIterator)
         {
-            uniqueBoards.insert(*(boardIterator->second));
+            uniqueBoards.insert(boardIterator->second.data);
         }
         REQUIRE(uniqueBoards.size() == boardCount);
     }
 
-    SECTION("Check each box contains the correct number of boards")
+    SECTION("Check each box contains the correct number of boards", "[Aesop]")
     {
         unsigned boardsPerBox = boardCount / engine.PoetsBoxes.size();
         std::map<AddressComponent, PoetsBox*>::iterator boxIterator;
