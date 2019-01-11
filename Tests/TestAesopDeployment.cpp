@@ -75,7 +75,53 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Dump for fun")
+    /* Compute number of mailboxes in each board according to the
+     * deployer. This accumulation assumes there is at least one board and one
+     * mailbox... */
+    unsigned mailboxCount = std::accumulate(deployer.mailboxesInBoard.begin(),
+                                            deployer.mailboxesInBoard.end(),
+                                            1, std::multiplies<unsigned>());
+
+    SECTION("Check each board contains the correct number of mailboxes", "[Aesop][!mayfail]")
+    {
+        WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
+                          unsigned int, float,
+                          unsigned int, unsigned int,
+                          engine.PoetsBoards, boardIterator)
+        {
+            REQUIRE(boardIterator->second.data->PoetsMailboxes.SizeNodes() ==
+                    mailboxCount);
+        }
+    }
+
+    SECTION("Check each mailbox in the engine is unique", "[Aesop][!mayfail]")
+    {
+        std::set<PoetsMailbox*> uniqueMailboxes;
+
+        /* For each board... */
+        WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
+                          unsigned int, float,
+                          unsigned int, unsigned int,
+                          engine.PoetsBoards, boardIterator)
+        {
+            /* For each mailbox in that board... */
+            WALKPDIGRAPHNODES(AddressComponent, PoetsMailbox*,
+                              unsigned int, float,
+                              unsigned int, unsigned int,
+                              boardIterator->second.data->PoetsMailboxes,
+                              mailboxIterator)
+            {
+                /* Track if unique. */
+                uniqueMailboxes.insert(mailboxIterator->second.data);
+            }
+        }
+
+        /* Right-hand side is number of boards in engine * number of mailboxes
+         * in board. */
+        REQUIRE(uniqueMailboxes.size() == boardCount * mailboxCount);
+    }
+
+    SECTION("Dump for fun", "[Aesop]")
     {
         engine.dump();
     }
