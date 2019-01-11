@@ -337,7 +337,6 @@ void Dialect1Deployer::populate_map_with_boards(
     itemAndAddress<PoetsBoard*>* boardAndAddress;
 
     /* We loop until we have created all of the boards that we need to. */
-    unsigned boardIndex = 0;  /* Increases monotonically. */
     bool looping = true;
     while(looping)
     {
@@ -348,12 +347,8 @@ void Dialect1Deployer::populate_map_with_boards(
         boardAndAddress = new itemAndAddress<PoetsBoard*>;
         boardAndAddress->address = flatten_address(boardAddress,
                                                    boardWordLengths);
-        boardAndAddress->poetsItem = new PoetsBoard(dformat("Board%06d",
-                                                            boardIndex));
-        boardAndAddress->poetsItem->dram = dram;
-        boardAndAddress->poetsItem->supervisorMemory = boardSupervisorMemory;
+        boardAndAddress->poetsItem = create_board();
         boardMap->insert(std::make_pair(boardAddress, boardAndAddress));
-        boardIndex++;
 
         /* Increment hierarchical address.
 
@@ -388,4 +383,15 @@ void Dialect1Deployer::populate_map_with_boards(
             }
         }
     }
+}
+
+/* Dynamically creates a new POETS board, and populates it with it's common
+   parameters. Does not define contained items. */
+PoetsBoard* Dialect1Deployer::create_board()
+{
+    PoetsBoard* returnAddress;
+    returnAddress = new PoetsBoard(dformat("Board%06d", boardIndex++));
+    returnAddress->dram = dram;
+    returnAddress->supervisorMemory = boardSupervisorMemory;
+    return returnAddress;
 }

@@ -96,6 +96,10 @@ private:
     void populate_map_with_boards(
         std::map<MultiAddressComponent,
                  itemAndAddress<PoetsBoard*>*>* boardMap);
+
+    /* Factories and their indeces. */
+    unsigned boardIndex;
+    PoetsBoard* create_board();
 };
 
 #endif
