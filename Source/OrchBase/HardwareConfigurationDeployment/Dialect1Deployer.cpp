@@ -317,22 +317,18 @@ void Dialect1Deployer::populate_map_with_boards(
     {
         looping = false;
 
-        /* Since there must be a first dimension, create a board for each
-           element in this first dimension. */
-        for (boardAddress[0]=0; boardAddress[0]<boardsInEngine[0];
-             boardAddress[0]++)
-        {
-            /* Store */
-            boardAndAddress = new itemAndAddress<PoetsBoard*>;
-            boardAndAddress->address = flatten_address(boardAddress,
-                                                       boardWordLengths);
-            boardAndAddress->poetsItem = new PoetsBoard(dformat("Board%06d",
-                                                                boardIndex));
-            boardMap->insert(std::make_pair(boardAddress, boardAndAddress));
-            boardIndex++;
-        }
+        /* Create and store a board in the map. */
+        boardAndAddress = new itemAndAddress<PoetsBoard*>;
+        boardAndAddress->address = flatten_address(boardAddress,
+                                                   boardWordLengths);
+        boardAndAddress->poetsItem = new PoetsBoard(dformat("Board%06d",
+                                                            boardIndex));
+        boardMap->insert(std::make_pair(boardAddress, boardAndAddress));
+        boardIndex++;
 
-        /* If there are higher dimensions, increment to the next one
+        /* Increment hierarchical address.
+
+           If there are higher dimensions, increment to the next one
            recursively until there are no more addresses to use.
 
            Examples:
@@ -348,7 +344,7 @@ void Dialect1Deployer::populate_map_with_boards(
 
             3. If boardAddress is (3,1,1) and boardsInEngine is (4,2,2), then
                iteration stops, and no more boards are created. */
-        for (unsigned dimension=1; dimension<boardDimensions; dimension++)
+        for (unsigned dimension=0; dimension<boardDimensions; dimension++)
         {
             if (boardAddress[dimension] == boardsInEngine[dimension] - 1)
             {
@@ -359,6 +355,7 @@ void Dialect1Deployer::populate_map_with_boards(
             {
                 boardAddress[dimension]++;
                 looping = true;
+                break;
             }
         }
     }
