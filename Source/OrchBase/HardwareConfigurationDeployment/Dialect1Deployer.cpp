@@ -136,30 +136,35 @@ void Dialect1Deployer::connect_boards_in_engine(
             outerFlatAddress = outerBoardIterator->second->address;
             for (unsigned dimension=0; dimension<boardDimensions; dimension++)
             {
-                /* Handle edge-cases if the hypercube is not periodic. */
+                /* Handle edge-case. */
                 isAnyoneAhead = true;
                 isAnyoneBehind = true;
-                if (!boardHypercubePeriodicity[dimension])
+                if (outerHierarchicalAddress[dimension] == 0)
                 {
-                    if (outerHierarchicalAddress[dimension] == 0)
-                    {
-                        isAnyoneBehind = false;
-                    }
-                    else if (outerHierarchicalAddress[dimension] ==
-                             boardsInEngine[dimension] - 1)
-                    {
-                        isAnyoneAhead = false;
-                    }
+                    isAnyoneBehind = false;
+                }
+                else if (outerHierarchicalAddress[dimension] ==
+                         boardsInEngine[dimension] - 1)
+                {
+                    isAnyoneAhead = false;
                 }
 
                 /* Prepare to compute the address of the neighbour. */
                 innerHierarchicalAddress = outerHierarchicalAddress;
 
-                /* Yay nesting. */
-                if (isAnyoneAhead)
+                /* Connect to the neighbour ahead, if any. */
+                if (isAnyoneAhead || boardHypercubePeriodicity[dimension])
                 {
-                    /* Compute the address of the neighbour. */
-                    innerHierarchicalAddress[dimension] += 1;
+                    if (isAnyoneAhead)
+                    {
+                        /* Compute the address of the neighbour. */
+                        innerHierarchicalAddress[dimension] += 1;
+                    }
+                    else
+                    {
+                        innerHierarchicalAddress[dimension] = 0;
+                    }
+
                     innerFlatAddress = flatten_address(
                         innerHierarchicalAddress, boardWordLengths);
 
@@ -170,11 +175,24 @@ void Dialect1Deployer::connect_boards_in_engine(
                 }
 
                 /* As previous, but for boards behind us. */
-                if (isAnyoneBehind)
+                if (isAnyoneBehind || boardHypercubePeriodicity[dimension])
                 {
-                    innerHierarchicalAddress[dimension] -= 1;
+                    if (isAnyoneBehind)
+                    {
+                        /* Compute the address of the neighbour. */
+                        innerHierarchicalAddress[dimension] -= 1;
+                    }
+                    else
+                    {
+                        innerHierarchicalAddress[dimension] =
+                            boardsInEngine[dimension] - 1;
+                    }
+
                     innerFlatAddress = flatten_address(
                         innerHierarchicalAddress, boardWordLengths);
+
+                    /* Do the actual connecting. This connection happens
+                       one-way, because we are iterating through each board. */
                     engine->connect(outerFlatAddress, innerFlatAddress,
                                     costBoardBoard, true);
                 }
