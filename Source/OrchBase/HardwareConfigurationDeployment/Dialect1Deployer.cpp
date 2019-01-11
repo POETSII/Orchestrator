@@ -36,7 +36,7 @@ void Dialect1Deployer::deploy(PoetsEngine* engine,
        hierarchical address components. Also store the flattened addresses
        in a second map. */
     std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*> boards;
-    populate_map_with_boards(&boards); // <!>
+    populate_map_with_boards(&boards);
 
     /* Divide up the boards between the boxes naively, and assign them. */
     populate_boxes_evenly_with_boards(&(engine->PoetsBoxes), &boards);
