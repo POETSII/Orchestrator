@@ -44,7 +44,15 @@ void Dialect1Deployer::deploy(PoetsEngine* engine,
     /* Connect the boards in a graph for the engine. */
     connect_boards_in_engine(engine, &boards);
 
-    /* Free itemAndAddress<PoetsBoard*>* objects in boards <!> */
+    /* Free dynamically-allocated itemAndAddress<PoetsBoard*>* objects in
+     * boards. */
+    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*>::iterator \
+        boardIterator;
+    for (boardIterator=boards.begin(); boardIterator!=boards.end();
+         boardIterator++)
+    {
+        delete boardIterator->second;
+    }
 }
 
 /* Assigns all metadata defined in this deployer to the engine. Arguments:
