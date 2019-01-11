@@ -73,7 +73,7 @@ public:
 
     /* Core properties */
     unsigned threadsInCore;
-    float coreThreadCost;
+    float costCoreThread;
     float threadThreadCost;
     unsigned dataMemory;
     unsigned instructionMemory;

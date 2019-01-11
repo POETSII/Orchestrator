@@ -122,10 +122,12 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         }
     }
 
+    /* Gather all mailboxes in the engine for implementation elegance later. */
+    std::set<PoetsMailbox*> uniqueMailboxes;
+    std::set<PoetsMailbox*>::iterator uniqueMailboxIterator;
+
     SECTION("Check each mailbox in the engine is unique", "[Aesop][!mayfail]")
     {
-        std::set<PoetsMailbox*> uniqueMailboxes;
-
         /* For each board... */
         WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
                           unsigned int, float,
@@ -140,13 +142,104 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
                               mailboxIterator)
             {
                 /* Track if unique. */
-                uniqueMailboxes.insert(mailboxIterator->second.data);
+                uniqueMailboxes.insert(&(*(mailboxIterator)->second.data));
             }
         }
 
         /* Right-hand side is number of boards in engine * number of mailboxes
          * in board. */
         REQUIRE(uniqueMailboxes.size() == boardCount * mailboxCount);
+    }
+
+    SECTION("Check each mailbox has correct static properties", "[Aesop][!mayfail]")
+    {
+        for (uniqueMailboxIterator=uniqueMailboxes.begin();
+             uniqueMailboxIterator!=uniqueMailboxes.end();
+             uniqueMailboxIterator++)
+        {
+            REQUIRE((*uniqueMailboxIterator)->costMailboxCore ==
+                    deployer.costMailboxCore);
+        }
+    }
+
+    SECTION("Check each mailbox contains the correct number of cores", "[Aesop][!mayfail]")
+    {
+        for (uniqueMailboxIterator=uniqueMailboxes.begin();
+             uniqueMailboxIterator!=uniqueMailboxes.end();
+             uniqueMailboxIterator++)
+        {
+            REQUIRE((*uniqueMailboxIterator)->PoetsCores.size() ==
+                    deployer.coresInMailbox);
+        }
+    }
+
+    /* Gather all cores in the engine for implementation elegance later. */
+    std::set<PoetsCore*> uniqueCores;
+    std::set<PoetsCore*>::iterator uniqueCoreIterator;
+
+    SECTION("Check each core in the engine is unique", "[Aesop][!mayfail]")
+    {
+        std::map<AddressComponent, PoetsCore*>::iterator coreIterator;
+        for (uniqueMailboxIterator=uniqueMailboxes.begin();
+             uniqueMailboxIterator!=uniqueMailboxes.end();
+             uniqueMailboxIterator++)
+        {
+            for (coreIterator=(*uniqueMailboxIterator)->PoetsCores.begin();
+                 coreIterator!=(*uniqueMailboxIterator)->PoetsCores.end();
+                 coreIterator++)
+            {
+                uniqueCores.insert(coreIterator->second); // <!> This can't work, we need another level of nesting.
+            }
+        }
+
+        /* Right-hand side is number of boards in engine * number of mailboxes
+         * in board * number of cores in mailbox. */
+        REQUIRE(uniqueCores.size() ==
+                boardCount * mailboxCount * deployer.coresInMailbox);
+    }
+
+    SECTION("Check each core has correct static properties", "[Aesop][!mayfail]")
+    {
+        for (uniqueCoreIterator=uniqueCores.begin();
+             uniqueCoreIterator!=uniqueCores.end(); uniqueCoreIterator++)
+        {
+            REQUIRE((*uniqueCoreIterator)->costCoreThread ==
+                    deployer.costCoreThread);
+        }
+    }
+
+    SECTION("Check each core contains the correct number of threads", "[Aesop][!mayfail]")
+    {
+        for (uniqueCoreIterator=uniqueCores.begin();
+             uniqueCoreIterator!=uniqueCores.end(); uniqueCoreIterator++)
+        {
+            REQUIRE((*uniqueCoreIterator)->PoetsThreads.size() ==
+                    deployer.threadsInCore);
+        }
+    }
+
+    SECTION("Check each thread in the engine is unique", "[Aesop][!mayfail]")
+    {
+        std::set<PoetsThread*> uniqueThreads;
+        std::map<AddressComponent, PoetsThread*>::iterator threadIterator;
+        for (uniqueCoreIterator=uniqueCores.begin();
+             uniqueCoreIterator!=uniqueCores.end();
+             uniqueCoreIterator++)
+        {
+            for (threadIterator=(*uniqueCoreIterator)->PoetsThreads.begin();
+                 threadIterator!=(*uniqueCoreIterator)->PoetsThreads.end();
+                 threadIterator++)
+            {
+                uniqueThreads.insert(threadIterator->second);
+            }
+        }
+
+        /* Right-hand side is number of boards in engine * number of mailboxes
+         * in board * number of cores in mailbox * number of threads in a
+         * core. */
+        REQUIRE(uniqueMailboxes.size() ==
+                boardCount * mailboxCount * deployer.coresInMailbox
+                * deployer.threadsInCore);
     }
 
     SECTION("Dump for fun", "[Aesop]")
