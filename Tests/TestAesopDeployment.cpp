@@ -40,6 +40,19 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         REQUIRE(uniqueBoxes.size() == deployer.boxesInEngine);
     }
 
+    SECTION("Check each box has correct static properties", "[Aesop]")
+    {
+        std::map<AddressComponent, PoetsBox*>::iterator boxIterator;
+        for (boxIterator=engine.PoetsBoxes.begin();
+             boxIterator!=engine.PoetsBoxes.end(); boxIterator++)
+        {
+            REQUIRE(boxIterator->second->supervisorMemory ==
+                    deployer.boxSupervisorMemory);
+            REQUIRE(boxIterator->second->costBoxBoard ==
+                    deployer.costBoxBoard);
+        }
+    }
+
     /* Compute number of boards total in the engine according to the
      * deployer. This accumulation assumes there is at least one board... */
     unsigned boardCount = std::accumulate(deployer.boardsInEngine.begin(),
@@ -91,6 +104,21 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         {
             REQUIRE(boardIterator->second.data->PoetsMailboxes.SizeNodes() ==
                     mailboxCount);
+        }
+    }
+
+    SECTION("Check each board has correct static properties", "[Aesop]")
+    {
+        WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
+                          unsigned int, float,
+                          unsigned int, unsigned int,
+                          engine.PoetsBoards, boardIterator)
+        {
+            REQUIRE(boardIterator->second.data->dram == deployer.dram);
+            REQUIRE(boardIterator->second.data->supervisorMemory ==
+                    deployer.boardSupervisorMemory);
+            REQUIRE(boardIterator->second.data->costBoardMailbox ==
+                    deployer.costBoardMailbox);
         }
     }
 

@@ -55,7 +55,7 @@ public:
     /* Box properties */
     float costBoxBoard;
     float costBoardBoard;
-    int boxSupervisorMemory;
+    unsigned boxSupervisorMemory;
 
     /* Board properties */
     std::vector<unsigned> mailboxesInBoard;
@@ -63,8 +63,8 @@ public:
     std::vector<bool> mailboxHypercubePeriodicity;
     float costBoardMailbox;
     float costMailboxMailbox;
-    int boardSupervisorMemory;
-    int dram;
+    unsigned boardSupervisorMemory;
+    unsigned dram;
 
     /* Mailbox properties */
     unsigned coresInMailbox;

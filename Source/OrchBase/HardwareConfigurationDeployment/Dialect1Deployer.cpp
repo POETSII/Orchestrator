@@ -304,6 +304,7 @@ void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
     {
         temporaryBox = new PoetsBox(dformat("Box%06d", addressComponent));
         temporaryBox->costBoxBoard = costBoxBoard;
+        temporaryBox->supervisorMemory = boxSupervisorMemory;
         engine->contain(addressComponent, temporaryBox);
     }
 }
@@ -334,12 +335,15 @@ void Dialect1Deployer::populate_map_with_boards(
     {
         looping = false;
 
-        /* Create and store a board in the map. */
+        /* Create and store a board in the map. Assign simple properties to the
+         * board while we're here.*/
         boardAndAddress = new itemAndAddress<PoetsBoard*>;
         boardAndAddress->address = flatten_address(boardAddress,
                                                    boardWordLengths);
         boardAndAddress->poetsItem = new PoetsBoard(dformat("Board%06d",
                                                             boardIndex));
+        boardAndAddress->poetsItem->dram = dram;
+        boardAndAddress->poetsItem->supervisorMemory = boardSupervisorMemory;
         boardMap->insert(std::make_pair(boardAddress, boardAndAddress));
         boardIndex++;
 
