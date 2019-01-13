@@ -1,6 +1,12 @@
 
 #include "Dialect1Deployer.h"
 
+Dialect1Deployer::Dialect1Deployer()
+{
+    boardIndex = 0;
+    mailboxIndex = 0;
+}
+
 /* Defines logic for deploying a dialect 1-style configuration to an engine and
    address format. Arguments:
 
@@ -15,9 +21,10 @@
    Validation must be performed by the logic that populates deployer
    objects. If you don't validate your input, your deployment will fall over.
 
-   There is some code duplication between populate_board_map and
-   populate_mailbox_map, but the function-template solution became quite obtuse
-   to read, which is why I have kept them separate here.
+   There is a lot of code duplication here, notably between
+   populate_<something>_map methods and the various connection methods, but the
+   function-template solution became quite obtuse to read, which is why I have
+   kept them separate here.
 
    Deployers must free their internal data structures before they are
    destructed to avoid memory leaks - "free_" methods are providied to
@@ -48,11 +55,25 @@ void Dialect1Deployer::deploy(PoetsEngine* engine,
     populate_boxes_evenly_with_boardmap(&(engine->PoetsBoxes));
 
     /* Connect the boards in a graph for the engine. */
-    connect_boards_in_engine(engine);
+    connect_boards_from_boardmap_in_engine(engine);
 
-    /* Create a series of mailboxes, storing them in a map, addressed by their
-       hierarchical address components. */
-    populate_mailbox_map();
+    /* For each board, create a bunch of mailboxes and connect them up. */
+    for (BoardMap::iterator boardIterator=boardMap.begin();
+         boardIterator!=boardMap.end(); boardIterator++)
+    {
+        /* Create a series of mailboxes, storing them in a map, addressed by
+           their hierarchical address components. */
+        populate_mailbox_map();
+
+        /* Connect the mailboxes in the board. */
+        connect_mailboxes_from_mailboxmap_in_board(
+            boardIterator->second->poetsItem);
+
+        /* Clear the mailbox map for the next iteration. NB: Does not free the
+           PoetsMailbox objects themselves, only the itemAndAddress objects. */
+        free_items_in_mailbox_map();
+        mailboxMap.clear();
+    }
 
     /* Free itemAndAddress objects in the boardMap. */
     free_items_in_board_map();
@@ -93,7 +114,8 @@ void Dialect1Deployer::assign_sizes_to_address_format(
 
     - engine: Engine to populate.
 */
-void Dialect1Deployer::connect_boards_in_engine(PoetsEngine* engine)
+void Dialect1Deployer::connect_boards_from_boardmap_in_engine(
+    PoetsEngine* engine)
 {
     /* The connection behaviour depends on whether or not the hypercube
        argument was specified. If a hypercube, connect them in a hypercube
@@ -229,6 +251,153 @@ void Dialect1Deployer::connect_boards_in_engine(PoetsEngine* engine)
     }
 }
 
+/* Donates all mailboxes in the mailboxMap to the board, and connects them
+   up. Arguments:
+
+    - board: Board to populate.
+*/
+void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
+    PoetsBoard* board)
+{
+    /* The connection behaviour depends on whether or not the hypercube
+       argument was specified. If a hypercube, connect them in a hypercube
+       (obviously). If not a hypercube, connect them all-to-all
+       (not-so-obviously).
+
+       Whatever we do, we'll need these declarations however. */
+    MailboxMap::iterator outerMailboxIterator;
+    AddressComponent outerFlatAddress;
+    AddressComponent innerFlatAddress;
+
+    if (mailboxesAsHypercube)
+    {
+        /* For each mailbox, donate that mailbox to the board. */
+        for (outerMailboxIterator=mailboxMap.begin();
+             outerMailboxIterator!=mailboxMap.end(); outerMailboxIterator++)
+        {
+            board->contain(outerMailboxIterator->second->address,
+                           outerMailboxIterator->second->poetsItem);
+        }
+
+        /* For each mailbox, connect that mailbox to its neighbours. Note that
+           this loop is not rolled with the other loop because a mailbox must
+           first be donated before it is connected, and try/catching for
+           duplicate containment operations is (probably) more expensive than
+           keeping the loops separate. */
+        unsigned mailboxDimensions = mailboxesInBoard.size();
+
+        /* Variables in the loop to determine whether or not to connect ahead
+           or behind a given mailbox in a given dimension. */
+        bool isAnyoneAhead;
+        bool isAnyoneBehind;
+
+        /* Variable in the loop to hold our hierarchical address, and the
+           computed hierarchical address of a neighbour. */
+        MultiAddressComponent outerHierarchicalAddress;
+        MultiAddressComponent innerHierarchicalAddress;
+
+        for (outerMailboxIterator=mailboxMap.begin();
+             outerMailboxIterator!=mailboxMap.end(); outerMailboxIterator++)
+        {
+            /* For each dimension, connect to the neighbour ahead and
+               behind (if there is one). */
+            outerHierarchicalAddress = outerMailboxIterator->first;
+            outerFlatAddress = outerMailboxIterator->second->address;
+            for (unsigned dimension=0; dimension<mailboxDimensions;
+                 dimension++)
+            {
+                /* Handle edge-case. */
+                isAnyoneAhead = true;
+                isAnyoneBehind = true;
+                if (outerHierarchicalAddress[dimension] == 0)
+                {
+                    isAnyoneBehind = false;
+                }
+                else if (outerHierarchicalAddress[dimension] ==
+                         mailboxesInBoard[dimension] - 1)
+                {
+                    isAnyoneAhead = false;
+                }
+
+                /* Connect to the neighbour ahead, if any. */
+                if (isAnyoneAhead || mailboxHypercubePeriodicity[dimension])
+                {
+                    innerHierarchicalAddress = outerHierarchicalAddress;
+                    if (isAnyoneAhead)
+                    {
+                        /* Compute the address of the neighbour. */
+                        innerHierarchicalAddress[dimension] += 1;
+                    }
+                    else
+                    {
+                        innerHierarchicalAddress[dimension] = 0;
+                    }
+
+                    innerFlatAddress = flatten_address(
+                        innerHierarchicalAddress, mailboxWordLengths);
+
+                    /* Do the actual connecting. This connection happens
+                       one-way, because we are iterating through each
+                       mailbox. */
+                    board->connect(outerFlatAddress, innerFlatAddress,
+                                   costMailboxMailbox, true);
+                }
+
+                /* As previous, but for mailboxes behind us. */
+                if (isAnyoneBehind || mailboxHypercubePeriodicity[dimension])
+                {
+                    innerHierarchicalAddress = outerHierarchicalAddress;
+                    if (isAnyoneBehind)
+                    {
+                        /* Compute the address of the neighbour. */
+                        innerHierarchicalAddress[dimension] -= 1;
+                    }
+                    else
+                    {
+                        innerHierarchicalAddress[dimension] =
+                            mailboxesInBoard[dimension] - 1;
+                    }
+
+                    innerFlatAddress = flatten_address(
+                        innerHierarchicalAddress, mailboxWordLengths);
+
+                    /* Do the actual connecting. This connection happens
+                       one-way, because we are iterating through each
+                       mailbox. */
+                    board->connect(outerFlatAddress, innerFlatAddress,
+                                   costMailboxMailbox, true);
+                }
+            }  /* End for each dimension. */
+        }  /* End for each mailbox. */
+    }
+    else  /* All-to-all */
+    {
+        /* For each mailbox, donate that mailbox to the board, then connect
+           that mailbox to every mailbox in the board so far (handshaking
+           problem). */
+        MailboxMap::iterator innerMailboxIterator;
+        for (outerMailboxIterator=mailboxMap.begin();
+             outerMailboxIterator!=mailboxMap.end(); outerMailboxIterator++)
+        {
+            /* Donation. */
+            outerFlatAddress = outerMailboxIterator->second->address;
+            board->contain(outerFlatAddress,
+                           outerMailboxIterator->second->poetsItem);
+
+            /* Connection between the previously-donated mailboxes, again
+               flattening the inner address. */
+            for (innerMailboxIterator=mailboxMap.begin();
+                 innerMailboxIterator!=outerMailboxIterator;
+                 innerMailboxIterator++)
+            {
+                innerFlatAddress = innerMailboxIterator->second->address;
+                board->connect(outerFlatAddress, innerFlatAddress,
+                               costMailboxMailbox);
+            }
+        }
+    }
+}
+
 /* Flattens a multidimensional address (or a vector-address with one
    dimension), and returns it. Arguments:
 
@@ -249,7 +418,7 @@ AddressComponent Dialect1Deployer::flatten_address(
     AddressComponent returnValue = 0;
     for (int dimension=address.size()-1; dimension>=0; dimension--)
     {
-        returnValue <<= wordLengths[dimension] - 1;
+        returnValue <<= wordLengths[dimension];
         returnValue |= address[dimension];
     }
     return returnValue;
@@ -315,9 +484,7 @@ void Dialect1Deployer::populate_board_map()
 {
     unsigned boardDimensions = boardsInEngine.size();
 
-    /* A temporary address, one for each created board in the map. A vector is
-       used over a std::array here to make the reduction operation in
-       flatten_address easier to write. */
+    /* A temporary address, one for each created board in the map. */
     MultiAddressComponent boardAddress(boardDimensions, 0);
 
     /* A temporary board-address pair for populating the map. */
@@ -381,9 +548,7 @@ void Dialect1Deployer::populate_mailbox_map()
 {
     unsigned mailboxDimensions = mailboxesInBoard.size();
 
-    /* A temporary address, one for each created mailbox in the map. A vector
-       is used over a std::array here to make the reduction operation in
-       flatten_address easier to write. */
+    /* A temporary address, one for each created mailbox in the map. */
     MultiAddressComponent mailboxAddress(mailboxDimensions, 0);
 
     /* A temporary mailbox-address pair for populating the map. */

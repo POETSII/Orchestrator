@@ -13,7 +13,9 @@
 #include "HardwareModel.h"
 
 /* Address components that are multidimensional (to support hypercubes), that
-   have not been flattened, are vectors of address components. */
+   have not been flattened, are vectors of address components. A vector is used
+   over a std::array here to make the reduction operation in flatten_address
+   easier to write. */
 typedef std::vector<AddressComponent> MultiAddressComponent;
 
 /* Simple container for storing items with their flattened addresses, so they
@@ -32,6 +34,8 @@ typedef std::map<MultiAddressComponent, itemAndAddress<PoetsMailbox*>*>
 class Dialect1Deployer
 {
 public:
+
+    Dialect1Deployer();
 
     void deploy(PoetsEngine* engine, HardwareAddressFormat* addressFormat);
 
@@ -105,7 +109,8 @@ private:
     /* Assignment and population methods used during deployment. */
     void assign_metadata_to_engine(PoetsEngine* engine);
     void assign_sizes_to_address_format(HardwareAddressFormat* format);
-    void connect_boards_in_engine(PoetsEngine* engine);
+    void connect_boards_from_boardmap_in_engine(PoetsEngine* engine);
+    void connect_mailboxes_from_mailboxmap_in_board(PoetsBoard* board);
     AddressComponent flatten_address(MultiAddressComponent address,
                                      std::vector<unsigned> wordLengths);
     void populate_boxes_evenly_with_boardmap(
