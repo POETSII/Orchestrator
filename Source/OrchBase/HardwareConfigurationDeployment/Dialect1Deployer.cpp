@@ -15,9 +15,13 @@
    Validation must be performed by the logic that populates deployer
    objects. If you don't validate your input, your deployment will fall over.
 
-   There is some code duplication between populate_map_with_boards and
-   populate_map_with_mailboxes, but the function-template solution became quite
-   obtuse to read, which is why I have kept them separate here.
+   There is some code duplication between populate_board_map and
+   populate_mailbox_map, but the function-template solution became quite obtuse
+   to read, which is why I have kept them separate here.
+
+   Deployers must free their internal data structures before they are
+   destructed to avoid memory leaks - "free_" methods are providied to
+   facilitate this.
 
    See accompanying header for the set of variables that are used during
    deployment. */
@@ -38,29 +42,20 @@ void Dialect1Deployer::deploy(PoetsEngine* engine,
 
     /* Create a series of boards, storing them in a map, addressed by their
        hierarchical address components. */
-    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*> boards;
-    populate_map_with_boards(&boards);
+    populate_board_map();
 
     /* Divide up the boards between the boxes naively, and assign them. */
-    populate_boxes_evenly_with_boards(&(engine->PoetsBoxes), &boards);
+    populate_boxes_evenly_with_boardmap(&(engine->PoetsBoxes));
 
     /* Connect the boards in a graph for the engine. */
-    connect_boards_in_engine(engine, &boards);
+    connect_boards_in_engine(engine);
 
     /* Create a series of mailboxes, storing them in a map, addressed by their
        hierarchical address components. */
-    std::map<MultiAddressComponent, itemAndAddress<PoetsMailbox*>*> mailboxes;
-    populate_map_with_mailboxes(&mailboxes);
+    populate_mailbox_map();
 
-    /* Free dynamically-allocated itemAndAddress<PoetsBoard*>* objects in
-     * boards. */
-    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*>::iterator \
-        boardIterator;
-    for (boardIterator=boards.begin(); boardIterator!=boards.end();
-         boardIterator++)
-    {
-        delete boardIterator->second;
-    }
+    /* Free itemAndAddress objects in the boardMap. */
+    free_items_in_board_map();
 }
 
 /* Assigns all metadata defined in this deployer to the engine. Arguments:
@@ -93,17 +88,12 @@ void Dialect1Deployer::assign_sizes_to_address_format(
                                                 mailboxWordLengths.end(), 0);
 }
 
-/* Donates all boards in the map to the engine, and connects them
+/* Donates all boards in the boardMap to the engine, and connects them
    up. Arguments:
 
     - engine: Engine to populate.
-
-    - boardMap: Map of boards, given their hierarchical addresses.
 */
-void Dialect1Deployer::connect_boards_in_engine(
-    PoetsEngine* engine,
-    std::map<MultiAddressComponent,
-             itemAndAddress<PoetsBoard*>*>* boardMap)
+void Dialect1Deployer::connect_boards_in_engine(PoetsEngine* engine)
 {
     /* The connection behaviour depends on whether or not the hypercube
        argument was specified. If a hypercube, connect them in a hypercube
@@ -111,16 +101,15 @@ void Dialect1Deployer::connect_boards_in_engine(
        (not-so-obviously).
 
        Whatever we do, we'll need these declarations however. */
-    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*>::iterator \
-        outerBoardIterator;
+    BoardMap::iterator outerBoardIterator;
     AddressComponent outerFlatAddress;
     AddressComponent innerFlatAddress;
 
     if (boardsAsHypercube)
     {
         /* For each board, donate that board to the engine. */
-        for (outerBoardIterator=boardMap->begin();
-             outerBoardIterator!=boardMap->end(); outerBoardIterator++)
+        for (outerBoardIterator=boardMap.begin();
+             outerBoardIterator!=boardMap.end(); outerBoardIterator++)
         {
             engine->contain(outerBoardIterator->second->address,
                             outerBoardIterator->second->poetsItem);
@@ -143,8 +132,8 @@ void Dialect1Deployer::connect_boards_in_engine(
         MultiAddressComponent outerHierarchicalAddress;
         MultiAddressComponent innerHierarchicalAddress;
 
-        for (outerBoardIterator=boardMap->begin();
-             outerBoardIterator!=boardMap->end(); outerBoardIterator++)
+        for (outerBoardIterator=boardMap.begin();
+             outerBoardIterator!=boardMap.end(); outerBoardIterator++)
         {
             /* For each dimension, connect to the neighbour ahead and
                behind (if there is one). */
@@ -218,11 +207,9 @@ void Dialect1Deployer::connect_boards_in_engine(
     {
         /* For each board, donate that board to the engine, then connect that
            board to every board in the engine so far (handshaking problem). */
-        std::map<MultiAddressComponent,
-                 itemAndAddress<PoetsBoard*>*>::iterator innerBoardIterator;
-
-        for (outerBoardIterator=boardMap->begin();
-             outerBoardIterator!=boardMap->end(); outerBoardIterator++)
+        BoardMap::iterator innerBoardIterator;
+        for (outerBoardIterator=boardMap.begin();
+             outerBoardIterator!=boardMap.end(); outerBoardIterator++)
         {
             /* Donation. */
             outerFlatAddress = outerBoardIterator->second->address;
@@ -231,7 +218,7 @@ void Dialect1Deployer::connect_boards_in_engine(
 
             /* Connection between the previously-donated boards, again
                flattening the inner address. */
-            for (innerBoardIterator=boardMap->begin();
+            for (innerBoardIterator=boardMap.begin();
                  innerBoardIterator!=outerBoardIterator; innerBoardIterator++)
             {
                 innerFlatAddress = innerBoardIterator->second->address;
@@ -268,30 +255,25 @@ AddressComponent Dialect1Deployer::flatten_address(
     return returnValue;
 }
 
-/* Distributes all boards in a map to all boxes evenly, arbitrarily. Assumes
-   that the number of boards divides into the number of boxes without
-   remainder. Arguments:
+/* Distributes all boards in the boardMap to all boxes evenly,
+   arbitrarily. Assumes that the number of boards divides into the number of
+   boxes without remainder. Arguments:
 
     - boxMap: Boxes, mapped by their address components.
 
-    - boardMap: All boards (previously uncontained), mapped by their
-      hierarchical addresses.
-
    Modifies the boxes inplace.
 */
-void Dialect1Deployer::populate_boxes_evenly_with_boards(
-    std::map<AddressComponent, PoetsBox*>* boxMap,
-    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*>* boardMap)
+void Dialect1Deployer::populate_boxes_evenly_with_boardmap(
+    std::map<AddressComponent, PoetsBox*>* boxMap)
 {
     /* An even distribution (we hope). */
-    unsigned boardsPerBox = boardMap->size() / boxMap->size();
+    unsigned boardsPerBox = boardMap.size() / boxMap->size();
 
     /* We iterate through the map of boxes and boards, distributing all boards
        up to a given amount, such that an even distribution is maintained. */
     std::map<AddressComponent, PoetsBox*>::iterator \
         boxIterator = boxMap->begin();
-    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*>::iterator \
-        boardIterator = boardMap->begin();
+    BoardMap::iterator boardIterator = boardMap.begin();
     for (boxIterator=boxMap->begin(); boxIterator!=boxMap->end();
          boxIterator++)
     {
@@ -325,14 +307,11 @@ void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
     }
 }
 
-/* Populates a map passed as an argument with dynamically-allocated
-   PoetsBoards. Also defines their addresses, and includes that information in
-   the map. Arguments:
-
-    - boardMap: Maps hierarchical addresses onto POETS boards.
+/* Populates boardMap with dynamically-allocated itemAndAddress objects,
+   containing dynamically-allocated PoetsBoards. Also defines their addresses,
+   and includes that information in the map.
 */
-void Dialect1Deployer::populate_map_with_boards(
-    std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*>* boardMap)
+void Dialect1Deployer::populate_board_map()
 {
     unsigned boardDimensions = boardsInEngine.size();
 
@@ -356,7 +335,7 @@ void Dialect1Deployer::populate_map_with_boards(
         boardAndAddress->address = flatten_address(boardAddress,
                                                    boardWordLengths);
         boardAndAddress->poetsItem = create_board();
-        boardMap->insert(std::make_pair(boardAddress, boardAndAddress));
+        boardMap.insert(std::make_pair(boardAddress, boardAndAddress));
 
         /* Increment hierarchical address.
 
@@ -393,19 +372,12 @@ void Dialect1Deployer::populate_map_with_boards(
     }
 }
 
-/* Populates a map passed as an argument with dynamically-allocated
-   PoetsMailboxes. Also defines their addresses, and includes that information
-   in the map.
-
-   Only creates enough mailboxes to fit in one board.
-
-   Arguments:
-
-    - mailboxMap: Maps hierarchical addresses onto POETS mailboxes.
+/* Populates mailboxMap with dynamically-allocated itemAndAddress objects,
+   containing dynamically-allocated PoetsMailboxes. Also defines their
+   addresses, and includes that information in the map. Only creates enough
+   mailboxes to fit in one board.
 */
-void Dialect1Deployer::populate_map_with_mailboxes(
-    std::map<MultiAddressComponent,
-             itemAndAddress<PoetsMailbox*>*>* mailboxMap)
+void Dialect1Deployer::populate_mailbox_map()
 {
     unsigned mailboxDimensions = mailboxesInBoard.size();
 
@@ -429,7 +401,7 @@ void Dialect1Deployer::populate_map_with_mailboxes(
         mailboxAndAddress->address = flatten_address(mailboxAddress,
                                                      mailboxWordLengths);
         mailboxAndAddress->poetsItem = create_mailbox();
-        mailboxMap->insert(std::make_pair(mailboxAddress, mailboxAndAddress));
+        mailboxMap.insert(std::make_pair(mailboxAddress, mailboxAndAddress));
 
         /* Increment hierarchical address.
 
@@ -487,4 +459,26 @@ PoetsMailbox* Dialect1Deployer::create_mailbox()
     returnAddress->costCoreCore = costCoreCore;
     returnAddress->costMailboxCore = costMailboxCore;
     return returnAddress;
+}
+
+/* Frees dyamically-allocated value objects (itemAndAddress<PoetsBoard*>*)
+   objects in the boardMap. */
+void Dialect1Deployer::free_items_in_board_map()
+{
+    for (BoardMap::iterator boardIterator=boardMap.begin();
+         boardIterator!=boardMap.end(); boardIterator++)
+    {
+        delete boardIterator->second;
+    }
+}
+
+/* Frees dyamically-allocated value objects (itemAndAddress<PoetsMailbox*>*)
+   objects in the mailboxMap. */
+void Dialect1Deployer::free_items_in_mailbox_map()
+{
+    for (MailboxMap::iterator mailboxIterator=mailboxMap.begin();
+         mailboxIterator!=mailboxMap.end(); mailboxIterator++)
+    {
+        delete mailboxIterator->second;
+    }
 }

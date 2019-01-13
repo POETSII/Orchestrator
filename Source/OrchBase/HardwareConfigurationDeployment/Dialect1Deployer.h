@@ -24,6 +24,11 @@ struct itemAndAddress {
     AddressComponent address;
 };
 
+/* Types for private maps, for readability. */
+typedef std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*> BoardMap;
+typedef std::map<MultiAddressComponent, itemAndAddress<PoetsMailbox*>*>
+    MailboxMap;
+
 class Dialect1Deployer
 {
 public:
@@ -79,33 +84,34 @@ public:
     unsigned instructionMemory;
 
 private:
-    /* Assignment and population methods used during deployment. */
-    void assign_metadata_to_engine(PoetsEngine* engine);
-    void assign_sizes_to_address_format(HardwareAddressFormat* format);
-    void connect_boards_in_engine(
-        PoetsEngine* engine,
-        std::map<MultiAddressComponent,
-                 itemAndAddress<PoetsBoard*>*>* boardMap);
-    AddressComponent flatten_address(MultiAddressComponent address,
-                                     std::vector<unsigned> wordLengths);
-    void populate_boxes_evenly_with_boards(
-        std::map<AddressComponent, PoetsBox*>* boxMap,
-        std::map<MultiAddressComponent,
-                 itemAndAddress<PoetsBoard*>*>* boardMap);
-    void populate_engine_with_boxes_and_their_costs(PoetsEngine* engine);
-    void populate_map_with_boards(
-        std::map<MultiAddressComponent,
-                 itemAndAddress<PoetsBoard*>*>* boardMap);
-    void populate_map_with_mailboxes(
-        std::map<MultiAddressComponent,
-                 itemAndAddress<PoetsMailbox*>*>* mailboxMap);
-
-    /* Factories and their indeces. */
+    /* Item factories and their indeces. */
     unsigned boardIndex;
     PoetsBoard* create_board();
 
     unsigned mailboxIndex;
     PoetsMailbox* create_mailbox();
+
+    /* Maps for staging POETS items during deployment. */
+    BoardMap boardMap;
+    MailboxMap mailboxMap;
+
+    void free_items_in_board_map();
+    void free_items_in_mailbox_map();
+
+    /* Population methods for internal maps. */
+    void populate_board_map();
+    void populate_mailbox_map();  /* Only populates enough for one board. */
+
+    /* Assignment and population methods used during deployment. */
+    void assign_metadata_to_engine(PoetsEngine* engine);
+    void assign_sizes_to_address_format(HardwareAddressFormat* format);
+    void connect_boards_in_engine(PoetsEngine* engine);
+    AddressComponent flatten_address(MultiAddressComponent address,
+                                     std::vector<unsigned> wordLengths);
+    void populate_boxes_evenly_with_boardmap(
+        std::map<AddressComponent, PoetsBox*>* boxMap);
+    void populate_engine_with_boxes_and_their_costs(PoetsEngine* engine);
+
 };
 
 #endif
