@@ -509,20 +509,21 @@ void Dialect1Deployer::populate_board_map()
            If there are higher dimensions, increment to the next one
            recursively until there are no more addresses to use.
 
+           The left-most dimension is more significant than the right-most
+           dimension (big-endian).
+
            Examples:
 
-            1. If boardAddress is (3,0,0) and boardsInEngine is (4,2,2), then
-               boardAddress would become (3,1,0), which would be set to (0,1,0)
-               when the next board is created.
+            1. If boardAddress is (0,0,3) and boardsInEngine is (2,2,4), then
+               boardAddress would become (0,1,0).
 
-            2. If boardAddress is (3,1,0) and boardsInEngine is (4,2,2), then
-               boardAddress would become (3,0,1), because the second dimension
-               addition is carried over into the third dimension. This address
-               would then be set to (0,0,1) when the next board is created.
+            2. If boardAddress is (0,1,3) and boardsInEngine is (2,2,4), then
+               boardAddress would become (1,0,0), because the second dimension
+               addition is carried over into the first dimension.
 
-            3. If boardAddress is (3,1,1) and boardsInEngine is (4,2,2), then
+            3. If boardAddress is (1,1,3) and boardsInEngine is (2,2,4), then
                iteration stops, and no more boards are created. */
-        for (unsigned dimension=0; dimension<boardDimensions; dimension++)
+        for (int dimension=boardDimensions-1; dimension>=0; dimension--)
         {
             if (boardAddress[dimension] == boardsInEngine[dimension] - 1)
             {
@@ -573,21 +574,11 @@ void Dialect1Deployer::populate_mailbox_map()
            If there are higher dimensions, increment to the next one
            recursively until there are no more addresses to use.
 
-           Examples:
+           The left-most dimension is more significant than the right-most
+           dimension (big-endian).
 
-            1. If mailboxAddress is (3,0,0) and mailboxesInBoard is (4,2,2),
-               then mailboxAddress would become (3,1,0), which would be set to
-               (0,1,0) when the next mailbox is created.
-
-            2. If mailboxAddress is (3,1,0) and mailboxesInBoard is (4,2,2),
-               then mailboxAddress would become (3,0,1), because the second
-               dimension addition is carried over into the third
-               dimension. This address would then be set to (0,0,1) when the
-               next mailbox is created.
-
-            3. If mailboxAddress is (3,1,1) and mailboxesInBoard is (4,2,2),
-               then iteration stops, and no more mailboxes are created. */
-        for (unsigned dimension=0; dimension<mailboxDimensions; dimension++)
+           See populate_board_map for examples.*/
+        for (int dimension=mailboxDimensions-1; dimension>=0; dimension--)
         {
             if (mailboxAddress[dimension] == mailboxesInBoard[dimension] - 1)
             {
