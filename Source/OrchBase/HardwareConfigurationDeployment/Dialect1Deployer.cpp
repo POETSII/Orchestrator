@@ -5,6 +5,7 @@ Dialect1Deployer::Dialect1Deployer()
 {
     createdBoardIndex = 0;
     createdMailboxIndex = 0;
+    createdCoreIndex = 0;
 }
 
 /* Defines logic for deploying a dialect 1-style configuration to an engine and
@@ -74,6 +75,10 @@ void Dialect1Deployer::deploy(PoetsEngine* engine,
         free_items_in_mailbox_map();
         mailboxMap.clear();
     }
+
+    /* For each mailbox, create a bunch of cores and store them within. */
+    for (unsigned mailboxIndex=0; mailboxIndex<allMailboxes.size();
+         create_cores_in_mailbox(allMailboxes[mailboxIndex++]));
 
     /* Free itemAndAddress objects in the boardMap. */
     free_items_in_board_map();
@@ -398,6 +403,14 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
     }
 }
 
+/* Creates a series of cores, and donates them to the mailbox passed in as an
+   argument. */
+void Dialect1Deployer::create_cores_in_mailbox(PoetsMailbox* mailbox)
+{
+    for(AddressComponent coreIndex = 0; coreIndex<coresInMailbox;
+        mailbox->contain(coreIndex++, create_core()));
+}
+
 /* Flattens a multidimensional address (or a vector-address with one
    dimension), and returns it. Arguments:
 
@@ -615,6 +628,25 @@ PoetsMailbox* Dialect1Deployer::create_mailbox()
                                              createdMailboxIndex++));
     returnAddress->costCoreCore = costCoreCore;
     returnAddress->costMailboxCore = costMailboxCore;
+
+    /* Add it to allMailboxes. */
+    allMailboxes.push_back(returnAddress);
+    return returnAddress;
+}
+
+/* Dynamically creates a new POETS core, and populates it with it's common
+   parameters. Does not define contained items. */
+PoetsCore* Dialect1Deployer::create_core()
+{
+    PoetsCore* returnAddress;
+    returnAddress = new PoetsCore(dformat("Core%06d", createdCoreIndex++));
+    returnAddress->dataMemory = dataMemory;
+    returnAddress->instructionMemory = instructionMemory;
+    returnAddress->costCoreThread = costCoreThread;
+    returnAddress->costThreadThread = costThreadThread;
+
+    /* Add it to allCores. */
+    allCores.push_back(returnAddress);
     return returnAddress;
 }
 

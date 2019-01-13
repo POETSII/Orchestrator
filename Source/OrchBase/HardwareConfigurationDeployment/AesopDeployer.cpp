@@ -56,7 +56,7 @@ AesopDeployer::AesopDeployer()
 
     threadsInCore = 16;
     costCoreThread = 0;
-    threadThreadCost = 0;
+    costThreadThread = 0;
     dataMemory = 0;
     instructionMemory = 8;
 }

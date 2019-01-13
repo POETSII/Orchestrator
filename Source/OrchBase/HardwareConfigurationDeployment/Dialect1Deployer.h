@@ -83,7 +83,7 @@ public:
     /* Core properties */
     unsigned threadsInCore;
     float costCoreThread;
-    float threadThreadCost;
+    float costThreadThread;
     unsigned dataMemory;
     unsigned instructionMemory;
 
@@ -95,12 +95,24 @@ private:
     unsigned createdMailboxIndex;
     PoetsMailbox* create_mailbox();
 
-    /* Maps for staging POETS items during deployment. */
+    unsigned createdCoreIndex;
+    PoetsCore* create_core();
+
+    /* Maps for staging POETS items during deployment, required to persist
+       connectivity information. */
     BoardMap boardMap;
     MailboxMap mailboxMap;
 
     void free_items_in_board_map();
     void free_items_in_mailbox_map();
+
+    /* Vectors for holding pointers to created items, for code simplification
+       (means we don't need to iterate through every board-mailbox to find
+       every core, for example). We don't need one of these for boards, because
+       boardMap stores the content of all boards in the engine for the duration
+       of the deployment. */
+    std::vector<PoetsMailbox*> allMailboxes;
+    std::vector<PoetsCore*> allCores;
 
     /* Population methods for internal maps. */
     void populate_board_map();
@@ -111,6 +123,7 @@ private:
     void assign_sizes_to_address_format(HardwareAddressFormat* format);
     void connect_boards_from_boardmap_in_engine(PoetsEngine* engine);
     void connect_mailboxes_from_mailboxmap_in_board(PoetsBoard* board);
+    void create_cores_in_mailbox(PoetsMailbox* mailbox);
     AddressComponent flatten_address(MultiAddressComponent address,
                                      std::vector<unsigned> wordLengths);
     void populate_boxes_evenly_with_boardmap(
