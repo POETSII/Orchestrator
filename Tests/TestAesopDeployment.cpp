@@ -97,7 +97,7 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
                                             deployer.mailboxesInBoard.end(),
                                             1, std::multiplies<unsigned>());
 
-    SECTION("Check each board contains the correct number of mailboxes", "[Aesop][!mayfail]")
+    SECTION("Check each board contains the correct number of mailboxes", "[Aesop]")
     {
         WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
                           unsigned int, float,
@@ -130,32 +130,32 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
     std::set<PoetsMailbox*> uniqueMailboxes;
     std::set<PoetsMailbox*>::iterator uniqueMailboxIterator;
 
-    SECTION("Check each mailbox in the engine is unique", "[Aesop][!mayfail]")
+    /* For each board... */
+    WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
+                      unsigned int, float,
+                      unsigned int, unsigned int,
+                      engine.PoetsBoards, boardIterator)
     {
-        /* For each board... */
-        WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
+        /* For each mailbox in that board... */
+        WALKPDIGRAPHNODES(AddressComponent, PoetsMailbox*,
                           unsigned int, float,
                           unsigned int, unsigned int,
-                          engine.PoetsBoards, boardIterator)
+                          boardIterator->second.data->PoetsMailboxes,
+                          mailboxIterator)
         {
-            /* For each mailbox in that board... */
-            WALKPDIGRAPHNODES(AddressComponent, PoetsMailbox*,
-                              unsigned int, float,
-                              unsigned int, unsigned int,
-                              boardIterator->second.data->PoetsMailboxes,
-                              mailboxIterator)
-            {
-                /* Track if unique. */
-                uniqueMailboxes.insert(&(*(mailboxIterator)->second.data));
-            }
+            /* Track if unique. */
+            uniqueMailboxes.insert(&(*(mailboxIterator)->second.data));
         }
+    }
 
+    SECTION("Check each mailbox in the engine is unique", "[Aesop]")
+    {
         /* Right-hand side is number of boards in engine * number of mailboxes
          * in board. */
         REQUIRE(uniqueMailboxes.size() == boardCount * mailboxCount);
     }
 
-    SECTION("Check each mailbox has correct static properties", "[Aesop][!mayfail]")
+    SECTION("Check each mailbox has correct static properties", "[Aesop]")
     {
         for (uniqueMailboxIterator=uniqueMailboxes.begin();
              uniqueMailboxIterator!=uniqueMailboxes.end();
@@ -168,7 +168,7 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Check each mailbox contains the correct number of cores", "[Aesop][!mayfail]")
+    SECTION("Check each mailbox contains the correct number of cores", "[Aesop]")
     {
         for (uniqueMailboxIterator=uniqueMailboxes.begin();
              uniqueMailboxIterator!=uniqueMailboxes.end();
@@ -183,28 +183,28 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
     std::set<PoetsCore*> uniqueCores;
     std::set<PoetsCore*>::iterator uniqueCoreIterator;
 
-    SECTION("Check each core in the engine is unique", "[Aesop][!mayfail]")
+    std::map<AddressComponent, PoetsCore*>::iterator coreIterator;
+    for (uniqueMailboxIterator=uniqueMailboxes.begin();
+         uniqueMailboxIterator!=uniqueMailboxes.end();
+         uniqueMailboxIterator++)
     {
-        std::map<AddressComponent, PoetsCore*>::iterator coreIterator;
-        for (uniqueMailboxIterator=uniqueMailboxes.begin();
-             uniqueMailboxIterator!=uniqueMailboxes.end();
-             uniqueMailboxIterator++)
+        for (coreIterator=(*uniqueMailboxIterator)->PoetsCores.begin();
+             coreIterator!=(*uniqueMailboxIterator)->PoetsCores.end();
+             coreIterator++)
         {
-            for (coreIterator=(*uniqueMailboxIterator)->PoetsCores.begin();
-                 coreIterator!=(*uniqueMailboxIterator)->PoetsCores.end();
-                 coreIterator++)
-            {
-                uniqueCores.insert(coreIterator->second); // <!> This can't work, we need another level of nesting.
-            }
+            uniqueCores.insert(coreIterator->second);
         }
+    }
 
+    SECTION("Check each core in the engine is unique", "[Aesop]")
+    {
         /* Right-hand side is number of boards in engine * number of mailboxes
          * in board * number of cores in mailbox. */
         REQUIRE(uniqueCores.size() ==
                 boardCount * mailboxCount * deployer.coresInMailbox);
     }
 
-    SECTION("Check each core has correct static properties", "[Aesop][!mayfail]")
+    SECTION("Check each core has correct static properties", "[Aesop]")
     {
         for (uniqueCoreIterator=uniqueCores.begin();
              uniqueCoreIterator!=uniqueCores.end(); uniqueCoreIterator++)
@@ -216,7 +216,7 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Check each core contains the correct number of threads", "[Aesop][!mayfail]")
+    SECTION("Check each core contains the correct number of threads", "[Aesop]")
     {
         for (uniqueCoreIterator=uniqueCores.begin();
              uniqueCoreIterator!=uniqueCores.end(); uniqueCoreIterator++)
@@ -226,7 +226,7 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Check each thread in the engine is unique", "[Aesop][!mayfail]")
+    SECTION("Check each thread in the engine is unique", "[Aesop]")
     {
         std::set<PoetsThread*> uniqueThreads;
         std::map<AddressComponent, PoetsThread*>::iterator threadIterator;
@@ -245,7 +245,7 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         /* Right-hand side is number of boards in engine * number of mailboxes
          * in board * number of cores in mailbox * number of threads in a
          * core. */
-        REQUIRE(uniqueMailboxes.size() ==
+        REQUIRE(uniqueThreads.size() ==
                 boardCount * mailboxCount * deployer.coresInMailbox
                 * deployer.threadsInCore);
     }
