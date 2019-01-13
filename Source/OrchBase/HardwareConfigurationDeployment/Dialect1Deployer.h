@@ -89,10 +89,10 @@ public:
 
 private:
     /* Item factories and their indeces. */
-    unsigned boardIndex;
+    unsigned createdBoardIndex;
     PoetsBoard* create_board();
 
-    unsigned mailboxIndex;
+    unsigned createdMailboxIndex;
     PoetsMailbox* create_mailbox();
 
     /* Maps for staging POETS items during deployment. */

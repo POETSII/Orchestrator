@@ -3,8 +3,8 @@
 
 Dialect1Deployer::Dialect1Deployer()
 {
-    boardIndex = 0;
-    mailboxIndex = 0;
+    createdBoardIndex = 0;
+    createdMailboxIndex = 0;
 }
 
 /* Defines logic for deploying a dialect 1-style configuration to an engine and
@@ -609,7 +609,7 @@ void Dialect1Deployer::populate_mailbox_map()
 PoetsBoard* Dialect1Deployer::create_board()
 {
     PoetsBoard* returnAddress;
-    returnAddress = new PoetsBoard(dformat("Board%06d", boardIndex++));
+    returnAddress = new PoetsBoard(dformat("Board%06d", createdBoardIndex++));
     returnAddress->dram = dram;
     returnAddress->supervisorMemory = boardSupervisorMemory;
     return returnAddress;
@@ -620,7 +620,8 @@ PoetsBoard* Dialect1Deployer::create_board()
 PoetsMailbox* Dialect1Deployer::create_mailbox()
 {
     PoetsMailbox* returnAddress;
-    returnAddress = new PoetsMailbox(dformat("Mailbox%06d", mailboxIndex++));
+    returnAddress = new PoetsMailbox(dformat("Mailbox%06d",
+                                             createdMailboxIndex++));
     returnAddress->costCoreCore = costCoreCore;
     returnAddress->costMailboxCore = costMailboxCore;
     return returnAddress;
