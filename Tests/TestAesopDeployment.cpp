@@ -48,8 +48,10 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         {
             REQUIRE(boxIterator->second->supervisorMemory ==
                     deployer.boxSupervisorMemory);
-            REQUIRE(boxIterator->second->costBoxBoard ==
-                    deployer.costBoxBoard);
+            REQUIRE(boxIterator->second->costBoxBoard -
+                    deployer.costBoxBoard < 1e-8);
+            REQUIRE(boxIterator->second->costBoxBoard -
+                    deployer.costBoxBoard > -1e-8);
         }
     }
 
@@ -117,8 +119,10 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
             REQUIRE(boardIterator->second.data->dram == deployer.dram);
             REQUIRE(boardIterator->second.data->supervisorMemory ==
                     deployer.boardSupervisorMemory);
-            REQUIRE(boardIterator->second.data->costBoardMailbox ==
-                    deployer.costBoardMailbox);
+            REQUIRE(boardIterator->second.data->costBoardMailbox -
+                    deployer.costBoardMailbox < 1e-8);
+            REQUIRE(boardIterator->second.data->costBoardMailbox -
+                    deployer.costBoardMailbox > -1e-8);
         }
     }
 
@@ -157,8 +161,10 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
              uniqueMailboxIterator!=uniqueMailboxes.end();
              uniqueMailboxIterator++)
         {
-            REQUIRE((*uniqueMailboxIterator)->costMailboxCore ==
-                    deployer.costMailboxCore);
+            REQUIRE((*uniqueMailboxIterator)->costMailboxCore -
+                    deployer.costMailboxCore < 1e-8);
+            REQUIRE((*uniqueMailboxIterator)->costMailboxCore -
+                    deployer.costMailboxCore > -1e-8);
         }
     }
 
@@ -203,8 +209,10 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         for (uniqueCoreIterator=uniqueCores.begin();
              uniqueCoreIterator!=uniqueCores.end(); uniqueCoreIterator++)
         {
-            REQUIRE((*uniqueCoreIterator)->costCoreThread ==
-                    deployer.costCoreThread);
+            REQUIRE((*uniqueCoreIterator)->costCoreThread -
+                    deployer.costCoreThread < 1e-8);
+            REQUIRE((*uniqueCoreIterator)->costCoreThread -
+                    deployer.costCoreThread > -1e-8);
         }
     }
 
