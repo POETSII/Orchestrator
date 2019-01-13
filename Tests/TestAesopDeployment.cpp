@@ -250,8 +250,10 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
                 * deployer.threadsInCore);
     }
 
+    /* Dumping test included for fun, if you are so inclined. Uncomment to get
+       a dump of the Aesop configuration. */ /*
     SECTION("Dump for fun", "[Aesop]")
     {
         engine.dump();
-    }
+    } */
 }
