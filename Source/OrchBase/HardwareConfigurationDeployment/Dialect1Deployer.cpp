@@ -6,6 +6,7 @@ Dialect1Deployer::Dialect1Deployer()
     createdBoardIndex = 0;
     createdMailboxIndex = 0;
     createdCoreIndex = 0;
+    createdThreadIndex = 0;
 }
 
 /* Defines logic for deploying a dialect 1-style configuration to an engine and
@@ -79,6 +80,10 @@ void Dialect1Deployer::deploy(PoetsEngine* engine,
     /* For each mailbox, create a bunch of cores and store them within. */
     for (unsigned mailboxIndex=0; mailboxIndex<allMailboxes.size();
          create_cores_in_mailbox(allMailboxes[mailboxIndex++]));
+
+    /* For each core, create a bunch of threads and store them within. */
+    for (unsigned coreIndex=0; coreIndex<allCores.size();
+         create_threads_in_core(allCores[coreIndex++]));
 
     /* Free itemAndAddress objects in the boardMap. */
     free_items_in_board_map();
@@ -411,6 +416,14 @@ void Dialect1Deployer::create_cores_in_mailbox(PoetsMailbox* mailbox)
         mailbox->contain(coreIndex++, create_core()));
 }
 
+/* Creates a series of threads, and donates them to the core passed in as an
+   argument. */
+void Dialect1Deployer::create_threads_in_core(PoetsCore* core)
+{
+    for(AddressComponent threadIndex = 0; threadIndex<threadsInCore;
+        core->contain(threadIndex++, create_thread()));
+}
+
 /* Flattens a multidimensional address (or a vector-address with one
    dimension), and returns it. Arguments:
 
@@ -648,6 +661,12 @@ PoetsCore* Dialect1Deployer::create_core()
     /* Add it to allCores. */
     allCores.push_back(returnAddress);
     return returnAddress;
+}
+
+/* Dynamically creates a new POETS thread. */
+PoetsThread* Dialect1Deployer::create_thread()
+{
+    return new PoetsThread(dformat("Thread%06d", createdThreadIndex++));
 }
 
 /* Frees dyamically-allocated value objects (itemAndAddress<PoetsBoard*>*)

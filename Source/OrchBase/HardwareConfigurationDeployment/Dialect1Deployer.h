@@ -98,8 +98,12 @@ private:
     unsigned createdCoreIndex;
     PoetsCore* create_core();
 
+    unsigned createdThreadIndex;
+    PoetsThread* create_thread();
+
     /* Maps for staging POETS items during deployment, required to persist
-       connectivity information. */
+       connectivity information. These need to be maps so that we can determine
+       the neighbours of an item given its hierarchical address. */
     BoardMap boardMap;
     MailboxMap mailboxMap;
 
@@ -124,12 +128,12 @@ private:
     void connect_boards_from_boardmap_in_engine(PoetsEngine* engine);
     void connect_mailboxes_from_mailboxmap_in_board(PoetsBoard* board);
     void create_cores_in_mailbox(PoetsMailbox* mailbox);
+    void create_threads_in_core(PoetsCore* core);
     AddressComponent flatten_address(MultiAddressComponent address,
                                      std::vector<unsigned> wordLengths);
     void populate_boxes_evenly_with_boardmap(
         std::map<AddressComponent, PoetsBox*>* boxMap);
     void populate_engine_with_boxes_and_their_costs(PoetsEngine* engine);
-
 };
 
 #endif
