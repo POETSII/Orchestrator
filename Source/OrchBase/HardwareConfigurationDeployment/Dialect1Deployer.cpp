@@ -395,7 +395,11 @@ void Dialect1Deployer::populate_map_with_boards(
 
 /* Populates a map passed as an argument with dynamically-allocated
    PoetsMailboxes. Also defines their addresses, and includes that information
-   in the map. Arguments:
+   in the map.
+
+   Only creates enough mailboxes to fit in one board.
+
+   Arguments:
 
     - mailboxMap: Maps hierarchical addresses onto POETS mailboxes.
 */
