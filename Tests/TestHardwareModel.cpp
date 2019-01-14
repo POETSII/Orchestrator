@@ -35,6 +35,12 @@ TEST_CASE("A full stack of hardware can be connected", "[Items]")
     core->contain(123, thread);
 }
 
+TEST_CASE("Engines can hold hardware address formats", "[Addressing]")
+{
+    PoetsEngine engine("Engine000");
+    engine.addressFormat = HardwareAddressFormat(4, 5, 6, 8, 9);
+}
+
 TEST_CASE("Threads cannot be claimed multiple times", "[Items]")
 {
     PoetsCore core("Core000");

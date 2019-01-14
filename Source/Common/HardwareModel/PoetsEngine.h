@@ -38,6 +38,9 @@ public:
     ~PoetsEngine();
     void clear();
 
+    /* Engines contain information on how addresses should be constructed. */
+    HardwareAddressFormat addressFormat;
+
     /* Engines are not contained by anything, but are have OrchBase as a
        namebase parent. */
 
