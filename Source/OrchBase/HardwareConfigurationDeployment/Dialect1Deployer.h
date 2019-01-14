@@ -37,7 +37,7 @@ public:
 
     Dialect1Deployer();
 
-    void deploy(PoetsEngine* engine, HardwareAddressFormat* addressFormat);
+    void deploy(PoetsEngine* engine);
 
     /* Items in the header */
     std::string author;

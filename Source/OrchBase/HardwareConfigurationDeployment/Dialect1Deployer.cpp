@@ -9,12 +9,10 @@ Dialect1Deployer::Dialect1Deployer()
     createdThreadIndex = 0;
 }
 
-/* Defines logic for deploying a dialect 1-style configuration to an engine and
-   address format. Arguments:
+/* Defines logic for deploying a dialect 1-style configuration to an
+   engine. Arguments:
 
     - engine: POETS Engine to modify in-place.
-
-    - addressFormat: Address format to populate.
 
    Configurations are deployed statically, but the deployer dynamically creates
    objects within the static objects. Your engine and addressFormat should be
@@ -34,14 +32,13 @@ Dialect1Deployer::Dialect1Deployer()
 
    See accompanying header for the set of variables that are used during
    deployment. */
-void Dialect1Deployer::deploy(PoetsEngine* engine,
-                              HardwareAddressFormat* addressFormat)
+void Dialect1Deployer::deploy(PoetsEngine* engine)
 {
     /* Assign metadata to the engine. */
     assign_metadata_to_engine(engine);
 
     /* Assign format sizes to the address format. */
-    assign_sizes_to_address_format(addressFormat);
+    assign_sizes_to_address_format(&(engine->addressFormat));
 
     /* Engine costings */
     engine->costExternalBox = costExternalBox;

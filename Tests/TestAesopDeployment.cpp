@@ -12,9 +12,26 @@
 TEST_CASE("Deployment to an empty engine", "[Aesop]")
 {
     PoetsEngine engine("Engine000");
-    HardwareAddressFormat addressFormat;
     AesopDeployer deployer;
-    deployer.deploy(&engine, &addressFormat);
+    deployer.deploy(&engine);
+
+    SECTION("Check the hardware address format in the engine is populated correctly", "[Aesop]")
+    {
+        REQUIRE(engine.addressFormat.boxWordLength ==
+                deployer.boxWordLength);
+        REQUIRE(engine.addressFormat.coreWordLength ==
+                deployer.coreWordLength);
+        REQUIRE(engine.addressFormat.threadWordLength ==
+                deployer.threadWordLength);
+
+        /* Sum-reduce the formats that are defined as vectors. */
+        engine.addressFormat.boardWordLength =
+            std::accumulate(deployer.boardWordLengths.begin(),
+                            deployer.boardWordLengths.end(), 0);
+        engine.addressFormat.mailboxWordLength =
+            std::accumulate(deployer.mailboxWordLengths.begin(),
+                            deployer.mailboxWordLengths.end(), 0);
+    }
 
     SECTION("Check engine contains the correct number of boxes", "[Aesop]")
     {
