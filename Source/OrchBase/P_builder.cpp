@@ -2,10 +2,10 @@
 
 #include "P_builder.h"
 #include "P_task.h"
-#include "P_box.h"
-#include "P_board.h"
-#include "P_core.h"
-#include "P_thread.h"
+#include "PoetsBox.h"
+#include "PoetsBoard.h"
+#include "PoetsCore.h"
+#include "PoetsThread.h"
 #include "P_port.h"
 #include "P_link.h"
 #include "P_devtyp.h"
@@ -136,7 +136,7 @@ void P_builder::Preplace(P_task* task)
      // this first naive preplace will sort everything out according to device type.
      if (!task->linked)
      {
-        if (par->pP == 0) // no topology?
+        if (par->engine == 0) // no topology?
         {
            // we will set up a virtual topology. Compute how many virtual boxes would
            // be needed.
@@ -155,15 +155,23 @@ void P_builder::Preplace(P_task* task)
                numCores += numDevices/(devicesPerThread*THREADS_PER_CORE);
                if (numDevices%(devicesPerThread*THREADS_PER_CORE)) ++numCores;
            }
-           unsigned numBoxes = numCores/(CORES_PER_BOARD*BOARDS_PER_BOX); // number of boxes
-           if (numCores%(CORES_PER_BOARD*BOARDS_PER_BOX)) ++numBoxes;     // one more if needed
-           par->pP = new P_graph(par,"VirtualSystem");                    // initialise the topology
-           par->Post(138,par->pP->Name());
-           par->pP->SetN(numBoxes, true); // and create a virtual topology
+           /* <!> MLV to figure out what exactly this method is doing. Can't
+              find it in the documentation anywhere... so I'm just going to
+              hook it to the deployer. We don't just "deploy to N boxes"
+              anymore... */
+           par->engine = new PoetsEngine("VirtualSystem");
+           /* Set parent of the engine to be the OrchBase instance this builder
+              is spawned from. */
+           par->engine->parent = par;
+           par->engine->Npar(par);
+
+           par->Post(138,par->engine->Name());
+           AesopDeployer deployer;
+           deployer.deploy(par->engine);
         }
         if (!par->pPlace->Place(task)) task->LinkFlag(); // then preplace on the real or virtual board.
      }
-     // if we need to we could aggregate some threads here to achieve maximum packing by merging partially-full threads.	 
+     // if we need to we could aggregate some threads here to achieve maximum packing by merging partially-full threads.
 }
 
 //------------------------------------------------------------------------------
@@ -185,15 +193,15 @@ void P_builder::GenFiles(P_task* task)
   }
   // build a core map visible to the make script (as a shell script)
   fstream cores_sh((task_dir+GENERATED_PATH+"/cores.sh").c_str(), fstream::in | fstream::out | fstream::trunc);
-  WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,par->pP->G,boxNode)
+  WALKPDIGRAPHNODES(unsigned,PoetsBox*,unsigned,P_link*,unsigned,P_port*,par->pP->G,boxNode)
   {
-  WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+  WALKVECTOR(PoetsBoard*,(*(boxNode->second))->P_boardv,board)
   {
-  for (unsigned int core = 0; core < (*board)->P_corev.size(); core++)
+  for (unsigned int core = 0; core < (*board)->PoetsCorev.size(); core++)
   {
-  if ((*board)->P_corev[core]->P_threadv[0]->P_devicel.size() && ((*board)->P_corev[core]->P_threadv[0]->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
+  if ((*board)->PoetsCorev[core]->PoetsThreadv[0]->P_devicel.size() && ((*board)->P_corev[core]->P_threadv[0]->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
   {
-      cores_sh << "cores[" << coreNum << "]=" << (*board)->P_corev[core]->addr.A_core << "\n";
+      cores_sh << "cores[" << coreNum << "]=" << (*board)->PoetsCorev[core]->addr.A_core << "\n";
       // these consist of the declarations and definitions of variables and the handler functions.
       fstream vars_h(static_cast<stringstream*>(&(stringstream(task_dir+GENERATED_H_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".h"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
       fstream vars_cpp(static_cast<stringstream*>(&(stringstream(task_dir+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
@@ -203,7 +211,7 @@ void P_builder::GenFiles(P_task* task)
       // conveniently since so far we have arranged it so that each core has a monolithic device type looking up its vars is
       // easy. Later this will need smoother access. It would be nice if we could define this as a const P_devtyp* but
       // unfortunately none of its member functions are const-qualified which hampers usability.
-      P_devtyp* c_devtyp = (*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->pP_devtyp;
+      P_devtyp* c_devtyp = (*(*board)->PoetsCorev[core]->PoetsThreadv[0]->P_devicel.begin())->pP_devtyp;
       // for some reason the seemingly-innocuous commented line below doesn't work as expected. Apparently devtyp_name becomes volatile even though
       // we aren't accessing the Name() field later in any way that might invalidate the pointer. Mysterious.
       // const char* devtyp_name = c_devtyp->Name().c_str();
@@ -221,7 +229,7 @@ void P_builder::GenFiles(P_task* task)
          vars_h << "typedef " << string(c_devtyp->par->pPropsD->c_src).erase(c_devtyp->par->pPropsD->c_src.length()-2).c_str() << " global_props_t;\n\n";
          vars_h << "extern const global_props_t GraphProperties;\n";
          string global_init("");
-         if ((*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->par->pPropsI) global_init = (*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->par->pPropsI->c_src;
+         if ((*(*board)->PoetsCorev[core]->PoetsThreadv[0]->P_devicel.begin())->par->pPropsI) global_init = (*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->par->pPropsI->c_src;
          else if (c_devtyp->par->pPropsI) global_init = c_devtyp->par->pPropsI->c_src;
          vars_cpp << "const global_props_t GraphProperties = " << global_init.c_str() << ";\n";
       }
@@ -231,7 +239,7 @@ void P_builder::GenFiles(P_task* task)
       for (vector<P_message*>::iterator msg = c_devtyp->par->P_messagev.begin(); msg != c_devtyp->par->P_messagev.end(); msg++)
           if ((*msg)->pPropsD) vars_h << "typedef " << string((*msg)->pPropsD->c_src).erase((*msg)->pPropsD->c_src.length()-2).c_str() << " msg_" <<(*msg)->Name().c_str() << "_pyld_t;\n";
       vars_h << "\n";
-      // device handlers	
+      // device handlers
       handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_RTS_handler (const void* graphProps, void* device, uint32_t* readyToSend, void** msg_buf);\n";
       handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OnIdle_handler (const void* graphProps, void* device);\n";
       handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OnCtl_handler (const void* graphProps, void* device, const void* msg);\n\n";
@@ -308,7 +316,7 @@ void P_builder::GenFiles(P_task* task)
           handlers_cpp << "   return 0;\n";
           handlers_cpp << handl_post;
       }
-      for (unsigned int thread = 0; thread < (*board)->P_corev[core]->P_threadv.size(); thread++) if ((*(*board)->P_corev[core]->P_threadv[thread]).P_devicel.size()) WriteThreadVars(task_dir, coreNum, thread, (*board)->P_corev[core]->P_threadv[thread], vars_h);
+      for (unsigned int thread = 0; thread < (*board)->PoetsCorev[core]->PoetsThreadv.size(); thread++) if ((*(*board)->P_corev[core]->P_threadv[thread]).P_devicel.size()) WriteThreadVars(task_dir, coreNum, thread, (*board)->P_corev[core]->P_threadv[thread], vars_h);
       vars_h.close();
       vars_cpp.close();
       handlers_h.close();
@@ -323,7 +331,7 @@ void P_builder::GenFiles(P_task* task)
 
 //------------------------------------------------------------------------------
 
-void P_builder::WriteThreadVars(string& task_dir, unsigned int core_num, unsigned int thread_num, P_thread* thread, fstream& vars_h)
+void P_builder::WriteThreadVars(string& task_dir, unsigned int core_num, unsigned int thread_num, PoetsThread* thread, fstream& vars_h)
 {
      // a trivial bit more overhead, perhaps, then passing this as an argument. The *general* method would extract the number of device types from the thread's device list.
      P_devtyp* t_devtyp = (*thread->P_devicel.begin())->pP_devtyp;
@@ -603,18 +611,18 @@ void P_builder::CompileBins(P_task * task)
         return;
      }
      unsigned int coreNum = 0;
-     WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,par->pP->G,boxNode)
+     WALKPDIGRAPHNODES(unsigned,PoetsBox*,unsigned,P_link*,unsigned,P_port*,par->pP->G,boxNode)
      {
-     WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+     WALKVECTOR(PoetsBoard*,(*(boxNode->second))->P_boardv,board)
      {
-     for (unsigned int c = 0; c < (*board)->P_corev.size(); c++)
+     for (unsigned int c = 0; c < (*board)->PoetsCorev.size(); c++)
      {
-         if ((*board)->P_corev[c]->P_threadv[0]->P_devicel.size() && ((*board)->P_corev[c]->P_threadv[0]->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
+         if ((*board)->PoetsCorev[c]->PoetsThreadv[0]->P_devicel.size() && ((*board)->P_corev[c]->P_threadv[0]->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
          {
             // a failure to read the generated binary may not be absolutely fatal; this could be retrieved later if
             // there was a transient read error (e.g. reading over a network connection)
             string binary_name(static_cast<stringstream*>(&(stringstream(task_dir+BIN_PATH, ios_base::out | ios_base::ate)<<"/"<<COREBIN_BASE<<coreNum<<".elf"))->str());
-            if (!((*board)->P_corev[c]->pCoreBin->Binary = fopen(binary_name.c_str(),"r")))
+            if (!((*board)->PoetsCorev[c]->pCoreBin->Binary = fopen(binary_name.c_str(),"r")))
                par->Post(806, binary_name);
             ++coreNum;
          }
@@ -625,5 +633,3 @@ void P_builder::CompileBins(P_task * task)
 
 //==============================================================================
 #endif
-
-

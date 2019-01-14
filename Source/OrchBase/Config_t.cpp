@@ -1,12 +1,12 @@
 //------------------------------------------------------------------------------
 
 #include "Config_t.h"
-#include "P_graph.h"
+#include "PoetsEngine.h"
 #include  "build_defs.h"
 
 //==============================================================================
 
-Config_t::Config_t(P_graph * _p,string _s):par(_p)
+Config_t::Config_t(PoetsEngine * _p,string _s):par(_p)
 {
 Name(_s);
 Npar(_p);

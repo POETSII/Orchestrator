@@ -3,7 +3,6 @@
 #include "Placement.h"
 #include "Constraints.h"
 #include "OrchBase.h"
-#include "P_core.h"
 #include "P_super.h"
 #include "P_devtyp.h"
 #include "build_defs.h"
@@ -11,7 +10,7 @@
 
 //==============================================================================
 
-Placement::Placement(OrchBase * _p):par(_p),pCon(0),pP_graph(0),pD_graph(0)
+Placement::Placement(OrchBase * _p):par(_p),pCon(0),pD_graph(0)
 {
 }
 
@@ -41,42 +40,67 @@ fflush(fp);
 
 //------------------------------------------------------------------------------
 
-bool Placement::GetNext(P_thread *& prTh, P_stride stride)
-// Routine to walk through the available threads....
+bool Placement::GetNext(PoetsThread *& prTh, P_stride stride)
+// Gets the next thread in the engine, and sets it to prTh. Returns true if a
+// new thread could not be found (i.e. we wrapped around). If we wrapped
+// around, set all of the iterators, and prTh, to their starting value.
 {
-prTh = *Nth;                           // preload the output data pointer
+    bool didWeWrap = false;
 
-bool wrap = false;                                          // Flag shows when we reset to the start
-Nth++;                                                      // Increment thread
-if ((Nth==(*Nco)->P_threadv.end()) || (stride > thread)) {  // Thread off the end?
-  Nco++;                                                    // Increment core
-  if ((Nco==(*Nbd)->P_corev.end()) || (stride > core)) {    // Core off the end?
-    Nbd++;                                                  // Increment board
-    if ((Nbd==pPbo->P_boardv.end()) || (stride > board)) {  // Board off the end?
-      pPbo = par->pP->G.NodeData(++Nbo);                    // Increment box
-      if ((Nbo==par->pP->G.NodeEnd()) || (stride == box)) { // Box off the end?
-        Nbo = par->pP->G.NodeBegin();                       // Reset the box iterator
-        wrap = true;                                        // We've clocked the system....
-      }                                                     // Reset the board pointer
-      Nbd = par->pP->G.NodeData(Nbo)->P_boardv.begin();
+    // Increment the thread, then check to see if we've run out of threads on
+    // the current core.
+    threadIterator++;
+    if (threadIterator == coreIterator->second->PoetsThreads.end())
+    {
+        // Increment the core, then check to see if we've run out of cores on
+        // the current mailbox.
+        coreIterator++;
+        if (coreIterator == mailboxIterator->second.data->PoetsCores.end())
+        {
+            // Increment the mailbox, then check to see if we've run out of
+            // mailboxes on the current board.
+            mailboxIterator++;
+            if (mailboxIterator ==
+                boardIterator->second.data->PoetsMailboxes.NodeEnd())
+            {
+                // Increment the board, then check to see if we've run out of
+                // boards in the current engine.
+                if (boardIterator == par->engine->PoetsBoards.NodeEnd())
+                {
+                    // Out of boards, we're done here.
+                    boardIterator = par->engine->PoetsBoards.NodeBegin();
+                    didWeWrap = true;
+                }
+                // Now we have a new board, set the mailbox iterator to point
+                // to the first mailbox in that board.
+                mailboxIterator =
+                    boardIterator->second.data->PoetsMailboxes.NodeBegin();
+            }
+
+            // Now we have a new mailbox, set the core iterator to point to the
+            // first core in that mailbox.
+            coreIterator = mailboxIterator->second.data->PoetsCores.end();
+        }
+
+        // Now we have a new core, set the thread iterator to point to the
+        // first thread on that core.
+        threadIterator = coreIterator->second->PoetsThreads.begin();
     }
-    Nco = (*Nbd)->P_corev.begin();     // Reset the core iterator
-  }
-  Nth = (*Nco)->P_threadv.begin();     // Reset the thread iterator
-}
-return wrap;
+
+    // Set thread pointer and return.
+    prTh = threadIterator->second;
+    return didWeWrap;
 }
 
 //------------------------------------------------------------------------------
 
 void Placement::Init()
-// Initialise 'current' pointers to the first thread/core/board/box
+// Initialise 'current' pointers to the first thread/core/mailbox/board
 {
-Nbo  = par->pP->G.NodeBegin();
-pPbo = par->pP->G.NodeData(Nbo);
-Nbd  = pPbo->P_boardv.begin();
-Nco  = (*Nbd)->P_corev.begin();
-Nth  = (*Nco)->P_threadv.begin();
+    boardIterator = par->engine->PoetsBoards.NodeBegin();
+    mailboxIterator = boardIterator->second.data->PoetsMailboxes.NodeBegin();
+    coreIterator = mailboxIterator->second.data->PoetsCores.end();
+    threadIterator = coreIterator->second->PoetsThreads.begin();
 }
 
 //------------------------------------------------------------------------------
@@ -84,8 +108,8 @@ Nth  = (*Nco)->P_threadv.begin();
 bool Placement::Place(P_task * pT)
 // Place a task.
 {
-P_thread * pTh = 0;
- 
+PoetsThread * pTh = 0;
+
 WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
 {
     vector<P_device*> dVs = pT->pD->DevicesOfType(*dT); // get all the devices of this type
@@ -131,7 +155,7 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
     // current tinsel architecture shares I-memory between pairs of cores, so
     // for a new device type, if the postincremented core number is odd, we
     // need to increment again to get an even boundary.
-    if (((*Nco)->addr.A_core & 0x1) && GetNext(pTh,Placement::core))
+    if ((coreIterator->first & 0x1) && GetNext(pTh,Placement::core))
     {
        par->Post(163, pT->Name()); // out of room. Abandon placement.
        return true;
@@ -143,22 +167,18 @@ return false;
 
 //------------------------------------------------------------------------------
 
-void Placement::Xlink(P_device * pDe,P_thread * pTh)
+void Placement::Xlink(P_device * pDe,PoetsThread * pTh)
 // Actually link a real device to a real thread
 {
 printf("XLinking device %s to thread %s\n",
         pDe->FullName().c_str(),pTh->FullName().c_str());
 fflush(stdout);
 pDe->pP_thread = pTh;                  // Device to thread
-pTh->P_devicel.push_back(pDe);         // Thread to device
-pDe->addr |= pTh->addr;                // Complete P address structure
+pTh->PoetsDevices.push_back(pDe);      // Thread to device
 // The supervisor is already attached to the task; now it needs to be linked to
 // the topology. I can't but think there's a cooler way......
-pDe->par->par->pSup->Attach(pTh->par->par->par);
+pDe->par->par->pSup->Attach(pTh->parent->parent->parent->parent);
 
 }
 
 //==============================================================================
-
-
-

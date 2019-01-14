@@ -1,10 +1,10 @@
-#ifndef __P_graphH__H
-#define __P_graphH__H
+#ifndef __PoetsEngineH__H
+#define __PoetsEngineH__H
 
 #include <stdio.h>
 #include "pdigraph.hpp"
 #include "NameBase.h"
-#include "P_box.h"
+#include "PoetsBox.h"
 #include "P_link.h"
 #include "P_port.h"
 class Config_t;
@@ -16,11 +16,11 @@ using namespace std;
 
 //==============================================================================
 
-class P_graph : public NameBase
+class PoetsEngine : public NameBase
 {
 public:
-                   P_graph(OrchBase *,string);
-virtual ~          P_graph();
+                   PoetsEngine(OrchBase *,string);
+virtual ~          PoetsEngine();
 void               Clear();
 void               Cm(Cli *);
 void               Dump(FILE * = stdout);
@@ -29,7 +29,7 @@ inline void        Set1(bool vSys = true) {SetN(1, vSys);};
 inline void        Set2(bool vSys = true) {SetN(2, vSys);};
 void               SetN(unsigned, bool = false);
                                        // The hardware graph
-pdigraph<unsigned,P_box *,unsigned,P_link *,unsigned,P_port *> G;
+pdigraph<unsigned,PoetsBox *,unsigned,P_link *,unsigned,P_port *> G;
 OrchBase *         par;                // Object parent
 list<Config_t *>   pConfigl;           // HW configuration objects
 

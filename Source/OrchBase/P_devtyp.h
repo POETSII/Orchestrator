@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include "NameBase.h"
-#include "P_board.h"
+#include "PoetsBoard.h"
 #include "Bin.h"
 class D_graph;
 class P_devtyp;

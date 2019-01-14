@@ -7,7 +7,7 @@
 #include "P_message.h"
 #include "P_typdcl.h"
 class P_device;
-class P_graph;
+class PoetsEngine;
 class P_task;
 class P_pin;
 class P_devtyp;
@@ -26,7 +26,7 @@ vector<P_device*>   DevicesOfType(const P_devtyp* d_type);
                                        // The device graph
 pdigraph<unsigned,P_device *,unsigned,P_message *,unsigned,P_pin *> G;
 P_task *           par;                // Object parent
-P_graph *          pP;                 // Shortcut to the hardware graph
+PoetsEngine *          pP;                 // Shortcut to the hardware graph
 P_typdcl *         pD;                 // Shortcut to declare object
 CFrag *            pPropsI;            // Graph properties initialiser code
 

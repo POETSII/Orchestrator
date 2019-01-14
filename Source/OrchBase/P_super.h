@@ -2,7 +2,7 @@
 #define __P_superH__H
 
 #include <stdio.h>
-#include "P_box.h"
+#include "PoetsBox.h"
 #include "P_device.h"
 #include <vector>
 using namespace std;
@@ -16,12 +16,12 @@ public:
                     P_super(string);
 virtual ~           P_super();
 
-void                Attach(P_box *);
-void                Detach(P_box *);
+void                Attach(PoetsBox *);
+void                Detach(PoetsBox *);
 void                Detach();
 void                Dump(FILE * = stdout);
 
-vector<P_box *>     P_boxv;
+vector<PoetsBox *>     PoetsBoxv;
 
 };
 

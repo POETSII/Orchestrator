@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include "NameBase.h"
-class P_graph;
+class PoetsEngine;
 
 //==============================================================================
 
@@ -12,7 +12,7 @@ class P_graph;
 class Config_t : public NameBase
 {
 public:
-                  Config_t(P_graph *,string);
+                  Config_t(PoetsEngine *,string);
 virtual ~         Config_t();
 
 void              Dump(FILE * = stdout);
@@ -30,7 +30,7 @@ unsigned          bMem;
 unsigned          boards; 
 unsigned          cores;
 unsigned          threads;
-P_graph *         par;
+PoetsEngine *         par;
 
 };
 

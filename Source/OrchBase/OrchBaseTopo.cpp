@@ -163,7 +163,7 @@ Post(136);
 void OrchBase::TopoSet1(Cli::Cl_t Cl)
 {
 ClearTopo();
-pP = new P_graph(this,"Set1");
+pP = new PoetsEngine(this,"Set1");
 Post(138,pP->Name());
 pP->Set1();
 }
@@ -173,7 +173,7 @@ pP->Set1();
 void OrchBase::TopoSet2(Cli::Cl_t Cl)
 {
 ClearTopo();
-pP = new P_graph(this,"Set2");
+pP = new PoetsEngine(this,"Set2");
 Post(138,pP->Name());
 pP->Set2();
 }
