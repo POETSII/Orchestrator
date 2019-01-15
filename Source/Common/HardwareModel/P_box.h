@@ -15,8 +15,9 @@
 #include "dumpchan.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
-#include "P_engine.h"
 #include "P_board.h"
+#include "P_engine.h"
+#include "P_super.h"
 
 #define MAXIMUM_BREAKER_LENGTH 80
 
@@ -41,6 +42,10 @@ public:
      * boards. */
     std::vector<P_board*> P_boardv;
     void contain(AddressComponent addressComponent, P_board* board);
+
+    /* Boxes contain supervisors. Boards can also contain supervisors, but
+     * boards point to their parent's (i.e. their box) supervisor vector. */
+    std::vector<P_super*> P_superv;
 
     unsigned int supervisorMemory;
     float costBoxBoard;

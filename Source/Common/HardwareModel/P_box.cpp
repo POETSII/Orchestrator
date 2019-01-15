@@ -14,7 +14,8 @@ P_box::P_box(std::string name)
 P_box::~P_box(){clear();}
 
 /* Clears the dynamically-allocated elements of the data structure of this box,
- * deleting all contained components recursively. */
+ * deleting all contained components recursively. NB: Does not delete
+ * supervisors; this is handled by D_graph. */
 void P_box::clear()
 {
     /* Clear all boards that this box knows about. This should clear

@@ -44,10 +44,6 @@ public:
     P_box* parent = NULL;
     void on_being_contained_hook(P_box* container);
 
-    /* Boards can be assigned supervisors, by offset. These offsets refer to
-     * indeces of the supervisor vector in the box that contains this board. */
-    std::vector<unsigned> sup_offv;
-
     /* Boards contain mailboxes as a graph, mapped by their hardware address
      * components. */
     pdigraph<AddressComponent, P_mailbox*,
@@ -56,6 +52,11 @@ public:
     void contain(AddressComponent addressComponent, P_mailbox* mailbox);
     void connect(AddressComponent start, AddressComponent end, float weight,
                  bool oneWay=false);
+
+    /* Boards can be assigned supervisors, by offset. The supervisors
+     * themselves are stored on the box level. The board actually contains
+     * indeces to the vector on the box level. */
+    std::vector<unsigned> sup_offv;
 
     unsigned int dram;
     unsigned int supervisorMemory;
