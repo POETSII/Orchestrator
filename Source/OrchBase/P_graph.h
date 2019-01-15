@@ -1,5 +1,5 @@
-#ifndef __P_graphH__H
-#define __P_graphH__H
+#ifndef __PoetsEngineH__H
+#define __PoetsEngineH__H
 
 #include <stdio.h>
 #include "pdigraph.hpp"
@@ -16,11 +16,11 @@ using namespace std;
 
 //==============================================================================
 
-class P_graph : public NameBase
+class PoetsEngine : public NameBase
 {
 public:
-                   P_graph(OrchBase *,string);
-virtual ~          P_graph();
+                   PoetsEngine(OrchBase *,string);
+virtual ~          PoetsEngine();
 void               Clear();
 void               Cm(Cli *);
 void               Dump(FILE * = stdout);
@@ -38,3 +38,7 @@ list<Config_t *>   pConfigl;           // HW configuration objects
 //==============================================================================
 
 #endif
+
+
+
+

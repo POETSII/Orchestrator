@@ -28,7 +28,7 @@ void               Par(D_graph * _p);
 void               Unlink();
 
 D_graph *          par;
-PoetsThread *      pP_thread;
+PoetsThread *         pP_thread;
 P_devtyp *         pP_devtyp;
 CFrag *            pPropsI;            // Device properties initialiser code
 CFrag *            pStateI;            // Device state initialiser code

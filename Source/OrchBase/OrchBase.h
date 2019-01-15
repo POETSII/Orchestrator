@@ -6,7 +6,6 @@
 #include "HardwareModel.h"
 #include "Placement.h"
 #include "Cli.h"
-class PoetsEngine;
 class P_task;
 class P_builder;
 class T_gen;
