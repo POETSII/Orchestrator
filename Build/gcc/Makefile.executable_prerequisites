@@ -81,6 +81,7 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(SOURCE_DIR)/NameServer/Ns_el.cpp
 
 ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
+ROOT_SOURCES += $(HARDWARE_DEPLOYER_SOURCES)
 
 # Add (almost) all of the sources from OrchBase and Parser.
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)
