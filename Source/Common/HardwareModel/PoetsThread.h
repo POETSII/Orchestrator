@@ -17,7 +17,7 @@
 #include "macros.h"
 #include "NameBase.h"
 #include "PoetsCore.h"
-#include "P_device.h"
+#include "PoetsDevice.h"
 
 #define MAXIMUM_BREAKER_LENGTH 80
 
@@ -38,7 +38,7 @@ public:
        hardware model and the placement implementation; POETS devices (which
        are part of the task graph) get mapped onto threads. Multiple devices
        are services by a single thread. */
-    std::list<P_device *> PoetsDevices;
+    std::list<PoetsDevice *> PoetsDevicel;
 
     unsigned int dataMemoryAddress;
     unsigned int instructionMemoryAddress;

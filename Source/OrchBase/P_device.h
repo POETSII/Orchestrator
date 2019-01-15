@@ -6,7 +6,7 @@
 #include "pdigraph.hpp"
 #include "P_addr.h"
 class D_graph;
-class PoetsThread;
+class P_thread;
 class P_devtyp;
 class CFrag;
 
@@ -27,8 +27,9 @@ vector<string>     NSGetoupt();
 void               Par(D_graph * _p);
 void               Unlink();
 
+P_addr             addr;
 D_graph *          par;
-PoetsThread *         pP_thread;
+P_thread *         pP_thread;
 P_devtyp *         pP_devtyp;
 CFrag *            pPropsI;            // Device properties initialiser code
 CFrag *            pStateI;            // Device state initialiser code
@@ -62,3 +63,7 @@ map<unsigned int, unsigned int> ipin_idxs;
 //==============================================================================
 
 #endif
+
+
+
+

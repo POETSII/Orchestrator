@@ -42,15 +42,15 @@ fprintf(fp,"link /dump %35s++++++++++++++++++++++++++++++++++++++\n",s.c_str());
 if (pP==0) fprintf(fp,"No topology graph\n");
 else {
   fprintf(fp,"Devices on threads :\n");
-  WALKPDIGRAPHNODES(unsigned,PoetsBox *,unsigned,P_link *,unsigned,P_port *,pP->G,i){
-    PoetsBox * pbo = pP->G.NodeData(i);
+  WALKPDIGRAPHNODES(unsigned,P_box *,unsigned,P_link *,unsigned,P_port *,pP->G,i){
+    P_box * pbo = pP->G.NodeData(i);
     if (pbo==0) {
       fprintf(fp,"Topology graph empty\n");
       break;
     }
-    WALKVECTOR(PoetsBoard *,pbo->P_boardv,pbd) {
-      WALKVECTOR(PoetsCore *,(*pbd)->P_corev,pco) {
-        WALKVECTOR(PoetsThread *,(*pco)->P_threadv,pth) {
+    WALKVECTOR(P_board *,pbo->P_boardv,pbd) {
+      WALKVECTOR(P_core *,(*pbd)->P_corev,pco) {
+        WALKVECTOR(P_thread *,(*pco)->P_threadv,pth) {
           if ((*pth)->P_devicel.empty());
 //            fprintf(fp,"Thread %s empty\n",(*pth)->FullName().c_str());
           else fprintf(fp,"Thread %s : %u devices\n",
@@ -73,9 +73,9 @@ else {
         WALKPDIGRAPHNODES(unsigned,P_device *,unsigned,P_message *,
                           unsigned,P_pin *,pgr->G,i) {
           P_device * pDe = pgr->G.NodeData(i);
-            if (pDe->pPoetsThread!=0)
+            if (pDe->pP_thread!=0)
               fprintf(fp,"Device %s : thread %s\n",
-                    pDe->FullName().c_str(),pDe->pPoetsThread->FullName().c_str());
+                    pDe->FullName().c_str(),pDe->pP_thread->FullName().c_str());
         }
       }
     }
@@ -176,8 +176,8 @@ pD->Dump();
 pD->pP_devtyp->Dump();
 pT->Dump();
 pT->pOwn->Dump();
-pD->pPoetsThread->Dump();
-pD->pPoetsThread->par->Dump();
+pD->pP_thread->Dump();
+pD->pP_thread->par->Dump();
 
 string s0 = pD->Name();
 string s1 = pD->pP_devtyp->Name();
@@ -191,7 +191,7 @@ vector<string> ns3 = pD->NSGetoupt();
 unsigned u0 =  pD->Id();
 P_addr_t p0 = pD->addr;
 unsigned u1 = pD->attr;
-unsigned u2 = pD->pPoetsThread->par->pCoreBin->Id();
+unsigned u2 = pD->pP_thread->par->pCoreBin->Id();
 
   ns.PutD(pD->Name(),                  // Device name
           pD->pP_devtyp->Name(),       // Device type
@@ -205,7 +205,7 @@ unsigned u2 = pD->pPoetsThread->par->pCoreBin->Id();
           pD->Id(),                    // Device ID
           pD->addr,                    // Hardware address
           pD->attr,                    // Attribute
-          pD->pPoetsThread->par->pCoreBin->Id());   // Binary file ID
+          pD->pP_thread->par->pCoreBin->Id());   // Binary file ID
 }
 ns.Put<unsigned>(0,&(ns.keyv));               // Key vector
 ns.Key(Q::CANDC,Q::LOAD);
@@ -269,10 +269,10 @@ void OrchBase::UnlinkAll()
 {
 if (pP==0) return;                     // No node graph
                                        // Kill the thread->device links
-WALKPDIGRAPHNODES(unsigned,PoetsBox *,unsigned,P_link *,unsigned,P_port *,pP->G,i)
-  WALKVECTOR(PoetsBoard *,pP->G.NodeData(i)->P_boardv,j)
-    WALKVECTOR(PoetsCore *,(*j)->P_corev,k)
-      WALKVECTOR(PoetsThread *,(*k)->P_threadv,l) (*l)->P_devicel.clear();
+WALKPDIGRAPHNODES(unsigned,P_box *,unsigned,P_link *,unsigned,P_port *,pP->G,i)
+  WALKVECTOR(P_board *,pP->G.NodeData(i)->P_boardv,j)
+    WALKVECTOR(P_core *,(*j)->P_corev,k)
+      WALKVECTOR(P_thread *,(*k)->P_threadv,l) (*l)->P_devicel.clear();
 
 if (P_taskm.empty()) return;           // No tasks at all
 WALKMAP(string,P_task *,P_taskm,i) {   // Walk them that's there
@@ -282,7 +282,7 @@ WALKMAP(string,P_task *,P_taskm,i) {   // Walk them that's there
   D_graph * pDg = pTa->pD;             // Device graph
   WALKPDIGRAPHNODES(unsigned,P_device *,unsigned,P_message *,
                     unsigned,P_pin *,pDg->G,j)
-    pDg->G.NodeData(j)->pPoetsThread=0;   // Kill link into threads
+    pDg->G.NodeData(j)->pP_thread=0;   // Kill link into threads
 }
 
 }
@@ -299,11 +299,11 @@ P_task * pTa = P_taskm[tname];         // Finally get the actual task
 if (!pTa->linked) return;              // Not linked anyway - skip it
 pTa->linked = false;                   // Not linked now
 D_graph * pDg = pTa->pD;               // Device graph - walk it
-set<PoetsThread *> touched;
+set<P_thread *> touched;
 WALKPDIGRAPHNODES(unsigned,P_device *,unsigned,P_message *,
                   unsigned,P_pin *,pDg->G,i) {
   P_device * pDe = pDg->G.NodeData(i); // Each device.....
-  PoetsThread * pTh = pDe->pP_thread;     // Linked thread
+  P_thread * pTh = pDe->pP_thread;     // Linked thread
   if (pTh==0) Post(907,pDe->FullName());
   WALKLIST(P_device *,pTh->P_devicel,j) if ((*j)==pDe) {
     (*j)=0;
@@ -311,7 +311,7 @@ WALKPDIGRAPHNODES(unsigned,P_device *,unsigned,P_message *,
   }
 }
 if (pP==0) Post(908);
-WALKSET(PoetsThread *,touched,i) (*i)->P_devicel.remove(0);
+WALKSET(P_thread *,touched,i) (*i)->P_devicel.remove(0);
 
 }
 

@@ -2,12 +2,11 @@
 #define __P_builderH__H
 
 #include <stdio.h>
+#include "OrchBase.h"
 #include <fstream>
 #include <string>
 #include <cstdlib>
-#include "AesopDeployer.h"
 #include "build_defs.h"
-#include "OrchBase.h"
 using namespace std;
 
 #ifndef __BORLANDC__
@@ -31,15 +30,15 @@ void                Load(const string&);
 OrchBase *            par;
 
 #ifndef __BORLANDC__
-map<string, I_Graph*> defs;
 QCoreApplication      app;
+map<string, I_Graph*> defs;
 
 private:
 
 void Preplace(P_task*);
 void GenFiles(P_task*);
 void CompileBins(P_task*);
-void WriteThreadVars(string&, unsigned int, unsigned int, PoetsThread*, fstream&);
+void WriteThreadVars(string&, unsigned int, unsigned int, P_thread*, fstream&);
 
 #endif
 };
@@ -47,3 +46,7 @@ void WriteThreadVars(string&, unsigned int, unsigned int, PoetsThread*, fstream&
 //==============================================================================
 
 #endif
+
+
+
+

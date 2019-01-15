@@ -59,7 +59,7 @@ fprintf(fp,"D_graph %35s+++++++++++++++++++++++++++++++++++++\n",s.c_str());
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
 fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
-fprintf(fp,"PoetsEngine shortcut %#08p\n",pP);
+fprintf(fp,"P_graph shortcut %#08p\n",pP);
 if (pP!=0) fprintf(fp,"...%s\n",pP->FullName().c_str());
 fprintf(fp,"C Initialiser %#08p\n",pPropsI);
 if (pPropsI!=0) pPropsI->Dump(fp);

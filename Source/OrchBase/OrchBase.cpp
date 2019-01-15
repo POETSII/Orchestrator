@@ -5,7 +5,7 @@
 #include "P_builder.h"
 #include "filename.h"
 #include "Constraints.h"
-#include "PoetsCore.h"
+#include "P_core.h"
 #include "P_task.h"
 #include "P_typdcl.h"
 #include "P_devtyp.h"

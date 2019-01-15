@@ -41,9 +41,8 @@ public:
     /* Engines contain information on how addresses should be constructed. */
     HardwareAddressFormat addressFormat;
 
-    /* Engines are not contained by anything, but have OrchBase as a namebase
-       parent. */
-    OrchBase* parent;
+    /* Engines are not contained by anything, but are have OrchBase as a
+       namebase parent. */
 
     /* Engines contain boxes, mapped by their hardware address component. */
     void contain(AddressComponent addressComponent, PoetsBox* box);

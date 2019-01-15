@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "NameBase.h"
 #include "P_message.h"
-#include "PoetsBoard.h"
+#include "P_board.h"
 #include "Bin.h"
 class D_graph;
 class P_devtyp;
