@@ -1,4 +1,3 @@
-
 #include "Dialect1Deployer.h"
 
 Dialect1Deployer::Dialect1Deployer()
@@ -10,28 +9,28 @@ Dialect1Deployer::Dialect1Deployer()
 }
 
 /* Defines logic for deploying a dialect 1-style configuration to an
-   engine. Arguments:
-
-    - engine: POETS Engine to modify in-place.
-
-   Configurations are deployed statically, but the deployer dynamically creates
-   objects within the static objects. Your engine and addressFormat should be
-   constructed by your containing object, and passed in by reference.
-
-   Validation must be performed by the logic that populates deployer
-   objects. If you don't validate your input, your deployment will fall over.
-
-   There is a lot of code duplication here, notably between
-   populate_<something>_map methods and the various connection methods, but the
-   function-template solution became quite obtuse to read, which is why I have
-   kept them separate here.
-
-   Deployers must free their internal data structures before they are
-   destructed to avoid memory leaks - "free_" methods are providied to
-   facilitate this.
-
-   See accompanying header for the set of variables that are used during
-   deployment. */
+ * engine. Arguments:
+ *
+ *  - engine: POETS Engine to modify in-place.
+ *
+ * Configurations are deployed statically, but the deployer dynamically creates
+ * objects within the static objects. Your engine and addressFormat should be
+ * constructed by your containing object, and passed in by reference.
+ *
+ * Validation must be performed by the logic that populates deployer
+ * objects. If you don't validate your input, your deployment will fall over.
+ *
+ * There is a lot of code duplication here, notably between
+ * populate_<something>_map methods and the various connection methods, but the
+ * function-template solution became quite obtuse to read, which is why I have
+ * kept them separate here.
+ *
+ * Deployers must free their internal data structures before they are
+ * destructed to avoid memory leaks - "free_" methods are providied to
+ * facilitate this.
+ *
+ * See accompanying header for the set of variables that are used during
+ * deployment. */
 void Dialect1Deployer::deploy(P_engine* engine)
 {
     /* Assign metadata to the engine. */
@@ -47,7 +46,7 @@ void Dialect1Deployer::deploy(P_engine* engine)
     populate_engine_with_boxes_and_their_costs(engine);
 
     /* Create a series of boards, storing them in a map, addressed by their
-       hierarchical address components. */
+     * hierarchical address components. */
     populate_board_map();
 
     /* Divide up the boards between the boxes naively, and assign them. */
@@ -61,7 +60,7 @@ void Dialect1Deployer::deploy(P_engine* engine)
          boardIterator!=boardMap.end(); boardIterator++)
     {
         /* Create a series of mailboxes, storing them in a map, addressed by
-           their hierarchical address components. */
+         * their hierarchical address components. */
         populate_mailbox_map();
 
         /* Connect the mailboxes in the board. */
@@ -69,7 +68,7 @@ void Dialect1Deployer::deploy(P_engine* engine)
             boardIterator->second->poetsItem);
 
         /* Clear the mailbox map for the next iteration. NB: Does not free the
-           P_mailbox objects themselves, only the itemAndAddress objects. */
+         * P_mailbox objects themselves, only the itemAndAddress objects. */
         free_items_in_mailbox_map();
         mailboxMap.clear();
     }
@@ -87,9 +86,8 @@ void Dialect1Deployer::deploy(P_engine* engine)
 }
 
 /* Assigns all metadata defined in this deployer to the engine. Arguments:
-
-    - engine: the P_engine to assign metadata to.
-*/
+ *
+ * - engine: the P_engine to assign metadata to. */
 void Dialect1Deployer::assign_metadata_to_engine(P_engine* engine)
 {
     engine->author = author;
@@ -98,10 +96,9 @@ void Dialect1Deployer::assign_metadata_to_engine(P_engine* engine)
     engine->fileOrigin = fileOrigin;
 }
 
-/* Assigns all sizes to an address format object. Arguments
-
-    - format: the HardwareAddressObject to assign sizes to.
-*/
+/* Assigns all sizes to an address format object. Arguments:
+ *
+ * - format: the HardwareAddressObject to assign sizes to. */
 void Dialect1Deployer::assign_sizes_to_address_format(
     HardwareAddressFormat* format)
 {
@@ -117,19 +114,17 @@ void Dialect1Deployer::assign_sizes_to_address_format(
 }
 
 /* Donates all boards in the boardMap to the engine, and connects them
-   up. Arguments:
-
-    - engine: Engine to populate.
-*/
-void Dialect1Deployer::connect_boards_from_boardmap_in_engine(
-    P_engine* engine)
+ * up. Arguments:
+ *
+ *  - engine: Engine to populate. */
+void Dialect1Deployer::connect_boards_from_boardmap_in_engine(P_engine* engine)
 {
     /* The connection behaviour depends on whether or not the hypercube
-       argument was specified. If a hypercube, connect them in a hypercube
-       (obviously). If not a hypercube, connect them all-to-all
-       (not-so-obviously).
-
-       Whatever we do, we'll need these declarations however. */
+     * argument was specified. If a hypercube, connect them in a hypercube
+     * (obviously). If not a hypercube, connect them all-to-all
+     * (not-so-obviously).
+     *
+     * Whatever we do, we'll need these declarations however. */
     BoardMap::iterator outerBoardIterator;
     AddressComponent outerFlatAddress;
     AddressComponent innerFlatAddress;
@@ -145,19 +140,19 @@ void Dialect1Deployer::connect_boards_from_boardmap_in_engine(
         }
 
         /* For each board, connect that board to its neighbours. Note that this
-           loop is not rolled with the other loop because a board must first be
-           donated before it is connected, and try/catching for duplicate
-           containment operations is (probably) more expensive than keeping the
-           loops separate. */
+         * loop is not rolled with the other loop because a board must first be
+         * donated before it is connected, and try/catching for duplicate
+         * containment operations is (probably) more expensive than keeping the
+         * loops separate. */
         unsigned boardDimensions = boardsInEngine.size();
 
         /* Variables in the loop to determine whether or not to connect ahead
-           or behind a given board in a given dimension. */
+         * or behind a given board in a given dimension. */
         bool isAnyoneAhead;
         bool isAnyoneBehind;
 
         /* Variable in the loop to hold our hierarchical address, and the
-           computed hierarchical address of a neighbour. */
+         * computed hierarchical address of a neighbour. */
         MultiAddressComponent outerHierarchicalAddress;
         MultiAddressComponent innerHierarchicalAddress;
 
@@ -165,7 +160,7 @@ void Dialect1Deployer::connect_boards_from_boardmap_in_engine(
              outerBoardIterator!=boardMap.end(); outerBoardIterator++)
         {
             /* For each dimension, connect to the neighbour ahead and
-               behind (if there is one). */
+             * behind (if there is one). */
             outerHierarchicalAddress = outerBoardIterator->first;
             outerFlatAddress = outerBoardIterator->second->address;
             for (unsigned dimension=0; dimension<boardDimensions; dimension++)
@@ -201,7 +196,7 @@ void Dialect1Deployer::connect_boards_from_boardmap_in_engine(
                         innerHierarchicalAddress, boardWordLengths);
 
                     /* Do the actual connecting. This connection happens
-                       one-way, because we are iterating through each board. */
+                     * one-way, because we are iterating through each board. */
                     engine->connect(outerFlatAddress, innerFlatAddress,
                                     costBoardBoard, true);
                 }
@@ -225,7 +220,7 @@ void Dialect1Deployer::connect_boards_from_boardmap_in_engine(
                         innerHierarchicalAddress, boardWordLengths);
 
                     /* Do the actual connecting. This connection happens
-                       one-way, because we are iterating through each board. */
+                     * one-way, because we are iterating through each board. */
                     engine->connect(outerFlatAddress, innerFlatAddress,
                                     costBoardBoard, true);
                 }
@@ -235,7 +230,7 @@ void Dialect1Deployer::connect_boards_from_boardmap_in_engine(
     else  /* All-to-all */
     {
         /* For each board, donate that board to the engine, then connect that
-           board to every board in the engine so far (handshaking problem). */
+         * board to every board in the engine so far (handshaking problem). */
         BoardMap::iterator innerBoardIterator;
         for (outerBoardIterator=boardMap.begin();
              outerBoardIterator!=boardMap.end(); outerBoardIterator++)
@@ -246,7 +241,7 @@ void Dialect1Deployer::connect_boards_from_boardmap_in_engine(
                             outerBoardIterator->second->poetsItem);
 
             /* Connection between the previously-donated boards, again
-               flattening the inner address. */
+             * flattening the inner address. */
             for (innerBoardIterator=boardMap.begin();
                  innerBoardIterator!=outerBoardIterator; innerBoardIterator++)
             {
@@ -259,19 +254,18 @@ void Dialect1Deployer::connect_boards_from_boardmap_in_engine(
 }
 
 /* Donates all mailboxes in the mailboxMap to the board, and connects them
-   up. Arguments:
-
-    - board: Board to populate.
-*/
+ * up. Arguments:
+ *
+ * - board: Board to populate. */
 void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
     P_board* board)
 {
     /* The connection behaviour depends on whether or not the hypercube
-       argument was specified. If a hypercube, connect them in a hypercube
-       (obviously). If not a hypercube, connect them all-to-all
-       (not-so-obviously).
-
-       Whatever we do, we'll need these declarations however. */
+     * argument was specified. If a hypercube, connect them in a hypercube
+     * (obviously). If not a hypercube, connect them all-to-all
+     * (not-so-obviously).
+     *
+     * Whatever we do, we'll need these declarations however. */
     MailboxMap::iterator outerMailboxIterator;
     AddressComponent outerFlatAddress;
     AddressComponent innerFlatAddress;
@@ -287,19 +281,19 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
         }
 
         /* For each mailbox, connect that mailbox to its neighbours. Note that
-           this loop is not rolled with the other loop because a mailbox must
-           first be donated before it is connected, and try/catching for
-           duplicate containment operations is (probably) more expensive than
-           keeping the loops separate. */
+         * this loop is not rolled with the other loop because a mailbox must
+         * first be donated before it is connected, and try/catching for
+         * duplicate containment operations is (probably) more expensive than
+         * keeping the loops separate. */
         unsigned mailboxDimensions = mailboxesInBoard.size();
 
         /* Variables in the loop to determine whether or not to connect ahead
-           or behind a given mailbox in a given dimension. */
+         * or behind a given mailbox in a given dimension. */
         bool isAnyoneAhead;
         bool isAnyoneBehind;
 
         /* Variable in the loop to hold our hierarchical address, and the
-           computed hierarchical address of a neighbour. */
+         * computed hierarchical address of a neighbour. */
         MultiAddressComponent outerHierarchicalAddress;
         MultiAddressComponent innerHierarchicalAddress;
 
@@ -307,7 +301,7 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
              outerMailboxIterator!=mailboxMap.end(); outerMailboxIterator++)
         {
             /* For each dimension, connect to the neighbour ahead and
-               behind (if there is one). */
+             * behind (if there is one). */
             outerHierarchicalAddress = outerMailboxIterator->first;
             outerFlatAddress = outerMailboxIterator->second->address;
             for (unsigned dimension=0; dimension<mailboxDimensions;
@@ -344,8 +338,8 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
                         innerHierarchicalAddress, mailboxWordLengths);
 
                     /* Do the actual connecting. This connection happens
-                       one-way, because we are iterating through each
-                       mailbox. */
+                     * one-way, because we are iterating through each
+                     * mailbox. */
                     board->connect(outerFlatAddress, innerFlatAddress,
                                    costMailboxMailbox, true);
                 }
@@ -369,8 +363,8 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
                         innerHierarchicalAddress, mailboxWordLengths);
 
                     /* Do the actual connecting. This connection happens
-                       one-way, because we are iterating through each
-                       mailbox. */
+                     * one-way, because we are iterating through each
+                     * mailbox. */
                     board->connect(outerFlatAddress, innerFlatAddress,
                                    costMailboxMailbox, true);
                 }
@@ -380,8 +374,8 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
     else  /* All-to-all */
     {
         /* For each mailbox, donate that mailbox to the board, then connect
-           that mailbox to every mailbox in the board so far (handshaking
-           problem). */
+         * that mailbox to every mailbox in the board so far (handshaking
+         * problem). */
         MailboxMap::iterator innerMailboxIterator;
         for (outerMailboxIterator=mailboxMap.begin();
              outerMailboxIterator!=mailboxMap.end(); outerMailboxIterator++)
@@ -392,7 +386,7 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
                            outerMailboxIterator->second->poetsItem);
 
             /* Connection between the previously-donated mailboxes, again
-               flattening the inner address. */
+             * flattening the inner address. */
             for (innerMailboxIterator=mailboxMap.begin();
                  innerMailboxIterator!=outerMailboxIterator;
                  innerMailboxIterator++)
@@ -406,7 +400,7 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
 }
 
 /* Creates a series of cores, and donates them to the mailbox passed in as an
-   argument. */
+ * argument. */
 void Dialect1Deployer::create_cores_in_mailbox(P_mailbox* mailbox)
 {
     for(AddressComponent coreIndex = 0; coreIndex<coresInMailbox;
@@ -414,7 +408,7 @@ void Dialect1Deployer::create_cores_in_mailbox(P_mailbox* mailbox)
 }
 
 /* Creates a series of threads, and donates them to the core passed in as an
-   argument. */
+ * argument. */
 void Dialect1Deployer::create_threads_in_core(P_core* core)
 {
     for(AddressComponent threadIndex = 0; threadIndex<threadsInCore;
@@ -422,19 +416,18 @@ void Dialect1Deployer::create_threads_in_core(P_core* core)
 }
 
 /* Flattens a multidimensional address (or a vector-address with one
-   dimension), and returns it. Arguments:
-
-    - address: address to flatten.
-    - wordLengths: word lengths of each component of the address
-
-   address and wordLengths must have the same number of dimensions.
-
-   Examples:
-
-    1. address is (0,0,0), wordLengths is (3,2,1), returns 0b000000 = 0.
-    2. address is (3,1,1), wordLengths is (3,2,1), returns 0b011011 = 27.
-    3. address is (7,3,1), wordLengths is (3,2,1), returns 0b111111 = 63.
-*/
+ * dimension), and returns it. Arguments:
+ *
+ * - address: address to flatten.
+ * - wordLengths: word lengths of each component of the address
+ *
+ * address and wordLengths must have the same number of dimensions.
+ *
+ * Examples:
+ *
+ *  1. address is (0,0,0), wordLengths is (3,2,1), returns 0b000000 = 0.
+ *  2. address is (3,1,1), wordLengths is (3,2,1), returns 0b011011 = 27.
+ *  3. address is (7,3,1), wordLengths is (3,2,1), returns 0b111111 = 63. */
 AddressComponent Dialect1Deployer::flatten_address(
     MultiAddressComponent address, std::vector<unsigned> wordLengths)
 {
@@ -448,13 +441,10 @@ AddressComponent Dialect1Deployer::flatten_address(
 }
 
 /* Distributes all boards in the boardMap to all boxes evenly,
-   arbitrarily. Assumes that the number of boards divides into the number of
-   boxes without remainder. Arguments:
-
-    - boxMap: Boxes, mapped by their address components.
-
-   Modifies the boxes inplace.
-*/
+ * arbitrarily. Assumes that the number of boards divides into the number of
+ * boxes without remainder. Modifies the boxes inplace. Arguments:
+ *
+ * - boxMap: Boxes, mapped by their address components. */
 void Dialect1Deployer::populate_boxes_evenly_with_boardmap(
     std::map<AddressComponent, P_box*>* boxMap)
 {
@@ -462,15 +452,14 @@ void Dialect1Deployer::populate_boxes_evenly_with_boardmap(
     unsigned boardsPerBox = boardMap.size() / boxMap->size();
 
     /* We iterate through the map of boxes and boards, distributing all boards
-       up to a given amount, such that an even distribution is maintained. */
-    std::map<AddressComponent, P_box*>::iterator \
-        boxIterator = boxMap->begin();
+     * up to a given amount, such that an even distribution is maintained. */
+    std::map<AddressComponent, P_box*>::iterator boxIterator = boxMap->begin();
     BoardMap::iterator boardIterator = boardMap.begin();
     for (boxIterator=boxMap->begin(); boxIterator!=boxMap->end();
          boxIterator++)
     {
         /* Contain 'boardsPerBox' boards in this box, using the flattened
-           address. */
+         * address. */
         for (unsigned boardIndex=0; boardIndex<boardsPerBox; boardIndex++)
         {
             boxIterator->second->contain(boardIterator->second->address,
@@ -481,9 +470,9 @@ void Dialect1Deployer::populate_boxes_evenly_with_boardmap(
 }
 
 /* Populates a P_engine with boxes, and defines the box-board costs in those
-   boxes. Arguments:
-
-    - engine: P_engine to populate. */
+ * boxes. Arguments:
+ *
+ * - engine: P_engine to populate. */
 void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
     P_engine* engine)
 {
@@ -500,9 +489,8 @@ void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
 }
 
 /* Populates boardMap with dynamically-allocated itemAndAddress objects,
-   containing dynamically-allocated P_boards. Also defines their addresses,
-   and includes that information in the map.
-*/
+ * containing dynamically-allocated P_boards. Also defines their addresses, and
+ * includes that information in the map. */
 void Dialect1Deployer::populate_board_map()
 {
     unsigned boardDimensions = boardsInEngine.size();
@@ -528,24 +516,24 @@ void Dialect1Deployer::populate_board_map()
         boardMap.insert(std::make_pair(boardAddress, boardAndAddress));
 
         /* Increment hierarchical address.
-
-           If there are higher dimensions, increment to the next one
-           recursively until there are no more addresses to use.
-
-           The left-most dimension is more significant than the right-most
-           dimension (big-endian).
-
-           Examples:
-
-            1. If boardAddress is (0,0,3) and boardsInEngine is (2,2,4), then
-               boardAddress would become (0,1,0).
-
-            2. If boardAddress is (0,1,3) and boardsInEngine is (2,2,4), then
-               boardAddress would become (1,0,0), because the second dimension
-               addition is carried over into the first dimension.
-
-            3. If boardAddress is (1,1,3) and boardsInEngine is (2,2,4), then
-               iteration stops, and no more boards are created. */
+         *
+         * If there are higher dimensions, increment to the next one
+         * recursively until there are no more addresses to use.
+         *
+         * The left-most dimension is more significant than the right-most
+         * dimension (big-endian).
+         *
+         * Examples:
+         *
+         *  1. If boardAddress is (0,0,3) and boardsInEngine is (2,2,4), then
+         *     boardAddress would become (0,1,0).
+         *
+         *  2. If boardAddress is (0,1,3) and boardsInEngine is (2,2,4), then
+         *     boardAddress would become (1,0,0), because the second dimension
+         *     addition is carried over into the first dimension.
+         *
+         *  3. If boardAddress is (1,1,3) and boardsInEngine is (2,2,4), then
+         *     iteration stops, and no more boards are created. */
         for (int dimension=boardDimensions-1; dimension>=0; dimension--)
         {
             if (boardAddress[dimension] == boardsInEngine[dimension] - 1)
@@ -564,10 +552,9 @@ void Dialect1Deployer::populate_board_map()
 }
 
 /* Populates mailboxMap with dynamically-allocated itemAndAddress objects,
-   containing dynamically-allocated P_mailboxes. Also defines their
-   addresses, and includes that information in the map. Only creates enough
-   mailboxes to fit in one board.
-*/
+ * containing dynamically-allocated P_mailboxes. Also defines their addresses,
+ * and includes that information in the map. Only creates enough mailboxes to
+ * fit in one board. */
 void Dialect1Deployer::populate_mailbox_map()
 {
     unsigned mailboxDimensions = mailboxesInBoard.size();
@@ -593,14 +580,14 @@ void Dialect1Deployer::populate_mailbox_map()
         mailboxMap.insert(std::make_pair(mailboxAddress, mailboxAndAddress));
 
         /* Increment hierarchical address.
-
-           If there are higher dimensions, increment to the next one
-           recursively until there are no more addresses to use.
-
-           The left-most dimension is more significant than the right-most
-           dimension (big-endian).
-
-           See populate_board_map for examples.*/
+         *
+         * If there are higher dimensions, increment to the next one
+         * recursively until there are no more addresses to use.
+         *
+         * The left-most dimension is more significant than the right-most
+         * dimension (big-endian).
+         *
+         * See populate_board_map for examples. */
         for (int dimension=mailboxDimensions-1; dimension>=0; dimension--)
         {
             if (mailboxAddress[dimension] == mailboxesInBoard[dimension] - 1)
@@ -619,7 +606,7 @@ void Dialect1Deployer::populate_mailbox_map()
 }
 
 /* Dynamically creates a new POETS board, and populates it with it's common
-   parameters. Does not define contained items. */
+ * parameters. Does not define contained items. */
 P_board* Dialect1Deployer::create_board()
 {
     P_board* returnAddress;
@@ -631,12 +618,12 @@ P_board* Dialect1Deployer::create_board()
 }
 
 /* Dynamically creates a new POETS mailbox, and populates it with it's common
-   parameters. Does not define contained items. */
+ * parameters. Does not define contained items. */
 P_mailbox* Dialect1Deployer::create_mailbox()
 {
     P_mailbox* returnAddress;
     returnAddress = new P_mailbox(dformat("Mailbox%06d",
-                                             createdMailboxIndex++));
+                                          createdMailboxIndex++));
     returnAddress->costCoreCore = costCoreCore;
     returnAddress->costMailboxCore = costMailboxCore;
 
@@ -646,7 +633,7 @@ P_mailbox* Dialect1Deployer::create_mailbox()
 }
 
 /* Dynamically creates a new POETS core, and populates it with it's common
-   parameters. Does not define contained items. */
+ * parameters. Does not define contained items. */
 P_core* Dialect1Deployer::create_core()
 {
     P_core* returnAddress;
@@ -667,8 +654,8 @@ P_thread* Dialect1Deployer::create_thread()
     return new P_thread(dformat("Thread%06d", createdThreadIndex++));
 }
 
-/* Frees dyamically-allocated value objects (itemAndAddress<P_board*>*)
-   objects in the boardMap. */
+/* Frees dyamically-allocated value objects (itemAndAddress<P_board*>*) objects
+ * in the boardMap. */
 void Dialect1Deployer::free_items_in_board_map()
 {
     for (BoardMap::iterator boardIterator=boardMap.begin();
@@ -679,7 +666,7 @@ void Dialect1Deployer::free_items_in_board_map()
 }
 
 /* Frees dyamically-allocated value objects (itemAndAddress<P_mailbox*>*)
-   objects in the mailboxMap. */
+ * objects in the mailboxMap. */
 void Dialect1Deployer::free_items_in_mailbox_map()
 {
     for (MailboxMap::iterator mailboxIterator=mailboxMap.begin();

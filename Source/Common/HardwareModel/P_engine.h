@@ -2,13 +2,13 @@
 #define __ORCHESTRATOR_SOURCE_COMMON_HARDWAREMODEL_POETSENGINE_H
 
 /* Describes the concept of a "POETS Engine" in the model of the POETS hardware
-   stack.
-
-   The POETS Engine is a self-contained model of the hardware that contains
-   boxes and a graph of boards.
-
-   See the hardware model documentation for further information POETS
-   engines. */
+ * stack.
+ *
+ * The POETS Engine is a self-contained model of the hardware that contains
+ * boxes and a graph of boards.
+ *
+ * See the hardware model documentation for further information POETS
+ * engines. */
 
 #include <sstream>
 
@@ -42,7 +42,8 @@ public:
     HardwareAddressFormat addressFormat;
 
     /* Engines are not contained by anything, but are have OrchBase as a
-       namebase parent. */
+     * namebase parent. */
+    OrchBase* parent;
 
     /* Engines contain boxes, mapped by their hardware address component. */
     void contain(AddressComponent addressComponent, P_box* box);
@@ -50,7 +51,7 @@ public:
     bool is_empty();
 
     /* Engines also contain a graph of boards, again mapped by their hardware
-       components. */
+     * components. */
     pdigraph<AddressComponent, P_board*,
         unsigned int, float,
         unsigned int, unsigned int> G;
@@ -59,7 +60,7 @@ public:
                  bool oneWay=false);
 
     /* Engines may be created from a configuration file. If so, some portion of
-       their metadata will be set. */
+     * their metadata will be set. */
     std::string author;
     long datetime;
     std::string version;

@@ -2,7 +2,7 @@
 #define __ORCHESTRATOR_SOURCE_COMMON_ORCHESTRATOREXCEPTION_H
 
 /* Describes a base exception class that can be thrown by various Orchestrator
-   components. */
+ * components. */
 
 #include <exception>
 #include <string>

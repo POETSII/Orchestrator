@@ -1,11 +1,11 @@
 /* Defines POETS Mailbox behaviour (see the accompanying header for further
-   information). */
+ * information). */
 
 #include "P_mailbox.h"
 
 /* Constructs a POETS Mailbox. Arguments:
-   - name: Name of this mailbox object (see namebase)
-*/
+ *
+ * - name: Name of this mailbox object (see namebase) */
 P_mailbox::P_mailbox(std::string name)
 {
     Name(name);
@@ -14,12 +14,11 @@ P_mailbox::P_mailbox(std::string name)
 P_mailbox::~P_mailbox(){clear();}
 
 /* Clears the dynamically-allocated elements of the data structure of this
-   mailbox, deleting all contained components recursively.
-*/
+ * mailbox, deleting all contained components recursively. */
 void P_mailbox::clear()
 {
     /* Clear all cores that this mailbox knows about. This should clear
-       recursively. */
+     * recursively. */
     WALKMAP(AddressComponent,P_core*,P_corem,iterator)
     {
         delete iterator->second;
@@ -28,11 +27,10 @@ void P_mailbox::clear()
 }
 
 /* Donates an uncontained core to this mailbox. Arguments:
-
-   - addressComponent: Used to index the core in this mailbox.
-   - core: Pointer to the core object to contain. Must not already have a
-     parent.
-*/
+ *
+ * - addressComponent: Used to index the core in this mailbox.
+ * - core: Pointer to the core object to contain. Must not already have a
+ *   parent. */
 void P_mailbox::contain(AddressComponent addressComponent, P_core* core)
 {
     /* Verify that the core is unowned. */
@@ -65,10 +63,9 @@ void P_mailbox::contain(AddressComponent addressComponent, P_core* core)
 }
 
 /* Write debug and diagnostic information about the POETS mailbox, recursively,
-   using dumpchan. Arguments:
-
-   - file: File to dump to.
-*/
+ * using dumpchan. Arguments:
+ *
+ * - file: File to dump to. */
 void P_mailbox::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
@@ -110,8 +107,8 @@ void P_mailbox::dump(FILE* file)
 }
 
 /* Hook that a container calls to contain this object. Arguments:
-   - container: Address of the board that contains this mailbox.
-*/
+ *
+ * - container: Address of the board that contains this mailbox. */
 void P_mailbox::on_being_contained_hook(P_board* container)
 {
     parent = container;

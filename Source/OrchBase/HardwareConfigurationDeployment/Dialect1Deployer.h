@@ -2,8 +2,8 @@
 #define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWARECONFIGURATION_DIALECT1DEPLOYER_H
 
 /* Defines how dialect-1 style files are deployed to define P_engine
-   configurations. This data structure holds configuration information, so that
-   it can be deployed to a given engine and address format. */
+ * configurations. This data structure holds configuration information, so that
+ * it can be deployed to a given engine and address format. */
 
 #include <map>
 #include <numeric>
@@ -13,13 +13,13 @@
 #include "HardwareModel.h"
 
 /* Address components that are multidimensional (to support hypercubes), that
-   have not been flattened, are vectors of address components. A vector is used
-   over a std::array here to make the reduction operation in flatten_address
-   easier to write. */
+ * have not been flattened, are vectors of address components. A vector is used
+ * over a std::array here to make the reduction operation in flatten_address
+ * easier to write. */
 typedef std::vector<AddressComponent> MultiAddressComponent;
 
 /* Simple container for storing items with their flattened addresses, so they
-   can be indexed in maps by the hierarchical addresses. */
+ * can be indexed in maps by the hierarchical addresses. */
 template <typename PoetsItem>
 struct itemAndAddress {
     PoetsItem poetsItem;  /* E.g. P_board*, or P_mailbox*. */
@@ -55,8 +55,8 @@ public:
     /* Engine properties */
     unsigned boxesInEngine;
     std::vector<unsigned> boardsInEngine;  /* NB: Number of boards must divide
-                                              equally between the number of
-                                              boxes. */
+                                            * equally between the number of
+                                            * boxes. */
     bool boardsAsHypercube;
     std::vector<bool> boardHypercubePeriodicity;
     float costExternalBox;
@@ -102,8 +102,8 @@ private:
     P_thread* create_thread();
 
     /* Maps for staging POETS items during deployment, required to persist
-       connectivity information. These need to be maps so that we can determine
-       the neighbours of an item given its hierarchical address. */
+     * connectivity information. These need to be maps so that we can determine
+     * the neighbours of an item given its hierarchical address. */
     BoardMap boardMap;
     MailboxMap mailboxMap;
 
@@ -111,10 +111,10 @@ private:
     void free_items_in_mailbox_map();
 
     /* Vectors for holding pointers to created items, for code simplification
-       (means we don't need to iterate through every board-mailbox to find
-       every core, for example). We don't need one of these for boards, because
-       boardMap stores the content of all boards in the engine for the duration
-       of the deployment. */
+     * (means we don't need to iterate through every board-mailbox to find
+     * every core, for example). We don't need one of these for boards, because
+     * boardMap stores the content of all boards in the engine for the duration
+     * of the deployment. */
     std::vector<P_mailbox*> allMailboxes;
     std::vector<P_core*> allCores;
 

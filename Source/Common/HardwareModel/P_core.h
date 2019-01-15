@@ -2,13 +2,13 @@
 #define __ORCHESTRATOR_SOURCE_COMMON_HARDWAREMODEL_POETSCORE_H
 
 /* Describes the concept of a "POETS Core" in the model of the POETS hardware
-   stack.
-
-   The POETS Core is a representation of a core on an FPGA board in the POETS
-   hardware, and is served by a "mailbox".
-
-   See the hardware model documentation for further information POETS
-   cores. */
+ * stack.
+ *
+ * The POETS Core is a representation of a core on an FPGA board in the POETS
+ * hardware, and is served by a "mailbox".
+ *
+ * See the hardware model documentation for further information POETS
+ * cores. */
 
 #include <sstream>
 

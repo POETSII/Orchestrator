@@ -2,13 +2,13 @@
 #define __ORCHESTRATOR_SOURCE_COMMON_HARDWAREMODEL_POETSBOARD_H
 
 /* Describes the concept of a "POETS Board" in the model of the POETS
-   hardware stack.
-
-   The POETS Board represents an FPGA board in the POETS Engine, and contains
-   mailboxes.
-
-   See the hardware model documentation for further information POETS
-   boards. */
+ * hardware stack.
+ *
+ * The POETS Board represents an FPGA board in the POETS Engine, and contains
+ * mailboxes.
+ *
+ * See the hardware model documentation for further information POETS
+ * boards. */
 
 #include <sstream>
 
@@ -37,10 +37,10 @@ public:
     void clear();
 
     /* Boards live in boxes; this is the box that this board lives in. Note
-       that boards also live in the engine by direct reference, but this is
-       not captured in the board construct.
-
-       Boards use boxes as their NameBase parent. */
+     * that boards also live in the engine by direct reference, but this is
+     * not captured in the board construct.
+     *
+     * Boards use boxes as their NameBase parent. */
     P_box* parent = NULL;
     void on_being_contained_hook(P_box* container);
 
@@ -49,7 +49,7 @@ public:
     std::vector<unsigned> sup_offv;
 
     /* Boards contain mailboxes as a graph, mapped by their hardware address
-       components. */
+     * components. */
     pdigraph<AddressComponent, P_mailbox*,
         unsigned int, float,
         unsigned int, unsigned int> G;

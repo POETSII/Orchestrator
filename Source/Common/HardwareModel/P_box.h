@@ -38,7 +38,7 @@ public:
     void on_being_contained_hook(P_engine* container);
 
     /* Boxes contain boards. Note that engines also contain a graph of
-       boards. */
+     * boards. */
     std::vector<P_board*> P_boardv;
     void contain(AddressComponent addressComponent, P_board* board);
 

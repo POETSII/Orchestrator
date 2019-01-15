@@ -1,11 +1,11 @@
 /* Defines POETS Board behaviour (see the accompanying header for further
-   information). */
+ * information). */
 
 #include "P_board.h"
 
 /* Constructs a POETS Board. Arguments:
-   - name: Name of this board object (see namebase)
-*/
+ *
+ * - name: Name of this board object (see namebase) */
 P_board::P_board(std::string name)
 {
     arcKey = 0;
@@ -35,12 +35,11 @@ P_board::~P_board()
 }
 
 /* Clears the dynamically-allocated elements of the data structure of this
-   board, deleting all contained components recursively.
-*/
+ * board, deleting all contained components recursively. */
 void P_board::clear()
 {
     /* Clear all mailboxes that this board knows about. This in turn will clear
-       structures lower in the hierarchy recursively. */
+     * structures lower in the hierarchy recursively. */
     WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
                       unsigned int, float,
                       unsigned int, unsigned int,
@@ -57,13 +56,11 @@ void P_board::clear()
 }
 
 /* Donates an uncontained mailbox to this board. Arguments:
-
-   - addressComponent: Used to index the mailbox in this board.
-   - mailbox: Pointer to the mailbox object to contain. Must not already have a
-     parent.
-*/
-void P_board::contain(AddressComponent addressComponent,
-                         P_mailbox* mailbox)
+ *
+ * - addressComponent: Used to index the mailbox in this board.
+ * - mailbox: Pointer to the mailbox object to contain. Must not already have a
+ *   parent. */
+void P_board::contain(AddressComponent addressComponent, P_mailbox* mailbox)
 {
     /* Verify that the mailbox is unowned. */
     if (mailbox->parent != NULL)
@@ -92,20 +89,19 @@ void P_board::contain(AddressComponent addressComponent,
     }
 
     /* We don't care about the result of inserting the mailbox into this graph,
-       because we've checked the item is not owned before adding it. */
+     * because we've checked the item is not owned before adding it. */
     G.InsertNode(addressComponent, mailbox);
 }
 
 /* Connects two mailboxes together that are owned by this board. Arguments:
-
-   - start, end: Pointers to two mailbox objects to connect. Must be owned by
-     this board.
-   - weight: Edge weight for the connection.
-   - oneWay: If false, the connection is bidirectional, otherwise is
-     unidirectional, from start to end.
-*/
+ *
+ * - start, end: Pointers to two mailbox objects to connect. Must be owned by
+ *   this board.
+ * - weight: Edge weight for the connection.
+ * - oneWay: If false, the connection is bidirectional, otherwise is
+ *   unidirectional, from start to end. */
 void P_board::connect(AddressComponent start, AddressComponent end,
-                         float weight, bool oneWay)
+                      float weight, bool oneWay)
 {
     G.InsertArc(arcKey++, start, end, weight);
     if (!oneWay)
@@ -115,10 +111,9 @@ void P_board::connect(AddressComponent start, AddressComponent end,
 }
 
 /* Write debug and diagnostic information about the POETS board, recursively,
-   using dumpchan. Arguments:
-
-   - file: File to dump to.
-*/
+ * using dumpchan. Arguments:
+ *
+ * - file: File to dump to. */
 void P_board::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
@@ -154,8 +149,7 @@ void P_board::dump(FILE* file)
 
         /* Set up callbacks for walking through the mailbox nodes. */
         struct WalkCallbacks {
-            CALLBACK node(void*, AddressComponent const&,
-                          P_mailbox* &mailbox)
+            CALLBACK node(void*, AddressComponent const&, P_mailbox* &mailbox)
             {
                 mailbox->dump();
             }
@@ -176,8 +170,8 @@ void P_board::dump(FILE* file)
 }
 
 /* Hook that a container calls to contain this object. Arguments:
-   - container: Address of the box that contains this board.
-*/
+ *
+ * - container: Address of the box that contains this board. */
 void P_board::on_being_contained_hook(P_box* container)
 {
     parent = container;

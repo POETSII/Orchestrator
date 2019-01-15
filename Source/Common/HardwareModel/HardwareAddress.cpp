@@ -1,15 +1,14 @@
 /* Defines hardware address behaviour (see the accompanying header for further
-   information). */
+ * information). */
 
 #include "HardwareAddress.h"
 
 /* Constructs a hardware address. Arguments:
-
-   - format: A format for the hardware address.
-
-   - Each argument after this: values for those components of the hardware
-     address.
-*/
+ *
+ * - format: A format for the hardware address.
+ *
+ * - Each argument after this: values for those components of the hardware
+     address. */
 HardwareAddress::HardwareAddress(
     HardwareAddressFormat* format,
     AddressComponent boxComponent,
@@ -31,8 +30,8 @@ HardwareAddress::HardwareAddress(
     for(unsigned index=0; index<5; set_defined(index++));
 }
 
-/* Alternatively, construct a hardware address without priming it with
-   values explicitly. */
+/* Alternatively, construct a hardware address without priming it with values
+ * explicitly. */
 HardwareAddress::HardwareAddress(HardwareAddressFormat* format)
     :format(format)
 {
@@ -62,13 +61,11 @@ unsigned HardwareAddress::get_hardware_address()
 }
 
 /* Setters, which set the address component with a value.
-
-   Also updates the "definitions" word. Raises if the input does not fit within
-   the loaded format.
-
-   Arguments:
-
-   - value: Value to set.
+ *
+ * Also updates the "definitions" word. Raises if the input does not fit within
+ * the loaded format. Arguments:
+ *
+ * - value: Value to set.
 */
 void HardwareAddress::set_box(AddressComponent value)
 {
@@ -150,18 +147,17 @@ void HardwareAddress::set_thread(AddressComponent value)
 }
 
 /* Updates the internal record of which components of this address have been
-   defined. Arguments:
-
-   - index: which element of the binary word to set to 1. */
+ * defined. Arguments:
+ *
+ * - index: which element of the binary word to set to 1. */
 void HardwareAddress::set_defined(unsigned index)
 {
     index &= (1 << index);
 }
 
 /* Write debug and diagnostic information using dumpchan. Arguments:
-
-   - file: File to dump to.
-*/
+ *
+ * - file: File to dump to. */
 void HardwareAddress::dump(FILE* file)
 {
     /* The dump basically just contains the lengths. */

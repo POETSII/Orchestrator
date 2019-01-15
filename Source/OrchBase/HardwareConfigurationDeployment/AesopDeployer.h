@@ -2,7 +2,7 @@
 #define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWARECONFIGURATION_AESOPDEPLOYER_H
 
 /* Defines a configuration sufficient to deploy "an Aesop engine". It's all in
-   the constructor. */
+ * the constructor. */
 
 #include "Dialect1Deployer.h"
 

@@ -1,21 +1,20 @@
 /* Defines POETS Thread behaviour (see the accompanying header for further
-   information). */
+ * information). */
 
 #include "P_thread.h"
 
 /* Constructs a POETS Thread. Arguments:
-   - name: Name of this thread object (see namebase)
-*/
+ *
+ * - name: Name of this thread object (see namebase) */
 P_thread::P_thread(std::string name)
 {
     Name(name);
 }
 
 /* Write debug and diagnostic information about the POETS thread, recursively,
-   using dumpchan. Arguments:
-
-   - file: File to dump to.
-*/
+ * using dumpchan. Arguments:
+ *
+ * - file: File to dump to. */
 void P_thread::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
@@ -49,8 +48,8 @@ void P_thread::dump(FILE* file)
 }
 
 /* Hook that a container calls to contain this object. Arguments:
-   - container: Address of the core that contains this thread
-*/
+ *
+ * - container: Address of the core that contains this thread */
 void P_thread::on_being_contained_hook(P_core* container)
 {
     parent = container;

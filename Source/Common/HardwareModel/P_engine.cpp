@@ -1,19 +1,19 @@
 /* Defines POETS Engine behaviour (see the accompanying header for further
-   information). */
+ * information). */
 
 #include "P_engine.h"
 
 /* Constructs a POETS Engine. Arguments:
-   - name: Name of this engine object (see namebase)
-*/
+ *
+ * - name: Name of this engine object (see namebase) */
 P_engine::P_engine(std::string name)
 {
     Name(name);
 
     /* Set up callbacks for the graph container (command pattern). Note that we
-       don't print the boards recursively; boards are printed when the boxes
-       are printed, though we still dump the connectivity information from the
-       graph of boards. */
+     * don't print the boards recursively; boards are printed when the boxes
+     * are printed, though we still dump the connectivity information from the
+     * graph of boards. */
     struct GraphCallbacks {
         CALLBACK node_key(AddressComponent const& key){printf("%u", key);}
         CALLBACK node(P_board* const& board)
@@ -30,38 +30,34 @@ P_engine::P_engine(std::string name)
     G.SetAD_CB(GraphCallbacks::arc);
 
     /* Set up default metadata information. If these are unchanged, the engine
-       will not print them when dump is called (strings are initialised
-       empty). */
+     * will not print them when dump is called (strings are initialised
+     * empty). */
     datetime = 0;
 }
 
 P_engine::~P_engine(){clear();}
 
 /* Clears the dynamically-allocated elements of the data structure of this
-   engine, deleting all contained components recursively.
-*/
+ * engine, deleting all contained components recursively. */
 void P_engine::clear()
 {
     /* Clear all boxes that this engine knows about. This should clear
        recursively. Since the engine cannot contain boards that are not
        contained by its boxes, the graph of boards does not need to be
        cleared in this way. */
-    WALKMAP(AddressComponent,P_box*,P_boxm,iterator)
-    {
-        delete iterator->second;
-    }
+    WALKMAP(AddressComponent,P_box*,P_boxm,iterator){delete iterator->second;}
     P_boxm.clear();
 
     /* But we do want to clear the graph object itself, even though the boards
-       inside it have been freed by this point. */
+     * inside it have been freed by this point. */
     G.Clear();
 }
 
 /* Donates an uncontained box to this engine. Arguments:
-
-   - addressComponent: Used to index the box in this engine.
-   - box: Pointer to the box object to contain. Must not already have a parent.
-*/
+ *
+ * - addressComponent: Used to index the box in this engine.
+ * - box: Pointer to the box object to contain. Must not already have a
+ *        parent. */
 void P_engine::contain(AddressComponent addressComponent, P_box* box)
 {
     /* Verify that the box is unowned. */
@@ -94,16 +90,15 @@ void P_engine::contain(AddressComponent addressComponent, P_box* box)
 }
 
 /* Donates a board to this engine. The board must be contained by a box, which
-   is in turn contained by this engine. Arguments:
-
-   - addressComponent: Used to index the box in this engine.
-   - board: Pointer to the board object to contain.
-*/
+ * is in turn contained by this engine. Arguments:
+ *
+ * - addressComponent: Used to index the box in this engine.
+ * - board: Pointer to the board object to contain. */
 void P_engine::contain(AddressComponent addressComponent, P_board* board)
 {
     /* Verify that the board is owned by a box, which is owned by this
-       engine. The predicates evaluated in order to prevent segfaulting. NULL
-       has no parent, but all boxes define a parent. */
+     * engine. The predicates evaluated in order to prevent segfaulting. NULL
+     * has no parent, but all boxes define a parent. */
     bool raisingOnUnownedBoard = false;
     if (board->parent == NULL) raisingOnUnownedBoard = true;
     else if (board->parent->parent != this) raisingOnUnownedBoard = true;
@@ -130,14 +125,13 @@ void P_engine::contain(AddressComponent addressComponent, P_board* board)
 }
 
 /* Connects two boards together that are owned by boxes that this engine
-   owns. Arguments:
-
-   - start, end: Pointers to two board objects to connect. Must be owned by
-     boxes that this engine owns.
-   - weight: Edge weight for the connection.
-   - oneWay: If false, the connection is bidirectional, otherwise is
-     unidirectional, from start to end.
-*/
+ * owns. Arguments:
+ *
+ * - start, end: Pointers to two board objects to connect. Must be owned by
+ *   boxes that this engine owns.
+ * - weight: Edge weight for the connection.
+ * - oneWay: If false, the connection is bidirectional, otherwise is
+ *   unidirectional, from start to end. */
 void P_engine::connect(AddressComponent start, AddressComponent end,
                           float weight, bool oneWay)
 {
@@ -149,10 +143,9 @@ void P_engine::connect(AddressComponent start, AddressComponent end,
 }
 
 /* Write debug and diagnostic information about the POETS engine, recursively,
-   using dumpchan. Arguments:
-
-   - file: File to dump to.
-*/
+ * using dumpchan. Arguments:
+ *
+ * - file: File to dump to. */
 void P_engine::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
@@ -226,9 +219,9 @@ void P_engine::dump(FILE* file)
 }
 
 /* Defines whether or not the engine is empty.
-
-   An engine is empty if it contains no boxes. Engines cannot contain boards
-   without first containing boxes, and since the only way to remove boxes and
-   boards from an engine is by clearing it completely, checking for boxes alone
-   is enough. */
+ *
+ * An engine is empty if it contains no boxes. Engines cannot contain boards
+ * without first containing boxes, and since the only way to remove boxes and
+ * boards from an engine is by clearing it completely, checking for boxes alone
+ * is enough. */
 bool P_engine::is_empty(){return P_boxm.empty();}

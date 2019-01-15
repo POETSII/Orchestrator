@@ -1,5 +1,5 @@
 /* Defines the behaviour of items in the POETS hardware stack that can be
-   addressed (see the accompanying header for more information). */
+ * addressed (see the accompanying header for more information). */
 
 #include "AddressableItem.h"
 
@@ -15,17 +15,15 @@ AddressableItem::~AddressableItem()
 }
 
 /* Hardware address getter and setter, maintains the isAddressBound record. Any
-   address passed to this setter will be deleted when this AddressableItem
-   object is destroyed, so allocate this dynamically, e.g.
-
-       ...
-       AddressableItem duck;
-       HardwareAddress* address;
-       address = new HardwareAddress(...);
-       AddressableItem.set_hardware_address(address)
-       ...
-*/
-
+ * address passed to this setter will be deleted when this AddressableItem
+ * object is destroyed, so allocate this dynamically, e.g.
+ *
+ *     ...
+ *     AddressableItem duck;
+ *     HardwareAddress* address;
+ *     address = new HardwareAddress(...);
+ *     AddressableItem.set_hardware_address(address)
+ *     ... */
 HardwareAddress* AddressableItem::get_hardware_address()
 {
     return hardwareAddress;

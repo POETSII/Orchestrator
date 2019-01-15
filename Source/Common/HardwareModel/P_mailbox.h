@@ -2,13 +2,13 @@
 #define __ORCHESTRATOR_SOURCE_COMMON_HARDWAREMODEL_POETSMAILBOX_H
 
 /* Describes the concept of a "POETS Mailbox" in the model of the POETS
-   hardware stack.
-
-   The POETS Mailbox services cores, and is contained by an FPGA board on the
-   next level of the hierarchy.
-
-   See the hardware model documentation for further information POETS
-   mailboxes. */
+ * hardware stack.
+ *
+ * The POETS Mailbox services cores, and is contained by an FPGA board on the
+ * next level of the hierarchy.
+ *
+ * See the hardware model documentation for further information POETS
+ * mailboxes. */
 
 #include <sstream>
 
@@ -35,7 +35,7 @@ public:
     void clear();
 
     /* Mailboxes live in boards; this is the board that this mailbox lives
-       in. */
+     * in. */
     P_board* parent = NULL;
     void on_being_contained_hook(P_board* container);
 

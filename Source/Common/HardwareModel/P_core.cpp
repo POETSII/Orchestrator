@@ -1,11 +1,11 @@
 /* Defines POETS Core behaviour (see the accompanying header for further
-   information). */
+ * information). */
 
 #include "P_core.h"
 
 /* Constructs a POETS Core. Arguments:
-   - name: Name of this core object (see namebase)
-*/
+ *
+ * - name: Name of this core object (see namebase) */
 P_core::P_core(std::string name)
 {
     Name(name);
@@ -16,12 +16,11 @@ P_core::P_core(std::string name)
 P_core::~P_core(){clear();}
 
 /* Clears the dynamically-allocated elements of the data structure of this
-   core, deleting all contained components recursively.
-*/
+ * core, deleting all contained components recursively. */
 void P_core::clear()
 {
     /* Clear all threads that this core knows about. This should clear
-       recursively. */
+     * recursively. */
     WALKMAP(AddressComponent,P_thread*,P_threadm,iterator)
     {
         delete iterator->second;
@@ -34,11 +33,10 @@ void P_core::clear()
 }
 
 /* Donates an uncontained thread to this core. Arguments:
-
-   - addressComponent: Used to index the thread in this core.
-   - thread: Pointer to the thread object to contain. Must not already have a
-     parent.
-*/
+ *
+ * - addressComponent: Used to index the thread in this core.
+ * - thread: Pointer to the thread object to contain. Must not already have a
+ *   parent. */
 void P_core::contain(AddressComponent addressComponent, P_thread* thread)
 {
     /* Verify that the thread is unowned. */
@@ -71,10 +69,9 @@ void P_core::contain(AddressComponent addressComponent, P_thread* thread)
 }
 
 /* Write debug and diagnostic information about the POETS core, recursively,
-   using dumpchan. Arguments:
-
-   - file: File to dump to.
-*/
+ * using dumpchan. Arguments:
+ *
+ * - file: File to dump to. */
 void P_core::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
@@ -137,8 +134,8 @@ void P_core::dump(FILE* file)
 }
 
 /* Hook that a container calls to contain this object. Arguments:
-   - container: Address of the mailbox that contains this core.
-*/
+ *
+ * - container: Address of the mailbox that contains this core. */
 void P_core::on_being_contained_hook(P_mailbox* container)
 {
     parent = container;

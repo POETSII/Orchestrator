@@ -5,14 +5,14 @@
 AesopDeployer::AesopDeployer()
 {
     /* Properties defined in order in Dialect1Deployer.h (good luck maintaining
-       that...). Costs are all zero and data memory is zero, because these are
-       not known. */
+     * that...). Costs are all zero and data memory is zero, because these are
+     * not known. */
 
     author = "Mark Vousden";
     datetime = 201901101712;
     version = "0.3.1";
     fileOrigin = "AesopDeployer.cpp";  /* This is not how this is supposed to
-                                          be used! */
+                                        * be used! */
 
     boxWordLength = 0;  /* There's only one box! */
     boardWordLengths.clear();
