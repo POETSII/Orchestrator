@@ -28,7 +28,11 @@ P_board::P_board(std::string name)
     G.SetAD_CB(GraphCallbacks::arc);
 }
 
-P_board::~P_board(){clear();}
+P_board::~P_board()
+{
+    clear();
+    sup_offv.clear();
+}
 
 /* Clears the dynamically-allocated elements of the data structure of this
    board, deleting all contained components recursively.
