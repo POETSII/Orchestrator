@@ -8,7 +8,7 @@
 //==============================================================================
 
 P_device::P_device(D_graph * G, string name):
-          par(G),pPoetsThread(0),pP_devtyp(0),pPropsI(0),pStateI(0)
+          par(G),pP_thread(0),pP_devtyp(0),pPropsI(0),pStateI(0)
 {
 Name(name);
 Npar(G);
@@ -37,8 +37,8 @@ fprintf(fp,"State initialiser         %#08p\n",pStateI);
 if (pStateI!=0) pStateI->Dump(fp);
 fprintf(fp,"Device type               %#08p\n",pP_devtyp);
 if (pP_devtyp!=0) fprintf(fp,"...%s\n",pP_devtyp->FullName().c_str());
-fprintf(fp,"Thread cross-link         %#08p\n",pPoetsThread);
-if (pPoetsThread!=0) fprintf(fp,"...%s\n",pP_thread->FullName().c_str());
+fprintf(fp,"Thread cross-link         %#08p\n",pP_thread);
+if (pP_thread!=0) fprintf(fp,"...%s\n",pP_thread->FullName().c_str());
 fprintf(fp,"Attribute word   %u(0x%08x)\n",attr,attr);
 NameBase::Dump(fp);
 DumpChan::Dump(fp);
@@ -110,13 +110,10 @@ void P_device::Unlink()
 // Unlink this device from the topology database
 {
                                        // Thread list
-list<P_device *> * pL = &(pPoetsThread->P_devicel);
+list<P_device *> * pL = &(pP_thread->PoetsDevices);
                                        // Zero the topology->task link
 WALKLIST(P_device *,(*pL),i) if ((*i)==this) (*i)=0;
-pPoetsThread = 0;                         // Disconnect device from thread
+pP_thread = 0;                         // Disconnect device from thread
 }
 
 //==============================================================================
-
-
-

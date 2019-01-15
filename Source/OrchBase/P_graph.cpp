@@ -1,6 +1,6 @@
 //------------------------------------------------------------------------------
 
-#include "PoetsEngine.h"
+#include "P_graph.h"
 #include "Pglobals.h"
 #include "Cli.h"
 #include "OrchBase.h"
@@ -9,7 +9,7 @@
 
 //==============================================================================
 
-PoetsEngine::P_graph(OrchBase * _p,string _s):par(_p)
+P_graph::P_graph(OrchBase * _p,string _s):par(_p)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
@@ -27,7 +27,7 @@ G.SetAK_CB(P_link::LnkKey_cb);
 
 //------------------------------------------------------------------------------
 
-PoetsEngine::~P_graph()
+P_graph::~P_graph()
 {
 Clear();
 WALKLIST(Config_t *,pConfigl,i) delete *i;
@@ -36,7 +36,7 @@ WALKLIST(Config_t *,pConfigl,i) delete *i;
 
 //------------------------------------------------------------------------------
 
-void PoetsEngine::Clear()
+void P_graph::Clear()
 // Remove all the data - dynamic and topological - from the hardware graph
 {
 par->UnlinkAll();                      // Disconnect any/all tasks
@@ -53,16 +53,16 @@ G.Clear();                             // Destroy the topology itself
 
 //------------------------------------------------------------------------------
 
-void PoetsEngine::Cm(Cli *)
+void P_graph::Cm(Cli *)
 {
 }
 
 //------------------------------------------------------------------------------
 
-void PoetsEngine::Dump(FILE * fp)
+void P_graph::Dump(FILE * fp)
 {
 string s = FullName();
-fprintf(fp,"PoetsEngine dump %35s++++++++++++++++++++++++++++++++\n",s.c_str());
+fprintf(fp,"P_graph dump %35s++++++++++++++++++++++++++++++++\n",s.c_str());
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
 fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
@@ -90,20 +90,20 @@ WALKPDIGRAPHARCS(unsigned,PoetsBox *,unsigned,P_link *,unsigned,P_port *,G,i)
   }
 fprintf(fp,"BOX GRAPH ARCS (P_link) %35s---------------------\n",s.c_str());
 NameBase::Dump(fp);
-fprintf(fp,"PoetsEngine dump %35s--------------------------------\n",s.c_str());
+fprintf(fp,"P_graph dump %35s--------------------------------\n",s.c_str());
 fflush(fp);
 }
 
 //------------------------------------------------------------------------------
 
-bool PoetsEngine::IsEmpty()
+bool P_graph::IsEmpty()
 {
 return G.SizeNodes()==0 ? true : false;
 }
 
 //------------------------------------------------------------------------------
 
-void PoetsEngine::SetN(unsigned numBoxes, bool vSys)
+void P_graph::SetN(unsigned numBoxes, bool vSys)
 // Reset the topology graph, and recreate it with exactly and only one node
 // (box)
 {
@@ -128,6 +128,3 @@ par->pPlace->Init();                   // Initialise the placement system
 //------------------------------------------------------------------------------
 
 //==============================================================================
-
-
-
