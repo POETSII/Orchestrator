@@ -17,7 +17,9 @@
 #include "NameBase.h"
 #include "OwnershipException.h"
 #include "P_box.h"
+#include "P_link.h"
 #include "P_mailbox.h"
+#include "P_port.h"
 #include "pdigraph.hpp"
 
 #define MAXIMUM_BREAKER_LENGTH 80
@@ -47,8 +49,8 @@ public:
     /* Boards contain mailboxes as a graph, mapped by their hardware address
      * components. */
     pdigraph<AddressComponent, P_mailbox*,
-        unsigned int, float,
-        unsigned int, unsigned int> G;
+             unsigned, P_link*,
+             unsigned, P_port*> G;
     void contain(AddressComponent addressComponent, P_mailbox* mailbox);
     void connect(AddressComponent start, AddressComponent end, float weight,
                  bool oneWay=false);

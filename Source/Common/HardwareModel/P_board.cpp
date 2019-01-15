@@ -19,7 +19,7 @@ P_board::P_board(std::string name)
             printf("%s", mailbox->FullName().c_str());
         }
         CALLBACK arc_key(unsigned int const& key){printf("%u", key);}
-        CALLBACK arc(float const& weight){printf("%f", weight);}
+        CALLBACK arc(P_link* const& link){printf("%f", link->weight);}
     };
 
     G.SetNK_CB(GraphCallbacks::node_key);
@@ -40,15 +40,36 @@ void P_board::clear()
 {
     /* Clear all mailboxes that this board knows about. This in turn will clear
      * structures lower in the hierarchy recursively. */
+    AddressComponent nodeKey;
     WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
-                      unsigned int, float,
-                      unsigned int, unsigned int,
+                      unsigned, P_link*,
+                      unsigned, P_port*,
                       G, iterator)
     {
         if (iterator != G.NodeEnd())
         {
             delete G.NodeData(iterator);
+
+            /* Also clear the ports of the graph while we're here. */
+            nodeKey = G.NodeKey(iterator);
+            WALKPDIGRAPHINPINS(AddressComponent, P_mailbox*,
+                               unsigned, P_link*,
+                               unsigned, P_port*,
+                               G, nodeKey, pinIterator)
+            {
+                delete G.PinData(pinIterator);
+            }
+
+            WALKPDIGRAPHOUTPINS(AddressComponent, P_mailbox*,
+                                unsigned, P_link*,
+                                unsigned, P_port*,
+                                G, nodeKey, pinIterator)
+            {
+                delete G.PinData(pinIterator);
+            }
         }
+
+
     }
 
     /* Clear the graph object itself. */
@@ -103,10 +124,16 @@ void P_board::contain(AddressComponent addressComponent, P_mailbox* mailbox)
 void P_board::connect(AddressComponent start, AddressComponent end,
                       float weight, bool oneWay)
 {
-    G.InsertArc(arcKey++, start, end, weight);
+    P_link* startToEndLink = new P_link();
+    startToEndLink->AutoName();
+    startToEndLink->weight = weight;
+    G.InsertArc(arcKey++, start, end, startToEndLink);
     if (!oneWay)
     {
-        G.InsertArc(arcKey++, end, start, weight);
+        P_link* endToStartLink = new P_link();
+        endToStartLink->AutoName();
+        endToStartLink->weight = weight;
+        G.InsertArc(arcKey++, end, start, endToStartLink);
     }
 }
 

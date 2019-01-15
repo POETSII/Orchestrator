@@ -87,8 +87,8 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
     {
         std::set<P_board*> uniqueBoards;
         WALKPDIGRAPHNODES(AddressComponent, P_board*,
-                          unsigned int, float,
-                          unsigned int, unsigned int,
+                          unsigned, P_link*,
+                          unsigned, P_port*,
                           engine.G, boardIterator)
         {
             uniqueBoards.insert(boardIterator->second.data);
@@ -117,8 +117,8 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
     SECTION("Check each board contains the correct number of mailboxes", "[Aesop]")
     {
         WALKPDIGRAPHNODES(AddressComponent, P_board*,
-                          unsigned int, float,
-                          unsigned int, unsigned int,
+                          unsigned, P_link*,
+                          unsigned, P_port*,
                           engine.G, boardIterator)
         {
             REQUIRE(boardIterator->second.data->G.SizeNodes() ==
@@ -129,8 +129,8 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
     SECTION("Check each board has correct static properties", "[Aesop]")
     {
         WALKPDIGRAPHNODES(AddressComponent, P_board*,
-                          unsigned int, float,
-                          unsigned int, unsigned int,
+                          unsigned, P_link*,
+                          unsigned, P_port*,
                           engine.G, boardIterator)
         {
             REQUIRE(boardIterator->second.data->dram == deployer.dram);
@@ -149,14 +149,14 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
 
     /* For each board... */
     WALKPDIGRAPHNODES(AddressComponent, P_board*,
-                      unsigned int, float,
-                      unsigned int, unsigned int,
+                      unsigned, P_link*,
+                      unsigned, P_port*,
                       engine.G, boardIterator)
     {
         /* For each mailbox in that board... */
         WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
-                          unsigned int, float,
-                          unsigned int, unsigned int,
+                          unsigned, P_link*,
+                          unsigned, P_port*,
                           boardIterator->second.data->G,
                           mailboxIterator)
         {

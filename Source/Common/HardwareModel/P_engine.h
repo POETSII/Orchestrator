@@ -19,6 +19,8 @@
 #include "OwnershipException.h"
 #include "P_box.h"
 #include "P_board.h"
+#include "P_link.h"
+#include "P_port.h"
 #include "pdigraph.hpp"
 
 #define MAXIMUM_BREAKER_LENGTH 80
@@ -53,8 +55,8 @@ public:
     /* Engines also contain a graph of boards, again mapped by their hardware
      * components. */
     pdigraph<AddressComponent, P_board*,
-        unsigned int, float,
-        unsigned int, unsigned int> G;
+             unsigned, P_link*,
+             unsigned, P_port*> G;
     void contain(AddressComponent addressComponent, P_board* board);
     void connect(AddressComponent start, AddressComponent end, float weight,
                  bool oneWay=false);

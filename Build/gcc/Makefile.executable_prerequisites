@@ -38,6 +38,8 @@ HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp 
                          $(SOURCE_DIR)/Common/HardwareModel/P_mailbox.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_core.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_thread.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_link.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_port.cpp \
                          $(SOURCE_DIR)/Common/NameBase.cpp \
                          $(SOURCE_DIR)/OrchBase/Bin.cpp \
                          $(GENERICS_DIR)/dumpchan.cpp \

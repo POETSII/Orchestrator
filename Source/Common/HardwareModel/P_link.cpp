@@ -4,6 +4,10 @@
 
 //==============================================================================
 
+P_link::P_link(){}
+
+//==============================================================================
+
 P_link::P_link(string _s)
 {
 Name(_s);                              // Save name
@@ -34,7 +38,7 @@ fflush(fp);
 void P_link::LnkDat_cb(P_link * const & p)
 // Debug callback for arc data
 {
-if (p!=0) fprintf(dfp,"lnk(D): %s",p->Name().c_str());
+if (p!=0) fprintf(dfp,"lnk(D): %s",p->weight);
 else fprintf(dfp,"lnk(D): ***");
 fflush(dfp);
 }
@@ -49,6 +53,3 @@ fflush(dfp);
 }
 
 //==============================================================================
-
-
-

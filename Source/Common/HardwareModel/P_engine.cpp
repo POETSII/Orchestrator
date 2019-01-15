@@ -21,7 +21,7 @@ P_engine::P_engine(std::string name)
             printf("%s", board->FullName().c_str());
         }
         CALLBACK arc_key(unsigned int const& key){printf("%u", key);}
-        CALLBACK arc(float const& weight){printf("%f", weight);}
+        CALLBACK arc(P_link* const& link){printf("%f", link->weight);}
     };
 
     G.SetNK_CB(GraphCallbacks::node_key);
@@ -45,8 +45,41 @@ void P_engine::clear()
        recursively. Since the engine cannot contain boards that are not
        contained by its boxes, the graph of boards does not need to be
        cleared in this way. */
-    WALKMAP(AddressComponent,P_box*,P_boxm,iterator){delete iterator->second;}
+    WALKMAP(AddressComponent, P_box*, P_boxm, iterator)
+    {
+        delete iterator->second;
+    }
     P_boxm.clear();
+
+    /* Clear the links of the graph object. */
+    WALKPDIGRAPHARCS(AddressComponent,P_board*,
+                     unsigned,P_link*,
+                     unsigned,P_port*,G,arcIterator)
+    {
+        delete G.ArcData(arcIterator);
+    }
+
+    /* Clear the ports of the graph object (by iterating through the nodes). */
+    AddressComponent nodeKey;
+    WALKPDIGRAPHNODES(AddressComponent, P_board*,
+                      unsigned, P_link*,
+                      unsigned, P_port*, G, nodeIterator)
+    {
+        nodeKey = G.NodeKey(nodeIterator);
+        WALKPDIGRAPHINPINS(AddressComponent, P_board*,
+                           unsigned, P_link*,
+                           unsigned, P_port*, G, nodeKey, pinIterator)
+        {
+            delete G.PinData(pinIterator);
+        }
+
+        WALKPDIGRAPHOUTPINS(AddressComponent, P_board*,
+                            unsigned, P_link*,
+                            unsigned, P_port*, G, nodeKey, pinIterator)
+        {
+            delete G.PinData(pinIterator);
+        }
+    }
 
     /* But we do want to clear the graph object itself, even though the boards
      * inside it have been freed by this point. */
@@ -133,12 +166,18 @@ void P_engine::contain(AddressComponent addressComponent, P_board* board)
  * - oneWay: If false, the connection is bidirectional, otherwise is
  *   unidirectional, from start to end. */
 void P_engine::connect(AddressComponent start, AddressComponent end,
-                          float weight, bool oneWay)
+                       float weight, bool oneWay)
 {
-    G.InsertArc(arcKey++, start, end, weight);
+    P_link* startToEndLink = new P_link();
+    startToEndLink->AutoName();
+    startToEndLink->weight = weight;
+    G.InsertArc(arcKey++, start, end, startToEndLink);
     if (!oneWay)
     {
-        G.InsertArc(arcKey++, end, start, weight);
+        P_link* endToStartLink = new P_link();
+        endToStartLink->AutoName();
+        endToStartLink->weight = weight;
+        G.InsertArc(arcKey++, end, start, endToStartLink);
     }
 }
 
