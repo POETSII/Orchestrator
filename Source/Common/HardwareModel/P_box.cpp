@@ -20,11 +20,11 @@ void P_box::clear()
 {
     /* Clear all boards that this box knows about. This should clear
        recursively. */
-    WALKMAP(AddressComponent,P_board*,P_boards,iterator)
+    WALKVECTOR(P_board*,P_boardv,iterator)
     {
-        delete iterator->second;
+        delete *iterator;
     }
-    P_boards.clear();
+    P_boardv.clear();
 }
 
 /* Donates an uncontained board to this box. Arguments:
@@ -61,7 +61,7 @@ void P_box::contain(AddressComponent addressComponent, P_board* board)
         throw OwnershipException(errorMessage.str());
     }
 
-    P_boards[addressComponent] = board;
+    P_boardv.push_back(board);
 }
 
 /* Write debug and diagnostic information about the POETS box, recursively,
@@ -85,16 +85,15 @@ void P_box::dump(FILE* file)
 
     /* About contained items, if any. */
     fprintf(file, "Boards in this box %s\n", std::string(60, '+').c_str());
-    if (P_boards.empty())
-        fprintf(file, "The board map is empty.\n");
+    if (P_boardv.empty())
+        fprintf(file, "The board vector is empty.\n");
     else
     {
-        WALKMAP(AddressComponent,P_board*,P_boards,iterator)
+        WALKVECTOR(P_board*,P_boardv,iterator)
         {
-            P_board* iterBoard = iterator->second;
+            P_board* iterBoard = *iterator;
             /* Print information from the map. */
-            fprintf(file, "%u: %s (%p)\n",
-                    iterator->first,
+            fprintf(file, "%s (%p)\n",
                     iterBoard->FullName().c_str(), iterBoard);
             /* Recursive-dump. */
             iterBoard->dump();

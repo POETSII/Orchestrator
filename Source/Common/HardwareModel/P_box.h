@@ -37,9 +37,9 @@ public:
     P_engine* parent = NULL;
     void on_being_contained_hook(P_engine* container);
 
-    /* Boxes contain boards, mapped by their hardware address components. Note
-       that engines also contain a graph of boards. */
-    std::map<AddressComponent, P_board*> P_boards;
+    /* Boxes contain boards. Note that engines also contain a graph of
+       boards. */
+    std::vector<P_board*> P_boardv;
     void contain(AddressComponent addressComponent, P_board* board);
 
     unsigned int supervisorMemory;

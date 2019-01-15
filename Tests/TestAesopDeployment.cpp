@@ -103,7 +103,7 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         for (boxIterator=engine.P_boxm.begin();
              boxIterator!=engine.P_boxm.end(); boxIterator++)
         {
-            REQUIRE(boxIterator->second->P_boards.size() == boardsPerBox);
+            REQUIRE(boxIterator->second->P_boardv.size() == boardsPerBox);
         }
     }
 
