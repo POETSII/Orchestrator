@@ -16,32 +16,32 @@
 #include "dumpchan.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
-#include "PoetsBoard.h"
-#include "PoetsCore.h"
+#include "P_board.h"
+#include "P_core.h"
 
 #define MAXIMUM_BREAKER_LENGTH 80
 
 /* Facilitate out-of-order includes. */
-struct PoetsBoard;
-struct PoetsCore;
+struct P_board;
+struct P_core;
 
-class PoetsMailbox: public AddressableItem, public NameBase, protected DumpChan
+class P_mailbox: public AddressableItem, public NameBase, protected DumpChan
 {
 public:
-    PoetsMailbox(std::string name);
+    P_mailbox(std::string name);
 
     /* Destruction */
-    ~PoetsMailbox();
+    ~P_mailbox();
     void clear();
 
     /* Mailboxes live in boards; this is the board that this mailbox lives
        in. */
-    PoetsBoard* parent = NULL;
-    void on_being_contained_hook(PoetsBoard* container);
+    P_board* parent = NULL;
+    void on_being_contained_hook(P_board* container);
 
     /* Mailboxes contain cores, mapped by their hardware address components. */
-    std::map<AddressComponent, PoetsCore*> PoetsCores;
-    void contain(AddressComponent addressComponent, PoetsCore* core);
+    std::map<AddressComponent, P_core*> P_corem;
+    void contain(AddressComponent addressComponent, P_core* core);
 
     float costCoreCore;
     float costMailboxCore;

@@ -1,12 +1,12 @@
 /* Defines POETS Board behaviour (see the accompanying header for further
    information). */
 
-#include "PoetsBoard.h"
+#include "P_board.h"
 
 /* Constructs a POETS Board. Arguments:
    - name: Name of this board object (see namebase)
 */
-PoetsBoard::PoetsBoard(std::string name)
+P_board::P_board(std::string name)
 {
     arcKey = 0;
     Name(name);
@@ -14,7 +14,7 @@ PoetsBoard::PoetsBoard(std::string name)
     /* Set up callbacks for the graph container (command pattern). */
     struct GraphCallbacks {
         CALLBACK node_key(AddressComponent const& key){printf("%u", key);}
-        CALLBACK node(PoetsMailbox* const& mailbox)
+        CALLBACK node(P_mailbox* const& mailbox)
         {
             printf("%s", mailbox->FullName().c_str());
         }
@@ -22,34 +22,34 @@ PoetsBoard::PoetsBoard(std::string name)
         CALLBACK arc(float const& weight){printf("%f", weight);}
     };
 
-    PoetsMailboxes.SetNK_CB(GraphCallbacks::node_key);
-    PoetsMailboxes.SetND_CB(GraphCallbacks::node);
-    PoetsMailboxes.SetAK_CB(GraphCallbacks::arc_key);
-    PoetsMailboxes.SetAD_CB(GraphCallbacks::arc);
+    G.SetNK_CB(GraphCallbacks::node_key);
+    G.SetND_CB(GraphCallbacks::node);
+    G.SetAK_CB(GraphCallbacks::arc_key);
+    G.SetAD_CB(GraphCallbacks::arc);
 }
 
-PoetsBoard::~PoetsBoard(){clear();}
+P_board::~P_board(){clear();}
 
 /* Clears the dynamically-allocated elements of the data structure of this
    board, deleting all contained components recursively.
 */
-void PoetsBoard::clear()
+void P_board::clear()
 {
     /* Clear all mailboxes that this board knows about. This in turn will clear
        structures lower in the hierarchy recursively. */
-    WALKPDIGRAPHNODES(AddressComponent, PoetsMailbox*,
+    WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
                       unsigned int, float,
                       unsigned int, unsigned int,
-                      PoetsMailboxes, iterator)
+                      G, iterator)
     {
-        if (iterator != PoetsMailboxes.NodeEnd())
+        if (iterator != G.NodeEnd())
         {
-            delete PoetsMailboxes.NodeData(iterator);
+            delete G.NodeData(iterator);
         }
     }
 
     /* Clear the graph object itself. */
-    PoetsMailboxes.Clear();
+    G.Clear();
 }
 
 /* Donates an uncontained mailbox to this board. Arguments:
@@ -58,8 +58,8 @@ void PoetsBoard::clear()
    - mailbox: Pointer to the mailbox object to contain. Must not already have a
      parent.
 */
-void PoetsBoard::contain(AddressComponent addressComponent,
-                         PoetsMailbox* mailbox)
+void P_board::contain(AddressComponent addressComponent,
+                         P_mailbox* mailbox)
 {
     /* Verify that the mailbox is unowned. */
     if (mailbox->parent != NULL)
@@ -89,7 +89,7 @@ void PoetsBoard::contain(AddressComponent addressComponent,
 
     /* We don't care about the result of inserting the mailbox into this graph,
        because we've checked the item is not owned before adding it. */
-    PoetsMailboxes.InsertNode(addressComponent, mailbox);
+    G.InsertNode(addressComponent, mailbox);
 }
 
 /* Connects two mailboxes together that are owned by this board. Arguments:
@@ -100,13 +100,13 @@ void PoetsBoard::contain(AddressComponent addressComponent,
    - oneWay: If false, the connection is bidirectional, otherwise is
      unidirectional, from start to end.
 */
-void PoetsBoard::connect(AddressComponent start, AddressComponent end,
+void P_board::connect(AddressComponent start, AddressComponent end,
                          float weight, bool oneWay)
 {
-    PoetsMailboxes.InsertArc(arcKey++, start, end, weight);
+    G.InsertArc(arcKey++, start, end, weight);
     if (!oneWay)
     {
-        PoetsMailboxes.InsertArc(arcKey++, end, start, weight);
+        G.InsertArc(arcKey++, end, start, weight);
     }
 }
 
@@ -115,13 +115,13 @@ void PoetsBoard::connect(AddressComponent start, AddressComponent end,
 
    - file: File to dump to.
 */
-void PoetsBoard::dump(FILE* file)
+void P_board::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
 
     /* About this object and its parent, if any. */
     char breaker[MAXIMUM_BREAKER_LENGTH + 1];
-    int breakerLength = sprintf(breaker, "PoetsBoard %s ", fullName.c_str());
+    int breakerLength = sprintf(breaker, "P_board %s ", fullName.c_str());
     for(int index=breakerLength; index<MAXIMUM_BREAKER_LENGTH - 1;
         breaker[index++]='+');
     breaker[MAXIMUM_BREAKER_LENGTH - 1] = '\n';
@@ -132,18 +132,18 @@ void PoetsBoard::dump(FILE* file)
     /* About the mailbox graph. */
     fprintf(file, "Mailbox connectivity in this board %s\n",
             std::string(44, '+').c_str());
-    if (PoetsMailboxes.SizeNodes() == 0)
+    if (G.SizeNodes() == 0)
         fprintf(file, "The mailbox graph is empty.\n");
     else
     {
         /* Dump graph (which does not dump items). */
-        PoetsMailboxes.Dump();
+        G.Dump();
     }
     fprintf(file, "Mailbox connectivity in this board %s\n",
             std::string(44, '-').c_str());
 
     /* About contained items, if any. */
-    if (PoetsMailboxes.SizeNodes() > 0)
+    if (G.SizeNodes() > 0)
     {
         fprintf(file, "Mailboxes in this board %s\n",
                 std::string(55, '+').c_str());
@@ -151,14 +151,14 @@ void PoetsBoard::dump(FILE* file)
         /* Set up callbacks for walking through the mailbox nodes. */
         struct WalkCallbacks {
             CALLBACK node(void*, AddressComponent const&,
-                          PoetsMailbox* &mailbox)
+                          P_mailbox* &mailbox)
             {
                 mailbox->dump();
             }
         };
 
         /* Dump mailboxes in the graph recursively. */
-        PoetsMailboxes.WALKNODES(NULL, WalkCallbacks::node);
+        G.WALKNODES(NULL, WalkCallbacks::node);
 
         fprintf(file, "Mailboxes in this board %s\n",
                 std::string(55, '-').c_str());
@@ -174,7 +174,7 @@ void PoetsBoard::dump(FILE* file)
 /* Hook that a container calls to contain this object. Arguments:
    - container: Address of the box that contains this board.
 */
-void PoetsBoard::on_being_contained_hook(PoetsBox* container)
+void P_board::on_being_contained_hook(P_box* container)
 {
     parent = container;
     Npar(container);

@@ -16,29 +16,29 @@
 #include "dumpchan.h"
 #include "macros.h"
 #include "NameBase.h"
-#include "PoetsCore.h"
-#include "PoetsDevice.h"
+#include "P_core.h"
+#include "P_device.h"
 
 #define MAXIMUM_BREAKER_LENGTH 80
 
 /* Facilitate out-of-order includes. */
-struct PoetsCore;
+struct P_core;
 
-class PoetsThread: public AddressableItem, public NameBase, protected DumpChan
+class P_thread: public AddressableItem, public NameBase, protected DumpChan
 {
 public:
-    PoetsThread(std::string name);
+    P_thread(std::string name);
 
     /* Threads live in cores; this is the core that this thread lives in, if
        any. */
-    PoetsCore* parent = NULL;
-    void on_being_contained_hook(PoetsCore* container);
+    P_core* parent = NULL;
+    void on_being_contained_hook(P_core* container);
 
     /* Not part of the hardware, this list acts as an interface between the
        hardware model and the placement implementation; POETS devices (which
        are part of the task graph) get mapped onto threads. Multiple devices
        are services by a single thread. */
-    std::list<PoetsDevice *> PoetsDevicel;
+    std::list<P_device *> P_devicel;
 
     unsigned int dataMemoryAddress;
     unsigned int instructionMemoryAddress;

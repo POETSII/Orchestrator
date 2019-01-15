@@ -32,7 +32,7 @@ Dialect1Deployer::Dialect1Deployer()
 
    See accompanying header for the set of variables that are used during
    deployment. */
-void Dialect1Deployer::deploy(PoetsEngine* engine)
+void Dialect1Deployer::deploy(P_engine* engine)
 {
     /* Assign metadata to the engine. */
     assign_metadata_to_engine(engine);
@@ -51,7 +51,7 @@ void Dialect1Deployer::deploy(PoetsEngine* engine)
     populate_board_map();
 
     /* Divide up the boards between the boxes naively, and assign them. */
-    populate_boxes_evenly_with_boardmap(&(engine->PoetsBoxes));
+    populate_boxes_evenly_with_boardmap(&(engine->P_boxm));
 
     /* Connect the boards in a graph for the engine. */
     connect_boards_from_boardmap_in_engine(engine);
@@ -69,7 +69,7 @@ void Dialect1Deployer::deploy(PoetsEngine* engine)
             boardIterator->second->poetsItem);
 
         /* Clear the mailbox map for the next iteration. NB: Does not free the
-           PoetsMailbox objects themselves, only the itemAndAddress objects. */
+           P_mailbox objects themselves, only the itemAndAddress objects. */
         free_items_in_mailbox_map();
         mailboxMap.clear();
     }
@@ -88,9 +88,9 @@ void Dialect1Deployer::deploy(PoetsEngine* engine)
 
 /* Assigns all metadata defined in this deployer to the engine. Arguments:
 
-    - engine: the PoetsEngine to assign metadata to.
+    - engine: the P_engine to assign metadata to.
 */
-void Dialect1Deployer::assign_metadata_to_engine(PoetsEngine* engine)
+void Dialect1Deployer::assign_metadata_to_engine(P_engine* engine)
 {
     engine->author = author;
     engine->datetime = datetime;
@@ -122,7 +122,7 @@ void Dialect1Deployer::assign_sizes_to_address_format(
     - engine: Engine to populate.
 */
 void Dialect1Deployer::connect_boards_from_boardmap_in_engine(
-    PoetsEngine* engine)
+    P_engine* engine)
 {
     /* The connection behaviour depends on whether or not the hypercube
        argument was specified. If a hypercube, connect them in a hypercube
@@ -264,7 +264,7 @@ void Dialect1Deployer::connect_boards_from_boardmap_in_engine(
     - board: Board to populate.
 */
 void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
-    PoetsBoard* board)
+    P_board* board)
 {
     /* The connection behaviour depends on whether or not the hypercube
        argument was specified. If a hypercube, connect them in a hypercube
@@ -407,7 +407,7 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
 
 /* Creates a series of cores, and donates them to the mailbox passed in as an
    argument. */
-void Dialect1Deployer::create_cores_in_mailbox(PoetsMailbox* mailbox)
+void Dialect1Deployer::create_cores_in_mailbox(P_mailbox* mailbox)
 {
     for(AddressComponent coreIndex = 0; coreIndex<coresInMailbox;
         mailbox->contain(coreIndex++, create_core()));
@@ -415,7 +415,7 @@ void Dialect1Deployer::create_cores_in_mailbox(PoetsMailbox* mailbox)
 
 /* Creates a series of threads, and donates them to the core passed in as an
    argument. */
-void Dialect1Deployer::create_threads_in_core(PoetsCore* core)
+void Dialect1Deployer::create_threads_in_core(P_core* core)
 {
     for(AddressComponent threadIndex = 0; threadIndex<threadsInCore;
         core->contain(threadIndex++, create_thread()));
@@ -456,14 +456,14 @@ AddressComponent Dialect1Deployer::flatten_address(
    Modifies the boxes inplace.
 */
 void Dialect1Deployer::populate_boxes_evenly_with_boardmap(
-    std::map<AddressComponent, PoetsBox*>* boxMap)
+    std::map<AddressComponent, P_box*>* boxMap)
 {
     /* An even distribution (we hope). */
     unsigned boardsPerBox = boardMap.size() / boxMap->size();
 
     /* We iterate through the map of boxes and boards, distributing all boards
        up to a given amount, such that an even distribution is maintained. */
-    std::map<AddressComponent, PoetsBox*>::iterator \
+    std::map<AddressComponent, P_box*>::iterator \
         boxIterator = boxMap->begin();
     BoardMap::iterator boardIterator = boardMap.begin();
     for (boxIterator=boxMap->begin(); boxIterator!=boxMap->end();
@@ -480,19 +480,19 @@ void Dialect1Deployer::populate_boxes_evenly_with_boardmap(
     }
 }
 
-/* Populates a PoetsEngine with boxes, and defines the box-board costs in those
+/* Populates a P_engine with boxes, and defines the box-board costs in those
    boxes. Arguments:
 
-    - engine: PoetsEngine to populate. */
+    - engine: P_engine to populate. */
 void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
-    PoetsEngine* engine)
+    P_engine* engine)
 {
-    PoetsBox* temporaryBox;  /* Staging variable for boxes. */
+    P_box* temporaryBox;  /* Staging variable for boxes. */
 
     for (AddressComponent addressComponent=0; addressComponent < boxesInEngine;
          addressComponent++)
     {
-        temporaryBox = new PoetsBox(dformat("Box%06d", addressComponent));
+        temporaryBox = new P_box(dformat("Box%06d", addressComponent));
         temporaryBox->costBoxBoard = costBoxBoard;
         temporaryBox->supervisorMemory = boxSupervisorMemory;
         engine->contain(addressComponent, temporaryBox);
@@ -500,7 +500,7 @@ void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
 }
 
 /* Populates boardMap with dynamically-allocated itemAndAddress objects,
-   containing dynamically-allocated PoetsBoards. Also defines their addresses,
+   containing dynamically-allocated P_boards. Also defines their addresses,
    and includes that information in the map.
 */
 void Dialect1Deployer::populate_board_map()
@@ -511,7 +511,7 @@ void Dialect1Deployer::populate_board_map()
     MultiAddressComponent boardAddress(boardDimensions, 0);
 
     /* A temporary board-address pair for populating the map. */
-    itemAndAddress<PoetsBoard*>* boardAndAddress;
+    itemAndAddress<P_board*>* boardAndAddress;
 
     /* We loop until we have created all of the boards that we need to. */
     bool looping = true;
@@ -521,7 +521,7 @@ void Dialect1Deployer::populate_board_map()
 
         /* Create and store a board in the map. Assign simple properties to the
          * board while we're here.*/
-        boardAndAddress = new itemAndAddress<PoetsBoard*>;
+        boardAndAddress = new itemAndAddress<P_board*>;
         boardAndAddress->address = flatten_address(boardAddress,
                                                    boardWordLengths);
         boardAndAddress->poetsItem = create_board();
@@ -564,7 +564,7 @@ void Dialect1Deployer::populate_board_map()
 }
 
 /* Populates mailboxMap with dynamically-allocated itemAndAddress objects,
-   containing dynamically-allocated PoetsMailboxes. Also defines their
+   containing dynamically-allocated P_mailboxes. Also defines their
    addresses, and includes that information in the map. Only creates enough
    mailboxes to fit in one board.
 */
@@ -576,7 +576,7 @@ void Dialect1Deployer::populate_mailbox_map()
     MultiAddressComponent mailboxAddress(mailboxDimensions, 0);
 
     /* A temporary mailbox-address pair for populating the map. */
-    itemAndAddress<PoetsMailbox*>* mailboxAndAddress;
+    itemAndAddress<P_mailbox*>* mailboxAndAddress;
 
     /* We loop until we have created all of the mailboxes that we need to. */
     bool looping = true;
@@ -586,7 +586,7 @@ void Dialect1Deployer::populate_mailbox_map()
 
         /* Create and store a mailbox in the map. Assign simple properties to
          * the mailbox while we're here.*/
-        mailboxAndAddress = new itemAndAddress<PoetsMailbox*>;
+        mailboxAndAddress = new itemAndAddress<P_mailbox*>;
         mailboxAndAddress->address = flatten_address(mailboxAddress,
                                                      mailboxWordLengths);
         mailboxAndAddress->poetsItem = create_mailbox();
@@ -620,10 +620,10 @@ void Dialect1Deployer::populate_mailbox_map()
 
 /* Dynamically creates a new POETS board, and populates it with it's common
    parameters. Does not define contained items. */
-PoetsBoard* Dialect1Deployer::create_board()
+P_board* Dialect1Deployer::create_board()
 {
-    PoetsBoard* returnAddress;
-    returnAddress = new PoetsBoard(dformat("Board%06d", createdBoardIndex++));
+    P_board* returnAddress;
+    returnAddress = new P_board(dformat("Board%06d", createdBoardIndex++));
     returnAddress->dram = dram;
     returnAddress->supervisorMemory = boardSupervisorMemory;
     return returnAddress;
@@ -631,10 +631,10 @@ PoetsBoard* Dialect1Deployer::create_board()
 
 /* Dynamically creates a new POETS mailbox, and populates it with it's common
    parameters. Does not define contained items. */
-PoetsMailbox* Dialect1Deployer::create_mailbox()
+P_mailbox* Dialect1Deployer::create_mailbox()
 {
-    PoetsMailbox* returnAddress;
-    returnAddress = new PoetsMailbox(dformat("Mailbox%06d",
+    P_mailbox* returnAddress;
+    returnAddress = new P_mailbox(dformat("Mailbox%06d",
                                              createdMailboxIndex++));
     returnAddress->costCoreCore = costCoreCore;
     returnAddress->costMailboxCore = costMailboxCore;
@@ -646,10 +646,10 @@ PoetsMailbox* Dialect1Deployer::create_mailbox()
 
 /* Dynamically creates a new POETS core, and populates it with it's common
    parameters. Does not define contained items. */
-PoetsCore* Dialect1Deployer::create_core()
+P_core* Dialect1Deployer::create_core()
 {
-    PoetsCore* returnAddress;
-    returnAddress = new PoetsCore(dformat("Core%06d", createdCoreIndex++));
+    P_core* returnAddress;
+    returnAddress = new P_core(dformat("Core%06d", createdCoreIndex++));
     returnAddress->dataMemory = dataMemory;
     returnAddress->instructionMemory = instructionMemory;
     returnAddress->costCoreThread = costCoreThread;
@@ -661,12 +661,12 @@ PoetsCore* Dialect1Deployer::create_core()
 }
 
 /* Dynamically creates a new POETS thread. */
-PoetsThread* Dialect1Deployer::create_thread()
+P_thread* Dialect1Deployer::create_thread()
 {
-    return new PoetsThread(dformat("Thread%06d", createdThreadIndex++));
+    return new P_thread(dformat("Thread%06d", createdThreadIndex++));
 }
 
-/* Frees dyamically-allocated value objects (itemAndAddress<PoetsBoard*>*)
+/* Frees dyamically-allocated value objects (itemAndAddress<P_board*>*)
    objects in the boardMap. */
 void Dialect1Deployer::free_items_in_board_map()
 {
@@ -677,7 +677,7 @@ void Dialect1Deployer::free_items_in_board_map()
     }
 }
 
-/* Frees dyamically-allocated value objects (itemAndAddress<PoetsMailbox*>*)
+/* Frees dyamically-allocated value objects (itemAndAddress<P_mailbox*>*)
    objects in the mailboxMap. */
 void Dialect1Deployer::free_items_in_mailbox_map()
 {

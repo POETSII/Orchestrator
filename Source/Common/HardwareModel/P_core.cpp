@@ -1,32 +1,32 @@
 /* Defines POETS Core behaviour (see the accompanying header for further
    information). */
 
-#include "PoetsCore.h"
+#include "P_core.h"
 
 /* Constructs a POETS Core. Arguments:
    - name: Name of this core object (see namebase)
 */
-PoetsCore::PoetsCore(std::string name)
+P_core::P_core(std::string name)
 {
     Name(name);
     dataBinary = new Bin();
     instructionBinary = new Bin();
 }
 
-PoetsCore::~PoetsCore(){clear();}
+P_core::~P_core(){clear();}
 
 /* Clears the dynamically-allocated elements of the data structure of this
    core, deleting all contained components recursively.
 */
-void PoetsCore::clear()
+void P_core::clear()
 {
     /* Clear all threads that this core knows about. This should clear
        recursively. */
-    WALKMAP(AddressComponent,PoetsThread*,PoetsThreads,iterator)
+    WALKMAP(AddressComponent,P_thread*,P_threadm,iterator)
     {
         delete iterator->second;
     }
-    PoetsThreads.clear();
+    P_threadm.clear();
 
     /* Clear binaries. */
     if (dataBinary != 0) delete dataBinary;
@@ -39,7 +39,7 @@ void PoetsCore::clear()
    - thread: Pointer to the thread object to contain. Must not already have a
      parent.
 */
-void PoetsCore::contain(AddressComponent addressComponent, PoetsThread* thread)
+void P_core::contain(AddressComponent addressComponent, P_thread* thread)
 {
     /* Verify that the thread is unowned. */
     if (thread->parent != NULL)
@@ -67,7 +67,7 @@ void PoetsCore::contain(AddressComponent addressComponent, PoetsThread* thread)
         throw OwnershipException(errorMessage.str());
     }
 
-    PoetsThreads[addressComponent] = thread;
+    P_threadm[addressComponent] = thread;
 }
 
 /* Write debug and diagnostic information about the POETS core, recursively,
@@ -75,13 +75,13 @@ void PoetsCore::contain(AddressComponent addressComponent, PoetsThread* thread)
 
    - file: File to dump to.
 */
-void PoetsCore::dump(FILE* file)
+void P_core::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
 
     /* About this object and its parent, if any. */
     char breaker[MAXIMUM_BREAKER_LENGTH + 1];
-    int breakerLength = sprintf(breaker, "PoetsCore %s ", fullName.c_str());
+    int breakerLength = sprintf(breaker, "P_core %s ", fullName.c_str());
     for(int index=breakerLength; index<MAXIMUM_BREAKER_LENGTH - 1;
         breaker[index++]='+');
     breaker[MAXIMUM_BREAKER_LENGTH - 1] = '\n';
@@ -112,13 +112,13 @@ void PoetsCore::dump(FILE* file)
 
     /* About contained items, if any. */
     fprintf(file, "Threads in this core %s\n", std::string(58, '+').c_str());
-    if (PoetsThreads.empty())
+    if (P_threadm.empty())
         fprintf(file, "The thread map is empty.\n");
     else
     {
-        WALKMAP(AddressComponent,PoetsThread*,PoetsThreads,iterator)
+        WALKMAP(AddressComponent,P_thread*,P_threadm,iterator)
         {
-            PoetsThread* iterThread = iterator->second;
+            P_thread* iterThread = iterator->second;
             /* Print information from the map. */
             fprintf(file, "%u: %s (%p)\n",
                     iterator->first,
@@ -139,7 +139,7 @@ void PoetsCore::dump(FILE* file)
 /* Hook that a container calls to contain this object. Arguments:
    - container: Address of the mailbox that contains this core.
 */
-void PoetsCore::on_being_contained_hook(PoetsMailbox* container)
+void P_core::on_being_contained_hook(P_mailbox* container)
 {
     parent = container;
     Npar(container);

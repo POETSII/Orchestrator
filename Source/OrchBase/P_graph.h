@@ -11,6 +11,7 @@ class Config_t;
 class OrchBase;
 class Cli;
 class D_graph;
+class P_box;
 #include <list>
 using namespace std;
 

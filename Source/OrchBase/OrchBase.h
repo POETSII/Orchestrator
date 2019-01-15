@@ -2,6 +2,7 @@
 #define __OrchBaseH__H
 
 #include <stdio.h>
+#include "HardwareModel.h"
 #include "D_graph.h"
 #include "P_graph.h"
 #include "Placement.h"

@@ -17,31 +17,31 @@
 #include "dumpchan.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
-#include "PoetsMailbox.h"
-#include "PoetsThread.h"
+#include "P_mailbox.h"
+#include "P_thread.h"
 
 #define MAXIMUM_BREAKER_LENGTH 80
 
 /* Facilitate out-of-order includes. */
-struct PoetsMailbox;
-struct PoetsThread;
+struct P_mailbox;
+struct P_thread;
 
-class PoetsCore: public AddressableItem, public NameBase, protected DumpChan
+class P_core: public AddressableItem, public NameBase, protected DumpChan
 {
 public:
-    PoetsCore(std::string name);
+    P_core(std::string name);
 
     /* Destruction */
-    ~PoetsCore();
+    ~P_core();
     void clear();
 
     /* Cores live in mailboxes; this is the mailbox that this core lives in. */
-    PoetsMailbox* parent = NULL;
-    void on_being_contained_hook(PoetsMailbox* container);
+    P_mailbox* parent = NULL;
+    void on_being_contained_hook(P_mailbox* container);
 
     /* Cores contain threads, mapped by their hardware address components. */
-    std::map<AddressComponent, PoetsThread*> PoetsThreads;
-    void contain(AddressComponent addressComponent, PoetsThread* thread);
+    std::map<AddressComponent, P_thread*> P_threadm;
+    void contain(AddressComponent addressComponent, P_thread* thread);
 
     /* Instruction and data binaries are loaded onto cores. */
     Bin* dataBinary;

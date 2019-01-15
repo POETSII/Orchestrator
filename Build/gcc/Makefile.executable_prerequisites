@@ -32,12 +32,12 @@ HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cp
 
 # Sources used by executables that require the hardware model.
 HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/PoetsBox.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/PoetsBoard.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/PoetsMailbox.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/PoetsCore.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/PoetsThread.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/PoetsEngine.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_engine.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_box.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_board.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_mailbox.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_core.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_thread.cpp \
                          $(SOURCE_DIR)/Common/NameBase.cpp \
                          $(SOURCE_DIR)/OrchBase/Bin.cpp \
                          $(GENERICS_DIR)/dumpchan.cpp \

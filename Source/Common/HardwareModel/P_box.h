@@ -15,32 +15,32 @@
 #include "dumpchan.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
-#include "PoetsEngine.h"
-#include "PoetsBoard.h"
+#include "P_engine.h"
+#include "P_board.h"
 
 #define MAXIMUM_BREAKER_LENGTH 80
 
 /* Facilitate out-of-order includes. */
-struct PoetsEngine;
-struct PoetsBoard;
+struct P_engine;
+struct P_board;
 
-class PoetsBox: public AddressableItem, public NameBase, protected DumpChan
+class P_box: public AddressableItem, public NameBase, protected DumpChan
 {
 public:
-    PoetsBox(std::string name);
+    P_box(std::string name);
 
     /* Destruction */
-    ~PoetsBox();
+    ~P_box();
     void clear();
 
     /* Boxes are contained by a POETS Engine. */
-    PoetsEngine* parent = NULL;
-    void on_being_contained_hook(PoetsEngine* container);
+    P_engine* parent = NULL;
+    void on_being_contained_hook(P_engine* container);
 
     /* Boxes contain boards, mapped by their hardware address components. Note
        that engines also contain a graph of boards. */
-    std::map<AddressComponent, PoetsBoard*> PoetsBoards;
-    void contain(AddressComponent addressComponent, PoetsBoard* board);
+    std::map<AddressComponent, P_board*> P_boards;
+    void contain(AddressComponent addressComponent, P_board* board);
 
     unsigned int supervisorMemory;
     float costBoxBoard;

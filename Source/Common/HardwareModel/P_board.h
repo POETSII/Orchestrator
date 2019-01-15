@@ -16,24 +16,24 @@
 #include "dumpchan.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
-#include "PoetsBox.h"
-#include "PoetsMailbox.h"
+#include "P_box.h"
+#include "P_mailbox.h"
 #include "pdigraph.hpp"
 
 #define MAXIMUM_BREAKER_LENGTH 80
 #define CALLBACK static void
 
 /* Facilitate out-of-order includes. */
-struct PoetsBox;
-struct PoetsMailbox;
+struct P_box;
+struct P_mailbox;
 
-class PoetsBoard: public AddressableItem, public NameBase, protected DumpChan
+class P_board: public AddressableItem, public NameBase, protected DumpChan
 {
 public:
-    PoetsBoard(std::string name);
+    P_board(std::string name);
 
     /* Destruction */
-    ~PoetsBoard();
+    ~P_board();
     void clear();
 
     /* Boards live in boxes; this is the box that this board lives in. Note
@@ -41,15 +41,15 @@ public:
        not captured in the board construct.
 
        Boards use boxes as their NameBase parent. */
-    PoetsBox* parent = NULL;
-    void on_being_contained_hook(PoetsBox* container);
+    P_box* parent = NULL;
+    void on_being_contained_hook(P_box* container);
 
     /* Boards contain mailboxes as a graph, mapped by their hardware address
        components. */
-    pdigraph<AddressComponent, PoetsMailbox*,
+    pdigraph<AddressComponent, P_mailbox*,
         unsigned int, float,
-        unsigned int, unsigned int> PoetsMailboxes;
-    void contain(AddressComponent addressComponent, PoetsMailbox* mailbox);
+        unsigned int, unsigned int> G;
+    void contain(AddressComponent addressComponent, P_mailbox* mailbox);
     void connect(AddressComponent start, AddressComponent end, float weight,
                  bool oneWay=false);
 

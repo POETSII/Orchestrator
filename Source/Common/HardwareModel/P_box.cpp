@@ -1,30 +1,30 @@
 /* Defines POETS Box behaviour (see the accompanying header for further
    information). */
 
-#include "PoetsBox.h"
+#include "P_box.h"
 
 /* Constructs a POETS Box. Arguments:
    - name: Name of this box object (see namebase)
 */
-PoetsBox::PoetsBox(std::string name)
+P_box::P_box(std::string name)
 {
     Name(name);
 }
 
-PoetsBox::~PoetsBox(){clear();}
+P_box::~P_box(){clear();}
 
 /* Clears the dynamically-allocated elements of the data structure of this
    box, deleting all contained components recursively.
 */
-void PoetsBox::clear()
+void P_box::clear()
 {
     /* Clear all boards that this box knows about. This should clear
        recursively. */
-    WALKMAP(AddressComponent,PoetsBoard*,PoetsBoards,iterator)
+    WALKMAP(AddressComponent,P_board*,P_boards,iterator)
     {
         delete iterator->second;
     }
-    PoetsBoards.clear();
+    P_boards.clear();
 }
 
 /* Donates an uncontained board to this box. Arguments:
@@ -33,7 +33,7 @@ void PoetsBox::clear()
    - board: Pointer to the board object to contain. Must not already have a
      parent.
 */
-void PoetsBox::contain(AddressComponent addressComponent, PoetsBoard* board)
+void P_box::contain(AddressComponent addressComponent, P_board* board)
 {
     /* Verify that the board is unowned. */
     if (board->parent != NULL)
@@ -61,7 +61,7 @@ void PoetsBox::contain(AddressComponent addressComponent, PoetsBoard* board)
         throw OwnershipException(errorMessage.str());
     }
 
-    PoetsBoards[addressComponent] = board;
+    P_boards[addressComponent] = board;
 }
 
 /* Write debug and diagnostic information about the POETS box, recursively,
@@ -69,13 +69,13 @@ void PoetsBox::contain(AddressComponent addressComponent, PoetsBoard* board)
 
    - file: File to dump to.
 */
-void PoetsBox::dump(FILE* file)
+void P_box::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
 
     /* About this object and its parent, if any. */
     char breaker[MAXIMUM_BREAKER_LENGTH + 1];
-    int breakerLength = sprintf(breaker, "PoetsBox %s ", fullName.c_str());
+    int breakerLength = sprintf(breaker, "P_box %s ", fullName.c_str());
     for(int index=breakerLength; index<MAXIMUM_BREAKER_LENGTH - 1;
         breaker[index++]='+');
     breaker[MAXIMUM_BREAKER_LENGTH - 1] = '\n';
@@ -85,13 +85,13 @@ void PoetsBox::dump(FILE* file)
 
     /* About contained items, if any. */
     fprintf(file, "Boards in this box %s\n", std::string(60, '+').c_str());
-    if (PoetsBoards.empty())
+    if (P_boards.empty())
         fprintf(file, "The board map is empty.\n");
     else
     {
-        WALKMAP(AddressComponent,PoetsBoard*,PoetsBoards,iterator)
+        WALKMAP(AddressComponent,P_board*,P_boards,iterator)
         {
-            PoetsBoard* iterBoard = iterator->second;
+            P_board* iterBoard = iterator->second;
             /* Print information from the map. */
             fprintf(file, "%u: %s (%p)\n",
                     iterator->first,
@@ -112,7 +112,7 @@ void PoetsBox::dump(FILE* file)
 /* Hook that a container calls to contain this object. Arguments:
    - container: Address of the engine that contains this box.
 */
-void PoetsBox::on_being_contained_hook(PoetsEngine* container)
+void P_box::on_being_contained_hook(P_engine* container)
 {
     parent = container;
     Npar(container);

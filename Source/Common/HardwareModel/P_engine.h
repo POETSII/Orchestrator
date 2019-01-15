@@ -17,8 +17,8 @@
 #include "NameBase.h"
 #include "OrchBase.h"
 #include "OwnershipException.h"
-#include "PoetsBox.h"
-#include "PoetsBoard.h"
+#include "P_box.h"
+#include "P_board.h"
 #include "pdigraph.hpp"
 
 #define MAXIMUM_BREAKER_LENGTH 80
@@ -26,16 +26,16 @@
 
 /* Facilitate out-of-order includes. */
 struct OrchBase;
-struct PoetsBox;
-struct PoetsBoard;
+struct P_box;
+struct P_board;
 
-class PoetsEngine: public NameBase, protected DumpChan
+class P_engine: public NameBase, protected DumpChan
 {
 public:
-    PoetsEngine(std::string name);
+    P_engine(std::string name);
 
     /* Destruction */
-    ~PoetsEngine();
+    ~P_engine();
     void clear();
 
     /* Engines contain information on how addresses should be constructed. */
@@ -45,16 +45,16 @@ public:
        namebase parent. */
 
     /* Engines contain boxes, mapped by their hardware address component. */
-    void contain(AddressComponent addressComponent, PoetsBox* box);
-    std::map<AddressComponent, PoetsBox*> PoetsBoxes;
+    void contain(AddressComponent addressComponent, P_box* box);
+    std::map<AddressComponent, P_box*> P_boxm;
     bool is_empty();
 
     /* Engines also contain a graph of boards, again mapped by their hardware
        components. */
-    pdigraph<AddressComponent, PoetsBoard*,
+    pdigraph<AddressComponent, P_board*,
         unsigned int, float,
-        unsigned int, unsigned int> PoetsBoards;
-    void contain(AddressComponent addressComponent, PoetsBoard* board);
+        unsigned int, unsigned int> G;
+    void contain(AddressComponent addressComponent, P_board* board);
     void connect(AddressComponent start, AddressComponent end, float weight,
                  bool oneWay=false);
 

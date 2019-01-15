@@ -11,7 +11,7 @@
 
 TEST_CASE("Deployment to an empty engine", "[Aesop]")
 {
-    PoetsEngine engine("Engine000");
+    P_engine engine("Engine000");
     AesopDeployer deployer;
     deployer.deploy(&engine);
 
@@ -36,21 +36,21 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
     SECTION("Check engine contains the correct number of boxes", "[Aesop]")
     {
         /* Check there is a value for each logical address component. */
-        REQUIRE(engine.PoetsBoxes.size() == deployer.boxesInEngine);
+        REQUIRE(engine.P_boxm.size() == deployer.boxesInEngine);
         for (AddressComponent boxIndex=0; boxIndex < deployer.boxesInEngine;
              boxIndex++)
         {
-            REQUIRE(engine.PoetsBoxes.find(boxIndex++) !=
-                    engine.PoetsBoxes.end());
+            REQUIRE(engine.P_boxm.find(boxIndex++) !=
+                    engine.P_boxm.end());
         }
     }
 
     SECTION("Check each box is unique", "[Aesop]")
     {
-        std::set<PoetsBox*> uniqueBoxes;
-        std::map<AddressComponent, PoetsBox*>::iterator boxIterator;
-        for (boxIterator=engine.PoetsBoxes.begin();
-             boxIterator!=engine.PoetsBoxes.end(); boxIterator++)
+        std::set<P_box*> uniqueBoxes;
+        std::map<AddressComponent, P_box*>::iterator boxIterator;
+        for (boxIterator=engine.P_boxm.begin();
+             boxIterator!=engine.P_boxm.end(); boxIterator++)
         {
             uniqueBoxes.insert(boxIterator->second);
         }
@@ -59,9 +59,9 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
 
     SECTION("Check each box has correct static properties", "[Aesop]")
     {
-        std::map<AddressComponent, PoetsBox*>::iterator boxIterator;
-        for (boxIterator=engine.PoetsBoxes.begin();
-             boxIterator!=engine.PoetsBoxes.end(); boxIterator++)
+        std::map<AddressComponent, P_box*>::iterator boxIterator;
+        for (boxIterator=engine.P_boxm.begin();
+             boxIterator!=engine.P_boxm.end(); boxIterator++)
         {
             REQUIRE(boxIterator->second->supervisorMemory ==
                     deployer.boxSupervisorMemory);
@@ -80,16 +80,16 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
 
     SECTION("Check engine contains the correct number of boards", "[Aesop]")
     {
-        REQUIRE(engine.PoetsBoards.SizeNodes() == boardCount);
+        REQUIRE(engine.G.SizeNodes() == boardCount);
     }
 
     SECTION("Check each board is unique", "[Aesop]")
     {
-        std::set<PoetsBoard*> uniqueBoards;
-        WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
+        std::set<P_board*> uniqueBoards;
+        WALKPDIGRAPHNODES(AddressComponent, P_board*,
                           unsigned int, float,
                           unsigned int, unsigned int,
-                          engine.PoetsBoards, boardIterator)
+                          engine.G, boardIterator)
         {
             uniqueBoards.insert(boardIterator->second.data);
         }
@@ -98,12 +98,12 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
 
     SECTION("Check each box contains the correct number of boards", "[Aesop]")
     {
-        unsigned boardsPerBox = boardCount / engine.PoetsBoxes.size();
-        std::map<AddressComponent, PoetsBox*>::iterator boxIterator;
-        for (boxIterator=engine.PoetsBoxes.begin();
-             boxIterator!=engine.PoetsBoxes.end(); boxIterator++)
+        unsigned boardsPerBox = boardCount / engine.P_boxm.size();
+        std::map<AddressComponent, P_box*>::iterator boxIterator;
+        for (boxIterator=engine.P_boxm.begin();
+             boxIterator!=engine.P_boxm.end(); boxIterator++)
         {
-            REQUIRE(boxIterator->second->PoetsBoards.size() == boardsPerBox);
+            REQUIRE(boxIterator->second->P_boards.size() == boardsPerBox);
         }
     }
 
@@ -116,22 +116,22 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
 
     SECTION("Check each board contains the correct number of mailboxes", "[Aesop]")
     {
-        WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
+        WALKPDIGRAPHNODES(AddressComponent, P_board*,
                           unsigned int, float,
                           unsigned int, unsigned int,
-                          engine.PoetsBoards, boardIterator)
+                          engine.G, boardIterator)
         {
-            REQUIRE(boardIterator->second.data->PoetsMailboxes.SizeNodes() ==
+            REQUIRE(boardIterator->second.data->G.SizeNodes() ==
                     mailboxCount);
         }
     }
 
     SECTION("Check each board has correct static properties", "[Aesop]")
     {
-        WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
+        WALKPDIGRAPHNODES(AddressComponent, P_board*,
                           unsigned int, float,
                           unsigned int, unsigned int,
-                          engine.PoetsBoards, boardIterator)
+                          engine.G, boardIterator)
         {
             REQUIRE(boardIterator->second.data->dram == deployer.dram);
             REQUIRE(boardIterator->second.data->supervisorMemory ==
@@ -144,20 +144,20 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
     }
 
     /* Gather all mailboxes in the engine for implementation elegance later. */
-    std::set<PoetsMailbox*> uniqueMailboxes;
-    std::set<PoetsMailbox*>::iterator uniqueMailboxIterator;
+    std::set<P_mailbox*> uniqueMailboxes;
+    std::set<P_mailbox*>::iterator uniqueMailboxIterator;
 
     /* For each board... */
-    WALKPDIGRAPHNODES(AddressComponent, PoetsBoard*,
+    WALKPDIGRAPHNODES(AddressComponent, P_board*,
                       unsigned int, float,
                       unsigned int, unsigned int,
-                      engine.PoetsBoards, boardIterator)
+                      engine.G, boardIterator)
     {
         /* For each mailbox in that board... */
-        WALKPDIGRAPHNODES(AddressComponent, PoetsMailbox*,
+        WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
                           unsigned int, float,
                           unsigned int, unsigned int,
-                          boardIterator->second.data->PoetsMailboxes,
+                          boardIterator->second.data->G,
                           mailboxIterator)
         {
             /* Track if unique. */
@@ -191,22 +191,22 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
              uniqueMailboxIterator!=uniqueMailboxes.end();
              uniqueMailboxIterator++)
         {
-            REQUIRE((*uniqueMailboxIterator)->PoetsCores.size() ==
+            REQUIRE((*uniqueMailboxIterator)->P_corem.size() ==
                     deployer.coresInMailbox);
         }
     }
 
     /* Gather all cores in the engine for implementation elegance later. */
-    std::set<PoetsCore*> uniqueCores;
-    std::set<PoetsCore*>::iterator uniqueCoreIterator;
+    std::set<P_core*> uniqueCores;
+    std::set<P_core*>::iterator uniqueCoreIterator;
 
-    std::map<AddressComponent, PoetsCore*>::iterator coreIterator;
+    std::map<AddressComponent, P_core*>::iterator coreIterator;
     for (uniqueMailboxIterator=uniqueMailboxes.begin();
          uniqueMailboxIterator!=uniqueMailboxes.end();
          uniqueMailboxIterator++)
     {
-        for (coreIterator=(*uniqueMailboxIterator)->PoetsCores.begin();
-             coreIterator!=(*uniqueMailboxIterator)->PoetsCores.end();
+        for (coreIterator=(*uniqueMailboxIterator)->P_corem.begin();
+             coreIterator!=(*uniqueMailboxIterator)->P_corem.end();
              coreIterator++)
         {
             uniqueCores.insert(coreIterator->second);
@@ -238,21 +238,21 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
         for (uniqueCoreIterator=uniqueCores.begin();
              uniqueCoreIterator!=uniqueCores.end(); uniqueCoreIterator++)
         {
-            REQUIRE((*uniqueCoreIterator)->PoetsThreads.size() ==
+            REQUIRE((*uniqueCoreIterator)->P_threadm.size() ==
                     deployer.threadsInCore);
         }
     }
 
     SECTION("Check each thread in the engine is unique", "[Aesop]")
     {
-        std::set<PoetsThread*> uniqueThreads;
-        std::map<AddressComponent, PoetsThread*>::iterator threadIterator;
+        std::set<P_thread*> uniqueThreads;
+        std::map<AddressComponent, P_thread*>::iterator threadIterator;
         for (uniqueCoreIterator=uniqueCores.begin();
              uniqueCoreIterator!=uniqueCores.end();
              uniqueCoreIterator++)
         {
-            for (threadIterator=(*uniqueCoreIterator)->PoetsThreads.begin();
-                 threadIterator!=(*uniqueCoreIterator)->PoetsThreads.end();
+            for (threadIterator=(*uniqueCoreIterator)->P_threadm.begin();
+                 threadIterator!=(*uniqueCoreIterator)->P_threadm.end();
                  threadIterator++)
             {
                 uniqueThreads.insert(threadIterator->second);

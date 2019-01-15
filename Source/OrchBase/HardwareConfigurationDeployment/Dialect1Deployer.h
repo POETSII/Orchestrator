@@ -1,7 +1,7 @@
 #ifndef __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWARECONFIGURATION_DIALECT1DEPLOYER_H
 #define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWARECONFIGURATION_DIALECT1DEPLOYER_H
 
-/* Defines how dialect-1 style files are deployed to define PoetsEngine
+/* Defines how dialect-1 style files are deployed to define P_engine
    configurations. This data structure holds configuration information, so that
    it can be deployed to a given engine and address format. */
 
@@ -22,13 +22,13 @@ typedef std::vector<AddressComponent> MultiAddressComponent;
    can be indexed in maps by the hierarchical addresses. */
 template <typename PoetsItem>
 struct itemAndAddress {
-    PoetsItem poetsItem;  /* E.g. PoetsBoard*, or PoetsMailbox*. */
+    PoetsItem poetsItem;  /* E.g. P_board*, or P_mailbox*. */
     AddressComponent address;
 };
 
 /* Types for private maps, for readability. */
-typedef std::map<MultiAddressComponent, itemAndAddress<PoetsBoard*>*> BoardMap;
-typedef std::map<MultiAddressComponent, itemAndAddress<PoetsMailbox*>*>
+typedef std::map<MultiAddressComponent, itemAndAddress<P_board*>*> BoardMap;
+typedef std::map<MultiAddressComponent, itemAndAddress<P_mailbox*>*>
     MailboxMap;
 
 class Dialect1Deployer
@@ -37,7 +37,7 @@ public:
 
     Dialect1Deployer();
 
-    void deploy(PoetsEngine* engine);
+    void deploy(P_engine* engine);
 
     /* Items in the header */
     std::string author;
@@ -90,16 +90,16 @@ public:
 private:
     /* Item factories and their indeces. */
     unsigned createdBoardIndex;
-    PoetsBoard* create_board();
+    P_board* create_board();
 
     unsigned createdMailboxIndex;
-    PoetsMailbox* create_mailbox();
+    P_mailbox* create_mailbox();
 
     unsigned createdCoreIndex;
-    PoetsCore* create_core();
+    P_core* create_core();
 
     unsigned createdThreadIndex;
-    PoetsThread* create_thread();
+    P_thread* create_thread();
 
     /* Maps for staging POETS items during deployment, required to persist
        connectivity information. These need to be maps so that we can determine
@@ -115,25 +115,25 @@ private:
        every core, for example). We don't need one of these for boards, because
        boardMap stores the content of all boards in the engine for the duration
        of the deployment. */
-    std::vector<PoetsMailbox*> allMailboxes;
-    std::vector<PoetsCore*> allCores;
+    std::vector<P_mailbox*> allMailboxes;
+    std::vector<P_core*> allCores;
 
     /* Population methods for internal maps. */
     void populate_board_map();
     void populate_mailbox_map();  /* Only populates enough for one board. */
 
     /* Assignment and population methods used during deployment. */
-    void assign_metadata_to_engine(PoetsEngine* engine);
+    void assign_metadata_to_engine(P_engine* engine);
     void assign_sizes_to_address_format(HardwareAddressFormat* format);
-    void connect_boards_from_boardmap_in_engine(PoetsEngine* engine);
-    void connect_mailboxes_from_mailboxmap_in_board(PoetsBoard* board);
-    void create_cores_in_mailbox(PoetsMailbox* mailbox);
-    void create_threads_in_core(PoetsCore* core);
+    void connect_boards_from_boardmap_in_engine(P_engine* engine);
+    void connect_mailboxes_from_mailboxmap_in_board(P_board* board);
+    void create_cores_in_mailbox(P_mailbox* mailbox);
+    void create_threads_in_core(P_core* core);
     AddressComponent flatten_address(MultiAddressComponent address,
                                      std::vector<unsigned> wordLengths);
     void populate_boxes_evenly_with_boardmap(
-        std::map<AddressComponent, PoetsBox*>* boxMap);
-    void populate_engine_with_boxes_and_their_costs(PoetsEngine* engine);
+        std::map<AddressComponent, P_box*>* boxMap);
+    void populate_engine_with_boxes_and_their_costs(P_engine* engine);
 };
 
 #endif
