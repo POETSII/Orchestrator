@@ -626,6 +626,7 @@ P_board* Dialect1Deployer::create_board()
     returnAddress = new P_board(dformat("Board%06d", createdBoardIndex++));
     returnAddress->dram = dram;
     returnAddress->supervisorMemory = boardSupervisorMemory;
+    returnAddress->costBoardMailbox = costBoardMailbox;
     return returnAddress;
 }
 
