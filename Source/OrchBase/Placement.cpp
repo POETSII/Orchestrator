@@ -110,7 +110,7 @@ bool Placement::Place(P_task * pT)
 // Place a task.
 {
 P_thread * pTh = 0;
- 
+
 WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
 {
     vector<P_device*> dVs = pT->pD->DevicesOfType(*dT); // get all the devices of this type
@@ -182,6 +182,3 @@ pDe->par->par->pSup->Attach(pTh->parent->parent->parent);
 }
 
 //==============================================================================
-
-
-
