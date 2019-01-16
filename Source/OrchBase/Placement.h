@@ -2,19 +2,20 @@
 #define __PlacementH__H
 
 #include <stdio.h>
+#include "HardwareAddress.h"
 #include "pdigraph.hpp"
-class P_graph;
-class P_task;
-class D_graph;
 class Constraints;
+class D_graph;
 class OrchBase;
-class P_thread;
-class P_device;
-class P_core;
 class P_board;
-class P_box;
+class P_core;
+class P_device;
+class P_engine;
 class P_link;
+class P_mailbox;
 class P_port;
+class P_task;
+class P_thread;
 
 //==============================================================================
 
@@ -22,7 +23,7 @@ class Placement
 {
 public:
 
-enum P_stride {thread, core, board, box};
+enum P_stride {thread, core, mailbox, board};
 
                    Placement(OrchBase *);
 virtual ~          Placement();
@@ -38,18 +39,16 @@ OrchBase *         par;
 Constraints *      pCon;
 D_graph *          pD_graph;
 
-pdigraph<unsigned,P_box *,unsigned,P_link *,unsigned,P_port *>::TPn_it Nbo;
-P_box *                                                                pPbo;
-vector<P_board*>::iterator                                             Nbd;
-vector<P_core*>::iterator                                              Nco;
-vector<P_thread*>::iterator                                            Nth;
-
+pdigraph<AddressComponent, P_board*,
+         unsigned, P_link*,
+         unsigned, P_port*>::TPn_it boardIterator;
+pdigraph<AddressComponent, P_mailbox*,
+         unsigned, P_link*,
+         unsigned, P_port*>::TPn_it mailboxIterator;
+map<AddressComponent, P_core*>::iterator coreIterator;
+map<AddressComponent, P_thread*>::iterator threadIterator;
 };
 
 //==============================================================================
 
 #endif
-
-
-
-
