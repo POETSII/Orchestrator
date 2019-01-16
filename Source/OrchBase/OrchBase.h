@@ -81,6 +81,7 @@ void                   OwneDump(Cli::Cl_t);
 void                   OwneShow(Cli::Cl_t);
 void                   OwneTask(Cli::Cl_t);
 
+P_engine *             pE;             // Poets engine (hardware model)
 P_graph *              pP;             // Box graph
 Placement *            pPlace;         // Cross-linker
 P_builder *            pB;             // Object to build the datastructure

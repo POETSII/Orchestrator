@@ -30,6 +30,7 @@
 OrchBase::OrchBase(int argc,char * argv[],string d,string sfile) :
   CommonBase(argc,argv,d,sfile)
 {
+pE        = 0;
 pP        = 0;
 pB        = new P_builder(argc, argv, this);       // Object to build the datastructure
 pTG       = new T_gen(this);           // PoL task generator
