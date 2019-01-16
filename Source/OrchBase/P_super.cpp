@@ -92,9 +92,9 @@ void P_super::Detach(P_board* targetBoard)
     if (supervisorIterator == parentBox->P_superv.end()){return;}
 
     // Remove the supervisor from the board, by its index in the box.
-    unsigned supervisorIndex = supervisorIterator -
-        parentBox->P_superv.begin();
-    targetBoard->sup_offv.erase(supervisorIndex);
+    unsigned superIndex = supervisorIterator - parentBox->P_superv.begin();
+    std::remove(targetBoard->sup_offv.begin(), targetBoard->sup_offv.end(),
+                superIndex);
 
     // Remove the board from this P_super object.
     WALKVECTOR(P_board*, P_boardv, boardIterator)
