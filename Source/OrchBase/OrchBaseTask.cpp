@@ -651,7 +651,7 @@ WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
 WALKMAP(AddressComponent, P_core*,
         (*board)->G.NodeData(mailbox)->P_corem, core)
 {
-firstThread = core->second->P_threadv[0];
+firstThread = core->second->P_threadm.begin()->second;
 if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
 {
    Pkt.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
