@@ -1,13 +1,9 @@
 //------------------------------------------------------------------------------
 
+#include "AesopDeployer.h"
+#include "HardwareModel.h"
 #include "P_builder.h"
 #include "P_task.h"
-#include "P_box.h"
-#include "P_board.h"
-#include "P_core.h"
-#include "P_thread.h"
-#include "P_port.h"
-#include "P_link.h"
 #include "P_devtyp.h"
 #include "P_device.h"
 #include <sstream>
@@ -136,7 +132,7 @@ void P_builder::Preplace(P_task* task)
      // this first naive preplace will sort everything out according to device type.
      if (!task->linked)
      {
-        if (par->pP == 0) // no topology?
+        if (par->pE == 0) // no topology?
         {
            // we will set up a virtual topology. Compute how many virtual boxes would
            // be needed.
@@ -157,9 +153,13 @@ void P_builder::Preplace(P_task* task)
            }
            unsigned numBoxes = numCores/(CORES_PER_BOARD*BOARDS_PER_BOX); // number of boxes
            if (numCores%(CORES_PER_BOARD*BOARDS_PER_BOX)) ++numBoxes;     // one more if needed
-           par->pP = new P_graph(par,"VirtualSystem");                    // initialise the topology
-           par->Post(138,par->pP->Name());
-           par->pP->SetN(numBoxes, true); // and create a virtual topology
+           // Initialise the topology as an N-box Aesop system.
+           par->pE = new P_engine("VirtualSystem");
+           par->pE.parent = par;
+           AesopDeployer deployer;
+           deployer.boxesInEngine = numBoxes;
+           par->Post(138,par->pE->Name());
+           deployer.deploy(par->pE);
         }
         if (!par->pPlace->Place(task)) task->LinkFlag(); // then preplace on the real or virtual board.
      }
