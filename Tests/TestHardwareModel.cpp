@@ -11,6 +11,7 @@
 TEST_CASE("A full stack of hardware can be connected", "[Items]")
 {
     P_engine engine("Engine000");
+    engine.addressFormat = HardwareAddressFormat(4, 5, 6, 8, 9);
     P_box* box;
     P_board* board;
     P_mailbox* firstMailbox;
@@ -33,12 +34,6 @@ TEST_CASE("A full stack of hardware can be connected", "[Items]")
     board->connect(0, 1, 10);
     firstMailbox->contain(10, core);
     core->contain(123, thread);
-}
-
-TEST_CASE("Engines can hold hardware address formats", "[Addressing]")
-{
-    P_engine engine("Engine000");
-    engine.addressFormat = HardwareAddressFormat(4, 5, 6, 8, 9);
 }
 
 TEST_CASE("Threads cannot be claimed multiple times", "[Items]")
@@ -89,6 +84,7 @@ TEST_CASE("Boards cannot be claimed multiple times by engines", "[Items]")
     box = new P_box("Box000");
     board = new P_board("Board000");
 
+    engine.addressFormat = HardwareAddressFormat(4, 5, 6, 8, 9);
     engine.contain(4, box);
     box->contain(17, board);
     engine.contain(17, board);
@@ -111,6 +107,7 @@ TEST_CASE("Boxes cannot be claimed multiple times", "[Items]")
     P_box* box;
     box = new P_box("Box000");
 
+    engine.addressFormat = HardwareAddressFormat(4, 5, 6, 8, 9);
     engine.contain(4, box);
     REQUIRE_THROWS_AS(engine.contain(124, box), OwnershipException&);
 }
@@ -217,4 +214,71 @@ TEST_CASE("Metadata can be assigned to POETS engines", "[Metadata]")
     engine.datetime = 20190107162455;
     engine.version = "0.3.1~sandwich";
     engine.fileOrigin = "TestHardwareModel.cpp fake";
+}
+
+TEST_CASE("Items in the hardware stack have meaningful addresses", "[Address Assignment]")
+{
+    P_engine engine("Engine000");
+    P_box* box = new P_box("Box000");
+    P_board* board = new P_board("Board000");
+    P_mailbox* mailbox = new P_mailbox("Mailbox000");
+    P_core* core = new P_core("Core000");
+    P_thread* thread = new P_thread("Thread000");
+
+    AddressComponent boxComponent = 0;
+    AddressComponent boardComponent = 1;
+    AddressComponent mailboxComponent = 2;
+    AddressComponent coreComponent = 3;
+    AddressComponent threadComponent = 4;
+
+    engine.addressFormat = HardwareAddressFormat(0, 1, 2, 2, 3);
+    engine.contain(boxComponent, box);
+    box->contain(boardComponent, board);
+    engine.contain(boardComponent, board);
+    board->contain(mailboxComponent, mailbox);
+    mailbox->contain(coreComponent, core);
+    core->contain(threadComponent, thread);
+
+    HardwareAddress* address;
+
+    /* Check box address has the box component, and is not fully defined. */
+    REQUIRE(box->get_hardware_address()->get_box() == boxComponent);
+    REQUIRE(box->get_hardware_address()->is_fully_defined() == false);
+
+    /* Check board address has the box and board components, and is not fully
+     * defined. */
+    REQUIRE(board->get_hardware_address()->get_box() == boxComponent);
+    REQUIRE(board->get_hardware_address()->get_board() == boardComponent);
+    REQUIRE(board->get_hardware_address()->is_fully_defined() == false);
+
+    /* And so on. */
+    REQUIRE(mailbox->get_hardware_address()->get_box() == boxComponent);
+    REQUIRE(mailbox->get_hardware_address()->get_board() == boardComponent);
+    REQUIRE(mailbox->get_hardware_address()->get_mailbox() == mailboxComponent);
+    REQUIRE(mailbox->get_hardware_address()->is_fully_defined() == false);
+
+    REQUIRE(core->get_hardware_address()->get_box() == boxComponent);
+    REQUIRE(core->get_hardware_address()->get_board() == boardComponent);
+    REQUIRE(core->get_hardware_address()->get_mailbox() == mailboxComponent);
+    REQUIRE(core->get_hardware_address()->get_core() == coreComponent);
+    REQUIRE(core->get_hardware_address()->is_fully_defined() == false);
+
+    REQUIRE(thread->get_hardware_address()->get_box() == boxComponent);
+    REQUIRE(thread->get_hardware_address()->get_board() == boardComponent);
+    REQUIRE(thread->get_hardware_address()->get_mailbox() == mailboxComponent);
+    REQUIRE(thread->get_hardware_address()->get_core() == coreComponent);
+    REQUIRE(thread->get_hardware_address()->get_thread() == threadComponent);
+
+    /* However, thread-addresses are supposed to be fully defined. */
+    REQUIRE(thread->get_hardware_address()->is_fully_defined() == true);
+
+    SECTION("Check that the addresses are truly unique.")
+    {
+        REQUIRE(board->get_hardware_address() != core->get_hardware_address());
+
+        /* We're really trying to break it. */
+        board->set_hardware_address(
+            new HardwareAddress(&(engine.addressFormat)));
+        REQUIRE(core->get_hardware_address()->get_box() == boxComponent);
+    }
 }

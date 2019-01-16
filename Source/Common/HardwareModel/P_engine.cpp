@@ -120,6 +120,11 @@ void P_engine::contain(AddressComponent addressComponent, P_box* box)
     }
 
     P_boxm[addressComponent] = box;
+
+    /* Define a hardware address for the box. */
+    HardwareAddress* boxHardwareAddress = new HardwareAddress(&addressFormat);
+    boxHardwareAddress->set_box(addressComponent);
+    box->set_hardware_address(boxHardwareAddress);
 }
 
 /* Donates a board to this engine. The board must be contained by a box, which

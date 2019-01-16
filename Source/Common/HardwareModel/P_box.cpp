@@ -58,6 +58,15 @@ void P_box::contain(AddressComponent addressComponent, P_board* board)
     }
 
     P_boardv.push_back(board);
+
+    /* Define a hardware address for the board, if we have a hardware
+     * address. */
+    if (isAddressBound)
+    {
+        HardwareAddress* boardHardwareAddress = copy_hardware_address();
+        boardHardwareAddress->set_board(addressComponent);
+        board->set_hardware_address(boardHardwareAddress);
+    }
 }
 
 /* Write debug and diagnostic information about the POETS box, recursively,

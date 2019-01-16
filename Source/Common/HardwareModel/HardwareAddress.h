@@ -15,6 +15,10 @@
  * refactored to store their components in an array to reduce code
  * repitition. But it doesn't.
  *
+ * Note that, other than the hardware address format (format), this class
+ * contains no dynamic members. This is to facilitate easy copying when
+ * populating POETS engines.
+ *
  * See the hardware model documentation for further information about hardware
  * addresses. */
 

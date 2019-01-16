@@ -14,6 +14,13 @@ AddressableItem::~AddressableItem()
     if (isAddressBound) delete hardwareAddress;
 }
 
+/* Shallow-copies the hardware address belonging to this object, and writes the
+ * dynamically-allocated copy to the pointer returned. */
+HardwareAddress* AddressableItem::copy_hardware_address()
+{
+    return new HardwareAddress(*hardwareAddress);
+}
+
 /* Hardware address getter and setter, maintains the isAddressBound record. Any
  * address passed to this setter will be deleted when this AddressableItem
  * object is destroyed, so allocate this dynamically, e.g.

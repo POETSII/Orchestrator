@@ -20,6 +20,7 @@ class AddressableItem
 public:
     AddressableItem();
     ~AddressableItem();
+    HardwareAddress* copy_hardware_address();
     HardwareAddress* get_hardware_address();
     void set_hardware_address(HardwareAddress* value);
 

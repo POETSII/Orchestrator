@@ -66,6 +66,14 @@ void P_core::contain(AddressComponent addressComponent, P_thread* thread)
     }
 
     P_threadm[addressComponent] = thread;
+
+    /* Define a hardware address for the thread. */
+    if (isAddressBound)
+    {
+        HardwareAddress* threadHardwareAddress = copy_hardware_address();
+        threadHardwareAddress->set_thread(addressComponent);
+        thread->set_hardware_address(threadHardwareAddress);
+    }
 }
 
 /* Write debug and diagnostic information about the POETS core, recursively,

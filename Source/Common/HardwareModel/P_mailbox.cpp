@@ -60,6 +60,14 @@ void P_mailbox::contain(AddressComponent addressComponent, P_core* core)
     }
 
     P_corem[addressComponent] = core;
+
+    /* Define a hardware address for the core. */
+    if (isAddressBound)
+    {
+        HardwareAddress* coreHardwareAddress = copy_hardware_address();
+        coreHardwareAddress->set_core(addressComponent);
+        core->set_hardware_address(coreHardwareAddress);
+    }
 }
 
 /* Write debug and diagnostic information about the POETS mailbox, recursively,

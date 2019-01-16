@@ -112,6 +112,15 @@ void P_board::contain(AddressComponent addressComponent, P_mailbox* mailbox)
     /* We don't care about the result of inserting the mailbox into this graph,
      * because we've checked the item is not owned before adding it. */
     G.InsertNode(addressComponent, mailbox);
+
+    /* Define a hardware address for the mailbox, if we have a hardware
+     * address. */
+    if (isAddressBound)
+    {
+        HardwareAddress* mailboxHardwareAddress = copy_hardware_address();
+        mailboxHardwareAddress->set_mailbox(addressComponent);
+        mailbox->set_hardware_address(mailboxHardwareAddress);
+    }
 }
 
 /* Connects two mailboxes together that are owned by this board. Arguments:

@@ -143,7 +143,7 @@ void HardwareAddress::set_thread(AddressComponent value)
 
     /* Set */
     threadComponent = value;
-    set_defined(3);
+    set_defined(4);
 }
 
 /* Updates the internal record of which components of this address have been
@@ -152,7 +152,7 @@ void HardwareAddress::set_thread(AddressComponent value)
  * - index: which element of the binary word to set to 1. */
 void HardwareAddress::set_defined(unsigned index)
 {
-    index &= (1 << index);
+    definitions |= (1 << index);
 }
 
 /* Write debug and diagnostic information using dumpchan. Arguments:
