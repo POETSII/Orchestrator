@@ -155,7 +155,7 @@ void P_builder::Preplace(P_task* task)
            if (numCores%(CORES_PER_BOARD*BOARDS_PER_BOX)) ++numBoxes;     // one more if needed
            // Initialise the topology as an N-box Aesop system.
            par->pE = new P_engine("VirtualSystem");
-           par->pE.parent = par;
+           par->pE->parent = par;
            AesopDeployer deployer;
            deployer.boxesInEngine = numBoxes;
            par->Post(138,par->pE->Name());
