@@ -11,7 +11,7 @@
 
 //==============================================================================
 
-Placement::Placement(OrchBase * _p):par(_p),pCon(0),pP_graph(0),pD_graph(0)
+Placement::Placement(OrchBase * _p):par(_p),pCon(0),pD_graph(0)
 {
 }
 

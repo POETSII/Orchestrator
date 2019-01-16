@@ -34,10 +34,9 @@ void               Init();
 bool               Place(P_task *);
 void               Xlink(P_device *,P_thread *);
 
-P_graph *          pP_graph;
-D_graph *          pD_graph;
-Constraints *      pCon;
 OrchBase *         par;
+Constraints *      pCon;
+D_graph *          pD_graph;
 
 pdigraph<unsigned,P_box *,unsigned,P_link *,unsigned,P_port *>::TPn_it Nbo;
 P_box *                                                                pPbo;
