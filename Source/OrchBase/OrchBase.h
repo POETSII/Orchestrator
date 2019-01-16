@@ -21,7 +21,7 @@ using namespace std;
 
 class OrchBase : public CommonBase, public NameBase
 {
-public:               
+public:
                        OrchBase(int,char *[],string,string);
 virtual ~              OrchBase();
 void                   Dump(FILE * = stdout);
@@ -97,7 +97,3 @@ map<string,P_owner *>  P_ownerm;       // Task ownership container
 //==============================================================================
 
 #endif
-
-
-
-
