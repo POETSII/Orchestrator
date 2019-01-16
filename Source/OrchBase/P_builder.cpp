@@ -184,16 +184,20 @@ void P_builder::GenFiles(P_task* task)
     return;
   }
   // build a core map visible to the make script (as a shell script)
+  P_core* thisCore;  // Core available during iteration.
+  P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
   fstream cores_sh((task_dir+GENERATED_PATH+"/cores.sh").c_str(), fstream::in | fstream::out | fstream::trunc);
-  WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,par->pP->G,boxNode)
+  WALKPDIGRAPHNODES(AddressComponent,P_board*,unsigned,P_link*,unsigned,P_port*,par->pE->G,boardNode)
   {
-  WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+  WALKPDIGRAPHNODES(AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,P_port*,par->pE->G.NodeData(boardNode)->G,mailboxNode)
   {
-  for (unsigned int core = 0; core < (*board)->P_corev.size(); core++)
+  WALKMAP(AddressComponent,P_core*,par->pE->G.NodeData(boardNode)->G.NodeData(mailboxNode)->P_corem,coreNode)
   {
-  if ((*board)->P_corev[core]->P_threadv[0]->P_devicel.size() && ((*board)->P_corev[core]->P_threadv[0]->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
+  thisCore = coreNode->second;
+  firstThread = thisCore->P_threadm.begin()->second;
+  if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
   {
-      cores_sh << "cores[" << coreNum << "]=" << (*board)->P_corev[core]->addr.A_core << "\n";
+      cores_sh << "cores[" << coreNum << "]=" << thisCore->get_hardware_address()->get_core() << "\n";
       // these consist of the declarations and definitions of variables and the handler functions.
       fstream vars_h(static_cast<stringstream*>(&(stringstream(task_dir+GENERATED_H_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".h"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
       fstream vars_cpp(static_cast<stringstream*>(&(stringstream(task_dir+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
@@ -203,7 +207,7 @@ void P_builder::GenFiles(P_task* task)
       // conveniently since so far we have arranged it so that each core has a monolithic device type looking up its vars is
       // easy. Later this will need smoother access. It would be nice if we could define this as a const P_devtyp* but
       // unfortunately none of its member functions are const-qualified which hampers usability.
-      P_devtyp* c_devtyp = (*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->pP_devtyp;
+      P_devtyp* c_devtyp = (*firstThread->P_devicel.begin())->pP_devtyp;
       // for some reason the seemingly-innocuous commented line below doesn't work as expected. Apparently devtyp_name becomes volatile even though
       // we aren't accessing the Name() field later in any way that might invalidate the pointer. Mysterious.
       // const char* devtyp_name = c_devtyp->Name().c_str();
@@ -221,7 +225,7 @@ void P_builder::GenFiles(P_task* task)
          vars_h << "typedef " << string(c_devtyp->par->pPropsD->c_src).erase(c_devtyp->par->pPropsD->c_src.length()-2).c_str() << " global_props_t;\n\n";
          vars_h << "extern const global_props_t GraphProperties;\n";
          string global_init("");
-         if ((*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->par->pPropsI) global_init = (*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->par->pPropsI->c_src;
+         if ((*firstThread->P_devicel.begin())->par->pPropsI) global_init = (*firstThread->P_devicel.begin())->par->pPropsI->c_src;
          else if (c_devtyp->par->pPropsI) global_init = c_devtyp->par->pPropsI->c_src;
          vars_cpp << "const global_props_t GraphProperties = " << global_init.c_str() << ";\n";
       }
@@ -308,7 +312,13 @@ void P_builder::GenFiles(P_task* task)
           handlers_cpp << "   return 0;\n";
           handlers_cpp << handl_post;
       }
-      for (unsigned int thread = 0; thread < (*board)->P_corev[core]->P_threadv.size(); thread++) if ((*(*board)->P_corev[core]->P_threadv[thread]).P_devicel.size()) WriteThreadVars(task_dir, coreNum, thread, (*board)->P_corev[core]->P_threadv[thread], vars_h);
+      WALKMAP(AddressComponent,P_thread*,thisCore->P_threadm,threadIterator)
+      {
+          if (threadIterator->second->P_devicel.size())
+          {
+              WriteThreadVars(task_dir, coreNum, threadIterator->first, threadIterator->second, vars_h);
+          }
+      }
       vars_h.close();
       vars_cpp.close();
       handlers_h.close();
@@ -603,18 +613,22 @@ void P_builder::CompileBins(P_task * task)
         return;
      }
      unsigned int coreNum = 0;
-     WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,par->pP->G,boxNode)
+     P_core* thisCore;  // Core available during iteration.
+     P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
+     WALKPDIGRAPHNODES(AddressComponent,P_board*,unsigned,P_link*,unsigned,P_port*,par->pE->G,boardNode)
      {
-     WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+     WALKPDIGRAPHNODES(AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,P_port*,par->pE->G.NodeData(boardNode)->G,mailboxNode)
      {
-     for (unsigned int c = 0; c < (*board)->P_corev.size(); c++)
+     WALKMAP(AddressComponent,P_core*,par->pE->G.NodeData(boardNode)->G.NodeData(mailboxNode)->P_corem,coreNode)
      {
-         if ((*board)->P_corev[c]->P_threadv[0]->P_devicel.size() && ((*board)->P_corev[c]->P_threadv[0]->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
+         thisCore = coreNode->second;
+         firstThread = thisCore->P_threadm.begin()->second;
+         if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
          {
             // a failure to read the generated binary may not be absolutely fatal; this could be retrieved later if
             // there was a transient read error (e.g. reading over a network connection)
             string binary_name(static_cast<stringstream*>(&(stringstream(task_dir+BIN_PATH, ios_base::out | ios_base::ate)<<"/"<<COREBIN_BASE<<coreNum<<".elf"))->str());
-            if (!((*board)->P_corev[c]->pCoreBin->Binary = fopen(binary_name.c_str(),"r")))
+            if (!(thisCore->instructionBinary->Binary = fopen(binary_name.c_str(),"r")))
                par->Post(806, binary_name);
             ++coreNum;
          }
