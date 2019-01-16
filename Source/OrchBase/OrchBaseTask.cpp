@@ -62,10 +62,6 @@ if (pP!=0) {
                     pP->G,i){
     if (i==pP->G.NodeEnd()) break;
     P_box * pb = pP->G.NodeData(i);
-    if (pb->pMothBin!=0) {             // Box-local binaries
-      delete pb->pMothBin;
-      pb->pMothBin=0;
-    }
     WALKVECTOR(P_board *,pb->P_boardv,ib) {
       (*ib)->pSup=0;                   // Disconnect supervisor link
       WALKVECTOR(P_core *,(*ib)->P_corev,ic) {
