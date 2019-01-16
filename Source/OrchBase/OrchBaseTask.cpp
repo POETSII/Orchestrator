@@ -239,7 +239,7 @@ if (fp!=stdout) fclose(fp);
 }
 
 //------------------------------------------------------------------------------
- 
+
 void OrchBase::TaskGeom(Cli::Cl_t Cl)
 // Routine to decorate an existing task with geometry.
 // For use in generating pretty pictures.....
@@ -370,7 +370,7 @@ PktD.Key(Q::NAME,Q::TDIR);                // and the data directory
 PktC.Src(Urank);
 string taskname = task->first;
 PktC.Put(0, &taskname);                    // first field in the packet is the task name
-PktD.Put(0, &taskname);                
+PktD.Put(0, &taskname);
 taskname+="/";                             // for the moment the binary directory will be fixed
 taskname+=BIN_PATH;                        // later we could make this user-settable.
 // duplicate P_builder's iteration through the task
@@ -671,6 +671,3 @@ if (fp!=stdout) fclose(fp);
 }
 
 //==============================================================================
-
-
-
