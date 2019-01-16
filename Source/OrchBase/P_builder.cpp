@@ -163,7 +163,7 @@ void P_builder::Preplace(P_task* task)
         }
         if (!par->pPlace->Place(task)) task->LinkFlag(); // then preplace on the real or virtual board.
      }
-     // if we need to we could aggregate some threads here to achieve maximum packing by merging partially-full threads.	 
+     // if we need to we could aggregate some threads here to achieve maximum packing by merging partially-full threads.
 }
 
 //------------------------------------------------------------------------------
@@ -231,7 +231,7 @@ void P_builder::GenFiles(P_task* task)
       for (vector<P_message*>::iterator msg = c_devtyp->par->P_messagev.begin(); msg != c_devtyp->par->P_messagev.end(); msg++)
           if ((*msg)->pPropsD) vars_h << "typedef " << string((*msg)->pPropsD->c_src).erase((*msg)->pPropsD->c_src.length()-2).c_str() << " msg_" <<(*msg)->Name().c_str() << "_pyld_t;\n";
       vars_h << "\n";
-      // device handlers	
+      // device handlers
       handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_RTS_handler (const void* graphProps, void* device, uint32_t* readyToSend, void** msg_buf);\n";
       handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OnIdle_handler (const void* graphProps, void* device);\n";
       handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OnCtl_handler (const void* graphProps, void* device, const void* msg);\n\n";
@@ -625,5 +625,3 @@ void P_builder::CompileBins(P_task * task)
 
 //==============================================================================
 #endif
-
-
