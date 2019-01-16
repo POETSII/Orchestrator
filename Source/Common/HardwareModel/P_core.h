@@ -48,6 +48,7 @@ public:
     Bin* instructionBinary;
     unsigned int dataMemory;
     unsigned int instructionMemory;
+    void clear_binaries();
 
     float costCoreThread;
     float costThreadThread;

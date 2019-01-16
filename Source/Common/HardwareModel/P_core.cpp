@@ -27,7 +27,12 @@ void P_core::clear()
     }
     P_threadm.clear();
 
-    /* Clear binaries. */
+    clear_binaries();
+}
+
+/* Clears the dynamically-allocated binaries. */
+void P_core::clear_binaries()
+{
     if (dataBinary != 0) delete dataBinary;
     if (instructionBinary != 0) delete instructionBinary;
 }

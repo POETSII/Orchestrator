@@ -56,27 +56,44 @@ void OrchBase::ClearTasks()
 // Destroy the entire task section of the database. (This is the easy one)
 // The code is different to the clear-individual-tasks because it's faster
 {
-// Walk the hardware, killing all the links into the task structures
-if (pP!=0) {
-  WALKPDIGRAPHNODES(unsigned,P_box *,unsigned,P_link *,unsigned,P_port *,
-                    pP->G,i){
-    if (i==pP->G.NodeEnd()) break;
-    P_box * pb = pP->G.NodeData(i);
-    WALKVECTOR(P_board *,pb->P_boardv,ib) {
-      (*ib)->pSup=0;                   // Disconnect supervisor link
-      WALKVECTOR(P_core *,(*ib)->P_corev,ic) {
-        if ((*ic)->pCoreBin!=0) {      // Thread-local binaries
-          delete (*ic)->pCoreBin;
-          (*ic)->pCoreBin=0;
-        }
-        WALKVECTOR(P_thread *,(*ic)->P_threadv,it) {
-          (*it)->P_devicel.clear();    // Kill the cross-links
-        }
-      }
-    }
-  }
-}
 
+// Walk the hardware, killing all the links into the task structures
+if (pE != 0)
+{
+    // Walk the boxes and remove the supervisor links therein.
+    WALKMAP(AddressComponent, P_box*, pE->P_boxm, boxIterator)
+    {
+        boxIterator->second->P_superv.clear();
+
+        // Walk the boards and remove the supervisor links therein.
+        WALKVECTOR(P_board*, boxIterator->second->P_boardv, boardIterator)
+        {
+            (*boardIterator)->sup_offv.clear();
+
+            // Walk the cores and clear all binaries therein, if any are
+            // loaded.
+            WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                              unsigned, P_link*,
+                              unsigned, P_port*, (*boardIterator)->G,
+                              mailboxIterator)
+            {
+                WALKMAP(AddressComponent, P_core*,
+                        (*boardIterator)->G.NodeData(mailboxIterator)->P_corem,
+                        coreIterator)
+                {
+                    coreIterator->second->clear_binaries();
+
+                    // Walk the threads and remove the device links.
+                    WALKMAP(AddressComponent, P_thread*,
+                            coreIterator->second->P_threadm, threadIterator)
+                    {
+                        threadIterator->second->P_devicel.clear();
+                    }
+                }
+            }
+        }
+    }
+}
 
 // Kill the supervisors
 WALKMAP(string,P_super *,P_superm,i) delete (*i).second;
