@@ -134,7 +134,7 @@ void P_super::Dump(FILE * fp)
 {
 fprintf(fp,"P_super+++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"Supervisor attached to :\n");
-WALKVECTOR(P_box *,P_boxv,i) fprintf(fp,"%s\n",(*i)->FullName().c_str());
+WALKVECTOR(P_board*, P_boardv, i) fprintf(fp,"%s\n",(*i)->FullName().c_str());
 P_device::Dump(fp);
 fprintf(fp,"P_super---------------------------------\n");
 fflush(fp);
