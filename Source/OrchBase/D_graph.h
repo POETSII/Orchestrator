@@ -35,7 +35,3 @@ CFrag *            pPropsI;            // Graph properties initialiser code
 //==============================================================================
 
 #endif
-
-
-
-

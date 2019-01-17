@@ -101,6 +101,3 @@ vector<P_device*> D_graph::DevicesOfType(const P_devtyp* d_type)
 }
 
 //==============================================================================
-
-
-
