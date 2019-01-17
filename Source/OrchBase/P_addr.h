@@ -14,7 +14,7 @@ using namespace std;
 // fields set ot not), and these can be set (merged) with the operators
 // provided. Once the devices are mapped and crosslinked, the full device P_addr
 // is derived from the mapped hardware hierarchy.
-// The whole thing has a rather anal access interface to allow us to do it
+// The whole thing has a rather banal access interface to allow us to do it
 // differently if we ever want to.
 
 // It's made of two classes, P_addr and P_addr_t, the latter being the subset of
