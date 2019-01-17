@@ -244,30 +244,55 @@ TEST_CASE("Items in the hardware stack have meaningful addresses", "[Address Ass
     /* Check box address has the box component, and is not fully defined. */
     REQUIRE(box->get_hardware_address()->get_box() == boxComponent);
     REQUIRE(box->get_hardware_address()->is_fully_defined() == false);
+    REQUIRE(box->get_hardware_address()->is_box_defined() == true);
+    REQUIRE(box->get_hardware_address()->is_board_defined() == false);
+    REQUIRE(box->get_hardware_address()->is_mailbox_defined() == false);
+    REQUIRE(box->get_hardware_address()->is_core_defined() == false);
+    REQUIRE(box->get_hardware_address()->is_thread_defined() == false);
 
     /* Check board address has the box and board components, and is not fully
      * defined. */
     REQUIRE(board->get_hardware_address()->get_box() == boxComponent);
     REQUIRE(board->get_hardware_address()->get_board() == boardComponent);
     REQUIRE(board->get_hardware_address()->is_fully_defined() == false);
+    REQUIRE(board->get_hardware_address()->is_box_defined() == true);
+    REQUIRE(board->get_hardware_address()->is_board_defined() == true);
+    REQUIRE(board->get_hardware_address()->is_mailbox_defined() == false);
+    REQUIRE(board->get_hardware_address()->is_core_defined() == false);
+    REQUIRE(board->get_hardware_address()->is_thread_defined() == false);
 
     /* And so on. */
     REQUIRE(mailbox->get_hardware_address()->get_box() == boxComponent);
     REQUIRE(mailbox->get_hardware_address()->get_board() == boardComponent);
     REQUIRE(mailbox->get_hardware_address()->get_mailbox() == mailboxComponent);
     REQUIRE(mailbox->get_hardware_address()->is_fully_defined() == false);
+    REQUIRE(mailbox->get_hardware_address()->is_box_defined() == true);
+    REQUIRE(mailbox->get_hardware_address()->is_board_defined() == true);
+    REQUIRE(mailbox->get_hardware_address()->is_mailbox_defined() == true);
+    REQUIRE(mailbox->get_hardware_address()->is_core_defined() == false);
+    REQUIRE(mailbox->get_hardware_address()->is_thread_defined() == false);
 
     REQUIRE(core->get_hardware_address()->get_box() == boxComponent);
     REQUIRE(core->get_hardware_address()->get_board() == boardComponent);
     REQUIRE(core->get_hardware_address()->get_mailbox() == mailboxComponent);
     REQUIRE(core->get_hardware_address()->get_core() == coreComponent);
     REQUIRE(core->get_hardware_address()->is_fully_defined() == false);
+    REQUIRE(core->get_hardware_address()->is_box_defined() == true);
+    REQUIRE(core->get_hardware_address()->is_board_defined() == true);
+    REQUIRE(core->get_hardware_address()->is_mailbox_defined() == true);
+    REQUIRE(core->get_hardware_address()->is_core_defined() == true);
+    REQUIRE(core->get_hardware_address()->is_thread_defined() == false);
 
     REQUIRE(thread->get_hardware_address()->get_box() == boxComponent);
     REQUIRE(thread->get_hardware_address()->get_board() == boardComponent);
     REQUIRE(thread->get_hardware_address()->get_mailbox() == mailboxComponent);
     REQUIRE(thread->get_hardware_address()->get_core() == coreComponent);
     REQUIRE(thread->get_hardware_address()->get_thread() == threadComponent);
+    REQUIRE(thread->get_hardware_address()->is_box_defined() == true);
+    REQUIRE(thread->get_hardware_address()->is_board_defined() == true);
+    REQUIRE(thread->get_hardware_address()->is_mailbox_defined() == true);
+    REQUIRE(thread->get_hardware_address()->is_core_defined() == true);
+    REQUIRE(thread->get_hardware_address()->is_thread_defined() == true);
 
     /* However, thread-addresses are supposed to be fully defined. */
     REQUIRE(thread->get_hardware_address()->is_fully_defined() == true);

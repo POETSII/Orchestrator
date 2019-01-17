@@ -60,6 +60,19 @@ unsigned HardwareAddress::get_hardware_address()
     return returnValue;
 }
 
+/* Populates a software address object with information from this hardware
+ * address object. Arguments:
+ *
+ * - target: Software address object to populate. */
+void HardwareAddress::populate_software_address(P_addr* target)
+{
+    if (is_box_defined()){target->SetBox(get_box());}
+    if (is_board_defined()){target->SetBoard(get_board());}
+    if (is_mailbox_defined()){target->SetMailbox(get_mailbox());}
+    if (is_core_defined()){target->SetCore(get_core());}
+    if (is_thread_defined()){target->SetThread(get_thread());}
+}
+
 /* Setters, which set the address component with a value.
  *
  * Also updates the "definitions" word. Raises if the input does not fit within

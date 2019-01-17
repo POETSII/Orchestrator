@@ -25,6 +25,7 @@
 #include "dfprintf.h"
 #include "HardwareAddressFormat.h"
 #include "InvalidAddressException.h"
+#include "P_addr.h"
 #include <cmath>  /* For validating address components. */
 
 /* Components of hardware addresses are unsigned integers. */
@@ -59,11 +60,17 @@ public:
 
     /* Access */
     unsigned get_hardware_address();
+    void populate_software_address(P_addr* target);
     void dump(FILE* = stdout);
 
     /* Defines whether or not the hardware address is fully defined. No binary
      * literal in C++98 (yuck). */
     inline bool is_fully_defined(){return definitions == 31;}  /* 0b11111 */
+    inline bool is_box_defined(){return (definitions & 1) > 0;}
+    inline bool is_board_defined(){return (definitions & 2) > 0;}
+    inline bool is_mailbox_defined(){return (definitions & 4) > 0;}
+    inline bool is_core_defined(){return (definitions & 8) > 0;}
+    inline bool is_thread_defined(){return (definitions & 16) > 0;}
 
 private:
 

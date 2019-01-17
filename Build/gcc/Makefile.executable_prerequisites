@@ -28,6 +28,8 @@ TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
 # Sources used by executables that need to address hardware.
 HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cpp \
                            $(SOURCE_DIR)/Common/HardwareModel/HardwareAddressFormat.cpp \
+                           $(SOURCE_DIR)/OrchBase/P_addr.cpp \
+                           $(GENERICS_DIR)/flat.cpp \
                            $(GENERICS_DIR)/dfprintf.cpp
 
 # Sources used by executables that require the hardware model.
