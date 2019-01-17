@@ -31,7 +31,6 @@ OrchBase::OrchBase(int argc,char * argv[],string d,string sfile) :
   CommonBase(argc,argv,d,sfile)
 {
 pE        = 0;
-pP        = 0;
 pB        = new P_builder(argc, argv, this);       // Object to build the datastructure
 pTG       = new T_gen(this);           // PoL task generator
 pPlace    = new Placement(this);       // Xlink controller
@@ -43,7 +42,7 @@ taskpath  = string(" ");
 
 OrchBase::~OrchBase()
 {
-if (pP!=0)        delete pP;           // Kill the P-node graph
+if (pE!=0)        delete pE;           // Kill the P-node graph
 if (pB!=0)        delete pB;           // Object to build the datastructure
 if (pPlace!=0)    delete pPlace;       // Cross link controller
 if (pTG!=0)       delete pTG;          // PoL generator
@@ -65,8 +64,8 @@ fprintf(fp,"OrchBase dump+++++++++++++++++++++++++++++++\n");  fflush(fp);
 fprintf(fp,"NameBase %s\n",FullName().c_str());
 fprintf(fp,"Task path %s\n",taskpath.c_str());
 fprintf(fp,"HARDWARE++++++++++++++++++++++++++++++++++++\n");
-if (pP==0) fprintf(fp,"No hardware topology loaded\n");
-else pP->Dump(fp);
+if (pE==0) fprintf(fp,"No hardware topology loaded\n");
+else pE->dump(fp);
 if (pPlace==0) fprintf(fp,"No placement object to be found?\n");
 else pPlace->Dump(fp);
 fprintf(fp,"HARDWARE------------------------------------\n");

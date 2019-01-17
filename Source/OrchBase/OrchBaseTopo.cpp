@@ -17,10 +17,10 @@ void OrchBase::ClearBoxConfig(string)
 
 void OrchBase::ClearTopo()
 {
-if (pP==0) return;
-Post(134,pP->FullName());
-delete pP;
-pP = 0;
+if (pE==0) return;
+Post(134,pE->FullName());
+delete pE;
+pE = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -97,16 +97,16 @@ pPlace->pCon->Constraintm[constraint] = str2uint(Cl.Pa_v[1].Val);
 
 void OrchBase::TopoDump(Cli::Cl_t Cl)
 {
-if (pP==0) return;
-if (Cl.Pa_v.empty()) pP->Dump();
+if (pE==0) return;
+if (Cl.Pa_v.empty()) pE->dump();
 WALKVECTOR(Cli::Pa_t,Cl.Pa_v,i) {      // Loop through streams to dump to
   string st = (*i).Val;                // Dump stream
-  if (st.empty()) pP->Dump();
+  if (st.empty()) pE->dump();
   st = topopath + st;
   FILE * fp = fopen(st.c_str(),"w");
   if (fp==0) Post(132,st);
   else {
-    pP->Dump(fp);
+    pE->dump(fp);
     fclose(fp);
   }
 }
@@ -162,20 +162,25 @@ Post(136);
 
 void OrchBase::TopoSet1(Cli::Cl_t Cl)
 {
-ClearTopo();
-pP = new P_graph(this,"Set1");
-Post(138,pP->Name());
-pP->Set1();
+    ClearTopo();
+    pE = new P_engine("Aesop [1 box]");
+    pE->parent = this;
+    AesopDeployer deployer;
+    Post(138,pE->Name());
+    deployer.deploy(pE);
 }
 
 //------------------------------------------------------------------------------
 
 void OrchBase::TopoSet2(Cli::Cl_t Cl)
 {
-ClearTopo();
-pP = new P_graph(this,"Set2");
-Post(138,pP->Name());
-pP->Set2();
+    ClearTopo();
+    pE = new P_engine("Aesop [2 boxes]");
+    pE->parent = this;
+    AesopDeployer deployer;
+    deployer.boxesInEngine = 2;
+    Post(138,pE->Name());
+    deployer.deploy(pE);
 }
 
 //==============================================================================

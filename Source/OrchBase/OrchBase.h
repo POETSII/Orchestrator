@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include "HardwareModel.h"
 #include "D_graph.h"
-#include "P_graph.h"
 #include "Placement.h"
 #include "Cli.h"
 class P_task;
@@ -82,7 +81,6 @@ void                   OwneShow(Cli::Cl_t);
 void                   OwneTask(Cli::Cl_t);
 
 P_engine *             pE;             // Poets engine (hardware model)
-P_graph *              pP;             // Box graph
 Placement *            pPlace;         // Cross-linker
 P_builder *            pB;             // Object to build the datastructure
 T_gen *                pTG;            // PoL task generator

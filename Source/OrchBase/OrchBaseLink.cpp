@@ -111,11 +111,11 @@ void OrchBase::LinkLink(Cli::Cl_t Cl)
 {
 if (Cl.Pa_v.empty()) return;           // Nothing to do
 string st = Cl.Pa_v[0].Val;            // Task to load
-if (pP==0) {                           // No topology?
+if (pE==0) {                           // No topology?
   Post(151,st);
   return;
 }
-if (pP->IsEmpty()) {                   // Still no topology?
+if (pE->is_empty()) {                   // Still no topology?
   Post(151,st);
   return;
 }
@@ -148,7 +148,7 @@ if (!pPlace->Place(pT)) pT->LinkFlag();
 
 
 /*
-unsigned lim = (*pP->pConfigl.begin())->ThreadsPerBox();
+unsigned lim = (*pP->pConfigl.begin())->ThreadsPerBox();  // MLV: This isn't going to work since the hardware model has changed.
 for(unsigned i=0;i<lim*4;i++) {
   bool f = pPlace->GetNext(pTh,pCo,pBo,pBx);
   printf("%c Th:%s Co:%s Bo:%s Bx:%s\n",f ? 'X' : ' ',
@@ -346,7 +346,7 @@ WALKPDIGRAPHNODES(unsigned,P_device *,unsigned,P_message *,
     touched.insert(pTh);
   }
 }
-if (pP==0) Post(908);
+if (pE==0) Post(908);
 WALKSET(P_thread *,touched,i) (*i)->P_devicel.remove(0);
 
 }
