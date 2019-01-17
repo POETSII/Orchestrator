@@ -49,6 +49,7 @@ HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp 
 # Sources used by executables that deploy POETS Engine configurations.
 HARDWARE_DEPLOYER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/Dialect1Deployer.cpp \
                             $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/AesopDeployer.cpp \
+                            $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/MultiAesopDeployer.cpp \
                             $(HARDWARE_MODEL_SOURCES)
 
 # The orchestrate execution script uses a template.

@@ -8,8 +8,9 @@
 #include "AesopDeployer.h"
 #include "HardwareAddressFormat.h"
 #include "HardwareModel.h"
+#include "MultiAesopDeployer.h"
 
-TEST_CASE("Deployment to an empty engine", "[Aesop]")
+TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
 {
     P_engine engine("Engine000");
     AesopDeployer deployer;
@@ -273,4 +274,32 @@ TEST_CASE("Deployment to an empty engine", "[Aesop]")
     {
         engine.dump();
     } */
+}
+
+TEST_CASE("MultiAesop(4) deployment to an empty engine", "[MultiAesop]")
+{
+    unsigned multiple = 4;
+
+    P_engine engine("Engine000");
+    MultiAesopDeployer deployer(4);
+    AesopDeployer comparisonDeployer;
+    deployer.deploy(&engine);
+
+    SECTION("Check engine contains the correct number of boxes", "[MultiAesop]")
+    {
+        REQUIRE(engine.P_boxm.size() ==
+                comparisonDeployer.boxesInEngine * multiple);
+    }
+
+    /* Compute number of boards total in the engine according to the
+     * deployer. This accumulation assumes there is at least one board... */
+    unsigned comparisonBoardCount = std::accumulate(
+        comparisonDeployer.boardsInEngine.begin(),
+        comparisonDeployer.boardsInEngine.end(), 1,
+        std::multiplies<unsigned>());
+
+    SECTION("Check engine contains the correct number of boards", "[MultiAesop]")
+    {
+        REQUIRE(engine.G.SizeNodes() == comparisonBoardCount * multiple);
+    }
 }

@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 
-#include "AesopDeployer.h"
 #include "HardwareModel.h"
+#include "MultiAesopDeployer.h"
 #include "P_builder.h"
 #include "P_task.h"
 #include "P_devtyp.h"
@@ -156,8 +156,7 @@ void P_builder::Preplace(P_task* task)
            // Initialise the topology as an N-box Aesop system.
            par->pE = new P_engine("VirtualSystem");
            par->pE->parent = par;
-           AesopDeployer deployer;
-           deployer.boxesInEngine = numBoxes;
+           MultiAesopDeployer deployer(numBoxes);
            par->Post(138,par->pE->Name());
            deployer.deploy(par->pE);
         }
