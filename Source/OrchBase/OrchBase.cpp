@@ -11,7 +11,7 @@
 #include "P_devtyp.h"
 #include "CMsg_p.h"
 #include "T_gen.h"
-#include "Config_t.h"
+#include "AesopDeployer.h"
 #include "Ns_el.h"
 #include "P_super.h"
 
