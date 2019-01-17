@@ -220,7 +220,7 @@ P_addr_t p0 = pD->addr;
           pD->Id(),                    // Device ID
           pD->addr,                    // Hardware address
           pD->attr,                    // Attribute
-          pD->pP_thread->parent->pCoreBin->Id());   // Binary file ID
+          pD->pP_thread->parent->instructionBinary->Id());   // Binary file ID
 }
 ns.Put<unsigned>(0,&(ns.keyv));               // Key vector
 ns.Key(Q::CANDC,Q::LOAD);
