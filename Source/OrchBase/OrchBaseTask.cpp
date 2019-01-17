@@ -417,12 +417,33 @@ thisCore = core->second;
 firstThread = thisCore->P_threadm.begin()->second;
 if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
 {
+    // determine the last thread that has a device mapped onto it (recall that all devices within a core service the same task.
+    std::map<AddressComponent, P_thread*>::reverse_iterator thread;
+    for (thread=thisCore->P_threadm.rbegin();
+         thread!=thisCore->P_threadm.rend(); thread++)
+    {
+        if (thread->second->P_devicel.size() > 0) break;
+    }
+
+    // Add the thread address to coreVec as a device address.
+    HardwareAddress* threadHardwareAddress;
+    threadHardwareAddress = thread->second->get_hardware_address();
+    P_addr_t threadFullAddress;
+    threadFullAddress.A_box = threadHardwareAddress->get_box(),
+    threadFullAddress.A_board = threadHardwareAddress->get_board(),
+    threadFullAddress.A_mailbox = threadHardwareAddress->get_mailbox(),
+    threadFullAddress.A_core = threadHardwareAddress->get_core(),
+    threadFullAddress.A_thread = threadHardwareAddress->get_thread(),
+    coreVec.push_back(pair<unsigned, P_addr_t>
+                      (coreNum++, threadFullAddress));
+
+   /* MLV and ADR, on 2019-01-18, discussed that the above was effectively synonymous with the below (for the new hardware model).
    // core lists here indicate the available hardware rather than the placed hardware, so we have
    // to search for the last placed thread.
-   // <!> MLV doesn't understand this.
    unsigned t_i = 1;
    while (t_i < thisCore->P_threadv.size() && thisCore->P_threadv[t_i]->P_devicel.size()) ++t_i;
    coreVec.push_back(pair<unsigned,P_addr_t>(coreNum++, *(dynamic_cast<P_addr_t*>(&(thisCore->P_threadv[--t_i]->addr))))); // add it to the core list to be sent (may need to cast thisCore->addr to P_addr_t)
+   */
 }
 }
 }
