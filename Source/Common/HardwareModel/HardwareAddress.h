@@ -60,7 +60,8 @@ public:
 
     /* Access */
     unsigned get_hardware_address();
-    void populate_software_address(P_addr* target);
+    void populate_a_software_address(P_addr* target);
+    void populate_from_software_address(P_addr* source);
     void dump(FILE* = stdout);
 
     /* Defines whether or not the hardware address is fully defined. No binary
