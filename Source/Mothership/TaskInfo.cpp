@@ -54,60 +54,82 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
 {
     if (VirtualBox == 0) // no box yet. Assume this core insertion defines our box number.
     {
-       VirtualBox = new P_box(0);
-       VirtualBox->AutoName(TaskName+"_Box_");
-       VirtualBox->addr.A_box = coreID.A_box;
-       printf("Inserting VirtualBox %s\n",VirtualBox->Name().c_str());
-       fflush(stdout);
+        VirtualBox = new P_box(0);
+        VirtualBox->AutoName(TaskName+"_Box_");
+        VirtualBox->get_hardware_address()->set_box(coreID.A_box);
+        printf("Inserting VirtualBox %s\n",VirtualBox->Name().c_str());
+        fflush(stdout);
     }
-    if (coreID.A_box != VirtualBox->addr.A_box) return; // not our box. Ignore.
+    if (coreID.A_box != VirtualBox->get_hardware_address()->get_box()) return; // not our box. Ignore.
     P_board* VirtualBoard = 0;
     WALKVECTOR(P_board*, VirtualBox->P_boardv, B)
     {
-       if ((*B)->addr.A_board == coreID.A_board)
-       {
-	  printf("Using VirtualBoard %s\n",(*B)->Name().c_str());
-          fflush(stdout);
-	  VirtualBoard = (*B);
-	  break;
-       }
+        if ((*B)->get_hardware_address()->get_board() == coreID.A_board)
+        {
+            printf("Using VirtualBoard %s\n",(*B)->Name().c_str());
+            fflush(stdout);
+            VirtualBoard = (*B);
+            break;
+        }
     }
     if (!VirtualBoard) // no existing board matches the core. Create a new one.
     {
-       VirtualBox->P_boardv.push_back(new P_board(VirtualBox)); // same thing for names here.
-       VirtualBoard = VirtualBox->P_boardv.back();
-       VirtualBoard->AutoName(VirtualBox->Name()+"_Board_");
-       VirtualBoard->addr.A_box = coreID.A_box;
-       VirtualBoard->addr.A_board = coreID.A_board;
-       printf("Inserting VirtualBoard %s\n",VirtualBoard->Name().c_str());
-       fflush(stdout);
+        VirtualBoard = new P_board(0);
+        VirtualBoard->parent = VirtualBox;
+        VirtualBox->contain(coreID.A_board, VirtualBoard);
+        VirtualBoard->AutoName(VirtualBox->Name()+"_Board_");
+        printf("Inserting VirtualBoard %s\n",VirtualBoard->Name().c_str());
+        fflush(stdout);
     }
+    P_mailbox* VirtualMailbox = 0;
+    WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                      unsigned, P_link*,
+                      unsigned, P_port*, VirtualBoard->G, MB)
+    {
+        if (VirtualBoard->G.NodeData(MB)->get_hardware_address()->get_mailbox() == coreID.A_mailbox)
+        {
+            printf("Using VirtualMailbox %s\n",
+                   VirtualBoard->G.NodeData(MB)->Name().c_str());
+            fflush(stdout);
+            VirtualMailbox = VirtualBoard->G.NodeData(MB);
+            break;
+        }
+    }
+    if (!VirtualMailbox) // no existing mailbox matches the core. Create a new one.
+    {
+        VirtualMailbox = new P_mailbox(0);
+        VirtualMailbox->parent = VirtualBoard;
+        VirtualBoard->contain(coreID.A_mailbox, VirtualMailbox);
+        VirtualMailbox->AutoName(VirtualBoard->Name()+"_Mailbox_");
+        printf("Inserting VirtualMailbox %s\n",VirtualMailbox->Name().c_str());
+        fflush(stdout);
+    }
+
     softMap_t::iterator C = VCoreMap.find(vCore);
     if (C != VCoreMap.end())
     {
-       // core already exists. No need to add.
-       if ((C->second->addr.A_box == VirtualBox->addr.A_box) && (C->second->addr.A_board == VirtualBoard->addr.A_board) && (C->second->addr.A_core == coreID.A_core)) return;
+        // core already exists. No need to add.
+        if ((C->second->get_hardware_address()->get_box() == VirtualBox->get_hardware_address()->get_box()) &&
+            (C->second->get_hardware_address()->get_board() == VirtualBoard->get_hardware_address()->get_board()) &&
+            (C->second->get_hardware_address()->get_mailbox() == VirtualMailbox->get_hardware_address()->get_mailbox()) &&
+            (C->second->get_hardware_address()->get_core() == coreID.A_core)) return;
        // A mapped core with the same virtual number is already in the table; get rid of it.
        CoreMap.erase(C->second);
        removeCore(C->second);
     }
     // insert the new core with its appropriate address fields.
-    VirtualBoard->P_corev.push_back(new P_core(VirtualBoard));
-    P_core* VirtualCore = VirtualBoard->P_corev.back();
-    VirtualCore->AutoName(VirtualBoard->Name()+"_Core_");
-    VirtualCore->addr.A_box = coreID.A_box;
-    VirtualCore->addr.A_board = coreID.A_board;
-    VirtualCore->addr.A_core = coreID.A_core;
+    P_core* VirtualCore = new P_core(0);
+    VirtualCore->parent = VirtualMailbox;
+    VirtualMailbox->contain(coreID.A_core, VirtualCore);
+    VirtualCore->AutoName(VirtualMailbox->Name()+"_Core_");
     // generate the threads for the core.
+    P_thread* VirtualThread;
     for (unsigned thread = 0; thread <= coreID.A_thread; thread++)
     {
-        VirtualCore->P_threadv.push_back(new P_thread(VirtualCore));
-	P_thread* VirtualThread = VirtualCore->P_threadv.back();
-	VirtualThread->AutoName(VirtualCore->Name()+"_Thread_");
-	VirtualThread->addr.A_box = coreID.A_box;
-	VirtualThread->addr.A_board = coreID.A_board;
-	VirtualThread->addr.A_core = coreID.A_core;
-	VirtualThread->addr.A_thread = thread;
+        VirtualThread = new P_thread(0);
+        VirtualThread->parent = VirtualCore;
+        VirtualCore->contain(coreID.A_thread, VirtualThread);
+        VirtualThread->AutoName(VirtualCore->Name()+"_Thread_");
     }
     // then map to the task.
     VCoreMap[vCore] = VirtualCore;
