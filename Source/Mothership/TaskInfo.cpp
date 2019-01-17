@@ -28,7 +28,11 @@ bool TaskInfo_t::setCore(uint32_t vCore, P_core* core)
      if (VCoreMap.find(vCore) == VCoreMap.end()) return false; // virtual core exists?
      if (CoreMap.find(core) == CoreMap.end()) // new physical core?
      {
-        insertCore(vCore, core->addr); // add a new core in the usual way
+        // Get a P_addr_t for this core.
+        P_addr coreSoftAddress;
+        core->get_hardware_address()->
+            populate_a_software_address(&coreSoftAddress);
+        insertCore(vCore, coreSoftAddress); // add a new core in the usual way
         return true;
      }
      CoreMap[core] = vCore;     // otherwise set both maps
