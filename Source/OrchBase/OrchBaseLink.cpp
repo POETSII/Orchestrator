@@ -282,12 +282,33 @@ void OrchBase::UnlinkAll()
 // the device <-> thread links are all deleted. Not ethe placement moduke needs
 // not know - the topology is left untouched.
 {
-if (pP==0) return;                     // No node graph
-                                       // Kill the thread->device links
-WALKPDIGRAPHNODES(unsigned,P_box *,unsigned,P_link *,unsigned,P_port *,pP->G,i)
-  WALKVECTOR(P_board *,pP->G.NodeData(i)->P_boardv,j)
-    WALKVECTOR(P_core *,(*j)->P_corev,k)
-      WALKVECTOR(P_thread *,(*k)->P_threadv,l) (*l)->P_devicel.clear();
+
+if (pE == 0) return;
+else if (pE->is_empty()) return;
+else {
+  // Iterate over all threads.
+  WALKPDIGRAPHNODES(AddressComponent, P_board*,
+                    unsigned, P_link*,
+                    unsigned, P_port*, pE->G,boardIterator)
+  {
+    WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                      unsigned, P_link*,
+                      unsigned, P_port*,
+                      pE->G.NodeData(boardIterator)->G,mailboxIterator)
+    {
+      WALKMAP(AddressComponent, P_core*,
+              pE->G.NodeData(boardIterator)->
+              G.NodeData(mailboxIterator)->P_corem, coreIterator)
+      {
+        WALKMAP(AddressComponent, P_thread*,
+                coreIterator->second->P_threadm, threadIterator)
+        {
+            threadIterator->second->P_devicel.clear();
+        }
+      }
+    }
+  }
+}
 
 if (P_taskm.empty()) return;           // No tasks at all
 WALKMAP(string,P_task *,P_taskm,i) {   // Walk them that's there
