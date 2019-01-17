@@ -39,29 +39,47 @@ void OrchBase::LinkDump(Cli::Cl_t Cl)
 FILE * fp = stdout;                    // For now
 string s = "Console";                  // For now
 fprintf(fp,"link /dump %35s++++++++++++++++++++++++++++++++++++++\n",s.c_str());
-if (pP==0) fprintf(fp,"No topology graph\n");
+if (pE == 0) fprintf(fp,"No topology graph\n");
+else if (pE->is_empty()) fprintf(fp,"Topology graph empty\n");
 else {
   fprintf(fp,"Devices on threads :\n");
-  WALKPDIGRAPHNODES(unsigned,P_box *,unsigned,P_link *,unsigned,P_port *,pP->G,i){
-    P_box * pbo = pP->G.NodeData(i);
-    if (pbo==0) {
-      fprintf(fp,"Topology graph empty\n");
-      break;
-    }
-    WALKVECTOR(P_board *,pbo->P_boardv,pbd) {
-      WALKVECTOR(P_core *,(*pbd)->P_corev,pco) {
-        WALKVECTOR(P_thread *,(*pco)->P_threadv,pth) {
-          if ((*pth)->P_devicel.empty());
-//            fprintf(fp,"Thread %s empty\n",(*pth)->FullName().c_str());
-          else fprintf(fp,"Thread %s : %u devices\n",
-                       (*pth)->FullName().c_str(),(*pth)->P_devicel.size());
-          WALKLIST(P_device *,(*pth)->P_devicel,pde) {
-            fprintf(fp,"       %s\n",(*pde)->FullName().c_str());
+
+  // Iterate over all threads.
+  WALKPDIGRAPHNODES(AddressComponent, P_board*,
+                    unsigned, P_link*,
+                    unsigned, P_port*, pE->G,boardIterator)
+  {
+    WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                      unsigned, P_link*,
+                      unsigned, P_port*,
+                      pE->G.NodeData(boardIterator)->G,mailboxIterator)
+    {
+      WALKMAP(AddressComponent, P_core*,
+              pE->G.NodeData(boardIterator)->
+              G.NodeData(mailboxIterator)->P_corem, coreIterator)
+      {
+        WALKMAP(AddressComponent, P_thread*,
+                coreIterator->second->P_threadm, threadIterator)
+        {
+
+          if (!threadIterator->second->P_devicel.empty())
+          {
+            fprintf(fp,"Thread %s : %u devices\n",
+                    threadIterator->second->FullName().c_str(),
+                    threadIterator->second->P_devicel.size());
+
+            WALKLIST(P_device*, threadIterator->second->P_devicel,
+                     deviceIterator)
+            {
+              fprintf(fp, "       %s\n",
+                      (*deviceIterator)->FullName().c_str());
+            }
           }
         }
       }
     }
   }
+
   fprintf(fp,"Threads on devices :\n");
   if (P_taskm.empty()) fprintf(fp,"No tasks loaded\n");
   else {
