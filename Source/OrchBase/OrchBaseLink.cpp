@@ -195,7 +195,7 @@ pD->pP_devtyp->Dump();
 pT->Dump();
 pT->pOwn->Dump();
 pD->pP_thread->dump();
-pD->pP_thread->par->dump();
+pD->pP_thread->parent->dump();
 
 string s0 = pD->Name();
 string s1 = pD->pP_devtyp->Name();
@@ -209,7 +209,7 @@ vector<string> ns3 = pD->NSGetoupt();
 unsigned u0 =  pD->Id();
 P_addr_t p0 = pD->addr;
 unsigned u1 = pD->attr;
-unsigned u2 = pD->pP_thread->par->pCoreBin->Id();
+unsigned u2 = pD->pP_thread->parent->pCoreBin->Id();
 
   ns.PutD(pD->Name(),                  // Device name
           pD->pP_devtyp->Name(),       // Device type
@@ -223,7 +223,7 @@ unsigned u2 = pD->pP_thread->par->pCoreBin->Id();
           pD->Id(),                    // Device ID
           pD->addr,                    // Hardware address
           pD->attr,                    // Attribute
-          pD->pP_thread->par->pCoreBin->Id());   // Binary file ID
+          pD->pP_thread->parent->pCoreBin->Id());   // Binary file ID
 }
 ns.Put<unsigned>(0,&(ns.keyv));               // Key vector
 ns.Key(Q::CANDC,Q::LOAD);
