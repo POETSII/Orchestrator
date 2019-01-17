@@ -132,7 +132,7 @@ if (pT->linked) {                      // Task already linked?
 
 /*
 
-               MOVED THE LOOP BELOW INTO THE PLACEMENT CLASS AND 
+               MOVED THE LOOP BELOW INTO THE PLACEMENT CLASS AND
                MODIFIED TO PLACE ONE DEVICE TYPE PER CORE
 
 // WALKPDIGRAPHNODES(unsigned,P_device *,unsigned,P_message *,unsigned,P_pin *,pD->G,i)
@@ -160,7 +160,7 @@ for(unsigned i=0;i<lim*4;i++) {
 }
 
 //------------------------------------------------------------------------------
- 
+
 void OrchBase::LinkNser(Cli::Cl_t Cl)
 // Command from monkey to upload a linked task to the nameserver
 {
@@ -352,6 +352,3 @@ WALKSET(P_thread *,touched,i) (*i)->P_devicel.remove(0);
 }
 
 //==============================================================================
-
-
-
