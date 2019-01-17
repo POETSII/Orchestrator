@@ -206,7 +206,6 @@ vector<string> vs0 = pD->NSGetinpn();
 vector<string> vs1 = pD->NSGetinpt();
 vector<string> vs2 = pD->NSGetoupn();
 vector<string> ns3 = pD->NSGetoupt();
-P_addr_t p0 = pD->addr;
 
   ns.PutD(pD->Name(),                  // Device name
           pD->pP_devtyp->Name(),       // Device type
