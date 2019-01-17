@@ -22,14 +22,14 @@ TaskInfo_t::~TaskInfo_t()
       delete bBins->second;
 }
 
-// sets the core value for a virtual core, provided this core number exists 
+// sets the core value for a virtual core, provided this core number exists
 bool TaskInfo_t::setCore(uint32_t vCore, P_core* core)
 {
      if (VCoreMap.find(vCore) == VCoreMap.end()) return false; // virtual core exists?
      if (CoreMap.find(core) == CoreMap.end()) // new physical core?
      {
         insertCore(vCore, core->addr); // add a new core in the usual way
-        return true;		   
+        return true;
      }
      CoreMap[core] = vCore;     // otherwise set both maps
      VCoreMap[vCore] = core;
@@ -63,12 +63,12 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
        if ((*B)->addr.A_board == coreID.A_board)
        {
 	  printf("Using VirtualBoard %s\n",(*B)->Name().c_str());
-          fflush(stdout);	  
+          fflush(stdout);
 	  VirtualBoard = (*B);
 	  break;
        }
     }
-    if (!VirtualBoard) // no existing board matches the core. Create a new one. 
+    if (!VirtualBoard) // no existing board matches the core. Create a new one.
     {
        VirtualBox->P_boardv.push_back(new P_board(VirtualBox)); // same thing for names here.
        VirtualBoard = VirtualBox->P_boardv.back();
@@ -81,13 +81,13 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     softMap_t::iterator C = VCoreMap.find(vCore);
     if (C != VCoreMap.end())
     {
-       // core already exists. No need to add. 
+       // core already exists. No need to add.
        if ((C->second->addr.A_box == VirtualBox->addr.A_box) && (C->second->addr.A_board == VirtualBoard->addr.A_board) && (C->second->addr.A_core == coreID.A_core)) return;
        // A mapped core with the same virtual number is already in the table; get rid of it.
        CoreMap.erase(C->second);
-       removeCore(C->second); 
+       removeCore(C->second);
     }
-    // insert the new core with its appropriate address fields. 
+    // insert the new core with its appropriate address fields.
     VirtualBoard->P_corev.push_back(new P_core(VirtualBoard));
     P_core* VirtualCore = VirtualBoard->P_corev.back();
     VirtualCore->AutoName(VirtualBoard->Name()+"_Core_");
@@ -115,7 +115,7 @@ void TaskInfo_t::deleteCore(uint32_t vCore)
 {
      softMap_t::iterator C;
      if ((C = VCoreMap.find(vCore)) == VCoreMap.end()) return; // core isn't mapped
-     P_core* core = C->second;  
+     P_core* core = C->second;
      CoreMap.erase(C->second); // remove from both maps
      VCoreMap.erase(C);
      removeCore(core);          // and then remove from the VirtualBox
@@ -149,7 +149,7 @@ void TaskInfo_t::removeCore(P_core* core)
 vector<P_core*>& TaskInfo_t::CoresForTask()
 {
    if (!cores.size())
-   {  
+   {
       WALKVECTOR(P_board*,VirtualBox->P_boardv,board)
         cores.insert(cores.end(),(*board)->P_corev.begin(),(*board)->P_corev.end());
    }
@@ -163,7 +163,7 @@ vector<P_thread*>& TaskInfo_t::ThreadsForTask()
       {
 	WALKVECTOR(P_core*,(*board)->P_corev,core)
 	  threads.insert(threads.end(),(*core)->P_threadv.begin(),(*core)->P_threadv.end());
-      }      
+      }
    }
    return threads;
 }
