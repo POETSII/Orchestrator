@@ -84,7 +84,7 @@ Root::~Root()
 WALKVECTOR(FnMap_t*, FnMapx, F)
     delete *F;
 }
-       
+
 //------------------------------------------------------------------------------
 
 void Root::CallEcho(Cli::Cl_t Cl)
@@ -421,7 +421,7 @@ else ProcCmnd(&Cm);                    // Handle ordinary batch command
 }
 
 //------------------------------------------------------------------------------
-   
+
 unsigned Root::OnInje(PMsg_p * Z, unsigned cIdx)
 // Handle a message coming in from the Injector.
 {
@@ -674,6 +674,3 @@ Post(26,sD,sT);
 }
 
 //==============================================================================
-
-
-
