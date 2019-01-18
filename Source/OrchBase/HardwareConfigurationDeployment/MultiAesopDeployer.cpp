@@ -4,6 +4,8 @@
 
 MultiAesopDeployer::MultiAesopDeployer(unsigned multiple)
 {
+    fileOrigin = "MultiAesopDeployer.cpp";
+
     /* More boxes! */
     boxesInEngine *= multiple;
 
