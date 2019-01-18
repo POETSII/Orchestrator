@@ -64,6 +64,9 @@ private:
   vector<P_core*> cores;
   vector<P_thread*> threads;
   vector<P_device*> devices;
+  void populateCoreVector();
+  void populateThreadVector();
+  void populateDeviceVector();
 
   map<P_board*,vector<BinPair_t>*> binaries;
 

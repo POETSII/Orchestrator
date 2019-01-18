@@ -160,67 +160,125 @@ void TaskInfo_t::deleteCore(P_core* core)
 // remove a core from the VirtualBox
 void TaskInfo_t::removeCore(P_core* core)
 {
-     vector<P_core*>::iterator C = core->par->P_corev.begin();
-     while (C != core->par->P_corev.end())
-     {
-           if ((*C) == core)
-           {
-	      core->par->P_corev.erase(C); // very inefficient but rare: remove old mapped core
-	      break;                       // and end the search
-	   }
-     }
-     delete core;                          // once removed destroy the object.
+    std::map<AddressComponent, P_core*>::iterator coreIterator;
+    for (coreIterator=core->parent->P_corem.begin();
+         coreIterator!=core->parent->P_corem.end(); coreIterator++)
+    {
+        if (coreIterator->second == core)
+        {
+            core->parent->P_corem.erase(coreIterator); // very inefficient but rare: remove old mapped core
+            break;                                     // and end the search
+        }
+    }
+    delete core; // once removed destroy the object.
+}
+
+// Populates the "cores" member of this object using the Virtual hardware
+// stack, if "cores" has not already been populated.
+void TaskInfo_t::populateCoreVector()
+{
+    P_board* VirtualBoard;
+    P_mailbox* VirtualMailbox;
+    P_core* VirtualCore;
+    if (!cores.size())
+    {
+        WALKVECTOR(P_board*, VirtualBox->P_boardv, B)
+        {
+            VirtualBoard = (*B);
+            WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                              unsigned, P_link*,
+                              unsigned, P_port*, VirtualBoard->G, MB)
+            {
+                VirtualMailbox = VirtualBoard->G.NodeData(MB);
+                WALKMAP(AddressComponent, P_core*, VirtualMailbox->P_corem, CO)
+                {
+                    VirtualCore = CO->second;
+                    cores.push_back(VirtualCore);
+                }
+            }
+        }
+   }
+}
+
+// Populates the "threads" member of this object, if it has not already been
+// populated.
+void TaskInfo_t::populateThreadVector()
+{
+    P_core* VirtualCore;
+    P_thread* VirtualThread;
+    if (!threads.size())
+    {
+        populateCoreVector();
+        WALKVECTOR(P_core*, cores, CO)
+        {
+            VirtualCore = (*CO);
+            WALKMAP(AddressComponent, P_thread*, VirtualCore->P_threadm, TH)
+            {
+                VirtualThread = TH->second;
+                threads.push_back(VirtualThread);
+            }
+        }
+    }
+}
+
+// Populates the "devices" member of this object, if it has not already been
+// populated.
+void TaskInfo_t::populateDeviceVector()
+{
+    P_thread* VirtualThread;
+    P_device* VirtualDevice;
+    if (!devices.size())
+    {
+        populateThreadVector();
+        WALKVECTOR(P_thread*, threads, TH)
+        {
+            VirtualThread = (*TH);
+            WALKLIST(P_device*, VirtualThread->P_devicel, DV)
+            {
+                VirtualDevice = (*DV);
+                devices.push_back(VirtualDevice);
+            }
+        }
+    }
 }
 
 vector<P_core*>& TaskInfo_t::CoresForTask()
 {
-   if (!cores.size())
-   {
-      WALKVECTOR(P_board*,VirtualBox->P_boardv,board)
-        cores.insert(cores.end(),(*board)->P_corev.begin(),(*board)->P_corev.end());
-   }
-   return cores;
+    populateCoreVector();
+    return cores;
 }
+
 vector<P_thread*>& TaskInfo_t::ThreadsForTask()
 {
-   if (!threads.size())
-   {
-      WALKVECTOR(P_board*,VirtualBox->P_boardv,board)
-      {
-	WALKVECTOR(P_core*,(*board)->P_corev,core)
-	  threads.insert(threads.end(),(*core)->P_threadv.begin(),(*core)->P_threadv.end());
-      }
-   }
-   return threads;
+    populateThreadVector();
+    return threads;
 }
+
 vector<P_device*>& TaskInfo_t::DevicesForTask()
 {
-   if (!devices.size())
-   {
-      WALKVECTOR(P_board*,VirtualBox->P_boardv,board)
-      {
-	WALKVECTOR(P_core*,(*board)->P_corev,core)
-	{
-	  WALKVECTOR(P_thread*,(*core)->P_threadv,thread)
-	    devices.insert(devices.end(),(*thread)->P_devicel.begin(),(*thread)->P_devicel.end());
-	}
-      }
-   }
-   return devices;
+    populateDeviceVector();
+    return devices;
 }
 
 vector<BinPair_t>& TaskInfo_t::BinariesForBoard(P_board* board)
 {
-   if (binaries.find(board) == binaries.end())
-   {
-      BinPair_t core_bins;
-      binaries[board] = new vector<BinPair_t>;
-      WALKVECTOR(P_core*,board->P_corev,core)
-      {
-	core_bins.instr = (*core)->pCoreBin;
-	core_bins.data = (*core)->pDataBin;
-	binaries[board]->push_back(core_bins);
-      }
-   }
-   return *binaries[board];
+    P_mailbox* VirtualMailbox;
+    if (binaries.find(board) == binaries.end())
+    {
+        BinPair_t core_bins;
+        binaries[board] = new vector<BinPair_t>;
+        WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                          unsigned, P_link*,
+                          unsigned, P_port*, board->G, MB)
+        {
+            VirtualMailbox = board->G.NodeData(MB);
+            WALKMAP(AddressComponent, P_core*, VirtualMailbox->P_corem, CO)
+            {
+                core_bins.instr = CO->second->instructionBinary;
+                core_bins.data = CO->second->dataBinary;
+                binaries[board]->push_back(core_bins);
+            }
+        }
+    }
+    return *binaries[board];
 }
