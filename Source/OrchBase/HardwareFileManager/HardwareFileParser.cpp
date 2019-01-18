@@ -70,7 +70,7 @@ void HardwareFileParser::onSyntaxError(void* parser, void* uifInstance, int)
     - if the input file is semantically invalid.
     - if engine is not empty.
 */
-void HardwareFileParser::populateHardwareModel(PoetsEngine* engine)
+void HardwareFileParser::populateHardwareModel(P_engine* engine)
 {
     /* Throw if we have not loaded a file yet. */
     if (!isFileLoaded)

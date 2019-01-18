@@ -46,7 +46,7 @@ class HardwareFileParser: public JNJ
 public:
     HardwareFileParser();
     void loadFile(const char* filePath);
-    void populateHardwareModel(PoetsEngine* engine);
+    void populateHardwareModel(P_engine* engine);
 
 private:
     bool isFileLoaded;
