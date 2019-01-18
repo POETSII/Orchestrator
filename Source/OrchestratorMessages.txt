@@ -67,6 +67,7 @@
 161(W) : "Owner %s does not exist"
 162(E) : "No NameServer is running - cannot upload task"
 163(E) : "Task %s too large for system - cannot place"
+164(W) : "No topology is loaded"
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"

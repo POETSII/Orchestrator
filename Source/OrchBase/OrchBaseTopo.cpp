@@ -97,7 +97,7 @@ pPlace->pCon->Constraintm[constraint] = str2uint(Cl.Pa_v[1].Val);
 
 void OrchBase::TopoDump(Cli::Cl_t Cl)
 {
-if (pE==0) return;
+if (pE==0){Post(164);return};
 if (Cl.Pa_v.empty()) pE->dump();
 WALKVECTOR(Cli::Pa_t,Cl.Pa_v,i) {      // Loop through streams to dump to
   string st = (*i).Val;                // Dump stream
