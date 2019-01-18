@@ -194,17 +194,13 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/OrchBase/build_defs.cpp \
                      $(SOURCE_DIR)/OrchBase/CFrag.cpp \
                      $(SOURCE_DIR)/OrchBase/CMsg_p.cpp \
-                     $(SOURCE_DIR)/OrchBase/Config_t.cpp \
                      $(SOURCE_DIR)/OrchBase/D_graph.cpp \
                      $(SOURCE_DIR)/OrchBase/P_addr.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_board.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_box.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_core.cpp \
                      $(SOURCE_DIR)/OrchBase/P_device.cpp \
                      $(SOURCE_DIR)/OrchBase/P_message.cpp \
                      $(SOURCE_DIR)/OrchBase/P_pin.cpp \
                      $(SOURCE_DIR)/OrchBase/P_task.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_thread.cpp
+                     $(HARDWARE_DEPLOYER_SOURCES)
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 
