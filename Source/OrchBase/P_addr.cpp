@@ -41,18 +41,7 @@ fflush(fp);
 
 P_addr::P_addr()
 {
-A_boxV     = 1;                         // Box address not valid
-A_boardV   = 1;                         // Board address not valid
-A_mailboxV = 1;                         // ...
-A_coreV    = 1;
-A_threadV  = 1;
-A_deviceV  = 1;
-A_box      = 0;                         // For the sake of it...
-A_board    = 0;
-A_mailbox  = 0;
-A_core     = 0;
-A_thread   = 0;
-A_device   = 0;
+    Reset();
 }
 
 //------------------------------------------------------------------------------
@@ -137,6 +126,24 @@ rmbV = A_mailboxV;
 rcoV = A_coreV;
 rthV = A_threadV;
 rdeV = A_deviceV;
+}
+
+//------------------------------------------------------------------------------
+
+void P_addr::Reset()
+{
+A_boxV     = 1;                         // Box address not valid
+A_boardV   = 1;                         // Board address not valid
+A_mailboxV = 1;                         // ...
+A_coreV    = 1;
+A_threadV  = 1;
+A_deviceV  = 1;
+A_box      = 0;                         // For the sake of it...
+A_board    = 0;
+A_mailbox  = 0;
+A_core     = 0;
+A_thread   = 0;
+A_device   = 0;
 }
 
 //------------------------------------------------------------------------------

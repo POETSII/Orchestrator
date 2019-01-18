@@ -63,9 +63,14 @@ unsigned HardwareAddress::get_hardware_address()
 /* Populates a software address object with information from this hardware
  * address object. Arguments:
  *
- * - target: Software address object to populate. */
-void HardwareAddress::populate_a_software_address(P_addr* target)
+ * - target: Software address object to populate.
+ * - resetFirst: Whether or not to reset the target software address before
+ *               populating it. May have a default definined in the
+ *               accompanying header. */
+void HardwareAddress::populate_a_software_address(P_addr* target,
+                                                  bool resetFirst)
 {
+    if (resetFirst){target->Reset();}
     if (is_box_defined()){target->SetBox(get_box());}
     if (is_board_defined()){target->SetBoard(get_board());}
     if (is_mailbox_defined()){target->SetMailbox(get_mailbox());}

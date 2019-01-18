@@ -56,6 +56,7 @@ bool               OK();
 void               RawA(unsigned &,unsigned &,unsigned &,unsigned &,unsigned &,
                         unsigned &);
 void               RawV(int &,int &,int &,int &,int &, int &);
+void               Reset();
 void               SetBoard  (unsigned a){ A_board   = a; A_boardV   = 0; }
 void               SetBox    (unsigned a){ A_box     = a; A_boxV     = 0; }
 void               SetMailbox(unsigned a){ A_mailbox = a; A_mailboxV = 0; }
