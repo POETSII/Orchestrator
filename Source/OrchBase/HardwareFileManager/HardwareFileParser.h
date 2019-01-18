@@ -39,7 +39,7 @@
 
 #include "dfprintf.h"
 #include "jnj.h"  /* JNJ is a wrapper around UIF that provides nicer access to
-                     the UIF data structure. */
+                   * the UIF data structure. */
 
 class HardwareFileParser: public JNJ
 {
