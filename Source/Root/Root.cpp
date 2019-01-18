@@ -523,7 +523,7 @@ if (strcmp(scmnd.c_str(),"topo")==0) return CmTopo(pC);
 
 // Handle Ctrl-D behaviour in common shells. Ctrl-D repeatedly sends the EOF
 // character. Check only the first character of the input.
-if (scmnd.at(0)==EOF) return CmExit(pC);
+if (scmnd.at(0)==0) return CmExit(pC);
 
 return CmDrop(pC);
 }
