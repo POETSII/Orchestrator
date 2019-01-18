@@ -521,6 +521,10 @@ if (strcmp(scmnd.c_str(),"task")==0) return CmTask(pC);
 if (strcmp(scmnd.c_str(),"test")==0) return CmTest(pC);
 if (strcmp(scmnd.c_str(),"topo")==0) return CmTopo(pC);
 
+// Handle Ctrl-D behaviour in common shells. Ctrl-D repeatedly sends the EOF
+// character. Check only the first character of the input.
+if (strcmp(scmnd.at(0))==std::ifstream::traits_type::eof()) return CmExit(pC);
+
 return CmDrop(pC);
 }
 
