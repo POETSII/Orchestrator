@@ -98,14 +98,16 @@ unsigned TMoth::Boot(string task)
    // do this before running 'go' so that we can receive the responses in one block.
    map<unsigned, vector<unsigned>*> t_start_bitmap;
    vector<P_core*> taskCores = TaskMap[task]->CoresForTask();
+   P_addr coreAddress;
    WALKVECTOR(P_core*,taskCores,C)
    {
-       unsigned numThreads = (*C)->P_threadv.size();
+       unsigned numThreads = (*C)->P_threadm.size();
        if (numThreads)
        {
-          t_start_bitmap[TMoth::GetHWAddr((*C)->addr)] = new vector<unsigned>(numThreads/(8*sizeof(unsigned)),UINT_MAX);
+          (*C)->get_hardware_address()->populate_a_software_address(&coreAddress);
+          t_start_bitmap[TMoth::GetHWAddr(coreAddress)] = new vector<unsigned>(numThreads/(8*sizeof(unsigned)),UINT_MAX);
           unsigned remainder = numThreads%(8*sizeof(unsigned));
-          if (remainder) t_start_bitmap[TMoth::GetHWAddr((*C)->addr)]->push_back(UINT_MAX >> ((8*sizeof(unsigned))-remainder));
+          if (remainder) t_start_bitmap[TMoth::GetHWAddr(coreAddress)]->push_back(UINT_MAX >> ((8*sizeof(unsigned))-remainder));
        }
    }
    // printf("Task start bitmaps created for %d cores\n", t_start_bitmap.size());
@@ -113,20 +115,22 @@ unsigned TMoth::Boot(string task)
    // actually boot the cores
    WALKVECTOR(P_core*,taskCores,C)
    {
-     fromAddr(TMoth::GetHWAddr((*C)->addr),&mX,&mY,&core,&thread);
-     // printf("Booting %d threads on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
+     (*C)->get_hardware_address()->populate_a_software_address(&coreAddress);
+     fromAddr(TMoth::GetHWAddr(coreAddress),&mX,&mY,&core,&thread);
+     // printf("Booting %d threads on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
      // fflush(stdout);
-     startOne(mX,mY,core,(*C)->P_threadv.size());
-     // printf("%d threads started on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
+     startOne(mX,mY,core,(*C)->P_threadm.size());
+     // printf("%d threads started on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
      // fflush(stdout);
-     // printf("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
+     // printf("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
      // fflush(stdout);
      goOne(mX,mY,core);
    }
    // per Matt Naylor comment safer to start all cores then issue the go command to all cores separately.
    // WALKVECTOR(P_core*,taskCores,C)
    // {
-   //  printf("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
+   //  (*C)->get_hardware_address()->populate_a_software_address(&coreAddress);
+   //  printf("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
    //  fflush(stdout);
    //  goOne(mX,mY,core);
    // }
@@ -249,10 +253,16 @@ unsigned TMoth::CmLoad(string task)
    // for each board mapped to the task,
    WALKVECTOR(P_board*,TaskMap[task]->BoardsForTask(),B)
    {
-      // printf("This board using %d cores\n", (*B)->P_corev.size());
-      // fflush(stdout);
-      // less work to compute as we go along than to call CoresForTask.size()
-      coresThisTask += (*B)->P_corev.size();
+      WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                        unsigned, P_link*,
+                        unsigned, P_port*, (*B)->G, MB)
+      {
+          // printf("This board using %d cores\n", (*B)->G.NodeData(MB)->P_corem.size());
+          // fflush(stdout);
+          // less work to compute as we go along than to call CoresForTask.size()
+          // MLV: Not so sure in a post-mailbox world any more...
+          coresThisTask += (*B)->G.NodeData(MB)->P_corem.size();
+      }
       coresLoaded += LoadBoard(*B); // load the board (unthreaded model)
    }
    // printf("All boards finished; %d cores loaded\n", coresLoaded);
@@ -314,8 +324,12 @@ unsigned TMoth::CmRun(string task)
    // build a list of the threads in this task (that should be released from barrier)
    // vector<P_thread*> threads_for_task = TaskMap[task]->ThreadsForTask();
    vector<unsigned> threadsToRelease;
+   P_addr threadAddress;
    WALKVECTOR(P_thread*,TaskMap[task]->ThreadsForTask(),R)
-     threadsToRelease.push_back(TMoth::GetHWAddr((*R)->addr));
+   {
+   (*R)->get_hardware_address()->populate_a_software_address(&threadAddress);
+   threadsToRelease.push_back(TMoth::GetHWAddr(threadAddress));
+   }
    // printf("%d threads to release in task %s\n",threadsToRelease.size(),task.c_str());
    // fflush(stdout);
    while (!canSend()); // wait until a message can be sent. The Twig process should be fielding unexpected traffic by this point.
@@ -387,9 +401,11 @@ unsigned TMoth::CmStop(string task)
    // fflush(stdout);
    // go through each thread of the task,
    //vector<P_thread*> threads_for_task = TaskMap[task]->ThreadsForTask();
+   P_addr threadAddress;
    WALKVECTOR(P_thread*, TaskMap[task]->ThreadsForTask(), R)
    {
-     uint32_t destDevAddr = TMoth::GetHWAddr((*R)->addr);
+     (*R)->get_hardware_address()->populate_a_software_address(&threadAddress);
+     uint32_t destDevAddr = TMoth::GetHWAddr(threadAddress);
      // printf("Stopping thread %d in task %s\n", destDevAddr, task.c_str());
      // fflush(stdout);
      stop_msg.destDeviceAddr = DEST_BROADCAST; // issue the stop message to all devices
@@ -431,7 +447,7 @@ WALKMAP(string,TaskInfo_t*,TaskMap,Task)
   fprintf(fp,"Task %s in state %s:\n",Task->second->TaskName.c_str(),TaskInfo_t::Task_Status.find(Task->second->status)->second.c_str());
   fprintf(fp,"Reading from binary path %s\n",Task->second->BinPath.c_str());
   fprintf(fp,"Task map dump:\n");
-  Task->second->VirtualBox->Dump(fp);
+  Task->second->VirtualBox->dump(fp);
   fprintf(fp,".......................................\n");
 }
 fprintf(fp,"Mothership dump-----------------------------------\n");
@@ -443,36 +459,43 @@ CommonBase::Dump(fp);
 
 int TMoth::LoadBoard(P_board* board)
 {
-      int coresLoaded = 0;
-      string task;
-      WALKMAP(string,TaskInfo_t*,TaskMap,K) // find our task
-      {
-	if (K->second->status == TaskInfo_t::TASK_BOOT) task = K->first;
-	break;
-      }
-      if (!task.empty()) // anything to do?
-      {
-	 TaskInfo_t* task_map = TaskMap[task];
-	 WALKVECTOR(P_core*,board->P_corev,C) // grab each core's code and data file
-         {
-	    string code_f(task_map->BinPath + "/softswitch_code_" + int2str(task_map->getCore(*C)) + ".v");
-	    string data_f(task_map->BinPath + "/softswitch_data_" + int2str(task_map->getCore(*C)) + ".v");
-	    (*C)->pCoreBin = new Bin(fopen(code_f.c_str(), "r"));
-	    (*C)->pDataBin = new Bin(fopen(data_f.c_str(), "r"));
-	    uint32_t mX, mY, core, thread;
-	    // printf("Loading core with virtual address Bx:%d, Bd:%d, Cr:%d\n",(*C)->addr.A_box,(*C)->addr.A_board,(*C)->addr.A_core);
-            // fflush(stdout);
-	    fromAddr(TMoth::GetHWAddr((*C)->addr), &mX, &mY, &core, &thread);
-	    // printf("Loading hardware thread 0x%X at x:%d y:%d c:%d\n",TMoth::GetHWAddr((*C)->addr),mX,mY,core);
-            // fflush(stdout);
-	    loadInstrsOntoCore(code_f.c_str(),mX,mY,core); // load instruction memory
-	    loadDataViaCore(data_f.c_str(),mX,mY,core); // then data memory
-	    ++coresLoaded;
-         }
-      }
-      // printf("Boot process for board %s finished %d cores loaded\n", board->Name().c_str(), coresLoaded);
-      // fflush(stdout);
-      return coresLoaded;
+    int coresLoaded = 0;
+    string task;
+    WALKMAP(string,TaskInfo_t*,TaskMap,K) // find our task
+    {
+        if (K->second->status == TaskInfo_t::TASK_BOOT) task = K->first;
+        break;
+    }
+    if (!task.empty()) // anything to do?
+    {
+        TaskInfo_t* task_map = TaskMap[task];
+        P_addr coreAddress;
+        WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                          unsigned, P_link*,
+                          unsigned, P_port*, board->G, MB)
+        {
+            WALKMAP(AddressComponent, P_core*, board->G.NodeData(MB)->P_corem, C) // grab each core's code and data file
+            {
+                string code_f(task_map->BinPath + "/softswitch_code_" + int2str(task_map->getCore(C->second)) + ".v");
+                string data_f(task_map->BinPath + "/softswitch_data_" + int2str(task_map->getCore(C->second)) + ".v");
+                C->second->instructionBinary = new Bin(fopen(code_f.c_str(), "r"));
+                C->second->dataBinary = new Bin(fopen(data_f.c_str(), "r"));
+                uint32_t mX, mY, core, thread;
+                // printf("Loading core with virtual address Bx:%d, Bd:%d, Cr:%d\n",coreAddress.A_box,coreAddress.A_board,coreAddress.A_core);
+                // fflush(stdout);
+                C->second->get_hardware_address()->populate_a_software_address(&coreAddress);
+                fromAddr(TMoth::GetHWAddr(coreAddress), &mX, &mY, &core, &thread);
+                // printf("Loading hardware thread 0x%X at x:%d y:%d c:%d\n",TMoth::GetHWAddr(coreAddress),mX,mY,core);
+                // fflush(stdout);
+                loadInstrsOntoCore(code_f.c_str(),mX,mY,core); // load instruction memory
+                loadDataViaCore(data_f.c_str(),mX,mY,core); // then data memory
+                ++coresLoaded;
+            }
+        }
+    }
+    // printf("Boot process for board %s finished %d cores loaded\n", board->Name().c_str(), coresLoaded);
+    // fflush(stdout);
+    return coresLoaded;
 }
 
 //------------------------------------------------------------------------------
