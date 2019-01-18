@@ -54,6 +54,7 @@
 136(I) : "Whatever you asked for, it's not working yet"
 137(I) : "Topology default file path is ||%s||"
 138(I) : "Creating topology ||%s||"
+139(W) : "No topology is loaded."
 151(W) : "Attempt to xlink task %s when no topology exists"
 152(W) : "Attempt to xlink non-existent task %s"
 153(W) : "Attempt to xlink task %s - it's already linked"
@@ -67,7 +68,6 @@
 161(W) : "Owner %s does not exist"
 162(E) : "No NameServer is running - cannot upload task"
 163(E) : "Task %s too large for system - cannot place"
-164(W) : "No topology is loaded"
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"
