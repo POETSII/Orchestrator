@@ -2,31 +2,31 @@
 #define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEMANAGER_HARDWAREFILEPARSER_H
 
 /* Logic for parsing hardware model files, and for generating hardware models
-   from them.
-
-   Hardware model files are UIF files that fully define a model of the
-   hardware, which is suitable for the Orchestrator's purposes.
-
-   Rougly speaking, the conversion from a hardware model file to a hardware
-   model follows this procedure:
-
-    1. Load the file.
-    2. Parse the file using the UIF parser, and generate a token tree. Raises
-       if the file is syntactically invalid.
-    3. Parse the token tree, and generate a hardware stack (PoetsEngine
-       populated with components). Raises if the file is semantically invalid.
-    ...
-    From which the programmer can use the hardware model as they desire (for
-    the most part, this means putting it into the Orchestrator, but do what you
-    will).
-
-   The HardwareFileParser class encapsulates this process (I wouldn't normally
-   do it this way, but the recommended approach for using UIF is to use it as a
-   base class, so...). Only one file can be loaded by this parser at a time;
-   loading a second file clobbers the data structure of the first.
-
-   See the hardware model documentation for a description of the file
-   format. */
+ * from them.
+ *
+ * Hardware model files are UIF files that fully define a model of the
+ * hardware, which is suitable for the Orchestrator's purposes.
+ *
+ * Rougly speaking, the conversion from a hardware model file to a hardware
+ * model follows this procedure:
+ *
+ *  1. Load the file.
+ *  2. Parse the file using the UIF parser, and generate a token tree. Raises
+ *     if the file is syntactically invalid.
+ *  3. Parse the token tree, and generate a hardware stack (PoetsEngine
+ *     populated with components). Raises if the file is semantically invalid.
+ *  ...
+ *  From which the programmer can use the hardware model as they desire (for
+ *  the most part, this means putting it into the Orchestrator, but do what you
+ *  will).
+ *
+ * The HardwareFileParser class encapsulates this process (I wouldn't normally
+ * do it this way, but the recommended approach for using UIF is to use it as a
+ * base class, so...). Only one file can be loaded by this parser at a time;
+ * loading a second file clobbers the data structure of the first.
+ *
+ * See the hardware model documentation for a description of the file
+ * format. */
 
 #include <numeric>
 #include <string.h>
