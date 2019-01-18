@@ -126,7 +126,7 @@ void P_core::dump(FILE* file)
         fprintf(file, "The thread map is empty.\n");
     else
     {
-        WALKMAP(AddressComponent,P_thread*,P_threadm,iterator)
+        WALKMAP(AddressComponent, P_thread*, P_threadm, iterator)
         {
             P_thread* iterThread = iterator->second;
             /* Print information from the map. */
@@ -134,7 +134,7 @@ void P_core::dump(FILE* file)
                     iterator->first,
                     iterThread->FullName().c_str(), iterThread);
             /* Recursive-dump. */
-            iterThread->dump();
+            iterThread->dump(file);
         }
     }
     fprintf(file, "Threads in this core %s\n", std::string(58, '-').c_str());

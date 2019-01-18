@@ -231,6 +231,7 @@ void P_engine::dump(FILE* file)
     else
     {
         /* Dump graph (which does not dump items). */
+        G.DumpChan(file);
         G.Dump();
     }
     fprintf(file, "Board connectivity in this engine %s\n",
@@ -242,15 +243,14 @@ void P_engine::dump(FILE* file)
         fprintf(file, "The box map is empty.\n");
     else
     {
-        WALKMAP(AddressComponent,P_box*,P_boxm,iterator)
+        WALKMAP(AddressComponent, P_box*, P_boxm, iterator)
         {
-            P_box* iterThread = iterator->second;
+            P_box* iterBox = iterator->second;
             /* Print information from the map. */
-            fprintf(file, "%u: %s (%p)\n",
-                    iterator->first,
-                    iterThread->FullName().c_str(), iterThread);
+            fprintf(file, "%u: %s (%p)\n", iterator->first,
+                    iterBox->FullName().c_str(), iterBox);
             /* Recursive-dump. */
-            iterThread->dump();
+            iterBox->dump(file);
         }
     }
     fprintf(file, "Boxes in this engine %s\n", std::string(58, '-').c_str());

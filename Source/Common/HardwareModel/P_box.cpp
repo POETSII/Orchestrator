@@ -92,14 +92,14 @@ void P_box::dump(FILE* file)
     if (P_boardv.empty()){fprintf(file, "The board vector is empty.\n");}
     else
     {
-        WALKVECTOR(P_board*,P_boardv,iterator)
+        WALKVECTOR(P_board*, P_boardv, iterator)
         {
             P_board* iterBoard = *iterator;
             /* Print information from the map. */
             fprintf(file, "%s (%p)\n",
                     iterBoard->FullName().c_str(), iterBoard);
             /* Recursive-dump. */
-            iterBoard->dump();
+            iterBoard->dump(file);
         }
     }
     fprintf(file, "Boards in this box %s\n", std::string(60, '-').c_str());

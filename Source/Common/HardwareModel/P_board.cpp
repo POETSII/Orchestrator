@@ -172,6 +172,7 @@ void P_board::dump(FILE* file)
     else
     {
         /* Dump graph (which does not dump items). */
+        G.DumpChan(file);
         G.Dump();
     }
     fprintf(file, "Mailbox connectivity in this board %s\n",
@@ -183,16 +184,18 @@ void P_board::dump(FILE* file)
         fprintf(file, "Mailboxes in this board %s\n",
                 std::string(55, '+').c_str());
 
-        /* Set up callbacks for walking through the mailbox nodes. */
+        /* Set up callbacks for walking through the mailbox nodes, passing in
+         * the file pointer. */
         struct WalkCallbacks {
-            CALLBACK node(void*, AddressComponent const&, P_mailbox* &mailbox)
+            CALLBACK node(void* file, AddressComponent const&,
+                          P_mailbox* &mailbox)
             {
-                mailbox->dump();
+                mailbox->dump(static_cast<FILE*>(file));
             }
         };
 
         /* Dump mailboxes in the graph recursively. */
-        G.WALKNODES(NULL, WalkCallbacks::node);
+        G.WALKNODES(file, WalkCallbacks::node);
 
         fprintf(file, "Mailboxes in this board %s\n",
                 std::string(55, '-').c_str());

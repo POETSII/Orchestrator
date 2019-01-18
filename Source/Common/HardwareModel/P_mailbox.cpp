@@ -94,7 +94,7 @@ void P_mailbox::dump(FILE* file)
         fprintf(file, "The core map is empty.\n");
     else
     {
-        WALKMAP(AddressComponent,P_core*,P_corem,iterator)
+        WALKMAP(AddressComponent, P_core*, P_corem, iterator)
         {
             P_core* iterCore = iterator->second;
             /* Print information from the map. */
@@ -102,7 +102,7 @@ void P_mailbox::dump(FILE* file)
                     iterator->first,
                     iterCore->FullName().c_str(), iterCore);
             /* Recursive-dump. */
-            iterCore->dump();
+            iterCore->dump(file);
         }
     }
     fprintf(file, "Cores in this mailbox %s\n", std::string(57, '-').c_str());
