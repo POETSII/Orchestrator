@@ -34,6 +34,7 @@
 
 #include "HardwareAddressFormat.h"
 #include "HardwareAddress.h"
+#include "HardwareFileNotFoundException.h"
 #include "HardwareModel.h"
 #include "HardwareSyntaxException.h"
 
@@ -51,6 +52,7 @@ public:
 private:
     bool isFileLoaded;
     std::string loadedFile;
+    bool doesFileExist(const char* filePath);
     static void onSyntaxError(void*, void*, int);
 };
 

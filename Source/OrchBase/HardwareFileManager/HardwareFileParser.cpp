@@ -11,6 +11,25 @@ HardwareFileParser::HardwareFileParser():JNJ(),isFileLoaded(false)
     SetECB(this, onSyntaxError);
 }
 
+/* Returns true if a file exists at the path passed to by argument, and false
+ * otherwise.
+ *
+ * Would be more elegant and faster with POSIX's stat...
+ *
+ * Arguments:
+ *
+ * - filePath: Path to look at. */
+bool HardwareFileParser::doesFileExist(const char* filePath)
+{
+    FILE* testFile = fopen(filePath, "r");
+    if (testFile)
+    {
+        fclose(testFile);
+        return true;
+    }
+    else{return false;}
+}
+
 /* Loads an input file and parses it through the UIF parsing mechanism to
  * generate the tree structure. Arguments:
  *
@@ -21,9 +40,16 @@ HardwareFileParser::HardwareFileParser():JNJ(),isFileLoaded(false)
  *
  * Throws if:
  *
+ * - the input file does not exist.
  * - the input file is syntactically invalid. */
 void HardwareFileParser::loadFile(const char* filePath)
 {
+    if(!doesFileExist(filePath))
+    {
+        throw HardwareFileNotFoundException(
+            dformat("[ERROR] No input file found at \"%s\".\n", filePath));
+    }
+
     if (isFileLoaded)
     {
         Reset();  /* From UIF. */

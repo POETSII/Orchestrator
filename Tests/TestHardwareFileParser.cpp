@@ -20,4 +20,25 @@ TEST_CASE("Files with an invalid syntax raise syntax error", "[Parser]")
                         HardwareSyntaxException&);
 }
 
-// <!> Non-existent files?
+TEST_CASE("Files that do not exist raise a file-not-found error", "[Parser]")
+{
+    HardwareFileParser parser;
+
+    /* Find a file that doesn't exist by starting from "x", and adding "x"s
+     * until we hit a non-existent file. Would be better with POSIX's stat. */
+    std::string filePath;
+    FILE* testFile;
+    while (true)
+    {
+        testFile = fopen(filePath.c_str(), "r");
+        if (testFile)
+        {
+            fclose(testFile);
+            filePath.append("x");
+        }
+        else {break;}
+    }
+
+    REQUIRE_THROWS_AS(parser.loadFile(filePath.c_str()),
+                      HardwareFileNotFoundException&);
+}
