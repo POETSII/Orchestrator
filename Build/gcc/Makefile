@@ -78,6 +78,7 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/Common/HardwareModel \
                 -I$(SOURCE_DIR)/OrchBase \
                 -I$(SOURCE_DIR)/OrchBase/HardwareFileManager \
+                -I$(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment \
                 -I$(SOURCE_DIR)/Injector \
                 -I$(SOURCE_DIR)/Parser \
                 -I$(SOURCE_DIR)/NameServer \
@@ -197,6 +198,7 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 		["QT_LIB_DIR"]="$(realpath $(QT_LIB_DIR))" \
 		["JTAG_LIB_DIR"]="$(realpath $(JTAG_LIB_DIR))" \
 		["GCC_LIB_DIR"]="$(realpath $(GCC_LIB_DIR))" \
+		["CR_LIB_DIR"]="$(realpath $(CR_LIB_DIR))" \
 		["SUPERVISOR_LIB_DIR"]="$$(realpath -m $(SUPERVISOR_LIB_DIR))" \
 		["EXECUTABLE_DIR"]="$$(realpath -m $(EXECUTABLE_DIR))");\
 	for KEY in "$${!SUBSTITUTIONS[@]}"; do \

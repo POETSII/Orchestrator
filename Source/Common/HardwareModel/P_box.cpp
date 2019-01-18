@@ -1,23 +1,35 @@
 /* Defines POETS Box behaviour (see the accompanying header for further
-   information). */
+ * information). */
 
-#include "PoetsBox.h"
+#include "P_box.h"
 
 /* Constructs a POETS Box. Arguments:
-   - name: Name of this box object (see namebase)
-*/
-PoetsBox::PoetsBox(std::string name)
+ *
+ * - name: Name of this box object (see namebase) */
+P_box::P_box(std::string name)
 {
     Name(name);
 }
 
-/* Donates an uncontained board to this box. Arguments:
+P_box::~P_box(){clear();}
 
-   - addressComponent: Used to index the board in this box.
-   - board: Pointer to the board object to contain. Must not already have a
-     parent.
-*/
-void PoetsBox::contain(AddressComponent addressComponent, PoetsBoard* board)
+/* Clears the dynamically-allocated elements of the data structure of this box,
+ * deleting all contained components recursively. NB: Does not delete
+ * supervisors; this is handled by D_graph. */
+void P_box::clear()
+{
+    /* Clear all boards that this box knows about. This should clear
+     * recursively. */
+    WALKVECTOR(P_board*,P_boardv,iterator){delete *iterator;}
+    P_boardv.clear();
+}
+
+/* Donates an uncontained board to this box. Arguments:
+ *
+ * - addressComponent: Used to index the board in this box.
+ * - board: Pointer to the board object to contain. Must not already have a
+ *   parent. */
+void P_box::contain(AddressComponent addressComponent, P_board* board)
 {
     /* Verify that the board is unowned. */
     if (board->parent != NULL)
@@ -45,21 +57,29 @@ void PoetsBox::contain(AddressComponent addressComponent, PoetsBoard* board)
         throw OwnershipException(errorMessage.str());
     }
 
-    PoetsBoards[addressComponent] = board;
+    P_boardv.push_back(board);
+
+    /* Define a hardware address for the board, if we have a hardware
+     * address. */
+    if (isAddressBound)
+    {
+        HardwareAddress* boardHardwareAddress = copy_hardware_address();
+        boardHardwareAddress->set_board(addressComponent);
+        board->set_hardware_address(boardHardwareAddress);
+    }
 }
 
 /* Write debug and diagnostic information about the POETS box, recursively,
-   using dumpchan. Arguments:
-
-   - file: File to dump to.
-*/
-void PoetsBox::dump(FILE* file)
+ * using dumpchan. Arguments:
+ *
+ * - file: File to dump to. */
+void P_box::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
 
     /* About this object and its parent, if any. */
     char breaker[MAXIMUM_BREAKER_LENGTH + 1];
-    int breakerLength = sprintf(breaker, "PoetsBox %s ", fullName.c_str());
+    int breakerLength = sprintf(breaker, "P_box %s ", fullName.c_str());
     for(int index=breakerLength; index<MAXIMUM_BREAKER_LENGTH - 1;
         breaker[index++]='+');
     breaker[MAXIMUM_BREAKER_LENGTH - 1] = '\n';
@@ -69,19 +89,17 @@ void PoetsBox::dump(FILE* file)
 
     /* About contained items, if any. */
     fprintf(file, "Boards in this box %s\n", std::string(60, '+').c_str());
-    if (PoetsBoards.empty())
-        fprintf(file, "The board map is empty.\n");
+    if (P_boardv.empty()){fprintf(file, "The board vector is empty.\n");}
     else
     {
-        WALKMAP(AddressComponent,PoetsBoard*,PoetsBoards,iterator)
+        WALKVECTOR(P_board*, P_boardv, iterator)
         {
-            PoetsBoard* iterBoard = iterator->second;
+            P_board* iterBoard = *iterator;
             /* Print information from the map. */
-            fprintf(file, "%u: %s (%p)\n",
-                    iterator->first,
+            fprintf(file, "%s (%p)\n",
                     iterBoard->FullName().c_str(), iterBoard);
             /* Recursive-dump. */
-            iterBoard->dump();
+            iterBoard->dump(file);
         }
     }
     fprintf(file, "Boards in this box %s\n", std::string(60, '-').c_str());
@@ -94,9 +112,9 @@ void PoetsBox::dump(FILE* file)
 }
 
 /* Hook that a container calls to contain this object. Arguments:
-   - container: Address of the engine that contains this box.
-*/
-void PoetsBox::on_being_contained_hook(PoetsEngine* container)
+ *
+ * - container: Address of the engine that contains this box. */
+void P_box::on_being_contained_hook(P_engine* container)
 {
     parent = container;
     Npar(container);

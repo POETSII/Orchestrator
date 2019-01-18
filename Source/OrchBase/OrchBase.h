@@ -2,8 +2,8 @@
 #define __OrchBaseH__H
 
 #include <stdio.h>
+#include "HardwareModel.h"
 #include "D_graph.h"
-#include "P_graph.h"
 #include "Placement.h"
 #include "Cli.h"
 class P_task;
@@ -20,7 +20,7 @@ using namespace std;
 
 class OrchBase : public CommonBase, public NameBase
 {
-public:               
+public:
                        OrchBase(int,char *[],string,string);
 virtual ~              OrchBase();
 void                   Dump(FILE * = stdout);
@@ -80,7 +80,7 @@ void                   OwneDump(Cli::Cl_t);
 void                   OwneShow(Cli::Cl_t);
 void                   OwneTask(Cli::Cl_t);
 
-P_graph *              pP;             // Box graph
+P_engine *             pE;             // Poets engine (hardware model)
 Placement *            pPlace;         // Cross-linker
 P_builder *            pB;             // Object to build the datastructure
 T_gen *                pTG;            // PoL task generator
@@ -96,7 +96,3 @@ map<string,P_owner *>  P_ownerm;       // Task ownership container
 //==============================================================================
 
 #endif
-
-
-
-

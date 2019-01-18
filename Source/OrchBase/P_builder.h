@@ -30,8 +30,8 @@ void                Load(const string&);
 OrchBase *            par;
 
 #ifndef __BORLANDC__
-QCoreApplication      app;
 map<string, I_Graph*> defs;
+QCoreApplication      app;
 
 private:
 
@@ -46,7 +46,3 @@ void WriteThreadVars(string&, unsigned int, unsigned int, P_thread*, fstream&);
 //==============================================================================
 
 #endif
-
-
-
-

@@ -28,18 +28,31 @@ TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
 # Sources used by executables that need to address hardware.
 HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cpp \
                            $(SOURCE_DIR)/Common/HardwareModel/HardwareAddressFormat.cpp \
+                           $(SOURCE_DIR)/OrchBase/P_addr.cpp \
+                           $(GENERICS_DIR)/flat.cpp \
+                           $(GENERICS_DIR)/dfprintf.cpp
 
 # Sources used by executables that require the hardware model.
-HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/PoetsBox.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/PoetsBoard.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/PoetsMailbox.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/PoetsCore.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/PoetsThread.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/PoetsEngine.cpp \
+HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_engine.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_box.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_board.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_mailbox.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_core.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_thread.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_link.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/P_port.cpp \
                          $(SOURCE_DIR)/Common/NameBase.cpp \
+                         $(SOURCE_DIR)/OrchBase/Bin.cpp \
                          $(GENERICS_DIR)/dumpchan.cpp \
                          $(GENERICS_DIR)/rand.cpp \
                          $(HARDWARE_ADDRESS_SOURCES)
+
+# Sources used by executables that deploy POETS Engine configurations.
+HARDWARE_DEPLOYER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/Dialect1Deployer.cpp \
+                            $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/AesopDeployer.cpp \
+                            $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/MultiAesopDeployer.cpp \
+                            $(HARDWARE_MODEL_SOURCES)
 
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
@@ -71,6 +84,7 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(SOURCE_DIR)/NameServer/Ns_el.cpp
 
 ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
+ROOT_SOURCES += $(HARDWARE_DEPLOYER_SOURCES)
 
 # Add (almost) all of the sources from OrchBase and Parser.
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)
@@ -180,17 +194,13 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/OrchBase/build_defs.cpp \
                      $(SOURCE_DIR)/OrchBase/CFrag.cpp \
                      $(SOURCE_DIR)/OrchBase/CMsg_p.cpp \
-                     $(SOURCE_DIR)/OrchBase/Config_t.cpp \
                      $(SOURCE_DIR)/OrchBase/D_graph.cpp \
                      $(SOURCE_DIR)/OrchBase/P_addr.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_board.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_box.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_core.cpp \
                      $(SOURCE_DIR)/OrchBase/P_device.cpp \
                      $(SOURCE_DIR)/OrchBase/P_message.cpp \
                      $(SOURCE_DIR)/OrchBase/P_pin.cpp \
                      $(SOURCE_DIR)/OrchBase/P_task.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_thread.cpp
+                     $(HARDWARE_DEPLOYER_SOURCES)
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 

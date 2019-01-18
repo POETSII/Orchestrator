@@ -39,29 +39,47 @@ void OrchBase::LinkDump(Cli::Cl_t Cl)
 FILE * fp = stdout;                    // For now
 string s = "Console";                  // For now
 fprintf(fp,"link /dump %35s++++++++++++++++++++++++++++++++++++++\n",s.c_str());
-if (pP==0) fprintf(fp,"No topology graph\n");
+if (pE == 0) fprintf(fp,"No topology graph\n");
+else if (pE->is_empty()) fprintf(fp,"Topology graph empty\n");
 else {
   fprintf(fp,"Devices on threads :\n");
-  WALKPDIGRAPHNODES(unsigned,P_box *,unsigned,P_link *,unsigned,P_port *,pP->G,i){
-    P_box * pbo = pP->G.NodeData(i);
-    if (pbo==0) {
-      fprintf(fp,"Topology graph empty\n");
-      break;
-    }
-    WALKVECTOR(P_board *,pbo->P_boardv,pbd) {
-      WALKVECTOR(P_core *,(*pbd)->P_corev,pco) {
-        WALKVECTOR(P_thread *,(*pco)->P_threadv,pth) {
-          if ((*pth)->P_devicel.empty());
-//            fprintf(fp,"Thread %s empty\n",(*pth)->FullName().c_str());
-          else fprintf(fp,"Thread %s : %u devices\n",
-                       (*pth)->FullName().c_str(),(*pth)->P_devicel.size());
-          WALKLIST(P_device *,(*pth)->P_devicel,pde) {
-            fprintf(fp,"       %s\n",(*pde)->FullName().c_str());
+
+  // Iterate over all threads.
+  WALKPDIGRAPHNODES(AddressComponent, P_board*,
+                    unsigned, P_link*,
+                    unsigned, P_port*, pE->G,boardIterator)
+  {
+    WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                      unsigned, P_link*,
+                      unsigned, P_port*,
+                      pE->G.NodeData(boardIterator)->G,mailboxIterator)
+    {
+      WALKMAP(AddressComponent, P_core*,
+              pE->G.NodeData(boardIterator)->
+              G.NodeData(mailboxIterator)->P_corem, coreIterator)
+      {
+        WALKMAP(AddressComponent, P_thread*,
+                coreIterator->second->P_threadm, threadIterator)
+        {
+
+          if (!threadIterator->second->P_devicel.empty())
+          {
+            fprintf(fp,"Thread %s : %u devices\n",
+                    threadIterator->second->FullName().c_str(),
+                    threadIterator->second->P_devicel.size());
+
+            WALKLIST(P_device*, threadIterator->second->P_devicel,
+                     deviceIterator)
+            {
+              fprintf(fp, "       %s\n",
+                      (*deviceIterator)->FullName().c_str());
+            }
           }
         }
       }
     }
   }
+
   fprintf(fp,"Threads on devices :\n");
   if (P_taskm.empty()) fprintf(fp,"No tasks loaded\n");
   else {
@@ -93,11 +111,11 @@ void OrchBase::LinkLink(Cli::Cl_t Cl)
 {
 if (Cl.Pa_v.empty()) return;           // Nothing to do
 string st = Cl.Pa_v[0].Val;            // Task to load
-if (pP==0) {                           // No topology?
+if (pE==0) {                           // No topology?
   Post(151,st);
   return;
 }
-if (pP->IsEmpty()) {                   // Still no topology?
+if (pE->is_empty()) {                   // Still no topology?
   Post(151,st);
   return;
 }
@@ -114,7 +132,7 @@ if (pT->linked) {                      // Task already linked?
 
 /*
 
-               MOVED THE LOOP BELOW INTO THE PLACEMENT CLASS AND 
+               MOVED THE LOOP BELOW INTO THE PLACEMENT CLASS AND
                MODIFIED TO PLACE ONE DEVICE TYPE PER CORE
 
 // WALKPDIGRAPHNODES(unsigned,P_device *,unsigned,P_message *,unsigned,P_pin *,pD->G,i)
@@ -130,7 +148,7 @@ if (!pPlace->Place(pT)) pT->LinkFlag();
 
 
 /*
-unsigned lim = (*pP->pConfigl.begin())->ThreadsPerBox();
+unsigned lim = (*pP->pConfigl.begin())->ThreadsPerBox();  // MLV: This isn't going to work since the hardware model has changed.
 for(unsigned i=0;i<lim*4;i++) {
   bool f = pPlace->GetNext(pTh,pCo,pBo,pBx);
   printf("%c Th:%s Co:%s Bo:%s Bx:%s\n",f ? 'X' : ' ',
@@ -142,7 +160,7 @@ for(unsigned i=0;i<lim*4;i++) {
 }
 
 //------------------------------------------------------------------------------
- 
+
 void OrchBase::LinkNser(Cli::Cl_t Cl)
 // Command from monkey to upload a linked task to the nameserver
 {
@@ -176,8 +194,8 @@ pD->Dump();
 pD->pP_devtyp->Dump();
 pT->Dump();
 pT->pOwn->Dump();
-pD->pP_thread->Dump();
-pD->pP_thread->par->Dump();
+pD->pP_thread->dump();
+pD->pP_thread->parent->dump();
 
 string s0 = pD->Name();
 string s1 = pD->pP_devtyp->Name();
@@ -188,10 +206,6 @@ vector<string> vs0 = pD->NSGetinpn();
 vector<string> vs1 = pD->NSGetinpt();
 vector<string> vs2 = pD->NSGetoupn();
 vector<string> ns3 = pD->NSGetoupt();
-unsigned u0 =  pD->Id();
-P_addr_t p0 = pD->addr;
-unsigned u1 = pD->attr;
-unsigned u2 = pD->pP_thread->par->pCoreBin->Id();
 
   ns.PutD(pD->Name(),                  // Device name
           pD->pP_devtyp->Name(),       // Device type
@@ -205,7 +219,7 @@ unsigned u2 = pD->pP_thread->par->pCoreBin->Id();
           pD->Id(),                    // Device ID
           pD->addr,                    // Hardware address
           pD->attr,                    // Attribute
-          pD->pP_thread->par->pCoreBin->Id());   // Binary file ID
+          pD->pP_thread->parent->instructionBinary->Id());   // Binary file ID
 }
 ns.Put<unsigned>(0,&(ns.keyv));               // Key vector
 ns.Key(Q::CANDC,Q::LOAD);
@@ -267,12 +281,33 @@ void OrchBase::UnlinkAll()
 // the device <-> thread links are all deleted. Not ethe placement moduke needs
 // not know - the topology is left untouched.
 {
-if (pP==0) return;                     // No node graph
-                                       // Kill the thread->device links
-WALKPDIGRAPHNODES(unsigned,P_box *,unsigned,P_link *,unsigned,P_port *,pP->G,i)
-  WALKVECTOR(P_board *,pP->G.NodeData(i)->P_boardv,j)
-    WALKVECTOR(P_core *,(*j)->P_corev,k)
-      WALKVECTOR(P_thread *,(*k)->P_threadv,l) (*l)->P_devicel.clear();
+
+if (pE == 0) return;
+else if (pE->is_empty()) return;
+else {
+  // Iterate over all threads.
+  WALKPDIGRAPHNODES(AddressComponent, P_board*,
+                    unsigned, P_link*,
+                    unsigned, P_port*, pE->G,boardIterator)
+  {
+    WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                      unsigned, P_link*,
+                      unsigned, P_port*,
+                      pE->G.NodeData(boardIterator)->G,mailboxIterator)
+    {
+      WALKMAP(AddressComponent, P_core*,
+              pE->G.NodeData(boardIterator)->
+              G.NodeData(mailboxIterator)->P_corem, coreIterator)
+      {
+        WALKMAP(AddressComponent, P_thread*,
+                coreIterator->second->P_threadm, threadIterator)
+        {
+            threadIterator->second->P_devicel.clear();
+        }
+      }
+    }
+  }
+}
 
 if (P_taskm.empty()) return;           // No tasks at all
 WALKMAP(string,P_task *,P_taskm,i) {   // Walk them that's there
@@ -310,12 +345,9 @@ WALKPDIGRAPHNODES(unsigned,P_device *,unsigned,P_message *,
     touched.insert(pTh);
   }
 }
-if (pP==0) Post(908);
+if (pE==0) Post(908);
 WALKSET(P_thread *,touched,i) (*i)->P_devicel.remove(0);
 
 }
 
 //==============================================================================
-
-
-

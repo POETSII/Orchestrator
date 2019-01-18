@@ -1,11 +1,10 @@
 /* Defines hardware address format behaviour (see the accompanying header for
-   further information). */
+ * further information). */
 
 #include "HardwareAddressFormat.h"
 
 /* Constructs a hardware address format. Each argument corresponds to the
-   length of the address section.
-*/
+ * length of the address section. */
 HardwareAddressFormat::HardwareAddressFormat(unsigned boxWordLength,
                           unsigned boardWordLength,
                           unsigned mailboxWordLength,
@@ -33,10 +32,14 @@ HardwareAddressFormat::HardwareAddressFormat(unsigned boxWordLength,
     */
 }
 
-/* Write debug and diagnostic information using dumpchan. Arguments:
+/* Constructs without populating. You really don't want to use this without
+ * populating it first (either by passing it to a deployer, or setting the
+ * values yourself later). */
+HardwareAddressFormat::HardwareAddressFormat(){}
 
-   - file: File to dump to.
-*/
+/* Write debug and diagnostic information using dumpchan. Arguments:
+ *
+ * - file: File to dump to. */
 void HardwareAddressFormat::dump(FILE* file)
 {
     /* The dump basically just contains the lengths. */

@@ -1,23 +1,37 @@
 /* Defines POETS Mailbox behaviour (see the accompanying header for further
-   information). */
+ * information). */
 
-#include "PoetsMailbox.h"
+#include "P_mailbox.h"
 
 /* Constructs a POETS Mailbox. Arguments:
-   - name: Name of this mailbox object (see namebase)
-*/
-PoetsMailbox::PoetsMailbox(std::string name)
+ *
+ * - name: Name of this mailbox object (see namebase) */
+P_mailbox::P_mailbox(std::string name)
 {
     Name(name);
 }
 
-/* Donates an uncontained core to this mailbox. Arguments:
+P_mailbox::~P_mailbox(){clear();}
 
-   - addressComponent: Used to index the core in this mailbox.
-   - core: Pointer to the core object to contain. Must not already have a
-     parent.
-*/
-void PoetsMailbox::contain(AddressComponent addressComponent, PoetsCore* core)
+/* Clears the dynamically-allocated elements of the data structure of this
+ * mailbox, deleting all contained components recursively. */
+void P_mailbox::clear()
+{
+    /* Clear all cores that this mailbox knows about. This should clear
+     * recursively. */
+    WALKMAP(AddressComponent,P_core*,P_corem,iterator)
+    {
+        delete iterator->second;
+    }
+    P_corem.clear();
+}
+
+/* Donates an uncontained core to this mailbox. Arguments:
+ *
+ * - addressComponent: Used to index the core in this mailbox.
+ * - core: Pointer to the core object to contain. Must not already have a
+ *   parent. */
+void P_mailbox::contain(AddressComponent addressComponent, P_core* core)
 {
     /* Verify that the core is unowned. */
     if (core->parent != NULL)
@@ -45,21 +59,28 @@ void PoetsMailbox::contain(AddressComponent addressComponent, PoetsCore* core)
         throw OwnershipException(errorMessage.str());
     }
 
-    PoetsCores[addressComponent] = core;
+    P_corem[addressComponent] = core;
+
+    /* Define a hardware address for the core. */
+    if (isAddressBound)
+    {
+        HardwareAddress* coreHardwareAddress = copy_hardware_address();
+        coreHardwareAddress->set_core(addressComponent);
+        core->set_hardware_address(coreHardwareAddress);
+    }
 }
 
 /* Write debug and diagnostic information about the POETS mailbox, recursively,
-   using dumpchan. Arguments:
-
-   - file: File to dump to.
-*/
-void PoetsMailbox::dump(FILE* file)
+ * using dumpchan. Arguments:
+ *
+ * - file: File to dump to. */
+void P_mailbox::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
 
     /* About this object and its parent, if any. */
     char breaker[MAXIMUM_BREAKER_LENGTH + 1];
-    int breakerLength = sprintf(breaker, "PoetsMailbox %s ", fullName.c_str());
+    int breakerLength = sprintf(breaker, "P_mailbox %s ", fullName.c_str());
     for(int index=breakerLength; index<MAXIMUM_BREAKER_LENGTH - 1;
         breaker[index++]='+');
     breaker[MAXIMUM_BREAKER_LENGTH - 1] = '\n';
@@ -69,19 +90,19 @@ void PoetsMailbox::dump(FILE* file)
 
     /* About contained items, if any. */
     fprintf(file, "Cores in this mailbox %s\n", std::string(57, '+').c_str());
-    if (PoetsCores.empty())
+    if (P_corem.empty())
         fprintf(file, "The core map is empty.\n");
     else
     {
-        WALKMAP(AddressComponent,PoetsCore*,PoetsCores,iterator)
+        WALKMAP(AddressComponent, P_core*, P_corem, iterator)
         {
-            PoetsCore* iterCore = iterator->second;
+            P_core* iterCore = iterator->second;
             /* Print information from the map. */
             fprintf(file, "%u: %s (%p)\n",
                     iterator->first,
                     iterCore->FullName().c_str(), iterCore);
             /* Recursive-dump. */
-            iterCore->dump();
+            iterCore->dump(file);
         }
     }
     fprintf(file, "Cores in this mailbox %s\n", std::string(57, '-').c_str());
@@ -94,9 +115,9 @@ void PoetsMailbox::dump(FILE* file)
 }
 
 /* Hook that a container calls to contain this object. Arguments:
-   - container: Address of the board that contains this mailbox.
-*/
-void PoetsMailbox::on_being_contained_hook(PoetsBoard* container)
+ *
+ * - container: Address of the board that contains this mailbox. */
+void P_mailbox::on_being_contained_hook(P_board* container)
 {
     parent = container;
     Npar(container);

@@ -56,31 +56,44 @@ void OrchBase::ClearTasks()
 // Destroy the entire task section of the database. (This is the easy one)
 // The code is different to the clear-individual-tasks because it's faster
 {
-// Walk the hardware, killing all the links into the task structures
-if (pP!=0) {
-  WALKPDIGRAPHNODES(unsigned,P_box *,unsigned,P_link *,unsigned,P_port *,
-                    pP->G,i){
-    if (i==pP->G.NodeEnd()) break;
-    P_box * pb = pP->G.NodeData(i);
-    if (pb->pMothBin!=0) {             // Box-local binaries
-      delete pb->pMothBin;
-      pb->pMothBin=0;
-    }
-    WALKVECTOR(P_board *,pb->P_boardv,ib) {
-      (*ib)->pSup=0;                   // Disconnect supervisor link
-      WALKVECTOR(P_core *,(*ib)->P_corev,ic) {
-        if ((*ic)->pCoreBin!=0) {      // Thread-local binaries
-          delete (*ic)->pCoreBin;
-          (*ic)->pCoreBin=0;
-        }
-        WALKVECTOR(P_thread *,(*ic)->P_threadv,it) {
-          (*it)->P_devicel.clear();    // Kill the cross-links
-        }
-      }
-    }
-  }
-}
 
+// Walk the hardware, killing all the links into the task structures
+if (pE != 0)
+{
+    // Walk the boxes and remove the supervisor links therein.
+    WALKMAP(AddressComponent, P_box*, pE->P_boxm, boxIterator)
+    {
+        boxIterator->second->P_superv.clear();
+
+        // Walk the boards and remove the supervisor links therein.
+        WALKVECTOR(P_board*, boxIterator->second->P_boardv, boardIterator)
+        {
+            (*boardIterator)->sup_offv.clear();
+
+            // Walk the cores and clear all binaries therein, if any are
+            // loaded.
+            WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                              unsigned, P_link*,
+                              unsigned, P_port*, (*boardIterator)->G,
+                              mailboxIterator)
+            {
+                WALKMAP(AddressComponent, P_core*,
+                        (*boardIterator)->G.NodeData(mailboxIterator)->P_corem,
+                        coreIterator)
+                {
+                    coreIterator->second->clear_binaries();
+
+                    // Walk the threads and remove the device links.
+                    WALKMAP(AddressComponent, P_thread*,
+                            coreIterator->second->P_threadm, threadIterator)
+                    {
+                        threadIterator->second->P_devicel.clear();
+                    }
+                }
+            }
+        }
+    }
+}
 
 // Kill the supervisors
 WALKMAP(string,P_super *,P_superm,i) delete (*i).second;
@@ -243,7 +256,7 @@ if (fp!=stdout) fclose(fp);
 }
 
 //------------------------------------------------------------------------------
- 
+
 void OrchBase::TaskGeom(Cli::Cl_t Cl)
 // Routine to decorate an existing task with geometry.
 // For use in generating pretty pictures.....
@@ -374,11 +387,13 @@ PktD.Key(Q::NAME,Q::TDIR);                // and the data directory
 PktC.Src(Urank);
 string taskname = task->first;
 PktC.Put(0, &taskname);                    // first field in the packet is the task name
-PktD.Put(0, &taskname);                
+PktD.Put(0, &taskname);
 taskname+="/";                             // for the moment the binary directory will be fixed
 taskname+=BIN_PATH;                        // later we could make this user-settable.
 // duplicate P_builder's iteration through the task
-WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,pP->G,boxNode)
+P_core* thisCore;  // Core available during iteration.
+P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
+WALKMAP(AddressComponent, P_box*, pE->P_boxm, boxNode)
 {
 while (cIdx < Comms.size()) // grab the next available mothership
 {
@@ -389,17 +404,47 @@ while (cIdx < Comms.size()) // grab the next available mothership
 taskname.insert(0,string("/home/")+currBox->P_user+"/");
 PktD.Put(1,&taskname);
 coreVec.clear();   // reset the packet content
-WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+WALKVECTOR(P_board*,boxNode->second->P_boardv,board)
 {
-WALKVECTOR(P_core*,(*board)->P_corev,core)
+WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                  unsigned, P_link*,
+                  unsigned, P_port*, (*board)->G, mailbox)
 {
-if ((*core)->P_threadv[0]->P_devicel.size() && ((*core)->P_threadv[0]->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
+WALKMAP(AddressComponent, P_core*,
+        (*board)->G.NodeData(mailbox)->P_corem, core)
 {
+thisCore = core->second;
+firstThread = thisCore->P_threadm.begin()->second;
+if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
+{
+    // determine the last thread that has a device mapped onto it (recall that all devices within a core service the same task.
+    std::map<AddressComponent, P_thread*>::reverse_iterator thread;
+    for (thread=thisCore->P_threadm.rbegin();
+         thread!=thisCore->P_threadm.rend(); thread++)
+    {
+        if (thread->second->P_devicel.size() > 0) break;
+    }
+
+    // Add the thread address to coreVec as a device address.
+    HardwareAddress* threadHardwareAddress;
+    threadHardwareAddress = thread->second->get_hardware_address();
+    P_addr_t threadFullAddress;
+    threadFullAddress.A_box = threadHardwareAddress->get_box(),
+    threadFullAddress.A_board = threadHardwareAddress->get_board(),
+    threadFullAddress.A_mailbox = threadHardwareAddress->get_mailbox(),
+    threadFullAddress.A_core = threadHardwareAddress->get_core(),
+    threadFullAddress.A_thread = threadHardwareAddress->get_thread(),
+    coreVec.push_back(pair<unsigned, P_addr_t>
+                      (coreNum++, threadFullAddress));
+
+   /* MLV and ADR, on 2019-01-18, discussed that the above was effectively synonymous with the below (for the new hardware model).
    // core lists here indicate the available hardware rather than the placed hardware, so we have
    // to search for the last placed thread.
    unsigned t_i = 1;
-   while (t_i < (*core)->P_threadv.size() && (*core)->P_threadv[t_i]->P_devicel.size()) ++t_i;
-   coreVec.push_back(pair<unsigned,P_addr_t>(coreNum++, *(dynamic_cast<P_addr_t*>(&((*core)->P_threadv[--t_i]->addr))))); // add it to the core list to be sent (may need to cast (*core)->addr to P_addr_t)
+   while (t_i < thisCore->P_threadv.size() && thisCore->P_threadv[t_i]->P_devicel.size()) ++t_i;
+   coreVec.push_back(pair<unsigned,P_addr_t>(coreNum++, *(dynamic_cast<P_addr_t*>(&(thisCore->P_threadv[--t_i]->addr))))); // add it to the core list to be sent (may need to cast thisCore->addr to P_addr_t)
+   */
+}
 }
 }
 }
@@ -479,7 +524,8 @@ PktD.Src(Urank);
 string taskname = task->first;
 PktD.Put(0, &taskname);                    // first field in the packet is the task name
 // duplicate P_builder's iteration through the task
-WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,pP->G,boxNode)
+P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
+WALKMAP(AddressComponent, P_box*, pE->P_boxm, boxNode)
 {
 while (cIdx < Comms.size()) // grab the next available mothership
 {
@@ -489,11 +535,17 @@ while (cIdx < Comms.size()) // grab the next available mothership
 }
 PktD.comm = 0; // reset the comm for the recall packet
 // inefficient way to detect which boxes have this task mapped. In future the NameServer will hold this table and we should just be able to look it up.
-WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+WALKVECTOR(P_board*,boxNode->second->P_boardv,board)
 {
-WALKVECTOR(P_core*,(*board)->P_corev,core)
+WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                  unsigned, P_link*,
+                  unsigned, P_port*, (*board)->G, mailbox)
 {
-if ((*core)->P_threadv[0]->P_devicel.size() && ((*core)->P_threadv[0]->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
+WALKMAP(AddressComponent, P_core*,
+        (*board)->G.NodeData(mailbox)->P_corem, core)
+{
+firstThread = core->second->P_threadm.begin()->second;
+if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
 {
    PktD.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
    PktD.Send(currBox->P_rank);        // Send to the target Mothership
@@ -502,7 +554,8 @@ if (PktD.comm) break;                 // exit the search loop once any core mapp
 }
 if (PktD.comm) break;
 }
-}                                     // Next Mothership
+}
+} // Next Mothership
 }
 
 //------------------------------------------------------------------------------
@@ -597,10 +650,11 @@ Pkt.Put(0, &taskname);                    // first field in the packet is the ta
 
 unsigned cIdx = 0;                        // comm number to look for Motherships. Start from local MPI_COMM_WORLD.
 vector<ProcMap::ProcMap_t>::iterator currBox = pPmap[cIdx]->vPmap.begin(); // process map for the Mothership being deployed to
+P_thread* firstThread;  // The "first" thread in the core in the current iteration. "first" is arbitrary, because cores are stored in a map.
 
 // search for boxes assigned to the task. For the future, it would be more efficient to build a map
 // rather than redo the search.
-WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,pP->G,boxNode)
+WALKMAP(AddressComponent, P_box*, pE->P_boxm, boxNode)
 {
 while (cIdx < Comms.size()) // grab the next available mothership
 {
@@ -609,11 +663,17 @@ while (cIdx < Comms.size()) // grab the next available mothership
       ++cIdx;
 }
 bool UsedByTask = false;
-WALKVECTOR(P_board*,(*(boxNode->second))->P_boardv,board)
+WALKVECTOR(P_board*,boxNode->second->P_boardv,board)
 {
-WALKVECTOR(P_core*,(*board)->P_corev,core)
+WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                  unsigned, P_link*,
+                  unsigned, P_port*, (*board)->G, mailbox)
 {
-if ((*core)->P_threadv[0]->P_devicel.size() && ((*core)->P_threadv[0]->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
+WALKMAP(AddressComponent, P_core*,
+        (*board)->G.NodeData(mailbox)->P_corem, core)
+{
+firstThread = core->second->P_threadm.begin()->second;
+if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
 {
    Pkt.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
    Pkt.Send(currBox->P_rank);        // to the target Mothership. This will work for now, but it would be far better to broadcast the send (so everyone gets it synchronously)
@@ -621,8 +681,9 @@ if ((*core)->P_threadv[0]->P_devicel.size() && ((*core)->P_threadv[0]->P_devicel
    break;
 }
 }
-if (UsedByTask) break;               // only need to send once to each box
 }
+}
+if (UsedByTask) break;               // only need to send once to each box
 }
 }
 
@@ -675,6 +736,3 @@ if (fp!=stdout) fclose(fp);
 }
 
 //==============================================================================
-
-
-
