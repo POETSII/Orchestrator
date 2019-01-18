@@ -67,7 +67,6 @@ void HardwareFileParser::loadFile(const char* filePath)
     loadedFile += filePath;
     isFileLoaded = true;
     Addx(strdup(filePath));
-    // <!> Some error handling needed here.
 }
 
 /* Defines behaviour when a syntax error is encountered when reading a file.
@@ -105,6 +104,6 @@ void HardwareFileParser::populateHardwareModel(P_engine* engine)
     /* Throw if we have not loaded a file yet. */
     if (!isFileLoaded)
     {
-        // <!> Throw!
+        throw HardwareFileNotLoadedException();
     }
 }

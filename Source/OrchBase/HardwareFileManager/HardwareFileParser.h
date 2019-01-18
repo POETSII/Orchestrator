@@ -54,6 +54,7 @@
 #include "HardwareAddressFormat.h"
 #include "HardwareAddress.h"
 #include "HardwareFileNotFoundException.h"
+#include "HardwareFileNotLoadedException.h"
 #include "HardwareModel.h"
 #include "HardwareSyntaxException.h"
 

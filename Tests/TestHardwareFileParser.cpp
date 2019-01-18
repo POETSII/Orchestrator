@@ -42,3 +42,11 @@ TEST_CASE("Files that do not exist raise a file-not-found error", "[Parser]")
     REQUIRE_THROWS_AS(parser.loadFile(filePath.c_str()),
                       HardwareFileNotFoundException&);
 }
+
+TEST_CASE("Attempting to populate before loaded a file raises", "[Parser]")
+{
+    P_engine* engine;
+    HardwareFileParser parser;
+    REQUIRE_THROWS_AS(parser.populateHardwareModel(engine),
+                      HardwareFileNotLoadedException&);
+}
