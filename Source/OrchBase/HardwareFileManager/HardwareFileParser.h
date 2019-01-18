@@ -2,7 +2,26 @@
 #define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEMANAGER_HARDWAREFILEPARSER_H
 
 /* Logic for parsing hardware model files, and for generating hardware models
- * from them.
+ * from them. Example:
+ *
+ *     P_engine* engine = new P_engine("My engine");
+ *     parser = HardwareFileParser("/path/to/my/hardware/file.uif", engine);
+ *     // We're done here.
+ *
+ * Or, for more points:
+ *
+ *     P_engine* engine = new P_engine("My engine");
+ *     parser = HardwareFileParser;
+ *     try
+ *     {
+ *         loadFile("/path/to/my/hardware/file.uif");
+ *         populateHardwareModel(engine);
+ *     }
+ *     catch (OrchestratorException& exception)
+ *     {
+ *         printf("%s\n", exception.what())
+ *     }
+ *     // We're done here.
  *
  * Hardware model files are UIF files that fully define a model of the
  * hardware, which is suitable for the Orchestrator's purposes.
@@ -46,6 +65,7 @@ class HardwareFileParser: public JNJ
 {
 public:
     HardwareFileParser();
+    HardwareFileParser(const char* filePath, P_engine* engine);
     void loadFile(const char* filePath);
     void populateHardwareModel(P_engine* engine);
 

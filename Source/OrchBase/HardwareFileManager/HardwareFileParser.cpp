@@ -11,6 +11,14 @@ HardwareFileParser::HardwareFileParser():JNJ(),isFileLoaded(false)
     SetECB(this, onSyntaxError);
 }
 
+/* Constructs the file parser, parses a file, and dumps it in an engine. */
+HardwareFileParser::HardwareFileParser(const char* filePath, P_engine* engine)
+    :JNJ(),isFileLoaded(false)
+{
+    loadFile(filePath);
+    populateHardwareModel(engine);
+}
+
 /* Returns true if a file exists at the path passed to by argument, and false
  * otherwise.
  *
