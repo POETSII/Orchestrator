@@ -14,8 +14,8 @@
  *     parser = HardwareFileParser;
  *     try
  *     {
- *         loadFile("/path/to/my/hardware/file.uif");
- *         populateHardwareModel(engine);
+ *         parser.loadFile("/path/to/my/hardware/file.uif");
+ *         parser.populateHardwareModel(engine);
  *     }
  *     catch (OrchestratorException& exception)
  *     {
