@@ -50,3 +50,10 @@ TEST_CASE("Attempting to populate before loaded a file raises", "[Parser]")
     REQUIRE_THROWS_AS(parser.populateHardwareModel(engine),
                       HardwareFileNotLoadedException&);
 }
+
+TEST_CASE("Aesop example does not raise", "[Parser]")
+{
+    HardwareFileParser parser;
+    parser.loadFile("../Tests/StaticResources/aesop_dialect_1.uif");
+    parser.Dump();
+}
