@@ -18,7 +18,7 @@
 
 [engine]
 +boxes=1
-+boards=hypercube(2,3)
++boards=hypercube(3,1)
 +external_box_cost=0
 
 [box]

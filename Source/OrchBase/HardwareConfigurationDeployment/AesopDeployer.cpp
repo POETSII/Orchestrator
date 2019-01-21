@@ -16,7 +16,7 @@ AesopDeployer::AesopDeployer()
 
     boxWordLength = 0;  /* There's only one box! */
     boardWordLengths.clear();
-    boardWordLengths.push_back(1);
+    boardWordLengths.push_back(2);
     boardWordLengths.push_back(2);
     mailboxWordLengths.clear();
     mailboxWordLengths.push_back(2);
@@ -26,8 +26,8 @@ AesopDeployer::AesopDeployer()
 
     boxesInEngine = 1;
     boardsInEngine.clear();
-    boardsInEngine.push_back(2);
     boardsInEngine.push_back(3);
+    boardsInEngine.push_back(1);
     boardsAsHypercube = true;
     boardHypercubePeriodicity.clear();
     boardHypercubePeriodicity.push_back(false);
