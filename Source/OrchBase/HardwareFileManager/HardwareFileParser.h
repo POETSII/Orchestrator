@@ -56,6 +56,7 @@
 #include "HardwareFileNotFoundException.h"
 #include "HardwareFileNotLoadedException.h"
 #include "HardwareModel.h"
+#include "HardwareSemanticException.h"
 #include "HardwareSyntaxException.h"
 
 #include "dfprintf.h"
@@ -75,6 +76,9 @@ private:
     std::string loadedFile;
     bool doesFileExist(const char* filePath);
     static void onSyntaxError(void*, void*, int);
+
+    /* Validation methods. */
+    bool validateSections(std::string* errorMessage);
 };
 
 #endif

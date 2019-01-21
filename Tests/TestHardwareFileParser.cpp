@@ -15,9 +15,9 @@ TEST_CASE("Files with a valid syntax do not raise", "[Parser]")
 TEST_CASE("Files with an invalid syntax raise syntax error", "[Parser]")
 {
     HardwareFileParser parser;
-    REQUIRE_THROWS_AS(
-        parser.loadFile("../Tests/StaticResources/invalid_test_file.uif"),
-                        HardwareSyntaxException&);
+    REQUIRE_THROWS_AS(parser.loadFile(
+        "../Tests/StaticResources/syntactically_invalid_test_file.uif"),
+                      HardwareSyntaxException&);
 }
 
 TEST_CASE("Files that do not exist raise a file-not-found error", "[Parser]")
@@ -55,5 +55,31 @@ TEST_CASE("Aesop example does not raise", "[Parser]")
 {
     HardwareFileParser parser;
     parser.loadFile("../Tests/StaticResources/aesop_dialect_1.uif");
-    parser.Dump();
+}
+
+TEST_CASE("A file with multiple identical valid sections raise a semantics error", "[Parser]")
+{
+    P_engine* engine;
+    HardwareFileParser parser;
+    parser.loadFile("../Tests/StaticResources/duplicate_section_invalid.uif");
+    REQUIRE_THROWS_AS(parser.populateHardwareModel(engine),
+                      HardwareSemanticException&);
+}
+
+TEST_CASE("A file with a missing section raises a semantics error", "[Parser]")
+{
+    P_engine* engine;
+    HardwareFileParser parser;
+    parser.loadFile("../Tests/StaticResources/missing_section_invalid.uif");
+    REQUIRE_THROWS_AS(parser.populateHardwareModel(engine),
+                      HardwareSemanticException&);
+}
+
+TEST_CASE("A file with an invalid section raises a semantics error", "[Parser]")
+{
+    P_engine* engine;
+    HardwareFileParser parser;
+    parser.loadFile("../Tests/StaticResources/invalid_section.uif");
+    REQUIRE_THROWS_AS(parser.populateHardwareModel(engine),
+                      HardwareSemanticException&);
 }
