@@ -10,9 +10,12 @@
 #include "P_link.h"
 #include "P_devtyp.h"
 #include "P_device.h"
+#include "P_pintyp.h"
+#include "P_pin.h"
 #include <sstream>
 #include <algorithm>
 #include <set>
+#include <iostream>
 
 #ifdef __BORLANDC__
 
@@ -183,6 +186,135 @@ void P_builder::GenFiles(P_task* task)
     par->Post(811, task->Name());
     return;
   }
+
+  // build the supervisor (which will be compiled into a .so)
+  if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+STATIC_SRC_PATH<<"Supervisor.* "<<task_dir+GENERATED_PATH))->str().c_str()))
+  {
+      par->Post(807, (task_dir+GENERATED_PATH).c_str());
+      return;
+  }
+  // open the default supervisor
+  fstream supervisor_h((task_dir+GENERATED_PATH+"/Supervisor.h").c_str(), fstream::in | fstream::out | fstream::ate);
+  fstream supervisor_cpp((task_dir+GENERATED_PATH+"/Supervisor.cpp").c_str(), fstream::in | fstream::out | fstream::ate);
+  supervisor_h << "\n";
+  supervisor_cpp << "\n";
+  if (task->pSup) // is there a non-default supervisor? If so, build it.
+  {
+     supervisor_h << "#define _APPLICATION_SUPERVISOR_ 1\n\n";
+     P_devtyp* supervisor_type = task->pSup->pP_devtyp;
+     set<P_message*> sup_msgs; // set used to retain only unique message types used by supervisors
+     stringstream sup_inPin_typedefs("",ios_base::out | ios_base::ate);
+     stringstream sup_pin_handlers("",ios_base::out | ios_base::ate);
+     stringstream sup_pin_vectors("",ios_base::out | ios_base::ate);
+     stringstream sup_inPin_props("",ios_base::out | ios_base::ate);
+     stringstream sup_inPin_state("",ios_base::out | ios_base::ate);
+     // build supervisor pin handlers.
+     const char* s_handl_pre = "{\n";
+     const char* s_handl_post = "}\n\n";
+     sup_pin_handlers << "vector<supInputPin*> Supervisor::inputs;\n";
+     sup_pin_handlers << "vector<supOutputPin*> Supervisor::outputs;\n\n";
+     // input pin variables and handlers
+     WALKVECTOR(P_pintyp*, supervisor_type->P_pintypIv, sI_pin)
+     {
+         sup_msgs.insert((*sI_pin)->pMsg);
+         const char* sIpin_name = (*sI_pin)->Name().c_str();
+         sup_pin_handlers << "unsigned super_InPin_" << sIpin_name << "_Recv_handler (const void* pinProps, void* pinState, const P_Sup_Msg_t* inMsg, PMsg_p* outMsg, void* msgBuf)\n";
+         sup_pin_handlers << s_handl_pre;
+         sup_inPin_props.str("");
+         if ((*sI_pin)->pPropsD)
+         {
+             sup_inPin_typedefs << "typedef " << string((*sI_pin)->pPropsD->c_src).erase((*sI_pin)->pPropsD->c_src.length()-2).c_str() << " super_InPin_" << sIpin_name << "_props_t;\n\n";
+             sup_pin_handlers << "   const super_InPin_" << sIpin_name << "_props_t* sEdgeProperties = static_cast<const super_InPin_" << sIpin_name << "_props_t*>(pinProps);\n";
+             sup_inPin_props <<  "new const super_InPin_" << sIpin_name << "_props_t " << (*sI_pin)->pPropsI->c_src.c_str();
+         }
+         else sup_inPin_props << "0";
+         sup_inPin_state.str("");
+         if ((*sI_pin)->pStateD)
+         {
+             sup_inPin_typedefs << "typedef " << string((*sI_pin)->pStateD->c_src).erase((*sI_pin)->pStateD->c_src.length()-2).c_str() << " super_InPin_" << sIpin_name << "_state_t;\n\n";
+             sup_pin_handlers << "   super_InPin_" << sIpin_name << "_state_t* sEdgeState = static_cast<super_InPin_" << sIpin_name << "_state_t*>(pinState);\n";
+             sup_inPin_state  << "new super_InPin_" << sIpin_name << "_state_t " << (*sI_pin)->pStateI->c_src.c_str();
+         }
+         else sup_inPin_state << "0";
+         if ((*sI_pin)->pMsg->pPropsD) sup_pin_handlers << "   const s_msg_" << (*sI_pin)->pMsg->Name().c_str() << "_pyld_t* message = static_cast<const s_msg_" <<  (*sI_pin)->pMsg->Name().c_str() << "_pyld_t*>(static_cast<const void*>(inMsg->data));\n";
+         sup_pin_handlers << (*sI_pin)->pHandl->c_src.c_str() << "\n";
+         // return no error by default if the handler bottoms out without problems
+         sup_pin_handlers << "   return 0;\n";
+         sup_pin_handlers << s_handl_post;
+         // this will create a new pin object - how should this be deleted on exit since it's held in a static class member?
+         sup_pin_vectors << "Supervisor::inputs.push_back(new supInputPin(&super_InPin_" << sIpin_name << "_Recv_handler," << sup_inPin_props.str().c_str() << "," << sup_inPin_state.str().c_str() << "));\n";
+     }
+     sup_pin_handlers << "\n";
+     // output pin handlers
+     WALKVECTOR(P_pintyp*, supervisor_type->P_pintypOv, sO_pin)
+     {
+         sup_msgs.insert((*sO_pin)->pMsg);
+         const char* sOpin_name = (*sO_pin)->Name().c_str();
+         sup_pin_handlers << "unsigned super_OutPin_" << sOpin_name << "_Send_handler (PMsg_p* outMsg, void* msgBuf, unsigned superMsg)\n";
+         sup_pin_handlers << s_handl_pre;
+         sup_pin_handlers << "   int s_c;\n";
+         sup_pin_handlers << "   P_Sup_Msg_t* s_msg;\n";
+         sup_pin_handlers << "   P_Sup_Hdr_t s_msg_hdr;\n";
+         sup_pin_handlers << "   if (!(s_msg = outMsg->Get<P_Sup_Msg_t>(0, s_c))) return -1;\n";
+         sup_pin_handlers << "   s_msg_hdr = s_msg->header;\n";
+         if ((*sO_pin)->pMsg->pPropsD) // message has some sort of payload
+         {
+            /* rather awkward code for payload extraction. a PMsg, unfortunately, has an interface that expects you
+             * to test any extracted data item before trying to dereference it. On the other hand, when you create
+             * a new data item, it copies it into the message from a presumed existing data item. Well, what we want is
+             * to create the data item directly in the PMsg, since we are massaging the data in some way from an existing
+             * buffer, and a second buffer-heave-across is undesirable. You also can't create a new heap item directly in
+             * the Put PMsg function (which inserts a data item) because if you do, given that PMsg itself copies the data
+             * across, the newly-created item can't be deleted. So you have to go through the strange sequence below of
+             * creating a new data item, inserting it into the PMsg, deleting the allocation, then referring to the contained
+             * object in the PMsg if everything is to be well-behaved.
+            */
+            sup_pin_handlers << "   s_msg_" << (*sO_pin)->pMsg->Name().c_str() << "_pyld_t* outPyld;\n";
+            sup_pin_handlers << "   if (superMsg) outPyld = static_cast<s_msg_" << (*sO_pin)->pMsg->Name().c_str() << "_pyld_t*>(static_cast<void*>(s_msg->data);\n";
+            sup_pin_handlers << "   else\n";
+            sup_pin_handlers << "   {\n";
+            sup_pin_handlers << "      P_Msg_t* msg = new P_Msg_t();\n";
+            sup_pin_handlers << "      outMsg->Put<P_Sup_Msg_t>(0, msg, 1);\n";
+            sup_pin_handlers << "      delete msg;\n";
+            sup_pin_handlers << "      if (!(msg = outMsg->Get<P_Msg_t>(0, s_c))) return -1;\n";
+            sup_pin_handlers << "      outPyld = static_cast<s_msg_" << (*sO_pin)->pMsg->Name().c_str() << "_pyld_t*>(static_cast<void*>(msg->data));\n";
+            sup_pin_handlers << "   }\n";
+         }
+         sup_pin_handlers << (*sO_pin)->pHandl->c_src.c_str() << "\n";
+         // last part sets up to send the messages (which is automatically handled upon exit from the SupervisorCall).
+         sup_pin_handlers << "   if (!superMsg)\n";
+         sup_pin_handlers << "   {\n";
+         sup_pin_handlers << "   P_Msg_t* sendMsg;\n";
+         sup_pin_handlers << "   if (!(sendMsg = outMsg->Get<P_Msg_t>(0, s_c))) return -1;\n";
+         sup_pin_handlers << "   P_Msg_Hdr_t* outHdr = &sendMsg->header;\n";
+         sup_pin_handlers << "   outHdr->destDeviceAddr = s_msg_hdr.sourceDeviceAddr;\n";
+         sup_pin_handlers << "   outHdr->messageLenBytes = sizeof(P_Msg_Hdr_t);\n";
+         if ((*sO_pin)->pMsg->pPropsD) sup_pin_handlers << "   outHdr->messageLenBytes += sizeof(s_msg_" << (*sO_pin)->pMsg->Name().c_str() << "_pyld_t);\n";
+         sup_pin_handlers << "   }\n";
+         // return number of messages to send if no error.
+         sup_pin_handlers << "   return s_c;\n";
+         sup_pin_handlers << s_handl_post;
+         sup_pin_vectors << "Supervisor::outputs.push_back(new supOutputPin(&super_OutPin_" << sOpin_name << "_Send_handler));\n";
+     }
+     // supervisor message types. Note that for all objects with properties and state, both these values are optional so we need to check for their existence.
+     WALKSET(P_message*, sup_msgs, s_msg)
+         if ((*s_msg)->pPropsD) supervisor_h << "typedef " << string((*s_msg)->pPropsD->c_src).erase((*s_msg)->pPropsD->c_src.length()-2).c_str() << " s_msg_" <<(*s_msg)->Name().c_str() << "_pyld_t;\n\n";
+     // bung all the user-defined stuff into the supervisor: types first, then handlers, then static pin vector initialisers.
+     supervisor_h << sup_inPin_typedefs.str().c_str();
+     // lay down all the generic code fragments before handlers (they might have function declarations, type declarations, etc.)
+     WALKVECTOR(CFrag*,supervisor_type->pHandlv,sCode)
+     {
+         supervisor_cpp << (*sCode)->c_src.c_str() << "\n";
+     }
+     supervisor_cpp << "\n" << sup_pin_handlers.str().c_str();
+     // have to build the static vectors inside a loadable function
+     supervisor_cpp << "\n";
+     supervisor_cpp << "extern \"C\"" << s_handl_pre;
+     supervisor_cpp << "int SupervisorInit()\n" << s_handl_pre << sup_pin_vectors.str().c_str();
+     supervisor_cpp << "return 0;\n" << "}\n" << s_handl_post;
+  }
+  supervisor_cpp.close();
+
   // build a core map visible to the make script (as a shell script)
   fstream cores_sh((task_dir+GENERATED_PATH+"/cores.sh").c_str(), fstream::in | fstream::out | fstream::trunc);
   WALKPDIGRAPHNODES(unsigned,P_box*,unsigned,P_link*,unsigned,P_port*,par->pP->G,boxNode)
@@ -280,12 +412,12 @@ void P_builder::GenFiles(P_task* task)
           if ((*I_pin)->pPropsD)
           {
               vars_h << "typedef " << string((*I_pin)->pPropsD->c_src).erase((*I_pin)->pPropsD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t;\n\n";
-              handlers_cpp << "   const devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t* edgeProperties = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_ipin_" << Ipin_name << "_props_t*>(edgeInstance->properties);\n";
+              handlers_cpp << "   const devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t* edgeProperties = static_cast<const devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t*>(edgeInstance->properties);\n";
           }
           if ((*I_pin)->pStateD)
           {
               vars_h << "typedef " << string((*I_pin)->pStateD->c_src).erase((*I_pin)->pStateD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t;\n\n";
-              handlers_cpp << "   devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t* edgeState = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_ipin_" << Ipin_name << "_state_t*>(edgeInstance->state);\n";
+              handlers_cpp << "   devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t* edgeState = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t*>(edgeInstance->state);\n";
           }
           if ((*I_pin)->pMsg->pPropsD) handlers_cpp << "   const msg_" << (*I_pin)->pMsg->Name().c_str() << "_pyld_t* message = static_cast<const msg_" <<  (*I_pin)->pMsg->Name().c_str() << "_pyld_t*>(msg);\n";
           handlers_cpp << (*I_pin)->pHandl->c_src.c_str() << "\n";
@@ -406,7 +538,7 @@ void P_builder::WriteThreadVars(string& task_dir, unsigned int core_num, unsigne
      vars_h << "//------------------------------ Device Instance Tables ------------------------------\n";
      vars_h << "extern devInst_t Thread_" << thread_num << "_Devices[" << thread->P_devicel.size() << "];\n\n";
      initialiser.str("{");
-     uint32_t index = 0;
+     unsigned index = 0;
      stringstream initialiser_2("", ios_base::out | ios_base::ate);
      stringstream initialiser_3("", ios_base::out | ios_base::ate);
      stringstream initialiser_4("{", ios_base::out | ios_base::ate);
@@ -463,7 +595,7 @@ void P_builder::WriteThreadVars(string& task_dir, unsigned int core_num, unsigne
                  initialiser_3 << "};\n";
                  initialiser_6 << "};\n";
                  initialiser_7 << "};\n";
-                 if (next_pin != (*device)->par->G.index_n[(*device)->idx].fani.begin())
+                 if (next_pin != (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS)) // pin has connections?
                  {
                     // create input edge data structures
                     --next_pin;
@@ -573,6 +705,7 @@ void P_builder::CompileBins(P_task * task)
      // create all the necessary build directories
      system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+COMMON_PATH))->str().c_str());
      system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+TINSEL_PATH))->str().c_str());
+     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+ORCH_PATH))->str().c_str());
      system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+BIN_PATH))->str().c_str());
      system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+BUILD_PATH))->str().c_str());
      // copy static files to their relevant places: softswitch sources,
@@ -585,6 +718,12 @@ void P_builder::CompileBins(P_task * task)
      if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+TINSEL_SRC_PATH<<"/* "<<PERMISSION_CPY<<" "<<RECURSIVE_CPY<<" "<<task_dir+TINSEL_PATH))->str().c_str()))
      {
          par->Post(807, (task_dir+TINSEL_SRC_PATH).c_str());
+         return;
+     }
+     // Orchestrator code for Mothership
+     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+ORCH_SRC_PATH<<"/* "<<RECURSIVE_CPY<<" "<<task_dir+ORCH_PATH))->str().c_str()))
+     {
+         par->Post(807, (task_dir+ORCH_SRC_PATH).c_str());
          return;
      }
      // Makefile

@@ -39,11 +39,6 @@ HOSTLINK_OBJECT_DIR := ./Objects/Hostlink
 # binaries are built):
 EXECUTABLE_DIR := $(ROOT_DIR)/bin
 
-# Supervisors are placed in here. Supervisors (.so) are shared object library
-# files that are generated from supervisor object files (.o), which are in turn
-# generated from source files (.cpp).
-SUPERVISOR_LIB_DIR := $(EXECUTABLE_DIR)
-
 # A note on dependency handling: we couple gcc's various -M flags with Make's
 # ability to import dependency files to manage build dependencies. For more
 # information,
@@ -100,7 +95,6 @@ LOGSERVER_MESSAGE_FILE = $(EXECUTABLE_DIR)/OrchestratorMessages.txt
 RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
-STUB_SUPERVISOR = $(SUPERVISOR_LIB_DIR)/libSupervisor.so
 JTAG_ATLANTIC_LOCAL = $(EXECUTABLE_DIR)/libjtag_atlantic.so
 JTAG_CLIENT_LOCAL = $(EXECUTABLE_DIR)/libjtag_client.so
 
@@ -113,7 +107,6 @@ rtcl: $(RTCL_EXECUTABLE)
 injector: $(INJECTOR_EXECUTABLE)
 mothership: $(MOTHERSHIP_EXECUTABLE) \
             $(JTAG_ATLANTIC_LOCAL) $(JTAG_CLIENT_LOCAL)
-stub_supervisor: $(STUB_SUPERVISOR)
 
 # Prerequisites (objects) for building executables are defined here:
 include Makefile.prerequisites
@@ -132,11 +125,11 @@ $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
 $(MOTHERSHIP_EXECUTABLE):
 	@$(shell mkdir --parents $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
-        -L$(MPICH_LIB_DIR) -L/usr/lib -L$(QT_LIB_DIR) -L$(JTAG_LIB_DIR) \
-        -L$(SUPERVISOR_LIB_DIR) \
-        -o $@ $^ \
-        -lQt5Core -lmpi -lpthread \
-        -ljtag_atlantic -ljtag_client -lSupervisor
+	-Wl,-export-dynamic \
+	-L$(MPICH_LIB_DIR) -L/usr/lib -L$(QT_LIB_DIR) -L$(JTAG_LIB_DIR) \
+	-o $@ $^ \
+        -lQt5Core -lmpi -lpthread -ldl \
+        -ljtag_atlantic -ljtag_client
 
 # Object generation. Note: The move command installs the assembled dependency
 # file (see *Note 1*). The touch updates the timestamp on the target (to avoid
@@ -153,11 +146,6 @@ $(OBJECT_DIR)/%.o: $(ROOT_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
 
 $(HOSTLINK_OBJECT_DIR)/%.o: $(TINSEL_HOSTLINK_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
 	$(build-object)
-
-# Supervisor generation.
-$(STUB_SUPERVISOR): $(STUB_SUPERVISOR_OBJECTS)
-	@mkdir --parents $$(dirname $@)
-	$(CXX) -shared -L$(MPICH_LIB_DIR) -Wl,-soname,$$(basename $@) -o $@ $<
 
 # Miscellaneous files to be copied to the execution directory in order for
 # various components of the Orchestrator to function.
@@ -187,7 +175,6 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 		["QT_LIB_DIR"]="$(realpath $(QT_LIB_DIR))" \
 		["JTAG_LIB_DIR"]="$(realpath $(JTAG_LIB_DIR))" \
 		["GCC_LIB_DIR"]="$(realpath $(GCC_LIB_DIR))" \
-		["SUPERVISOR_LIB_DIR"]="$$(realpath -m $(SUPERVISOR_LIB_DIR))" \
 		["EXECUTABLE_DIR"]="$$(realpath -m $(EXECUTABLE_DIR))");\
 	for KEY in "$${!SUBSTITUTIONS[@]}"; do \
 		sed -i "s|{{ $$KEY }}|$${SUBSTITUTIONS[$$KEY]}|" "$(ORCHESTRATE_TMP)";\
@@ -209,11 +196,10 @@ $(DEPENDENCY_DIR)/%.d:
 
 clean:
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
-	$(SUPERVISOR_LIB_DIR) $(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT)
+	$(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT)
 
 # Dependency files must not be removed by Make (unless explicitly cleaned).
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
 
 # Non-builtin targets that do not explicitly represent files that are created.
-.PHONY: all clean orchestrate root dummy logserver rtcl injector mothership \
-stub_supervisor
+.PHONY: all clean orchestrate root dummy logserver rtcl injector mothership 

@@ -36,7 +36,7 @@ void PIDataType::defineObject(QXmlStreamReader* xml_def)
             if (xml_def->attributes().hasAttribute("", "default"))
                 default_value = xml_def->attributes().value("", "default").toString();
         }
-        else base_type = "struct";
+        else base_type = "array";
         break;
         case UNION:
         // uses the c keyword union as the base type.
@@ -82,7 +82,7 @@ const PIGraphObject* PIDataType::appendSubObject(QXmlStreamReader* xml_def)
         return sub_object;
     }
     // non-composite types can't have internal members. Refer to base class.
-    else if (!((base_type == "union") || (base_type.contains("struct")))) return PIGraphBranch::appendSubObject(xml_def);
+    else if (!((base_type == "union") || (base_type == "array") || (base_type.contains("struct")))) return PIGraphBranch::appendSubObject(xml_def);
     switch (valid_elements.value(xml_def->name().toString(), DTYPE))
     {
     // valid sub-objects recurse down the XML tree.
@@ -107,13 +107,17 @@ const PIGraphObject* PIDataType::appendSubObject(QXmlStreamReader* xml_def)
 const size_t PIDataType::size() const
 {
     size_t curr_size = 0;
-    if (base_type == "union")
+    if (base_type == "union") // unions iterate through their data members and look for the largest element
     {
        for (QVector<const PIGraphObject*>::const_iterator member = beginConstSubObjects(DTYPE); member != endConstSubObjects(DTYPE); member++) curr_size = std::max(curr_size, static_cast<const PIDataType*>(*member)->size());
     }
-    else if (base_type == "struct")
+    else if (base_type == "struct") // structures iterate through their data members and accumulate sizes
     {
        for (QVector<const PIGraphObject*>::const_iterator member = beginConstSubObjects(DTYPE); member != endConstSubObjects(DTYPE); member++) curr_size += static_cast<const PIDataType*>(*member)->size();
+    }
+    else if (base_type == "array") // arrays with internal objects take their data member's size (there should be only one)
+    {
+       curr_size += static_cast<const PIDataType*>(constSubObject(DTYPE,0))->size();
     }
     else curr_size = data_type->type_sizes.value(base_type);
     if (num_replications < 0) return curr_size;
@@ -127,6 +131,14 @@ const QString& PIDataType::elaborateDataTypeStr(const QString& indent)
     if (expanded_type.endsWith(";\n") || expanded_type.endsWith("*/\n")) return expanded_type;
     // unknown types merely end the comment section.
     if (expanded_type.contains("/*")) return expanded_type.append("*/\n");
+    // arrays are built by expanding their internal member
+    if (base_type == "array")
+    {
+       expanded_type = static_cast<PIDataType*>(subObject(DTYPE,0))->elaborateDataTypeStr(indent);
+       expanded_type.chop(2); // remove the trailing ;\n from expanded elements.
+    }
+    else
+    {
     expanded_type = base_type;
     // composite types - expand internal members
     if (expanded_type == "union" || expanded_type.contains("struct"))
@@ -138,6 +150,7 @@ const QString& PIDataType::elaborateDataTypeStr(const QString& indent)
     }
     // everything other than top-level structures uses its name as a data definition
     if (num_replications) expanded_type.append(QString(" %1").arg(name()));
+    }
     // arrays append their size suffix
     if (num_replications > 0) expanded_type.append(QString("[%1]").arg(num_replications));
     // 'top and tail' the declaration before returning it.
@@ -182,7 +195,7 @@ const QString& PIDataType::defaultValue() const
            // get each member in turn and build by recursive descent.
            def_subobject = dynamic_cast<const PIDataType*>(*def_member);
            // expand any internal arrays. Arrays at the top level are not expanded but subelement arrays are - this is treated as a higher-level default.
-           if (def_subobject->numElements() > 0)
+           if (def_subobject->numElements() > 0 && (!(def_subobject->dataTypeStr() == "array")))
            {
               QString array_internals = QString("%1, ").arg(def_subobject->defaultValue()).repeated(def_subobject->numElements());
               array_internals.chop(2);
@@ -194,6 +207,12 @@ const QString& PIDataType::defaultValue() const
        build_default.chop(2);
        return default_value = QString("{%1}").arg(build_default);
        //return default_value = QString("{%1}").arg(build_default.chopped(2));
+    }
+    if (base_type == "array") // arrays of non-scalars are expanded from their internal defaults
+    {
+        QString array_internals = QString("%1, ").arg(dynamic_cast<const PIDataType*>(constSubObject(DTYPE, 0))->defaultValue()).repeated(numElements());
+        array_internals.chop(2);
+        return default_value = QString("{%1}").arg(array_internals);
     }
     // everything else is a scalar without a preset default, so we fall back on a generic default.
     // arrays at this level of the data structure are NOT expanded; this is left to higher-level default expansions

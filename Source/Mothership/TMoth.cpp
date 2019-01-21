@@ -3,6 +3,7 @@
 #include "TMoth.h"
 #include <stdio.h>
 #include <sstream>
+#include <dlfcn.h>
 #include "Pglobals.h"
 #include "CMsg_p.h"
 #include "flat.h"
@@ -45,8 +46,7 @@ ForwardMsgs = false; // don't forward tinsel traffic yet
 MPISpinner();                          // Spin on *all* messages; exit on DIE
 // printf("Exiting Mothership. Closedown flags: AcceptConns: %s, ForwardMsgs: %s\n", AcceptConns ? "true" : "false", ForwardMsgs ? "true" : "false");
 // fflush(stdout);
-if (twig_running) pthread_join(Twig_thread,NULL); // wait for the twig thread, if it started.
-twig_running = false;
+if (twig_running) StopTwig(); // wait for the twig thread, if it's still somehow running.
 printf("********* Mothership rank %d on the way out\n",Urank); fflush(stdout);
 }
 
@@ -179,6 +179,17 @@ unsigned TMoth::Boot(string task)
    // tinsel cores. Have to do it here, after all the initial setup is complete,
    // otherwise setup barrier communications may fail.
    void* args = this;
+   // at this point, load the Supervisor for the task.
+   SuperHandle = dlopen((TaskMap[task]->BinPath+"/supervisor.so").c_str(), RTLD_NOW);
+   if (!SuperHandle) Post(532,(TaskMap[task]->BinPath+"/supervisor.so"),int2str(Urank),string(dlerror()));
+   else
+   {
+     int (*SupervisorInit)() = reinterpret_cast<int (*)()>(dlsym(SuperHandle, "SupervisorInit"));
+      string badFunc("");
+      if (!SupervisorInit || (*SupervisorInit)()) badFunc = "SupervisorInit";
+      else if ((SupervisorCall = reinterpret_cast<int (*)(PMsg_p*, PMsg_p*)>(dlsym(SuperHandle, "SupervisorCall"))) == NULL) badFunc = "SupervisorCall";
+      if (badFunc.size()) Post(533,badFunc,int2str(Urank),string(dlerror()));
+   }
    ForwardMsgs = true; // set forwarding on so thread doesn't immediately exit
    if (pthread_create(&Twig_thread,NULL,Twig,args))
    {
@@ -399,7 +410,12 @@ unsigned TMoth::CmStop(string task)
      send(destDevAddr,(sizeof(P_Msg_Hdr_t)/(4 << TinselLogWordsPerFlit) + sizeof(P_Msg_Hdr_t)%(4 << TinselLogWordsPerFlit) ? 1 : 0),&stop_msg);
    }
    TaskMap[task]->status = TaskInfo_t::TASK_END;
-   return 0;
+   // check to see if there are any other active tasks
+   WALKMAP(string, TaskInfo_t*, TaskMap, tsk)
+     if ((tsk->second->status == TaskInfo_t::TASK_BARR) || (tsk->second->status == TaskInfo_t::TASK_RUN)) return 0;
+   // if not, shut down the Twig thread.
+   if (twig_running) StopTwig();
+   return 0;  
    }
    case TaskInfo_t::TASK_STOP:
    case TaskInfo_t::TASK_END:
@@ -782,7 +798,7 @@ WALKMAP(string, TaskInfo_t*, TaskMap, tsk)
        if (tsk->second->status == TaskInfo_t::TASK_RUN)  CmStop(tsk->first);
 }
 // stop accepting Tinsel messages
-ForwardMsgs = false;
+if (twig_running) StopTwig();
 return CommonBase::OnExit(Z,cIdx); // exit through CommonBase handler
 }
 
@@ -795,9 +811,11 @@ unsigned TMoth::OnSuper(PMsg_p * Z, unsigned cIdx)
 PMsg_p W(Comms[cIdx]);
 W.Key(Q::SUPR);
 W.Src(Z->Tgt());
-if (SupervisorCall(Z,&W) > 0) // Execute. Send a reply if one is expected
+int superReturn = 0;
+if ((superReturn = (*SupervisorCall)(Z,&W)) > 0) // Execute. Send a reply if one is expected
   if (!cIdx && (Z->Tgt() == Urank) && (Z->Src() == Urank)) OnTinsel(Z, 0); // either to Tinsels,
   else W.Send(Z->Src());  // or to some external or internal process.
+ if (superReturn < 0) Post(530, int2str(Urank)); 
 return 0;
 }
 
@@ -889,6 +907,29 @@ vector<P_Sup_Msg_t> pkt_v(packet,&packet[last_index]); // maybe slightly more ef
 W.Put<P_Sup_Msg_t>(0,&pkt_v);    // stuff the Tinsel message into the packet
 W.Send();                        // away it goes.
 return 0;
+}
+
+//------------------------------------------------------------------------------
+
+void TMoth::StopTwig()
+// Cleanly shut down (or try to) the Twig process. This occurs whenever we
+// end a task in preparation for shutting down, or exiting.
+{
+if (!twig_running) return;
+ForwardMsgs = false;            // notify the Twig to shut down
+pthread_join(Twig_thread,NULL); // wait for it to do so
+if (SuperHandle)                // then unload its Supervisor
+{
+   // clean up memory first
+   int (*SupervisorExit)() = reinterpret_cast<int (*)()>(dlsym(SuperHandle, "SupervisorExit"));
+   if (!SupervisorExit || (*SupervisorExit)() || dlclose(SuperHandle))
+   {  
+      Post(534,int2str(Urank));
+      SuperHandle = 0;          // even if we errored invalidate the Supervisor
+   }
+   SupervisorCall = 0;
+}
+twig_running = false;
 }
 
 //------------------------------------------------------------------------------

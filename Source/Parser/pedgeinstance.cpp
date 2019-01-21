@@ -63,8 +63,6 @@ void PEdgeInstance::elaborateEdge(D_graph* graph_rep)
         if (parent_instance) // no parent instance would be a serious elaboration error
         {
            // generate or retrieve all the objects required to insert the node into the graph
-           QString src_pin_name;
-           QString dst_pin_name;
            P_pin* src_pin = new P_pin(graph_rep, path.src.pin->name().toStdString());
            P_pin* dst_pin = new P_pin(graph_rep, path.dst.pin->name().toStdString());
            P_message* msg_type = const_cast<PMessageType*>(path.src.pin->msgType())->elaborateMessage();

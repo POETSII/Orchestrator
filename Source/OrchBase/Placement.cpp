@@ -88,6 +88,8 @@ P_thread * pTh = 0;
  
 WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
 {
+    if ((*dT)->pOnRTS) // don't need to place if it's a supervisor - easily identified by lack of RTS handler
+    {
     vector<P_device*> dVs = pT->pD->DevicesOfType(*dT); // get all the devices of this type
     unsigned int devMem = (*dT)->MemPerDevice();
     if (devMem > BYTES_PER_THREAD)
@@ -135,6 +137,7 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
     {
        par->Post(163, pT->Name()); // out of room. Abandon placement.
        return true;
+    }
     }
 }
 return false;
