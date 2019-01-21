@@ -180,8 +180,8 @@ unsigned TMoth::Boot(string task)
    // otherwise setup barrier communications may fail.
    void* args = this;
    // at this point, load the Supervisor for the task.
-   SuperHandle = dlopen((TaskMap[task]->BinPath+"/supervisor.so").c_str(), RTLD_NOW);
-   if (!SuperHandle) Post(532,(TaskMap[task]->BinPath+"/supervisor.so"),int2str(Urank),string(dlerror()));
+   SuperHandle = dlopen((TaskMap[task]->BinPath+"/libSupervisor.so").c_str(), RTLD_NOW);
+   if (!SuperHandle) Post(532,(TaskMap[task]->BinPath+"/libSupervisor.so"),int2str(Urank),string(dlerror()));
    else
    {
      int (*SupervisorInit)() = reinterpret_cast<int (*)()>(dlsym(SuperHandle, "SupervisorInit"));
