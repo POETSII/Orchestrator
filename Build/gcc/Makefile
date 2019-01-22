@@ -231,12 +231,14 @@ $(APPLICATION_STAGING_DIR)/Supervisor.cpp $(APPLICATION_STAGING_DIR)/Supervisor.
 		"$(abspath $(SOURCE_DIR)/Mothership/Supervisor$(suffix $@))" "$@"
 
 # Tearing down the environment (for 'clean'), leaving the xml directory for the
-# user.
+# user. Only tear it down if $(APPLICATION_STAGING_DIR) exists.
 application_staging_environment_teardown:
-	find "$(APPLICATION_STAGING_DIR)" \
-		! -wholename "$(APPLICATION_STAGING_DIR)/xml" \
-		! -wholename "$(APPLICATION_STAGING_DIR)" \
-		-exec rm --force --recursive {} +
+	if [ -d "$(APPLICATION_STAGING_DIR)" ]; then \
+		find "$(APPLICATION_STAGING_DIR)" \
+			! -wholename "$(APPLICATION_STAGING_DIR)/xml" \
+			! -wholename "$(APPLICATION_STAGING_DIR)" \
+			-exec rm --force --recursive {} +; \
+	fi
 
 # Dependency files have no build instructions (Make must not fall over if the
 # dependency file is not there), because they are created from the compilation
