@@ -72,8 +72,9 @@ if [ $MOTHERSHIP_ARG_SET -eq 1 -a $ON_POETS_BOX -eq 0 ]; then
 not run on a POETS box. Continuing without spawning any motherships."
 fi
 
-# Setup
-export RISCV_DIR="{{ RISCV_DIR }}"
+# Setup for building applications
+export RISCV_PATH="{{ RISCV_DIR }}"
+export MPICH_PATH="{{ MPICH_DIR }}"
 export PATH="{{ MPICH_DIR }}/bin:{{ RISCV_BIN_DIR }}:$PATH"
 export TRIVIAL_LOG_HANDLER=1
 
