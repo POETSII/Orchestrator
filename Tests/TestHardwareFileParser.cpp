@@ -52,10 +52,11 @@ TEST_CASE("Attempting to populate before loaded a file raises", "[Parser]")
                       HardwareFileNotLoadedException&);
 }
 
-TEST_CASE("Aesop example does not raise", "[Parser]")
+TEST_CASE("Aesop example does not raise end-to-end", "[Parser]")
 {
-    HardwareFileParser parser;
-    parser.load_file("../Tests/StaticResources/aesop_dialect_1.uif");
+    P_engine engine("Test Engine");
+    HardwareFileParser parser("../Tests/StaticResources/aesop_dialect_1.uif",
+                              &engine);
 }
 
 TEST_CASE("A file with multiple identical valid sections raise a semantics error", "[Parser]")

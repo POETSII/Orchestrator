@@ -384,14 +384,23 @@ void HardwareFileParser::provision_deployer(Dialect1Deployer* deployer)
 
             else if (sectionName == "engine")
             {
-                // switch(variable.c_str())
-                // {
-                // case "boxes":;
-                // case "boards":;
-                // case "external_box_cost":;
-                // case "board_board_cost":;
-                // default: printf("Whoops (engine)\n"); // <!>
-                // }
+                if (variable == "boxes")
+                {
+                    deployer->boxesInEngine = str2uint(valueNodes[0]->str);
+                }
+                else if (variable == "boards")
+                {
+                    /* Hypercube? */
+                }
+                else if (variable == "external_box_cost")
+                {
+                    deployer->externalBoxCost = str2float(valueNodes[0]->str);
+                }
+                else if (variable == "board_board_cost")
+                {
+                    deployer->boardBoardCost = str2float(valueNodes[0]->str);
+                }
+                else {printf("Whoops (engine)\n");} // <!>
             }
 
             else if (sectionName == "box")

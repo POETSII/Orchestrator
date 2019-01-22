@@ -60,10 +60,10 @@ public:
     bool boardsAsHypercube;
     std::vector<bool> boardHypercubePeriodicity;
     float costExternalBox;
+    float costBoardBoard;
 
     /* Box properties */
     float costBoxBoard;
-    float costBoardBoard;
     unsigned boxSupervisorMemory;
 
     /* Board properties */
