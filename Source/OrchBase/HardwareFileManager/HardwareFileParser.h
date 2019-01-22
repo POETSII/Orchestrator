@@ -14,8 +14,8 @@
  *     parser = HardwareFileParser;
  *     try
  *     {
- *         parser.loadFile("/path/to/my/hardware/file.uif");
- *         parser.populateHardwareModel(engine);
+ *         parser.load_file("/path/to/my/hardware/file.uif");
+ *         parser.populate_hardware_model(engine);
  *     }
  *     catch (OrchestratorException& exception)
  *     {
@@ -51,6 +51,7 @@
 #include <string.h>
 #include <vector>
 
+#include "Dialect1Deployer.h"
 #include "HardwareAddressFormat.h"
 #include "HardwareAddress.h"
 #include "HardwareFileNotFoundException.h"
@@ -58,8 +59,10 @@
 #include "HardwareModel.h"
 #include "HardwareSemanticException.h"
 #include "HardwareSyntaxException.h"
+#include "InvalidEngineException.h"
 
 #include "dfprintf.h"
+#include "flat.h"
 #include "jnj.h"  /* JNJ is a wrapper around UIF that provides nicer access to
                    * the UIF data structure. */
 
@@ -68,17 +71,22 @@ class HardwareFileParser: public JNJ
 public:
     HardwareFileParser();
     HardwareFileParser(const char* filePath, P_engine* engine);
-    void loadFile(const char* filePath);
-    void populateHardwareModel(P_engine* engine);
+    void load_file(const char* filePath);
+    void populate_hardware_model(P_engine* engine);
 
 private:
     bool isFileLoaded;
     std::string loadedFile;
-    bool doesFileExist(const char* filePath);
-    static void onSyntaxError(void*, void*, int);
+    bool does_file_exist(const char* filePath);
+    static void on_syntax_error(void*, void*, int);
 
     /* Validation methods. */
-    bool validateSections(std::string* errorMessage);
+    bool validate_section_contents(std::string* errorMessage);
+    bool validate_sections(std::string* errorMessage);
+
+    /* Sneaky population (validation is mandatory). */
+    void provision_deployer(Dialect1Deployer* deployer);
+    void populate(P_engine* engine);
 };
 
 #endif

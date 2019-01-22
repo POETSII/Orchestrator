@@ -32,7 +32,10 @@ P_engine::P_engine(std::string name)
     /* Set up default metadata information. If these are unchanged, the engine
      * will not print them when dump is called (strings are initialised
      * empty). */
+    author = "(undefined)";
     datetime = 0;
+    version = "(undefined)";
+    fileOrigin = "(undefined)";
 }
 
 P_engine::~P_engine(){clear();}

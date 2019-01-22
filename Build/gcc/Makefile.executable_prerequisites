@@ -54,6 +54,15 @@ HARDWARE_DEPLOYER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployme
                             $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/MultiAesopDeployer.cpp \
                             $(HARDWARE_MODEL_SOURCES)
 
+# Sources used by executables that read hardware files.
+HARDWARE_FILE_PARSER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileManager/HardwareFileParser.cpp \
+                               $(GENERICS_DIR)/dfprintf.cpp \
+                               $(GENERICS_DIR)/flat.cpp \
+                               $(GENERICS_DIR)/jnj.cpp \
+                               $(GENERICS_DIR)/lex.cpp \
+                               $(GENERICS_DIR)/uif.cpp \
+                               $(HARDWARE_DEPLOYER_SOURCES)
+
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
 
@@ -84,7 +93,7 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(SOURCE_DIR)/NameServer/Ns_el.cpp
 
 ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
-ROOT_SOURCES += $(HARDWARE_DEPLOYER_SOURCES)
+ROOT_SOURCES += $(HARDWARE_FILE_PARSER_SOURCES)
 
 # Add (almost) all of the sources from OrchBase and Parser.
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)

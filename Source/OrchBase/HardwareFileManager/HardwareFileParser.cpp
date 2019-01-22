@@ -8,15 +8,15 @@ HardwareFileParser::HardwareFileParser():JNJ(),isFileLoaded(false)
 {
     /* Registers callback functions (for the UIF base) for error handling
      * purposes. */
-    SetECB(this, onSyntaxError);
+    SetECB(this, on_syntax_error);
 }
 
 /* Constructs the file parser, parses a file, and dumps it in an engine. */
 HardwareFileParser::HardwareFileParser(const char* filePath, P_engine* engine)
     :JNJ(),isFileLoaded(false)
 {
-    loadFile(filePath);
-    populateHardwareModel(engine);
+    load_file(filePath);
+    populate_hardware_model(engine);
 }
 
 /* Returns true if a file exists at the path passed to by argument, and false
@@ -27,7 +27,7 @@ HardwareFileParser::HardwareFileParser(const char* filePath, P_engine* engine)
  * Arguments:
  *
  * - filePath: Path to look at. */
-bool HardwareFileParser::doesFileExist(const char* filePath)
+bool HardwareFileParser::does_file_exist(const char* filePath)
 {
     FILE* testFile = fopen(filePath, "r");
     if (testFile)
@@ -50,9 +50,9 @@ bool HardwareFileParser::doesFileExist(const char* filePath)
  *
  * - the input file does not exist.
  * - the input file is syntactically invalid. */
-void HardwareFileParser::loadFile(const char* filePath)
+void HardwareFileParser::load_file(const char* filePath)
 {
-    if(!doesFileExist(filePath))
+    if(!does_file_exist(filePath))
     {
         throw HardwareFileNotFoundException(
             dformat("[ERROR] No input file found at \"%s\".\n", filePath));
@@ -76,7 +76,7 @@ void HardwareFileParser::loadFile(const char* filePath)
  * this is lifted from there.
  *
  * Scoping be damned. */
-void HardwareFileParser::onSyntaxError(void* parser, void* uifInstance, int)
+void HardwareFileParser::on_syntax_error(void* parser, void* uifInstance, int)
 {
     std::string accumulatedMessage;
     std::vector<std::string> errorMessages;
@@ -90,7 +90,7 @@ void HardwareFileParser::onSyntaxError(void* parser, void* uifInstance, int)
 }
 
 /* Populates a POETS Engine with information from the hardware
- * model. Arguments:
+ * model, after validation. Arguments:
  *
  * - engine: Pointer to the POETS Engine to populate. Must be empty.
  *
@@ -99,7 +99,7 @@ void HardwareFileParser::onSyntaxError(void* parser, void* uifInstance, int)
  *  - no input file has been loaded by this parser.
  *  - if the input file is semantically invalid.
  *  - if engine is not empty. */
-void HardwareFileParser::populateHardwareModel(P_engine* engine)
+void HardwareFileParser::populate_hardware_model(P_engine* engine)
 {
     /* Throw if we have not loaded a file yet. */
     if (!isFileLoaded)
@@ -107,16 +107,51 @@ void HardwareFileParser::populateHardwareModel(P_engine* engine)
         throw HardwareFileNotLoadedException();
     }
 
+    /* Throw if the engine is not empty. */
+    if (!(engine->is_empty()))
+    {
+        throw InvalidEngineException();
+    }
+
     /* Call the various semantic validation methods. */
     std::string errorMessage;
     bool failedValidation = false;
-    failedValidation |= !validateSections(&errorMessage);
+    failedValidation |= !validate_sections(&errorMessage);
 
     /* Throw if any of the validation methods failed. */
     if (failedValidation)
     {
         throw HardwareSemanticException(errorMessage.c_str());
     }
+
+    /* Now we actually do the population. */
+    populate(engine);
+}
+
+/* Validate that all sections have correct contents, given that all sections
+ * exist. The list of variables too great to enumerate here; look at the
+ * documentation or examples for the definitive list.
+ *
+ * Arguments:
+ *
+ * - errorMessage: string to write error message to, always appended to.
+ *
+ * Returns true if all mandatory fields are defined exactly once and if no
+ * incorrect variables are defined, and false otherwise. */
+bool HardwareFileParser::validate_section_contents(std::string* errorMessage)
+{
+    /* Define what is valid. */
+    std::map<std::string, unsigned> mandatoryHeaderFields;
+    std::vector<std::string> optionalHeaderFields;
+    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("datetime", 0));
+    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("dialect", 0));
+    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("version", 0));
+    optionalHeaderFields.push_back("author");
+    optionalHeaderFields.push_back("hardware");
+    optionalHeaderFields.push_back("file");
+
+    /* <!> */
+    return true;
 }
 
 /* Validate that there are no duplicated sections in the hardware model, and
@@ -135,8 +170,8 @@ void HardwareFileParser::populateHardwareModel(P_engine* engine)
  * - errorMessage: string to write error message to, always appended to.
  *
  * Returns true if all sections exist and are unique, and false
- * otherwise. Should only be called after a file has been loaded.*/
-bool HardwareFileParser::validateSections(std::string* errorMessage)
+ * otherwise. Should only be called after a file has been loaded. */
+bool HardwareFileParser::validate_sections(std::string* errorMessage)
 {
     /* Grab section names. */
     std::vector<UIF::Node*> sectionNameNodes;
@@ -229,4 +264,184 @@ bool HardwareFileParser::validateSections(std::string* errorMessage)
     }
 
     return returnValue;
+}
+
+/* Actually populates the hardware model, does not validate, should not
+ * throw (hah). Arguments:
+ *
+ * - engine: Pointer to the POETS Engine to populate. Must be empty. */
+void HardwareFileParser::populate(P_engine* engine)
+{
+    Dialect1Deployer deployer;
+    provision_deployer(&deployer);
+    deployer.deploy(engine);
+}
+
+/* Provisions a dialect 1 deployer with the configuration in this
+ * parser. Is pretty naive. Arguments:
+ *
+ * - deployer: Deployer to provision. */
+void HardwareFileParser::provision_deployer(Dialect1Deployer* deployer)
+{
+    /* Grab sections. */
+    std::vector<UIF::Node*> sectionNodes;
+    std::vector<UIF::Node*>::iterator sectionIterator;
+    GetSect(sectionNodes);
+
+    /* Temporary staging vectors for holding value nodes and variable
+     * nodes. NB: Here, each record holds at most one variable node, but can
+     * have multiple values. */
+    std::vector<UIF::Node*> valueNodes;
+    std::vector<UIF::Node*>::iterator valueNodeIterator;
+    std::vector<UIF::Node*> variableNodes;
+    std::string variable;
+
+    /* For each section... */
+    std::vector<UIF::Node*> recordNodes;
+    std::vector<UIF::Node*>::iterator recordIterator;
+    std::string sectionName;
+    for (sectionIterator=sectionNodes.begin();
+         sectionIterator!=sectionNodes.end(); sectionIterator++)
+    {
+        sectionName = (*sectionIterator)->str;
+
+        /* Iterate through all records in this section. NB: Clears the
+         * recordNodes vector. */
+        GetRecd((*sectionIterator), recordNodes);
+
+        for (recordIterator=recordNodes.begin();
+             recordIterator!=recordNodes.end(); recordIterator++)
+        {
+            /* Get the value and variable nodes. Only the first variable node
+             * will be used. */
+            GetVari((*recordIterator), variableNodes);
+            GetValu((*recordIterator), valueNodes);
+            variable = variableNodes[0]->str;
+
+            /* A gigantic if/else for each section the record could be in,
+             * followed by a slightly less gigantic if/else for each variable
+             * the record corresponds to. Could probably be an
+             * enumerated-type-powered-switch-case monstrosity instead, but
+             * ehh... */
+            if (sectionName == "header")
+            {
+                if (variable == "author")
+                {
+                    deployer->author = valueNodes[0]->str;
+                }
+                else if (variable == "datetime")
+                {
+                    deployer->datetime = str2long(valueNodes[0]->str);
+                }
+                else if (variable == "file")
+                {
+                    deployer->fileOrigin = valueNodes[0]->str;
+                }
+                else if (variable == "version")
+                {
+                    deployer->version = valueNodes[0]->str;
+                }
+                else if (variable == "dialect" || variable == "hardware");
+                else {printf("Whoops (header)\n");} // <!>
+            }
+
+            else if (sectionName == "packet_address_format")
+            {
+                if (variable == "board")  /* It's a vector. */
+                {
+                    for (valueNodeIterator=valueNodes.begin();
+                         valueNodeIterator!=valueNodes.end();
+                         valueNodeIterator++)
+                    {
+                        deployer->boardWordLengths.push_back(
+                            str2uint((*valueNodeIterator)->str));
+                    }
+                }
+                else if (variable == "box")
+                {
+                    deployer->boxWordLength = str2uint(valueNodes[0]->str);
+                }
+                else if (variable == "core")
+                {
+                    deployer->coreWordLength = str2uint(valueNodes[0]->str);
+                }
+                else if (variable == "mailbox")  /* It's a vector. */
+                {
+                    for (valueNodeIterator=valueNodes.begin();
+                         valueNodeIterator!=valueNodes.end();
+                         valueNodeIterator++)
+                    {
+                        deployer->mailboxWordLengths.push_back(
+                            str2uint((*valueNodeIterator)->str));
+                    }
+                }
+                else if (variable == "thread")
+                {
+                    deployer->threadWordLength = str2uint(valueNodes[0]->str);
+                }
+                else {printf("Whoops (packet_address_format)\n");} // <!>
+            }
+
+            else if (sectionName == "engine")
+            {
+                // switch(variable.c_str())
+                // {
+                // case "boxes":;
+                // case "boards":;
+                // case "external_box_cost":;
+                // case "board_board_cost":;
+                // default: printf("Whoops (engine)\n"); // <!>
+                // }
+            }
+
+            else if (sectionName == "box")
+            {
+                // switch(variable.c_str())
+                // {
+                // case "box_board_cost":;
+                // case "supervisor_memory":;
+                // default: printf("Whoops (box)\n"); // <!>
+                // }
+            }
+
+            else if (sectionName == "board")
+            {
+                // switch(variable.c_str())
+                // {
+                // case "mailboxes":;
+                // case "board_mailbox_cost":;
+                // case "supervisor_memory":;
+                // case "mailbox_mailbox_cost":;
+                // case "dram":;
+                // default: printf("Whoops (board)\n"); // <!>
+                // }
+            }
+
+            else if (sectionName == "mailbox")
+            {
+                // switch(variable.c_str())
+                // {
+                // case "cores":;
+                // case "mailbox_core_cost":;
+                // case "core_core_cost":;
+                // default: printf("Whoops (mailbox)\n"); // <!>
+                // }
+            }
+
+            else if (sectionName == "core")
+            {
+                // switch(variable.c_str())
+                // {
+                // case "threads":;
+                // case "instruction_memory":;
+                // case "data_memory":;
+                // case "thread_thread_cost":;
+                // case "core_thread_cost":;
+                // default: printf("Whoops (core)\n"); // <!>
+                // }
+            }
+
+            else {printf("Whoops (section)\n");}
+        }
+    }
 }
