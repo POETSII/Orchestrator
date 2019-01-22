@@ -1,6 +1,7 @@
 # Repo-specific ignores:
 *.temp.d
 *.log
+application-staging/
 bin/*
 Build/gcc/Objects
 Build/gcc/Dependency_lists

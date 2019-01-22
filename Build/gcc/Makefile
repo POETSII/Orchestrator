@@ -39,6 +39,9 @@ HOSTLINK_OBJECT_DIR := ./Objects/Hostlink
 # binaries are built):
 EXECUTABLE_DIR := $(ROOT_DIR)/bin
 
+# The application staging environment is built here:
+APPLICATION_STAGING_DIR := $(ROOT_DIR)/application-staging
+
 # A note on dependency handling: we couple gcc's various -M flags with Make's
 # ability to import dependency files to manage build dependencies. For more
 # information,
@@ -98,7 +101,8 @@ MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
 JTAG_ATLANTIC_LOCAL = $(EXECUTABLE_DIR)/libjtag_atlantic.so
 JTAG_CLIENT_LOCAL = $(EXECUTABLE_DIR)/libjtag_client.so
 
-all: orchestrate root dummy logserver rtcl injector mothership
+all: orchestrate root dummy logserver rtcl injector mothership \
+     application_staging_environment
 orchestrate: $(ORCHESTRATE_SCRIPT)
 root: $(ROOT_EXECUTABLE)
 dummy: $(DUMMY_EXECUTABLE)
@@ -190,6 +194,50 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 	rm "$(ORCHESTRATE_TMP)"
 	rmdir "$(dir $(ORCHESTRATE_TMP))"
 
+# Building the staging environment for XML applications to be used in the
+# Orchestrator. Users will place their XML applications in the xml directory
+# within the structure created by this process.
+application_staging_environment: $(APPLICATION_STAGING_DIR)/xml \
+$(APPLICATION_STAGING_DIR)/Orchestrator/Source \
+$(APPLICATION_STAGING_DIR)/Orchestrator/Generics \
+$(APPLICATION_STAGING_DIR)/Orchestrator/Source/Common \
+$(APPLICATION_STAGING_DIR)/SoftSwitch \
+$(APPLICATION_STAGING_DIR)/Tinsel \
+$(APPLICATION_STAGING_DIR)/Makefile \
+$(APPLICATION_STAGING_DIR)/Supervisor.cpp \
+$(APPLICATION_STAGING_DIR)/Supervisor.h
+
+$(APPLICATION_STAGING_DIR)/Orchestrator/Source \
+$(APPLICATION_STAGING_DIR)/xml:
+	mkdir --parents "$@"
+
+$(APPLICATION_STAGING_DIR)/Orchestrator/Generics:
+	ln --force --symbolic "$(abspath $(GENERICS_DIR))" "$@"
+
+$(APPLICATION_STAGING_DIR)/Orchestrator/Source/Common:
+	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Common)" "$@"
+
+$(APPLICATION_STAGING_DIR)/SoftSwitch:
+	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch)" "$@"
+
+$(APPLICATION_STAGING_DIR)/Tinsel:
+	ln --force --symbolic "$(abspath $(TINSEL_DIR))" "$@"
+
+$(APPLICATION_STAGING_DIR)/Makefile:
+	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch/Makefile)" "$@"
+
+$(APPLICATION_STAGING_DIR)/Supervisor.cpp $(APPLICATION_STAGING_DIR)/Supervisor.h:
+	ln --force --symbolic \
+		"$(abspath $(SOURCE_DIR)/Mothership/Supervisor$(suffix $@))" "$@"
+
+# Tearing down the environment (for 'clean'), leaving the xml directory for the
+# user.
+application_staging_environment_teardown:
+	find "$(APPLICATION_STAGING_DIR)" \
+		! -wholename "$(APPLICATION_STAGING_DIR)/xml" \
+		! -wholename "$(APPLICATION_STAGING_DIR)" \
+		-exec rm --force --recursive {} +
+
 # Dependency files have no build instructions (Make must not fall over if the
 # dependency file is not there), because they are created from the compilation
 # process. However, the directory structure for dependency files must be
@@ -197,7 +245,7 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 $(DEPENDENCY_DIR)/%.d:
 	@mkdir --parents $$(dirname $@)
 
-clean:
+clean: application_staging_environment_teardown
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
 	$(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT)
 
@@ -205,4 +253,5 @@ clean:
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
 
 # Non-builtin targets that do not explicitly represent files that are created.
-.PHONY: all clean orchestrate root dummy logserver rtcl injector mothership
+.PHONY: all clean orchestrate root dummy logserver rtcl injector mothership \
+    application_staging_environment application_staging_environment_teardown
