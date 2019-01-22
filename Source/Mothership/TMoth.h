@@ -46,12 +46,15 @@ unsigned              OnSuper(PMsg_p *,unsigned);
 unsigned              OnSyst(PMsg_p *,unsigned);
 unsigned              OnTinsel(PMsg_p*, unsigned);
 unsigned              OnTinselOut(P_Sup_Msg_t *);
-int                   SupervisorCall(PMsg_p*, PMsg_p*); // entry point for the Supervisor
+void                  StopTwig();
 unsigned              SystHW(const vector<string>&);
 unsigned              SystKill();
 unsigned              SystShow();
 unsigned              SystTopo();
 
+void*                 SuperHandle; // dynamically loadable supervisor
+int                   (*SupervisorCall)(PMsg_p*, PMsg_p*); // entry point for the Supervisor
+ 
 public:
 unsigned              PAddress; // address of this mothership in POETS-space
 bool                  ForwardMsgs;

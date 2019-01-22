@@ -81,6 +81,9 @@
 520(W) : "Unrecognised Mothership system command %s"
 530(E) : "Tinsel packet not received successfully on mothership %s"
 531(E) : "Couldn't create Twig thread on mothership %s. Communication from POETS processors to external is disabled"
+532(E) : "Supervisor %s could not be dynamically loaded on mothership %s because of error %s"
+533(E) : "Bad symbol %s in the Supervisor library on Mothership %s: check XML definition. Error was %s"
+534(E) : "Supervisor library could not be successfully unloaded on Mothership %s. Future attempts to run tasks may have strange I/O behaviour"
 
 600(I) : "%s"
 601(I) : "Core %s: (part %s): %s"
@@ -100,6 +103,7 @@
 812(E) : "Error: task %s is in an unexpected state"
 813(E) : "Error: task %s could not be %s. State on Mothership is %s"
 814(W) : "P_builder: no task found with source file %s"
+815(W) : "P_builder: task %s not registered under source file %s"
 901(U) : "%s: %s corrupt ?"
 902(U) : "OrchBase::ClearTasks(tt=%s)" 
 903(U) : "OrchBase::ClearDcls: Null pointer to %s in P_typdclm"

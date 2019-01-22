@@ -16,7 +16,7 @@ void PIPin::setMsgType(const QString& msg_type_id)
 {
     PIGraphType* parentGraph = dynamic_cast<PIGraphType*>(parent()->parent());
     if (parentGraph == NULL) return;
-    setMsgType(static_cast<const PMessageType*>(parentGraph->subObject(PIGraphType::MSGTYPES, msg_type_id)));
+    setMsgType(static_cast<const PMessageType*>(parentGraph->constSubObject(PIGraphType::MSGTYPES, msg_type_id)));
     if (!msg_type) *tmp_msg_id = msg_type_id;
 }
 

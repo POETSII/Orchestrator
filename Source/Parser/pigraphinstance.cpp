@@ -17,13 +17,13 @@ void PIGraphInstance::defineObject(QXmlStreamReader* xml_def)
      // a later lookup can set the links if necessary.
      graph_type_id = xml_def->attributes().value("", "graphTypeId").toString();
      PIGraphRoot* root_object = dynamic_cast<PIGraphRoot*>(parent());
-     if (root_object != NULL) graph_type = static_cast<const PIGraphType*>(root_object->subObject(PIGraphRoot::GTYPE, graph_type_id));
+     if (root_object != NULL) graph_type = static_cast<PIGraphType*>(root_object->subObject(PIGraphRoot::GTYPE, graph_type_id));
      if (xml_def->attributes().hasAttribute("", "supervisorDeviceTypeId"))
      {
          supervisor_type_id = xml_def->attributes().value("", "supervisorDeviceTypeId").toString();
          supervisor = new PDeviceInstance(true, supervisor_type_id, this);
      }
-     else if (supervisor = new PDeviceInstance(true, "", this)) supervisor_type_id = supervisor->name();
+     else if (supervisor = new PDeviceInstance(true, "", this)) supervisor_type_id = supervisor->deviceType()->name();
      PIGraphBranch::defineObject(xml_def);
 }
 
@@ -106,7 +106,7 @@ P_task* PIGraphInstance::elaborateGraphInstance(OrchBase* orch_root)
          // add to the task map
          orch_root->P_taskm[name().toStdString()] = graph_instance;
          graph_instance->pD = new D_graph(graph_instance, QString(name()+"_graph").toStdString());
-         graph_instance->pP_typdcl = const_cast<PIGraphType*>(graph_type)->elaborateGraphType(orch_root);
+         graph_instance->pP_typdcl = graph_type->elaborateGraphType(orch_root);
          graph_instance->pP_typdcl->P_taskl.push_back(graph_instance);
          graph_instance->pD->pD = graph_instance->pP_typdcl;
          if (properties()) graph_instance->pD->pPropsI = const_cast<PIDataValue*>(properties())->elaborateDataValue();
@@ -117,15 +117,17 @@ P_task* PIGraphInstance::elaborateGraphInstance(OrchBase* orch_root)
              device->idx = dev_inst;
              graph_instance->pD->G.InsertNode(dev_inst, device);
          }
-         // and then add all the edge instances
-         for (QVector<PIGraphObject*>::iterator edge = beginSubObjects(EDGEINSTS); edge < endSubObjects(EDGEINSTS); edge++)
-             static_cast<PEdgeInstance*>(*edge)->elaborateEdge(graph_instance->pD);
          // insert a supervisor if one is available
          if (supervisor != NULL)
          {
-             graph_instance->pSup = static_cast<P_super*>(const_cast<PDeviceInstance*>(supervisor)->elaborateSupervisorInstance(graph_instance->pD));
+             graph_instance->pSup = const_cast<PDeviceInstance*>(supervisor)->elaborateSupervisorInstance(graph_instance->pD);
+             graph_instance->pSup->idx = P_device::super_idx;
+             graph_instance->pD->G.InsertNode(P_device::super_idx, graph_instance->pSup);
              orch_root->P_superm[graph_instance->pSup->Name()] = graph_instance->pSup;
          }
+         // and then add all the edge instances
+         for (QVector<PIGraphObject*>::iterator edge = beginSubObjects(EDGEINSTS); edge < endSubObjects(EDGEINSTS); edge++)
+             static_cast<PEdgeInstance*>(*edge)->elaborateEdge(graph_instance->pD);
          graph_instance->PoL.IsPoL = false; // set the flag to indicate non-proof-of-life
       }
       return graph_instance;

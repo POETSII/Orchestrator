@@ -41,7 +41,17 @@ PIGraphObject* PSubObjects::removeSubObject(int obj_typeid, PIGraphObject* sub_o
     return NULL;
 }
 
-const PIGraphObject* PSubObjects::subObject(int obj_typeid, const QString& name) const
+const PIGraphObject* PSubObjects::constSubObject(int obj_typeid, const QString& name) const
+{
+    if (sub_objects.contains(obj_typeid))
+    {
+       int idx = subObjIndex(obj_typeid, name);
+       if (idx >= 0) return sub_objects[obj_typeid]->at(idx);
+    }
+    return NULL;
+}
+
+PIGraphObject* PSubObjects::subObject(int obj_typeid, const QString& name)
 {
     if (sub_objects.contains(obj_typeid))
     {

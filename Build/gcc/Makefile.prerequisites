@@ -182,10 +182,6 @@ HOSTLINK_SOURCES = $(TINSEL_HOSTLINK_DIR)/DebugLink.cpp \
                    $(TINSEL_HOSTLINK_DIR)/PowerLink.cpp \
                    $(TINSEL_HOSTLINK_DIR)/UART.cpp \
 
-# The example supervisor, which is not a component but is a shared object
-# library, consists of a single stub source file.
-STUB_SUPERVISOR_SOURCES = $(SOURCE_DIR)/Mothership/Supervisor.cpp
-
 # Convert these lists of sources into a list of objects to define a dependency
 # system for the linker.
 
@@ -220,7 +216,7 @@ $(1)_OBJECTS := $(call orch_sources_to_objects, $($(1)_SOURCES))
 endef
 
 $(foreach object_set,\
-          ROOT INJECTOR DUMMY LOGSERVER RTCL STUB_SUPERVISOR MOTHERSHIP,\
+          ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP,\
           $(eval $(call OBJECT_TEMPLATE,$(object_set))))
 
 HOSTLINK_OBJECTS := $(call sources_to_objects, $(TINSEL_HOSTLINK_DIR),\
@@ -240,5 +236,4 @@ $(foreach executable_name,\
           ROOT DUMMY LOGSERVER RTCL INJECTOR,\
           $(eval $(call RULE_TEMPLATE,$(executable_name))))
 
-$(MOTHERSHIP_EXECUTABLE): $(MOTHERSHIP_OBJECTS) $(HOSTLINK_OBJECTS) \
-                          $(STUB_SUPERVISOR)
+$(MOTHERSHIP_EXECUTABLE): $(MOTHERSHIP_OBJECTS) $(HOSTLINK_OBJECTS) 

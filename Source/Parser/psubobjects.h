@@ -14,8 +14,9 @@ public:
 
     PIGraphObject* insertSubObject(int obj_typeid, PIGraphObject* sub_obj);
     PIGraphObject* removeSubObject(int obj_typeid, PIGraphObject* sub_obj);
-    const PIGraphObject* subObject(int obj_typeid, const QString& name) const;
-    inline const PIGraphObject* subObject(int obj_typeid, int index) const {return sub_objects.contains(obj_typeid) ? sub_objects[obj_typeid]->at(index) : NULL;};
+    const PIGraphObject* constSubObject(int obj_typeid, const QString& name) const;
+    PIGraphObject* subObject(int obj_typeid, const QString& name);
+    inline const PIGraphObject* constSubObject(int obj_typeid, int index) const {return sub_objects.contains(obj_typeid) ? sub_objects[obj_typeid]->at(index) : NULL;};
     inline PIGraphObject* subObject(int obj_typeid, int index) {return sub_objects.contains(obj_typeid) ? sub_objects[obj_typeid]->at(index) : NULL;};
     inline const QVector<PIGraphObject*> subObjects(int obj_typeid) const {return sub_objects.contains(obj_typeid) ? *sub_objects[obj_typeid] : QVector<PIGraphObject*>();};
     inline QVector<PIGraphObject*>::iterator beginSubObjects(int obj_typeid) {return sub_objects.contains(obj_typeid) ? sub_objects[obj_typeid]->begin() : NULL;};
