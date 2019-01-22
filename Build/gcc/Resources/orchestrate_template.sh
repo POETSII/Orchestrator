@@ -73,8 +73,8 @@ not run on a POETS box. Continuing without spawning any motherships."
 fi
 
 # Setup
-export RISCV_DIR=
-export PATH="{{ MPICH_DIR }}/bin:$RISCV_DIR/bin:$PATH"
+export RISCV_DIR="{{ RISCV_DIR }}"
+export PATH="{{ MPICH_DIR }}/bin:{{ RISCV_BIN_DIR }}:$PATH"
 export TRIVIAL_LOG_HANDLER=1
 
 if [ $ON_POETS_BOX -eq 1 ]; then

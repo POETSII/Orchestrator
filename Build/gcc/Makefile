@@ -176,6 +176,8 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 		["JTAG_LIB_DIR"]="$(realpath $(JTAG_LIB_DIR))" \
 		["GCC_LIB_DIR"]="$(realpath $(GCC_LIB_DIR))" \
 		["CR_LIB_DIR"]="$(realpath $(CR_LIB_DIR))" \
+		["RISCV_DIR"]="$(realpath $(RISCV_DIR))" \
+		["RISCV_BIN_DIR"]="$(realpath $(RISCV_BIN_DIR))" \
 		["EXECUTABLE_DIR"]="$$(realpath -m $(EXECUTABLE_DIR))");\
 	for KEY in "$${!SUBSTITUTIONS[@]}"; do \
 		sed -i "s|{{ $$KEY }}|$${SUBSTITUTIONS[$$KEY]}|" "$(ORCHESTRATE_TMP)";\
