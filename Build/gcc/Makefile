@@ -201,7 +201,7 @@ application_staging_environment: $(APPLICATION_STAGING_DIR)/xml \
 $(APPLICATION_STAGING_DIR)/Orchestrator/Source \
 $(APPLICATION_STAGING_DIR)/Orchestrator/Generics \
 $(APPLICATION_STAGING_DIR)/Orchestrator/Source/Common \
-$(APPLICATION_STAGING_DIR)/SoftSwitch \
+$(APPLICATION_STAGING_DIR)/Softswitch \
 $(APPLICATION_STAGING_DIR)/Tinsel \
 $(APPLICATION_STAGING_DIR)/Makefile \
 $(APPLICATION_STAGING_DIR)/Supervisor.cpp \
@@ -217,7 +217,7 @@ $(APPLICATION_STAGING_DIR)/Orchestrator/Generics:
 $(APPLICATION_STAGING_DIR)/Orchestrator/Source/Common:
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Common)" "$@"
 
-$(APPLICATION_STAGING_DIR)/SoftSwitch:
+$(APPLICATION_STAGING_DIR)/Softswitch:
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch)" "$@"
 
 $(APPLICATION_STAGING_DIR)/Tinsel:
