@@ -19,8 +19,8 @@ AesopDeployer::AesopDeployer()
     boardWordLengths.push_back(2);
     boardWordLengths.push_back(2);
     mailboxWordLengths.clear();
-    mailboxWordLengths.push_back(2);
-    mailboxWordLengths.push_back(2);
+    mailboxWordLengths.push_back(4);
+    mailboxWordLengths.push_back(0);
     coreWordLength = 2;
     threadWordLength = 4;
 
@@ -39,8 +39,8 @@ AesopDeployer::AesopDeployer()
     boxSupervisorMemory = 10240;
 
     mailboxesInBoard.clear();
-    mailboxesInBoard.push_back(4);
-    mailboxesInBoard.push_back(4);
+    mailboxesInBoard.push_back(16);
+    mailboxesInBoard.push_back(1);
     mailboxesAsHypercube = true;
     mailboxHypercubePeriodicity.clear();
     mailboxHypercubePeriodicity.push_back(false);
