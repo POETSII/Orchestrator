@@ -213,7 +213,7 @@ void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
      }
      uint32_t RTS_updated;
      // stop message ends the simulation and exits the update loop at the earliest possible opportunity
-     if ((recv_pkt->messageTag == P_MSG_TAG_STOP) && (recv_pkt->destPin == P_SUP_PIN_SYS))
+     if ((recv_pkt->messageTag == P_MSG_TAG_STOP) && (recv_pkt->destPin == P_SUP_PIN_SYS_SHORT))
      {
         thr_ctxt->ctlEnd = 1;
 	return;
