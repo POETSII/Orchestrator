@@ -100,7 +100,7 @@ void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatil
 
 void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt)
 {
-     devTyp_t* deviceType = &thr_ctxt->devTyps[deviceType_num];
+     devTyp_t* deviceType __attribute__((unused)) = &thr_ctxt->devTyps[deviceType_num]; //TODO: Remove this __attribute__((unused)) when code used
      /*
      Handler addresses ought to reside in instruction memory and thus remain valid: to be seen.
      deviceType->RTS_Handler = RTS_Handlers[thr_ctxt->threadID.PThread][deviceType_num]; // RTS_Handlers is a table that must be built by the Orchestrator.
@@ -184,7 +184,7 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
 	  buffered = 1;
        }
        // then run the application's OnSend (which, if we are buffering, may alter the buffer again)
-       uint32_t RTS_updated = cur_pin->pinType->Send_Handler(thr_ctxt->properties, cur_device, static_cast<char*>(const_cast<void*>(send_buf))+sizeof(P_Msg_Hdr_t), buffered);
+       uint32_t RTS_updated __attribute__((unused)) = cur_pin->pinType->Send_Handler(thr_ctxt->properties, cur_device, static_cast<char*>(const_cast<void*>(send_buf))+sizeof(P_Msg_Hdr_t), buffered);
     }
     // send the message (to as many destinations as possible before the network blocks).
     while (tinselCanSend() && cur_device->currTgt < cur_pin->numTgts)
@@ -211,7 +211,7 @@ void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
            recv_device_end = (recv_device_begin =  &thr_ctxt->devInsts[(recv_pkt->destDeviceAddr & P_DEVICE_MASK) >> P_DEVICE_OS]) + 1;
         else return; // exit and dump packet if the device is out of range.
      }
-     uint32_t RTS_updated;
+     uint32_t RTS_updated __attribute__((unused));
      // stop message ends the simulation and exits the update loop at the earliest possible opportunity
      if ((recv_pkt->messageTag == P_MSG_TAG_STOP) && (recv_pkt->destPin == P_SUP_PIN_SYS_SHORT))
      {
@@ -362,7 +362,7 @@ devInst_t* softswitch_popRTS(PThreadContext* thr_ctxt)
 {
       devInst_t* popped = thr_ctxt->RTSHead;
       // single = in the if-conditional is correct here: we are setting and then testing for 0 having set.
-      if (thr_ctxt->RTSHead = popped->RTSNext) thr_ctxt->RTSHead->RTSPrev = 0;
+      if ((thr_ctxt->RTSHead = popped->RTSNext)) thr_ctxt->RTSHead->RTSPrev = 0;
       else thr_ctxt->RTSTail = 0; // may not be necessary since softswitch_pushRTS always overwrites RTSTail and queue empty checks look at RTSHead
       popped->RTSNext = popped->RTSPrev = 0; // zero out the popped device's linked-list pointers to remove it entirely from the list.
       return popped;
@@ -383,7 +383,7 @@ outPin_t* softswitch_popRTSPin(devInst_t* device)
 {
       outPin_t* popped = device->RTSPinHead;
       // single = in the if-conditional is correct here: we are setting and then testing for 0 having set.
-      if (device->RTSPinHead = popped->RTSPinNext) device->RTSPinHead->RTSPinPrev = 0;
+      if ((device->RTSPinHead = popped->RTSPinNext)) device->RTSPinHead->RTSPinPrev = 0;
       else device->RTSPinTail = 0;
       popped->RTSPinNext = popped->RTSPinPrev = 0;
       return popped;

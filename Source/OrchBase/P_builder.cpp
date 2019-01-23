@@ -355,7 +355,7 @@ void P_builder::GenFiles(P_task* task)
          string global_init("");
          if ((*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->par->pPropsI) global_init = (*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->par->pPropsI->c_src;
          else if (c_devtyp->par->pPropsI) global_init = c_devtyp->par->pPropsI->c_src;
-         vars_cpp << "const global_props_t GraphProperties = " << global_init.c_str() << ";\n";
+         vars_cpp << "const global_props_t GraphProperties __attribute__((unused)) = " << global_init.c_str() << ";\n";
       }
       for (vector<CFrag*>::iterator g_code = c_devtyp->par->General.begin(); g_code != c_devtyp->par->General.end(); g_code++)
           handlers_cpp << (*g_code)->c_src.c_str() << "\n"; // newline assumes general code fragments are unrelated and don't expect back-to-back concatenation
@@ -371,18 +371,18 @@ void P_builder::GenFiles(P_task* task)
           handlers_cpp << (*d_code)->c_src.c_str() << "\n";
       // this preamble is common to all the handlers.
       stringstream handl_pre_strm("{\n", ios_base::out | ios_base::ate);
-      if (c_devtyp->par->pPropsD) handl_pre_strm << "   const global_props_t* graphProperties = static_cast<const global_props_t*>(graphProps);\n";
-      handl_pre_strm << "   PDeviceInstance* deviceInstance = static_cast<PDeviceInstance*>(device);\n";
+      if (c_devtyp->par->pPropsD) handl_pre_strm << "   const global_props_t* graphProperties __attribute__((unused)) = static_cast<const global_props_t*>(graphProps);\n";
+      handl_pre_strm << "   PDeviceInstance* deviceInstance __attribute__((unused)) = static_cast<PDeviceInstance*>(device);\n";
       // device variables
       if (c_devtyp->pPropsD)
       {
           vars_h << "typedef " << string(c_devtyp->pPropsD->c_src).erase(c_devtyp->pPropsD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_props_t;\n\n";
-          handl_pre_strm << "   const devtyp_" << c_devtyp->Name().c_str() << "_props_t* deviceProperties = static_cast<const devtyp_" << c_devtyp->Name().c_str() << "_props_t*>(deviceInstance->properties);\n";
+          handl_pre_strm << "   const devtyp_" << c_devtyp->Name().c_str() << "_props_t* deviceProperties __attribute__((unused)) = static_cast<const devtyp_" << c_devtyp->Name().c_str() << "_props_t*>(deviceInstance->properties);\n";
       }
       if (c_devtyp->pStateD)
       {
           vars_h << "typedef " << string(c_devtyp->pStateD->c_src).erase(c_devtyp->pStateD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_state_t;\n\n";
-          handl_pre_strm << "   devtyp_" << c_devtyp->Name().c_str() << "_state_t* deviceState = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_state_t*>(deviceInstance->state);\n";
+          handl_pre_strm << "   devtyp_" << c_devtyp->Name().c_str() << "_state_t* deviceState __attribute__((unused)) = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_state_t*>(deviceInstance->state);\n";
       }
       // same thing with this: clearly stream strings are moved about in memory! Seems daft.
       // const char* handl_pre = handl_pre_strm.str().c_str();
@@ -408,7 +408,7 @@ void P_builder::GenFiles(P_task* task)
           handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_Recv_handler (const void* graphProps, void* device, void* edge, const void* msg);\n";
           handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_Recv_handler (const void* graphProps, void* device, void* edge, const void* msg)\n";
           handlers_cpp << handl_pre_strm.str().c_str();
-          handlers_cpp << "   inEdge_t* edgeInstance = static_cast<inEdge_t*>(edge);\n";
+          handlers_cpp << "   inEdge_t* edgeInstance __attribute__((unused)) = static_cast<inEdge_t*>(edge);\n";
           if ((*I_pin)->pPropsD)
           {
               vars_h << "typedef " << string((*I_pin)->pPropsD->c_src).erase((*I_pin)->pPropsD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t;\n\n";
