@@ -89,4 +89,7 @@ private:
     void populate(P_engine* engine);
 };
 
+float str2float(std::string floatLike);
+unsigned str2unsigned(std::string unsignedLike);
+
 #endif

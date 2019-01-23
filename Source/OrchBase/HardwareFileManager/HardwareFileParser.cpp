@@ -1,6 +1,6 @@
 /* Defines behaviour for the hardware model file parser (see the accompanying
  * header for further information). */
-
+#include <iostream> // <!>
 #include "HardwareFileParser.h"
 
 /* Constructs the file parser. */
@@ -273,16 +273,31 @@ bool HardwareFileParser::validate_sections(std::string* errorMessage)
 void HardwareFileParser::populate(P_engine* engine)
 {
     Dialect1Deployer deployer;
+    printf("provisioning deployer...\n");  // <!>
     provision_deployer(&deployer);
     deployer.deploy(engine);
 }
 
 /* Provisions a dialect 1 deployer with the configuration in this
- * parser. Is pretty naive. Arguments:
+ * parser. Performs validation on types of values in assignments, as well as
+ * conveniently-easy-to-catch semantic mistakes (i.e. missing '+' signs before
+ * a binding).
  *
- * - deployer: Deployer to provision. */
-void HardwareFileParser::provision_deployer(Dialect1Deployer* deployer)
+ * This method creates a deployer, then uses that deployer to populate the one
+ * passed as argument. This approach is taken so that semantic errors found
+ * while populating the proxy deployer do not corrupt the one passed in as an
+ * argument.
+ *
+ * Arguments:
+ *
+ * - deployerTarget: Self explanatory really. */
+void HardwareFileParser::provision_deployer(Dialect1Deployer* deployerTarget)
 {
+    /* Create a deployer to populate. */
+    Dialect1Deployer deployer;
+    bool valid = true;
+    std::string error;
+
     /* Grab sections. */
     std::vector<UIF::Node*> sectionNodes;
     std::vector<UIF::Node*>::iterator sectionIterator;
@@ -300,10 +315,28 @@ void HardwareFileParser::provision_deployer(Dialect1Deployer* deployer)
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
     std::string sectionName;
+    std::vector<UIF::Node*> sectionNameNodes;
+    std::vector<std::string> values;
     for (sectionIterator=sectionNodes.begin();
          sectionIterator!=sectionNodes.end(); sectionIterator++)
     {
-        sectionName = (*sectionIterator)->str;
+        /* Determine the names of this section. */
+        GetNames((*sectionIterator), sectionNameNodes);
+
+        /* A comment at the top of the file creates a section node with empty
+         * string. This section node has record nodes corresponding to the
+         * comment text. We do not care about those for the purposes of
+         * populating the deployer object, so we skip this section.
+         *
+         * On the bright side, this can only happen once, because after the
+         * next section, every record is within a section (it's not possible to
+         * escape!). */
+        if (sectionNameNodes.empty()){continue;}
+
+        /* We only care about the first name (i.e. if the name is
+         * "header(Aesop)", we care only about "header") by reading only from
+         * the first name-type node. */
+        sectionName = sectionNameNodes[0]->str;
 
         /* Iterate through all records in this section. NB: Clears the
          * recordNodes vector. */
@@ -312,34 +345,71 @@ void HardwareFileParser::provision_deployer(Dialect1Deployer* deployer)
         for (recordIterator=recordNodes.begin();
              recordIterator!=recordNodes.end(); recordIterator++)
         {
-            /* Get the value and variable nodes. Only the first variable node
-             * will be used. */
+            /* Get the value and variable nodes. */
             GetVari((*recordIterator), variableNodes);
             GetValu((*recordIterator), valueNodes);
+
+            /* Ignore this record if the record has not got a variable/value
+               pair (i.e. if the line is empty, or is just a comment). */
+            if (variableNodes.size() == 0 || valueNodes.size() == 0){continue;}
+
+            /* Only the first variable node will be used, and it must have a
+             * "+" preceeding it. */
             variable = variableNodes[0]->str;
+            if (variableNodes[0]->qop != Lex::Sy_plus)
+            {
+                printf("Your variable '%s' is missing a '+'.\n",
+                       variable.c_str()); // <!>
+            }
+
+            /* There may be many values. If there is only one value, the first
+             * value node contains the value. If there are multiple (N) value
+             * nodes, the first value node contains N value nodes, each with an
+             * entry. */
+            values.clear();
+            if (valueNodes[0]->leaf.size() == 0)  /* There's only one value. */
+            {
+                values.push_back(valueNodes[0]->str);
+            }
+            else  /* There are many values. */
+            {
+                for (valueNodeIterator=valueNodes[0]->leaf.begin();
+                     valueNodeIterator!=valueNodes[0]->leaf.end();
+                     valueNodeIterator++)
+                {
+                    values.push_back((*valueNodeIterator)->str);
+                }
+            }
 
             /* A gigantic if/else for each section the record could be in,
              * followed by a slightly less gigantic if/else for each variable
              * the record corresponds to. Could probably be an
              * enumerated-type-powered-switch-case monstrosity instead, but
-             * ehh... */
+             * ehh...
+             *
+             * We also do some validation on input types in here. */
+            printf("section: %s, variable: %s, value(s): ", sectionName.c_str(), variable.c_str());  // <!>
+            for (std::vector<std::string>::iterator i=values.begin();
+                 i!=values.end(); ++i) std::cout << *i << ' ';
+            printf("\n"); // <!>
+
             if (sectionName == "header")
             {
                 if (variable == "author")
                 {
-                    deployer->author = valueNodes[0]->str;
+                    deployer->author = values[0];
                 }
                 else if (variable == "datetime")
                 {
-                    deployer->datetime = str2long(valueNodes[0]->str);
+                    deployer->datetime = str2long(values[0]);
                 }
                 else if (variable == "file")
                 {
-                    deployer->fileOrigin = valueNodes[0]->str;
+                    deployer->fileOrigin = values[0];
                 }
                 else if (variable == "version")
                 {
-                    deployer->version = valueNodes[0]->str;
+                    deployer->version = values[0];
                 }
                 else if (variable == "dialect" || variable == "hardware");
                 else {printf("Whoops (header)\n");} // <!>
@@ -347,37 +417,34 @@ void HardwareFileParser::provision_deployer(Dialect1Deployer* deployer)
 
             else if (sectionName == "packet_address_format")
             {
-                if (variable == "board")  /* It's a vector. */
+                if (variable == "board")
                 {
-                    for (valueNodeIterator=valueNodes.begin();
-                         valueNodeIterator!=valueNodes.end();
-                         valueNodeIterator++)
-                    {
-                        deployer->boardWordLengths.push_back(
-                            str2uint((*valueNodeIterator)->str));
-                    }
+                    /* Convert the values from strings to uints, and drop them
+                     * in the deployer. */
+                    deployer->boardWordLengths.resize(values.size());
+                    std::transform(values.begin(), values.end(),
+                                   deployer->boardWordLengths.begin(),
+                                   str2unsigned);
                 }
                 else if (variable == "box")
                 {
-                    deployer->boxWordLength = str2uint(valueNodes[0]->str);
+                    deployer->boxWordLength = str2unsigned(values[0]);
                 }
                 else if (variable == "core")
                 {
-                    deployer->coreWordLength = str2uint(valueNodes[0]->str);
+                    deployer->coreWordLength = str2unsigned(values[0]);
                 }
-                else if (variable == "mailbox")  /* It's a vector. */
+                else if (variable == "mailbox")
                 {
-                    for (valueNodeIterator=valueNodes.begin();
-                         valueNodeIterator!=valueNodes.end();
-                         valueNodeIterator++)
-                    {
-                        deployer->mailboxWordLengths.push_back(
-                            str2uint((*valueNodeIterator)->str));
-                    }
+                    /* Same as with packet_address_format::board. */
+                    deployer->mailboxWordLengths.resize(values.size());
+                    std::transform(values.begin(), values.end(),
+                                   deployer->mailboxWordLengths.begin(),
+                                   str2unsigned);
                 }
                 else if (variable == "thread")
                 {
-                    deployer->threadWordLength = str2uint(valueNodes[0]->str);
+                    deployer->threadWordLength = str2unsigned(values[0]);
                 }
                 else {printf("Whoops (packet_address_format)\n");} // <!>
             }
@@ -386,71 +453,219 @@ void HardwareFileParser::provision_deployer(Dialect1Deployer* deployer)
             {
                 if (variable == "boxes")
                 {
-                    deployer->boxesInEngine = str2uint(valueNodes[0]->str);
+                    deployer->boxesInEngine = str2unsigned(values[0]);
                 }
                 else if (variable == "boards")
                 {
-                    /* Hypercube? */
+                    if (values.size() == 1)  /* Scalar */
+                    {
+                        deployer->boardsInEngine.push_back(
+                            str2unsigned(values[0]));
+                        deployer->boardHypercubePeriodicity.push_back(false);
+                    }
+                    else  /* Hypercube */
+                    {
+                        /* Complain if multidimensional without hypercube. */
+                        if (valueNodes[0]->str != "hypercube")
+                        {
+                            printf("engine::boards isn't a hypercube when it "
+                                   "should be...\n"); // <!>
+                        }
+
+                        deployer->boardsInEngine.resize(values.size());
+                        std::transform(values.begin(), values.end(),
+                                       deployer->boardsInEngine.begin(),
+                                       str2unsigned);
+
+                        /* Handle periodicity ('+' sign in values) */
+                        for (valueNodeIterator=valueNodes[0]->leaf.begin();
+                             valueNodeIterator!=valueNodes[0]->leaf.end();
+                             valueNodeIterator++)
+                        {
+                            if ((*valueNodeIterator)->qop == Lex::Sy_plus)
+                            {
+                                deployer->boardHypercubePeriodicity.
+                                    push_back(true);
+                            }
+                            else if ((*valueNodeIterator)->qop == Lex::Sy_ISTR)
+                            {
+                                deployer->boardHypercubePeriodicity.
+                                    push_back(false);
+                            }
+                            else
+                            {
+                                printf("Invalid value for boards variable in "
+                                       "the engine section. Not sure how to "
+                                       "react to this.\n"); // <!>
+                                deployer->boardHypercubePeriodicity.
+                                    push_back(false);
+                            }
+                        }
+                    }
                 }
                 else if (variable == "external_box_cost")
                 {
-                    deployer->externalBoxCost = str2float(valueNodes[0]->str);
+                    deployer->costExternalBox = str2float(values[0]);
                 }
                 else if (variable == "board_board_cost")
                 {
-                    deployer->boardBoardCost = str2float(valueNodes[0]->str);
+                    deployer->costBoardBoard = str2float(values[0]);
                 }
                 else {printf("Whoops (engine)\n");} // <!>
             }
 
             else if (sectionName == "box")
             {
-                // switch(variable.c_str())
-                // {
-                // case "box_board_cost":;
-                // case "supervisor_memory":;
-                // default: printf("Whoops (box)\n"); // <!>
-                // }
+                if (variable == "box_board_cost")
+                {
+                    deployer->costBoxBoard = str2float(values[0]);
+                }
+                else if (variable == "supervisor_memory")
+                {
+                    deployer->boxSupervisorMemory = str2unsigned(values[0]);
+                }
+                else {printf("Whoops (box)\n");}  // <!>
             }
 
             else if (sectionName == "board")
             {
-                // switch(variable.c_str())
-                // {
-                // case "mailboxes":;
-                // case "board_mailbox_cost":;
-                // case "supervisor_memory":;
-                // case "mailbox_mailbox_cost":;
-                // case "dram":;
-                // default: printf("Whoops (board)\n"); // <!>
-                // }
+                if (variable == "mailboxes")
+                {
+                    if (values.size() == 1)  /* Scalar */
+                    {
+                        deployer->mailboxesInBoard.push_back(
+                            str2unsigned(values[0]));
+                        deployer->mailboxHypercubePeriodicity.push_back(false);
+                    }
+                    else  /* Hypercube */
+                    {
+                        /* Complain if multidimensional without hypercube. */
+                        if (valueNodes[0]->str != "hypercube")
+                        {
+                            printf("board::mailboxes isn't a hypercube when "
+                                   "it should be...\n"); // <!>
+                        }
+
+                        deployer->mailboxesInBoard.resize(values.size());
+                        std::transform(values.begin(), values.end(),
+                                       deployer->mailboxesInBoard.begin(),
+                                       str2unsigned);
+
+                        /* Handle periodicity ('+' sign in values) */
+                        for (valueNodeIterator=valueNodes[0]->leaf.begin();
+                             valueNodeIterator!=valueNodes[0]->leaf.end();
+                             valueNodeIterator++)
+                        {
+                            if ((*valueNodeIterator)->qop == Lex::Sy_plus)
+                            {
+                                deployer->mailboxHypercubePeriodicity.
+                                    push_back(true);
+                            }
+                            else if ((*valueNodeIterator)->qop == Lex::Sy_ISTR)
+                            {
+                                deployer->mailboxHypercubePeriodicity.
+                                    push_back(false);
+                            }
+                            else
+                            {
+                                printf("Invalid value for mailboxes variable "
+                                       "in the engine section. Not sure how "
+                                       "to react to this.\n"); // <!>
+                                deployer->mailboxHypercubePeriodicity.
+                                    push_back(false);
+                            }
+                        }
+                    }
+                }
+                else if (variable == "board_mailbox_cost")
+                {
+                    deployer->costBoardMailbox = str2float(values[0]);
+                }
+                else if (variable == "mailbox_mailbox_cost")
+                {
+                    deployer->costBoardMailbox = str2float(values[0]);
+                }
+                else if (variable == "supervisor_memory")
+                {
+                    deployer->boardSupervisorMemory = str2unsigned(values[0]);
+                }
+                else if (variable == "dram")
+                {
+                    deployer->dram = str2unsigned(values[0]);
+                }
+                else {printf("Whoops (board)\n");}  // <!>
             }
 
             else if (sectionName == "mailbox")
             {
-                // switch(variable.c_str())
-                // {
-                // case "cores":;
-                // case "mailbox_core_cost":;
-                // case "core_core_cost":;
-                // default: printf("Whoops (mailbox)\n"); // <!>
-                // }
+                if (variable == "cores")
+                {
+                    if (valueNodes[0]->qop != Lex::Sy_ISTR)
+                    {
+                        printf("That's not an integer string...\n"); // <!>
+                    }
+                    deployer->coresInMailbox = str2unsigned(values[0]);
+                }
+                else if (variable == "mailbox_core_cost")
+                {
+                    deployer->costMailboxCore = str2float(values[0]);
+                }
+                else if (variable == "core_core_cost")
+                {
+                    deployer->costCoreCore = str2float(values[0]);
+                }
+                else {printf("Whoops (mailbox)\n");}  // <!>
             }
 
             else if (sectionName == "core")
             {
-                // switch(variable.c_str())
-                // {
-                // case "threads":;
-                // case "instruction_memory":;
-                // case "data_memory":;
-                // case "thread_thread_cost":;
-                // case "core_thread_cost":;
-                // default: printf("Whoops (core)\n"); // <!>
-                // }
+                if (variable == "threads")
+                {
+                    deployer->threadsInCore = str2unsigned(values[0]);
+                }
+                else if (variable == "instruction_memory")
+                {
+                    deployer->instructionMemory = str2unsigned(values[0]);
+                }
+                else if (variable == "data_memory")
+                {
+                    deployer->dataMemory = str2unsigned(values[0]);
+                }
+                else if (variable == "core_thread_cost")
+                {
+                    deployer->costCoreThread = str2float(values[0]);
+                }
+                else if (variable == "thread_thread_cost")
+                {
+                    deployer->costThreadThread = str2float(values[0]);
+                }
+                else {printf("Whoops (core)\n");}  // <!>
             }
 
             else {printf("Whoops (section)\n");}
         }
     }
+
+    /* If every record was valid, we populate the input deployer with our
+     * created one. */
+
+}
+
+/* Converts a float-like input string to an actual float. */
+float str2float(std::string floatLike)
+{
+    float returnValue;
+    sscanf(floatLike.c_str(), "%f", &returnValue);
+    return returnValue;
+}
+
+/* Converts a float-like input string to an actual float. I know something like
+ * this exists in flat, but I want something with a single argument so that I
+ * can use std::transform to transform a vector of strings into a vector of
+ * unsigneds. */
+unsigned str2unsigned(std::string uintLike)
+{
+    unsigned returnValue;
+    sscanf(uintLike.c_str(), "%u", &returnValue);
+    return returnValue;
 }
