@@ -391,7 +391,7 @@ unsigned TMoth::CmStop(string task)
    uint32_t mX, mY, core, thread;
    P_Msg_Hdr_t stop_msg;
    stop_msg.destEdgeIndex = 0;           // ignore edge index. Unused.
-   stop_msg.destPin = P_SUP_PIN_SYS;     // goes to the system pin
+   stop_msg.destPin = P_SUP_PIN_SYS_SHORT;     // goes to the system pin
    stop_msg.messageTag = P_MSG_TAG_STOP; // with a stop message type
    uint8_t flit[4 << TinselLogWordsPerFlit];
    // printf("Stopping task %s\n",task.c_str());
