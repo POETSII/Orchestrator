@@ -153,15 +153,20 @@ void P_board::connect(AddressComponent start, AddressComponent end,
 void P_board::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
+    std::string nameWithPrefix = dformat("P_thread %s ", fullName.c_str());
+    std::string breakerTail;
+    if (nameWithPrefix.size() >= MAXIMUM_BREAKER_LENGTH)
+    {
+        breakerTail.assign("+");
+    }
+    else
+    {
+        breakerTail.assign(nameWithPrefix.size() - MAXIMUM_BREAKER_LENGTH,
+                           '+');
+    }
+    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
 
     /* About this object and its parent, if any. */
-    char breaker[MAXIMUM_BREAKER_LENGTH + 1];
-    int breakerLength = sprintf(breaker, "P_board %s ", fullName.c_str());
-    for(int index=breakerLength; index<MAXIMUM_BREAKER_LENGTH - 1;
-        breaker[index++]='+');
-    breaker[MAXIMUM_BREAKER_LENGTH - 1] = '\n';
-    breaker[MAXIMUM_BREAKER_LENGTH] = '\0';
-    fprintf(file, "%s", breaker);
     NameBase::Dump(file);
 
     /* About the mailbox graph. */
@@ -202,9 +207,8 @@ void P_board::dump(FILE* file)
     }
 
     /* Close breaker and flush the dump. */
-    for(int index=breakerLength; index<MAXIMUM_BREAKER_LENGTH - 1;
-        breaker[index++]='-');
-    fprintf(file, "%s", breaker);
+    std::replace(breakerTail.begin(), breakerTail.end(), '+', '-');
+    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
     fflush(file);
 }
 

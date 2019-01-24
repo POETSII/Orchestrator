@@ -196,15 +196,20 @@ void P_engine::connect(AddressComponent start, AddressComponent end,
 void P_engine::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
+    std::string nameWithPrefix = dformat("P_thread %s ", fullName.c_str());
+    std::string breakerTail;
+    if (nameWithPrefix.size() >= MAXIMUM_BREAKER_LENGTH)
+    {
+        breakerTail.assign("+");
+    }
+    else
+    {
+        breakerTail.assign(nameWithPrefix.size() - MAXIMUM_BREAKER_LENGTH,
+                           '+');
+    }
+    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
 
     /* About this object. */
-    char breaker[MAXIMUM_BREAKER_LENGTH + 1];
-    int breakerLength = sprintf(breaker, "P_engine %s ", fullName.c_str());
-    for(int index=breakerLength; index<MAXIMUM_BREAKER_LENGTH - 1;
-        breaker[index++]='+');
-    breaker[MAXIMUM_BREAKER_LENGTH - 1] = '\n';
-    breaker[MAXIMUM_BREAKER_LENGTH] = '\0';
-    fprintf(file, "%s", breaker);
     NameBase::Dump(file);
 
     /* Metadata from a configuration file, if set. */
@@ -259,9 +264,8 @@ void P_engine::dump(FILE* file)
     fprintf(file, "Boxes in this engine %s\n", std::string(58, '-').c_str());
 
     /* Close breaker and flush the dump. */
-    for(int index=breakerLength; index<MAXIMUM_BREAKER_LENGTH - 1;
-        breaker[index++]='-');
-    fprintf(file, "%s", breaker);
+    std::replace(breakerTail.begin(), breakerTail.end(), '+', '-');
+    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
     fflush(file);
 }
 
