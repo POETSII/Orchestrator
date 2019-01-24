@@ -44,6 +44,18 @@
  * base class, so...). Only one file can be loaded by this parser at a time;
  * loading a second file clobbers the data structure of the first.
  *
+ * As part of this process, the input file is validated. Points that are not
+ * currently validated include:
+ *
+ * - Lines within a section that are simply one word, without the assignment
+ *   operator (=) or the prefix (+). These are simply ignored.
+ *
+ * - Multidimensional input components are not matched against their respective
+ *   address word lengths, either using their dimensionality or their value.
+ *
+ * - Repeatedly-defined values within a section - only the last defined value
+ *   is used.
+ *
  * See the hardware model documentation for a description of the file
  * format. */
 
