@@ -100,7 +100,7 @@ void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatil
 
 void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt)
 {
-     devTyp_t* deviceType __attribute__((unused)) = &thr_ctxt->devTyps[deviceType_num]; //TODO: Remove this __attribute__((unused)) when code used
+     devTyp_t* deviceType = &thr_ctxt->devTyps[deviceType_num];
      /*
      Handler addresses ought to reside in instruction memory and thus remain valid: to be seen.
      deviceType->RTS_Handler = RTS_Handlers[thr_ctxt->threadID.PThread][deviceType_num]; // RTS_Handlers is a table that must be built by the Orchestrator.
