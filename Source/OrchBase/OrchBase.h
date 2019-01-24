@@ -1,16 +1,19 @@
 #ifndef __OrchBaseH__H
 #define __OrchBaseH__H
 
-#include <stdio.h>
-#include "HardwareModel.h"
-#include "D_graph.h"
-#include "Placement.h"
-#include "Cli.h"
 class P_task;
 class P_builder;
 class T_gen;
 class P_owner;
 class P_super;
+class Dialect1Deployer;
+
+#include <stdio.h>
+#include "D_graph.h"
+#include "HardwareModel.h"
+#include "HardwareFileParser.h"
+#include "Placement.h"
+#include "Cli.h"
 #include "Environment.h"
 #include "CommonBase.h"
 #include "P_owner.h"

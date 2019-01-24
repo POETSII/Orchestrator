@@ -92,7 +92,8 @@ void HardwareFileParser::on_syntax_error(void* parser, void* uifInstance, int)
 /* Populates a POETS Engine with information from the hardware
  * model, after validation. Arguments:
  *
- * - engine: Pointer to the POETS Engine to populate. Must be empty.
+ * - engine: Pointer to the POETS Engine to populate. Cleared if the input file
+ *   is valid.
  *
  * Throws if:
  *
@@ -105,12 +106,6 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
     if (!isFileLoaded)
     {
         throw HardwareFileNotLoadedException();
-    }
-
-    /* Throw if the engine is not empty. */
-    if (!(engine->is_empty()))
-    {
-        throw InvalidEngineException();
     }
 
     /* Call the various semantic validation methods. */
@@ -130,6 +125,9 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
     }
 
     /* Otherwise, it's go time. */
+    delete engine;
+    engine = new P_engine("");
+    /* Name will be set during deployment (if the deployer does its job!). */
     deployer.deploy(engine);
 }
 

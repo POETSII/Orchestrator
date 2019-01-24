@@ -123,6 +123,7 @@ private:
     void populate_mailbox_map();  /* Only populates enough for one board. */
 
     /* Assignment and population methods used during deployment. */
+    void name_engine(P_engine* engine);
     void assign_metadata_to_engine(P_engine* engine);
     void assign_sizes_to_address_format(HardwareAddressFormat* format);
     void connect_boards_from_boardmap_in_engine(P_engine* engine);

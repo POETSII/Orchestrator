@@ -4,12 +4,12 @@
 /* Describes an exception that is to be thrown when the hardware file parser is
  * ordered to populate a deployer before it has loaded a file. */
 
-#include "OrchestratorException.h"
+#include "HardwareFileParserException.h"
 
-class HardwareFileNotLoadedException: public OrchestratorException
+class HardwareFileNotLoadedException: public HardwareFileParserException
 {
 public:
-    HardwareFileNotLoadedException():OrchestratorException{""}
+    HardwareFileNotLoadedException():HardwareFileParserException{""}
     {message = "[ERROR] Engine-population attempted without first "
                "loading a file.\n";}
 };

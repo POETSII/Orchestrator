@@ -6,6 +6,9 @@ Dialect1Deployer::Dialect1Deployer()
     createdMailboxIndex = 0;
     createdCoreIndex = 0;
     createdThreadIndex = 0;
+    author = "";
+    version = "";
+    fileOrigin = "";
 }
 
 /* Defines logic for deploying a dialect 1-style configuration to an
@@ -33,6 +36,9 @@ Dialect1Deployer::Dialect1Deployer()
  * deployment. */
 void Dialect1Deployer::deploy(P_engine* engine)
 {
+    /* Name the engine, if it isn't already named. */
+    name_engine(engine);
+
     /* Assign metadata to the engine. */
     assign_metadata_to_engine(engine);
 
@@ -83,6 +89,19 @@ void Dialect1Deployer::deploy(P_engine* engine)
 
     /* Free itemAndAddress objects in the boardMap. */
     free_items_in_board_map();
+}
+
+/* Assigns a name to the engine, if one isn't already assigned. Arguments:
+ *
+ * - engine: the P_engine to assign a name to. */
+void Dialect1Deployer::name_engine(P_engine* engine)
+{
+    if ((engine->Name().size() == 0 ||
+         engine->Name() == "**undefined**") &&
+        fileOrigin.size() >= 0)
+    {
+        engine->Name(fileOrigin);
+    }
 }
 
 /* Assigns all metadata defined in this deployer to the engine. Arguments:

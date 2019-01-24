@@ -12,6 +12,7 @@
 #include "CMsg_p.h"
 #include "T_gen.h"
 #include "AesopDeployer.h"
+#include "Dialect1Deployer.h"
 #include "MultiAesopDeployer.h"
 #include "Ns_el.h"
 #include "P_super.h"

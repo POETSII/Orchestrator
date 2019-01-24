@@ -127,11 +127,27 @@ Post(133,"complete");
 void OrchBase::TopoLoad(Cli::Cl_t Cl)
 // Load a topology in from a file
 {
-if (Cl.Pa_v.empty()) return;           // No file?
-string st = Cl.Pa_v[0].Val;
-ClearTopo();
-Post(135,"started",st);
-Post(135,"complete",st);
+    ClearTopo();
+    pE = new P_engine("Engine under construction...");
+    pE->parent = this;
+    std::string inputFilePath = Cl.Pa_v[0].Val;
+
+    HardwareFileParser parser;
+    try
+    {
+        parser.load_file(inputFilePath.c_str());
+        parser.populate_hardware_model(pE);
+        Post(140, inputFilePath.c_str());
+    }
+    catch (OrchestratorException& exception)
+    {
+        std::string errorLogPath = "hardware_parser_error_log.txt";
+        std::ofstream errorLogFile;
+        errorLogFile.open(errorLogPath.c_str(), std::fstream::out);
+        errorLogFile << exception.message.c_str();
+        errorLogFile.close();
+        Post(141, inputFilePath.c_str(), errorLogPath.c_str());
+    }
 }
 
 //------------------------------------------------------------------------------

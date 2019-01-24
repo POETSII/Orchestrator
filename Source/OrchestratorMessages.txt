@@ -55,6 +55,8 @@
 137(I) : "Topology default file path is ||%s||"
 138(I) : "Creating topology ||%s||"
 139(W) : "No topology is loaded."
+140(I) : "Topology loaded from file ||%s||."
+141(E) : "Hardware input file ||%s|| contained errors. See error log at ||%s|| for information about the errors."
 151(W) : "Attempt to xlink task %s when no topology exists"
 152(W) : "Attempt to xlink non-existent task %s"
 153(W) : "Attempt to xlink task %s - it's already linked"

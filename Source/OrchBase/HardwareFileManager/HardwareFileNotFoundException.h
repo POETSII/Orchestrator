@@ -4,13 +4,13 @@
 /* Describes an exception that is to be thrown when a path is passed to the
  * hardware file parser, which does not correspond to a file. */
 
-#include "OrchestratorException.h"
+#include "HardwareFileParserException.h"
 
-class HardwareFileNotFoundException: public OrchestratorException
+class HardwareFileNotFoundException: public HardwareFileParserException
 {
 public:
     HardwareFileNotFoundException(std::string message):
-        OrchestratorException(message){};
+        HardwareFileParserException(message){};
 };
 
 #endif

@@ -59,7 +59,6 @@
 #include "HardwareModel.h"
 #include "HardwareSemanticException.h"
 #include "HardwareSyntaxException.h"
-#include "InvalidEngineException.h"
 
 #include "dfprintf.h"
 #include "flat.h"

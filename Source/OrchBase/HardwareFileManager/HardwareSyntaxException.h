@@ -4,13 +4,13 @@
 /* Describes an exception that is to be thrown when a hardware file is passed
  * to the hardware file parser, and when the file contains a syntax error. */
 
-#include "OrchestratorException.h"
+#include "HardwareFileParserException.h"
 
-class HardwareSyntaxException: public OrchestratorException
+class HardwareSyntaxException: public HardwareFileParserException
 {
 public:
     HardwareSyntaxException(std::string message):
-        OrchestratorException(message){};
+        HardwareFileParserException(message){};
 };
 
 #endif

@@ -3,9 +3,10 @@
 
 #include <algorithm>
 #include <stdio.h>
-#include "P_box.h"
+#include "P_board.h"
 #include "P_device.h"
 #include <vector>
+class P_board;
 using namespace std;
 
 //==============================================================================

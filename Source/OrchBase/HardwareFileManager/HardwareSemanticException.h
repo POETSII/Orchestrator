@@ -4,13 +4,13 @@
 /* Describes an exception that is to be thrown when a hardware file is passed
  * to the hardware file parser, and when the file contains a semantic error. */
 
-#include "OrchestratorException.h"
+#include "HardwareFileParserException.h"
 
-class HardwareSemanticException: public OrchestratorException
+class HardwareSemanticException: public HardwareFileParserException
 {
 public:
     HardwareSemanticException(std::string message):
-        OrchestratorException(message){};
+        HardwareFileParserException(message){};
 };
 
 #endif
