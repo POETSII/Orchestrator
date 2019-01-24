@@ -20,11 +20,11 @@
 +boxes=1
 +boards=hypercube(3,1)
 +external_box_cost=0
++board_board_cost=0
 
 [box]
 +box_board_cost=0
 +supervisor_memory=10240 // MiB
-+board_board_cost=0
 
 [board]
 +mailboxes=hypercube(16,1)

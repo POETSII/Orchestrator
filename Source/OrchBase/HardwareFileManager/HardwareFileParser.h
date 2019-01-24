@@ -83,10 +83,25 @@ private:
     /* Validation methods. */
     bool validate_section_contents(std::string* errorMessage);
     bool validate_sections(std::string* errorMessage);
+    bool provision_deployer(Dialect1Deployer* deployer,
+                            std::string* errorMessage);
 
-    /* Sneaky population (validation is mandatory). */
-    void provision_deployer(Dialect1Deployer* deployer);
-    void populate(P_engine* engine);
+    /* Node-checking methods. */
+    bool isValueAtNodeNatural(UIF::Node* recordNode, UIF::Node* valueNode,
+                              std::string variable, std::string value,
+                              std::string sectionName,
+                              std::string* errorMessage);
+    bool isValueAtNodeFloating(UIF::Node* recordNode, UIF::Node* valueNode,
+                               std::string variable, std::string value,
+                               std::string sectionName,
+                               std::string* errorMessage);
+    bool areValuesAtNodeNatural(UIF::Node* recordNode, UIF::Node* valueNode,
+                                std::string variable, std::string value,
+                                std::string sectionName,
+                                std::string* errorMessage);
+    void invalidVariableMessage(std::string* errorMessage,
+                                UIF::Node* recordNode, std::string sectionName,
+                                std::string variable);
 };
 
 float str2float(std::string floatLike);
