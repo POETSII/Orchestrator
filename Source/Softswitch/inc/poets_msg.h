@@ -88,12 +88,12 @@ typedef struct p_super_message
 const unsigned int p_msg_pyld_size = sizeof(P_Msg_t)-sizeof(P_Msg_Hdr_t);
 const unsigned int p_super_data_size = sizeof(P_Sup_Msg_t)-sizeof(P_Sup_Hdr_t);
 
+inline size_t p_msg_size() {return sizeof(P_Msg_t);};
+inline size_t p_hdr_size() {return sizeof(P_Msg_Hdr_t);};
+inline size_t p_sup_msg_size() {return sizeof(P_Sup_Msg_t);};
+inline size_t p_sup_hdr_size() {return sizeof(P_Sup_Hdr_t);};size_t p_msg_size();
 // message buffers (last argument) in the message setters must be volatile because we might wish
 // to write directly to a hardware resource containing the buffer, which in general may be volatile.
-size_t p_msg_size();
-size_t p_hdr_size();
-size_t p_sup_msg_size();
-size_t p_sup_hdr_size();
 void set_msg_hdr(uint32_t, uint32_t, uint8_t, uint8_t, uint16_t = 0, P_Msg_Hdr_t* = 0);
 void pack_msg(uint32_t, uint32_t, uint32_t, uint32_t, uint8_t, uint16_t = 0, void* = 0, P_Msg_t* = 0);
 void set_super_hdr(uint32_t, uint16_t, uint16_t, uint32_t, uint32_t = 0, P_Sup_Hdr_t* = 0);

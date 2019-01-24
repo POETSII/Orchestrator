@@ -631,8 +631,8 @@ void* TMoth::Twig(void* par)
            // and tinsel messsages might be time-critical.
            while (parent->canRecv())
            {
-	         // printf("Message received from a Device\n");
-		 // fflush(stdout);
+	         //printf("Message received from a Device\n");
+		 //fflush(stdout);
                  parent->recv(recv_buf);
 	         uint32_t* device = static_cast<uint32_t*>(p_recv_buf); // get the first word, which will be a device address
 	         if (!(*device & P_SUP_MASK)) // bound for an external?
@@ -817,7 +817,7 @@ int superReturn = 0;
 if ((superReturn = (*SupervisorCall)(Z,&W)) > 0) // Execute. Send a reply if one is expected
   if (!cIdx && (Z->Tgt() == Urank) && (Z->Src() == Urank)) OnTinsel(&W, 0); // either to Tinsels,
   else W.Send(Z->Src());  // or to some external or internal process.
- if (superReturn < 0) Post(530, int2str(Urank)); 
+if (superReturn < 0) Post(530, int2str(Urank)); 
 return 0;
 }
 

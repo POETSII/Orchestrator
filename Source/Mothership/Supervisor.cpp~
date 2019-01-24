@@ -1,8 +1,7 @@
 #include "Supervisor.h"
 
-#undef _APPLICATION_SUPERVISOR_
-// when this is defined application supervisors will be built.
-#ifdef _APPLICATION_SUPERVISOR_
+// when this is defined without _NON application supervisors will be built.
+#ifdef _APPLICATION_SUPERVISOR__NON
 
 extern "C"
 {

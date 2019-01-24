@@ -304,6 +304,7 @@ void P_builder::GenFiles(P_task* task)
      // bung all the user-defined stuff into the supervisor: types first, then handlers, then static pin vector initialisers.
      supervisor_h << sup_inPin_typedefs.str().c_str();
      // lay down all the generic code fragments before handlers (they might have function declarations, type declarations, etc.)
+     supervisor_cpp << "#ifdef _APPLICATION_SUPERVISOR_\n\n";
      WALKVECTOR(CFrag*,supervisor_type->pHandlv,sCode)
      {
          supervisor_cpp << (*sCode)->c_src.c_str() << "\n";
@@ -314,6 +315,7 @@ void P_builder::GenFiles(P_task* task)
      supervisor_cpp << "extern \"C\"" << s_handl_pre;
      supervisor_cpp << "int SupervisorInit()\n" << s_handl_pre << sup_pin_vectors.str().c_str();
      supervisor_cpp << "return 0;\n" << "}\n" << s_handl_post;
+     supervisor_cpp << "#endif";
   }
   supervisor_cpp.close();
 
