@@ -98,8 +98,7 @@ void HardwareFileParser::on_syntax_error(void* parser, void* uifInstance, int)
  * Throws if:
  *
  *  - no input file has been loaded by this parser.
- *  - if the input file is semantically invalid.
- *  - if engine is not empty. */
+ *  - if the input file is semantically invalid. */
 void HardwareFileParser::populate_hardware_model(P_engine* engine)
 {
     /* Throw if we have not loaded a file yet. */
@@ -120,7 +119,6 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
     /* Throw if any of the validation methods failed. */
     if (failedValidation)
     {
-        printf("%s\n", errorMessage.c_str());  // <!>
         throw HardwareSemanticException(errorMessage.c_str());
     }
 
@@ -129,6 +127,7 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
     engine = new P_engine("");
     /* Name will be set during deployment (if the deployer does its job!). */
     deployer.deploy(engine);
+    engine->dump();
 }
 
 /* Validate that all sections have correct contents, given that all sections

@@ -26,7 +26,7 @@
  * Hardware model files are UIF files that fully define a model of the
  * hardware, which is suitable for the Orchestrator's purposes.
  *
- * Rougly speaking, the conversion from a hardware model file to a hardware
+ * Roughly speaking, the conversion from a hardware model file to a hardware
  * model follows this procedure:
  *
  *  1. Load the file.
@@ -55,6 +55,9 @@
  *
  * - Repeatedly-defined values within a section - only the last defined value
  *   is used.
+ *
+ * The contents of the engine are only replaced if validation succeeds. This
+ * replacement requires the engine to be dynamically allocated.
  *
  * See the hardware model documentation for a description of the file
  * format. */

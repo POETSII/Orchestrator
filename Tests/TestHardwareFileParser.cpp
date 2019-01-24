@@ -46,42 +46,48 @@ TEST_CASE("Files that do not exist raise a file-not-found error", "[Parser]")
 
 TEST_CASE("Attempting to populate before loaded a file raises", "[Parser]")
 {
-    P_engine engine("Test Engine");
+    P_engine* engine = new P_engine("Test Engine");
     HardwareFileParser parser;
-    REQUIRE_THROWS_AS(parser.populate_hardware_model(&engine),
+    REQUIRE_THROWS_AS(parser.populate_hardware_model(engine),
                       HardwareFileNotLoadedException&);
+    delete engine;
 }
 
 TEST_CASE("Aesop example does not raise end-to-end", "[Parser]")
 {
-    P_engine engine("Test Engine");
+    P_engine* engine = new P_engine("Test Engine");
     HardwareFileParser parser("../Tests/StaticResources/aesop_dialect_1.uif",
-                              &engine);
+                              engine);
+    engine->dump();
+    delete engine;
 }
 
 TEST_CASE("A file with multiple identical valid sections raise a semantics error", "[Parser]")
 {
-    P_engine engine("Test Engine");
+    P_engine* engine = new P_engine("Test Engine");
     HardwareFileParser parser;
     parser.load_file("../Tests/StaticResources/duplicate_section_invalid.uif");
-    REQUIRE_THROWS_AS(parser.populate_hardware_model(&engine),
+    REQUIRE_THROWS_AS(parser.populate_hardware_model(engine),
                       HardwareSemanticException&);
+    delete engine;
 }
 
 TEST_CASE("A file with a missing section raises a semantics error", "[Parser]")
 {
-    P_engine engine("Test Engine");
+    P_engine* engine = new P_engine("Test Engine");
     HardwareFileParser parser;
     parser.load_file("../Tests/StaticResources/missing_section_invalid.uif");
-    REQUIRE_THROWS_AS(parser.populate_hardware_model(&engine),
+    REQUIRE_THROWS_AS(parser.populate_hardware_model(engine),
                       HardwareSemanticException&);
+    delete engine;
 }
 
 TEST_CASE("A file with an invalid section raises a semantics error", "[Parser]")
 {
-    P_engine engine("Test Engine");
+    P_engine* engine = new P_engine("Test Engine");
     HardwareFileParser parser;
     parser.load_file("../Tests/StaticResources/invalid_section.uif");
-    REQUIRE_THROWS_AS(parser.populate_hardware_model(&engine),
+    REQUIRE_THROWS_AS(parser.populate_hardware_model(engine),
                       HardwareSemanticException&);
+    delete engine;
 }
