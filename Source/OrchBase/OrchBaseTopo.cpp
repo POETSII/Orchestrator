@@ -139,12 +139,7 @@ void OrchBase::TopoLoad(Cli::Cl_t Cl)
     }
     catch (OrchestratorException& exception)
     {
-        std::string errorLogPath = "hardware_parser_error_log.txt";
-        std::ofstream errorLogFile;
-        errorLogFile.open(errorLogPath.c_str(), std::fstream::out);
-        errorLogFile << exception.message.c_str();
-        errorLogFile.close();
-        Post(141, inputFilePath.c_str(), errorLogPath.c_str());
+        Post(141, inputFilePath.c_str(), ("a" + exception.message).c_str());
     }
 }
 
