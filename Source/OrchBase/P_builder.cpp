@@ -198,7 +198,7 @@ void P_builder::GenFiles(P_task* task)
   fstream supervisor_cpp((task_dir+GENERATED_PATH+"/Supervisor.cpp").c_str(), fstream::in | fstream::out | fstream::ate);
   supervisor_h << "\n";
   supervisor_cpp << "\n";
-  if (task->pSup) // is there a non-default supervisor? If so, build it.
+  if (task->pSup->pP_devtyp->Name() != "_DEFAULT_SUPERVISOR_") // is there a non-default supervisor? If so, build it.
   {
      supervisor_h << "#define _APPLICATION_SUPERVISOR_ 1\n\n";
      P_devtyp* supervisor_type = task->pSup->pP_devtyp;
@@ -213,6 +213,8 @@ void P_builder::GenFiles(P_task* task)
      const char* s_handl_post = "}\n\n";
      sup_pin_handlers << "vector<supInputPin*> Supervisor::inputs;\n";
      sup_pin_handlers << "vector<supOutputPin*> Supervisor::outputs;\n\n";
+     sup_pin_vectors << "cout << \"Starting Application Supervisor for application " << task->Name() << "\\n\";\n";
+     sup_pin_vectors << "cout.flush();\n";
      // input pin variables and handlers
      WALKVECTOR(P_pintyp*, supervisor_type->P_pintypIv, sI_pin)
      {
@@ -288,7 +290,7 @@ void P_builder::GenFiles(P_task* task)
          sup_pin_handlers << "   if (!(sendMsg = outMsg->Get<P_Msg_t>(0, s_c))) return -1;\n";
          sup_pin_handlers << "   P_Msg_Hdr_t* outHdr = &sendMsg->header;\n";
          sup_pin_handlers << "   outHdr->destDeviceAddr = s_msg_hdr.sourceDeviceAddr;\n";
-         sup_pin_handlers << "   outHdr->messageLenBytes = sizeof(P_Msg_Hdr_t);\n";
+         sup_pin_handlers << "   outHdr->messageLenBytes = p_hdr_size();\n";
          if ((*sO_pin)->pMsg->pPropsD) sup_pin_handlers << "   outHdr->messageLenBytes += sizeof(s_msg_" << (*sO_pin)->pMsg->Name().c_str() << "_pyld_t);\n";
          sup_pin_handlers << "   }\n";
          // return number of messages to send if no error.
@@ -550,7 +552,7 @@ void P_builder::WriteThreadVars(string& task_dir, unsigned int core_num, unsigne
      for (list<P_device*>::iterator device = thread->P_devicel.begin(); device != thread->P_devicel.end(); device++)
      {
          // device index should be replaced by a GetHardwareAddress(...) call.
-         initialiser << "{&Thread_" << thread_num << "_Context,&Thread_" << thread_num << "_DeviceTypes[0]," << (*device)->idx << ",";
+         initialiser << "{&Thread_" << thread_num << "_Context,&Thread_" << thread_num << "_DeviceTypes[0]," << (*device)->addr.A_device << ",";
          // need to descend into the pins and set them up before setting up the device
          if (t_devtyp->P_pintypIv.size())
          {
@@ -643,7 +645,7 @@ void P_builder::WriteThreadVars(string& task_dir, unsigned int core_num, unsigne
                     {
                         // as for the case of inputs, the target device should be replaced by GetHardwareAddress(...)
                         unsigned int tgt_idx = ((*device)->par->G.index_a.find(*tgt)->second.to_p)->first;
-                        initialiser_3 << "{0," << ((*device)->par->G.index_a.find(*tgt)->second.to_n)->first << "," << (tgt_idx >> PIN_POS) << "," << (tgt_idx & (0xFFFFFFFF >> (32-PIN_POS))) << "},";
+                        initialiser_3 << "{0," << ((*device)->par->G.index_a.find(*tgt)->second.to_n)->second.data->addr.A_device << "," << (tgt_idx >> PIN_POS) << "," << (tgt_idx & (0xFFFFFFFF >> (32-PIN_POS))) << "},";
                     }
                     initialiser_3.seekp(-1,ios_base::cur);
                     initialiser_3 << "};\n";

@@ -1,5 +1,6 @@
 #include "PMsg_p.hpp"
 #include "poets_msg.h"
+#include <iostream>
 
 // OnReceive takes the pin properties and state, the received message and a buffer for any message to send
 typedef unsigned (*Sup_OnReceive_t) (const void*, void*, const P_Sup_Msg_t*, PMsg_p*, void*);

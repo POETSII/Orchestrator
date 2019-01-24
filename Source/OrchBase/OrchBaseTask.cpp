@@ -419,7 +419,7 @@ if (RootProcMapI->P_proc == currBox->P_proc)
 {
    // then copy locally (inefficient, wasteful, using the files in place would be better but this would require
    // different messages to be sent to different Motherships. For a later revision.
-   system((string("mkdir ~/")+task->first).c_str());
+   system((string("mkdir /home/")+currBox->P_user+"/"+task->first).c_str());
    system((string("cp -r ")+taskpath+task->first+"/"+BIN_PATH+" "+taskname).c_str());
 }
 else
