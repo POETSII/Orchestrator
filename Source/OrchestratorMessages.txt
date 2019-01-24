@@ -33,7 +33,7 @@
 060(W) : "Attempt to connect to service %s failed"
 061(W) : "Attempted to connect over an intercommunicator at index %s - ignored"
 062(W) : "Tried to connect to another universe before local process map was built. Try again later"
-063(U) : "Unable to create an Accept thread for process at rank %s - exiting" 
+063(U) : "Unable to create an Accept thread for process at rank %s - exiting"
 101(S) : "Decoder in %s has dropped a packet from %s(%s) to %s(%s) with key 0x%s"
 102(I) : "Task graph default file path is ||%s||"
 103(I) : "New path is ||%s||"
@@ -104,7 +104,7 @@
 813(E) : "Error: task %s could not be %s. State on Mothership is %s"
 814(W) : "P_builder: no task found with source file %s"
 901(U) : "%s: %s corrupt ?"
-902(U) : "OrchBase::ClearTasks(tt=%s)" 
+902(U) : "OrchBase::ClearTasks(tt=%s)"
 903(U) : "OrchBase::ClearDcls: Null pointer to %s in P_typdclm"
 904(U) : "OrchBase::ClearDcls: Null pointer to %s in P_taskm"
 905(U) : "T_Gen::Build: Null pointer argument"
@@ -114,4 +114,3 @@
 909(U) : "NameServer::OnLoad: No key vector in LOAD message"
 
 999(X) : "OINK ARGH OOK %s"
-
