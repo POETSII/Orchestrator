@@ -40,7 +40,7 @@ HOSTLINK_OBJECT_DIR := ./Objects/Hostlink
 EXECUTABLE_DIR := $(ROOT_DIR)/bin
 
 # The application staging environment is built here:
-APPLICATION_STAGING_DIR := $(ROOT_DIR)/application-staging
+APPLICATION_STAGING_DIR := $(ROOT_DIR)/application_staging
 
 # A note on dependency handling: we couple gcc's various -M flags with Make's
 # ability to import dependency files to manage build dependencies. For more
