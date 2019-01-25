@@ -124,7 +124,7 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
 
     /* Otherwise, it's go time. */
     delete engine;
-    engine = new P_engine("");
+    engine = new P_engine("**undefined**");
     /* Name will be set during deployment (if the deployer does its job!). */
     deployer.deploy(engine);
 }
@@ -235,9 +235,10 @@ bool HardwareFileParser::validate_sections(std::string* errorMessage)
              invalidNamedNodeIterator!=invalidNamedNodes.end();
              invalidNamedNodeIterator++)
         {
-            errorMessage->append(dformat("    %s (L%i)\n",
-                                         (*invalidNamedNodeIterator)->str,
-                                         (*invalidNamedNodeIterator)->pos));
+            errorMessage->append(dformat(
+                "    %s (L%i)\n",
+                (*invalidNamedNodeIterator)->str.c_str(),
+                (*invalidNamedNodeIterator)->pos));
         }
     }
 

@@ -139,7 +139,7 @@ void OrchBase::TopoLoad(Cli::Cl_t Cl)
     }
     catch (OrchestratorException& exception)
     {
-        Post(141, inputFilePath.c_str(), ("a" + exception.message).c_str());
+        Post(141, inputFilePath.c_str(), ("\n" + exception.message).c_str());
     }
 }
 
