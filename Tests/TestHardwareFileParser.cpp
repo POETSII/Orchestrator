@@ -58,7 +58,6 @@ TEST_CASE("Aesop example does not raise end-to-end", "[Parser]")
     P_engine* engine = new P_engine("Test Engine");
     HardwareFileParser parser("../Tests/StaticResources/aesop_dialect_1.uif",
                               engine);
-    engine->dump();
     delete engine;
 }
 

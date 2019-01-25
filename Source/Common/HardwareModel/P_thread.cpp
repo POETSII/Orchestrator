@@ -26,7 +26,7 @@ void P_thread::dump(FILE* file)
     }
     else
     {
-        breakerTail.assign(MAXIMUM_BREAKER_LENGTH - nameWithPrefix.size(),
+        breakerTail.assign(MAXIMUM_BREAKER_LENGTH - nameWithPrefix.size() - 1,
                            '+');
     }
     fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());

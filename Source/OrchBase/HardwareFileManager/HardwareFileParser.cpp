@@ -127,7 +127,6 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
     engine = new P_engine("");
     /* Name will be set during deployment (if the deployer does its job!). */
     deployer.deploy(engine);
-    engine->dump();
 }
 
 /* Validate that all sections have correct contents, given that all sections

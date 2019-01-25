@@ -88,7 +88,7 @@ void P_core::contain(AddressComponent addressComponent, P_thread* thread)
 void P_core::dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
-    std::string nameWithPrefix = dformat("P_thread %s ", fullName.c_str());
+    std::string nameWithPrefix = dformat("P_core %s ", fullName.c_str());
     std::string breakerTail;
     if (nameWithPrefix.size() >= MAXIMUM_BREAKER_LENGTH)
     {
@@ -96,7 +96,7 @@ void P_core::dump(FILE* file)
     }
     else
     {
-        breakerTail.assign(MAXIMUM_BREAKER_LENGTH - nameWithPrefix.size(),
+        breakerTail.assign(MAXIMUM_BREAKER_LENGTH - nameWithPrefix.size() - 1,
                            '+');
     }
     fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
