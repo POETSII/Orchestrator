@@ -127,14 +127,14 @@ Post(133,"complete");
 void OrchBase::TopoLoad(Cli::Cl_t Cl)
 // Load a topology in from a file
 {
+    ClearTopo();
     std::string inputFilePath = Cl.Pa_v[0].Val;
 
     HardwareFileParser parser;
     try
     {
         parser.load_file(inputFilePath.c_str());
-        parser.populate_hardware_model(pE);  /* Validates, then clears and
-                                              * populates if it was valid. */
+        parser.populate_hardware_model(pE);
         Post(140, inputFilePath.c_str());
     }
     catch (OrchestratorException& exception)

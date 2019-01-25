@@ -123,9 +123,6 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
     }
 
     /* Otherwise, it's go time. */
-    delete engine;
-    engine = new P_engine("**undefined**");
-    /* Name will be set during deployment (if the deployer does its job!). */
     deployer.deploy(engine);
 }
 

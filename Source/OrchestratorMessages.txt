@@ -56,7 +56,7 @@
 138(I) : "Creating topology ||%s||"
 139(W) : "No topology is loaded."
 140(I) : "Topology loaded from file ||%s||."
-141(E) : "Errors encountered loading hardware input file at ||%s|| (your hardware topology remains unchanged):%s"
+141(E) : "Errors encountered loading hardware input file at ||%s||:%s"
 151(W) : "Attempt to xlink task %s when no topology exists"
 152(W) : "Attempt to xlink non-existent task %s"
 153(W) : "Attempt to xlink task %s - it's already linked"
