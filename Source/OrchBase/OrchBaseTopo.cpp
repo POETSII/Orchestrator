@@ -128,6 +128,8 @@ void OrchBase::TopoLoad(Cli::Cl_t Cl)
 // Load a topology in from a file
 {
     ClearTopo();
+    pE = new P_engine("");
+    pE->parent = this;
     std::string inputFilePath = Cl.Pa_v[0].Val;
 
     HardwareFileParser parser;
@@ -140,6 +142,7 @@ void OrchBase::TopoLoad(Cli::Cl_t Cl)
     catch (OrchestratorException& exception)
     {
         Post(141, inputFilePath.c_str(), ("\n" + exception.message).c_str());
+        ClearTopo();
     }
 }
 
