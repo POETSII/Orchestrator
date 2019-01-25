@@ -39,7 +39,8 @@
 #define P_PKT_MSGTYP_ALIVE 0x4000
 #define P_MSG_TAG_INIT 0x0 // could also be 0xFFFF
 #define P_MSG_TAG_STOP 0x8000 
-#define P_SUP_PIN_SYS 0xFFFF
+#define P_SUP_PIN_SYS 0xFFFF	//An actual supervisor control message?
+#define P_SUP_PIN_SYS_SHORT 0xFF //A "fake?" Supervisor control message?!?!
 #define P_SUP_PIN_INIT 0 // very temporary bodge for __init__ pins
 #define P_SUP_MSG_BARR 0x0
 #define P_SUP_MSG_KILL 0x1

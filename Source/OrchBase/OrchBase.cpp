@@ -48,8 +48,11 @@ if (pE!=0)        delete pE;           // Kill the P-node graph
 if (pB!=0)        delete pB;           // Object to build the datastructure
 if (pPlace!=0)    delete pPlace;       // Cross link controller
 if (pTG!=0)       delete pTG;          // PoL generator
+
+// ADR supervisors do not need to be deleted here as they will be removed
+// in the task graphs.
                                        // Supervisors
-WALKMAP(string,P_super *,P_superm,i) delete (*i).second;
+//WALKMAP(string,P_super *,P_superm,i) delete (*i).second;
                                        // Task map contents
 WALKMAP(string,P_task *,P_taskm,i) delete (*i).second;
                                        // Type declare map contents

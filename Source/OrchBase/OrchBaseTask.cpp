@@ -375,7 +375,7 @@ if (!task->second->linked){                   // task mapped?
 unsigned coreNum = 0;                     // virtual core number counter
 unsigned cIdx = 0;                        // comm number to look for Motherships. Start from local MPI_COMM_WORLD.
 
-vector<pair<unsigned,P_addr_t>> coreVec;  // core map container to send
+vector<pair<unsigned,P_addr_t> > coreVec;  // core map container to send
 vector<ProcMap::ProcMap_t>::iterator currBox = pPmap[cIdx]->vPmap.begin(); // process map for the Mothership being deployed to
 
 

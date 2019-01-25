@@ -72,9 +72,10 @@ if [ $MOTHERSHIP_ARG_SET -eq 1 -a $ON_POETS_BOX -eq 0 ]; then
 not run on a POETS box. Continuing without spawning any motherships."
 fi
 
-# Setup
-export RISCV_DIR=
-export PATH="{{ MPICH_DIR }}/bin:$RISCV_DIR/bin:$PATH"
+# Setup for building applications
+export RISCV_PATH="{{ RISCV_DIR }}"
+export MPICH_PATH="{{ MPICH_DIR }}"
+export PATH="{{ MPICH_DIR }}/bin:{{ RISCV_BIN_DIR }}:$PATH"
 export TRIVIAL_LOG_HANDLER=1
 
 if [ $ON_POETS_BOX -eq 1 ]; then
@@ -86,14 +87,13 @@ fi
 MPI_LIB_DIR="{{ MPICH_LIB_DIR }}"
 QT_LIB_DIR="{{ QT_LIB_DIR }}"
 JTAG_LIB_DIR="{{ JTAG_LIB_DIR }}"
-SUPERVISOR_LIB_DIR="{{ SUPERVISOR_LIB_DIR }}"
 GCC_LIB_DIR="{{ GCC_LIB_DIR }}"
 CR_LIB_DIR="{{ CR_LIB_DIR }}"
 INTERNAL_LIB_PATH=./:"$QT_LIB_DIR":"$MPI_LIB_DIR":\
-"$GCC_LIB_DIR":"$SUPERVISOR_LIB_DIR":"$JTAG_LIB_DIR":
+"$GCC_LIB_DIR":"$JTAG_LIB_DIR":
 
 # Paths for dynamically-linked libraries required by MPI.
-export LD_LIBRARY_PATH="$CR_LIB_DIR":"$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="$CR_LIB_DIR":"$LD_LIBRARY_PATH":./
 
 # Define general MPI execution command.
 COMMAND="mpiexec.hydra -genv LD_LIBRARY_PATH \"$INTERNAL_LIB_PATH\" \

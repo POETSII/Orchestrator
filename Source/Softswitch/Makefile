@@ -1,6 +1,8 @@
-# Tinsel root
+# Main components roots
 export TINSEL_ROOT=../Tinsel
 export SOFTSW_ROOT=../Softswitch
+# this needs to be modified to reflect actual codebase location
+export ORCH_ROOT=../Orchestrator
 
 # Common directories
 TINSELINC = $(realpath $(TINSEL_ROOT)/include)
@@ -11,8 +13,15 @@ TINSELHL  = $(realpath $(TINSEL_ROOT)/hostlink)
 SOFTSWINC = $(realpath $(SOFTSW_ROOT)/inc)
 SOFTSWSRC = $(realpath $(SOFTSW_ROOT)/src)
 
+PCOMMONINC = $(realpath $(ORCH_ROOT)/Source/Common)
+GENERICSINC = $(realpath $(ORCH_ROOT)/Generics)
+
 ifndef RISCV_PATH
 export RISCV_PATH := /usr/local/riscv
+endif
+
+ifndef MPICH_PATH
+export MPICH_PATH := /usr/local/mpich
 endif
 
 # Application directories
@@ -31,6 +40,13 @@ ifdef TRIVIAL_LOG_HANDLER
 SOFTSWITCH_DEPS = handler_log_t.h
 LH_CFLAGS = -D TRIVIAL_LOG_HANDLER 
 endif
+
+# MPI tools
+MPICHINC = $(MPICH_PATH)/include
+MPICHBIN = $(MPICH_PATH)/bin
+MPICHLIB = $(MPICH_PATH)/lib
+MPICC    = $(MPICHBIN)/mpicc
+MPICXX   = $(MPICHBIN)/mpicxx
 
 # RISC-V tools
 RV_ARCH     = rv32imf
@@ -59,11 +75,18 @@ vpath vars_%.h $(GENINC)
 vpath handlers_%.h $(GENINC)
 vpath libc.a $(RV_LIBS)
 vpath libgcc.a $(RV_GCC_LIBS)
-VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC)
+vpath mpi%.h $(MPICHINC)
+vpath opa_%.h $(MPICHINC)
+vpath PMsg_p.hpp $(PCOMMONINC)
+vpath Supervisor.% $(realpath ../$(DEFAULT_GEN_DIR))
+VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC)
 
 # Local compiler flags
 CFLAGS = $(RV_CFLAGS) $(LH_CFLAGS) -O2 -I $(TINSELINC) -I $(SOFTSWINC) -I $(GENINC)
 LDFLAGS = -melf32lriscv -G 0 -L$(RV_LIBS) -L$(RV_GCC_LIBS) -lgcc -lc
+
+MPICFLAGS = -I$(SOFTSWINC) -I$(TINSELINC) -I$(MPICHINC) -I$(PCOMMONINC) -I$(GENERICSINC) -std=c++11 -fPIC -Wall
+MPILDFLAGS = -shared -L$(MPICHLIB)
 
 SECEXPCPPS := $(GENSRC)/%.cpp
 SECEXPOS := %.o
@@ -75,11 +98,16 @@ VDTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_data_%.v,$(wild
 # targets for thread-local variables 
 THREADVARS := $(patsubst $(GENSRC)/%.cpp,%.o,$(wildcard $(GENSRC)/vars_*_*.cpp))
 
-.PHONY: all clean printvars
-all : $(TARGETS) $(VCTARGETS) $(VDTARGETS)
+.PHONY: all clean printvars supervisor
+all : $(TARGETS) $(VCTARGETS) $(VDTARGETS) supervisor
 
 # This line can be given a target/prerequisite (tgt : $(TARGETS)) if needed
 #	$(foreach TARGET,$<,cp $(TARGET) $(BIN_DIR)/$(TARGET))
+
+supervisor: $(BIN_DIR)/libSupervisor.so
+
+$(BIN_DIR)/libSupervisor.so: Supervisor.cpp Supervisor.h
+	$(MPICXX) $(MPICFLAGS) $(MPILDFLAGS) -Wl,-soname,libSupervisor.so -o $@ $<
 
 $(BIN_DIR)/softswitch_code_%.v: $(BIN_DIR)/softswitch_%.elf
 	$(TINSELBIN)/checkelf.sh $<
@@ -135,5 +163,5 @@ $(HL)/%.o :
 	make -C $(TINSELHL)
 
 clean :
-	rm -f *.o *.elf link.ld $(BIN_DIR)/*.elf
+	rm -f *.o *.elf link.ld $(BIN_DIR)/*.elf $(BIN_DIR)/libSupervisor.so
 	make clean -C $(TINSELINC)

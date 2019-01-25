@@ -2,6 +2,7 @@
 #define __P_deviceH__H
 
 #include <stdio.h>
+#include <limits.h>
 #include "NameBase.h"
 #include "pdigraph.hpp"
 #include "P_addr.h"
@@ -33,7 +34,7 @@ P_thread *         pP_thread;
 P_devtyp *         pP_devtyp;
 CFrag *            pPropsI;            // Device properties initialiser code
 CFrag *            pStateI;            // Device state initialiser code
-unsigned int       idx;                // Index in the graph
+unsigned           idx;                // Index in the graph
 unsigned           attr;               // The eponymous attribute
 /* this looks like a hack, and maybe it is. When creating edges, in the
    actual on-chip implementation, messages are to be sent using a header
@@ -57,6 +58,7 @@ unsigned           attr;               // The eponymous attribute
    by all means put it in here, or whereever...
 */
 map<unsigned int, unsigned int> ipin_idxs;
+static const unsigned super_idx=UINT_MAX; // supervisor is always max index.
 
 };
 

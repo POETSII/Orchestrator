@@ -5,7 +5,7 @@
 #include "pcodefragment.h"
 
 PIGraphType::PIGraphType(const QString& name, PIGraphObject *parent) :
-    PConcreteDef(name, "GraphType", QVector<int>({DEVTYPES, MSGTYPES, SHAREDCODE}), parent), graph_type(NULL)
+    PConcreteDef(name, "GraphType", QVector<int>({DEVTYPES, SUPERDEVTYPES, MSGTYPES, SHAREDCODE}), parent), graph_type(NULL)
 {
 
 }
@@ -91,6 +91,12 @@ P_typdcl* PIGraphType::elaborateGraphType(OrchBase* orch_root)
        {
            graph_type->P_messagev.push_back(static_cast<PMessageType*>(*message_type)->elaborateMessage(graph_type));
            graph_type->P_messagev.back()->MsgType = graph_type->P_messagev.size()-1;
+       }
+       // next any supervisors
+       for (QVector<PIGraphObject*>::iterator s_dev_type = beginSubObjects(SUPERDEVTYPES); s_dev_type < endSubObjects(SUPERDEVTYPES); s_dev_type++)
+       {
+           graph_type->P_devtypv.push_back(static_cast<PSupervisorDeviceType*>(*s_dev_type)->elaborateSupervisorDeviceType(graph_type));
+           graph_type->P_devtypv.back()->idx = graph_type->P_devtypv.size()-1;
        }
        // and finally the various device types
        for (QVector<PIGraphObject*>::iterator device_type = beginSubObjects(DEVTYPES); device_type < endSubObjects(DEVTYPES); device_type++)

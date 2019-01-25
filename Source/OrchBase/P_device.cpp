@@ -7,6 +7,10 @@
 
 //==============================================================================
 
+const unsigned P_device::super_idx;
+
+//------------------------------------------------------------------------------
+
 P_device::P_device(D_graph * G, string name):
           par(G),pP_thread(0),pP_devtyp(0),pPropsI(0),pStateI(0)
 {
