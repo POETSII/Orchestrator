@@ -907,8 +907,9 @@ W.Tgt(Urank);                              // and directed at us
 unsigned last_index = packet->header.cmdLenBytes/p_sup_msg_size() + (packet->header.cmdLenBytes%p_sup_msg_size() ? 1 : 0);
 vector<P_Sup_Msg_t> pkt_v(packet,&packet[last_index]); // maybe slightly more efficient using the constructor
 W.Put<P_Sup_Msg_t>(0,&pkt_v);    // stuff the Tinsel message into the packet
-W.Send();                        // away it goes.
-return 0;
+return OnSuper(&W, 0);
+// W.Send();                        // away it goes.
+// return 0;
 }
 
 //------------------------------------------------------------------------------
