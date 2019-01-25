@@ -904,7 +904,7 @@ PMsg_p W(Comms[0]);                        // Create a new packet on the local c
 W.Key(Q::SUPR);                            // it'll be a Supervisor packet
 W.Src(Urank);                              // coming from the us
 W.Tgt(Urank);                              // and directed at us
-unsigned last_index = packet->header.cmdLenBytes/p_sup_msg_size() + (packet->header.cmdLenBytes%p_sup_msg_size() ? 1 : 0);
+unsigned last_index = packet->header.cmdLenBytes/p_sup_msg_size() + (packet->header.cmdLenBytes%p_sup_msg_size() ? 2 : 1);
 vector<P_Sup_Msg_t> pkt_v(packet,&packet[last_index]); // maybe slightly more efficient using the constructor
 W.Put<P_Sup_Msg_t>(0,&pkt_v);    // stuff the Tinsel message into the packet
 W.Send();                        // away it goes.
