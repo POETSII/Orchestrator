@@ -17,10 +17,17 @@ void OrchBase::ClearBoxConfig(string)
 
 void OrchBase::ClearTopo()
 {
-if (pE==0) return;
-Post(134,pE->FullName());
-delete pE;
-pE = 0;
+    if (pE==0) return;
+    if (pE->FullName().empty())
+    {
+        Post(134,"with no name");
+    }
+    else
+    {
+        Post(134,pE->FullName());
+    }
+    delete pE;
+    pE = 0;
 }
 
 //------------------------------------------------------------------------------
