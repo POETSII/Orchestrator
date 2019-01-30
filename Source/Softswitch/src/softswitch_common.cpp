@@ -188,7 +188,7 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
 	  buffered = 1;
        }
        // then run the application's OnSend (which, if we are buffering, may alter the buffer again)
-       uint32_t RTS_updated = cur_pin->pinType->Send_Handler(thr_ctxt->properties, cur_device, static_cast<char*>(const_cast<void*>(send_buf))+hdrSize, buffered);
+       uint32_t RTS_updated __attribute__((unused)) = cur_pin->pinType->Send_Handler(thr_ctxt->properties, cur_device, static_cast<char*>(const_cast<void*>(send_buf))+hdrSize, buffered);
     }
     // send the message (to as many destinations as possible before the network blocks).
     while (tinselCanSend() && cur_device->currTgt < cur_pin->numTgts)
