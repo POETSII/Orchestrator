@@ -435,6 +435,8 @@ void P_builder::GenFiles(P_task* task)
       for (vector<P_pintyp*>::iterator O_pin = c_devtyp->P_pintypOv.begin(); O_pin != c_devtyp->P_pintypOv.end(); O_pin++)
       {
           const char* Opin_name = (*O_pin)->Name().c_str();
+          handlers_h << "const uint32_t RTS_INDEX_" << (*O_pin)->Name().c_str() << " = " << (*O_pin)->idx << ";\n";
+          handlers_h << "const uint32_t RTS_FLAG_" << (*O_pin)->Name().c_str() << " = 0x1 << " << (*O_pin)->idx << ";\n";
           handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OutPin_" << Opin_name << "_Send_handler (const void* graphProps, void* device, void* msg, uint32_t buffered);\n";
           handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OutPin_" << Opin_name << "_Send_handler (const void* graphProps, void* device, void* msg, uint32_t buffered)\n";
           handlers_cpp << handl_pre_strm.str().c_str();
@@ -647,7 +649,12 @@ void P_builder::WriteThreadVars(string& task_dir, unsigned int core_num, unsigne
                     {
                         // as for the case of inputs, the target device should be replaced by GetHardwareAddress(...)
                         unsigned int tgt_idx = ((*device)->par->G.index_a.find(*tgt)->second.to_p)->first;
-                        initialiser_3 << "{0," << ((*device)->par->G.index_a.find(*tgt)->second.to_n)->second.data->addr.A_device << "," << (tgt_idx >> PIN_POS) << "," << (tgt_idx & (0xFFFFFFFF >> (32-PIN_POS))) << "},";
+                        P_addr tgt_addr = ((*device)->par->G.index_a.find(*tgt)->second.to_n)->second.data->addr;
+                        unsigned tgt_hwaddr = tgt_addr.A_box << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore + TinselLogCoresPerBoard + TinselMeshXBits + TinselMeshYBits);
+                        tgt_hwaddr |= tgt_addr.A_board << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore +TinselLogCoresPerBoard);
+                        tgt_hwaddr |= tgt_addr.A_core << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore);
+                        tgt_hwaddr |= tgt_addr.A_thread << (LOG_DEVICES_PER_THREAD);
+                        initialiser_3 << "{0," << (tgt_addr.A_device | tgt_hwaddr) << "," << (tgt_idx >> PIN_POS) << "," << (tgt_idx & (0xFFFFFFFF >> (32-PIN_POS))) << "},";
                     }
                     initialiser_3.seekp(-1,ios_base::cur);
                     initialiser_3 << "};\n";

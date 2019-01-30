@@ -102,7 +102,6 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
     if (!pCon) pCon = new Constraints();
     if (pCon->Constraintm.find("DevicesPerThread") == pCon->Constraintm.end()) pCon->Constraintm["DevicesPerThread"] = min(BYTES_PER_THREAD/devMem, MAX_DEVICES_PER_THREAD);
     if (pCon->Constraintm.find("ThreadsPerCore") == pCon->Constraintm.end()) pCon->Constraintm["ThreadsPerCore"] = THREADS_PER_CORE;
-    unsigned devThreadIdx = 0; // keep track of the relative position of the device within the thread (which will be its ID within the thread)
     for (unsigned devIdx = 0; devIdx < dVs.size(); devIdx++) // For each device.....
     {
         // if we have packed the existing thread,
@@ -116,9 +115,8 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
               par->Post(163, pT->Name()); // out of room. Abandon placement.
               return true;
            }
-           devThreadIdx = 0;
         }
-        dVs[devIdx]->addr.SetDevice(devThreadIdx++); // insert the device's internal address (thread index)
+        dVs[devIdx]->addr.SetDevice(devIdx%pCon->Constraintm["DevicesPerThread"]); // insert the device's internal address (thread index)
         Xlink(dVs[devIdx],pTh);            // And link thread and device
     }
 
