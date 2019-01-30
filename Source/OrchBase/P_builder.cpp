@@ -510,9 +510,9 @@ void P_builder::WriteThreadVars(string& task_dir, unsigned int core_num, unsigne
             if ((*ipin)->pMsg->pPropsD) initialiser << "sizeof(msg_" << (*ipin)->pMsg->Name().c_str() << "_pyld_t),";
             else initialiser << "0,";
             initialiser << (*ipin)->pMsg->MsgType;
-            if ((*ipin)->pPropsD) initialiser << ",sizeof(devtyp_" << t_devtyp->Name().c_str() << "_ipin_" << (*ipin)->Name().c_str() << "_props_t),";
+            if ((*ipin)->pPropsD) initialiser << ",sizeof(devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << (*ipin)->Name().c_str() << "_props_t),";
             else initialiser << ",0,";
-            if ((*ipin)->pStateD) initialiser << "sizeof(devtyp_" << t_devtyp->Name().c_str() << "_ipin_" << (*ipin)->Name().c_str() << "_state_t)},";
+            if ((*ipin)->pStateD) initialiser << "sizeof(devtyp_" << t_devtyp->Name().c_str() << "_InPin_" << (*ipin)->Name().c_str() << "_state_t)},";
             else initialiser << "0},";
         }
         initialiser.seekp(-1,ios_base::cur);
