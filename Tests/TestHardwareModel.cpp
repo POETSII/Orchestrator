@@ -302,8 +302,7 @@ TEST_CASE("Items in the hardware stack have meaningful addresses", "[Address Ass
         REQUIRE(board->get_hardware_address() != core->get_hardware_address());
 
         /* We're really trying to break it. */
-        board->set_hardware_address(
-            new HardwareAddress(&(engine.addressFormat)));
-        REQUIRE(core->get_hardware_address()->get_box() == boxComponent);
+        board->get_hardware_address()->set_board(0);
+        REQUIRE(core->get_hardware_address()->get_board() == boardComponent);
     }
 }
