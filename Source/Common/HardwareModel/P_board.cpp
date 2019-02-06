@@ -38,6 +38,15 @@ P_board::~P_board()
  * board, deleting all contained components recursively. */
 void P_board::clear()
 {
+    /* Clear the links of the graph object. */
+    WALKPDIGRAPHARCS(AddressComponent, P_mailbox*,
+                     unsigned, P_link*,
+                     unsigned, P_port*,
+                     G, iterator)
+    {
+        delete G.ArcData(iterator);  /* Deletes the edge. */
+    }
+
     /* Clear all mailboxes that this board knows about. This in turn will clear
      * structures lower in the hierarchy recursively. */
     AddressComponent nodeKey;
@@ -48,7 +57,7 @@ void P_board::clear()
     {
         if (iterator != G.NodeEnd())
         {
-            delete G.NodeData(iterator);
+            delete G.NodeData(iterator);  /* Deletes the mailbox. */
 
             /* Also clear the ports of the graph while we're here. */
             nodeKey = G.NodeKey(iterator);
@@ -57,7 +66,7 @@ void P_board::clear()
                                unsigned, P_port*,
                                G, nodeKey, pinIterator)
             {
-                delete G.PinData(pinIterator);
+                delete G.PinData(pinIterator);  /* Deletes the input port. */
             }
 
             WALKPDIGRAPHOUTPINS(AddressComponent, P_mailbox*,
@@ -65,11 +74,9 @@ void P_board::clear()
                                 unsigned, P_port*,
                                 G, nodeKey, pinIterator)
             {
-                delete G.PinData(pinIterator);
+                delete G.PinData(pinIterator);  /* Deletes the output port. */
             }
         }
-
-
     }
 
     /* Clear the graph object itself. */
