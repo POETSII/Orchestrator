@@ -1,6 +1,7 @@
 #ifndef _POETS_MSG_H_
 #define _POETS_MSG_H_
 
+#include <cstddef>
 #include <cstdint>
 
 // poets_hardware.h is a platform-specific configuration file
@@ -42,9 +43,9 @@
 #define P_SUP_PIN_SYS 0xFFFF	//An actual supervisor control message?
 #define P_SUP_PIN_SYS_SHORT 0xFF //A "fake?" Supervisor control message?!?!
 #define P_SUP_PIN_INIT 0 // very temporary bodge for __init__ pins
-#define P_SUP_MSG_BARR 0x0
-#define P_SUP_MSG_KILL 0x1
-#define P_SUP_MSG_LOG  0x2
+#define P_SUP_MSG_BARR 0x8000
+#define P_SUP_MSG_KILL 0x8001
+#define P_SUP_MSG_LOG  0x8002
 
 #pragma pack(push,1)
 typedef struct poets_message_header
@@ -83,11 +84,14 @@ typedef struct p_super_message
         P_Sup_Hdr_t header; // a Supervisor message always has an appropriate header
         uint8_t data[P_MSG_MAX_SIZE-sizeof(P_Sup_Hdr_t)]; // and it might have some sort of data
 } P_Sup_Msg_t;
-#pragma pack(pop)
 
 const unsigned int p_msg_pyld_size = sizeof(P_Msg_t)-sizeof(P_Msg_Hdr_t);
 const unsigned int p_super_data_size = sizeof(P_Sup_Msg_t)-sizeof(P_Sup_Hdr_t);
 
+inline size_t p_msg_size() {return sizeof(P_Msg_t);};
+inline size_t p_hdr_size() {return sizeof(P_Msg_Hdr_t);};
+inline size_t p_sup_msg_size() {return sizeof(P_Sup_Msg_t);};
+inline size_t p_sup_hdr_size() {return sizeof(P_Sup_Hdr_t);};size_t p_msg_size();
 // message buffers (last argument) in the message setters must be volatile because we might wish
 // to write directly to a hardware resource containing the buffer, which in general may be volatile.
 void set_msg_hdr(uint32_t, uint32_t, uint8_t, uint8_t, uint16_t = 0, P_Msg_Hdr_t* = 0);
@@ -97,4 +101,5 @@ uint32_t pack_super_msg(uint32_t, uint16_t, uint16_t, uint32_t, void*, P_Sup_Msg
 void super_buf_clr(P_Sup_Msg_t*);
 bool super_buf_recvd(const P_Sup_Msg_t*);
 
+#pragma pack(pop)
 #endif

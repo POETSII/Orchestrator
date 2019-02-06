@@ -3,7 +3,7 @@
 #include "pigraphinstance.h"
 
 PDeviceInstance::PDeviceInstance(bool is_supervisor, const QString &name, PIGraphObject *parent) :
-    PConcreteInstance(name, is_supervisor ? QString("SDevI") : QString("DevI"), is_supervisor ? QVector<int>() : QVector<int>({STATE}), parent), device_type(NULL), supervisor_type(NULL), device(NULL)
+    PConcreteInstance(name, is_supervisor ? QString("SDevI") : QString("DevI"), is_supervisor ? QVector<int>() : QVector<int>({STATE}), parent), device_type(NULL), supervisor_type(NULL), device(NULL), supervisor(NULL)
 {
     if (is_supervisor && parent)
     {

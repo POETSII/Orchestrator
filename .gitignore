@@ -1,7 +1,7 @@
 # Repo-specific ignores:
 *.temp.d
 *.log
-application-staging/
+application_staging/
 bin/*
 test_bin/*
 Build/gcc/Objects

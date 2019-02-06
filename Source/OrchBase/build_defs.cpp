@@ -16,6 +16,7 @@ const string MAKEDIR = "mkdir";
 const unsigned int MAX_HANDLERS = 1024;
 const unsigned int BYTES_PER_THREAD = 0x1 << (TinselLogBytesPerDRAM - TinselLogThreadsPerDRAM);
 const unsigned int MAX_DEVICES_PER_THREAD = 1024;
+const unsigned int LOG_DEVICES_PER_THREAD = 10;
 const unsigned int THREADS_PER_CORE = 0x1 << TinselLogThreadsPerCore;
 const unsigned int CORES_PER_BOARD = 0x1 << TinselLogCoresPerBoard;
 const unsigned int BOARDS_PER_BOX = TinselMeshXLen*TinselMeshYLen;
