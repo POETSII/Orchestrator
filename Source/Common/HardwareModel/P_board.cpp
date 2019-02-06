@@ -132,8 +132,8 @@ void P_board::contain(AddressComponent addressComponent, P_mailbox* mailbox)
 
 /* Connects two mailboxes together that are owned by this board. Arguments:
  *
- * - start, end: Pointers to two mailbox objects to connect. Must be owned by
- *   this board.
+ * - start, end: Address components of two mailbox objects owned by this board
+ *   to connect together.
  * - weight: Edge weight for the connection.
  * - oneWay: If false, the connection is bidirectional, otherwise is
  *   unidirectional, from start to end. */
