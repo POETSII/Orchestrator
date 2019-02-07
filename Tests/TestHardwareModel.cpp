@@ -123,6 +123,7 @@ TEST_CASE("Engines are not empty when populated", "[Emptiness]")
     P_engine engine("Engine000");
     P_box* box;
     box = new P_box("Box000");
+    engine.addressFormat = HardwareAddressFormat(4, 5, 6, 8, 9);
     engine.contain(0, box);
     REQUIRE(engine.is_empty() == false);
 }
@@ -132,6 +133,7 @@ TEST_CASE("Engines are empty when populated and then cleared", "[Emptiness]")
     P_engine engine("Engine000");
     P_box* box;
     box = new P_box("Box000");
+    engine.addressFormat = HardwareAddressFormat(4, 5, 6, 8, 9);
     engine.contain(0, box);
     engine.clear();
     REQUIRE(engine.is_empty());

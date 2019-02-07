@@ -97,8 +97,7 @@ void HardwareAddress::populate_from_software_address(P_addr* source)
  * Also updates the "definitions" word. Raises if the input does not fit within
  * the loaded format. Arguments:
  *
- * - value: Value to set.
-*/
+ * - value: Value to set. */
 void HardwareAddress::set_box(AddressComponent value)
 {
     /* Validate */
