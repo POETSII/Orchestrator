@@ -66,7 +66,8 @@ void HardwareFileParser::load_file(const char* filePath)
     loadedFile.clear();
     loadedFile += filePath;
     isFileLoaded = true;
-    Addx(strdup(filePath));
+    std::string filePathAsString = filePath;
+    Add(filePathAsString);
 }
 
 /* Defines behaviour when a syntax error is encountered when reading a file.
