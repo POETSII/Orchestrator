@@ -149,16 +149,10 @@ void P_board::connect(AddressComponent start, AddressComponent end,
             "'%u' to mailbox with index '%u' failed.", start, end));
     }
 
+    /* Make the reverse connection, if so desired. */
     if (!oneWay)
     {
-        P_link* endToStartLink = new P_link();
-        endToStartLink->AutoName();
-        endToStartLink->weight = weight;
-        if (!(G.InsertArc(arcKey++, end, start, endToStartLink)))
-        {
-            throw OwnershipException(dformat("Connection from mailbox with "
-                "index '%u' to mailbox with index '%u' failed.", end, start));
-        }
+        connect(end, start, weight, true);
     }
 }
 

@@ -185,16 +185,10 @@ void P_engine::connect(AddressComponent start, AddressComponent end,
             "'%u' to board with index '%u' failed.", start, end));
     }
 
+    /* Make the reverse connection, if so desired. */
     if (!oneWay)
     {
-        P_link* endToStartLink = new P_link();
-        endToStartLink->AutoName();
-        endToStartLink->weight = weight;
-        if (!(G.InsertArc(arcKey++, start, end, startToEndLink)))
-        {
-            throw OwnershipException(dformat("Connection from board with "
-                "index '%u' to board with index '%u' failed.", end, start));
-        }
+        connect(end, start, weight, true);
     }
 }
 
