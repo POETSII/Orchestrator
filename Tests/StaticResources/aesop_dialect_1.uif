@@ -13,7 +13,7 @@
 +mailbox=(4,0)
 +thread=4
 +core=2
-+board=(2,2)
++board=(2,0)
 +box=0  // There is only one box.
 
 [engine]

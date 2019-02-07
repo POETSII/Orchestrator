@@ -17,7 +17,7 @@ AesopDeployer::AesopDeployer()
     boxWordLength = 0;  /* There's only one box! */
     boardWordLengths.clear();
     boardWordLengths.push_back(2);
-    boardWordLengths.push_back(2);
+    boardWordLengths.push_back(0);
     mailboxWordLengths.clear();
     mailboxWordLengths.push_back(4);
     mailboxWordLengths.push_back(0);
