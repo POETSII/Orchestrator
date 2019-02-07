@@ -191,8 +191,8 @@ void Dialect1Deployer::connect_boards_from_boardmap_in_engine(P_engine* engine)
                 {
                     isAnyoneBehind = false;
                 }
-                else if (outerHierarchicalAddress[dimension] ==
-                         boardsInEngine[dimension] - 1)
+                if (outerHierarchicalAddress[dimension] ==
+                    boardsInEngine[dimension] - 1)
                 {
                     isAnyoneAhead = false;
                 }
@@ -333,8 +333,8 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
                 {
                     isAnyoneBehind = false;
                 }
-                else if (outerHierarchicalAddress[dimension] ==
-                         mailboxesInBoard[dimension] - 1)
+                if (outerHierarchicalAddress[dimension] ==
+                    mailboxesInBoard[dimension] - 1)
                 {
                     isAnyoneAhead = false;
                 }

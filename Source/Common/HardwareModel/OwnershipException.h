@@ -2,7 +2,8 @@
 #define __ORCHESTRATOR_SOURCE_COMMON_HARDWAREMODEL_OWNERSHIPEXCEPTION_H
 
 /* Describes an exception that is to be thrown when ownership is claimed of an
- * item in the hardware stack that is already owned. */
+ * item in the hardware stack that is already owned, or when an item in the
+ * hardware stack is to be connected, but is not owned. */
 
 #include "OrchestratorException.h"
 

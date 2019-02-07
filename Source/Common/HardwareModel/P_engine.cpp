@@ -179,13 +179,22 @@ void P_engine::connect(AddressComponent start, AddressComponent end,
     P_link* startToEndLink = new P_link();
     startToEndLink->AutoName();
     startToEndLink->weight = weight;
-    G.InsertArc(arcKey++, start, end, startToEndLink);
+    if (!(G.InsertArc(arcKey++, start, end, startToEndLink)))
+    {
+        throw OwnershipException(dformat("Connection from board with index "
+            "'%u' to board with index '%u' failed.", start, end));
+    }
+
     if (!oneWay)
     {
         P_link* endToStartLink = new P_link();
         endToStartLink->AutoName();
         endToStartLink->weight = weight;
-        G.InsertArc(arcKey++, end, start, endToStartLink);
+        if (!(G.InsertArc(arcKey++, start, end, startToEndLink)))
+        {
+            throw OwnershipException(dformat("Connection from board with "
+                "index '%u' to board with index '%u' failed.", end, start));
+        }
     }
 }
 
