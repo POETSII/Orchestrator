@@ -175,6 +175,7 @@ void P_builder::Preplace(P_task* task)
 void P_builder::GenFiles(P_task* task)
 {
   string task_dir(par->taskpath+task->Name());
+  system((string("rm -r -f ")+task_dir).c_str());
   system((MAKEDIR+" "+ task_dir).c_str());
   task_dir += "/";
   system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_PATH))->str().c_str());
