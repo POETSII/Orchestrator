@@ -212,21 +212,27 @@ $(APPLICATION_STAGING_DIR)/xml:
 	mkdir --parents "$@"
 
 $(APPLICATION_STAGING_DIR)/Orchestrator/Generics:
+	mkdir --parents "$(dir $@)"
 	ln --force --symbolic "$(abspath $(GENERICS_DIR))" "$@"
 
 $(APPLICATION_STAGING_DIR)/Orchestrator/Source/Common:
+	mkdir --parents "$(dir $@)"
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Common)" "$@"
 
 $(APPLICATION_STAGING_DIR)/Softswitch:
+	mkdir --parents "$(dir $@)"
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch)" "$@"
 
 $(APPLICATION_STAGING_DIR)/Tinsel:
+	mkdir --parents "$(dir $@)"
 	ln --force --symbolic "$(abspath $(TINSEL_DIR))" "$@"
 
 $(APPLICATION_STAGING_DIR)/Makefile:
+	mkdir --parents "$(dir $@)"
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch/Makefile)" "$@"
 
 $(APPLICATION_STAGING_DIR)/Supervisor.cpp $(APPLICATION_STAGING_DIR)/Supervisor.h:
+	mkdir --parents "$(dir $@)"
 	ln --force --symbolic \
 		"$(abspath $(SOURCE_DIR)/Mothership/Supervisor$(suffix $@))" "$@"
 
