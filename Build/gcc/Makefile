@@ -89,6 +89,10 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
 CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
            -std=c++11 -Wall -fPIC -pthread
 
+# Debug target logic.
+debug: CXXFLAGS += -g3
+debug: all
+
 # Handy aliases for building executables, scripts, and libraries. Order doesn't
 # matter.
 ORCHESTRATE_BASENAME = orchestrate.sh
@@ -268,5 +272,6 @@ clean: application_staging_environment_teardown
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
 
 # Non-builtin targets that do not explicitly represent files that are created.
-.PHONY: all clean orchestrate root dummy logserver rtcl injector mothership \
-    application_staging_environment application_staging_environment_teardown
+.PHONY: all clean debug orchestrate root dummy logserver rtcl injector \
+    mothership application_staging_environment \
+    application_staging_environment_teardown
