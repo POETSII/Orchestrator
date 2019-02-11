@@ -6,6 +6,9 @@
 # other reasons).
 SHELL = /bin/bash
 
+# Smart directory creation.
+MKDIR = mkdir --parents
+
 # Software dependencies (MPI, Qt, etc.) are largely hardcoded, because I'm too
 # short on time to write an autoconf wrapper or some other dependency
 # management system.
@@ -58,7 +61,7 @@ APPLICATION_STAGING_DIR := $(ROOT_DIR)/application_staging
 # move it to $(DEPENDENCY_DIR)/$*.d (see *Note 1*).
 DEPENDENCY_DIR = ./Dependency_lists
 DEPENDENCY_FLAGS = -MT "$@" -MMD -MP -MF $(DEPENDENCY_DIR)/$*.temp.d
-$(shell mkdir --parents $(DEPENDENCY_DIR))
+$(shell $(MKDIR) $(DEPENDENCY_DIR))
 
 # Include generated dependency files, because now is as good a time as any. We
 # use find to do this, which is not the most portable way. If you can think of
@@ -120,14 +123,14 @@ include Makefile.prerequisites
 # (obviously...)
 $(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) $(LOGSERVER_EXECUTABLE) \
 $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
-	@$(shell mkdir --parents $(EXECUTABLE_DIR))
+	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
         -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
         -o $@ $^ \
         -lQt5Core -lmpi -lpthread
 
 $(MOTHERSHIP_EXECUTABLE):
-	@$(shell mkdir --parents $(EXECUTABLE_DIR))
+	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
 	-Wl,-export-dynamic \
 	-L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L$(JTAG_LIB_DIR) -L/usr/lib \
@@ -139,7 +142,7 @@ $(MOTHERSHIP_EXECUTABLE):
 # file (see *Note 1*). The touch updates the timestamp on the target (to avoid
 # pointless rebuilds), and is predicated on the move command succeeding.
 define build-object
-    @mkdir --parents $$(dirname $@)
+    @$(MKDIR) $$(dirname $@)
     $(CXX) $(CXXFLAGS) -c -o $@ $<
     @mv --force $(DEPENDENCY_DIR)/$*.temp.d $(DEPENDENCY_DIR)/$*.d
     @touch $@
@@ -157,7 +160,7 @@ $(LOGSERVER_MESSAGE_FILE): $(LOGSERVER_MESSAGE_FILE_ORIGIN)
 $(JTAG_ATLANTIC_LOCAL): $(JTAG_LIB_DIR)/libjtag_atlantic.so
 $(JTAG_CLIENT_LOCAL): $(JTAG_LIB_DIR)/libjtag_client.so
 $(LOGSERVER_MESSAGE_FILE) $(JTAG_ATLANTIC_LOCAL) $(JTAG_CLIENT_LOCAL):
-	@mkdir --parents $$(dirname $@)
+	@$(MKDIR) $$(dirname $@)
 	cp "$<" "$@"
 
 # Building the orchestrate script, used to setup the runtime environment for
@@ -209,30 +212,30 @@ $(APPLICATION_STAGING_DIR)/Supervisor.h
 
 $(APPLICATION_STAGING_DIR)/Orchestrator/Source \
 $(APPLICATION_STAGING_DIR)/xml:
-	mkdir --parents "$@"
+	$(MKDIR) "$@"
 
 $(APPLICATION_STAGING_DIR)/Orchestrator/Generics:
-	mkdir --parents "$(dir $@)"
+	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic "$(abspath $(GENERICS_DIR))" "$@"
 
 $(APPLICATION_STAGING_DIR)/Orchestrator/Source/Common:
-	mkdir --parents "$(dir $@)"
+	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Common)" "$@"
 
 $(APPLICATION_STAGING_DIR)/Softswitch:
-	mkdir --parents "$(dir $@)"
+	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch)" "$@"
 
 $(APPLICATION_STAGING_DIR)/Tinsel:
-	mkdir --parents "$(dir $@)"
+	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic "$(abspath $(TINSEL_DIR))" "$@"
 
 $(APPLICATION_STAGING_DIR)/Makefile:
-	mkdir --parents "$(dir $@)"
+	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch/Makefile)" "$@"
 
 $(APPLICATION_STAGING_DIR)/Supervisor.cpp $(APPLICATION_STAGING_DIR)/Supervisor.h:
-	mkdir --parents "$(dir $@)"
+	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic \
 		"$(abspath $(SOURCE_DIR)/Mothership/Supervisor$(suffix $@))" "$@"
 
@@ -251,7 +254,7 @@ application_staging_environment_teardown:
 # process. However, the directory structure for dependency files must be
 # created.
 $(DEPENDENCY_DIR)/%.d:
-	@mkdir --parents $$(dirname $@)
+	@$(MKDIR) $$(dirname $@)
 
 clean: application_staging_environment_teardown
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
