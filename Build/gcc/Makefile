@@ -240,11 +240,15 @@ $(APPLICATION_STAGING_DIR)/Supervisor.cpp $(APPLICATION_STAGING_DIR)/Supervisor.
 		"$(abspath $(SOURCE_DIR)/Mothership/Supervisor$(suffix $@))" "$@"
 
 # Tearing down the environment (for 'clean'), leaving the xml directory for the
-# user. Only tear it down if $(APPLICATION_STAGING_DIR) exists.
+# user. Only tear it down if $(APPLICATION_STAGING_DIR) exists. NB:
+#
+#  - Single quotes needed for the regex predicate, because the path is
+#    relative. Consequently, the "." from "../../" should not be interpreted as
+#    a character.
 application_staging_environment_teardown:
 	if [ -d "$(APPLICATION_STAGING_DIR)" ]; then \
 		find "$(APPLICATION_STAGING_DIR)" \
-			! -wholename "$(APPLICATION_STAGING_DIR)/xml" \
+			! -regex '$(APPLICATION_STAGING_DIR)/xml.*' \
 			! -wholename "$(APPLICATION_STAGING_DIR)" \
 			-exec rm --force --recursive {} +; \
 	fi
