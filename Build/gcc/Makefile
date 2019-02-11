@@ -140,9 +140,9 @@ $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE) $(ALL_TESTS):
 $(MOTHERSHIP_EXECUTABLE):
 	@$(shell mkdir --parents $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
-	-Wl,-export-dynamic \
-	-L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L$(JTAG_LIB_DIR) -L/usr/lib \
-	-o $@ $^ \
+        -Wl,-export-dynamic \
+        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L$(JTAG_LIB_DIR) -L/usr/lib \
+        -o $@ $^ \
         -lQt5Core -lmpi -lpthread -ldl \
         -ljtag_atlantic -ljtag_client
 
