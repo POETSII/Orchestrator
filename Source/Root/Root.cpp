@@ -43,7 +43,9 @@ for(;;) {
 
   Pkt.Src(0);
   Pkt.Send(0);                         // Send to root process main thread
-  if (strcmp(buf,"exit")==0) break;    // User wants out - kill this thread
+
+  // User wants out - kill this thread
+  if (strcmp(buf,"exit")==0 or buf[0]==0) break;
 }
 
 //printf("kb_func: thread closing\n"); fflush(stdout);
