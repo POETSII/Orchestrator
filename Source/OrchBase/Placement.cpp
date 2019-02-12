@@ -100,7 +100,7 @@ void Placement::Init()
 {
     boardIterator = par->pE->G.NodeBegin();
     mailboxIterator = boardIterator->second.data->G.NodeBegin();
-    coreIterator = mailboxIterator->second.data->P_corem.end();
+    coreIterator = mailboxIterator->second.data->P_corem.begin();
     threadIterator = coreIterator->second->P_threadm.begin();
 }
 
