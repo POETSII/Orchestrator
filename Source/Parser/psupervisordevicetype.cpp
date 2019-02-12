@@ -62,5 +62,28 @@ const PIGraphObject* PSupervisorDeviceType::appendSubObject(QXmlStreamReader* xm
 
 P_devtyp* PSupervisorDeviceType::elaborateSupervisorDeviceType(P_typdcl* graph_type)
 {
-    return new P_devtyp(graph_type, name().toStdString());
+    if ((graph_type != NULL) && (device_type == NULL))
+    {
+       device_type = new P_devtyp(graph_type, name().toStdString());
+       // set up the bits of code
+       for (QVector<PIGraphObject*>::iterator p_code_frag = beginSubObjects(CODE); p_code_frag < endSubObjects(CODE); p_code_frag++)
+       {
+           // supervisors may have general code fragments
+           CFrag* code_frag = static_cast<PCodeFragment*>(*p_code_frag)->elaborateCodeFragment();
+           // add to the vector of general-purpose handlers
+           device_type->pHandlv.push_back(code_frag);
+       }
+       // then deal with pins in the normal way
+       for (QVector<PIGraphObject*>::iterator p_inpin = beginSubObjects(INPIN); p_inpin < endSubObjects(INPIN); p_inpin++)
+       {
+           device_type->P_pintypIv.push_back(static_cast<PIInputPin*>(*p_inpin)->elaboratePinType(device_type));
+           device_type->P_pintypIv.back()->idx = device_type->P_pintypIv.size()-1;
+       }
+       for (QVector<PIGraphObject*>::iterator p_outpin = beginSubObjects(OUTPIN); p_outpin < endSubObjects(OUTPIN); p_outpin++)
+       {
+           device_type->P_pintypOv.push_back(static_cast<PIOutputPin*>(*p_outpin)->elaboratePinType(device_type));
+           device_type->P_pintypOv.back()->idx = device_type->P_pintypOv.size()-1;
+       }
+    }
+    return device_type;
 }

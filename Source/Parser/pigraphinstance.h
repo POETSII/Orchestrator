@@ -20,7 +20,7 @@ public:
     inline void setPropsDataType(const PIDataType* data_type = 0) {PConcreteInstance::setPropsDataType(graph_type->properties());};
     P_task* elaborateGraphInstance(OrchBase* orch_root);
 
-    const PIGraphType* graph_type;
+    PIGraphType* graph_type;
     const PDeviceInstance* supervisor;
 
     enum vld_elem_types {OTHER, DEVINSTS, EDGEINSTS, SUPERINSTS};

@@ -3,6 +3,7 @@
 #include "TMoth.h"
 #include <stdio.h>
 #include <sstream>
+#include <dlfcn.h>
 #include "Pglobals.h"
 #include "CMsg_p.h"
 #include "flat.h"
@@ -45,8 +46,7 @@ ForwardMsgs = false; // don't forward tinsel traffic yet
 MPISpinner();                          // Spin on *all* messages; exit on DIE
 // printf("Exiting Mothership. Closedown flags: AcceptConns: %s, ForwardMsgs: %s\n", AcceptConns ? "true" : "false", ForwardMsgs ? "true" : "false");
 // fflush(stdout);
-if (twig_running) pthread_join(Twig_thread,NULL); // wait for the twig thread, if it started.
-twig_running = false;
+if (twig_running) StopTwig(); // wait for the twig thread, if it's still somehow running.
 printf("********* Mothership rank %d on the way out\n",Urank); fflush(stdout);
 }
 
@@ -135,7 +135,7 @@ unsigned TMoth::Boot(string task)
    P_Sup_Msg_t barrier_msg;
    while (!t_start_bitmap.empty())
    {
-     recvMsg(&barrier_msg, sizeof(P_Sup_Hdr_t));
+     recvMsg(&barrier_msg, p_sup_hdr_size());
      // printf("Received a message from a core during application barrier\n");
      // fflush(stdout);
      if ((barrier_msg.header.sourceDeviceAddr & P_SUP_MASK) && (barrier_msg.header.command == P_PKT_MSGTYP_BARRIER))
@@ -179,6 +179,18 @@ unsigned TMoth::Boot(string task)
    // tinsel cores. Have to do it here, after all the initial setup is complete,
    // otherwise setup barrier communications may fail.
    void* args = this;
+   // at this point, load the Supervisor for the task.
+   SuperHandle = dlopen((TaskMap[task]->BinPath+"/libSupervisor.so").c_str(), RTLD_NOW);
+   if (!SuperHandle) Post(532,(TaskMap[task]->BinPath+"/libSupervisor.so"),int2str(Urank),string(dlerror()));
+   else
+   {
+      Post (540,int2str(Urank));
+      int (*SupervisorInit)() = reinterpret_cast<int (*)()>(dlsym(SuperHandle, "SupervisorInit"));
+      string badFunc("");
+      if (!SupervisorInit || (*SupervisorInit)()) badFunc = "SupervisorInit";
+      else if ((SupervisorCall = reinterpret_cast<int (*)(PMsg_p*, PMsg_p*)>(dlsym(SuperHandle, "SupervisorCall"))) == NULL) badFunc = "SupervisorCall";
+      if (badFunc.size()) Post(533,badFunc,int2str(Urank),string(dlerror()));
+   }
    ForwardMsgs = true; // set forwarding on so thread doesn't immediately exit
    if (pthread_create(&Twig_thread,NULL,Twig,args))
    {
@@ -304,7 +316,7 @@ unsigned TMoth::CmRun(string task)
    // fflush(stdout);
    uint32_t mX, mY, core, thread;
    P_Msg_Hdr_t barrier_msg;
-   barrier_msg.messageLenBytes = sizeof(P_Msg_Hdr_t); // barrier is only a header. No payload.
+   barrier_msg.messageLenBytes = p_hdr_size(); // barrier is only a header. No payload.
    barrier_msg.destEdgeIndex = 0;                     // no edge index necessary.
    barrier_msg.destPin = P_SUP_PIN_INIT;              // it goes to the system __init__ pin
    barrier_msg.messageTag = P_MSG_TAG_INIT;           // and is of message type __init__.
@@ -327,7 +339,7 @@ unsigned TMoth::CmRun(string task)
      barrier_msg.destDeviceAddr = DEST_BROADCAST; // send to every device on the thread with a supervisor message
      // printf("Barrier release address: 0x%X\n", barrier_msg.destDeviceAddr);
      // fflush(stdout);
-     send(*R,(sizeof(P_Msg_Hdr_t)/(4 << TinselLogWordsPerFlit) + (sizeof(P_Msg_Hdr_t)%(4 << TinselLogWordsPerFlit) ? 1 : 0)), &barrier_msg);
+     send(*R,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + (p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0)), &barrier_msg);
    }
    // printf("Tinsel threads now on their own for task %s\n",task.c_str());
    // fflush(stdout);
@@ -380,7 +392,7 @@ unsigned TMoth::CmStop(string task)
    uint32_t mX, mY, core, thread;
    P_Msg_Hdr_t stop_msg;
    stop_msg.destEdgeIndex = 0;           // ignore edge index. Unused.
-   stop_msg.destPin = P_SUP_PIN_SYS;     // goes to the system pin
+   stop_msg.destPin = P_SUP_PIN_SYS_SHORT;     // goes to the system pin
    stop_msg.messageTag = P_MSG_TAG_STOP; // with a stop message type
    uint8_t flit[4 << TinselLogWordsPerFlit];
    // printf("Stopping task %s\n",task.c_str());
@@ -396,10 +408,15 @@ unsigned TMoth::CmStop(string task)
      // wait for the interface
      while (!canSend());
      // then issue the stop packet
-     send(destDevAddr,(sizeof(P_Msg_Hdr_t)/(4 << TinselLogWordsPerFlit) + sizeof(P_Msg_Hdr_t)%(4 << TinselLogWordsPerFlit) ? 1 : 0),&stop_msg);
+     send(destDevAddr,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0),&stop_msg);
    }
    TaskMap[task]->status = TaskInfo_t::TASK_END;
-   return 0;
+   // check to see if there are any other active tasks
+   WALKMAP(string, TaskInfo_t*, TaskMap, tsk)
+     if ((tsk->second->status == TaskInfo_t::TASK_BARR) || (tsk->second->status == TaskInfo_t::TASK_RUN)) return 0;
+   // if not, shut down the Twig thread.
+   if (twig_running) StopTwig();
+   return 0;  
    }
    case TaskInfo_t::TASK_STOP:
    case TaskInfo_t::TASK_END:
@@ -541,6 +558,7 @@ unsigned TMoth::NameRecl(PMsg_p* mTask_Info)
 	 return 1;
       }
       }
+      system((string("rm -r -f ")+TaskMap[TaskName]->BinPath).c_str());
       delete T->second; // get rid of its TaskInfo object
       TaskMap.erase(T); // and then remove it from the task map
       return 0;
@@ -595,7 +613,7 @@ void* TMoth::Twig(void* par)
 {
      TMoth* parent = static_cast<TMoth*>(par);
      const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
-     char recv_buf[sizeof(P_Msg_t)]; // buffer for one packet at a time
+     char recv_buf[p_msg_size()]; // buffer for one packet at a time
      void* p_recv_buf = static_cast<void*>(recv_buf);
      FILE* OutFile;
      char Line[4*P_MSG_MAX_SIZE];
@@ -613,8 +631,8 @@ void* TMoth::Twig(void* par)
            // and tinsel messsages might be time-critical.
            while (parent->canRecv())
            {
-	         // printf("Message received from a Device\n");
-		 // fflush(stdout);
+	         //printf("Message received from a Device\n");
+		 //fflush(stdout);
                  parent->recv(recv_buf);
 	         uint32_t* device = static_cast<uint32_t*>(p_recv_buf); // get the first word, which will be a device address
 	         if (!(*device & P_SUP_MASK)) // bound for an external?
@@ -655,10 +673,10 @@ void* TMoth::Twig(void* par)
                           (*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin] = new char[MAX_P_SUP_MSG_BYTES]();
 		       }
                        P_Sup_Msg_t* recvdMsg = static_cast<P_Sup_Msg_t*>(static_cast<void*>((*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin]));
-	               memcpy(recvdMsg+s_hdr->seq,s_hdr,sizeof(P_Sup_Hdr_t)); // stuff header into the persistent buffer
+	               memcpy(recvdMsg+s_hdr->seq,s_hdr,p_sup_hdr_size()); // stuff header into the persistent buffer
 		       // printf("Expecting message of total length %d\n", s_hdr->cmdLenBytes);
 		       // fflush(stdout);
-                       uint32_t len = s_hdr->seq == s_hdr->cmdLenBytes/sizeof(P_Sup_Msg_t) ?  s_hdr->cmdLenBytes%sizeof(P_Sup_Msg_t) : sizeof(P_Sup_Msg_t); // more message to receive?
+                       uint32_t len = s_hdr->seq == s_hdr->cmdLenBytes/p_sup_msg_size() ?  s_hdr->cmdLenBytes%p_sup_msg_size() : p_sup_msg_size(); // more message to receive?
 		       // printf("Length for sequence number %d: %d\n", s_hdr->seq, len);
 		       // fflush(stdout);
 	               if (len > szFlit) parent->recvMsg(((recvdMsg+s_hdr->seq)->data), len-szFlit); // get the whole message
@@ -782,7 +800,7 @@ WALKMAP(string, TaskInfo_t*, TaskMap, tsk)
        if (tsk->second->status == TaskInfo_t::TASK_RUN)  CmStop(tsk->first);
 }
 // stop accepting Tinsel messages
-ForwardMsgs = false;
+if (twig_running) StopTwig();
 return CommonBase::OnExit(Z,cIdx); // exit through CommonBase handler
 }
 
@@ -795,7 +813,11 @@ unsigned TMoth::OnSuper(PMsg_p * Z, unsigned cIdx)
 PMsg_p W(Comms[cIdx]);
 W.Key(Q::SUPR);
 W.Src(Z->Tgt());
-if (SupervisorCall(Z,&W) < 0) W.Send(Z->Src()); // Execute. Send a reply if one is expected
+int superReturn = 0;
+if ((superReturn = (*SupervisorCall)(Z,&W)) > 0) // Execute. Send a reply if one is expected
+  if (!cIdx && (Z->Tgt() == Urank) && (Z->Src() == Urank)) OnTinsel(&W, 0); // either to Tinsels,
+  else W.Send(Z->Src());  // or to some external or internal process.
+if (superReturn < 0) Post(530, int2str(Urank)); 
 return 0;
 }
 
@@ -848,6 +870,7 @@ WALKVECTOR(P_Msg_t, msgs, msg) // and they're sent blindly
    while (!canSend()); // if we have to we can run OnIdle to empty receive buffers
    send(msg->header.destDeviceAddr, FlitLen, &(*msg));
 }
+return 0;
 }
 
 //------------------------------------------------------------------------------
@@ -866,12 +889,12 @@ if ((packet->header.command == P_SUP_MSG_KILL)) return SystKill();
 // output messages can simply be posted to the LogServer as an informational message.
 if ((packet->header.command == P_SUP_MSG_LOG))
 {
-   // printf("Received a handler_log message from device %d\n", packet->header.sourceDeviceAddr, sizeof(P_Sup_Msg_t));
+   // printf("Received a handler_log message from device %d\n", packet->header.sourceDeviceAddr, p_sup_msg_size());
    // fflush(stdout);
    // Just output the string (this will involve some rubbish at the end where arguments would be;
    // to be fixed later). Note that uint8_t*'s have to be reinterpret_casted to char*s.
-   unsigned msg_len = ((packet->header.cmdLenBytes%sizeof(P_Sup_Msg_t)) && (packet->header.seq == packet->header.cmdLenBytes/sizeof(P_Sup_Msg_t))) ? packet->header.cmdLenBytes%sizeof(P_Sup_Msg_t) : sizeof(P_Sup_Msg_t)-sizeof(P_Sup_Hdr_t);
-   msg_len -= sizeof(P_Sup_Hdr_t);
+   unsigned msg_len = ((packet->header.cmdLenBytes%p_sup_msg_size()) && (packet->header.seq == packet->header.cmdLenBytes/p_sup_msg_size())) ? packet->header.cmdLenBytes%p_sup_msg_size() : p_sup_msg_size()-p_sup_hdr_size();
+   msg_len -= p_sup_hdr_size();
    Post(601, int2str(packet->header.sourceDeviceAddr), int2str(packet->header.seq), string(reinterpret_cast<const char*>(packet->data), msg_len));
    return 0;
 }
@@ -881,11 +904,35 @@ PMsg_p W(Comms[0]);                        // Create a new packet on the local c
 W.Key(Q::SUPR);                            // it'll be a Supervisor packet
 W.Src(Urank);                              // coming from the us
 W.Tgt(Urank);                              // and directed at us
-unsigned last_index = packet->header.cmdLenBytes/sizeof(P_Sup_Msg_t) + (packet->header.cmdLenBytes%sizeof(P_Sup_Msg_t) ? 1 : 0);
+unsigned last_index = packet->header.cmdLenBytes/p_sup_msg_size() + (packet->header.cmdLenBytes%p_sup_msg_size() ? 1 : 0);
 vector<P_Sup_Msg_t> pkt_v(packet,&packet[last_index]); // maybe slightly more efficient using the constructor
 W.Put<P_Sup_Msg_t>(0,&pkt_v);    // stuff the Tinsel message into the packet
-W.Send();                        // away it goes.
-return 0;
+return OnSuper(&W, 0);
+// W.Send();                        // away it goes.
+// return 0;
+}
+
+//------------------------------------------------------------------------------
+
+void TMoth::StopTwig()
+// Cleanly shut down (or try to) the Twig process. This occurs whenever we
+// end a task in preparation for shutting down, or exiting.
+{
+if (!twig_running) return;
+ForwardMsgs = false;            // notify the Twig to shut down
+pthread_join(Twig_thread,NULL); // wait for it to do so
+if (SuperHandle)                // then unload its Supervisor
+{
+   // clean up memory first
+   int (*SupervisorExit)() = reinterpret_cast<int (*)()>(dlsym(SuperHandle, "SupervisorExit"));
+   if (!SupervisorExit || (*SupervisorExit)() || dlclose(SuperHandle))
+   {  
+      Post(534,int2str(Urank));
+      SuperHandle = 0;          // even if we errored invalidate the Supervisor
+   }
+   SupervisorCall = 0;
+}
+twig_running = false;
 }
 
 //------------------------------------------------------------------------------

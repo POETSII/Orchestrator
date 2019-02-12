@@ -3,15 +3,24 @@
 #include "pigraphinstance.h"
 
 PDeviceInstance::PDeviceInstance(bool is_supervisor, const QString &name, PIGraphObject *parent) :
-    PConcreteInstance(name, is_supervisor ? QString("SDevI") : QString("DevI"), is_supervisor ? QVector<int>() : QVector<int>({STATE}), parent), device_type(NULL), supervisor_type(NULL), device(NULL)
+    PConcreteInstance(name, is_supervisor ? QString("SDevI") : QString("DevI"), is_supervisor ? QVector<int>() : QVector<int>({STATE}), parent), device_type(NULL), supervisor_type(NULL), device(NULL), supervisor(NULL)
 {
     if (is_supervisor && parent)
     {
         PIGraphInstance* inst_parent = dynamic_cast<PIGraphInstance*>(parent);
         if (inst_parent && inst_parent->graph_type)
         {
-           if (name.isEmpty()) supervisor_type = static_cast<const PSupervisorDeviceType*>(inst_parent->graph_type->subObject(PIGraphType::SUPERDEVTYPES, 0));
-           else supervisor_type = static_cast<const PSupervisorDeviceType*>(inst_parent->graph_type->subObject(PIGraphType::SUPERDEVTYPES, name));
+           if (name.isEmpty()) // no supervisor specified
+           {
+               // default to the first available supervisor if none specified
+               if (inst_parent->graph_type->numSubObjects(PIGraphType::SUPERDEVTYPES))
+                  supervisor_type = static_cast<const PSupervisorDeviceType*>(inst_parent->graph_type->constSubObject(PIGraphType::SUPERDEVTYPES, 0));
+               // or to the default supervisor if there are no defined supervisor types.
+               else
+                  supervisor_type = static_cast<const PSupervisorDeviceType*>(inst_parent->graph_type->insertSubObject(PIGraphType::SUPERDEVTYPES, new PSupervisorDeviceType("_DEFAULT_SUPERVISOR_", inst_parent->graph_type)));
+           }
+           // otherwise use the supervisor specified
+           else supervisor_type = static_cast<const PSupervisorDeviceType*>(inst_parent->graph_type->constSubObject(PIGraphType::SUPERDEVTYPES, name));
            setName(QString("%1_%2_inst").arg(parent->name()).arg(supervisor_type ? supervisor_type->name() : "sup_unknown"));
         }
     }
@@ -31,7 +40,7 @@ void PDeviceInstance::defineObject(QXmlStreamReader* xml_def)
     {
        PIGraphInstance* inst_parent = dynamic_cast<PIGraphInstance*>(parent());
        if (inst_parent)
-          device_type = static_cast<const PDeviceType*>(inst_parent->graph_type->subObject(PIGraphType::DEVTYPES, device_type_id));
+          device_type = static_cast<const PDeviceType*>(inst_parent->graph_type->constSubObject(PIGraphType::DEVTYPES, device_type_id));
     }
     PIGraphBranch::defineObject(xml_def);
 }
@@ -58,8 +67,8 @@ const PIGraphObject* PDeviceInstance::appendSubObject(QXmlStreamReader* xml_def)
        // set the name to the hierarchical ID chain if available.
        if (device_type && device_type->numSubObjects(PDeviceType::STATE))
        {
-           sub_object = insertSubObject(STATE, new PIDataValue(QString("%1_DevInst_%2_%3_val").arg(static_cast<PIGraphObject*>(parent())->name()).arg(name()).arg(device_type->subObject(PDeviceType::STATE, 0)->name()), this));
-           static_cast<PIDataValue*>(sub_object)->data_type = static_cast<const PIDataType*>(device_type->subObject(PDeviceType::STATE, 0));
+           sub_object = insertSubObject(STATE, new PIDataValue(QString("%1_DevInst_%2_%3_val").arg(static_cast<PIGraphObject*>(parent())->name()).arg(name()).arg(device_type->constSubObject(PDeviceType::STATE, 0)->name()), this));
+           static_cast<PIDataValue*>(sub_object)->data_type = static_cast<const PIDataType*>(device_type->constSubObject(PDeviceType::STATE, 0));
        }
        // otherwise the default name is DevInst_{DeviceInstanceID}_state_t_val
        else sub_object = insertSubObject(STATE, new PIDataValue(QString("DevInst_%1_state_t_val").arg(name()), this));

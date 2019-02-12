@@ -6,6 +6,8 @@
 // is to separate tinsel.h into tinsel.h and tinsel.cpp.
 extern int tinselId();
 
+// #pragma pack(push,1)
+
 void set_msg_hdr(uint32_t dst, uint32_t edge, uint8_t pin, uint8_t len, uint16_t tag, P_Msg_Hdr_t* hdr)
 {
         if (len > p_msg_pyld_size) return;            // die if the message is too big
@@ -72,3 +74,4 @@ bool super_buf_recvd(const P_Sup_Msg_t* msg)
      }
      return true;
 }
+// #pragma pack(pop)

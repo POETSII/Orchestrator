@@ -74,6 +74,23 @@ QString PIDataValue::elaborateSubValue(const QJsonObject& in_obj, const PIDataTy
     }
     // crude conversion to an int can be improved (and bounds-checked?) in future and should be migrated to PoetsDataType as a static method.
     else return enclose.arg(QVariant(in_val.toDouble(sub_type->defaultValue().toInt())).toInt());
+    case PoetsDataType::USCALAR:
+    if (sub_type->numElements() > 0)
+    {
+       // arrays need to be expanded and any missing elements filled with default values. Note that if the JSON array contains too many elements
+       // this will take the first numElements() values. We may want to issue a warning when this happens.
+       in_subarray = in_val.toArray();
+       // more string construction operators here to: convert to an int, extract the value from the JSON array as a double, using the default from the datatype if the extracted value is invalid.
+       for (int elem = 0; elem < std::min(in_subarray.size(), sub_type->numElements()); elem++) elements.append(QString("%1, ").arg(QVariant(in_subarray[elem].toDouble(sub_type->defaultValue().toDouble())).toUInt()));
+       // and finally append any missing defaults to the end. Remove the trailing comma-space with the chop(2) operation.
+       QString default_elems(QString("%1, ").arg(sub_type->defaultValue()).repeated(std::max((sub_type->numElements() - in_subarray.size()), 0)));
+       elements.append(default_elems);
+       elements.chop(2);
+       return enclose.arg(elements);
+       // return enclose.arg(elements.append(QString("%1, ").arg(sub_type->defaultValue()).repeated(max((sub_type->numElements() - in_subarray.size()), 0))).chopped(2));
+    }
+    // crude conversion to a uint can be improved (and bounds-checked?) in future and should be migrated to PoetsDataType as a static method.
+    else return enclose.arg(QVariant(in_val.toDouble(sub_type->defaultValue().toUInt())).toUInt());
     case PoetsDataType::FSCALAR:
     if (sub_type->numElements() > 0)
     {
@@ -149,7 +166,7 @@ QString PIDataValue::elaborateSubValue(const QJsonObject& in_obj, const PIDataTy
     // build an object from which the recursive descent can extract the value to set.
     in_subobj.insert(sub_member_name, in_val);
     // retrieve the submember
-    const PIDataType* sub_member = dynamic_cast<const PIDataType*>(sub_type->subObject(PIDataType::DTYPE, sub_member_name));
+    const PIDataType* sub_member = dynamic_cast<const PIDataType*>(sub_type->constSubObject(PIDataType::DTYPE, sub_member_name));
     if (sub_type->numElements() > 0)
     {
         // expand the array as above.

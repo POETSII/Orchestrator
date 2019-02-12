@@ -174,7 +174,7 @@ typedef struct PThreadContext
 // template<class T> T offset_ptr(ThreadCtxt_t* base, T offset);
 void softswitch_init(ThreadCtxt_t* thr_ctxt);
 void softswitch_finalize(ThreadCtxt_t* thr_ctxt, volatile void** send_buf, volatile void** recv_buf, volatile void** super_buf);
-void softswitch_alive(volatile void* send_buf); // debug: send alive message to host
+// void softswitch_alive(volatile void* send_buf); // debug: send alive message to host
 void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatile void* recv_buf);
 void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt);
 // handlers should reside in instruction memory and thus shouldn't need setup.

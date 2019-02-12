@@ -24,8 +24,8 @@ Will only start mothership process(es) if called on a POETS box.
 Optional arguments:
     -h, --help: Prints this help text.
     -m, --motherships N: Defines the number of mothership processes to spawn. \
-Only works if called on a POETS box. N must be a non-zero natural number with \
-no leading zeroes."
+Only works if called on a POETS box. N must be a natural number with no \
+leading zeroes."
 
 # Parse input arguments to determine mothership behaviour. This clears the
 # argument list.
@@ -40,14 +40,14 @@ while [ $# -gt 0 ]; do
             exit 0;;
         --motherships|-m)
             # Test input argument.
-            NATURAL_REGEXP='^[1-9][[:digit:]]*$'
+            NATURAL_REGEXP='^[0-9][[:digit:]]*$'
             if [ -z "$2" ]; then
                 >&2 echo "No input argument provided for --motherships. Pass \
-a non-zero natural number with no leading zeroes."
+a natural number with no leading zeroes."
                 exit 1
             elif ! [[ "$2" =~ $NATURAL_REGEXP ]]; then
                 >&2 echo "Invalid input argument for --motherships: \"$2\". \
-It should be a non-zero natural number with no leading zeroes."
+It should be a natural number with no leading zeroes."
                 exit 1
             fi
 
@@ -67,14 +67,17 @@ fi
 
 # Warn if the user set the number of motherships, and if we're not running
 # on a POETS box.
-if [ $MOTHERSHIP_ARG_SET -eq 1 -a $ON_POETS_BOX -eq 0 ]; then
+if [ $MOTHERSHIP_ARG_SET -eq 1 ] && \
+   [ $ON_POETS_BOX -eq 0 ] && \
+   [ $NUMBER_OF_MOTHERSHIPS -ne 0 ]; then
     >&2 echo "WARNING: Mothership argument was provided, but this script was \
 not run on a POETS box. Continuing without spawning any motherships."
 fi
 
-# Setup
-export RISCV_DIR=
-export PATH="{{ MPICH_DIR }}/bin:$RISCV_DIR/bin:$PATH"
+# Setup for building applications
+export RISCV_PATH="{{ RISCV_DIR }}"
+export MPICH_PATH="{{ MPICH_DIR }}"
+export PATH="{{ MPICH_DIR }}/bin:{{ RISCV_BIN_DIR }}:$PATH"
 export TRIVIAL_LOG_HANDLER=1
 
 if [ $ON_POETS_BOX -eq 1 ]; then
@@ -86,14 +89,13 @@ fi
 MPI_LIB_DIR="{{ MPICH_LIB_DIR }}"
 QT_LIB_DIR="{{ QT_LIB_DIR }}"
 JTAG_LIB_DIR="{{ JTAG_LIB_DIR }}"
-SUPERVISOR_LIB_DIR="{{ SUPERVISOR_LIB_DIR }}"
 GCC_LIB_DIR="{{ GCC_LIB_DIR }}"
 CR_LIB_DIR="{{ CR_LIB_DIR }}"
 INTERNAL_LIB_PATH=./:"$QT_LIB_DIR":"$MPI_LIB_DIR":\
-"$GCC_LIB_DIR":"$SUPERVISOR_LIB_DIR":"$JTAG_LIB_DIR":
+"$GCC_LIB_DIR":"$JTAG_LIB_DIR":
 
 # Paths for dynamically-linked libraries required by MPI.
-export LD_LIBRARY_PATH="$CR_LIB_DIR":"$LD_LIBRARY_PATH"
+export LD_LIBRARY_PATH="$CR_LIB_DIR":"$LD_LIBRARY_PATH":./
 
 # Define general MPI execution command.
 COMMAND="mpiexec.hydra -genv LD_LIBRARY_PATH \"$INTERNAL_LIB_PATH\" \

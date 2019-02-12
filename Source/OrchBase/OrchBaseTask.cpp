@@ -362,7 +362,7 @@ if (!task->second->linked){                   // task mapped?
 unsigned coreNum = 0;                     // virtual core number counter
 unsigned cIdx = 0;                        // comm number to look for Motherships. Start from local MPI_COMM_WORLD.
 
-vector<pair<unsigned,P_addr_t>> coreVec;  // core map container to send
+vector<pair<unsigned,P_addr_t> > coreVec;  // core map container to send
 vector<ProcMap::ProcMap_t>::iterator currBox = pPmap[cIdx]->vPmap.begin(); // process map for the Mothership being deployed to
 
 
@@ -419,12 +419,14 @@ if (RootProcMapI->P_proc == currBox->P_proc)
 {
    // then copy locally (inefficient, wasteful, using the files in place would be better but this would require
    // different messages to be sent to different Motherships. For a later revision.
-   system((string("mkdir ~/")+task->first).c_str());
+   system((string("rm -r -f /home/")+currBox->P_user+"/"+task->first).c_str());
+   system((string("mkdir /home/")+currBox->P_user+"/"+task->first).c_str());
    system((string("cp -r ")+taskpath+task->first+"/"+BIN_PATH+" "+taskname).c_str());
 }
 else
 {
    // otherwise copy binaries to the Mothership using SCP. This assumes ssh-agent has been run for the user.
+   system((string("ssh ")+currBox->P_user+"@"+currBox->P_proc+ "\"rm -r -f "+task->first+"\"").c_str());
    system((string("ssh ")+currBox->P_user+"@"+currBox->P_proc+ "\"mkdir "+task->first+"\"").c_str());
    system((string("scp -r ")+taskpath+task->first+"/"+BIN_PATH+" "+currBox->P_user+"@"+currBox->P_proc+":"+taskname).c_str());
 }

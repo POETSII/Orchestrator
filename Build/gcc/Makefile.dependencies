@@ -7,7 +7,7 @@
 # where you have extracted it to.
 #
 # In Mark's case, it looks like this:
-ORCHESTRATOR_DEPENDENCIES_DIR ?= /home/mv1g18/orchestrator_dependencies-3
+ORCHESTRATOR_DEPENDENCIES_DIR ?= /local/orchestrator-common/orchestrator_dependencies-4
 
 # If you're using the "orchestrator_dependencies" tarball, you shouldn't need
 # to do anything more. If you aren't, you'll need to configure the following to
@@ -42,3 +42,8 @@ GCC_LIB_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/gcc-7.3.0/lib64
 
 # libcr
 CR_LIB_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/libcr
+
+# RISCV 32-bit compiler, not used for building the Orchestrator, but necessary
+# for application building.
+RISCV_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/riscv32-compile-driver
+RISCV_BIN_DIR := $(RISCV_DIR)/bin
