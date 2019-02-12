@@ -145,6 +145,7 @@ void OrchBase::TopoLoad(Cli::Cl_t Cl)
         parser.load_file(inputFilePath.c_str());
         parser.populate_hardware_model(pE);
         Post(140, inputFilePath.c_str());
+        pPlace->Init();
     }
     catch (OrchestratorException& exception)
     {
@@ -187,6 +188,7 @@ void OrchBase::TopoSet1(Cli::Cl_t Cl)
     AesopDeployer deployer;
     Post(138, pE->Name());
     deployer.deploy(pE);
+    pPlace->Init();
 }
 
 //------------------------------------------------------------------------------
@@ -199,6 +201,7 @@ void OrchBase::TopoSet2(Cli::Cl_t Cl)
     MultiAesopDeployer deployer(2);
     Post(138, pE->Name());
     deployer.deploy(pE);
+    pPlace->Init();
 }
 
 //==============================================================================
