@@ -41,7 +41,7 @@ extern "C"
 {
 int SupervisorCall(PMsg_p* In, PMsg_p* Out)
 {
-  return 0;
+  return -1;
 }
 
 int SupervisorExit()

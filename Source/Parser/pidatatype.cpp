@@ -220,6 +220,7 @@ const QString& PIDataType::defaultValue() const
     switch (data_type->vld_types[base_type])
     {
     case PoetsDataType::ISCALAR:
+    case PoetsDataType::USCALAR:
     return default_value = "0";
     case PoetsDataType::FSCALAR:
     return default_value = "0.0";

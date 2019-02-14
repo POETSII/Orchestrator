@@ -116,6 +116,7 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
               return true;
            }
         }
+        dVs[devIdx]->addr.SetDevice(devIdx%pCon->Constraintm["DevicesPerThread"]); // insert the device's internal address (thread index)
         Xlink(dVs[devIdx],pTh);            // And link thread and device
     }
 
@@ -149,8 +150,8 @@ return false;
 void Placement::Xlink(P_device * pDe,P_thread * pTh)
 // Actually link a real device to a real thread
 {
-printf("XLinking device %s to thread %s\n",
-        pDe->FullName().c_str(),pTh->FullName().c_str());
+printf("XLinking device %s with id %d to thread %s\n",
+        pDe->FullName().c_str(), pDe->addr.A_device, pTh->FullName().c_str());
 fflush(stdout);
 pDe->pP_thread = pTh;                  // Device to thread
 pTh->P_devicel.push_back(pDe);         // Thread to device

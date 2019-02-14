@@ -121,7 +121,8 @@ P_task* PIGraphInstance::elaborateGraphInstance(OrchBase* orch_root)
          if (supervisor != NULL)
          {
              graph_instance->pSup = const_cast<PDeviceInstance*>(supervisor)->elaborateSupervisorInstance(graph_instance->pD);
-             graph_instance->pSup->idx = P_device::super_idx;
+             graph_instance->pSup->idx = P_device::super_idx;           // supervisor device has a max index
+             graph_instance->pSup->addr.SetDevice(P_device::super_idx); // which needs to be propagated to the device address since it's not placed
              graph_instance->pD->G.InsertNode(P_device::super_idx, graph_instance->pSup);
              orch_root->P_superm[graph_instance->pSup->Name()] = graph_instance->pSup;
          }
