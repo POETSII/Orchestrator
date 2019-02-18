@@ -57,11 +57,12 @@ void D_graph::Dump(FILE * fp)
 string s = FullName();
 fprintf(fp,"D_graph %35s+++++++++++++++++++++++++++++++++++++\n",s.c_str());
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
-fprintf(fp,"P_graph shortcut %#08p\n",pP);
+fprintf(fp,"P_graph shortcut %#018lx\n", (uint64_t) pP);
 if (pP!=0) fprintf(fp,"...%s\n",pP->FullName().c_str());
-fprintf(fp,"C Initialiser %#08p\n",pPropsI);
+fprintf(fp,"C Initialiser %#018lx\n", (uint64_t) pPropsI);
 if (pPropsI!=0) pPropsI->Dump(fp);
 fprintf(fp,"DEVICE GRAPH %35s++++++++++++++++++++++++++++++++\n",s.c_str());
 G.DumpChan(fp);                        // OP channel for callbacks

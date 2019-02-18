@@ -33,15 +33,16 @@ void P_device::Dump(FILE * fp)
 string s = FullName();
 fprintf(fp,"P_device %35s++++++++++++++++++++++++++++++++++++\n",s.c_str());
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
-fprintf(fp,"Properties initialiser    %#08p\n",pPropsI);
+fprintf(fp,"Properties initialiser    %#018lx\n", (uint64_t) pPropsI);
 if (pPropsI!=0) pPropsI->Dump(fp);
-fprintf(fp,"State initialiser         %#08p\n",pStateI);
+fprintf(fp,"State initialiser         %#018lx\n", (uint64_t) pStateI);
 if (pStateI!=0) pStateI->Dump(fp);
-fprintf(fp,"Device type               %#08p\n",pP_devtyp);
+fprintf(fp,"Device type               %#018lx\n", (uint64_t) pP_devtyp);
 if (pP_devtyp!=0) fprintf(fp,"...%s\n",pP_devtyp->FullName().c_str());
-fprintf(fp,"Thread cross-link         %#08p\n",pP_thread);
+fprintf(fp,"Thread cross-link         %#018lx\n", (uint64_t) pP_thread);
 if (pP_thread!=0) fprintf(fp,"...%s\n",pP_thread->FullName().c_str());
 fprintf(fp,"Attribute word   %u(0x%08x)\n",attr,attr);
 NameBase::Dump(fp);

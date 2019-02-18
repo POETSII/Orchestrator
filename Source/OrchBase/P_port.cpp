@@ -22,7 +22,7 @@ void P_port::Dump(FILE * fp)
 {
 fprintf(fp,"P_port++++++++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,(void *)0x00000000);
+fprintf(fp,"Me             %#018lx\n", (uint64_t) this);
 NameBase::Dump(fp);
 DumpChan::Dump(fp);
 fprintf(fp,"P_port--------------------------------------\n");

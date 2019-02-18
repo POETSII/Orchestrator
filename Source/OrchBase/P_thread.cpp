@@ -25,7 +25,8 @@ void P_thread::Dump(FILE * fp)
 string s = FullName();
 fprintf(fp,"P_thread %35s++++++++++++++++++++++++++++++++++++\n",s.c_str());
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
 fprintf(fp,"DEVICES IN THREAD %35s+++++++++++++++++++++++++++\n",s.c_str());
 if (P_devicel.empty())fprintf(fp,"Device list empty\n");

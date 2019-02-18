@@ -116,7 +116,7 @@ else par->Post(814,pT->filename);
 void P_builder::Dump(FILE * fp)
 {
 fprintf(fp,"P_builder+++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"Parent         %#08p\n",par);
+fprintf(fp,"Parent         %#018lx\n", (uint64_t) par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
 
 fprintf(fp,"P_builder-----------------------------------\n");

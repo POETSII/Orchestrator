@@ -31,7 +31,8 @@ void Config_t::Dump(FILE * fp)
 string s = FullName();
 fprintf(fp,"Config_t %35s++++++++++++++++++++++++++++++++++++\n",s.c_str());
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 fprintf(fp,"bMem           = %u\n",bMem);
 fprintf(fp,"boards         = %u\n",boards);
 fprintf(fp,"cores          = %u\n",cores);

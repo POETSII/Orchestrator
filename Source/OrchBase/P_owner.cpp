@@ -52,7 +52,7 @@ void P_owner::Dump(FILE * fp)
 {
 fprintf(fp,"P_owner+++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,(void *)0x00000000);
+fprintf(fp,"Me             %#018lx\n", (uint64_t) this);
 fprintf(fp,"...owns:\n");
 WALKVECTOR(P_task *,P_taskv,i) fprintf(fp,"%s\n",(*i)->FullName().c_str());
 NameBase::Dump(fp);

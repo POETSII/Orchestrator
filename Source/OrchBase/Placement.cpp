@@ -33,8 +33,8 @@ void Placement::DoLink()
 void Placement::Dump(FILE * fp)
 {
 fprintf(fp,"Placement+++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
-
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 fprintf(fp,"Placement-----------------------------------\n");
 fflush(fp);
 }

@@ -24,7 +24,8 @@ void P_message::Dump(FILE * fp)
 {
 fprintf(fp,"P_message+++++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 NameBase::Dump(fp);
 DumpChan::Dump(fp);
 fprintf(fp,"P_message-----------------------------------\n");
