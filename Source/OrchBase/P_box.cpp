@@ -9,7 +9,7 @@
 
 //==============================================================================
 
-P_box::P_box(P_graph * _p,string _s):par(_p),pMothBin(0),pConfig(0)
+P_box::P_box(P_graph * _p,string _s):pMothBin(0),par(_p),pConfig(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent

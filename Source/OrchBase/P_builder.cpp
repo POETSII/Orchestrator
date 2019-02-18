@@ -69,7 +69,7 @@ void P_builder::Load(const string& name, const string& filename)
 #else
 //==============================================================================
 
-P_builder::P_builder(int argc, char** argv, OrchBase * _p):par(_p), defs(), app(argc, argv)
+P_builder::P_builder(int argc, char** argv, OrchBase * _p):par(_p),app(argc, argv),defs()
 {
 
 }
