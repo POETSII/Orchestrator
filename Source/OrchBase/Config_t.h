@@ -16,18 +16,18 @@ public:
 virtual ~         Config_t();
 
 void              Dump(FILE * = stdout);
-unsigned          GetBMem();         // Return available memory on each board
+unsigned long     GetBMem();         // Return available memory on each board
 unsigned          GetBoards();       // Return board count in the box
 unsigned          GetCores();        // Return core count in a board
 unsigned          GetThreads();         // Return thread count in a core
-void              SetBMem(unsigned);    // Assign available memory on each board
+void              SetBMem(unsigned long); // Set available memory on each board
 void              SetBoards(unsigned);  // Assign board count in the box
 void              SetCores(unsigned);   // Assign core count in a board
 void              SetThreads(unsigned); // Assign thread count in a core
 unsigned          ThreadsPerBox();   // Guess
 
-unsigned          bMem;
-unsigned          boards; 
+unsigned long     bMem;
+unsigned          boards;
 unsigned          cores;
 unsigned          threads;
 P_graph *         par;

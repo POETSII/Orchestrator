@@ -33,7 +33,7 @@ fprintf(fp,"Config_t %35s++++++++++++++++++++++++++++++++++++\n",s.c_str());
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
 fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
         (uint64_t) this, (uint64_t) par);
-fprintf(fp,"bMem           = %u\n",bMem);
+fprintf(fp,"bMem           = %lu\n",bMem);
 fprintf(fp,"boards         = %u\n",boards);
 fprintf(fp,"cores          = %u\n",cores);
 fprintf(fp,"threads        = %u\n",threads);
@@ -43,7 +43,7 @@ fflush(fp);
 
 //------------------------------------------------------------------------------
 
-unsigned Config_t::GetBMem()
+unsigned long Config_t::GetBMem()
 // Return available memory on each board
 {
 return bMem;
@@ -75,7 +75,7 @@ return threads;
 
 //------------------------------------------------------------------------------
 
-void Config_t::SetBMem(unsigned mem)
+void Config_t::SetBMem(unsigned long mem)
 // Assign available memory on each board
 {
 bMem = mem;
