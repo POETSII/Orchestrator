@@ -53,7 +53,7 @@ else {
         WALKVECTOR(P_thread *,(*pco)->P_threadv,pth) {
           if ((*pth)->P_devicel.empty());
 //            fprintf(fp,"Thread %s empty\n",(*pth)->FullName().c_str());
-          else fprintf(fp,"Thread %s : %u devices\n",
+          else fprintf(fp,"Thread %s : %lu devices\n",
                        (*pth)->FullName().c_str(),(*pth)->P_devicel.size());
           WALKLIST(P_device *,(*pth)->P_devicel,pde) {
             fprintf(fp,"       %s\n",(*pde)->FullName().c_str());
