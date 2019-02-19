@@ -39,8 +39,8 @@ const PIGraphObject* PEdgeInstance::appendSubObject(QXmlStreamReader* xml_def)
            sub_object = insertSubObject(STATE, new PIDataValue(QString("%1_EdgeInst_%2_%3_val").arg(static_cast<PIGraphObject*>(parent())->name()).arg(name()).arg(path.dst.pin->constSubObject(PIInputPin::STATE, 0)->name()), this));
            static_cast<PIDataValue*>(sub_object)->data_type = static_cast<const PIDataType*>(path.dst.pin->constSubObject(PIInputPin::STATE, 0));
        }
-       // otherwise the default name is DevInst_{DeviceInstanceID}_state_t_val
-       else sub_object = insertSubObject(STATE, new PIDataValue(QString("DevInst_%1_state_t_val").arg(name()), this));
+       // otherwise the default name is EdgeInst_{EdgeInstanceID}_state_t_val
+       else sub_object = insertSubObject(STATE, new PIDataValue(QString("EdgeInst_%1_state_t_val").arg(name()), this));
        sub_object->defineObject(xml_def);
     }
     break;
@@ -60,9 +60,10 @@ void PEdgeInstance::elaborateEdge(D_graph* graph_rep)
      if (containing_graph == NULL) // no need to do anything if the edge has already been elaborated
      {
         PIGraphInstance* parent_instance = dynamic_cast<PIGraphInstance*>(parent());
-        if (parent_instance) // no parent instance would be a serious elaboration error
-        {
+        if (parent_instance && (parent_instance->graph_type != NULL)) // no parent instance would be a serious elaboration error
+        {           
            // generate or retrieve all the objects required to insert the node into the graph
+           if (path.dst.device == NULL) parsePath(); // build the path if it couldn't be done earlier
            P_pin* src_pin = new P_pin(graph_rep, path.src.pin->name().toStdString());
            P_pin* dst_pin = new P_pin(graph_rep, path.dst.pin->name().toStdString());
            P_message* msg_type = const_cast<PMessageType*>(path.src.pin->msgType())->elaborateMessage();
@@ -95,7 +96,7 @@ void PEdgeInstance::parsePath()
     QVector<QStringRef> dst_id_pin = dst_src[DST].split(":");
     QVector<QStringRef> src_id_pin = dst_src[SRC].split(":");
     PIGraphInstance* parent_instance = dynamic_cast<PIGraphInstance*>(parent());
-    if (parent_instance)
+    if (parent_instance && (parent_instance->graph_type != NULL)) // don't proceed further unless the graph type is known
     {
         if (dst_id_pin[0].isEmpty())
         {

@@ -1,17 +1,17 @@
 #include "i_graph.h"
 #include "orchbasedummy.h"
 
-I_Graph::I_Graph(QObject *parent) : QObject(parent), app_xml_def(), app_graph_def(NULL), app_text_def(NULL), orchestrator(NULL), internal_orch(false)
+I_Graph::I_Graph(QObject *parent) : QObject(parent), app_xml_def(), app_graph_def(NULL), orchestrator(NULL), app_text_def(NULL), internal_orch(false)
 {
 
 }
 
-I_Graph::I_Graph(OrchBase* orchestrator, QObject *parent) : QObject(parent), app_xml_def(), app_graph_def(NULL), app_text_def(NULL), orchestrator(orchestrator), internal_orch(false)
+I_Graph::I_Graph(OrchBase* orchestrator, QObject *parent) : QObject(parent), app_xml_def(), app_graph_def(NULL), orchestrator(orchestrator), app_text_def(NULL), internal_orch(false)
 {
 
 }
 
-I_Graph::I_Graph(const QString& input_filename, OrchBase* input_orchestrator, QObject *parent) : QObject(parent), app_xml_def(new QFile(input_filename, parent)), orchestrator(input_orchestrator), app_graph_def(NULL), app_text_def(NULL), internal_orch(false)
+I_Graph::I_Graph(const QString& input_filename, OrchBase* input_orchestrator, QObject *parent) : QObject(parent), app_xml_def(new QFile(input_filename, parent)), app_graph_def(NULL), orchestrator(input_orchestrator), app_text_def(NULL), internal_orch(false)
 {
 
 }
