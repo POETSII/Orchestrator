@@ -50,7 +50,7 @@
 #define TinselDCacheLogSetsPerThread 3
 #define TinselMaxThreads 16384
 #define TinselLogDCachesPerDRAM 3
-#define TinselSharedInstrMem False
+#define TinselSharedInstrMem false
 #define TinselWordsPerFlit 4
 #define TinselMeshXLen 3
 #define TinselThreadsPerDRAM 512
