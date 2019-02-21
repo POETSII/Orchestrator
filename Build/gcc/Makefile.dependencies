@@ -30,8 +30,21 @@ QT_INC_DIR = $(QT_DIR)/include
 # jtag library paths
 JTAG_LIB_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/jtag_libs
 
-# Tinsel (must be out of date, for now)
-TINSEL_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/tinsel
+# Search for Tinsel in this order:
+#  - Native clone on the machine (in /local/tinsel)
+#  - In the Orchestrator dependencies tarball
+TINSEL_SEARCHES = /local/tinsel $(ORCHESTRATOR_DEPENDENCIES_DIR)/tinsel
+
+# Define a shell script to determine the directory, printing only the earliest
+# one found.
+COMPUTE_THE_TINSEL_DIR = for DIR in $(TINSEL_SEARCHES); do \
+                             if [ -d "$$DIR" ]; then \
+                                 echo "$$DIR"; \
+                                 break; \
+                             fi; \
+                         done
+
+TINSEL_DIR = $(shell $(COMPUTE_THE_TINSEL_DIR))
 TINSEL_INC_DIR = $(TINSEL_DIR)/include
 TINSEL_LIB_DIR = $(TINSEL_DIR)/lib
 TINSEL_HOSTLINK_DIR = $(TINSEL_DIR)/hostlink
