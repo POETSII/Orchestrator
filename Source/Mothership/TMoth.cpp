@@ -498,7 +498,6 @@ unsigned TMoth::NameDist(PMsg_p* mTask_Info)
 // receive a broadcast core info block from the NameServer.
 {
       CMsg_p task_info(*mTask_Info);
-      TaskInfo_t* TaskInfo;
       string TaskName;
       task_info.Get(0, TaskName);
       map<string, TaskInfo_t*>::iterator T;
@@ -507,16 +506,14 @@ unsigned TMoth::NameDist(PMsg_p* mTask_Info)
          // printf("Inserting new task %s from NameDist\n", TaskName.c_str());
          // fflush(stdout);
 	 TaskMap[TaskName] = new TaskInfo_t(TaskName);
-	 T = --TaskMap.end();
       }
-      TaskInfo = T->second;
       vector<pair<unsigned,P_addr_t>> cores;
       task_info.Get(cores);
       // printf("Task %s has %d cores\n",TaskName.c_str(),cores.size());
       // fflush(stdout);
       // set up the cores
       for (vector<pair<unsigned,P_addr_t>>::iterator core = cores.begin(); core != cores.end(); core++)
-          TaskInfo->insertCore(core->first, core->second);
+          TaskMap[TaskName]->insertCore(core->first, core->second);
       // printf("%d cores inserted into TaskInfo structure for %s\n",cores.size(),TaskName.c_str());
       // fflush(stdout);
       return 0;
@@ -575,7 +572,6 @@ unsigned TMoth::NameTdir(const string& task, const string& dir)
          // printf("Inserting new task %s from NameTdir\n", task.c_str());
          // fflush(stdout);
 	 TaskMap[task] = new TaskInfo_t(task);
-	 T = --TaskMap.end();
       }
       TaskMap[task]->BinPath = dir;
       return 0;
