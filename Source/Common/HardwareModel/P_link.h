@@ -7,7 +7,7 @@
 
 //==============================================================================
 
-class P_link : public NameBase, protected DumpChan
+class P_link : public NameBase, public DumpChan
 {
 public:
                     P_link();
@@ -15,7 +15,7 @@ public:
 virtual ~           P_link();
 float               weight;
 
-void                Dump(FILE * = stdout);
+void                Dump(FILE * = dfp);
 static void         LnkDat_cb(P_link * const &);
 static void         LnkKey_cb(unsigned const &);
 

@@ -13,7 +13,7 @@
 #include "dumpchan.h"
 #define HARDWARE_ADDRESS_LENGTH 32
 
-class HardwareAddressFormat: protected DumpChan
+class HardwareAddressFormat: public DumpChan
 {
 public:
     HardwareAddressFormat(unsigned boxWordLength,

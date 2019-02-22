@@ -7,13 +7,13 @@
 
 //==============================================================================
 
-class P_port : public NameBase, protected DumpChan
+class P_port : public NameBase, public DumpChan
 {
 public:
                     P_port(string);
 virtual ~           P_port();
 
-void                Dump(FILE * = stdout);
+void                Dump(FILE * = dfp);
 static void         PrtDat_cb(P_port * const &);
 static void         PrtKey_cb(unsigned const &);
 

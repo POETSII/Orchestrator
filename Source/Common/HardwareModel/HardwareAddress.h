@@ -31,7 +31,7 @@
 /* Components of hardware addresses are unsigned integers. */
 typedef unsigned int AddressComponent;
 
-class HardwareAddress: protected DumpChan
+class HardwareAddress: public DumpChan
 {
 public:
     HardwareAddress(HardwareAddressFormat* format,

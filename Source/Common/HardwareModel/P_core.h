@@ -26,7 +26,7 @@
 struct P_mailbox;
 struct P_thread;
 
-class P_core: public AddressableItem, public NameBase, protected DumpChan
+class P_core: public AddressableItem, public NameBase, public DumpChan
 {
 public:
     P_core(std::string name);

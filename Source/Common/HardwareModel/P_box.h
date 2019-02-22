@@ -25,7 +25,7 @@
 struct P_engine;
 struct P_board;
 
-class P_box: public AddressableItem, public NameBase, protected DumpChan
+class P_box: public AddressableItem, public NameBase, public DumpChan
 {
 public:
     P_box(std::string name);

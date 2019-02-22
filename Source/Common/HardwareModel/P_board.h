@@ -29,7 +29,7 @@
 struct P_box;
 struct P_mailbox;
 
-class P_board: public AddressableItem, public NameBase, protected DumpChan
+class P_board: public AddressableItem, public NameBase, public DumpChan
 {
 public:
     P_board(std::string name);

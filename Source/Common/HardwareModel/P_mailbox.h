@@ -25,7 +25,7 @@
 struct P_board;
 struct P_core;
 
-class P_mailbox: public AddressableItem, public NameBase, protected DumpChan
+class P_mailbox: public AddressableItem, public NameBase, public DumpChan
 {
 public:
     P_mailbox(std::string name);

@@ -24,7 +24,7 @@
 /* Facilitate out-of-order includes. */
 struct P_core;
 
-class P_thread: public AddressableItem, public NameBase, protected DumpChan
+class P_thread: public AddressableItem, public NameBase, public DumpChan
 {
 public:
     P_thread(std::string name);

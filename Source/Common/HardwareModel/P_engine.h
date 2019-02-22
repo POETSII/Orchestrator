@@ -31,7 +31,7 @@ struct OrchBase;
 struct P_box;
 struct P_board;
 
-class P_engine: public NameBase, protected DumpChan
+class P_engine: public NameBase, public DumpChan
 {
 public:
     P_engine(std::string name);
