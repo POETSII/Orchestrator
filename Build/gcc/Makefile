@@ -137,8 +137,15 @@ tests: $(ALL_TESTS)
 # Makefile.executable_prerequisites for the prerequisites of these executables
 # (obviously...)
 $(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) $(LOGSERVER_EXECUTABLE) \
-$(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE) $(ALL_TESTS):
+$(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
+	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
+        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
+        -o $@ $^ \
+        -lQt5Core -lmpi -lpthread
+
+$(ALL_TESTS):
+	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
         -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
         -o $@ $^ \
