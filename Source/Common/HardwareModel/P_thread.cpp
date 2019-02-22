@@ -15,7 +15,7 @@ P_thread::P_thread(std::string name)
  * using dumpchan. Arguments:
  *
  * - file: File to dump to. */
-void P_thread::dump(FILE* file)
+void P_thread::Dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
     std::string nameWithPrefix = dformat("P_thread %s ", fullName.c_str());

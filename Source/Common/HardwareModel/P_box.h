@@ -50,7 +50,7 @@ public:
     unsigned int supervisorMemory;
     float costBoxBoard;
 
-    void dump(FILE* = stdout);
+    void Dump(FILE* = stdout);
 };
 
 #endif

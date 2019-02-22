@@ -53,7 +53,7 @@ public:
     float costCoreThread;
     float costThreadThread;
 
-    void dump(FILE* = stdout);
+    void Dump(FILE* = stdout);
 };
 
 #endif

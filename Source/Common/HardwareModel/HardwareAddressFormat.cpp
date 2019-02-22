@@ -40,7 +40,7 @@ HardwareAddressFormat::HardwareAddressFormat(){}
 /* Write debug and diagnostic information using dumpchan. Arguments:
  *
  * - file: File to dump to. */
-void HardwareAddressFormat::dump(FILE* file)
+void HardwareAddressFormat::Dump(FILE* file)
 {
     /* The dump basically just contains the lengths. */
     fprintf(file, "Hardware Address Format +++++++++++++++++++++++++\n\

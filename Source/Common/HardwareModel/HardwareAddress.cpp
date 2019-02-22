@@ -189,7 +189,7 @@ void HardwareAddress::set_defined(unsigned index)
 /* Write debug and diagnostic information using dumpchan. Arguments:
  *
  * - file: File to dump to. */
-void HardwareAddress::dump(FILE* file)
+void HardwareAddress::Dump(FILE* file)
 {
     /* The dump basically just contains the lengths. */
     fprintf(file, "Hardware Address +++++++++++++++++++++++++\n\

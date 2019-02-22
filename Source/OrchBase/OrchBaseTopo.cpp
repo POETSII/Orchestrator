@@ -105,15 +105,15 @@ pPlace->pCon->Constraintm[constraint] = str2uint(Cl.Pa_v[1].Val);
 void OrchBase::TopoDump(Cli::Cl_t Cl)
 {
 if (pE==0){Post(139);return;}
-if (Cl.Pa_v.empty()) pE->dump();
+if (Cl.Pa_v.empty()) pE->Dump();
 WALKVECTOR(Cli::Pa_t,Cl.Pa_v,i) {      // Loop through streams to dump to
   string st = (*i).Val;                // Dump stream
-  if (st.empty()) pE->dump();
+  if (st.empty()) pE->Dump();
   st = topopath + st;
   FILE * fp = fopen(st.c_str(),"w");
   if (fp==0) Post(132,st);
   else {
-    pE->dump(fp);
+    pE->Dump(fp);
     fclose(fp);
   }
 }

@@ -160,7 +160,7 @@ void P_board::connect(AddressComponent start, AddressComponent end,
  * using dumpchan. Arguments:
  *
  * - file: File to dump to. */
-void P_board::dump(FILE* file)
+void P_board::Dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
     std::string nameWithPrefix = dformat("P_board %s ", fullName.c_str());
@@ -205,7 +205,7 @@ void P_board::dump(FILE* file)
             CALLBACK node(void* file, AddressComponent const&,
                           P_mailbox* &mailbox)
             {
-                mailbox->dump(static_cast<FILE*>(file));
+                mailbox->Dump(static_cast<FILE*>(file));
             }
         };
 

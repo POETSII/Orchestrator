@@ -464,7 +464,7 @@ WALKMAP(string,TaskInfo_t*,TaskMap,Task)
   fprintf(fp,"Task %s in state %s:\n",Task->second->TaskName.c_str(),TaskInfo_t::Task_Status.find(Task->second->status)->second.c_str());
   fprintf(fp,"Reading from binary path %s\n",Task->second->BinPath.c_str());
   fprintf(fp,"Task map dump:\n");
-  Task->second->VirtualBox->dump(fp);
+  Task->second->VirtualBox->Dump(fp);
   fprintf(fp,".......................................\n");
 }
 fprintf(fp,"Mothership dump-----------------------------------\n");

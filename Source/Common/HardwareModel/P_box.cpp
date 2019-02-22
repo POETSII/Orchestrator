@@ -73,7 +73,7 @@ void P_box::contain(AddressComponent addressComponent, P_board* board)
  * using dumpchan. Arguments:
  *
  * - file: File to dump to. */
-void P_box::dump(FILE* file)
+void P_box::Dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
     std::string nameWithPrefix = dformat("P_box %s ", fullName.c_str());
@@ -104,7 +104,7 @@ void P_box::dump(FILE* file)
             fprintf(file, "%s (%p)\n",
                     iterBoard->FullName().c_str(), iterBoard);
             /* Recursive-dump. */
-            iterBoard->dump(file);
+            iterBoard->Dump(file);
         }
     }
     fprintf(file, "Boards in this box %s\n", std::string(60, '-').c_str());

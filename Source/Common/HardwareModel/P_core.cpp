@@ -85,7 +85,7 @@ void P_core::contain(AddressComponent addressComponent, P_thread* thread)
  * using dumpchan. Arguments:
  *
  * - file: File to dump to. */
-void P_core::dump(FILE* file)
+void P_core::Dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
     std::string nameWithPrefix = dformat("P_core %s ", fullName.c_str());
@@ -139,7 +139,7 @@ void P_core::dump(FILE* file)
                     iterator->first,
                     iterThread->FullName().c_str(), iterThread);
             /* Recursive-dump. */
-            iterThread->dump(file);
+            iterThread->Dump(file);
         }
     }
     fprintf(file, "Threads in this core %s\n", std::string(58, '-').c_str());

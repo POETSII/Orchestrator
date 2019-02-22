@@ -43,7 +43,7 @@ public:
     unsigned int dataMemoryAddress;
     unsigned int instructionMemoryAddress;
 
-    void dump(FILE* = stdout);
+    void Dump(FILE* = stdout);
 };
 
 #endif

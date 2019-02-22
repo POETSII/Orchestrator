@@ -196,7 +196,7 @@ void P_engine::connect(AddressComponent start, AddressComponent end,
  * using dumpchan. Arguments:
  *
  * - file: File to dump to. */
-void P_engine::dump(FILE* file)
+void P_engine::Dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
     std::string nameWithPrefix = dformat("P_engine %s ", fullName.c_str());
@@ -261,7 +261,7 @@ void P_engine::dump(FILE* file)
             fprintf(file, "%u: %s (%p)\n", iterator->first,
                     iterBox->FullName().c_str(), iterBox);
             /* Recursive-dump. */
-            iterBox->dump(file);
+            iterBox->Dump(file);
         }
     }
     fprintf(file, "Boxes in this engine %s\n", std::string(58, '-').c_str());

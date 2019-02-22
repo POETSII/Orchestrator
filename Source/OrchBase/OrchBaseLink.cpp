@@ -194,8 +194,8 @@ pD->Dump();
 pD->pP_devtyp->Dump();
 pT->Dump();
 pT->pOwn->Dump();
-pD->pP_thread->dump();
-pD->pP_thread->parent->dump();
+pD->pP_thread->Dump();
+pD->pP_thread->parent->Dump();
 
 string s0 = pD->Name();
 string s1 = pD->pP_devtyp->Name();

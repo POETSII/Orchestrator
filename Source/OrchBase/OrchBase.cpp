@@ -70,7 +70,7 @@ fprintf(fp,"NameBase %s\n",FullName().c_str());
 fprintf(fp,"Task path %s\n",taskpath.c_str());
 fprintf(fp,"HARDWARE++++++++++++++++++++++++++++++++++++\n");
 if (pE==0) fprintf(fp,"No hardware topology loaded\n");
-else pE->dump(fp);
+else pE->Dump(fp);
 if (pPlace==0) fprintf(fp,"No placement object to be found?\n");
 else pPlace->Dump(fp);
 fprintf(fp,"HARDWARE------------------------------------\n");

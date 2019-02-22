@@ -272,7 +272,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
        a dump of the Aesop configuration. */ /*
     SECTION("Dump for fun", "[Aesop]")
     {
-        engine.dump();
+        engine.Dump();
     } */
 }
 

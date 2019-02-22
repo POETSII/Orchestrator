@@ -29,7 +29,7 @@ public:
     unsigned coreWordLength;
     unsigned threadWordLength;
 
-    void dump(FILE* = stdout);
+    void Dump(FILE* = stdout);
 };
 
 #endif

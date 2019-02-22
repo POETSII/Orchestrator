@@ -62,7 +62,7 @@ public:
     unsigned get_hardware_address();
     void populate_a_software_address(P_addr* target, bool resetFirst = true);
     void populate_from_software_address(P_addr* source);
-    void dump(FILE* = stdout);
+    void Dump(FILE* = stdout);
 
     /* Defines whether or not the hardware address is fully defined. No binary
      * literal in C++98 (yuck). */

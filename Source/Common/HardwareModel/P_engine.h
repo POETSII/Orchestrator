@@ -69,7 +69,7 @@ public:
     std::string fileOrigin;
 
     float costExternalBox;
-    void dump(FILE* = stdout);
+    void Dump(FILE* = stdout);
 
 private:
     /* Keys for arcs in the graph, incremented when items are connected. */

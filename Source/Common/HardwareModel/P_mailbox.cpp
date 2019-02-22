@@ -74,7 +74,7 @@ void P_mailbox::contain(AddressComponent addressComponent, P_core* core)
  * using dumpchan. Arguments:
  *
  * - file: File to dump to. */
-void P_mailbox::dump(FILE* file)
+void P_mailbox::Dump(FILE* file)
 {
     std::string fullName = FullName();  /* Name of this from namebase. */
     std::string nameWithPrefix = dformat("P_mailbox %s ", fullName.c_str());
@@ -107,7 +107,7 @@ void P_mailbox::dump(FILE* file)
                     iterator->first,
                     iterCore->FullName().c_str(), iterCore);
             /* Recursive-dump. */
-            iterCore->dump(file);
+            iterCore->Dump(file);
         }
     }
     fprintf(file, "Cores in this mailbox %s\n", std::string(57, '-').c_str());

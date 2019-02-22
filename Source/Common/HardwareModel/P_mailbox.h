@@ -46,7 +46,7 @@ public:
     float costCoreCore;
     float costMailboxCore;
 
-    void dump(FILE* = stdout);
+    void Dump(FILE* = stdout);
 };
 
 #endif

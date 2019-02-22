@@ -27,7 +27,7 @@ TEST_CASE("Fully-defined addresses can be created from a format and all values",
     HardwareAddress address(&myFormat, 15, 31, 63, 255, 511);
     REQUIRE(address.get_hardware_address() == 4294967295);  /* Sorry!
     * // If you want to know what that bizarre number is, try dumping with
-    * address.dump(); */
+    * address.Dump(); */
     REQUIRE(address.is_fully_defined() == true);
 }
 
