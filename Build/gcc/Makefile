@@ -131,6 +131,7 @@ include Makefile.executable_prerequisites
 
 # Prerequisites for building tests are defined here:
 include Makefile.test_prerequisites
+tests: CXXFLAGS += -g3
 tests: $(ALL_TESTS)
 
 # Linking targets (to generate executables). See
