@@ -18,10 +18,13 @@ P_engine::P_engine(std::string name)
         CALLBACK node_key(AddressComponent const& key){printf("%u", key);}
         CALLBACK node(P_board* const& board)
         {
-            printf("%s", board->FullName().c_str());
+            fprintf(board->dfp, board->FullName().c_str());
         }
         CALLBACK arc_key(unsigned int const& key){printf("%u", key);}
-        CALLBACK arc(P_link* const& link){printf("%f", link->weight);}
+        CALLBACK arc(P_link* const& link)
+        {
+            fprintf(link->dfp, "%f", link->weight);
+        }
     };
 
     G.SetNK_CB(GraphCallbacks::node_key);
@@ -241,9 +244,22 @@ void P_engine::Dump(FILE* file)
         fprintf(file, "The board graph is empty.\n");
     else
     {
+        /* Change channels to the output file, storing the old values */
+        FILE* previousBoardChannel = P_board::dfp;
+        FILE* previousLinkChannel = P_link::dfp;
+        FILE* previousPortChannel = P_port::dfp;
+        P_board::dfp = file;
+        P_link::dfp = file;
+        P_port::dfp = file;
+
         /* Dump graph (which does not dump items). */
         G.DumpChan(file);
         G.Dump();
+
+        /* Set the old channels back. */
+        P_board::dfp = previousBoardChannel;
+        P_link::dfp = previousLinkChannel;
+        P_port::dfp = previousPortChannel;
     }
     fprintf(file, "Board connectivity in this engine %s\n",
             std::string(45, '-').c_str());
