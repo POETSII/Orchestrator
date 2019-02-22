@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include "NameBase.h"
-#include "pdigraph.hpp"    
+#include "pdigraph.hpp"
 
 //==============================================================================
 
@@ -22,7 +22,3 @@ static void         PrtKey_cb(unsigned const &);
 //==============================================================================
 
 #endif
-
-
-
-
