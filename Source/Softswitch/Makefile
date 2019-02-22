@@ -58,7 +58,7 @@ RV_LIBS     = $(RISCV_PATH)/riscv32-unknown-elf/lib/rv32im/ilp32
 RV_GCC_LIBS = $(RISCV_PATH)/lib/gcc/riscv32-unknown-elf/7.2.0/rv32im/ilp32
 # this had -nostdlib; we need it for memcpy.
 RV_CFLAGS   = -mabi=ilp32 -march=$(RV_ARCH) -static -mcmodel=medany \
-              -fvisibility=hidden -nostartfiles \
+              -fvisibility=hidden -nostartfiles -pipe\
               -fsingle-precision-constant -fno-builtin-printf
 
 # Extend PATH
@@ -85,7 +85,7 @@ VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC)
 CFLAGS = $(RV_CFLAGS) $(LH_CFLAGS) -O2 -I $(TINSELINC) -I $(SOFTSWINC) -I $(GENINC)
 LDFLAGS = -melf32lriscv -G 0 -L$(RV_LIBS) -L$(RV_GCC_LIBS) -lgcc -lc
 
-MPICFLAGS = -I$(SOFTSWINC) -I$(TINSELINC) -I$(MPICHINC) -I$(PCOMMONINC) -I$(GENERICSINC) -std=c++11 -fPIC -Wall
+MPICFLAGS = -I$(SOFTSWINC) -I$(TINSELINC) -I$(MPICHINC) -I$(PCOMMONINC) -I$(GENERICSINC) -std=c++11 -fPIC -pipe -Wall
 MPILDFLAGS = -shared -L$(MPICHLIB)
 
 SECEXPCPPS := $(GENSRC)/%.cpp
