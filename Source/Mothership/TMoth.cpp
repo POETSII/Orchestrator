@@ -254,8 +254,6 @@ unsigned TMoth::CmLoad(string task)
    // fflush(stdout);
    int coresThisTask = 0;
    int coresLoaded = 0;
-   void* pCoresPerBoard;
-   bool tOK = true;
    // printf("Task will use %d boards\n", TaskMap[task]->BoardsForTask().size());
    // fflush(stdout);
    // for each board mapped to the task,
@@ -314,17 +312,14 @@ unsigned TMoth::CmRun(string task)
    {
    // printf("Task %s entering tinsel barrier\n",task.c_str());
    // fflush(stdout);
-   uint32_t mX, mY, core, thread;
    P_Msg_Hdr_t barrier_msg;
    barrier_msg.messageLenBytes = p_hdr_size(); // barrier is only a header. No payload.
    barrier_msg.destEdgeIndex = 0;                     // no edge index necessary.
    barrier_msg.destPin = P_SUP_PIN_INIT;              // it goes to the system __init__ pin
    barrier_msg.messageTag = P_MSG_TAG_INIT;           // and is of message type __init__.
-   uint8_t flit[4 << TinselLogWordsPerFlit];
    // printf("Building thread list for task %s\n",task.c_str());
    // fflush(stdout);
    // build a list of the threads in this task (that should be released from barrier)
-   // vector<P_thread*> threads_for_task = TaskMap[task]->ThreadsForTask();
    vector<unsigned> threadsToRelease;
    WALKVECTOR(P_thread*,TaskMap[task]->ThreadsForTask(),R)
      threadsToRelease.push_back(TMoth::GetHWAddr((*R)->addr));
@@ -389,16 +384,13 @@ unsigned TMoth::CmStop(string task)
    {
    TaskMap[task]->status = TaskInfo_t::TASK_STOP;
    // set up for shutdown by creating a global stop message
-   uint32_t mX, mY, core, thread;
    P_Msg_Hdr_t stop_msg;
    stop_msg.destEdgeIndex = 0;           // ignore edge index. Unused.
    stop_msg.destPin = P_SUP_PIN_SYS_SHORT;     // goes to the system pin
    stop_msg.messageTag = P_MSG_TAG_STOP; // with a stop message type
-   uint8_t flit[4 << TinselLogWordsPerFlit];
    // printf("Stopping task %s\n",task.c_str());
    // fflush(stdout);
    // go through each thread of the task,
-   //vector<P_thread*> threads_for_task = TaskMap[task]->ThreadsForTask();
    WALKVECTOR(P_thread*, TaskMap[task]->ThreadsForTask(), R)
    {
      uint32_t destDevAddr = TMoth::GetHWAddr((*R)->addr);
@@ -440,7 +432,7 @@ WALKVECTOR(FnMap_t*,FnMapx,F)
 fprintf(fp,"Function table for comm %d:\n", cIdx++);
 fprintf(fp,"Key        Method\n");
 WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x 0x%#010p\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x 0x%010p\n",(*i).first,(*i).second);
 }
 fprintf(fp,"Loaded tasks:\n");
 WALKMAP(string,TaskInfo_t*,TaskMap,Task)
@@ -811,8 +803,10 @@ W.Key(Q::SUPR);
 W.Src(Z->Tgt());
 int superReturn = 0;
 if ((superReturn = (*SupervisorCall)(Z,&W)) > 0) // Execute. Send a reply if one is expected
+{
   if (!cIdx && (Z->Tgt() == Urank) && (Z->Src() == Urank)) OnTinsel(&W, 0); // either to Tinsels,
   else W.Send(Z->Src());  // or to some external or internal process.
+}
 if (superReturn < 0) Post(530, int2str(Urank)); 
 return 0;
 }
