@@ -269,9 +269,16 @@ application_staging_environment_teardown:
 $(DEPENDENCY_DIR)/%.d:
 	@$(MKDIR) $$(dirname $@)
 
+# Clean built files, but don't attempt to remove a Tinsel's config.h if we
+# don't own it.
 clean: application_staging_environment_teardown
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
-	$(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT) $(TINSEL_CONFIG)
+		$(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT)
+	if [ -e $(TINSEL_CONFIG) ]; then \
+		if [ $$(stat -c %U "$(TINSEL_CONFIG)") == $$USER ]; then \
+			rm $(TINSEL_CONFIG); \
+		fi \
+	fi
 
 # Dependency files must not be removed by Make (unless explicitly cleaned).
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
