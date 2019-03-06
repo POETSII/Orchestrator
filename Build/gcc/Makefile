@@ -272,7 +272,7 @@ $(DEPENDENCY_DIR)/%.d:
 
 clean: application_staging_environment_teardown
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
-	$(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT)
+	$(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT) $(TINSEL_CONFIG)
 
 # Dependency files must not be removed by Make (unless explicitly cleaned).
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
