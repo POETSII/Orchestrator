@@ -32,8 +32,8 @@ JTAG_LIB_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/jtag_libs
 
 # Search for Tinsel in this order:
 #  - Native clone on the machine (in /local/tinsel)
-#  - In the Orchestrator dependencies tarball
-TINSEL_SEARCHES = /local/tinsel $(ORCHESTRATOR_DEPENDENCIES_DIR)/tinsel
+#  - From the submodule in this repository
+TINSEL_SEARCHES = /local/tinsel $(ROOT_DIR)/Tinsel
 
 # Define a shell script to determine the directory, printing only the earliest
 # one found.
