@@ -245,7 +245,6 @@ $(APPLICATION_STAGING_DIR)/Supervisor.cpp $(APPLICATION_STAGING_DIR)/Supervisor.
 		"$(abspath $(SOURCE_DIR)/Mothership/Supervisor$(suffix $@))" "$@"
 
 # Building the Tinsel configuration file, required by a variety of objects.
-TINSEL_CONFIG = $(TINSEL_INC_DIR)/config.h
 $(TINSEL_CONFIG): $(TINSEL_DIR)/config.py
 	python2 "$(TINSEL_DIR)/config.py" cpp > "$@"
 

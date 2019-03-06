@@ -48,6 +48,7 @@ TINSEL_DIR = $(shell $(COMPUTE_THE_TINSEL_DIR))
 TINSEL_INC_DIR = $(TINSEL_DIR)/include
 TINSEL_LIB_DIR = $(TINSEL_DIR)/lib
 TINSEL_HOSTLINK_DIR = $(TINSEL_DIR)/hostlink
+TINSEL_CONFIG = $(TINSEL_INC_DIR)/config.h
 
 # GCC, not used for building the Orchestrator, but necessary for the
 # Mothership. Immediate-set, because it's used by the shell.
