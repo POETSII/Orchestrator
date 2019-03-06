@@ -16,7 +16,7 @@ extern const unsigned int LOG_DEVICES_PER_THREAD;
 extern const unsigned int THREADS_PER_CORE;
 extern const unsigned int CORES_PER_BOARD;
 extern const unsigned int BOARDS_PER_BOX;
-extern const unsigned long MEM_PER_BOARD;
+extern const unsigned long long MEM_PER_BOARD;
 extern const unsigned int PIN_POS;
 extern const std::string STATIC_SRC_PATH;
 extern const std::string COMMON_PATH;

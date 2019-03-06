@@ -110,7 +110,7 @@ void P_graph::SetN(unsigned numBoxes, bool vSys)
 {
 Clear();                               // Lose any existing structure
 // no effective memory limit on a virtual board
-if (vSys) (*pConfigl.begin())->SetBMem(ULONG_MAX);
+if (vSys) (*pConfigl.begin())->SetBMem(ULLONG_MAX);
 for (unsigned B = 0; B < numBoxes; B++)
 {
 P_box * pB = new P_box(this);          // New box
