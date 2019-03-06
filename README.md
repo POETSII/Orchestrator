@@ -1,3 +1,6 @@
+Note: This repository contains a submodule. Ensure you clone with
+`--recursive-submodules` (or `--recursive` if on Git 2.12 or earlier)
+
 # Orchestrator
 
 The Orchestrator is the configuration and run-time management system for POETS
