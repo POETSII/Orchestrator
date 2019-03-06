@@ -152,10 +152,11 @@ define build-object
     @touch $@
 endef
 
-$(OBJECT_DIR)/%.o: $(ROOT_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
+$(OBJECT_DIR)/%.o: $(ROOT_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d $(TINSEL_CONFIG)
 	$(build-object)
 
-$(HOSTLINK_OBJECT_DIR)/%.o: $(TINSEL_HOSTLINK_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
+$(HOSTLINK_OBJECT_DIR)/%.o: $(TINSEL_HOSTLINK_DIR)/%.cpp \
+                            $(DEPENDENCY_DIR)/%.d $(TINSEL_CONFIG)
 	$(build-object)
 
 # Miscellaneous files to be copied to the execution directory in order for
@@ -242,6 +243,11 @@ $(APPLICATION_STAGING_DIR)/Supervisor.cpp $(APPLICATION_STAGING_DIR)/Supervisor.
 	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic \
 		"$(abspath $(SOURCE_DIR)/Mothership/Supervisor$(suffix $@))" "$@"
+
+# Building the Tinsel configuration file, required by a variety of objects.
+TINSEL_CONFIG = $(TINSEL_INC_DIR)/config.h
+$(TINSEL_CONFIG): $(TINSEL_DIR)/config.py
+	python2 "$(TINSEL_DIR)/config.py" cpp > "$@"
 
 # Tearing down the environment (for 'clean'), leaving the xml directory for the
 # user. Only tear it down if $(APPLICATION_STAGING_DIR) exists. NB:
