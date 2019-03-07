@@ -99,12 +99,8 @@ void P_box::Dump(FILE* file)
     {
         WALKVECTOR(P_board*, P_boardv, iterator)
         {
-            P_board* iterBoard = *iterator;
-            /* Print information from the map. */
-            fprintf(file, "%s (%p)\n",
-                    iterBoard->FullName().c_str(), iterBoard);
             /* Recursive-dump. */
-            iterBoard->Dump(file);
+            (*iterator)->Dump(file);
         }
     }
     fprintf(file, "Boards in this box %s\n", std::string(60, '-').c_str());

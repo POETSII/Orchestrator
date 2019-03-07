@@ -133,13 +133,8 @@ void P_core::Dump(FILE* file)
     {
         WALKMAP(AddressComponent, P_thread*, P_threadm, iterator)
         {
-            P_thread* iterThread = iterator->second;
-            /* Print information from the map. */
-            fprintf(file, "%u: %s (%p)\n",
-                    iterator->first,
-                    iterThread->FullName().c_str(), iterThread);
             /* Recursive-dump. */
-            iterThread->Dump(file);
+            iterator->second->Dump(file);
         }
     }
     fprintf(file, "Threads in this core %s\n", std::string(58, '-').c_str());

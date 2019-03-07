@@ -272,12 +272,8 @@ void P_engine::Dump(FILE* file)
     {
         WALKMAP(AddressComponent, P_box*, P_boxm, iterator)
         {
-            P_box* iterBox = iterator->second;
-            /* Print information from the map. */
-            fprintf(file, "%u: %s (%p)\n", iterator->first,
-                    iterBox->FullName().c_str(), iterBox);
             /* Recursive-dump. */
-            iterBox->Dump(file);
+            iterator->second->Dump(file);
         }
     }
     fprintf(file, "Boxes in this engine %s\n", std::string(58, '-').c_str());

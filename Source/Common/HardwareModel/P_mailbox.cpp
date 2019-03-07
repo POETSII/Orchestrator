@@ -101,13 +101,8 @@ void P_mailbox::Dump(FILE* file)
     {
         WALKMAP(AddressComponent, P_core*, P_corem, iterator)
         {
-            P_core* iterCore = iterator->second;
-            /* Print information from the map. */
-            fprintf(file, "%u: %s (%p)\n",
-                    iterator->first,
-                    iterCore->FullName().c_str(), iterCore);
             /* Recursive-dump. */
-            iterCore->Dump(file);
+            iterator->second->Dump(file);
         }
     }
     fprintf(file, "Cores in this mailbox %s\n", std::string(57, '-').c_str());
