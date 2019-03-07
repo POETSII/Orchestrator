@@ -432,7 +432,7 @@ WALKVECTOR(FnMap_t*,FnMapx,F)
 fprintf(fp,"Function table for comm %d:\n", cIdx++);
 fprintf(fp,"Key        Method\n");
 WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x 0x%010p\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x %018lx\n",(*i).first,(uint64_t)&(*i).second); //0x%010x
 }
 fprintf(fp,"Loaded tasks:\n");
 WALKMAP(string,TaskInfo_t*,TaskMap,Task)
@@ -607,7 +607,7 @@ void* TMoth::Twig(void* par)
      char Line[4*P_MSG_MAX_SIZE];
      fpos_t readPos;
      fpos_t writePos;
-     if (OutFile = fopen("./DebugOutput.txt", "a+"))
+     if ( (OutFile = fopen("./DebugOutput.txt", "a+")) )
      {
         fsetpos(OutFile, &readPos);
 	fsetpos(OutFile, &writePos);
