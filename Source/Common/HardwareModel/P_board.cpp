@@ -13,18 +13,23 @@ P_board::P_board(std::string name)
 
     /* Set up callbacks for the graph container (command pattern). */
     struct GraphCallbacks {
-        CALLBACK node_key(AddressComponent const& key){printf("%u", key);}
+        CALLBACK key(unsigned int const& key)
+        {
+            fprintf(dfp, "%u", key);
+        }
         CALLBACK node(P_mailbox* const& mailbox)
         {
-            printf("%s", mailbox->FullName().c_str());
+            fprintf(mailbox->dfp, mailbox->FullName().c_str());
         }
-        CALLBACK arc_key(unsigned int const& key){printf("%u", key);}
-        CALLBACK arc(P_link* const& link){printf("%f", link->weight);}
+        CALLBACK arc(P_link* const& link)
+        {
+            fprintf(link->dfp, "%f", link->weight);
+        }
     };
 
-    G.SetNK_CB(GraphCallbacks::node_key);
+    G.SetNK_CB(GraphCallbacks::key);
     G.SetND_CB(GraphCallbacks::node);
-    G.SetAK_CB(GraphCallbacks::arc_key);
+    G.SetAK_CB(GraphCallbacks::key);
     G.SetAD_CB(GraphCallbacks::arc);
 }
 
@@ -186,9 +191,22 @@ void P_board::Dump(FILE* file)
         fprintf(file, "The mailbox graph is empty.\n");
     else
     {
+        /* Change channels to the output file, storing the old values */
+        FILE* previousBoardChannel = P_board::dfp;
+        FILE* previousLinkChannel = P_link::dfp;
+        FILE* previousPortChannel = P_port::dfp;
+        P_board::dfp = file;
+        P_link::dfp = file;
+        P_port::dfp = file;
+
         /* Dump graph (which does not dump items). */
         G.DumpChan(file);
         G.Dump();
+
+        /* Set the old channels back. */
+        P_board::dfp = previousBoardChannel;
+        P_link::dfp = previousLinkChannel;
+        P_port::dfp = previousPortChannel;
     }
     fprintf(file, "Mailbox connectivity in this board %s\n",
             std::string(44, '-').c_str());
