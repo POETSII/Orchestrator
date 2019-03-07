@@ -37,7 +37,6 @@ void               Xlink(P_device *,P_thread *);
 
 OrchBase *         par;
 Constraints *      pCon;
-P_graph *          pP_graph;
 D_graph *          pD_graph;
 
 pdigraph<AddressComponent, P_board*,
