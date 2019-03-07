@@ -64,7 +64,8 @@ void P_graph::Dump(FILE * fp)
 string s = FullName();
 fprintf(fp,"P_graph dump %35s++++++++++++++++++++++++++++++++\n",s.c_str());
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
 fprintf(fp,"BOX CONFIGURATION OBJECTS %35s+++++++++++++++++++\n",s.c_str());
 WALKLIST(Config_t *,pConfigl,i) (*i)->Dump();
@@ -109,9 +110,7 @@ void P_graph::SetN(unsigned numBoxes, bool vSys)
 {
 Clear();                               // Lose any existing structure
 // no effective memory limit on a virtual board
-// note that an unsigned int may be inadequate to express the memory limit
-// even in real systems!
-if (vSys) (*pConfigl.begin())->SetBMem(UINT_MAX);
+if (vSys) (*pConfigl.begin())->SetBMem(ULLONG_MAX);
 for (unsigned B = 0; B < numBoxes; B++)
 {
 P_box * pB = new P_box(this);          // New box

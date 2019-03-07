@@ -29,7 +29,8 @@ void P_core::Dump(FILE * fp)
 string s = FullName();
 fprintf(fp,"P_core %35s++++++++++++++++++++++++++++++++++++++\n",s.c_str());
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
 if (pCoreBin!=0) pCoreBin->Dump(fp);
 else fprintf(fp,"Core binary undefined\n");

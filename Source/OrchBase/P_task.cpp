@@ -34,7 +34,8 @@ void P_task::Dump(FILE * fp)
 {
 fprintf(fp,"P_task++++++++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
 if (pP_typdcl==0) fprintf(fp,"No type declare block\n");
 else fprintf(fp,"Type declare block %s\n",pP_typdcl->FullName().c_str());

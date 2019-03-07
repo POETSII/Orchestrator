@@ -53,7 +53,7 @@ else {
         WALKVECTOR(P_thread *,(*pco)->P_threadv,pth) {
           if ((*pth)->P_devicel.empty());
 //            fprintf(fp,"Thread %s empty\n",(*pth)->FullName().c_str());
-          else fprintf(fp,"Thread %s : %u devices\n",
+          else fprintf(fp,"Thread %s : %lu devices\n",
                        (*pth)->FullName().c_str(),(*pth)->P_devicel.size());
           WALKLIST(P_device *,(*pth)->P_devicel,pde) {
             fprintf(fp,"       %s\n",(*pde)->FullName().c_str());
@@ -188,10 +188,6 @@ vector<string> vs0 = pD->NSGetinpn();
 vector<string> vs1 = pD->NSGetinpt();
 vector<string> vs2 = pD->NSGetoupn();
 vector<string> ns3 = pD->NSGetoupt();
-unsigned u0 =  pD->Id();
-P_addr_t p0 = pD->addr;
-unsigned u1 = pD->attr;
-unsigned u2 = pD->pP_thread->par->pCoreBin->Id();
 
   ns.PutD(pD->Name(),                  // Device name
           pD->pP_devtyp->Name(),       // Device type

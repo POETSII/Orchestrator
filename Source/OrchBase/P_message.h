@@ -18,8 +18,8 @@ static void         MsgDat_cb(P_message * const &);
 static void         MsgKey_cb(unsigned const &);
 void                Dump(FILE * = stdout);
 
-CFrag *             pPropsD;
 P_typdcl *          par;
+CFrag *             pPropsD;
 size_t              MsgSize;
 unsigned            MsgType; // this is the same as the index in P_messagev.
 

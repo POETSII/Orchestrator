@@ -33,21 +33,22 @@ void P_devtyp::Dump(FILE * fp)
 {
 fprintf(fp,"P_devtyp++++++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
 fprintf(fp,"HANDLER CODE++++++++++++++++++++++++++++++++\n");
 WALKVECTOR(CFrag *,pHandlv,i)(*i)->Dump(fp);
-fprintf(fp,"OnRTS          %#08p\n",pOnRTS);
+fprintf(fp,"OnRTS          %#018lx\n", (uint64_t) pOnRTS);
 if (pOnRTS!=0) pOnRTS->Dump(fp);
-fprintf(fp,"OnIdle         %#08p\n",pOnIdle);
+fprintf(fp,"OnIdle         %#018lx\n", (uint64_t) pOnIdle);
 if (pOnIdle!=0) pOnIdle->Dump(fp);
-fprintf(fp,"Properties default initialiser %#08p\n",pPropsI);
+fprintf(fp,"Properties default initialiser %#018lx\n", (uint64_t) pPropsI);
 if (pPropsI!=0) pPropsI->Dump(fp);
-fprintf(fp,"State default initialiser %#08p\n",pPropsI);
+fprintf(fp,"State default initialiser %#018lx\n", (uint64_t) pPropsI);
 if (pStateI!=0) pStateI->Dump(fp);
-fprintf(fp,"Properties declaration %#08p\n",pPropsD);
+fprintf(fp,"Properties declaration %#018lx\n", (uint64_t) pPropsD);
 if (pPropsD!=0) pPropsD->Dump(fp);
-fprintf(fp,"State declaration %#08p\n",pStateD);
+fprintf(fp,"State declaration %#018lx\n", (uint64_t) pStateD);
 if (pStateD!=0) pStateD->Dump(fp);
 fprintf(fp,"HANDLER CODE--------------------------------\n");
 fprintf(fp,"OUTPUT PIN TYPES++++++++++++++++++++++++++++\n");

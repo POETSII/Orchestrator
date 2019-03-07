@@ -9,7 +9,7 @@
 
 //==============================================================================
 
-P_box::P_box(P_graph * _p,string _s):par(_p),pMothBin(0),pConfig(0)
+P_box::P_box(P_graph * _p,string _s):pMothBin(0),par(_p),pConfig(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
@@ -95,7 +95,7 @@ void P_box::Dump(FILE * fp)
 string s = FullName();
 fprintf(fp,"P_box %35s+++++++++++++++++++++++++++++++++++++++\n",s.c_str());
 fprintf(fp,"NameBase %s\n",FullName().c_str());
-fprintf(fp,"Parent         %#08p\n",par);
+fprintf(fp,"Parent         %#018lx\n", (uint64_t) par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
 if (pMothBin!=0) pMothBin->Dump(fp);
 else fprintf(fp,"No mothership binary (supervosir) defined\n");
