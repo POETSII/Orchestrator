@@ -15,21 +15,23 @@ P_engine::P_engine(std::string name)
      * are printed, though we still dump the connectivity information from the
      * graph of boards. */
     struct GraphCallbacks {
-        CALLBACK node_key(AddressComponent const& key){printf("%u", key);}
+        CALLBACK key(unsigned int const& key)
+        {
+            fprintf(dfp, "%u", key);
+        }
         CALLBACK node(P_board* const& board)
         {
             fprintf(board->dfp, board->FullName().c_str());
         }
-        CALLBACK arc_key(unsigned int const& key){printf("%u", key);}
         CALLBACK arc(P_link* const& link)
         {
             fprintf(link->dfp, "%f", link->weight);
         }
     };
 
-    G.SetNK_CB(GraphCallbacks::node_key);
+    G.SetNK_CB(GraphCallbacks::key);
     G.SetND_CB(GraphCallbacks::node);
-    G.SetAK_CB(GraphCallbacks::arc_key);
+    G.SetAK_CB(GraphCallbacks::key);
     G.SetAD_CB(GraphCallbacks::arc);
 
     /* Set up default metadata information. If these are unchanged, the engine
