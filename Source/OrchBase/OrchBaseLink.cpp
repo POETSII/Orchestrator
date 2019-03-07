@@ -64,7 +64,7 @@ else {
 
           if (!threadIterator->second->P_devicel.empty())
           {
-            fprintf(fp,"Thread %s : %u devices\n",
+            fprintf(fp,"Thread %s : %lu devices\n",
                     threadIterator->second->FullName().c_str(),
                     threadIterator->second->P_devicel.size());
 

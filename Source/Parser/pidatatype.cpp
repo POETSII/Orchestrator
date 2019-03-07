@@ -1,7 +1,7 @@
 #include "pidatatype.h"
 
 PIDataType::PIDataType(const QString& name, PIGraphObject *parent) :
-    PIGraphBranch(name, "DataType", QVector<int>({DTYPE}), parent), data_type(NULL), base_type(""), value(""), default_value(""), expanded_type(""), num_replications(0)
+    PIGraphBranch(name, "DataType", QVector<int>({DTYPE}), parent), data_type(NULL), base_type(""), expanded_type(""), value(""), default_value(""), _documentation(""), num_replications(0)
 {
     // we will do something more sensible with this in future when a PoetsDataType is better defined.
     data_type = new PoetsDataType(dynamic_cast<PIGraphObject*>(this));

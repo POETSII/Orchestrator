@@ -23,14 +23,15 @@ void P_pin::Dump(FILE * fp)
 {
 fprintf(fp,"P_pin+++++++++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
-fprintf(fp,"Pin type       %#08p\n",pP_pintyp);
+fprintf(fp,"Pin type       %#018lx\n", (uint64_t) pP_pintyp);
 if (pP_pintyp!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
-fprintf(fp,"Properties initialiser    %#08p\n",pPropsI);
+fprintf(fp,"Properties initialiser    %#018lx\n", (uint64_t) pPropsI);
 if (pPropsI!=0) pPropsI->Dump(fp);
-fprintf(fp,"State initialiser         %#08p\n",pStateI);
+fprintf(fp,"State initialiser         %#018lx\n", (uint64_t) pStateI);
 if (pStateI!=0) pStateI->Dump(fp);
 NameBase::Dump(fp);
 DumpChan::Dump(fp);

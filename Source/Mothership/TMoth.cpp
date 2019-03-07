@@ -258,8 +258,6 @@ unsigned TMoth::CmLoad(string task)
    // fflush(stdout);
    int coresThisTask = 0;
    int coresLoaded = 0;
-   void* pCoresPerBoard;
-   bool tOK = true;
    // printf("Task will use %d boards\n", TaskMap[task]->BoardsForTask().size());
    // fflush(stdout);
    // for each board mapped to the task,
@@ -324,17 +322,14 @@ unsigned TMoth::CmRun(string task)
    {
    // printf("Task %s entering tinsel barrier\n",task.c_str());
    // fflush(stdout);
-   uint32_t mX, mY, core, thread;
    P_Msg_Hdr_t barrier_msg;
    barrier_msg.messageLenBytes = p_hdr_size(); // barrier is only a header. No payload.
    barrier_msg.destEdgeIndex = 0;                     // no edge index necessary.
    barrier_msg.destPin = P_SUP_PIN_INIT;              // it goes to the system __init__ pin
    barrier_msg.messageTag = P_MSG_TAG_INIT;           // and is of message type __init__.
-   uint8_t flit[4 << TinselLogWordsPerFlit];
    // printf("Building thread list for task %s\n",task.c_str());
    // fflush(stdout);
    // build a list of the threads in this task (that should be released from barrier)
-   // vector<P_thread*> threads_for_task = TaskMap[task]->ThreadsForTask();
    vector<unsigned> threadsToRelease;
    P_addr threadAddress;
    WALKVECTOR(P_thread*,TaskMap[task]->ThreadsForTask(),R)
@@ -403,12 +398,10 @@ unsigned TMoth::CmStop(string task)
    {
    TaskMap[task]->status = TaskInfo_t::TASK_STOP;
    // set up for shutdown by creating a global stop message
-   uint32_t mX, mY, core, thread;
    P_Msg_Hdr_t stop_msg;
    stop_msg.destEdgeIndex = 0;           // ignore edge index. Unused.
    stop_msg.destPin = P_SUP_PIN_SYS_SHORT;     // goes to the system pin
    stop_msg.messageTag = P_MSG_TAG_STOP; // with a stop message type
-   uint8_t flit[4 << TinselLogWordsPerFlit];
    // printf("Stopping task %s\n",task.c_str());
    // fflush(stdout);
    // go through each thread of the task,
@@ -432,7 +425,7 @@ unsigned TMoth::CmStop(string task)
      if ((tsk->second->status == TaskInfo_t::TASK_BARR) || (tsk->second->status == TaskInfo_t::TASK_RUN)) return 0;
    // if not, shut down the Twig thread.
    if (twig_running) StopTwig();
-   return 0;  
+   return 0;
    }
    case TaskInfo_t::TASK_STOP:
    case TaskInfo_t::TASK_END:
@@ -456,7 +449,7 @@ WALKVECTOR(FnMap_t*,FnMapx,F)
 fprintf(fp,"Function table for comm %d:\n", cIdx++);
 fprintf(fp,"Key        Method\n");
 WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x 0x%#010p\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x %018lx\n",(*i).first,(uint64_t)&(*i).second); //0x%010x
 }
 fprintf(fp,"Loaded tasks:\n");
 WALKMAP(string,TaskInfo_t*,TaskMap,Task)
@@ -521,7 +514,6 @@ unsigned TMoth::NameDist(PMsg_p* mTask_Info)
 // receive a broadcast core info block from the NameServer.
 {
       CMsg_p task_info(*mTask_Info);
-      TaskInfo_t* TaskInfo;
       string TaskName;
       task_info.Get(0, TaskName);
       map<string, TaskInfo_t*>::iterator T;
@@ -530,16 +522,14 @@ unsigned TMoth::NameDist(PMsg_p* mTask_Info)
          // printf("Inserting new task %s from NameDist\n", TaskName.c_str());
          // fflush(stdout);
 	 TaskMap[TaskName] = new TaskInfo_t(TaskName);
-	 T = --TaskMap.end();
       }
-      TaskInfo = T->second;
       vector<pair<unsigned,P_addr_t>> cores;
       task_info.Get(cores);
       // printf("Task %s has %d cores\n",TaskName.c_str(),cores.size());
       // fflush(stdout);
       // set up the cores
       for (vector<pair<unsigned,P_addr_t>>::iterator core = cores.begin(); core != cores.end(); core++)
-          TaskInfo->insertCore(core->first, core->second);
+          TaskMap[TaskName]->insertCore(core->first, core->second);
       // printf("%d cores inserted into TaskInfo structure for %s\n",cores.size(),TaskName.c_str());
       // fflush(stdout);
       return 0;
@@ -598,7 +588,6 @@ unsigned TMoth::NameTdir(const string& task, const string& dir)
          // printf("Inserting new task %s from NameTdir\n", task.c_str());
          // fflush(stdout);
 	 TaskMap[task] = new TaskInfo_t(task);
-	 T = --TaskMap.end();
       }
       TaskMap[task]->BinPath = dir;
       return 0;
@@ -642,7 +631,7 @@ void* TMoth::Twig(void* par)
      char Line[4*P_MSG_MAX_SIZE];
      fpos_t readPos;
      fpos_t writePos;
-     if (OutFile = fopen("./DebugOutput.txt", "a+"))
+     if ( (OutFile = fopen("./DebugOutput.txt", "a+")) )
      {
         fsetpos(OutFile, &readPos);
 	fsetpos(OutFile, &writePos);
@@ -838,9 +827,11 @@ W.Key(Q::SUPR);
 W.Src(Z->Tgt());
 int superReturn = 0;
 if ((superReturn = (*SupervisorCall)(Z,&W)) > 0) // Execute. Send a reply if one is expected
+{
   if (!cIdx && (Z->Tgt() == Urank) && (Z->Src() == Urank)) OnTinsel(&W, 0); // either to Tinsels,
   else W.Send(Z->Src());  // or to some external or internal process.
-if (superReturn < 0) Post(530, int2str(Urank)); 
+}
+if (superReturn < 0) Post(530, int2str(Urank));
 return 0;
 }
 
@@ -949,7 +940,7 @@ if (SuperHandle)                // then unload its Supervisor
    // clean up memory first
    int (*SupervisorExit)() = reinterpret_cast<int (*)()>(dlsym(SuperHandle, "SupervisorExit"));
    if (!SupervisorExit || (*SupervisorExit)() || dlclose(SuperHandle))
-   {  
+   {
       Post(534,int2str(Urank));
       SuperHandle = 0;          // even if we errored invalidate the Supervisor
    }

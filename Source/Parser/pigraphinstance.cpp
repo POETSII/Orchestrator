@@ -3,7 +3,7 @@
 #include "P_typdcl.h"
 
 PIGraphInstance::PIGraphInstance(const QString& name, PIGraphObject *parent) :
-    PConcreteInstance(name, "GraphInstance", QVector<int>({DEVINSTS, EDGEINSTS, SUPERINSTS}), parent), graph_type(NULL), graph_instance(NULL), supervisor(NULL)
+    PConcreteInstance(name, "GraphInstance", QVector<int>({DEVINSTS, EDGEINSTS, SUPERINSTS}), parent), graph_type(NULL), supervisor(NULL), graph_instance(NULL), graph_type_id(""), supervisor_type_id("")
 {
 
 }
@@ -17,13 +17,19 @@ void PIGraphInstance::defineObject(QXmlStreamReader* xml_def)
      // a later lookup can set the links if necessary.
      graph_type_id = xml_def->attributes().value("", "graphTypeId").toString();
      PIGraphRoot* root_object = dynamic_cast<PIGraphRoot*>(parent());
-     if (root_object != NULL) graph_type = static_cast<PIGraphType*>(root_object->subObject(PIGraphRoot::GTYPE, graph_type_id));
+     if (root_object == NULL)
+     {
+        while ((xml_def->readNext() != QXmlStreamReader::EndElement) || (xml_def->name() != xmlName()));
+        xml_def->raiseError(QString("Error: GraphInstance %1 is not contained in a <Graphs> tag").arg(name()));
+        return;
+     }
+     graph_type = static_cast<PIGraphType*>(root_object->subObject(PIGraphRoot::GTYPE, graph_type_id));
      if (xml_def->attributes().hasAttribute("", "supervisorDeviceTypeId"))
      {
-         supervisor_type_id = xml_def->attributes().value("", "supervisorDeviceTypeId").toString();
-         supervisor = new PDeviceInstance(true, supervisor_type_id, this);
+        supervisor_type_id = xml_def->attributes().value("", "supervisorDeviceTypeId").toString();
+        supervisor = new PDeviceInstance(true, supervisor_type_id, this);
      }
-     else if (supervisor = new PDeviceInstance(true, "", this)) supervisor_type_id = supervisor->deviceType()->name();
+     else if ((supervisor = new PDeviceInstance(true, "", this)) && (graph_type != NULL)) supervisor_type_id = supervisor->deviceType()->name();
      PIGraphBranch::defineObject(xml_def);
 }
 
@@ -103,23 +109,45 @@ P_task* PIGraphInstance::elaborateGraphInstance(OrchBase* orch_root)
          graph_instance = new P_task(orch_root, name().toStdString());
          // give it a (dummy) filename equal to the root's name.
          graph_instance->filename = static_cast<PIGraphObject*>(parent())->name().toStdString();
-         // add to the task map
-         orch_root->P_taskm[name().toStdString()] = graph_instance;
+         if (!graph_type) // graph type not already set up implies it was encountered later.
+         {
+            PIGraphRoot* graphRoot = dynamic_cast<PIGraphRoot*>(parent()); // could this error by graphRoot == NULL?
+            if (graph_type_id.isEmpty())
+            {
+               if (!(graph_type = static_cast<PIGraphType*>(graphRoot->subObject(PIGraphRoot::GTYPE, 0))))
+               {
+                  orch_root->Post(113,graph_instance->Name()); // no graph types available. Can't instantiate an instance.
+                  delete graph_instance;
+                  return NULL;
+               }
+               graph_type_id = graph_type->name();
+            }
+            if (!(graph_type = static_cast<PIGraphType*>(graphRoot->subObject(PIGraphRoot::GTYPE, graph_type_id))))
+            {
+               orch_root->Post(113,graph_instance->Name()); // required graph type unavailable. Can't instantiate an instance.
+               delete graph_instance;
+               return NULL;
+            }
+         }
          graph_instance->pD = new D_graph(graph_instance, QString(name()+"_graph").toStdString());
          graph_instance->pP_typdcl = graph_type->elaborateGraphType(orch_root);
          graph_instance->pP_typdcl->P_taskl.push_back(graph_instance);
          graph_instance->pD->pD = graph_instance->pP_typdcl;
          if (properties()) graph_instance->pD->pPropsI = const_cast<PIDataValue*>(properties())->elaborateDataValue();
          // now start adding device instances to the graph
-         for (unsigned int dev_inst = 0; dev_inst < numSubObjects(DEVINSTS); dev_inst++)
+         for (int dev_inst = 0; dev_inst < numSubObjects(DEVINSTS); dev_inst++)
          {
-             P_device* device = static_cast<PDeviceInstance*>(subObject(DEVINSTS, dev_inst))->elaborateDeviceInstance(graph_instance->pD);
-             device->idx = dev_inst;
-             graph_instance->pD->G.InsertNode(dev_inst, device);
+             PDeviceInstance* devInstance = static_cast<PDeviceInstance*>(subObject(DEVINSTS, dev_inst));
+             if (!devInstance->deviceType()) devInstance->setDeviceType(); // retrofit the device type if needed
+             P_device* device = devInstance->elaborateDeviceInstance(graph_instance->pD);
+             device->idx = static_cast<unsigned>(dev_inst);
+             graph_instance->pD->G.InsertNode(static_cast<unsigned>(dev_inst), device);
          }
          // insert a supervisor if one is available
          if (supervisor != NULL)
          {
+             if (!supervisor->deviceType()) supervisor->setDeviceType();
+             if (supervisor_type_id.isEmpty()) supervisor_type_id = supervisor->deviceType()->name();
              graph_instance->pSup = const_cast<PDeviceInstance*>(supervisor)->elaborateSupervisorInstance(graph_instance->pD);
              graph_instance->pSup->idx = P_device::super_idx;           // supervisor device has a max index
              graph_instance->pSup->addr.SetDevice(P_device::super_idx); // which needs to be propagated to the device address since it's not placed

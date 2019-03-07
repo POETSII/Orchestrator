@@ -1,7 +1,7 @@
 #include "pigraphbranch.h"
 
 PIGraphBranch::PIGraphBranch(const QString& name, const QString& xml_name, const QVector<int>& sub_objects, QObject *parent) :
-    PSubObjects(sub_objects, parent), PIGraphObject(name, xml_name, parent)
+    PIGraphObject(name, xml_name, parent), PSubObjects(sub_objects, parent)
 {
 
 }

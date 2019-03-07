@@ -9,7 +9,7 @@ void softswitch_main()
   volatile void *recvBuffer=0;
   volatile void *sendBuffer=tinselSlot(0);   // hardware send buffer is dedicated to the first tinsel slot
   volatile void *superBuffer[NUM_SUP_BUFS];  // buffers allocated for supervisor messages.
-  for (uint32_t sb = 0; sb < NUM_SUP_BUFS-1; sb++) superBuffer[sb] = tinselSlot(sb+1);
+  for (uint32_t sb = 0; sb < NUM_SUP_BUFS; sb++) superBuffer[sb] = tinselSlot(sb+1);
   softswitch_init(ThreadContext);
   // send a message to the local supervisor saying we are ready;
   // then wait for the __init__ message to return by interrogating tinselCanRecv(). 

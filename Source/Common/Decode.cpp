@@ -24,20 +24,20 @@ virtual unsigned Decode(PMsg_p * pPkt, unsigned cIdx)
 //  printf("%s::Decode ",Sderived.c_str());
                                        // Handler in the derived class?
 if (FnMapx[cIdx]->find(pPkt->Key())!=FnMapx[cIdx]->end()) {
-//  printf(".. derived, key 0x%x\n", pPkt->Key()); fflush(stdout);
+  // printf(".. derived, key 0x%x\n", pPkt->Key()); fflush(stdout);
   return (this->*(*FnMapx[cIdx])[pPkt->Key()])(pPkt,cIdx);
 }
                                        // Nope. Base class?
 if (CommonBase::FnMapx[cIdx]->find(pPkt->Key())!=CommonBase::FnMapx[cIdx]->end()) {
-//  printf(".. base, key 0x%x\n", pPkt->Key()); fflush(stdout);
+  // printf(".. base, key 0x%x\n", pPkt->Key()); fflush(stdout);
   return (this->*(*CommonBase::FnMapx[cIdx])[pPkt->Key()])(pPkt,cIdx);
 }
 // printf(".. dropped, key 0x%x\n", pPkt->Key()); fflush(stdout);
                                        // Nope. Kick.
                                        // Pull out the unknown key and post what
                                        // little we know to the LogServer
-Post(101,Sderived,int2str(pPkt->Src()),int2str(pPkt->Tgt()),
-     hex2str(pPkt->Key()));
+Post(101,Sderived,int2str(pPkt->Src()),pPmap[cIdx]->vPmap[pPkt->Src()].P_class,int2str(pPkt->Tgt()),
+     pPmap[cIdx]->vPmap[pPkt->Tgt()].P_class,hex2str(pPkt->Key()));
 return 0;                              // Return "keep going" value
 }
 

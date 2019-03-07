@@ -33,8 +33,8 @@ void Placement::DoLink()
 void Placement::Dump(FILE * fp)
 {
 fprintf(fp,"Placement+++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
-
+fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
+        (uint64_t) this, (uint64_t) par);
 fprintf(fp,"Placement-----------------------------------\n");
 fflush(fp);
 }
@@ -159,7 +159,7 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
     // current tinsel architecture shares I-memory between pairs of cores, so
     // for a new device type, if the postincremented core number is odd, we
     // need to increment again to get an even boundary.
-    if ((coreIterator->first & 0x1) && GetNext(pTh,Placement::core))
+    if (SHARED_INSTR_MEM && (coreIterator->first & 0x1) && GetNext(pTh,Placement::core))
     {
        par->Post(163, pT->Name()); // out of room. Abandon placement.
        return true;

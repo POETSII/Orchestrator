@@ -476,7 +476,7 @@ else
    system((string("scp -r ")+taskpath+task->first+"/"+BIN_PATH+" "+currBox->P_user+"@"+currBox->P_proc+":"+taskname).c_str());
 }
 PktD.comm = PktC.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
-printf("Sending a distribution message to mothership with %d cores\n", coreVec.size());
+printf("Sending a distribution message to mothership with %lu cores\n", coreVec.size());
 PktC.Put(&coreVec); // place the core map in the packet to this Mothership
 /*
 printf("Sending a single-core distribution message to mothership cores\n");

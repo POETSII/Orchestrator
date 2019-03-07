@@ -367,10 +367,6 @@ if (sname[0]->str == string("generic")) {
   return;
 }
 
-/*
-
-
-
 P.FndRecdVari(sect,"extents",recds);   // "Extents" record
                                        // Not there - bail
 if ((recds.size()!=1) && pLog->Post(302,pCommon->name)) return;

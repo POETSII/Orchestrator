@@ -12,6 +12,7 @@ const map<unsigned char,string> TaskInfo_t::Task_Status({{TaskInfo_t::TASK_IDLE,
 
 TaskInfo_t::TaskInfo_t(string name) : TaskName(name), BinPath(), CoreMap(), VCoreMap()
 {
+    VirtualBox = 0;
     status = TASK_IDLE;
 }
 
