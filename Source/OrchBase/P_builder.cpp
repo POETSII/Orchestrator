@@ -220,23 +220,23 @@ void P_builder::GenFiles(P_task* task)
      WALKVECTOR(P_pintyp*, supervisor_type->P_pintypIv, sI_pin)
      {
          sup_msgs.insert((*sI_pin)->pMsg);
-         const char* sIpin_name = (*sI_pin)->Name().c_str();
-         sup_pin_handlers << "unsigned super_InPin_" << sIpin_name << "_Recv_handler (const void* pinProps, void* pinState, const P_Sup_Msg_t* inMsg, PMsg_p* outMsg, void* msgBuf)\n";
+         string sIpin_name = (*sI_pin)->Name();
+         sup_pin_handlers << "unsigned super_InPin_" << sIpin_name.c_str() << "_Recv_handler (const void* pinProps, void* pinState, const P_Sup_Msg_t* inMsg, PMsg_p* outMsg, void* msgBuf)\n";
          sup_pin_handlers << s_handl_pre;
          sup_inPin_props.str("");
          if ((*sI_pin)->pPropsD)
          {
-             sup_inPin_typedefs << "typedef " << string((*sI_pin)->pPropsD->c_src).erase((*sI_pin)->pPropsD->c_src.length()-2).c_str() << " super_InPin_" << sIpin_name << "_props_t;\n\n";
-             sup_pin_handlers << "   const super_InPin_" << sIpin_name << "_props_t* sEdgeProperties = static_cast<const super_InPin_" << sIpin_name << "_props_t*>(pinProps);\n";
-             sup_inPin_props <<  "new const super_InPin_" << sIpin_name << "_props_t " << (*sI_pin)->pPropsI->c_src.c_str();
+             sup_inPin_typedefs << "typedef " << string((*sI_pin)->pPropsD->c_src).erase((*sI_pin)->pPropsD->c_src.length()-2).c_str() << " super_InPin_" << sIpin_name.c_str() << "_props_t;\n\n";
+             sup_pin_handlers << "   const super_InPin_" << sIpin_name.c_str() << "_props_t* sEdgeProperties = static_cast<const super_InPin_" << sIpin_name.c_str() << "_props_t*>(pinProps);\n";
+             sup_inPin_props <<  "new const super_InPin_" << sIpin_name.c_str() << "_props_t " << (*sI_pin)->pPropsI->c_src.c_str();
          }
          else sup_inPin_props << "0";
          sup_inPin_state.str("");
          if ((*sI_pin)->pStateD)
          {
-             sup_inPin_typedefs << "typedef " << string((*sI_pin)->pStateD->c_src).erase((*sI_pin)->pStateD->c_src.length()-2).c_str() << " super_InPin_" << sIpin_name << "_state_t;\n\n";
-             sup_pin_handlers << "   super_InPin_" << sIpin_name << "_state_t* sEdgeState = static_cast<super_InPin_" << sIpin_name << "_state_t*>(pinState);\n";
-             sup_inPin_state  << "new super_InPin_" << sIpin_name << "_state_t " << (*sI_pin)->pStateI->c_src.c_str();
+             sup_inPin_typedefs << "typedef " << string((*sI_pin)->pStateD->c_src).erase((*sI_pin)->pStateD->c_src.length()-2).c_str() << " super_InPin_" << sIpin_name.c_str() << "_state_t;\n\n";
+             sup_pin_handlers << "   super_InPin_" << sIpin_name.c_str() << "_state_t* sEdgeState = static_cast<super_InPin_" << sIpin_name.c_str() << "_state_t*>(pinState);\n";
+             sup_inPin_state  << "new super_InPin_" << sIpin_name.c_str() << "_state_t " << (*sI_pin)->pStateI->c_src.c_str();
          }
          else sup_inPin_state << "0";
          if ((*sI_pin)->pMsg->pPropsD) sup_pin_handlers << "   const s_msg_" << (*sI_pin)->pMsg->Name().c_str() << "_pyld_t* message = static_cast<const s_msg_" <<  (*sI_pin)->pMsg->Name().c_str() << "_pyld_t*>(static_cast<const void*>(inMsg->data));\n";
@@ -245,15 +245,15 @@ void P_builder::GenFiles(P_task* task)
          sup_pin_handlers << "   return 0;\n";
          sup_pin_handlers << s_handl_post;
          // this will create a new pin object - how should this be deleted on exit since it's held in a static class member?
-         sup_pin_vectors << "Supervisor::inputs.push_back(new supInputPin(&super_InPin_" << sIpin_name << "_Recv_handler," << sup_inPin_props.str().c_str() << "," << sup_inPin_state.str().c_str() << "));\n";
+         sup_pin_vectors << "Supervisor::inputs.push_back(new supInputPin(&super_InPin_" << sIpin_name.c_str() << "_Recv_handler," << sup_inPin_props.str().c_str() << "," << sup_inPin_state.str().c_str() << "));\n";
      }
      sup_pin_handlers << "\n";
      // output pin handlers
      WALKVECTOR(P_pintyp*, supervisor_type->P_pintypOv, sO_pin)
      {
          sup_msgs.insert((*sO_pin)->pMsg);
-         const char* sOpin_name = (*sO_pin)->Name().c_str();
-         sup_pin_handlers << "unsigned super_OutPin_" << sOpin_name << "_Send_handler (PMsg_p* outMsg, void* msgBuf, unsigned superMsg)\n";
+         string sOpin_name = (*sO_pin)->Name();
+         sup_pin_handlers << "unsigned super_OutPin_" << sOpin_name.c_str() << "_Send_handler (PMsg_p* outMsg, void* msgBuf, unsigned superMsg)\n";
          sup_pin_handlers << s_handl_pre;
          sup_pin_handlers << "   int s_c;\n";
          sup_pin_handlers << "   P_Sup_Msg_t* s_msg;\n";
@@ -297,7 +297,7 @@ void P_builder::GenFiles(P_task* task)
          // return number of messages to send if no error.
          sup_pin_handlers << "   return s_c;\n";
          sup_pin_handlers << s_handl_post;
-         sup_pin_vectors << "Supervisor::outputs.push_back(new supOutputPin(&super_OutPin_" << sOpin_name << "_Send_handler));\n";
+         sup_pin_vectors << "Supervisor::outputs.push_back(new supOutputPin(&super_OutPin_" << sOpin_name.c_str() << "_Send_handler));\n";
      }
      // supervisor message types. Note that for all objects with properties and state, both these values are optional so we need to check for their existence.
      WALKSET(P_message*, sup_msgs, s_msg)
@@ -341,8 +341,13 @@ void P_builder::GenFiles(P_task* task)
       // easy. Later this will need smoother access. It would be nice if we could define this as a const P_devtyp* but
       // unfortunately none of its member functions are const-qualified which hampers usability.
       P_devtyp* c_devtyp = (*(*board)->P_corev[core]->P_threadv[0]->P_devicel.begin())->pP_devtyp;
-      // for some reason the seemingly-innocuous commented line below doesn't work as expected. Apparently devtyp_name becomes volatile even though
-      // we aren't accessing the Name() field later in any way that might invalidate the pointer. Mysterious.
+      /* The seemingly-innocuous commented line below doesn't work as expected. Apparently devtyp_name becomes volatile even though
+         we aren't accessing the Name() field later in any way that might invalidate the pointer. This is because functions (such as
+         Name() return a temporary object (on the stack) and the c_str() function directly references its object to get the object's
+         internal string representation. Thus as soon as control moves beyond this line the string temporary returned by Name() goes
+         out of scope, and the pointer obtained through c_str() is invalidated.
+         See https://stackoverflow.com/questions/42542055/trouble-with-stdstring-c-str?noredirect=1&lq=1
+      */
       // const char* devtyp_name = c_devtyp->Name().c_str();
       vars_h << "#include <cstdint>\n";
       vars_h << "#include \"softswitch_common.h\"\n\n";
@@ -389,8 +394,6 @@ void P_builder::GenFiles(P_task* task)
           vars_h << "typedef " << string(c_devtyp->pStateD->c_src).erase(c_devtyp->pStateD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_state_t;\n\n";
           handl_pre_strm << "   devtyp_" << c_devtyp->Name().c_str() << "_state_t* deviceState __attribute__((unused)) = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_state_t*>(deviceInstance->state);\n";
       }
-      // same thing with this: clearly stream strings are moved about in memory! Seems daft.
-      // const char* handl_pre = handl_pre_strm.str().c_str();
       // end preamble
       const char* handl_post = "}\n\n";
       handlers_cpp << "\n";
@@ -409,20 +412,20 @@ void P_builder::GenFiles(P_task* task)
       // input pin variables and handlers
       for (vector<P_pintyp*>::iterator I_pin = c_devtyp->P_pintypIv.begin(); I_pin != c_devtyp->P_pintypIv.end(); I_pin++)
       {
-          const char* Ipin_name = (*I_pin)->Name().c_str();
-          handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_Recv_handler (const void* graphProps, void* device, void* edge, const void* msg);\n";
-          handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_Recv_handler (const void* graphProps, void* device, void* edge, const void* msg)\n";
+          string Ipin_name = (*I_pin)->Name();
+          handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name.c_str() << "_Recv_handler (const void* graphProps, void* device, void* edge, const void* msg);\n";
+          handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name.c_str() << "_Recv_handler (const void* graphProps, void* device, void* edge, const void* msg)\n";
           handlers_cpp << handl_pre_strm.str().c_str();
           handlers_cpp << "   inEdge_t* edgeInstance __attribute__((unused)) = static_cast<inEdge_t*>(edge);\n";
           if ((*I_pin)->pPropsD)
           {
-              vars_h << "typedef " << string((*I_pin)->pPropsD->c_src).erase((*I_pin)->pPropsD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t;\n\n";
-              handlers_cpp << "   const devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t* edgeProperties = static_cast<const devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_props_t*>(edgeInstance->properties);\n";
+              vars_h << "typedef " << string((*I_pin)->pPropsD->c_src).erase((*I_pin)->pPropsD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name.c_str() << "_props_t;\n\n";
+              handlers_cpp << "   const devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name.c_str() << "_props_t* edgeProperties = static_cast<const devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name.c_str() << "_props_t*>(edgeInstance->properties);\n";
           }
           if ((*I_pin)->pStateD)
           {
-              vars_h << "typedef " << string((*I_pin)->pStateD->c_src).erase((*I_pin)->pStateD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t;\n\n";
-              handlers_cpp << "   devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t* edgeState = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name << "_state_t*>(edgeInstance->state);\n";
+              vars_h << "typedef " << string((*I_pin)->pStateD->c_src).erase((*I_pin)->pStateD->c_src.length()-2).c_str() << " devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name.c_str() << "_state_t;\n\n";
+              handlers_cpp << "   devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name.c_str() << "_state_t* edgeState = static_cast<devtyp_" << c_devtyp->Name().c_str() << "_InPin_" << Ipin_name.c_str() << "_state_t*>(edgeInstance->state);\n";
           }
           if ((*I_pin)->pMsg->pPropsD) handlers_cpp << "   const msg_" << (*I_pin)->pMsg->Name().c_str() << "_pyld_t* message = static_cast<const msg_" <<  (*I_pin)->pMsg->Name().c_str() << "_pyld_t*>(msg);\n";
           handlers_cpp << (*I_pin)->pHandl->c_src.c_str() << "\n";
@@ -435,11 +438,11 @@ void P_builder::GenFiles(P_task* task)
       // output pin handlers
       for (vector<P_pintyp*>::iterator O_pin = c_devtyp->P_pintypOv.begin(); O_pin != c_devtyp->P_pintypOv.end(); O_pin++)
       {
-          const char* Opin_name = (*O_pin)->Name().c_str();
+          string Opin_name = (*O_pin)->Name();
           handlers_h << "const uint32_t RTS_INDEX_" << (*O_pin)->Name().c_str() << " = " << (*O_pin)->idx << ";\n";
           handlers_h << "const uint32_t RTS_FLAG_" << (*O_pin)->Name().c_str() << " = 0x1 << " << (*O_pin)->idx << ";\n";
-          handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OutPin_" << Opin_name << "_Send_handler (const void* graphProps, void* device, void* msg, uint32_t buffered);\n";
-          handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OutPin_" << Opin_name << "_Send_handler (const void* graphProps, void* device, void* msg, uint32_t buffered)\n";
+          handlers_h << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OutPin_" << Opin_name.c_str() << "_Send_handler (const void* graphProps, void* device, void* msg, uint32_t buffered);\n";
+          handlers_cpp << "uint32_t devtyp_" << c_devtyp->Name().c_str() << "_OutPin_" << Opin_name.c_str() << "_Send_handler (const void* graphProps, void* device, void* msg, uint32_t buffered)\n";
           handlers_cpp << handl_pre_strm.str().c_str();
           if ((*O_pin)->pMsg->pPropsD) handlers_cpp << "   msg_" << (*O_pin)->pMsg->Name().c_str() << "_pyld_t* message = static_cast<msg_" <<  (*O_pin)->pMsg->Name().c_str() << "_pyld_t*>(msg);\n";
           handlers_cpp << (*O_pin)->pHandl->c_src.c_str() << "\n";
@@ -639,7 +642,7 @@ void P_builder::WriteThreadVars(string& task_dir, unsigned int core_num, unsigne
              for (vector<P_pintyp*>::iterator pin = t_devtyp->P_pintypOv.begin(); pin != t_devtyp->P_pintypOv.end(); pin++)
              {
                  initialiser_2 << "{0,&Thread_" << thread_num << "_DevTyp_0_OutputPins[" << (*pin)->idx << "],{},0,0,";
-                 if (!(*device)->par->G.FindArcs((*device)->idx,(*pin)->idx,in_pin_idxs,out_pin_idxs)) initialiser_2 << "0,0},";
+                 if ((!(*device)->par->G.FindArcs((*device)->idx,(*pin)->idx,in_pin_idxs,out_pin_idxs)) || !out_pin_idxs.size()) initialiser_2 << "0,0,0,0},";
                  else
                  {
                     vars_h << "extern outEdge_t Thread_" << thread_num << "_Device_" << (*device)->Name().c_str() << "_OutPin_" << (*pin)->Name().c_str() << "_Tgts[" << out_pin_idxs.size() << "];\n";

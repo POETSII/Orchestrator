@@ -37,6 +37,7 @@ public:
 
 //inline void handler_log(int level, const char * msg, ...) {handler_log_msg message; if (!message.pack_fmtstr(msg)) message.send_msg();};
 template<typename... F> inline void handler_log(int level, const char * msg, F... args)  {handler_log_msg message; if (!message.pack_fmtstr(msg)) message.send_msg();};
+inline void assert(int expression) {return;};
 
 #else
 

@@ -134,7 +134,7 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
     // current tinsel architecture shares I-memory between pairs of cores, so
     // for a new device type, if the postincremented core number is odd, we
     // need to increment again to get an even boundary.
-    if (((*Nco)->addr.A_core & 0x1) && GetNext(pTh,Placement::core))
+    if (SHARED_INSTR_MEM && ((*Nco)->addr.A_core & 0x1) && GetNext(pTh,Placement::core))
     {
        par->Post(163, pT->Name()); // out of room. Abandon placement.
        return true;

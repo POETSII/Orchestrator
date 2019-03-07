@@ -91,7 +91,7 @@ const unsigned int p_super_data_size = sizeof(P_Sup_Msg_t)-sizeof(P_Sup_Hdr_t);
 inline size_t p_msg_size() {return sizeof(P_Msg_t);};
 inline size_t p_hdr_size() {return sizeof(P_Msg_Hdr_t);};
 inline size_t p_sup_msg_size() {return sizeof(P_Sup_Msg_t);};
-inline size_t p_sup_hdr_size() {return sizeof(P_Sup_Hdr_t);};size_t p_msg_size();
+inline size_t p_sup_hdr_size() {return sizeof(P_Sup_Hdr_t);};
 // message buffers (last argument) in the message setters must be volatile because we might wish
 // to write directly to a hardware resource containing the buffer, which in general may be volatile.
 void set_msg_hdr(uint32_t, uint32_t, uint8_t, uint8_t, uint16_t = 0, P_Msg_Hdr_t* = 0);

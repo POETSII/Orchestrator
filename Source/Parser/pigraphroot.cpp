@@ -4,7 +4,7 @@
 #include "pmetadatapatch.h"
 #include <QFile>
 
-PIGraphRoot::PIGraphRoot(const QString& name, QObject *parent) : PIGraphBranch(name, "Graphs", QVector<int>({HEADER, GTYPE, GINST, METAP}), parent), obj_id_counter(0), orchestrator(NULL)
+PIGraphRoot::PIGraphRoot(const QString& name, QObject *parent) : PIGraphBranch(name, "Graphs", QVector<int>({HEADER, GTYPE, GINST, METAP}), parent), orchestrator(NULL), obj_id_counter(0), xml_hdr("")
 {
 
 }
@@ -104,7 +104,7 @@ const PIGraphObject* PIGraphRoot::appendSubObject(QXmlStreamReader* xml_def)
         }
         if (iref_def.atEnd())
         {
-           xml_def->raiseError(QString("Error: GraphInstance %s not found in reference file %s").arg(xml_def->attributes().value("", "id").toString()).arg(xml_def->attributes().value("", "src").toString()));
+           xml_def->raiseError(QString("Error: GraphInstance %1 not found in reference file %2").arg(xml_def->attributes().value("", "id").toString()).arg(xml_def->attributes().value("", "src").toString()));
            return sub_object;
         }
      }
@@ -142,7 +142,8 @@ void PIGraphRoot::elaborateRoot(OrchBase* orch_in)
         t_name = static_cast<PIGraphInstance*>(*graph_inst)->name().toStdString();
         if (orchestrator->P_taskm.find(t_name)==orchestrator->P_taskm.end()) // does the task already exist?
         {
-           orchestrator->P_taskm[t_name] = static_cast<PIGraphInstance*>(*graph_inst)->elaborateGraphInstance(orchestrator); //if not set it up
+           P_task* task = 0;
+           if ((task = static_cast<PIGraphInstance*>(*graph_inst)->elaborateGraphInstance(orchestrator)) != NULL) orchestrator->P_taskm[t_name] = task; //if not set it up
         }
         else orchestrator->Post(49,t_name);
     }

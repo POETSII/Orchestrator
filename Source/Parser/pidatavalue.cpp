@@ -1,7 +1,7 @@
 #include "pidatavalue.h"
 #include <algorithm>
 
-PIDataValue::PIDataValue(const QString& name, PIGraphObject *parent) : PIGraphLeaf(name, parent), elaborated_value(""), data_type(NULL)
+PIDataValue::PIDataValue(const QString& name, PIGraphObject *parent) : PIGraphLeaf(name, parent), data_type(NULL), elaborated_value("")
 {
 
 }
