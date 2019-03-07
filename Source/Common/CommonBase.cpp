@@ -294,7 +294,7 @@ for (;;) {
 //  printf("MPISpinner: waiting...\n");  fflush(stdout);
     int i=0;
     do { i++; MPI_Test(&request,&flag,&status); } while (flag==0);
-//  printf("MPISpinner: after %d, %s has landed\n",i,&MPI_Buf[0]);  fflush(stdout);
+    // printf("MPISpinner on process %d: after %d, %s has landed\n",Urank,i,&MPI_Buf[0]);  fflush(stdout);
     PMsg_p Pkt((byte *)&MPI_Buf[0],count);// Turn it into a packet
     Pkt.Ztime(1,MPI_Wtime());            // Timestamp arrival
     if (Decode(&Pkt,cIdx)!=0) return;    // Do it, possibly leaving afterwards

@@ -19,7 +19,7 @@ public:
     void defineObject(QXmlStreamReader* xml_def);
     const PIGraphObject* appendSubObject(QXmlStreamReader* xml_def);
     void elaborateEdge(D_graph* graph_rep);
-    inline void setPropsDataType(const PIDataType* data_type = 0) {PConcreteInstance::setPropsDataType(path.dst.pin->properties());};
+    inline void setPropsDataType(const PIDataType* data_type = 0) {PConcreteInstance::setPropsDataType(path.dst.pin ? NULL : path.dst.pin->properties());};
 
 private:
 

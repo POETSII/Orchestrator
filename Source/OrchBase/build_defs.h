@@ -18,6 +18,7 @@ extern const unsigned int CORES_PER_BOARD;
 extern const unsigned int BOARDS_PER_BOX;
 extern const unsigned int MEM_PER_BOARD;
 extern const unsigned int PIN_POS;
+extern const bool         SHARED_INSTR_MEM;
 extern const std::string STATIC_SRC_PATH;
 extern const std::string COMMON_PATH;
 extern const std::string TINSEL_PATH;

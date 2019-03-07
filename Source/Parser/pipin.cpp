@@ -1,7 +1,7 @@
 #include "pipin.h"
 #include "pigraphtype.h"
 
-PIPin::PIPin(QObject *parent) : QObject(parent), tmp_msg_id(new QString()), pin_type(NULL)
+PIPin::PIPin(QObject *parent) : QObject(parent), pin_type(NULL), msg_type(NULL), tmp_msg_id(new QString())
 {
 
 }
