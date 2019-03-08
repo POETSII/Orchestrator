@@ -24,37 +24,43 @@ void softswitch_main()
        Best that can be done is a command from the Supervisor that sets an
        end flag.
      */
+    
+    uint8_t toggleTCS;
+    uint8_t loopActive;
+    
     while (!ThreadContext->ctlEnd)
     {
-        // softswitch_alive(superBuffer[0]); // *debug: send periodic message to host*
-        // handle the receive case first as the highest priority.
-        if ((ThreadContext->receiveHasPriority || !softswitch_IsRTSReady(ThreadContext)) && tinselCanRecv())
+        toggleTCS = loopActive = 0;
+        
+        if (tinselCanRecv())        // Do receive first
         {
-            // softswitch_alive(superBuffer[0]); // *debug: send periodic message to host*
             recvBuffer=tinselRecv();
             softswitch_onReceive(ThreadContext, recvBuffer); // decode the receive and handle
             tinselAlloc(recvBuffer); // return control of the receive buffer to the hardware
+            loopActive++; // Mark that we have done something this loop.
         }
-        // softswitch_IsRTSReady would be more cleanly done as a method of
-        // a class PThreadContext.
-        else if (softswitch_IsRTSReady(ThreadContext))
+        
+        if (softswitch_IsRTSReady(ThreadContext)) // Now try a send
         {
-            // something to send, but channel is blocked. Do whatever idle
-            // processing can be achieved; if literally nothing can be done
-            // wait until there is something to do.
-            if (!tinselCanSend())
-            {
-                if (!softswitch_onIdle(ThreadContext)) tinselWaitUntil(TINSEL_CAN_SEND | TINSEL_CAN_RECV);
+            if (!tinselCanSend())         //Channel is blocked, flag it.
+            {             
+                toggleTCS = TINSEL_CAN_SEND;
             }
-            // otherwise deal with messages to send.
-            else
+            else    
             {
-                // softswitch_alive(superBuffer[0]); // *debug: send periodic message to host*
                 softswitch_onSend(ThreadContext, sendBuffer);
+                loopActive++; // Mark that we have done something this loop.
             }
         }
-        else if (!softswitch_onIdle(ThreadContext)) tinselWaitUntil(TINSEL_CAN_RECV); // thread is idle.
+        
+        // If we have done nothing, do whatever idle processing can be achieved; 
+        // if literally nothing can be done wait until there is something to do.
+        if (!loopActive && !softswitch_onIdle(ThreadContext)) 
+        {
+            tinselWaitUntil(TINSEL_CAN_RECV | toggleTCS); // thread is idle.
+        }
     }
+    
     softswitch_finalize(ThreadContext, &sendBuffer, &recvBuffer, superBuffer); // shut down once the end signal has been received.
 }
 
