@@ -25,7 +25,7 @@ void softswitch_main()
        end flag.
      */
     
-    uint8_t toggleTCS;
+    TinselWakeupCond toggleTCS;
     uint8_t loopActive;
     
     while (!ThreadContext->ctlEnd)
