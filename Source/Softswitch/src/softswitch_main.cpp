@@ -30,7 +30,8 @@ void softswitch_main()
     
     while (!ThreadContext->ctlEnd)
     {
-        toggleTCS = loopActive = 0;
+        toggleTCS = TINSEL_CAN_RECV;
+        loopActive = 0;
         
         if (tinselCanRecv())        // Do receive first
         {
