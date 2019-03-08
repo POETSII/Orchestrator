@@ -15,70 +15,70 @@ struct PInputPin;
 
 typedef struct p_message_q
 {
-  P_Msg_t msg;
-  p_message_q* prev;
-  p_message_q* next;
+    P_Msg_t msg;
+    p_message_q* prev;
+    p_message_q* next;
 } P_Msg_Q_t;
 
 typedef uint32_t (*RTS_handler_t)
-(const void* graphProps,
- void*       device,
- uint32_t*   readyToSend,
- void**      msg_buf
+(   const void* graphProps,
+    void*       device,
+    uint32_t*   readyToSend,
+    void**      msg_buf
 );
 
 typedef uint32_t (*OnIdle_handler_t)
-(const void* graphProps,
- void*       device
+(   const void* graphProps,
+    void*       device
 );
 
 typedef uint32_t (*OnCtl_handler_t)
-(const void* graphProps,
- void*       device,
- const void* msg
+(   const void* graphProps,
+    void*       device,
+    const void* msg
 );
 
 typedef uint32_t (*Recv_handler_t)
-(const void* graphProps,
- void*       device,
- void*       edge,
- const void* msg
+(   const void* graphProps,
+    void*       device,
+    void*       edge,
+    const void* msg
 );
 
 typedef uint32_t (*Send_handler_t)
-(const void* graphProps,
- void*       device,
- void*       msg,
- uint32_t    buffered
+(   const void* graphProps,
+    void*       device,
+    void*       msg,
+    uint32_t    buffered
 );
 
 typedef struct PInputType
 {
-  Recv_handler_t Recv_handler;
-  uint32_t       sz_msg;
-  uint32_t       msgType;
-  uint32_t       sz_props;
-  uint32_t       sz_state;
+    Recv_handler_t Recv_handler;
+    uint32_t       sz_msg;
+    uint32_t       msgType;
+    uint32_t       sz_props;
+    uint32_t       sz_state;
 } in_pintyp_t;
 
 typedef struct POutputType
 {
-  Send_handler_t Send_Handler;
-  uint32_t       sz_msg;
-  uint32_t       msgType;
+    Send_handler_t Send_Handler;
+    uint32_t       sz_msg;
+    uint32_t       msgType;
 } out_pintyp_t;
 
 typedef struct PDeviceType
 {
-  RTS_handler_t     RTS_Handler;
-  OnIdle_handler_t  OnIdle_Handler;
-  OnCtl_handler_t   OnCtl_Handler;
-  uint32_t          sz_props;
-  uint32_t          sz_state;
-  uint32_t          numInputTypes;
-  in_pintyp_t*      inputTypes;
-  uint32_t          numOutputTypes;
-  out_pintyp_t*     outputTypes;
+    RTS_handler_t     RTS_Handler;
+    OnIdle_handler_t  OnIdle_Handler;
+    OnCtl_handler_t   OnCtl_Handler;
+    uint32_t          sz_props;
+    uint32_t          sz_state;
+    uint32_t          numInputTypes;
+    in_pintyp_t*      inputTypes;
+    uint32_t          numOutputTypes;
+    out_pintyp_t*     outputTypes;
 } devTyp_t;
 
 // this maps output edges by target (device, pin, edge_index). While
@@ -88,77 +88,77 @@ typedef struct PDeviceType
 
 typedef struct POutputEdge
 {
-  POutputPin*        pin;        // back pointer to pin
-  uint32_t           tgt;        // destination device
-  uint32_t           tgtPin;     // destination pin
-  uint32_t           tgtEdge;    // destination edge index
+    POutputPin*       pin;        // back pointer to pin
+    uint32_t          tgt;        // destination device
+    uint32_t          tgtPin;     // destination pin
+    uint32_t          tgtEdge;    // destination edge index
 } outEdge_t;
 
 typedef struct POutputPin
 {
-  PDeviceInstance*  device;
-  out_pintyp_t*     pinType;
-  P_Msg_Q_t         msg_q_buf[P_MSG_Q_MAXCOUNT];
-  P_Msg_Q_t*        msg_q_head;
-  P_Msg_Q_t*        msg_q_tail;
-  uint32_t          numTgts;
-  outEdge_t*        targets;
-  POutputPin*       RTSPinPrev;
-  POutputPin*       RTSPinNext;
+    PDeviceInstance*  device;
+    out_pintyp_t*     pinType;
+    P_Msg_Q_t         msg_q_buf[P_MSG_Q_MAXCOUNT];
+    P_Msg_Q_t*        msg_q_head;
+    P_Msg_Q_t*        msg_q_tail;
+    uint32_t          numTgts;
+    outEdge_t*        targets;
+    POutputPin*       RTSPinPrev;
+    POutputPin*       RTSPinNext;
 } outPin_t;
 
 // this maps input edges by pin.
 
 typedef struct PInputEdge
 {
-  const PInputPin*   pin;        // back pointer to pin
-  uint32_t           tgt;        // destination device (for convenience)
-  uint32_t           src;        // source device (for convenience)
-  const void*        properties; // globally available
-  void*              state;
+    const PInputPin*  pin;        // back pointer to pin
+    uint32_t          tgt;        // destination device (for convenience)
+    uint32_t          src;        // source device (for convenience)
+    const void*       properties; // globally available
+    void*             state;
 } inEdge_t;
 
 // this maps input pins by device
 
 typedef struct PInputPin
 {
-  const PDeviceInstance*   device;
-  in_pintyp_t*             pinType;
-  uint32_t                 numSrcs;
-  inEdge_t*                sources;
+    const PDeviceInstance*   device;
+    in_pintyp_t*             pinType;
+    uint32_t                 numSrcs;
+    inEdge_t*                sources;
 } inPin_t;
   
 typedef struct PDeviceInstance
 {
-  PThreadContext*                     thread;
-  const devTyp_t*                     devType;
-  uint32_t                            deviceID;
-  uint32_t                            numInputs;
-  inPin_t*                            inputPins;
-  uint32_t                            numOutputs;
-  outPin_t*                           outputPins;
-  const void*                         properties;
-  void*                               state;
-  PDeviceInstance*                    RTSPrev;
-  PDeviceInstance*                    RTSNext;
-  outPin_t*                           RTSPinHead;
-  outPin_t*                           RTSPinTail;
-  uint32_t                            currTgt; // device to send to for current RTS pin
+    PThreadContext*                     thread;
+    const devTyp_t*                     devType;
+    uint32_t                            deviceID;
+    uint32_t                            numInputs;
+    inPin_t*                            inputPins;
+    uint32_t                            numOutputs;
+    outPin_t*                           outputPins;
+    const void*                         properties;
+    void*                               state;
+    PDeviceInstance*                    RTSPrev;
+    PDeviceInstance*                    RTSNext;
+    outPin_t*                           RTSPinHead;
+    outPin_t*                           RTSPinTail;
+    uint32_t                            currTgt; // device to send to for current RTS pin
 } devInst_t;
 
 typedef struct PThreadContext
 {
-  PThreadContext*    virtualAddr; // used to calculate offsets at initialisation time
-  uint32_t           numDevTyps;
-  devTyp_t*          devTyps;
-  uint32_t           numDevInsts;
-  devInst_t*         devInsts;
-  const void*        properties;
-  devInst_t*         RTSHead;
-  devInst_t*         RTSTail;
-  uint32_t           nextOnIdle;
-  uint32_t           receiveHasPriority;
-  uint32_t           ctlEnd;
+    PThreadContext*    virtualAddr; // used to calculate offsets at initialisation time
+    uint32_t           numDevTyps;
+    devTyp_t*          devTyps;
+    uint32_t           numDevInsts;
+    devInst_t*         devInsts;
+    const void*        properties;
+    devInst_t*         RTSHead;
+    devInst_t*         RTSTail;
+    uint32_t           nextOnIdle;
+    uint32_t           receiveHasPriority;
+    uint32_t           ctlEnd;
 } ThreadCtxt_t;
 
 // these functions would be more cleanly done as methods of a class PThread.
@@ -206,4 +206,4 @@ P_Msg_Q_t* softswitch_nextMsg(outPin_t* pin);
 // workaround bodge for some unfinished business in the XML handler fragments. Should be fixed in the XML.
 inline uint32_t handler_exit(uint32_t code) {return code;};
 
-#endif
+#endif //_SOFTSWITCH_COMMON_H_
