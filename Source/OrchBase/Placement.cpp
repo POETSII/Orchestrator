@@ -48,44 +48,54 @@ bool Placement::GetNext(P_thread *& prTh, P_stride stride)
 {
     bool didWeWrap = false;
 
-    // Increment the thread, then check to see if we've run out of threads on
-    // the current core.
-    threadIterator++;
-    if (threadIterator == coreIterator->second->P_threadm.end())
+    // If this is the first time we're getting the "next" thread, we want to
+    // return the first thread in the hardware stack. In doing this, mark the
+    // iterators as dirty so that the next iteration returns the second thread.
+    if (areIteratorsClean)
     {
-        // Increment the core, then check to see if we've run out of cores on
-        // the current mailbox.
-        coreIterator++;
-        if (coreIterator == mailboxIterator->second.data->P_corem.end())
+        areIteratorsClean = false;
+    }
+    else
+    {
+        // Increment the thread, then check to see if we've run out of threads
+        // on the current core.
+        threadIterator++;
+        if (threadIterator == coreIterator->second->P_threadm.end())
         {
-            // Increment the mailbox, then check to see if we've run out of
-            // mailboxes on the current board.
-            mailboxIterator++;
-            if (mailboxIterator ==
-                boardIterator->second.data->G.NodeEnd())
+            // Increment the core, then check to see if we've run out of cores
+            // on the current mailbox.
+            coreIterator++;
+            if (coreIterator == mailboxIterator->second.data->P_corem.end())
             {
-                // Increment the board, then check to see if we've run out of
-                // boards in the current engine.
-                if (boardIterator == par->pE->G.NodeEnd())
+                // Increment the mailbox, then check to see if we've run out of
+                // mailboxes on the current board.
+                mailboxIterator++;
+                if (mailboxIterator ==
+                    boardIterator->second.data->G.NodeEnd())
                 {
-                    // Out of boards, we're done here.
-                    boardIterator = par->pE->G.NodeBegin();
-                    didWeWrap = true;
+                    // Increment the board, then check to see if we've run out
+                    // of boards in the current engine.
+                    if (boardIterator == par->pE->G.NodeEnd())
+                    {
+                        // Out of boards, we're done here.
+                        boardIterator = par->pE->G.NodeBegin();
+                        didWeWrap = true;
+                    }
+                    // Now we have a new board, set the mailbox iterator to
+                    // point to the first mailbox in that board.
+                    mailboxIterator =
+                        boardIterator->second.data->G.NodeBegin();
                 }
-                // Now we have a new board, set the mailbox iterator to point
-                // to the first mailbox in that board.
-                mailboxIterator =
-                    boardIterator->second.data->G.NodeBegin();
+
+                // Now we have a new mailbox, set the core iterator to point to
+                // the first core in that mailbox.
+                coreIterator = mailboxIterator->second.data->P_corem.end();
             }
 
-            // Now we have a new mailbox, set the core iterator to point to the
-            // first core in that mailbox.
-            coreIterator = mailboxIterator->second.data->P_corem.end();
+            // Now we have a new core, set the thread iterator to point to the
+            // first thread on that core.
+            threadIterator = coreIterator->second->P_threadm.begin();
         }
-
-        // Now we have a new core, set the thread iterator to point to the
-        // first thread on that core.
-        threadIterator = coreIterator->second->P_threadm.begin();
     }
 
     // Set thread pointer and return.
@@ -102,6 +112,7 @@ void Placement::Init()
     mailboxIterator = boardIterator->second.data->G.NodeBegin();
     coreIterator = mailboxIterator->second.data->P_corem.begin();
     threadIterator = coreIterator->second->P_threadm.begin();
+    areIteratorsClean = true;
 }
 
 //------------------------------------------------------------------------------
@@ -109,7 +120,7 @@ void Placement::Init()
 bool Placement::Place(P_task * pT)
 // Place a task.
 {
-P_thread * pTh = 0;
+P_thread* pTh;
 
 WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
 {

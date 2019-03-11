@@ -47,6 +47,9 @@ pdigraph<AddressComponent, P_mailbox*,
          unsigned, P_port*>::TPn_it mailboxIterator;
 map<AddressComponent, P_core*>::iterator coreIterator;
 map<AddressComponent, P_thread*>::iterator threadIterator;
+
+private:
+bool               areIteratorsClean;
 };
 
 //==============================================================================
