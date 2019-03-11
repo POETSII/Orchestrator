@@ -429,11 +429,11 @@ if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par =
     HardwareAddress* threadHardwareAddress;
     threadHardwareAddress = thread->second->get_hardware_address();
     P_addr_t threadFullAddress;
-    threadFullAddress.A_box = threadHardwareAddress->get_box(),
-    threadFullAddress.A_board = threadHardwareAddress->get_board(),
-    threadFullAddress.A_mailbox = threadHardwareAddress->get_mailbox(),
-    threadFullAddress.A_core = threadHardwareAddress->get_core(),
-    threadFullAddress.A_thread = threadHardwareAddress->get_thread(),
+    threadFullAddress.A_box = threadHardwareAddress->get_box();
+    threadFullAddress.A_board = threadHardwareAddress->get_board();
+    threadFullAddress.A_mailbox = threadHardwareAddress->get_mailbox();
+    threadFullAddress.A_core = threadHardwareAddress->get_core();
+    threadFullAddress.A_thread = threadHardwareAddress->get_thread();
     coreVec.push_back(pair<unsigned, P_addr_t>
                       (coreNum++, threadFullAddress));
 
