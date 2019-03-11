@@ -58,6 +58,10 @@ private:
     pdigraph<AddressComponent, P_board*,
              unsigned, P_link*,
              unsigned, P_port*>::TPn_it boardIterator;
+    /* NB: Could simply use a map<AddressComponent, P_board*>::iterator. Also,
+     * can be initialised with engine->G.index_n.begin() instead of calling the
+     * pdigraph NodeBegin method, if we want to iterate backwards in future for
+     * whatever reason <!>. This also holds for mailboxIterator. */
     pdigraph<AddressComponent, P_mailbox*,
              unsigned, P_link*,
              unsigned, P_port*>::TPn_it mailboxIterator;
