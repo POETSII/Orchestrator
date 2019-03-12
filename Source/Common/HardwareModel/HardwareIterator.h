@@ -54,17 +54,10 @@ public:
 private:
     P_engine* engine;
 
-    /* The sub-iterators. */
-    pdigraph<AddressComponent, P_board*,
-             unsigned, P_link*,
-             unsigned, P_port*>::TPn_it boardIterator;
-    /* NB: Could simply use a map<AddressComponent, P_board*>::iterator. Also,
-     * can be initialised with engine->G.index_n.begin() instead of calling the
-     * pdigraph NodeBegin method, if we want to iterate backwards in future for
-     * whatever reason <!>. This also holds for mailboxIterator. */
-    pdigraph<AddressComponent, P_mailbox*,
-             unsigned, P_link*,
-             unsigned, P_port*>::TPn_it mailboxIterator;
+    /* The sub-iterators. Board and mailbox iterator iterate over graph nodes,
+     * which are stored in a map in the graph object (as index_n). */
+    std::map<AddressComponent, P_board*>::iterator boardIterator;
+    std::map<AddressComponent, P_mailbox*>::iterator mailboxIterator;
     std::map<AddressComponent, P_core*>::iterator coreIterator;
     std::map<AddressComponent, P_thread*>::iterator threadIterator;
 
