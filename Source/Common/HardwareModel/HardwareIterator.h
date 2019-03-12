@@ -42,6 +42,15 @@ public:
     bool has_item_changed(int itemIndex);
     bool has_wrapped();
 
+    /* Methods for (re)initialising iterators. These are called when
+     * HardwareIterator is initialised, and when the item on the lower level
+     * is incremented over a boundary. */
+    void reset_all_iterators();
+    void reset_board_iterator();
+    void reset_mailbox_iterator();
+    void reset_core_iterator();
+    void reset_thread_iterator();
+
     /* Incrementers, returns incremented items */
     P_board* next_board();
     P_mailbox* next_mailbox();
@@ -60,12 +69,6 @@ private:
     std::map<AddressComponent, P_mailbox*>::iterator mailboxIterator;
     std::map<AddressComponent, P_core*>::iterator coreIterator;
     std::map<AddressComponent, P_thread*>::iterator threadIterator;
-
-    /* Methods for (re)initialising iterators, for when they overrun. */
-    void initialise_board_iterator();
-    void initialise_mailbox_iterator();
-    void initialise_core_iterator();
-    void initialise_thread_iterator();
 
     /* Variables to store whether certain levels of the hierarchy have
      * changed. */

@@ -13,11 +13,7 @@ HardwareIterator::HardwareIterator(P_engine* engine):
     Name("Iterator for engine \"%s\"", P_engine->FullName().c_str());
     Npar(engine);
 
-    /* Initialise iterators. */
-    initialise_board_iterator();
-    initialise_mailbox_iterator();
-    initialise_core_iterator();
-    initialise_thread_iterator();
+    reset_all_iterators();
 
     /* Initialise "has the item changed" booleans. */
     for (int i = 0; i < 4; i++){itemChanged.push_back(false)}
@@ -59,27 +55,6 @@ bool HardwareIterator::has_wrapped()
     bool output = isWrapped;
     isWrapped = false;
     return isWrapped;
-}
-
-/* Methods for (re)initialising iterators, for when they overrun. */
-void HardwareIterator::initialise_board_iterator()
-{
-    boardIterator = engine->G.NodeBegin();
-}
-
-void HardwareIterator::initialise_mailbox_iterator()
-{
-    mailboxIterator = boardIterator->second.data->G.NodeBegin();
-}
-
-void HardwareIterator::initialise_core_iterator()
-{
-    coreIterator = mailboxIterator->second.data->P_corem.begin();
-}
-
-void HardwareIterator::initialise_thread_iterator()
-{
-    threadIterator = coreIterator->second->P_threadm.begin();
 }
 
 /* Incrementers! These all take no arguments, iterate to the next level of the
@@ -150,6 +125,35 @@ P_core* HardwareIterator::next_board()
     itemChanged[3] = true;
 
     return get_board();
+}
+
+/* Methods for resetting (re)initialising iterators. */
+void HardwareIterator::reset_all_iterators()
+{
+    reset_board_iterator();
+    reset_mailbox_iterator();
+    reset_core_iterator();
+    reset_thread_iterator();
+}
+
+void HardwareIterator::reset_board_iterator()
+{
+    boardIterator = engine->G.NodeBegin();
+}
+
+void HardwareIterator::reset_mailbox_iterator()
+{
+    mailboxIterator = boardIterator->second.data->G.NodeBegin();
+}
+
+void HardwareIterator::reset_core_iterator()
+{
+    coreIterator = mailboxIterator->second.data->P_corem.begin();
+}
+
+void HardwareIterator::reset_thread_iterator()
+{
+    threadIterator = coreIterator->second->P_threadm.begin();
 }
 
 /* Write debug and diagnostic information about this iterator using
