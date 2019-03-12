@@ -29,7 +29,7 @@ HardwareIterator::HardwareIterator(P_engine* engine, bool checkEngine):
  * contain at least one thread.
  *
  * Raises IteratorException if the aforementioned statement is not true. */
-bool check_engine()
+void check_engine()
 {
     std::string exceptionHeader = dformat("Cannot construct iterator for "
                                           "engine \"%s\"",

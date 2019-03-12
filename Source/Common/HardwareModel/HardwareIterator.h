@@ -72,7 +72,7 @@ private:
 
     /* Checks whether or not the engine we're iterating over is correctly
      * defined. */
-    bool check_engine();
+    void check_engine();
 
     /* The sub-iterators. Board and mailbox iterator iterate over graph nodes,
      * which are stored in a map in the graph object (as index_n). */
