@@ -14,10 +14,15 @@
  *   the "isWrapped" member to true.
  *
  * - Don't try to use this if the engine changes; just replace it with another
- *   instance (nothing is dynamic here). */
+ *   instance (nothing is dynamic here).
+ *
+ * - Construction will fall over brutally if the engine is not populated with
+ *   at least one thread.
+ */
 
 #include "dumpchan.h"
 #include "HardwareModel.h"
+#include "IteratorException.h"
 #include "pdigraph.hpp"
 
 class HardwareIterator: public NameBase, public DumpChan
@@ -62,6 +67,10 @@ public:
 
 private:
     P_engine* engine;
+
+    /* Checks whether or not the engine we're iterating over is correctly
+     * defined. */
+    bool check_engine();
 
     /* The sub-iterators. Board and mailbox iterator iterate over graph nodes,
      * which are stored in a map in the graph object (as index_n). */

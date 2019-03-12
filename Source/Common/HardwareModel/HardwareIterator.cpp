@@ -13,11 +13,75 @@ HardwareIterator::HardwareIterator(P_engine* engine):
     Name("Iterator for engine \"%s\"", P_engine->FullName().c_str());
     Npar(engine);
 
+    check_engine();
     reset_all_iterators();
 
     /* Initialise "has the item changed" booleans. */
     for (int i = 0; i < 4; i++){itemChanged.push_back(false)}
 }
+
+/* Check that the engine is ready for iteration.
+ *
+ * The engine must contain at least one board, each board must contain at least
+ * one mailbox, each mailbox must contain at least one core, and each core must
+ * contain at least one thread.
+ *
+ * Raises IteratorException if the aforementioned statement is not true. */
+bool check_engine()
+{
+    std::string exceptionHeader = dformat("Cannot construct iterator for "
+                                          "engine \"%s\"",
+                                          P_engine->FullName().c_str());
+
+    /* Check for boards. */
+    if (engine->G.SizeNodes() == 0)
+    {
+        throw IteratorException("%s because it contains no boards.",
+                                exceptionHeader.c_str());
+    }
+
+    for (boardIterator = engine->G.index_n.begin();
+         boardIterator != engine->G.index_n.end(); boardIterator++)
+    {
+        /* Check all boards have mailboxes. */
+        P_board* currentBoard = get_board();
+        if (currentBoard->G.SizeNodes() == 0)
+        {
+            throw IteratorException("%s because board \"%s\" contains no "
+                                    "mailboxes.",
+                                    currentBoard->FullName().c_str());
+        }
+
+        for (mailboxIterator = currentBoard->G.index_n.begin();
+             mailboxIterator != currentBoard->G.index_n.end();
+             mailboxIterator++)
+        {
+
+            /* Check all mailboxes have cores. */
+            P_mailbox* currentMailbox = get_mailbox();
+            if (currentMailbox->P_corem.empty())
+            {
+                throw IteratorException("%s because mailbox \"%s\" contains "
+                                        "no cores.",
+                                        currentMailbox->FullName().c_str());
+            }
+
+            for (coreIterator = currentMailbox->P_corem.begin();
+                 coreIterator != currentMailbox->P_corem.end(); coreIterator++)
+            {
+                /* Check all cores have threads. */
+                P_core* currentCore = get_core();
+                if (currentCore->P_threadm.empty())
+                {
+                    throw IteratorException("%s because core \"%s\" contains "
+                                            "no threads.",
+                                            currentCore->FullName().c_str());
+                }
+            }
+        }
+    }
+}
+
 
 /* Getters, each return the address of the item they get. */
 P_board* HardwareIterator::get_board()
