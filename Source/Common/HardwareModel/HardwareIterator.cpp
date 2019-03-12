@@ -5,15 +5,17 @@
 
 /* Constructs the hardware iterator. Arguments:
  *
- * - engine: POETS Engine to iterate over. */
-HardwareIterator::HardwareIterator(P_engine* engine):
+ * - engine: POETS Engine to iterate over
+ * - checkEngine: Whether or not to check the engine when constructing the
+ *   iterator. It is usually a good idea to do this. */
+HardwareIterator::HardwareIterator(P_engine* engine, bool checkEngine):
     engine(engine), isWrapped(false)
 {
     /* Namebase setup; the engine is the parent. */
     Name("Iterator for engine \"%s\"", P_engine->FullName().c_str());
     Npar(engine);
 
-    check_engine();
+    if (checkEngine) check_engine();
     reset_all_iterators();
 
     /* Initialise "has the item changed" booleans. */

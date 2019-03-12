@@ -16,8 +16,10 @@
  * - Don't try to use this if the engine changes; just replace it with another
  *   instance (nothing is dynamic here).
  *
- * - Construction will fall over brutally if the engine is not populated with
- *   at least one thread.
+ * - Construction will throw an IteratorException if the engine contains a
+ *   non-thread item (i.e. a board, mailbox, or core) that has no contained
+ *   items. This is because iterating through the threads of the hardware makes
+ *   no sense (and is unrealistic) if patches of the hardware are empty.
  */
 
 #include "dumpchan.h"
@@ -29,7 +31,7 @@ class HardwareIterator: public NameBase, public DumpChan
 {
 public:
 
-    HardwareIterator(P_engine* engine);
+    HardwareIterator(P_engine* engine, bool checkEngine=true);
 
     /* Getters */
     P_board* get_board();
