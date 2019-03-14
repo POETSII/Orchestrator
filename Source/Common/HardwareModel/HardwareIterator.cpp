@@ -12,14 +12,23 @@ HardwareIterator::HardwareIterator(P_engine* engine, bool checkEngine):
     engine(engine), isWrapped(false)
 {
     /* Namebase setup; the engine is the parent. */
-    Name("Iterator for engine \"%s\"", P_engine->FullName().c_str());
+    Name("Iterator");  /* Namebase will print the engine we're pointing to. */
     Npar(engine);
 
+    /* Define the length of the itemChanged vector as four (one for each level
+     * of the hardware hierarchy). */
+    itemChanged = vector<bool>(4, false);
+
+    /* Check that the engine is full, if desired. */
     if (checkEngine) check_engine();
+
+    /* Checking the engine uses the iterators in this class, so we need to
+     * reset them. */
     reset_all_iterators();
 
     /* Initialise "has the item changed" booleans. */
-    for (int i = 0; i < 4; i++){itemChanged.push_back(false)}
+    for (int i = 0; i < 4; i++){itemChanged[i] = false;}
+
 }
 
 /* Check that the engine is ready for iteration.
@@ -29,33 +38,34 @@ HardwareIterator::HardwareIterator(P_engine* engine, bool checkEngine):
  * contain at least one thread.
  *
  * Raises IteratorException if the aforementioned statement is not true. */
-void check_engine()
+void HardwareIterator::check_engine()
 {
     std::string exceptionHeader = dformat("Cannot construct iterator for "
                                           "engine \"%s\"",
-                                          P_engine->FullName().c_str());
+                                          engine->FullName().c_str());
 
     /* Check for boards. */
     if (engine->G.SizeNodes() == 0)
     {
-        throw IteratorException("%s because it contains no boards.",
-                                exceptionHeader.c_str());
+        throw IteratorException(dformat("%s because it contains no boards.",
+                                        exceptionHeader.c_str()));
     }
 
-    for (boardIterator = engine->G.index_n.begin();
-         boardIterator != engine->G.index_n.end(); boardIterator++)
+    for (boardIterator = engine->G.NodeBegin();
+         boardIterator != engine->G.NodeEnd(); boardIterator++)
     {
         /* Check all boards have mailboxes. */
         P_board* currentBoard = get_board();
         if (currentBoard->G.SizeNodes() == 0)
         {
-            throw IteratorException("%s because board \"%s\" contains no "
-                                    "mailboxes.",
-                                    currentBoard->FullName().c_str());
+            throw IteratorException(dformat("%s because board \"%s\" contains "
+                                            "no mailboxes.",
+                                            exceptionHeader.c_str(),
+                                            currentBoard->FullName().c_str()));
         }
 
-        for (mailboxIterator = currentBoard->G.index_n.begin();
-             mailboxIterator != currentBoard->G.index_n.end();
+        for (mailboxIterator = currentBoard->G.NodeBegin();
+             mailboxIterator != currentBoard->G.NodeEnd();
              mailboxIterator++)
         {
 
@@ -63,9 +73,10 @@ void check_engine()
             P_mailbox* currentMailbox = get_mailbox();
             if (currentMailbox->P_corem.empty())
             {
-                throw IteratorException("%s because mailbox \"%s\" contains "
-                                        "no cores.",
-                                        currentMailbox->FullName().c_str());
+                throw IteratorException(
+                    dformat("%s because mailbox \"%s\" contains no cores.",
+                            exceptionHeader.c_str(),
+                            currentMailbox->FullName().c_str()));
             }
 
             for (coreIterator = currentMailbox->P_corem.begin();
@@ -75,9 +86,10 @@ void check_engine()
                 P_core* currentCore = get_core();
                 if (currentCore->P_threadm.empty())
                 {
-                    throw IteratorException("%s because core \"%s\" contains "
-                                            "no threads.",
-                                            currentCore->FullName().c_str());
+                    throw IteratorException(
+                        dformat("%s because core \"%s\" contains no threads.",
+                                exceptionHeader.c_str(),
+                                currentCore->FullName().c_str()));
                 }
             }
         }
@@ -120,7 +132,7 @@ bool HardwareIterator::has_wrapped()
 {
     bool output = isWrapped;
     isWrapped = false;
-    return isWrapped;
+    return output;
 }
 
 /* Incrementers! These all take no arguments, iterate to the next level of the
@@ -131,7 +143,10 @@ P_thread* HardwareIterator::next_thread()
     threadIterator++;
 
     /* If we've run out of threads, increment the core. */
-    if (threadIterator == get_core()->P_threadm.end()){next_core();}
+    if (threadIterator == get_core()->P_threadm.end())
+    {
+        next_core();
+    }
 
     itemChanged[3] = true;
 
@@ -143,26 +158,32 @@ P_core* HardwareIterator::next_core()
     coreIterator++;
 
     /* If we've run out of cores, increment the mailbox. */
-    if (coreIterator == get_mailbox()->P_corem.end()){next_mailbox();}
+    if (coreIterator == get_mailbox()->P_corem.end())
+    {
+        next_mailbox();
+    }
 
     /* Everything us-and-below has changed. */
-    initialise_thread_iterator();
+    reset_thread_iterator();
     itemChanged[2] = true;
     itemChanged[3] = true;
 
     return get_core();
 }
 
-P_core* HardwareIterator::next_mailbox()
+P_mailbox* HardwareIterator::next_mailbox()
 {
     mailboxIterator++;
 
     /* If we've run out of mailboxes, increment the board. */
-    if (mailboxIterator == get_board()->G.NodeEnd()){next_board();}
+    if (mailboxIterator == get_board()->G.NodeEnd())
+    {
+        next_board();
+    }
 
     /* Everything us-and-below has changed. */
-    initialise_core_iterator();
-    initialise_thread_iterator();
+    reset_core_iterator();
+    reset_thread_iterator();
     itemChanged[1] = true;
     itemChanged[2] = true;
     itemChanged[3] = true;
@@ -170,21 +191,21 @@ P_core* HardwareIterator::next_mailbox()
     return get_mailbox();
 }
 
-P_core* HardwareIterator::next_board()
+P_board* HardwareIterator::next_board()
 {
     boardIterator++;
 
     /* If we've run out of boards, cycle around naively. */
-    if (mailboxIterator == get_board()->G.NodeEnd())
+    if (boardIterator == engine->G.NodeEnd())
     {
         isWrapped = true;
-        initialise_board_iterator();
+        reset_board_iterator();
     }
 
     /* Everything has changed. */
-    initialise_mailbox_iterator();
-    initialise_core_iterator();
-    initialise_thread_iterator();
+    reset_mailbox_iterator();
+    reset_core_iterator();
+    reset_thread_iterator();
     itemChanged[0] = true;
     itemChanged[1] = true;
     itemChanged[2] = true;
@@ -193,9 +214,11 @@ P_core* HardwareIterator::next_board()
     return get_board();
 }
 
-/* Methods for resetting (re)initialising iterators. */
+/* Methods for resetting (re)initialising iterators. Each reset method sets
+ * it's respective itemChanged appropriately. */
 void HardwareIterator::reset_all_iterators()
 {
+    /* Order is important. */
     reset_board_iterator();
     reset_mailbox_iterator();
     reset_core_iterator();
@@ -204,29 +227,37 @@ void HardwareIterator::reset_all_iterators()
 
 void HardwareIterator::reset_board_iterator()
 {
-    boardIterator = engine->G.NodeBegin();
+    BoardIterator initialValue = engine->G.NodeBegin();
+    itemChanged[0] = (boardIterator != initialValue);
+    boardIterator = initialValue;
 }
 
 void HardwareIterator::reset_mailbox_iterator()
 {
-    mailboxIterator = boardIterator->second.data->G.NodeBegin();
+    MailboxIterator initialValue = boardIterator->second.data->G.NodeBegin();
+    itemChanged[1] = (mailboxIterator != initialValue);
+    mailboxIterator = initialValue;
 }
 
 void HardwareIterator::reset_core_iterator()
 {
-    coreIterator = mailboxIterator->second.data->P_corem.begin();
+    CoreIterator initialValue = mailboxIterator->second.data->P_corem.begin();
+    itemChanged[2] = (coreIterator != initialValue);
+    coreIterator = initialValue;
 }
 
 void HardwareIterator::reset_thread_iterator()
 {
-    threadIterator = coreIterator->second->P_threadm.begin();
+    ThreadIterator initialValue = coreIterator->second->P_threadm.begin();
+    itemChanged[3] = (threadIterator != initialValue);
+    threadIterator = initialValue;
 }
 
 /* Write debug and diagnostic information about this iterator using
  * dumpchan. Arguments:
  *
  * - file: File to dump to. */
-void P_engine::Dump(FILE* file)
+void HardwareIterator::Dump(FILE* file)
 {
     std::string fullName = FullName();
     std::string breakerHead = fullName + " ";
@@ -246,39 +277,40 @@ void P_engine::Dump(FILE* file)
     NameBase::Dump(file);
 
     /* Various truths about the internal state. */
-    fprintf("Current board memory address:     %#018lx\n",
+    fprintf(file, "Current board memory address:     %#018lx\n",
             (uint64_t) get_board());
-    fprintf("Current board hardware address:   %u\n",
+    fprintf(file, "Current board hardware address:   %u\n",
             get_board()->get_hardware_address()->get_hardware_address());
-    fprintf("Current mailbox memory address:   %#018lx\n",
+    fprintf(file, "Current mailbox memory address:   %#018lx\n",
             (uint64_t) get_mailbox());
-    fprintf("Current mailbox hardware address: %u\n",
+    fprintf(file, "Current mailbox hardware address: %u\n",
             get_mailbox()->get_hardware_address()->get_hardware_address());
-    fprintf("Current core memory address:      %#018lx\n",
+    fprintf(file, "Current core memory address:      %#018lx\n",
             (uint64_t) get_core());
-    fprintf("Current core hardware address:    %u\n",
+    fprintf(file, "Current core hardware address:    %u\n",
             get_core()->get_hardware_address()->get_hardware_address());
-    fprintf("Current thread memory address:    %#018lx\n",
+    fprintf(file, "Current thread memory address:    %#018lx\n",
             (uint64_t) get_thread());
-    fprintf("Current thread hardware address:  %u\n",
+    fprintf(file, "Current thread hardware address:  %u\n",
             get_thread()->get_hardware_address()->get_hardware_address());
 
     /* Print whether or not each iterator has changed since the last time it
      * was polled. */
     std::vector<std::string> itemTypes;
     itemTypes.insert(itemTypes.end(), {"board", "mailbox", "core", "thread"});
-    for (long typeIndex = 0; typeIndex < itemTypes.size(); typeIndex++)
+    for (long unsigned typeIndex = 0; typeIndex < itemTypes.size();
+         typeIndex++)
     {
-        fprintf("The %s has%s changed since "
-                "\"has_%s_changed\" was last called.\n",
-                itemTypes[typeIndex],
+        fprintf(file, "The %s has%s changed since "
+                      "\"has_%s_changed\" was last called.\n",
+                itemTypes[typeIndex].c_str(),
                 itemChanged[typeIndex] ? "" : " not",
-                itemTypes[typeIndex]);
+                itemTypes[typeIndex].c_str());
     }
 
     /* Print whether or not the iterator has wrapped since it was last
      * polled. */
-    fprintf("This iterator has%s wrapped.\n", isWrapped ? "" : " not");
+    fprintf(file, "This iterator has%s wrapped.\n", isWrapped ? "" : " not");
 
     /* Close breaker and flush the dump. */
     std::replace(breakerTail.begin(), breakerTail.end(), '+', '-');

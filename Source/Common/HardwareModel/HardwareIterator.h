@@ -42,10 +42,10 @@ public:
     /* Convenience methods to determine whether the iterator at a certain level
      * of the hierarchy has changed value since the last time these methods
      * were called. */
-    inline bool has_board_changed(){return has_item_changed(0)};
-    inline bool has_mailbox_changed(){return has_item_changed(1)};
-    inline bool has_core_changed(){return has_item_changed(2)};
-    inline bool has_thread_changed(){return has_item_changed(3)};
+    inline bool has_board_changed(){return has_item_changed(0);}
+    inline bool has_mailbox_changed(){return has_item_changed(1);}
+    inline bool has_core_changed(){return has_item_changed(2);}
+    inline bool has_thread_changed(){return has_item_changed(3);}
     bool has_item_changed(int itemIndex);
     bool has_wrapped();
 
@@ -63,7 +63,6 @@ public:
     P_mailbox* next_mailbox();
     P_core* next_core();
     P_thread* next_thread();
-    inline P_thread* operator++(){return next_thread();}
 
     void Dump(FILE* = stdout);
 
@@ -74,16 +73,28 @@ private:
      * defined. */
     void check_engine();
 
-    /* The sub-iterators. Board and mailbox iterator iterate over graph nodes,
-     * which are stored in a map in the graph object (as index_n). */
-    std::map<AddressComponent, P_board*>::iterator boardIterator;
-    std::map<AddressComponent, P_mailbox*>::iterator mailboxIterator;
-    std::map<AddressComponent, P_core*>::iterator coreIterator;
-    std::map<AddressComponent, P_thread*>::iterator threadIterator;
+    /* The sub-iterators. Board and mailbox iterator iterate over graph
+     * nodes. */
+    typedef pdigraph<AddressComponent, P_board*,
+                     unsigned, P_link*,
+                     unsigned, P_port*>::TPn_it BoardIterator;
+    typedef pdigraph<AddressComponent, P_mailbox*,
+                     unsigned, P_link*,
+                     unsigned, P_port*>::TPn_it MailboxIterator;
+    typedef std::map<AddressComponent, P_core*>::iterator CoreIterator;
+    typedef std::map<AddressComponent, P_thread*>::iterator ThreadIterator;
+
+    BoardIterator boardIterator;
+    MailboxIterator mailboxIterator;
+    CoreIterator coreIterator;
+    ThreadIterator threadIterator;
 
     /* Variables to store whether certain levels of the hierarchy have
      * changed. */
-    std::vector<bool> itemChanged;
     bool isWrapped;
 
+    /* I don't use an enum to index this, because I need to calculate the
+     * length procedurally. */
+    std::vector<bool> itemChanged;
+};
 #endif
