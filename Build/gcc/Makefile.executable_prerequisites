@@ -54,6 +54,10 @@ HARDWARE_DEPLOYER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployme
                             $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/MultiAesopDeployer.cpp \
                             $(HARDWARE_MODEL_SOURCES)
 
+# Sources used by executables that iterate over the POETS Engine.
+HARDWARE_ITERATOR_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.cpp \
+                            $(HARDWARE_MODEL_SOURCES)
+
 # Sources used by executables that read hardware files.
 HARDWARE_FILE_PARSER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileManager/HardwareFileParser.cpp \
                                $(GENERICS_DIR)/dfprintf.cpp \
