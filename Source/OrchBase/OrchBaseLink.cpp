@@ -26,7 +26,12 @@ return 0;
 void OrchBase::LinkCons(Cli::Cl_t Cl)
 //
 {
-
+    if (Cl.Pa_v.empty()) return;                  // Empty constraint
+    string cName = Cl.Pa_v[0].Val;                // Constraint name
+    unsigned cVal = atoi(Cl.Pa_v[1].Val.c_str()); // Constraint value
+    if (!pPlace->pCon) pPlace->pCon = new Constraints(); // add constraints if not already there
+    Post(70,cName,int2str(cVal));
+    return;
 }
 
 //------------------------------------------------------------------------------

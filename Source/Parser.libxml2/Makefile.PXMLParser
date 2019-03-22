@@ -1,0 +1,40 @@
+#MPICHDIR  = /usr
+#MPICHLIBDIR = $(MPICHDIR)/lib
+#MPICHINCDIR = $(MPICHDIR)/include
+GCCDIR    = /usr/bin
+LIBDIR    = /usr/lib
+LIBXMLDIR = /home/adr1r17/Local_prg/libxml2.2.9.8
+INCDIR    = /usr/include
+XMLINCDIR = $(LIBXMLDIR)/include/libxml2/libxml
+XMLINBDIR = $(LIBXMLDIR)/include/libxml2
+XMLLIBDIR = $(LIBXMLDIR)/lib
+#BUILDDIR  = build
+BINDIR    = bin
+
+CC        = $(GCCDIR)/gcc
+CXX       = $(GCCDIR)/g++
+
+# must use -std=c++11 to get uintx_t, intx_t fixed-width types.
+#CPPFLAGS += -I Generics -I Source/Common -std=c++98 -I $(INCDIR) -I $(QTINCDIR) -include string.h -fpermissive
+CPPFLAGS += -std=c++98 -g -I $(INCDIR) -I$(XMLINCDIR) -I$(XMLINBDIR) -fPIC
+
+#LDFLAGS += -lpthread -lmpi
+LDFLAGS += -lxml2
+#LDLIBS := -L$(MPICHLIBDIR) -L$(LIBDIR)
+LDLIBS := -L$(LIBDIR) -L$(XMLLIBDIR)
+
+PARSER_SRC := $(wildcard *.cpp)
+PARSER_OBJ := $(subst .cpp,.o,$(PARSER_SRC))
+PARSER_TGT = $(BINDIR)/PXMLParser
+
+all : $(PARSER_TGT)
+
+PXMLParser: $(PARSER_TGT)
+
+$(PARSER_TGT) : $(PARSER_OBJ)
+	mkdir -p $(BINDIR)
+#	mkdir -p $(BUILDDIR)
+	$(CXX) $(CPPFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+
+clean :
+	rm -rf $(PARSER_TGT) $(PARSER_OBJ)

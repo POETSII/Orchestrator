@@ -12,64 +12,13 @@
 #include "P_device.h"
 #include "P_pintyp.h"
 #include "P_pin.h"
+#include "P_Graphs.h"
 #include <sstream>
 #include <algorithm>
 #include <set>
 #include <iostream>
 
-#ifdef __BORLANDC__
-
-//==============================================================================
-
-P_builder::P_builder(int argc, char** argv, OrchBase * _p):par(_p) //, def(NULL), app(argc, argv)
-{
-//def = new I_Graph(par, &app);
-}
-
-//------------------------------------------------------------------------------
-
-P_builder::~P_builder()
-{
-// if (def != 0) delete def;   // get rid of Qt objects
-}
-
-//------------------------------------------------------------------------------
-
-void P_builder::Build(P_task * pT)
-// Generates the application binaries - virtually mapped to a single board.
-{
-if (!pT) pT = par->P_taskm.begin()->second;
-par->Post(801,pT->Name(),pT->filename);
-//Preplace(pT, par->pVB);
-//GenFiles(par->pVB);
-//MakeFiles(par->pVB);
-//CompileBins(par->pVB);
-}
-
-//------------------------------------------------------------------------------
-
-void P_builder::Dump(FILE * fp)
-{
-fprintf(fp,"P_builder+++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"Parent         %#08p\n",par);
-if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
-
-fprintf(fp,"P_builder-----------------------------------\n");
-fflush(fp);
-}
-
-//------------------------------------------------------------------------------
-
-void P_builder::Load(const string& name, const string& filename)
-{
-//def->translate(QString::fromStdString(filename), QString::fromStdString(name), par);
-}
-
-//------------------------------------------------------------------------------
-#else
-//==============================================================================
-
-P_builder::P_builder(int argc, char** argv, OrchBase * _p):par(_p),app(argc, argv),defs()
+P_builder::P_builder(int argc, char** argv, OrchBase * _p):par(_p), defs()
 {
 
 }
@@ -78,7 +27,7 @@ P_builder::P_builder(int argc, char** argv, OrchBase * _p):par(_p),app(argc, arg
 
 P_builder::~P_builder()
 {
-for (map<string, I_Graph*>::iterator d = defs.begin(); d != defs.end(); d++) delete d->second;   // get rid of Qt objects
+
 }
 
 //------------------------------------------------------------------------------
@@ -98,17 +47,19 @@ CompileBins(pT);
 void P_builder::Clear(P_task * pT)
 // Clears imported task definitions
 {
-if (!pT) // default to all tasks
+if (!pT) defs.clear(); // default to all tasks
+else
 {
-   for (map<string, I_Graph*>::iterator T = defs.begin(); T != defs.end(); T++) delete T->second;
-   defs.clear();
+  pair<multimap<string,P_task*>::iterator,multimap<string,P_task*>::iterator> tasksThisFile = defs.equal_range(pT->filename);
+  multimap<string,P_task*>::iterator task = tasksThisFile.first;
+  if (task->first != pT->filename) par->Post(814,pT->filename);
+  else
+  {
+     while ((task != tasksThisFile.second) && task->second != pT) task++;
+     if (task == tasksThisFile.second) par->Post(815,pT->Name(), pT->filename);
+     else defs.erase(task);
+  }
 }
-else if (defs.find(pT->filename) != defs.end())
-{
-   delete defs[pT->filename];
-   defs.erase(pT->filename);
-}
-else par->Post(814,pT->filename);
 }
 
 //------------------------------------------------------------------------------
@@ -127,9 +78,22 @@ fflush(fp);
 
 void P_builder::Load(const string& filename)
 {
-if (defs.find(filename)!=defs.end()) par->Post(809,filename);                 // already imported file?
-defs[filename] = new I_Graph(QString::fromStdString(filename), par, &app);    // no: then do it here.
-if (defs[filename]->translate(QString::fromStdString(filename), par) != I_Graph::SUCCESS) par->Post(808,filename);
+if (defs.find(filename)!=defs.end()) // already imported file?
+{
+  par->Post(809,filename);           // don't do it again
+   return;
+}
+P_Graphs poetsParser(par,filename);  // no: then do it here.
+if (poetsParser.ParseDocument())
+{
+   par->Post(808,filename);          // bad XML definition
+   return;
+}
+WALKMAP(string,P_task*,par->P_taskm,task)
+{
+   // insert the loaded tasks into the file->task map
+   if (task->second->filename == filename) defs.insert(pair<string,P_task*>(filename,task->second));
+}						       						      
 }
 
 //------------------------------------------------------------------------------
