@@ -1,6 +1,7 @@
 #ifndef __OrchBaseH__H
 #define __OrchBaseH__H
 
+class Placement;
 class P_task;
 class P_builder;
 class T_gen;

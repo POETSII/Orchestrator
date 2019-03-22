@@ -26,6 +26,8 @@
 #include "HardwareModel.h"
 #include "IteratorException.h"
 #include "pdigraph.hpp"
+#include "P_link.h"
+#include "P_port.h"
 
 class HardwareIterator: public NameBase, public DumpChan
 {

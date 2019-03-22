@@ -297,7 +297,9 @@ TEST_CASE("Iteration behaviour with a known valid engine configuration.")
 
     /* Dumping test included for fun, if you are so inclined. Uncomment to get
      * a dump of the iterator at its end. */
-    iterator.Dump();
+    // printf("Here's a dump of the hardware iterator just before it iterates "
+    //        "over the edge of the hardware stack:\n");
+    // iterator.Dump();
 
     /* Push over the edge. */
     iterator.next_thread();
@@ -320,5 +322,6 @@ TEST_CASE("Iteration behaviour with a known valid engine configuration.")
 
     /* Dumping test included for fun, if you are so inclined. Uncomment to get
      * a dump of the iterator while it's "fresh". */
-    iterator.Dump();
+    // printf("\nHere's a dump of a \"fresh\" hardware iterator:\n");
+    // iterator.Dump();
 }

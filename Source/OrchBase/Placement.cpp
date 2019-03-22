@@ -1,17 +1,10 @@
 //------------------------------------------------------------------------------
 
 #include "Placement.h"
-#include "Constraints.h"
-#include "OrchBase.h"
-#include "P_core.h"
-#include "P_super.h"
-#include "P_devtyp.h"
-#include "build_defs.h"
-#include <algorithm>
 
 //==============================================================================
 
-Placement::Placement(OrchBase * _p):par(_p),pCon(0),pD_graph(0)
+Placement::Placement(OrchBase * _p):iterator(0),par(_p),pCon(0),pD_graph(0)
 {
 }
 
@@ -19,7 +12,7 @@ Placement::Placement(OrchBase * _p):par(_p),pCon(0),pD_graph(0)
 
 Placement::~Placement()
 {
-
+    if (iterator == 0) delete iterator;
 }
 
 //------------------------------------------------------------------------------
@@ -41,78 +34,10 @@ fflush(fp);
 
 //------------------------------------------------------------------------------
 
-bool Placement::GetNext(P_thread *& prTh, P_stride stride)
-// Gets the next thread in the engine, and sets it to prTh. Returns true if a
-// new thread could not be found (i.e. we wrapped around). If we wrapped
-// around, set all of the iterators, and prTh, to their starting value.
-{
-    bool didWeWrap = false;
-
-    // If this is the first time we're getting the "next" thread, we want to
-    // return the first thread in the hardware stack. In doing this, mark the
-    // iterators as dirty so that the next iteration returns the second thread.
-    if (areIteratorsClean)
-    {
-        areIteratorsClean = false;
-    }
-    else
-    {
-        // Increment the thread, then check to see if we've run out of threads
-        // on the current core.
-        threadIterator++;
-        if (threadIterator == coreIterator->second->P_threadm.end())
-        {
-            // Increment the core, then check to see if we've run out of cores
-            // on the current mailbox.
-            coreIterator++;
-            if (coreIterator == mailboxIterator->second.data->P_corem.end())
-            {
-                // Increment the mailbox, then check to see if we've run out of
-                // mailboxes on the current board.
-                mailboxIterator++;
-                if (mailboxIterator ==
-                    boardIterator->second.data->G.NodeEnd())
-                {
-                    // Increment the board, then check to see if we've run out
-                    // of boards in the current engine.
-                    if (boardIterator == par->pE->G.NodeEnd())
-                    {
-                        // Out of boards, we're done here.
-                        boardIterator = par->pE->G.NodeBegin();
-                        didWeWrap = true;
-                    }
-                    // Now we have a new board, set the mailbox iterator to
-                    // point to the first mailbox in that board.
-                    mailboxIterator =
-                        boardIterator->second.data->G.NodeBegin();
-                }
-
-                // Now we have a new mailbox, set the core iterator to point to
-                // the first core in that mailbox.
-                coreIterator = mailboxIterator->second.data->P_corem.end();
-            }
-
-            // Now we have a new core, set the thread iterator to point to the
-            // first thread on that core.
-            threadIterator = coreIterator->second->P_threadm.begin();
-        }
-    }
-
-    // Set thread pointer and return.
-    prTh = threadIterator->second;
-    return didWeWrap;
-}
-
-//------------------------------------------------------------------------------
-
 void Placement::Init()
-// Initialise 'current' pointers to the first thread/core/mailbox/board
 {
-    boardIterator = par->pE->G.NodeBegin();
-    mailboxIterator = boardIterator->second.data->G.NodeBegin();
-    coreIterator = mailboxIterator->second.data->P_corem.begin();
-    threadIterator = coreIterator->second->P_threadm.begin();
-    areIteratorsClean = true;
+    if (iterator != 0) delete iterator;
+    iterator = new HardwareIterator(par->pE);
 }
 
 //------------------------------------------------------------------------------
@@ -120,66 +45,100 @@ void Placement::Init()
 bool Placement::Place(P_task * pT)
 // Place a task.
 {
-P_thread* pTh;
+P_thread* pTh = iterator->get_thread();
 
 WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
 {
-    if ((*dT)->pOnRTS) // don't need to place if it's a supervisor - easily identified by lack of RTS handler
+    if ((*dT)->pOnRTS) // don't need to place if it's a supervisor - easily
+                       // identified by lack of RTS handler
     {
-    vector<P_device*> dVs = pT->pD->DevicesOfType(*dT); // get all the devices of this type
-    unsigned int devMem = (*dT)->MemPerDevice();
-    if (devMem > BYTES_PER_THREAD)
-    {
-       // even a single device is too big to fit
-       par->Post(810, (*dT)->Name(), int2str(devMem), int2str(BYTES_PER_THREAD));
-       return true;
-    }
-    // place according to constraints found
-    if (!pCon) pCon = new Constraints();
-    if (pCon->Constraintm.find("DevicesPerThread") == pCon->Constraintm.end()) pCon->Constraintm["DevicesPerThread"] = min(BYTES_PER_THREAD/devMem, MAX_DEVICES_PER_THREAD);
-    if (pCon->Constraintm.find("ThreadsPerCore") == pCon->Constraintm.end()) pCon->Constraintm["ThreadsPerCore"] = THREADS_PER_CORE;
-    for (unsigned devIdx = 0; devIdx < dVs.size(); devIdx++) // For each device.....
-    {
-        // if we have packed the existing thread,
-        if (!(devIdx%pCon->Constraintm["DevicesPerThread"]))
+        // get all the devices of this type
+        vector<P_device*> dVs = pT->pD->DevicesOfType(*dT);
+        unsigned int devMem = (*dT)->MemPerDevice();
+        if (devMem > BYTES_PER_THREAD)
         {
-           // ...get a thread, checking to see that we don't run out of room
-           // - i.e. that we increment past box space and this isn't the last
-           // device to place
-           if (GetNext(pTh) && !((devIdx == (dVs.size()-1)) && ((dT+1) == pT->pP_typdcl->P_devtypv.end())))
-           {
-              par->Post(163, pT->Name()); // out of room. Abandon placement.
-              return true;
-           }
+            // even a single device is too big to fit
+            par->Post(810, (*dT)->Name(), int2str(devMem),
+                      int2str(BYTES_PER_THREAD));
+            return true;
         }
-        dVs[devIdx]->addr.SetDevice(devIdx%pCon->Constraintm["DevicesPerThread"]); // insert the device's internal address (thread index)
-        Xlink(dVs[devIdx],pTh);            // And link thread and device
-    }
+        // place according to constraints found
+        if (!pCon) pCon = new Constraints();
+        if (pCon->Constraintm.find("DevicesPerThread") == pCon->Constraintm.end())
+            pCon->Constraintm["DevicesPerThread"] = min(BYTES_PER_THREAD/devMem,
+                                                        MAX_DEVICES_PER_THREAD);
+        if (pCon->Constraintm.find("ThreadsPerCore") == pCon->Constraintm.end())
+            pCon->Constraintm["ThreadsPerCore"] = THREADS_PER_CORE;
 
-    // jump to the next core: each core will only have one device type. We do not
-    // need to jump if the devices exactly fit on an integral number of cores because in
-    // that situation the previous GetNext() function will have incremented the core for us.
-    if (dVs.size()%(pCon->Constraintm["DevicesPerThread"]*pCon->Constraintm["ThreadsPerCore"]))
-    {
-       if (((dT+1) != pT->pP_typdcl->P_devtypv.end()) && GetNext(pTh,Placement::core))
-       {
-          par->Post(163, pT->Name()); // out of room. Abandon placement.
-          return true;
-       }
-    }
-    // current tinsel architecture shares I-memory between pairs of cores, so
-    // for a new device type, if the postincremented core number is odd, we
-    // need to increment again to get an even boundary.
-    if (SHARED_INSTR_MEM && (coreIterator->first & 0x1) && GetNext(pTh,Placement::core))
-    {
-       par->Post(163, pT->Name()); // out of room. Abandon placement.
-       return true;
-    }
+        // For each device.....
+        for (unsigned devIdx = 0; devIdx < dVs.size(); devIdx++)
+        {
+            // if we have packed the existing thread,
+            if (devIdx != 0 && !(devIdx%pCon->Constraintm["DevicesPerThread"]))
+            {
+                // get the next thread
+                pTh = iterator->next_thread();
+
+                // check to see that we don't run out of room - i.e. that we
+                // increment past box space and this isn't the last device to
+                // place
+                if (iterator->has_wrapped() &&
+                    !((devIdx == (dVs.size()-1)) &&
+                      ((dT+1) == pT->pP_typdcl->P_devtypv.end())))
+                {
+                    // out of room. Abandon placement.
+                    par->Post(163, pT->Name());
+                    return true;
+                }
+            }
+            // insert the device's internal address (thread index)
+            dVs[devIdx]->addr.SetDevice(
+                devIdx%pCon->Constraintm["DevicesPerThread"]);
+            // And link thread and device
+            Xlink(dVs[devIdx],pTh);
+        }
+
+        // jump to the next core: each core will only have one device type. We
+        // do not need to jump if the devices exactly fit on an integral number
+        // of cores because in that situation the previous GetNext() function
+        // will have incremented the core for us.
+        if (dVs.size()%(pCon->Constraintm["DevicesPerThread"]*pCon->Constraintm["ThreadsPerCore"]))
+        {
+            if (((dT+1) != pT->pP_typdcl->P_devtypv.end()))
+            {
+                // get the first thread on the next core, and abandon if we've
+                // filled up the hardware.
+                iterator->next_core();
+                pTh = iterator->get_thread();
+                if (iterator->has_wrapped())
+                {
+                    // out of room. Abandon placement.
+                    par->Post(163, pT->Name());
+                    return true;
+                }
+            }
+        }
+        // current tinsel architecture shares I-memory between pairs of cores,
+        // so for a new device type, if the postincremented core number is odd,
+        // we need to increment again to get an even boundary.
+        if (SHARED_INSTR_MEM &&
+            iterator->get_core()->get_hardware_address()->get_core() & 0x1)
+        {
+            // get the first thread on the next core, and abandon if we've
+            // filled up the hardware.
+            iterator->next_core();
+            pTh = iterator->get_thread();
+            if (iterator->has_wrapped())
+            {
+                // out of room. Abandon placement.
+                par->Post(163, pT->Name());
+                return true;
+            }
+        }
     }
 }
 return false;
 }
-
 
 //------------------------------------------------------------------------------
 
