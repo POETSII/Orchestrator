@@ -62,11 +62,12 @@ bool TaskInfo_t::setCore(P_core* core, uint32_t vCore)
 // absolute setter for a core - inserts if none exists, overwrites if it is already in the map
 void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
 {
-    // printf("Finding space for core with the following address "
-    //        "components:\nbox: %u\nboard: %u\nmailbox: %u\ncore: %u\n and "
-    //        "with %u threads.\n", coreID.A_box, coreID.A_board,
-    //        coreID.A_mailbox, coreID.A_core, coreID.A_thread + 1);
-    // fflush(stdout)
+    // printf("Finding space for a core with %u threads, and with the "
+    //        "following address components:\n  box: %u\n  board: %u\n  "
+    //        "mailbox: %u\n  core: %u\n",
+    //        coreID.A_thread + 1, coreID.A_box, coreID.A_board,
+    //        coreID.A_mailbox, coreID.A_core);
+    // fflush(stdout);
     if (VirtualBox == 0) // no box yet. Assume this core insertion defines our box number.
     {
         // printf("Creating new 'virtual' box.\n");
