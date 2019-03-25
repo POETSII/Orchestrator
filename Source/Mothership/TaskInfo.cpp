@@ -109,8 +109,8 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
         VirtualBoard->parent = VirtualBox;
         VirtualBox->contain(coreID.A_board, VirtualBoard);
         VirtualBoard->AutoName(VirtualBox->Name()+"_Board_");
-        printf("Inserting VirtualBoard %s\n",VirtualBoard->Name().c_str());
-        fflush(stdout);
+        // printf("Inserted VirtualBoard %s\n",VirtualBoard->Name().c_str());
+        // fflush(stdout);
     }
     P_mailbox* VirtualMailbox = 0;
     WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
@@ -134,8 +134,8 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
         VirtualMailbox->parent = VirtualBoard;
         VirtualBoard->contain(coreID.A_mailbox, VirtualMailbox);
         VirtualMailbox->AutoName(VirtualBoard->Name()+"_Mailbox_");
-        printf("Inserting VirtualMailbox %s\n",VirtualMailbox->Name().c_str());
-        fflush(stdout);
+        // printf("Inserting VirtualMailbox %s\n",VirtualMailbox->Name().c_str());
+        // fflush(stdout);
     }
 
     softMap_t::iterator C = VCoreMap.find(vCore);
