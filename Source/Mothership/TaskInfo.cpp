@@ -55,13 +55,24 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
 {
     if (VirtualBox == 0) // no box yet. Assume this core insertion defines our box number.
     {
-        VirtualBox = new P_box(0);
+        // printf("Creating new 'virtual' box.\n");
+        // fflush(stdout);
+        VirtualBox = new P_box("VirtualBox");
         VirtualBox->AutoName(TaskName+"_Box_");
         VirtualBox->get_hardware_address()->set_box(coreID.A_box);
         printf("Inserting VirtualBox %s\n",VirtualBox->Name().c_str());
         fflush(stdout);
     }
-    if (coreID.A_box != VirtualBox->get_hardware_address()->get_box()) return; // not our box. Ignore.
+
+    // Defense against multiple cores with different addresses.
+    if (coreID.A_box != VirtualBox->get_hardware_address()->get_box())
+    {
+        // printf("Core ID box address component (%d) does not match "
+        //        " VirtualBox box address component (%d). Not inserting "
+        //        " this core.\n");
+        // fflush(stdout);
+        return; // not our box. Ignore.
+    }
     P_board* VirtualBoard = 0;
     WALKVECTOR(P_board*, VirtualBox->P_boardv, B)
     {
@@ -75,7 +86,9 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     }
     if (!VirtualBoard) // no existing board matches the core. Create a new one.
     {
-        VirtualBoard = new P_board(0);
+        // printf("Creating 'virtual' board.\n");
+        // fflush(stdout);
+        VirtualBoard = new P_board("VirtualBoard");
         VirtualBoard->parent = VirtualBox;
         VirtualBox->contain(coreID.A_board, VirtualBoard);
         VirtualBoard->AutoName(VirtualBox->Name()+"_Board_");
@@ -98,7 +111,9 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     }
     if (!VirtualMailbox) // no existing mailbox matches the core. Create a new one.
     {
-        VirtualMailbox = new P_mailbox(0);
+        // printf("Creating 'virtual' mailbox.\n");
+        // fflush(stdout);
+        VirtualMailbox = new P_mailbox("VirtualMailbox");
         VirtualMailbox->parent = VirtualBoard;
         VirtualBoard->contain(coreID.A_mailbox, VirtualMailbox);
         VirtualMailbox->AutoName(VirtualBoard->Name()+"_Mailbox_");
@@ -113,13 +128,21 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
         if ((C->second->get_hardware_address()->get_box() == VirtualBox->get_hardware_address()->get_box()) &&
             (C->second->get_hardware_address()->get_board() == VirtualBoard->get_hardware_address()->get_board()) &&
             (C->second->get_hardware_address()->get_mailbox() == VirtualMailbox->get_hardware_address()->get_mailbox()) &&
-            (C->second->get_hardware_address()->get_core() == coreID.A_core)) return;
+            (C->second->get_hardware_address()->get_core() == coreID.A_core))
+        {
+            // printf("After all that, the core was already here. Not "
+            //        "inserting it.\n");
+            // fflush(stdout);
+            return;
+        }
        // A mapped core with the same virtual number is already in the table; get rid of it.
        CoreMap.erase(C->second);
        removeCore(C->second);
     }
     // insert the new core with its appropriate address fields.
-    P_core* VirtualCore = new P_core(0);
+    // printf("Creating 'virtual' core.\n");
+    // fflush(stdout);
+    P_core* VirtualCore = new P_core("VirtualCore");
     VirtualCore->parent = VirtualMailbox;
     VirtualMailbox->contain(coreID.A_core, VirtualCore);
     VirtualCore->AutoName(VirtualMailbox->Name()+"_Core_");
@@ -127,9 +150,9 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     P_thread* VirtualThread;
     for (unsigned thread = 0; thread <= coreID.A_thread; thread++)
     {
-        VirtualThread = new P_thread(0);
+        VirtualThread = new P_thread("VirtualThread");
         VirtualThread->parent = VirtualCore;
-        VirtualCore->contain(coreID.A_thread, VirtualThread);
+        VirtualCore->contain(thread, VirtualThread);
         VirtualThread->AutoName(VirtualCore->Name()+"_Thread_");
     }
     // then map to the task.
