@@ -62,6 +62,11 @@ bool TaskInfo_t::setCore(P_core* core, uint32_t vCore)
 // absolute setter for a core - inserts if none exists, overwrites if it is already in the map
 void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
 {
+    // printf("Finding space for core with the following address "
+    //        "components:\nbox: %u\nboard: %u\nmailbox: %u\ncore: %u\n and "
+    //        "with %u threads.\n", coreID.A_box, coreID.A_board,
+    //        coreID.A_mailbox, coreID.A_core, coreID.A_thread + 1);
+    // fflush(stdout)
     if (VirtualBox == 0) // no box yet. Assume this core insertion defines our box number.
     {
         // printf("Creating new 'virtual' box.\n");
@@ -85,8 +90,9 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     if (coreID.A_box != VirtualBox->get_hardware_address()->get_box())
     {
         // printf("Core ID box address component (%d) does not match "
-        //        " VirtualBox box address component (%d). Not inserting "
-        //        " this core.\n");
+        //        "VirtualBox box address component (%d). Not inserting this "
+        //        "core.\n",
+        //        coreID.A_box, VirtualBox->get_hardware_address()->get_box());
         // fflush(stdout);
         return; // not our box. Ignore.
     }
@@ -177,6 +183,7 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
         //        VirtualThread->Name().c_str());
         // fflush(stdout);
     }
+
     // then map to the task.
     VCoreMap[vCore] = VirtualCore;
     CoreMap[VirtualCore] = vCore;
