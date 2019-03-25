@@ -16,8 +16,8 @@ P_addr_t::P_addr_t(unsigned bx,unsigned bd,unsigned mb,unsigned co,unsigned th,
 {
 A_box     = bx;
 A_board   = bd;
-A_core    = co;
 A_mailbox = mb;
+A_core    = co;
 A_thread  = th;
 A_device  = de;
 }

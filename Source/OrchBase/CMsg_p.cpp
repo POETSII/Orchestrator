@@ -46,10 +46,10 @@ void CMsg_p::Get(vector<pair<unsigned,P_addr_t> > & vP)
     unsigned* pCIdx = PMsg_p::Get<unsigned>(1,len[0]);
     unsigned* pBox = PMsg_p::Get<unsigned>(2,len[1]);
     unsigned* pBoard = PMsg_p::Get<unsigned>(3,len[2]);
-    unsigned* pMailbox = PMsg_p::Get<unsigned>(3,len[3]);
-    unsigned* pCore = PMsg_p::Get<unsigned>(4,len[4]);
-    unsigned* pThread = PMsg_p::Get<unsigned>(5,len[5]);
-    unsigned* pDevice = PMsg_p::Get<unsigned>(6,len[6]);
+    unsigned* pMailbox = PMsg_p::Get<unsigned>(4,len[3]);
+    unsigned* pCore = PMsg_p::Get<unsigned>(5,len[4]);
+    unsigned* pThread = PMsg_p::Get<unsigned>(6,len[5]);
+    unsigned* pDevice = PMsg_p::Get<unsigned>(7,len[6]);
     if ((len[6] | len[5] | len[4] | len[3] | len[2] | len[1]) != len[0]);
     if (!pCIdx || !pBox || !pBoard || !pMailbox || !pCore || !pThread || !pDevice);
     for (int core = 0; core < len[0]; core++) vP.push_back(pair<unsigned,P_addr_t>(pCIdx[core],P_addr_t(pBox[core],pBoard[core],pMailbox[core],pCore[core],pThread[core],pDevice[core])));
