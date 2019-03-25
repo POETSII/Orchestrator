@@ -256,18 +256,24 @@ unsigned TMoth::CmLoad(string task)
    TaskMap[task]->status = TaskInfo_t::TASK_BOOT;
    // printf("Task status is TASK_BOOT\n");
    // fflush(stdout);
-   int coresThisTask = 0;
-   int coresLoaded = 0;
-   // printf("Task will use %d boards\n", TaskMap[task]->BoardsForTask().size());
+   long coresThisTask = 0;
+   long coresLoaded = 0;
+   // printf("Task will use %ld boards.\n",
+   //        TaskMap[task]->BoardsForTask().size());
    // fflush(stdout);
    // for each board mapped to the task,
    WALKVECTOR(P_board*,TaskMap[task]->BoardsForTask(),B)
    {
+      // printf("Board \"%s\" will use %ld mailboxes.\n",
+      //        (*B)->Name(), (*B)->G.SizeNodes());
+      // fflush(stdout);
       WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
                         unsigned, P_link*,
                         unsigned, P_port*, (*B)->G, MB)
       {
-          // printf("This board using %d cores\n", (*B)->G.NodeData(MB)->P_corem.size());
+          // printf("Mailbox \"%s\" will use %ld cores\n",
+          //        (*B)->G.NodeData(MB)->Name(),
+          //        (*B)->G.NodeData(MB)->P_corem.size());
           // fflush(stdout);
           // less work to compute as we go along than to call CoresForTask.size()
           // MLV: Not so sure in a post-mailbox world any more...
@@ -275,7 +281,9 @@ unsigned TMoth::CmLoad(string task)
       }
       coresLoaded += LoadBoard(*B); // load the board (unthreaded model)
    }
-   // printf("All boards finished; %d cores loaded\n", coresLoaded);
+   // printf("All boards finished. %ld cores were in the hardware model for "
+   //        "this task. %ld cores have been loaded.\n",
+   //        coresThisTask, coresLoaded);
    // fflush(stdout);
    // abandoning the boot if load failed
    if (coresLoaded < coresThisTask)
@@ -467,9 +475,9 @@ CommonBase::Dump(fp);
 
 //------------------------------------------------------------------------------
 
-int TMoth::LoadBoard(P_board* board)
+long TMoth::LoadBoard(P_board* board)
 {
-    int coresLoaded = 0;
+    long coresLoaded = 0;
     string task;
     WALKMAP(string,TaskInfo_t*,TaskMap,K) // find our task
     {
@@ -503,7 +511,7 @@ int TMoth::LoadBoard(P_board* board)
             }
         }
     }
-    // printf("Boot process for board %s finished %d cores loaded\n", board->Name().c_str(), coresLoaded);
+    // printf("Boot process for board %s finished %ld cores loaded\n", board->Name().c_str(), coresLoaded);
     // fflush(stdout);
     return coresLoaded;
 }

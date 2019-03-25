@@ -34,7 +34,7 @@ unsigned              CmStop(string);
 #include              "Decode.cpp"
 inline virtual string Dname(){ return typeid(*this).name(); }
 void                  Dump(FILE * = stdout);
-int                   LoadBoard(P_board*); // unthreaded version of bootloader 
+long                  LoadBoard(P_board*); // unthreaded version of bootloader
 unsigned              NameDist(PMsg_p*);
 unsigned              NameRecl(PMsg_p*);
 unsigned              NameTdir(const string&, const string&);
