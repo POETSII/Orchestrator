@@ -77,7 +77,7 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
         boxHardwareAddress->set_box(coreID.A_box);
         VirtualBox->set_hardware_address(boxHardwareAddress);
 
-        // printf("Inserted VirtualBox %s\n",VirtualBox->Name().c_str());
+        // printf("Inserted VirtualBox %s.\n", VirtualBox->Name().c_str());
         // fflush(stdout);
     }
 
@@ -95,8 +95,8 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     {
         if ((*B)->get_hardware_address()->get_board() == coreID.A_board)
         {
-            printf("Using VirtualBoard %s\n",(*B)->Name().c_str());
-            fflush(stdout);
+            // printf("Using VirtualBoard %s.\n",(*B)->Name().c_str());
+            // fflush(stdout);
             VirtualBoard = (*B);
             break;
         }
@@ -108,7 +108,7 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
         VirtualBoard = new P_board("VirtualBoard");
         VirtualBox->contain(coreID.A_board, VirtualBoard);
         VirtualBoard->AutoName(VirtualBox->Name()+"_Board_");
-        // printf("Inserted VirtualBoard %s\n",VirtualBoard->Name().c_str());
+        // printf("Inserted VirtualBoard %s\n", VirtualBoard->Name().c_str());
         // fflush(stdout);
     }
     P_mailbox* VirtualMailbox = 0;
@@ -132,7 +132,8 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
         VirtualMailbox = new P_mailbox("VirtualMailbox");
         VirtualBoard->contain(coreID.A_mailbox, VirtualMailbox);
         VirtualMailbox->AutoName(VirtualBoard->Name()+"_Mailbox_");
-        // printf("Inserting VirtualMailbox %s\n",VirtualMailbox->Name().c_str());
+        // printf("Inserted VirtualMailbox %s.\n",
+        //        VirtualMailbox->Name().c_str());
         // fflush(stdout);
     }
 
@@ -160,13 +161,21 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     P_core* VirtualCore = new P_core("VirtualCore");
     VirtualMailbox->contain(coreID.A_core, VirtualCore);
     VirtualCore->AutoName(VirtualMailbox->Name()+"_Core_");
+    // printf("Inserted VirtualCore %s\n", VirtualCore->Name().c_str());
+    // fflush(stdout);
+
     // generate the threads for the core.
     P_thread* VirtualThread;
     for (unsigned thread = 0; thread <= coreID.A_thread; thread++)
     {
+        // printf("Creating 'virtual' thread.\n");
+        // fflush(stdout);
         VirtualThread = new P_thread("VirtualThread");
         VirtualCore->contain(thread, VirtualThread);
         VirtualThread->AutoName(VirtualCore->Name()+"_Thread_");
+        // printf("Inserted VirtualThread %s\n",
+        //        VirtualThread->Name().c_str());
+        // fflush(stdout);
     }
     // then map to the task.
     VCoreMap[vCore] = VirtualCore;

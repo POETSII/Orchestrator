@@ -265,14 +265,14 @@ unsigned TMoth::CmLoad(string task)
    WALKVECTOR(P_board*,TaskMap[task]->BoardsForTask(),B)
    {
       // printf("Board \"%s\" will use %ld mailboxes.\n",
-      //        (*B)->Name(), (*B)->G.SizeNodes());
+      //        (*B)->Name().c_str(), (*B)->G.SizeNodes());
       // fflush(stdout);
       WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
                         unsigned, P_link*,
                         unsigned, P_port*, (*B)->G, MB)
       {
           // printf("Mailbox \"%s\" will use %ld cores\n",
-          //        (*B)->G.NodeData(MB)->Name(),
+          //        (*B)->G.NodeData(MB)->Name().c_str(),
           //        (*B)->G.NodeData(MB)->P_corem.size());
           // fflush(stdout);
           // less work to compute as we go along than to call CoresForTask.size()
