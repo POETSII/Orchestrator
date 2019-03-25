@@ -106,7 +106,6 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
         // printf("Creating 'virtual' board.\n");
         // fflush(stdout);
         VirtualBoard = new P_board("VirtualBoard");
-        VirtualBoard->parent = VirtualBox;
         VirtualBox->contain(coreID.A_board, VirtualBoard);
         VirtualBoard->AutoName(VirtualBox->Name()+"_Board_");
         // printf("Inserted VirtualBoard %s\n",VirtualBoard->Name().c_str());
@@ -131,7 +130,6 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
         // printf("Creating 'virtual' mailbox.\n");
         // fflush(stdout);
         VirtualMailbox = new P_mailbox("VirtualMailbox");
-        VirtualMailbox->parent = VirtualBoard;
         VirtualBoard->contain(coreID.A_mailbox, VirtualMailbox);
         VirtualMailbox->AutoName(VirtualBoard->Name()+"_Mailbox_");
         // printf("Inserting VirtualMailbox %s\n",VirtualMailbox->Name().c_str());
@@ -160,7 +158,6 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     // printf("Creating 'virtual' core.\n");
     // fflush(stdout);
     P_core* VirtualCore = new P_core("VirtualCore");
-    VirtualCore->parent = VirtualMailbox;
     VirtualMailbox->contain(coreID.A_core, VirtualCore);
     VirtualCore->AutoName(VirtualMailbox->Name()+"_Core_");
     // generate the threads for the core.
@@ -168,7 +165,6 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     for (unsigned thread = 0; thread <= coreID.A_thread; thread++)
     {
         VirtualThread = new P_thread("VirtualThread");
-        VirtualThread->parent = VirtualCore;
         VirtualCore->contain(thread, VirtualThread);
         VirtualThread->AutoName(VirtualCore->Name()+"_Thread_");
     }
