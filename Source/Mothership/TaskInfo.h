@@ -24,10 +24,12 @@ public:
   TaskInfo_t(string=string());
   virtual ~TaskInfo_t();
 
-  string TaskName;            // task name
-  unsigned char status;       // task runtime state
-  P_box* VirtualBox;          // which boards/cores does this task use?
-  string BinPath;             // which directory has which task's binaries
+  string TaskName;              // task name
+  unsigned char status;         // task runtime state
+  P_box* VirtualBox;            // which boards/cores does this task use?
+  string BinPath;               // which directory has which task's binaries
+  HardwareAddressFormat hardwareAddressFormat; // Dictates the spacing in
+                                               // hardware addresses.
 
   inline vector<P_board*>& BoardsForTask() {return VirtualBox->P_boardv;}
   inline P_core* getCore(uint32_t vCore) {return VCoreMap.find(vCore)->second;}

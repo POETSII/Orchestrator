@@ -14,6 +14,15 @@ TaskInfo_t::TaskInfo_t(string name) : TaskName(name), BinPath(), CoreMap(), VCor
 {
     VirtualBox = 0;
     status = TASK_IDLE;
+
+    // Defining the hardware address format, which dictates the spacing between
+    // levels of the hierarchy. This should be passed in from the root process
+    // when it reads the hardware model, but it's hardcoded for now. <!>
+    hardwareAddressFormat.boxWordLength = 0;
+    hardwareAddressFormat.boardWordLength = 99;
+    hardwareAddressFormat.mailboxWordLength = 99;
+    hardwareAddressFormat.coreWordLength = 99;
+    hardwareAddressFormat.threadWordLength = 99;
 }
 
 TaskInfo_t::~TaskInfo_t()
@@ -59,9 +68,17 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
         // fflush(stdout);
         VirtualBox = new P_box("VirtualBox");
         VirtualBox->AutoName(TaskName+"_Box_");
-        VirtualBox->get_hardware_address()->set_box(coreID.A_box);
-        printf("Inserting VirtualBox %s\n",VirtualBox->Name().c_str());
-        fflush(stdout);
+
+        // Setting up the address of the box. This address will propagate to
+        // items (boards, mailboxes, etc.) when they are contained.
+        HardwareAddress* boxHardwareAddress = new HardwareAddress(
+            &hardwareAddressFormat);  // This will be deleted when the box is
+                                      // cleaned up.
+        boxHardwareAddress->set_box(coreID.A_box);
+        VirtualBox->set_hardware_address(boxHardwareAddress);
+
+        // printf("Inserted VirtualBox %s\n",VirtualBox->Name().c_str());
+        // fflush(stdout);
     }
 
     // Defense against multiple cores with different addresses.
