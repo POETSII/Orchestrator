@@ -90,7 +90,7 @@ CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
            -std=c++11 -Wall -fPIC -pthread
 
 # Debug target logic.
-debug: CXXFLAGS += -g3
+debug: CXXFLAGS += -g3 -DORCHESTRATOR_DEBUG=1
 debug: all
 
 # Handy aliases for building executables, scripts, and libraries. Order doesn't
