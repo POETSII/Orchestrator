@@ -471,7 +471,7 @@ void Dialect1Deployer::populate_boxes_evenly_with_boardmap(
     unsigned boardsPerBox = boardMap.size() / boxMap->size();
 
     /* We iterate through the map of boxes and boards, distributing all boards
-     * up to a given amount, such that an even distribution is maintained. */
+     * up to a given amount, so that an even distribution is maintained. */
     std::map<AddressComponent, P_box*>::iterator boxIterator = boxMap->begin();
     BoardMap::iterator boardIterator = boardMap.begin();
     for (boxIterator=boxMap->begin(); boxIterator!=boxMap->end();
@@ -495,7 +495,7 @@ void Dialect1Deployer::populate_boxes_evenly_with_boardmap(
 void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
     P_engine* engine)
 {
-    P_box* temporaryBox;  /* Staging variable for boxes. */
+    P_box* temporaryBox;
 
     for (AddressComponent addressComponent=0; addressComponent < boxesInEngine;
          addressComponent++)
@@ -527,7 +527,7 @@ void Dialect1Deployer::populate_board_map()
         looping = false;
 
         /* Create and store a board in the map. Assign simple properties to the
-         * board while we're here.*/
+         * board while we're here. */
         boardAndAddress = new itemAndAddress<P_board*>;
         boardAndAddress->address = flatten_address(boardAddress,
                                                    boardWordLengths);
