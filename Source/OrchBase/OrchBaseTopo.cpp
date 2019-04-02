@@ -137,6 +137,7 @@ void OrchBase::TopoLoad(Cli::Cl_t Cl)
     ClearTopo();
     pE = new P_engine("");
     pE->parent = this;
+    pE->Npar(this);
     std::string inputFilePath = Cl.Pa_v[0].Val;
 
     HardwareFileParser parser;
@@ -185,6 +186,7 @@ void OrchBase::TopoSet1(Cli::Cl_t Cl)
     ClearTopo();
     pE = new P_engine("Aesop [1 box]");
     pE->parent = this;
+    pE->Npar(this);
     AesopDeployer deployer;
     Post(138, pE->Name());
     deployer.deploy(pE);
@@ -198,6 +200,7 @@ void OrchBase::TopoSet2(Cli::Cl_t Cl)
     ClearTopo();
     pE = new P_engine("Aesop [2 boxes]");
     pE->parent = this;
+    pE->Npar(this);
     MultiAesopDeployer deployer(2);
     Post(138, pE->Name());
     deployer.deploy(pE);
