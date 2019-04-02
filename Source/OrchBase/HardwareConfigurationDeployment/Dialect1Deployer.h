@@ -88,18 +88,11 @@ public:
     unsigned instructionMemory;
 
 private:
-    /* Item factories and their indeces. */
-    unsigned createdBoardIndex;
-    P_board* create_board();
-
-    unsigned createdMailboxIndex;
-    P_mailbox* create_mailbox();
-
-    unsigned createdCoreIndex;
-    P_core* create_core();
-
-    unsigned createdThreadIndex;
-    P_thread* create_thread();
+    /* Item factories. */
+    P_board* create_board(std::string name);
+    P_mailbox* create_mailbox(std::string name);
+    P_core* create_core(std::string name);
+    P_thread* create_thread(std::string name);
 
     /* Maps for staging POETS items during deployment, required to persist
      * connectivity information. These need to be maps so that we can determine

@@ -422,16 +422,27 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
  * argument. */
 void Dialect1Deployer::create_cores_in_mailbox(P_mailbox* mailbox)
 {
-    for(AddressComponent coreIndex = 0; coreIndex<coresInMailbox;
-        mailbox->contain(coreIndex++, create_core()));
+    P_core* temporaryCore;
+
+    for(AddressComponent coreIndex = 0; coreIndex<coresInMailbox; coreIndex++)
+    {
+        temporaryCore = create_core(dformat("Core%06d", coreIndex));
+        mailbox->contain(coreIndex, temporaryCore);
+    }
 }
 
 /* Creates a series of threads, and donates them to the core passed in as an
  * argument. */
 void Dialect1Deployer::create_threads_in_core(P_core* core)
 {
+    P_thread* temporaryThread;
+
     for(AddressComponent threadIndex = 0; threadIndex<threadsInCore;
-        core->contain(threadIndex++, create_thread()));
+        threadIndex++)
+    {
+        temporaryThread = create_thread(dformat("Thread%06d", threadIndex));
+        core->contain(threadIndex, temporaryThread);
+    }
 }
 
 /* Flattens a multidimensional address (or a vector-address with one
@@ -470,6 +481,9 @@ void Dialect1Deployer::populate_boxes_evenly_with_boardmap(
     /* An even distribution (we hope). */
     unsigned boardsPerBox = boardMap.size() / boxMap->size();
 
+    /* Index for all boards within one box. */
+    unsigned boardIndex = 0;
+
     /* We iterate through the map of boxes and boards, distributing all boards
      * up to a given amount, so that an even distribution is maintained. */
     std::map<AddressComponent, P_box*>::iterator boxIterator = boxMap->begin();
@@ -478,11 +492,13 @@ void Dialect1Deployer::populate_boxes_evenly_with_boardmap(
          boxIterator++)
     {
         /* Contain 'boardsPerBox' boards in this box, using the flattened
-         * address. */
+         * address, and set the name of the board appropriately. */
         for (unsigned boardIndex=0; boardIndex<boardsPerBox; boardIndex++)
         {
             boxIterator->second->contain(boardIterator->second->address,
                                          boardIterator->second->poetsItem);
+            boardIterator->second->poetsItem->Name(dformat("Board%06d",
+                                                           boardIndex));
             boardIterator++;
         }
     }
@@ -520,6 +536,9 @@ void Dialect1Deployer::populate_board_map()
     /* A temporary board-address pair for populating the map. */
     itemAndAddress<P_board*>* boardAndAddress;
 
+    /* A placeholder variable for defining board names. */
+    std::string boardName = "BoardWillBeNamedWhenMappedToABox";
+
     /* We loop until we have created all of the boards that we need to. */
     bool looping = true;
     while(looping)
@@ -531,7 +550,7 @@ void Dialect1Deployer::populate_board_map()
         boardAndAddress = new itemAndAddress<P_board*>;
         boardAndAddress->address = flatten_address(boardAddress,
                                                    boardWordLengths);
-        boardAndAddress->poetsItem = create_board();
+        boardAndAddress->poetsItem = create_board(boardName);
         boardMap.insert(std::make_pair(boardAddress, boardAndAddress));
 
         /* Increment hierarchical address.
@@ -584,6 +603,13 @@ void Dialect1Deployer::populate_mailbox_map()
     /* A temporary mailbox-address pair for populating the map. */
     itemAndAddress<P_mailbox*>* mailboxAndAddress;
 
+    /* A placeholder variable for defining mailbox names. Unlike
+     * populate_board_map, where all of the boards might go in different boxes,
+     * we know that all of the mailboxes in this map will be stored in the same
+     * board. This means we can meaningfully index the mailbox names as they
+     * are created. */
+    unsigned mailboxIndex;
+
     /* We loop until we have created all of the mailboxes that we need to. */
     bool looping = true;
     while(looping)
@@ -595,7 +621,8 @@ void Dialect1Deployer::populate_mailbox_map()
         mailboxAndAddress = new itemAndAddress<P_mailbox*>;
         mailboxAndAddress->address = flatten_address(mailboxAddress,
                                                      mailboxWordLengths);
-        mailboxAndAddress->poetsItem = create_mailbox();
+        mailboxAndAddress->poetsItem = create_mailbox(dformat("Mailbox%06d",
+                                                              mailboxIndex));
         mailboxMap.insert(std::make_pair(mailboxAddress, mailboxAndAddress));
 
         /* Increment hierarchical address.
@@ -626,10 +653,10 @@ void Dialect1Deployer::populate_mailbox_map()
 
 /* Dynamically creates a new POETS board, and populates it with it's common
  * parameters. Does not define contained items. */
-P_board* Dialect1Deployer::create_board()
+P_board* Dialect1Deployer::create_board(std::string name)
 {
     P_board* returnAddress;
-    returnAddress = new P_board(dformat("Board%06d", createdBoardIndex++));
+    returnAddress = new P_board(name);
     returnAddress->dram = dram;
     returnAddress->supervisorMemory = boardSupervisorMemory;
     returnAddress->costBoardMailbox = costBoardMailbox;
@@ -638,11 +665,10 @@ P_board* Dialect1Deployer::create_board()
 
 /* Dynamically creates a new POETS mailbox, and populates it with it's common
  * parameters. Does not define contained items. */
-P_mailbox* Dialect1Deployer::create_mailbox()
+P_mailbox* Dialect1Deployer::create_mailbox(std::string name)
 {
     P_mailbox* returnAddress;
-    returnAddress = new P_mailbox(dformat("Mailbox%06d",
-                                          createdMailboxIndex++));
+    returnAddress = new P_mailbox(name);
     returnAddress->costCoreCore = costCoreCore;
     returnAddress->costMailboxCore = costMailboxCore;
 
@@ -653,10 +679,10 @@ P_mailbox* Dialect1Deployer::create_mailbox()
 
 /* Dynamically creates a new POETS core, and populates it with it's common
  * parameters. Does not define contained items. */
-P_core* Dialect1Deployer::create_core()
+P_core* Dialect1Deployer::create_core(std::string name)
 {
     P_core* returnAddress;
-    returnAddress = new P_core(dformat("Core%06d", createdCoreIndex++));
+    returnAddress = new P_core(name);
     returnAddress->dataMemory = dataMemory;
     returnAddress->instructionMemory = instructionMemory;
     returnAddress->costCoreThread = costCoreThread;
@@ -668,9 +694,9 @@ P_core* Dialect1Deployer::create_core()
 }
 
 /* Dynamically creates a new POETS thread. */
-P_thread* Dialect1Deployer::create_thread()
+P_thread* Dialect1Deployer::create_thread(std::string name)
 {
-    return new P_thread(dformat("Thread%06d", createdThreadIndex++));
+    return new P_thread(name);
 }
 
 /* Frees dyamically-allocated value objects (itemAndAddress<P_board*>*) objects
