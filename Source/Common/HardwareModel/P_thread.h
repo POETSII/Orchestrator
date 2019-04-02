@@ -38,7 +38,7 @@ public:
      * hardware model and the placement implementation; POETS devices (which
      * are part of the task graph) get mapped onto threads. Multiple devices
      * are services by a single thread. */
-    std::list<P_device *> P_devicel;
+    std::list<P_device*> P_devicel;
 
     unsigned int dataMemoryAddress;
     unsigned int instructionMemoryAddress;
