@@ -648,8 +648,8 @@ P_box* Dialect1Deployer::create_box(std::string name)
 {
     P_box* returnAddress;
     returnAddress = new P_box(name);
-    temporaryBox->costBoxBoard = costBoxBoard;
-    temporaryBox->supervisorMemory = boxSupervisorMemory;
+    returnAddress->costBoxBoard = costBoxBoard;
+    returnAddress->supervisorMemory = boxSupervisorMemory;
     return returnAddress;
 }
 
