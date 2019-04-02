@@ -89,6 +89,7 @@ public:
 
 private:
     /* Item factories. */
+    P_box* create_box(std::string name);
     P_board* create_board(std::string name);
     P_mailbox* create_mailbox(std::string name);
     P_core* create_core(std::string name);

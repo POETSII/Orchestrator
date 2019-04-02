@@ -516,9 +516,7 @@ void Dialect1Deployer::populate_engine_with_boxes_and_their_costs(
     for (AddressComponent addressComponent=0; addressComponent < boxesInEngine;
          addressComponent++)
     {
-        temporaryBox = new P_box(dformat("Box%06d", addressComponent));
-        temporaryBox->costBoxBoard = costBoxBoard;
-        temporaryBox->supervisorMemory = boxSupervisorMemory;
+        temporaryBox = create_box(dformat("Box%06d", addressComponent));
         engine->contain(addressComponent, temporaryBox);
     }
 }
@@ -649,6 +647,17 @@ void Dialect1Deployer::populate_mailbox_map()
             }
         }
     }
+}
+
+/* Dynamically creates a new POETS box, and populates it with it's common
+ * parameters. Does not define contained items. */
+P_box* Dialect1Deployer::create_box(std::string name)
+{
+    P_box* returnAddress;
+    returnAddress = new P_box(name);
+    temporaryBox->costBoxBoard = costBoxBoard;
+    temporaryBox->supervisorMemory = boxSupervisorMemory;
+    return returnAddress;
 }
 
 /* Dynamically creates a new POETS board, and populates it with it's common
