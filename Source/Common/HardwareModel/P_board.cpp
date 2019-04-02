@@ -33,11 +33,7 @@ P_board::P_board(std::string name)
     G.SetAD_CB(GraphCallbacks::arc);
 }
 
-P_board::~P_board()
-{
-    clear();
-    sup_offv.clear();
-}
+P_board::~P_board(){clear();}
 
 /* Clears the dynamically-allocated elements of the data structure of this
  * board, deleting all contained components recursively. */
@@ -86,6 +82,9 @@ void P_board::clear()
 
     /* Clear the graph object itself. */
     G.Clear();
+
+    /* Supervisors begone! */
+    sup_offv.clear();
 }
 
 /* Donates an uncontained mailbox to this board. Arguments:
