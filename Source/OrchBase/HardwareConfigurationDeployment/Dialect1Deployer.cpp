@@ -2,10 +2,6 @@
 
 Dialect1Deployer::Dialect1Deployer()
 {
-    createdBoardIndex = 0;
-    createdMailboxIndex = 0;
-    createdCoreIndex = 0;
-    createdThreadIndex = 0;
     author = "";
     version = "";
     fileOrigin = "";
@@ -480,9 +476,6 @@ void Dialect1Deployer::populate_boxes_evenly_with_boardmap(
 {
     /* An even distribution (we hope). */
     unsigned boardsPerBox = boardMap.size() / boxMap->size();
-
-    /* Index for all boards within one box. */
-    unsigned boardIndex = 0;
 
     /* We iterate through the map of boxes and boards, distributing all boards
      * up to a given amount, so that an even distribution is maintained. */
