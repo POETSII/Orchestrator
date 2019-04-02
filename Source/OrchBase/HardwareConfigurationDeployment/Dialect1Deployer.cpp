@@ -599,7 +599,7 @@ void Dialect1Deployer::populate_mailbox_map()
      * we know that all of the mailboxes in this map will be stored in the same
      * board. This means we can meaningfully index the mailbox names as they
      * are created. */
-    unsigned mailboxIndex;
+    unsigned mailboxIndex = 0;
 
     /* We loop until we have created all of the mailboxes that we need to. */
     bool looping = true;
@@ -615,6 +615,7 @@ void Dialect1Deployer::populate_mailbox_map()
         mailboxAndAddress->poetsItem = create_mailbox(dformat("Mailbox%06d",
                                                               mailboxIndex));
         mailboxMap.insert(std::make_pair(mailboxAddress, mailboxAndAddress));
+        mailboxIndex++;
 
         /* Increment hierarchical address.
          *
