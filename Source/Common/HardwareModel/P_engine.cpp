@@ -8,6 +8,7 @@
  * - name: Name of this engine object (see namebase) */
 P_engine::P_engine(std::string name)
 {
+    arcKey = 0;
     Name(name);
 
     /* Set up callbacks for the graph container (command pattern). Note that we
