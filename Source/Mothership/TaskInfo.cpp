@@ -70,8 +70,7 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     // fflush(stdout);
     if (VirtualBox == 0) // no box yet. Assume this core insertion defines our box number.
     {
-        // printf("Creating new 'virtual' box.\n");
-        // fflush(stdout);
+        DebugPrint("Creating new 'virtual' box.\n");
         VirtualBox = new P_box("VirtualBox");
         VirtualBox->AutoName(TaskName+"_Box_");
 
@@ -83,18 +82,17 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
         boxHardwareAddress->set_box(coreID.A_box);
         VirtualBox->set_hardware_address(boxHardwareAddress);
 
-        // printf("Inserted VirtualBox %s.\n", VirtualBox->Name().c_str());
-        // fflush(stdout);
+        DebugPrint("Inserted VirtualBox %s.\n", VirtualBox->Name().c_str());
     }
 
     // Defense against multiple cores with different addresses.
     if (coreID.A_box != VirtualBox->get_hardware_address()->get_box())
     {
-        // printf("Core ID box address component (%d) does not match "
-        //        "VirtualBox box address component (%d). Not inserting this "
-        //        "core.\n",
-        //        coreID.A_box, VirtualBox->get_hardware_address()->get_box());
-        // fflush(stdout);
+        DebugPrint("Core ID box address component (%d) does not match "
+                   "VirtualBox box address component (%d). Not inserting this "
+                   "core.\n",
+                   coreID.A_box,
+                   VirtualBox->get_hardware_address()->get_box());
         return; // not our box. Ignore.
     }
     P_board* VirtualBoard = 0;
@@ -102,21 +100,18 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     {
         if ((*B)->get_hardware_address()->get_board() == coreID.A_board)
         {
-            // printf("Using VirtualBoard %s.\n",(*B)->Name().c_str());
-            // fflush(stdout);
+            DebugPrint("Using VirtualBoard %s.\n",(*B)->Name().c_str());
             VirtualBoard = (*B);
             break;
         }
     }
     if (!VirtualBoard) // no existing board matches the core. Create a new one.
     {
-        // printf("Creating 'virtual' board.\n");
-        // fflush(stdout);
+        DebugPrint("Creating 'virtual' board.\n");
         VirtualBoard = new P_board("VirtualBoard");
         VirtualBox->contain(coreID.A_board, VirtualBoard);
         VirtualBoard->AutoName(VirtualBox->Name()+"_Board_");
-        // printf("Inserted VirtualBoard %s\n", VirtualBoard->Name().c_str());
-        // fflush(stdout);
+        DebugPrint("Inserted VirtualBoard %s\n", VirtualBoard->Name().c_str());
     }
     P_mailbox* VirtualMailbox = 0;
     WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
@@ -125,23 +120,20 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     {
         if (VirtualBoard->G.NodeData(MB)->get_hardware_address()->get_mailbox() == coreID.A_mailbox)
         {
-            printf("Using VirtualMailbox %s\n",
-                   VirtualBoard->G.NodeData(MB)->Name().c_str());
-            fflush(stdout);
+            DebugPrint("Using VirtualMailbox %s\n",
+                       VirtualBoard->G.NodeData(MB)->Name().c_str());
             VirtualMailbox = VirtualBoard->G.NodeData(MB);
             break;
         }
     }
     if (!VirtualMailbox) // no existing mailbox matches the core. Create a new one.
     {
-        // printf("Creating 'virtual' mailbox.\n");
-        // fflush(stdout);
+        DebugPrint("Creating 'virtual' mailbox.\n");
         VirtualMailbox = new P_mailbox("VirtualMailbox");
         VirtualBoard->contain(coreID.A_mailbox, VirtualMailbox);
         VirtualMailbox->AutoName(VirtualBoard->Name()+"_Mailbox_");
-        // printf("Inserted VirtualMailbox %s.\n",
-        //        VirtualMailbox->Name().c_str());
-        // fflush(stdout);
+        DebugPrint("Inserted VirtualMailbox %s.\n",
+                   VirtualMailbox->Name().c_str());
     }
 
     softMap_t::iterator C = VCoreMap.find(vCore);
