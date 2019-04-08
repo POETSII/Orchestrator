@@ -318,12 +318,14 @@ unsigned TMoth::CmRun(string task)
    }
    DebugPrint("%d threads to release in task %s\n",threadsToRelease.size(),task.c_str());
    while (!canSend()); // wait until a message can be sent. The Twig process should be fielding unexpected traffic by this point.
-   DebugPrint("Issuing barrier release to %d threads\n",threadsToRelease.size());
+   DebugPrint("Issuing barrier release to %d threads, using message address "
+              "0x%X\n", threadsToRelease.size(), DEST_BROADCAST);
    // and then issue the barrier release to the threads.
    WALKVECTOR(unsigned,threadsToRelease,R)
    {
      barrier_msg.destDeviceAddr = DEST_BROADCAST; // send to every device on the thread with a supervisor message
-     DebugPrint("Barrier release address: 0x%X\n", barrier_msg.destDeviceAddr);
+     DebugPrint("Sending barrier release message to the thread with "
+                "hardware address %u.\n", *R);
      send(*R,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + (p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0)), &barrier_msg);
    }
    DebugPrint("Tinsel threads now on their own for task %s\n",task.c_str());
