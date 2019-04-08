@@ -62,12 +62,11 @@ bool TaskInfo_t::setCore(P_core* core, uint32_t vCore)
 // absolute setter for a core - inserts if none exists, overwrites if it is already in the map
 void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
 {
-    // printf("Finding space for a core with %u threads, and with the "
-    //        "following address components:\n  box: %u\n  board: %u\n  "
-    //        "mailbox: %u\n  core: %u\n",
-    //        coreID.A_thread + 1, coreID.A_box, coreID.A_board,
-    //        coreID.A_mailbox, coreID.A_core);
-    // fflush(stdout);
+    DebugPrint("Finding space for a core with %u threads, and with the "
+               "following address components:\n  box: %u\n  board: %u\n  "
+               "mailbox: %u\n  core: %u\n",
+               coreID.A_thread + 1, coreID.A_box, coreID.A_board,
+               coreID.A_mailbox, coreID.A_core);
     if (VirtualBox == 0) // no box yet. Assume this core insertion defines our box number.
     {
         DebugPrint("Creating new 'virtual' box.\n");
@@ -145,9 +144,8 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
             (C->second->get_hardware_address()->get_mailbox() == VirtualMailbox->get_hardware_address()->get_mailbox()) &&
             (C->second->get_hardware_address()->get_core() == coreID.A_core))
         {
-            // printf("After all that, the core was already here. Not "
-            //        "inserting it.\n");
-            // fflush(stdout);
+            DebugPrint("After all that, the core was already here. Not "
+                       "inserting it.\n");
             return;
         }
        // A mapped core with the same virtual number is already in the table; get rid of it.
@@ -155,26 +153,22 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
        removeCore(C->second);
     }
     // insert the new core with its appropriate address fields.
-    // printf("Creating 'virtual' core.\n");
-    // fflush(stdout);
+    DebugPrint("Creating 'virtual' core.\n");
     P_core* VirtualCore = new P_core("VirtualCore");
     VirtualMailbox->contain(coreID.A_core, VirtualCore);
     VirtualCore->AutoName(VirtualMailbox->Name()+"_Core_");
-    // printf("Inserted VirtualCore %s\n", VirtualCore->Name().c_str());
-    // fflush(stdout);
+    DebugPrint("Inserted VirtualCore %s\n", VirtualCore->Name().c_str());
 
     // generate the threads for the core.
     P_thread* VirtualThread;
     for (unsigned thread = 0; thread <= coreID.A_thread; thread++)
     {
-        // printf("Creating 'virtual' thread.\n");
-        // fflush(stdout);
+        DebugPrint("Creating 'virtual' thread.\n");
         VirtualThread = new P_thread("VirtualThread");
         VirtualCore->contain(thread, VirtualThread);
         VirtualThread->AutoName(VirtualCore->Name()+"_Thread_");
-        // printf("Inserted VirtualThread %s\n",
-        //        VirtualThread->Name().c_str());
-        // fflush(stdout);
+        DebugPrint("Inserted VirtualThread %s\n",
+                   VirtualThread->Name().c_str());
     }
 
     // then map to the task.
