@@ -1,6 +1,7 @@
 #ifndef __TASKINFO_H__
 #define __TASKINFO_H__
 
+#include "Debug.h"
 #include "P_task.h"
 #include "P_box.h"
 #include "P_board.h"

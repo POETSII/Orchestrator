@@ -54,8 +54,7 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
        VirtualBox = new P_box(0);
        VirtualBox->AutoName(TaskName+"_Box_");
        VirtualBox->addr.A_box = coreID.A_box;
-       printf("Inserting VirtualBox %s\n",VirtualBox->Name().c_str());
-       fflush(stdout);
+       DebugPrint("Inserting VirtualBox %s\n",VirtualBox->Name().c_str());
     }
     if (coreID.A_box != VirtualBox->addr.A_box) return; // not our box. Ignore.
     P_board* VirtualBoard = 0;
@@ -63,8 +62,7 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
     {
        if ((*B)->addr.A_board == coreID.A_board)
        {
-	  printf("Using VirtualBoard %s\n",(*B)->Name().c_str());
-          fflush(stdout);	  
+	  DebugPrint("Using VirtualBoard %s\n",(*B)->Name().c_str());
 	  VirtualBoard = (*B);
 	  break;
        }
@@ -76,8 +74,7 @@ void TaskInfo_t::insertCore(uint32_t vCore, P_addr_t coreID)
        VirtualBoard->AutoName(VirtualBox->Name()+"_Board_");
        VirtualBoard->addr.A_box = coreID.A_box;
        VirtualBoard->addr.A_board = coreID.A_board;
-       printf("Inserting VirtualBoard %s\n",VirtualBoard->Name().c_str());
-       fflush(stdout);
+       DebugPrint("Inserting VirtualBoard %s\n",VirtualBoard->Name().c_str());
     }
     softMap_t::iterator C = VCoreMap.find(vCore);
     if (C != VCoreMap.end())

@@ -44,8 +44,9 @@ twig_running = false;
 ForwardMsgs = false; // don't forward tinsel traffic yet
 
 MPISpinner();                          // Spin on *all* messages; exit on DIE
-// printf("Exiting Mothership. Closedown flags: AcceptConns: %s, ForwardMsgs: %s\n", AcceptConns ? "true" : "false", ForwardMsgs ? "true" : "false");
-// fflush(stdout);
+DebugPrint("Exiting Mothership. Closedown flags: AcceptConns: %s, "
+           "ForwardMsgs: %s\n", AcceptConns ? "true" : "false",
+           ForwardMsgs ? "true" : "false");
 if (twig_running) StopTwig(); // wait for the twig thread, if it's still somehow running.
 printf("********* Mothership rank %d on the way out\n",Urank); fflush(stdout);
 }
@@ -72,15 +73,13 @@ WALKMAP(string,TaskInfo_t*,TaskMap,T)
 
 unsigned TMoth::Boot(string task)
 {
-   // printf("Entering boot stage\n");
-   // fflush(stdout);
+   DebugPrint("Entering boot stage\n");
    if (TaskMap.find(task) == TaskMap.end())
    {
        Post(107,task);
        return 1;
    }
-   // printf("Task %s being booted\n", task.c_str());
-   // fflush(stdout);
+   DebugPrint("Task %s being booted\n", task.c_str());
    switch(TaskMap[task]->status)
    {
    case TaskInfo_t::TASK_BOOT:
@@ -89,8 +88,7 @@ unsigned TMoth::Boot(string task)
    TaskMap[task]->status = TaskInfo_t::TASK_ERR;
    return 2;
    }
-   // printf("Task is ready to be booted\n");
-   // fflush(stdout);
+   DebugPrint("Task is ready to be booted\n");
    case TaskInfo_t::TASK_RDY:
    {
    uint32_t mX, mY, core, thread;
@@ -108,63 +106,48 @@ unsigned TMoth::Boot(string task)
           if (remainder) t_start_bitmap[TMoth::GetHWAddr((*C)->addr)]->push_back(UINT_MAX >> ((8*sizeof(unsigned))-remainder));
        }
    }
-   // printf("Task start bitmaps created for %d cores\n", t_start_bitmap.size());
-   // fflush(stdout);
+   DebugPrint("Task start bitmaps created for %d cores\n", t_start_bitmap.size());
    // actually boot the cores
    WALKVECTOR(P_core*,taskCores,C)
    {
      fromAddr(TMoth::GetHWAddr((*C)->addr),&mX,&mY,&core,&thread);
-     // printf("Booting %d threads on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
-     // fflush(stdout);
+     DebugPrint("Booting %d threads on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
      startOne(mX,mY,core,(*C)->P_threadv.size());
-     // printf("%d threads started on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
-     // fflush(stdout);
-     // printf("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
-     // fflush(stdout);
+     DebugPrint("%d threads started on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
+     DebugPrint("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
      goOne(mX,mY,core);
    }
    // per Matt Naylor comment safer to start all cores then issue the go command to all cores separately.
    // WALKVECTOR(P_core*,taskCores,C)
    // {
-   //  printf("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
-   //  fflush(stdout);
+   //  DebugPrint("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
    //  goOne(mX,mY,core);
    // }
-   // printf("%d cores booted\n", taskCores.size());
-   // fflush(stdout);
+   // DebugPrint("%d cores booted\n", taskCores.size());
    P_Sup_Msg_t barrier_msg;
    while (!t_start_bitmap.empty())
    {
      recvMsg(&barrier_msg, p_sup_hdr_size());
-     // printf("Received a message from a core during application barrier\n");
-     // fflush(stdout);
+     DebugPrint("Received a message from a core during application barrier\n");
      if ((barrier_msg.header.sourceDeviceAddr & P_SUP_MASK) && (barrier_msg.header.command == P_PKT_MSGTYP_BARRIER))
      {
-        // printf("Barrier message from thread ID 0x%X\n", barrier_msg.header.sourceDeviceAddr ^ P_SUP_MASK);
-	// fflush(stdout);
+        DebugPrint("Barrier message from thread ID 0x%X\n", barrier_msg.header.sourceDeviceAddr ^ P_SUP_MASK);
         fromAddr(((barrier_msg.header.sourceDeviceAddr ^ P_SUP_MASK) >> P_THREAD_OS),&mX,&mY,&core,&thread);
 	unsigned hw_core = toAddr(mX,mY,core,0);
-	// printf("Received a barrier acknowledge from core %#X\n", hw_core);
-        // fflush(stdout);
+	DebugPrint("Received a barrier acknowledge from core %#X\n", hw_core);
 	if (t_start_bitmap.find(hw_core) != t_start_bitmap.end())
 	{
-	   // printf("Thread %d on core %d responding\n", thread, core);
-           // fflush(stdout);
-	   // printf("Core bitmap for thread %d before acknowledge: %#X\n", thread, (*t_start_bitmap[hw_core])[thread/(8*sizeof(unsigned))]);
-	   // fflush(stdout);
+	   DebugPrint("Thread %d on core %d responding\n", thread, core);
+	   DebugPrint("Core bitmap for thread %d before acknowledge: %#X\n", thread, (*t_start_bitmap[hw_core])[thread/(8*sizeof(unsigned))]);
 	   (*t_start_bitmap[hw_core])[thread/(8*sizeof(unsigned))] &= (~(1 << (thread%(8*sizeof(unsigned)))));
-	   // printf("Core bitmap for thread %d after acknowledge: %#X\n", thread, (*t_start_bitmap[hw_core])[thread/(8*sizeof(unsigned))]);
-	   // fflush(stdout);
+	   DebugPrint("Core bitmap for thread %d after acknowledge: %#X\n", thread, (*t_start_bitmap[hw_core])[thread/(8*sizeof(unsigned))]);
 	   vector<unsigned>::iterator S;
-	   // printf("Core bitmap currently has %d elements\n", t_start_bitmap.size());
-	   // fflush(stdout);
+	   DebugPrint("Core bitmap currently has %d elements\n", t_start_bitmap.size());
 	   for (S = t_start_bitmap[hw_core]->begin(); S != t_start_bitmap[hw_core]->end(); S++) if (*S) break;
-	   // printf("Core bitmap for core %d has %d subelements\n", hw_core, t_start_bitmap[hw_core]->size());
-	   // fflush(stdout);
+	   DebugPrint("Core bitmap for core %d has %d subelements\n", hw_core, t_start_bitmap[hw_core]->size());
 	   if (S == t_start_bitmap[hw_core]->end())
 	   {
-	      // printf("Removing core bitmap for core %d\n", thread, t_start_bitmap[hw_core]->size());
-	      // fflush(stdout);
+	      DebugPrint("Removing core bitmap for core %d\n", thread, t_start_bitmap[hw_core]->size());
 	      t_start_bitmap[hw_core]->clear();
 	      delete t_start_bitmap[hw_core];
 	      t_start_bitmap.erase(hw_core);
@@ -172,8 +155,7 @@ unsigned TMoth::Boot(string task)
 	}
      }
    }
-   // printf("%d cores passed Mothership barrier and awaiting start signal \n", taskCores.size());
-   // fflush(stdout);
+   DebugPrint("%d cores passed Mothership barrier and awaiting start signal \n", taskCores.size());
    // MPI_Barrier(Comms[0]);         // barrier on the mothercore side (temporarily removed until we have multi-mothership systems)
    // create a thread (later will be a process) to deal with packets from
    // tinsel cores. Have to do it here, after all the initial setup is complete,
@@ -218,15 +200,13 @@ unsigned TMoth::Boot(string task)
 unsigned TMoth::CmLoad(string task)
 // Load a task to the system
 {
-   // printf("%d tasks deployed to Mothership\n", TaskMap.size());
-   // fflush(stdout);
+   DebugPrint("%d tasks deployed to Mothership\n", TaskMap.size());
    if (TaskMap.find(task) == TaskMap.end())
    {
       Post(515, task, int2str(Urank));
       return 0;
    }
-   // printf("Task %s found\n", task.c_str());
-   // fflush(stdout);
+   DebugPrint("Task %s found\n", task.c_str());
    WALKMAP(string,TaskInfo_t*,TaskMap,T)
    {
      // only one task can be active at a time (for the moment. Later we may want more sophisticated task mapping
@@ -242,31 +222,26 @@ unsigned TMoth::CmLoad(string task)
 	return 0;
      }
    }
-   // printf("Task status confirmed as TASK_LOAD\n");
-   // fflush(stdout);
+   DebugPrint("Task status confirmed as TASK_LOAD\n");
    if (!((TaskMap[task]->status == TaskInfo_t::TASK_IDLE) || (TaskMap[task]->status == TaskInfo_t::TASK_END)))
    {
       Post(511,task,"loaded to hardware",TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
       return 0;
    }
    TaskMap[task]->status = TaskInfo_t::TASK_BOOT;
-   // printf("Task status is TASK_BOOT\n");
-   // fflush(stdout);
+   DebugPrint("Task status is TASK_BOOT\n");
    int coresThisTask = 0;
    int coresLoaded = 0;
-   // printf("Task will use %d boards\n", TaskMap[task]->BoardsForTask().size());
-   // fflush(stdout);
+   DebugPrint("Task will use %d boards\n", TaskMap[task]->BoardsForTask().size());
    // for each board mapped to the task,
    WALKVECTOR(P_board*,TaskMap[task]->BoardsForTask(),B)
    {
-      // printf("This board using %d cores\n", (*B)->P_corev.size());
-      // fflush(stdout);
+      DebugPrint("This board using %d cores\n", (*B)->P_corev.size());
       // less work to compute as we go along than to call CoresForTask.size()
       coresThisTask += (*B)->P_corev.size();
       coresLoaded += LoadBoard(*B); // load the board (unthreaded model)
    }
-   // printf("All boards finished; %d cores loaded\n", coresLoaded);
-   // fflush(stdout);
+   DebugPrint("All boards finished; %d cores loaded\n", coresLoaded);
    // abandoning the boot if load failed
    if (coresLoaded < coresThisTask)
    {
@@ -275,8 +250,7 @@ unsigned TMoth::CmLoad(string task)
       return 1;
    }
    TaskMap[task]->status = TaskInfo_t::TASK_RDY;
-   // printf("Task status is TASK_RDY\n");
-   // fflush(stdout);
+   DebugPrint("Task status is TASK_RDY\n");
    // boot the board (which has to be done from the main thread as it is not
    // thread-safe)
    return Boot(task);
@@ -310,34 +284,28 @@ unsigned TMoth::CmRun(string task)
    return 0;
    case TaskInfo_t::TASK_BARR:
    {
-   // printf("Task %s entering tinsel barrier\n",task.c_str());
-   // fflush(stdout);
+   DebugPrint("Task %s entering tinsel barrier\n",task.c_str());
    P_Msg_Hdr_t barrier_msg;
    barrier_msg.messageLenBytes = p_hdr_size(); // barrier is only a header. No payload.
    barrier_msg.destEdgeIndex = 0;                     // no edge index necessary.
    barrier_msg.destPin = P_SUP_PIN_INIT;              // it goes to the system __init__ pin
    barrier_msg.messageTag = P_MSG_TAG_INIT;           // and is of message type __init__.
-   // printf("Building thread list for task %s\n",task.c_str());
-   // fflush(stdout);
+   DebugPrint("Building thread list for task %s\n",task.c_str());
    // build a list of the threads in this task (that should be released from barrier)
    vector<unsigned> threadsToRelease;
    WALKVECTOR(P_thread*,TaskMap[task]->ThreadsForTask(),R)
      threadsToRelease.push_back(TMoth::GetHWAddr((*R)->addr));
-   // printf("%d threads to release in task %s\n",threadsToRelease.size(),task.c_str());
-   // fflush(stdout);
+   DebugPrint("%d threads to release in task %s\n",threadsToRelease.size(),task.c_str());
    while (!canSend()); // wait until a message can be sent. The Twig process should be fielding unexpected traffic by this point.
-   // printf("Issuing barrier release to %d threads\n",threadsToRelease.size());
-   // fflush(stdout);
+   DebugPrint("Issuing barrier release to %d threads\n",threadsToRelease.size());
    // and then issue the barrier release to the threads.
    WALKVECTOR(unsigned,threadsToRelease,R)
    {
      barrier_msg.destDeviceAddr = DEST_BROADCAST; // send to every device on the thread with a supervisor message
-     // printf("Barrier release address: 0x%X\n", barrier_msg.destDeviceAddr);
-     // fflush(stdout);
+     DebugPrint("Barrier release address: 0x%X\n", barrier_msg.destDeviceAddr);
      send(*R,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + (p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0)), &barrier_msg);
    }
-   // printf("Tinsel threads now on their own for task %s\n",task.c_str());
-   // fflush(stdout);
+   DebugPrint("Tinsel threads now on their own for task %s\n",task.c_str());
    TaskMap[task]->status = TaskInfo_t::TASK_RUN;
    return 0;
    }
@@ -388,14 +356,12 @@ unsigned TMoth::CmStop(string task)
    stop_msg.destEdgeIndex = 0;           // ignore edge index. Unused.
    stop_msg.destPin = P_SUP_PIN_SYS_SHORT;     // goes to the system pin
    stop_msg.messageTag = P_MSG_TAG_STOP; // with a stop message type
-   // printf("Stopping task %s\n",task.c_str());
-   // fflush(stdout);
+   DebugPrint("Stopping task %s\n",task.c_str());
    // go through each thread of the task,
    WALKVECTOR(P_thread*, TaskMap[task]->ThreadsForTask(), R)
    {
      uint32_t destDevAddr = TMoth::GetHWAddr((*R)->addr);
-     // printf("Stopping thread %d in task %s\n", destDevAddr, task.c_str());
-     // fflush(stdout);
+     DebugPrint("Stopping thread %d in task %s\n", destDevAddr, task.c_str());
      stop_msg.destDeviceAddr = DEST_BROADCAST; // issue the stop message to all devices
      // wait for the interface
      while (!canSend());
@@ -469,18 +435,15 @@ int TMoth::LoadBoard(P_board* board)
 	    (*C)->pCoreBin = new Bin(fopen(code_f.c_str(), "r"));
 	    (*C)->pDataBin = new Bin(fopen(data_f.c_str(), "r"));
 	    uint32_t mX, mY, core, thread;
-	    // printf("Loading core with virtual address Bx:%d, Bd:%d, Cr:%d\n",(*C)->addr.A_box,(*C)->addr.A_board,(*C)->addr.A_core);
-            // fflush(stdout);
+	    DebugPrint("Loading core with virtual address Bx:%d, Bd:%d, Cr:%d\n",(*C)->addr.A_box,(*C)->addr.A_board,(*C)->addr.A_core);
 	    fromAddr(TMoth::GetHWAddr((*C)->addr), &mX, &mY, &core, &thread);
-	    // printf("Loading hardware thread 0x%X at x:%d y:%d c:%d\n",TMoth::GetHWAddr((*C)->addr),mX,mY,core);
-            // fflush(stdout);
+	    DebugPrint("Loading hardware thread 0x%X at x:%d y:%d c:%d\n",TMoth::GetHWAddr((*C)->addr),mX,mY,core);
 	    loadInstrsOntoCore(code_f.c_str(),mX,mY,core); // load instruction memory
 	    loadDataViaCore(data_f.c_str(),mX,mY,core); // then data memory
 	    ++coresLoaded;
          }
       }
-      // printf("Boot process for board %s finished %d cores loaded\n", board->Name().c_str(), coresLoaded);
-      // fflush(stdout);
+      DebugPrint("Boot process for board %s finished %d cores loaded\n", board->Name().c_str(), coresLoaded);
       return coresLoaded;
 }
 
@@ -495,19 +458,16 @@ unsigned TMoth::NameDist(PMsg_p* mTask_Info)
       map<string, TaskInfo_t*>::iterator T;
       if ((T=TaskMap.find(TaskName)) == TaskMap.end())
       {
-         // printf("Inserting new task %s from NameDist\n", TaskName.c_str());
-         // fflush(stdout);
+         DebugPrint("Inserting new task %s from NameDist\n", TaskName.c_str());
 	 TaskMap[TaskName] = new TaskInfo_t(TaskName);
       }
       vector<pair<unsigned,P_addr_t>> cores;
       task_info.Get(cores);
-      // printf("Task %s has %d cores\n",TaskName.c_str(),cores.size());
-      // fflush(stdout);
+      DebugPrint("Task %s has %d cores\n",TaskName.c_str(),cores.size());
       // set up the cores
       for (vector<pair<unsigned,P_addr_t>>::iterator core = cores.begin(); core != cores.end(); core++)
           TaskMap[TaskName]->insertCore(core->first, core->second);
-      // printf("%d cores inserted into TaskInfo structure for %s\n",cores.size(),TaskName.c_str());
-      // fflush(stdout);
+      DebugPrint("%d cores inserted into TaskInfo structure for %s\n",cores.size(),TaskName.c_str());
       return 0;
 }
 
@@ -561,8 +521,7 @@ unsigned TMoth::NameTdir(const string& task, const string& dir)
       map<string, TaskInfo_t*>::iterator T;
       if ((T=TaskMap.find(task)) == TaskMap.end())
       {
-         // printf("Inserting new task %s from NameTdir\n", task.c_str());
-         // fflush(stdout);
+         DebugPrint("Inserting new task %s from NameTdir\n", task.c_str());
 	 TaskMap[task] = new TaskInfo_t(task);
       }
       TaskMap[task]->BinPath = dir;
@@ -619,15 +578,13 @@ void* TMoth::Twig(void* par)
            // and tinsel messsages might be time-critical.
            while (parent->canRecv())
            {
-	         //printf("Message received from a Device\n");
-		 //fflush(stdout);
+               DebugPrint("Message received from a Device\n");
                  parent->recv(recv_buf);
 	         uint32_t* device = static_cast<uint32_t*>(p_recv_buf); // get the first word, which will be a device address
 	         if (!(*device & P_SUP_MASK)) // bound for an external?
 	         {
 	            P_Msg_Hdr_t* m_hdr = static_cast<P_Msg_Hdr_t*>(p_recv_buf);
-		    // printf("Message is bound for external device %d\n", m_hdr->destDeviceAddr);
-		    // fflush(stdout);
+		    DebugPrint("Message is bound for external device %d\n", m_hdr->destDeviceAddr);
 	            if (parent->TwigExtMap[m_hdr->destDeviceAddr] == 0)
 		       parent->TwigExtMap[m_hdr->destDeviceAddr] = new deque<P_Msg_t>;
 	            if (m_hdr->messageLenBytes > szFlit)
@@ -641,37 +598,30 @@ void* TMoth::Twig(void* par)
 
 		    if (s_hdr->command == P_PKT_MSGTYP_ALIVE)
 		    {
-		       // printf("Thread %d is still alive\n", s_hdr->sourceDeviceAddr >> P_THREAD_OS);
-		       // fflush(stdout);
+		       DebugPrint("Thread %d is still alive\n", s_hdr->sourceDeviceAddr >> P_THREAD_OS);
 		    }
 		    else
 		    {
-		       // printf("Message is a Supervisor request from device %d\n", s_hdr->sourceDeviceAddr);
-		       // fflush(stdout);
+		       DebugPrint("Message is a Supervisor request from device %d\n", s_hdr->sourceDeviceAddr);
 	               if (parent->TwigMap[s_hdr->sourceDeviceAddr] == 0) // new device talking?
 		       {
-		          // printf("New device %d reporting to Supervisor\n", s_hdr->sourceDeviceAddr);
-		          // fflush(stdout);
+		          DebugPrint("New device %d reporting to Supervisor\n", s_hdr->sourceDeviceAddr);
 		          parent->TwigMap[s_hdr->sourceDeviceAddr] = new PinBuf_t;
 		       }
 	               if ((*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin] == 0) // inactive pin for the device?
 		       {
-		          // printf("New pin %d for device %d reporting to Supervisor\n", s_hdr->destPin, s_hdr->sourceDeviceAddr);
-		          // fflush(stdout);
+		          DebugPrint("New pin %d for device %d reporting to Supervisor\n", s_hdr->destPin, s_hdr->sourceDeviceAddr);
                           (*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin] = new char[MAX_P_SUP_MSG_BYTES]();
 		       }
                        P_Sup_Msg_t* recvdMsg = static_cast<P_Sup_Msg_t*>(static_cast<void*>((*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin]));
 	               memcpy(recvdMsg+s_hdr->seq,s_hdr,p_sup_hdr_size()); // stuff header into the persistent buffer
-		       // printf("Expecting message of total length %d\n", s_hdr->cmdLenBytes);
-		       // fflush(stdout);
+		       DebugPrint("Expecting message of total length %d\n", s_hdr->cmdLenBytes);
                        uint32_t len = s_hdr->seq == s_hdr->cmdLenBytes/p_sup_msg_size() ?  s_hdr->cmdLenBytes%p_sup_msg_size() : p_sup_msg_size(); // more message to receive?
-		       // printf("Length for sequence number %d: %d\n", s_hdr->seq, len);
-		       // fflush(stdout);
+		       DebugPrint("Length for sequence number %d: %d\n", s_hdr->seq, len);
 	               if (len > szFlit) parent->recvMsg(((recvdMsg+s_hdr->seq)->data), len-szFlit); // get the whole message
 	               if (super_buf_recvd(recvdMsg))
 	               {
-		          // printf("Entire Supervisor message received of length %d\n", s_hdr->cmdLenBytes);
-		          // fflush(stdout);
+		          DebugPrint("Entire Supervisor message received of length %d\n", s_hdr->cmdLenBytes);
 		          if (parent->OnTinselOut(recvdMsg))
 			     parent->Post(530, int2str(parent->Urank));
 		          super_buf_clr(recvdMsg);
@@ -687,8 +637,7 @@ void* TMoth::Twig(void* par)
 	      while (parent->pollStdOut(OutFile)) updated = true;
 	      if (updated)
 	      {
-		 // printf("Received a debug output message\n");
-		 // fflush(stdout);
+		 DebugPrint("Received a debug output message\n");
 	      }
 	      fgetpos(OutFile, &writePos);
 	   }
@@ -752,14 +701,12 @@ unsigned TMoth::OnName(PMsg_p * Z, unsigned cIdx)
 unsigned key = Z->Key();
 if (key == PMsg_p::KEY(Q::NAME,Q::DIST         ))
 {
-   // printf("NameDist command received\n");
-   // fflush(stdout);
+   DebugPrint("NameDist command received\n");
    return NameDist(Z);
 }
 if (key == PMsg_p::KEY(Q::NAME,Q::RECL         ))
 {
-   // printf("NameRecl command received\n");
-   // fflush(stdout);
+   DebugPrint("NameRecl command received\n");
    return NameRecl(Z);
 }
 if (key ==  PMsg_p::KEY(Q::NAME,Q::TDIR         ))
@@ -767,7 +714,7 @@ if (key ==  PMsg_p::KEY(Q::NAME,Q::TDIR         ))
    string task,dir;
    Z->Get(0,task);
    Z->Get(1,dir);
-   // printf("NameTdir command received: task %s, directory %s\n", task.c_str(), dir.c_str());
+   DebugPrint("NameTdir command received: task %s, directory %s\n", task.c_str(), dir.c_str());
    return NameTdir(task,dir);
 }
 else
@@ -872,15 +819,13 @@ unsigned TMoth::OnTinselOut(P_Sup_Msg_t * packet)
 // possibly generating another message; B) immediately export it over MPI to
 // the user Executive or other external process.
 {
-// printf("Processing a command message 0x%x from Tinsel device %d\n", packet->header.command, packet->header.sourceDeviceAddr);
-// fflush(stdout);
+DebugPrint("Processing a command message 0x%x from Tinsel device %d\n", packet->header.command, packet->header.sourceDeviceAddr);
 // handle the kill request from a tinsel core, which generally means an assert failed.
 if ((packet->header.command == P_SUP_MSG_KILL)) return SystKill();
 // output messages can simply be posted to the LogServer as an informational message.
 if ((packet->header.command == P_SUP_MSG_LOG))
 {
-   // printf("Received a handler_log message from device %d\n", packet->header.sourceDeviceAddr, p_sup_msg_size());
-   // fflush(stdout);
+   DebugPrint("Received a handler_log message from device %d\n", packet->header.sourceDeviceAddr, p_sup_msg_size());
    // Just output the string (this will involve some rubbish at the end where arguments would be;
    // to be fixed later). Note that uint8_t*'s have to be reinterpret_casted to char*s.
    unsigned msg_len = ((packet->header.cmdLenBytes%p_sup_msg_size()) && (packet->header.seq == packet->header.cmdLenBytes/p_sup_msg_size())) ? packet->header.cmdLenBytes%p_sup_msg_size() : p_sup_msg_size()-p_sup_hdr_size();
@@ -888,8 +833,7 @@ if ((packet->header.command == P_SUP_MSG_LOG))
    Post(601, int2str(packet->header.sourceDeviceAddr), int2str(packet->header.seq), string(reinterpret_cast<const char*>(packet->data), msg_len));
    return 0;
 }
-// printf("Message from device %d is a Supervisor call. Redirecting\n", packet->header.sourceDeviceAddr);
-// fflush(stdout);
+DebugPrint("Message from device %d is a Supervisor call. Redirecting\n", packet->header.sourceDeviceAddr);
 PMsg_p W(Comms[0]);                        // Create a new packet on the local comm
 W.Key(Q::SUPR);                            // it'll be a Supervisor packet
 W.Src(Urank);                              // coming from the us

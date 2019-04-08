@@ -172,7 +172,8 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/OrchBase/P_message.cpp \
                      $(SOURCE_DIR)/OrchBase/P_pin.cpp \
                      $(SOURCE_DIR)/OrchBase/P_task.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_thread.cpp
+                     $(SOURCE_DIR)/OrchBase/P_thread.cpp \
+                     $(SOURCE_DIR)/Common/Debug.cpp
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 
