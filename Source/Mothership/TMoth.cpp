@@ -563,7 +563,7 @@ unsigned TMoth::NameTdir(const string& task, const string& dir)
       if ((T=TaskMap.find(task)) == TaskMap.end())
       {
          DebugPrint("Inserting new task %s from NameTdir\n", task.c_str());
-	 TaskMap[task] = new TaskInfo_t(task);
+         TaskMap[task] = new TaskInfo_t(task);
       }
       TaskMap[task]->BinPath = dir;
       return 0;
@@ -625,7 +625,7 @@ void* TMoth::Twig(void* par)
 	         if (!(*device & P_SUP_MASK)) // bound for an external?
 	         {
 	            P_Msg_Hdr_t* m_hdr = static_cast<P_Msg_Hdr_t*>(p_recv_buf);
-		    DebugPrint("Message is bound for external device %d\n", m_hdr->destDeviceAddr);
+                DebugPrint("Message is bound for external device %d\n", m_hdr->destDeviceAddr);
 	            if (parent->TwigExtMap[m_hdr->destDeviceAddr] == 0)
 		       parent->TwigExtMap[m_hdr->destDeviceAddr] = new deque<P_Msg_t>;
 	            if (m_hdr->messageLenBytes > szFlit)
