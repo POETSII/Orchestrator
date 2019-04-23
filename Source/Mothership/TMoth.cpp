@@ -466,6 +466,9 @@ long TMoth::LoadBoard(P_board* board)
                 C->second->instructionBinary = new Bin(fopen(code_f.c_str(), "r"));
                 C->second->dataBinary = new Bin(fopen(data_f.c_str(), "r"));
                 uint32_t mX, mY, core, thread;
+                DebugPrint("Loading core with virtual address Bx:%d, Bd:%d, "
+                           "Cr:%d\n", coreAddress.A_box, coreAddress.A_board,
+                           coreAddress.A_core);
                 C->second->get_hardware_address()->populate_a_software_address(&coreAddress);
                 DebugPrint("Loading core with virtual address Bx:%d, Bd:%d, "
                            "Cr:%d\n",
