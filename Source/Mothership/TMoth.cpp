@@ -446,7 +446,9 @@ long TMoth::LoadBoard(P_board* board)
 {
     long coresLoaded = 0;
     string task;
-    WALKMAP(string,TaskInfo_t*,TaskMap,K) // find our task
+
+    // Find the task to load onto this board.
+    WALKMAP(string, TaskInfo_t*, TaskMap, K)
     {
         if (K->second->status == TaskInfo_t::TASK_BOOT) task = K->first;
         break;
@@ -455,30 +457,41 @@ long TMoth::LoadBoard(P_board* board)
     {
         TaskInfo_t* task_map = TaskMap[task];
         P_addr coreAddress;
+        uint32_t mX, mY, core, thread;  // Intermediates for HostLink-side
+                                        // address components.
         WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
                           unsigned, P_link*,
                           unsigned, P_port*, board->G, MB)
         {
-            WALKMAP(AddressComponent, P_core*, board->G.NodeData(MB)->P_corem, C) // grab each core's code and data file
+            WALKMAP(AddressComponent, P_core*,
+                    board->G.NodeData(MB)->P_corem, C)
             {
-                string code_f(task_map->BinPath + "/softswitch_code_" + int2str(task_map->getCore(C->second)) + ".v");
-                string data_f(task_map->BinPath + "/softswitch_data_" + int2str(task_map->getCore(C->second)) + ".v");
-                C->second->instructionBinary = new Bin(fopen(code_f.c_str(), "r"));
+                // Grab this core's code and data file
+                string code_f(task_map->BinPath + "/softswitch_code_" +
+                              int2str(task_map->getCore(C->second)) + ".v");
+                string data_f(task_map->BinPath + "/softswitch_data_" +
+                              int2str(task_map->getCore(C->second)) + ".v");
+                C->second->instructionBinary = new Bin(fopen(code_f.c_str(),
+                                                             "r"));
                 C->second->dataBinary = new Bin(fopen(data_f.c_str(), "r"));
-                uint32_t mX, mY, core, thread;
-                DebugPrint("Loading core with virtual address Bx:%d, Bd:%d, "
-                           "Cr:%d\n", coreAddress.A_box, coreAddress.A_board,
-                           coreAddress.A_core);
-                C->second->get_hardware_address()->populate_a_software_address(&coreAddress);
+
+                // Populate the P_addr coreAddress from the core's hardware
+                // address object. Use coreAddress to define mX, mY, core, and
+                // thread, for compatbilitity with HostLink's loading methods.
+                C->second->get_hardware_address()->
+                    populate_a_software_address(&coreAddress);
                 DebugPrint("Loading core with virtual address Bx:%d, Bd:%d, "
                            "Cr:%d\n",
                            coreAddress.A_box, coreAddress.A_board,
                            coreAddress.A_core);
-                fromAddr(TMoth::GetHWAddr(coreAddress), &mX, &mY, &core, &thread);
+                fromAddr(TMoth::GetHWAddr(coreAddress), &mX, &mY, &core,
+                         &thread);
                 DebugPrint("Loading hardware thread 0x%X at x:%d y:%d c:%d\n",
                            TMoth::GetHWAddr(coreAddress), mX, mY, core);
-                loadInstrsOntoCore(code_f.c_str(),mX,mY,core); // load instruction memory
-                loadDataViaCore(data_f.c_str(),mX,mY,core); // then data memory
+
+                // Load instruction memory, then data memory.
+                loadInstrsOntoCore(code_f.c_str(), mX, mY, core);
+                loadDataViaCore(data_f.c_str(), mX, mY, core);
                 ++coresLoaded;
             }
         }
