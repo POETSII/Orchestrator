@@ -150,6 +150,11 @@ printf("XLinking device %s with id %d to thread %s\n",
 fflush(stdout);
 pDe->pP_thread = pTh;                  // Device to thread
 pTh->P_devicel.push_back(pDe);         // Thread to device
+
+// Define the hardware address field in the device, leaving the device
+// component untouched..
+pTh->get_hardware_address()->populate_a_software_address(&(pDe->addr), false);
+
 // The supervisor is already attached to the task; now it needs to be linked to
 // the topology. I can't but think there's a cooler way......
 pDe->par->par->pSup->Attach(pTh->parent->parent->parent);
