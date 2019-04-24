@@ -663,8 +663,9 @@ void P_builder::WriteThreadVars(string& task_dir, unsigned int core_num, unsigne
                         // as for the case of inputs, the target device should be replaced by GetHardwareAddress(...)
                         unsigned int tgt_idx = ((*device)->par->G.index_a.find(*tgt)->second.to_p)->first;
                         P_addr tgt_addr = ((*device)->par->G.index_a.find(*tgt)->second.to_n)->second.data->addr;
-                        unsigned tgt_hwaddr = tgt_addr.A_box << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore + TinselLogCoresPerBoard + TinselMeshXBits + TinselMeshYBits);
-                        tgt_hwaddr |= tgt_addr.A_board << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore +TinselLogCoresPerBoard);
+                        unsigned tgt_hwaddr = tgt_addr.A_box << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore + TinselLogCoresPerMailbox + TinselLogMailboxesPerBoard + TinselMeshXBits + TinselMeshYBits);
+                        tgt_hwaddr |= tgt_addr.A_board << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore + TinselLogCoresPerMailbox + TinselLogMailboxesPerBoard);
+                        tgt_hwaddr |= tgt_addr.A_mailbox << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore + TinselLogCoresPerMailbox);
                         tgt_hwaddr |= tgt_addr.A_core << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore);
                         tgt_hwaddr |= tgt_addr.A_thread << (LOG_DEVICES_PER_THREAD);
                         initialiser_3 << "{0," << (tgt_addr.A_device | tgt_hwaddr) << "," << (tgt_idx >> PIN_POS) << "," << (tgt_idx & (0xFFFFFFFF >> (32-PIN_POS))) << "},";
