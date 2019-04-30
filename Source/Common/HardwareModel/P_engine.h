@@ -28,8 +28,8 @@
 
 /* Facilitate out-of-order includes. */
 struct OrchBase;
-struct P_box;
-struct P_board;
+class P_box;
+class P_board;
 
 class P_engine: public NameBase, public DumpChan
 {

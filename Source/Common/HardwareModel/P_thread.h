@@ -22,7 +22,7 @@
 #define MAXIMUM_BREAKER_LENGTH 80
 
 /* Facilitate out-of-order includes. */
-struct P_core;
+class P_core;
 
 class P_thread: public AddressableItem, public NameBase, public DumpChan
 {

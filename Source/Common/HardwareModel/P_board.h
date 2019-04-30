@@ -26,8 +26,8 @@
 #define CALLBACK static void
 
 /* Facilitate out-of-order includes. */
-struct P_box;
-struct P_mailbox;
+class P_box;
+class P_mailbox;
 
 class P_board: public AddressableItem, public NameBase, public DumpChan
 {

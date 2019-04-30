@@ -22,8 +22,8 @@
 #define MAXIMUM_BREAKER_LENGTH 80
 
 /* Facilitate out-of-order includes. */
-struct P_engine;
-struct P_board;
+class P_engine;
+class P_board;
 
 class P_box: public AddressableItem, public NameBase, public DumpChan
 {
