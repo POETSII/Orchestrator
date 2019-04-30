@@ -13,15 +13,15 @@ P_board::P_board(std::string name)
 
     /* Set up callbacks for the graph container (command pattern). */
     struct GraphCallbacks {
-        CALLBACK key(unsigned int const& key)
+        BOARD_GRAPH_CALLBACK key(unsigned int const& key)
         {
             fprintf(dfp, "%u", key);
         }
-        CALLBACK node(P_mailbox* const& mailbox)
+        BOARD_GRAPH_CALLBACK node(P_mailbox* const& mailbox)
         {
             fprintf(mailbox->dfp, mailbox->FullName().c_str());
         }
-        CALLBACK arc(P_link* const& link)
+        BOARD_GRAPH_CALLBACK arc(P_link* const& link)
         {
             fprintf(link->dfp, "%f", link->weight);
         }
@@ -219,8 +219,8 @@ void P_board::Dump(FILE* file)
         /* Set up callbacks for walking through the mailbox nodes, passing in
          * the file pointer. */
         struct WalkCallbacks {
-            CALLBACK node(void* file, AddressComponent const&,
-                          P_mailbox* &mailbox)
+            BOARD_GRAPH_CALLBACK node(void* file, AddressComponent const&,
+                                      P_mailbox* &mailbox)
             {
                 mailbox->Dump(static_cast<FILE*>(file));
             }

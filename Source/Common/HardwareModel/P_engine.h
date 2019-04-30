@@ -24,7 +24,7 @@
 #include "pdigraph.hpp"
 
 #define MAXIMUM_BREAKER_LENGTH 80
-#define CALLBACK static void
+#define ENGINE_GRAPH_CALLBACK static void
 
 /* Facilitate out-of-order includes. */
 struct OrchBase;

@@ -23,7 +23,7 @@
 #include "pdigraph.hpp"
 
 #define MAXIMUM_BREAKER_LENGTH 80
-#define CALLBACK static void
+#define BOARD_GRAPH_CALLBACK static void
 
 /* Facilitate out-of-order includes. */
 class P_box;

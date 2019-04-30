@@ -16,15 +16,15 @@ P_engine::P_engine(std::string name)
      * are printed, though we still dump the connectivity information from the
      * graph of boards. */
     struct GraphCallbacks {
-        CALLBACK key(unsigned int const& key)
+        ENGINE_GRAPH_CALLBACK key(unsigned int const& key)
         {
             fprintf(dfp, "%u", key);
         }
-        CALLBACK node(P_board* const& board)
+        ENGINE_GRAPH_CALLBACK node(P_board* const& board)
         {
             fprintf(board->dfp, board->FullName().c_str());
         }
-        CALLBACK arc(P_link* const& link)
+        ENGINE_GRAPH_CALLBACK arc(P_link* const& link)
         {
             fprintf(link->dfp, "%f", link->weight);
         }
