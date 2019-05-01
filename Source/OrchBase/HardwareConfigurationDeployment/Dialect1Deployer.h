@@ -41,7 +41,7 @@ public:
 
     /* Items in the header */
     std::string author;
-    long datetime;
+    long long datetime;
     std::string version;
     std::string fileOrigin;
 

@@ -64,7 +64,7 @@ public:
     /* Engines may be created from a configuration file. If so, some portion of
      * their metadata will be set. */
     std::string author;
-    long datetime;
+    long long datetime;
     std::string version;
     std::string fileOrigin;
 
