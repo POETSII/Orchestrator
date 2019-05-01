@@ -623,7 +623,7 @@ char * GetTime()
 // So: we use time() and gmtime() to get absolute hours:mins:secs, then clock()
 // to get the milliseconds since the program started. This latter number simply
 // increases monotonically, so we do some dirt and turn it into the decimal
-// absolute seconds. It's not actually absolutely correct, but it will deliver
+// absolute seconds. Its' not actually absolutely correct, but it will deliver
 // correct timing *intervals*.
 // Note we could up the timing accuracy from 10ms to 1 ms.... to do.....
 {
@@ -636,7 +636,7 @@ if (clock()==clock_t(-1)) return &buf[0];
                                        // High-precision relative time
 double ds = double(clock())/CLOCKS_PER_SEC;   // ... in seconds
 long stuff = long(ds*1000.0)%1000;            // ... in tenths of a second
-sprintf(&buf[8],".%02ld\0",stuff/10);  // Tack it onto the time string
+sprintf(&buf[8],".%02ld",stuff/10);    // Tack it onto the time string
 return &buf[0];
 }
 
@@ -726,7 +726,11 @@ return (ans!= -1) ? 0 : -1;                   // Fix return value to yes/no
 #endif
 
                                               // Some compilers do, some don't..
-//return -1;                                    // Paranoia.....
+#ifndef BORLAND                               // Oh, for heavens sake.....
+#ifndef MICROSOFT
+return -1;                                    // Paranoia.....
+#endif
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -760,7 +764,11 @@ strncpy(fdata->FD_name,fileblk.name,_MAX_PATH);
 return ans;
 #endif
 
-//return -1;                                    // Paranoia.....
+#ifndef BORLAND                               // Oh, for heavens sake.....
+#ifndef MICROSOFT
+return -1;                                    // Paranoia.....
+#endif
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -790,7 +798,11 @@ strncpy(fileblk.name,fdata->FD_name,_MAX_PATH);
 return _findclose((intptr_t)fdata->FD_reserved);
 #endif
 
-//return -1;                                    // Paranoia.....
+#ifndef BORLAND                               // Oh, for heavens sake.....
+#ifndef MICROSOFT
+return -1;                                    // Paranoia.....
+#endif
+#endif
 }
 
 //-------------------------------------------------------------------------------
