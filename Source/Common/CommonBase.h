@@ -7,6 +7,7 @@
 using namespace std;
 #include "PMsg_p.hpp"
 #include "ProcMap.h"
+#include "pthread.h"
 #include "flat.h"
 #include "mpi.h"
 
@@ -21,7 +22,7 @@ virtual ~              CommonBase();
 typedef unsigned       (CommonBase::*pMeth)(PMsg_p *,unsigned);
 typedef map<unsigned,pMeth> FnMap_t;
 static void*           Accept(void*);
- 
+
 protected:
 virtual unsigned       Connect(string="");
 virtual unsigned       Decode(PMsg_p *,unsigned) = 0;
@@ -88,5 +89,5 @@ const int              MSGBUF_BLK_MASK = (1<<LOG_MSGBUF_BLK_SZ)-1;
 };
 
 //==============================================================================
-   
+
 #endif
