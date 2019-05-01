@@ -27,7 +27,7 @@ for(;;) {
   static const unsigned SIZE = 512;
   char buf[SIZE];
   buf[0] = '\0';                       // Borland bug: notes 21/7/17
-  for(int j=1;j<SIZE;j++) buf[j]='x';
+  for(unsigned j=1;j<SIZE;j++) buf[j]='x';
   fgets(buf,SIZE-1,stdin);             // Pull in keyboard string
   len=strlen(buf)-1;                   // Ignore trailing newline
   if (len==0) continue;                // Hard to see how
@@ -151,9 +151,9 @@ void Root::CallShow(Cli::Cl_t Cl)
 // Monkey wants to see the call stack
 {
 FILE * fp = stdout;
-fprintf(fp,"Batch call stack has %u entries\n",stack.size());
+fprintf(fp,"Batch call stack has %lu entries\n",stack.size());
 WALKVECTOR(string,stack,i) fprintf(fp,"%s\n",(*i).c_str());
-fprintf(fp,"Batch command queue has %u entries\n",Equeue.size());
+fprintf(fp,"Batch command queue has %lu entries\n",Equeue.size());
 WALKLIST(Cli,Equeue,i) fprintf(fp,"%s\n",(*i).Orig.c_str());
 fflush(fp);
 }
@@ -212,7 +212,7 @@ if ((tpL = pPmap[cIdx]->U.LogServer) != Q::NAP) // is this the LogServer's local
    lIdx = cIdx; // and comm index
    for(p=0;p<Usize[cIdx];p++)
    {
-      if ((((cIdx != RootCIdx()) || (p!=Urank))) && (p!=tpL)) {  // NOT the LogServer
+      if ((((cIdx != RootCIdx()) || (p!=(int)Urank))) && (p!=tpL)) {  // NOT the LogServer
          Post(50,pPmap[cIdx]->M[p],int2str(p));
          Pkt.Send(p);
       }
@@ -222,7 +222,7 @@ else
 {
    for(p=0;p<Usize[cIdx];p++) // No. LogServer not on this comm. Shut everyone down.
    {
-      if (((cIdx != RootCIdx()) || (p!=Urank))) {  // Don't need to send to self
+      if (((cIdx != RootCIdx()) || (p!=(int)Urank))) {  // Don't need to send to self
          Post(50,pPmap[cIdx]->M[p],int2str(p));
          Pkt.Send(p);
       }
@@ -389,7 +389,7 @@ fprintf(fp,"Key        Method\n");
 // means it would try to dereference the iterator obtained from
 // F. Not what is expected...
 WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x 0x%#010p\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
 }
 fprintf(fp,"prompt    = %s\n",prompt);
 
