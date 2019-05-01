@@ -113,7 +113,7 @@ printf("Key        Method\n");
 WALKVECTOR(FnMap_t*,FnMapx,F)
 {
 WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x %#010p\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x %#016x\n",(*i).first,(*i).second);
 }
 printf("\nMessage map:\n");
 printf("Key(id)    Data(id : format string)\n");
