@@ -131,8 +131,10 @@ include Makefile.executable_prerequisites
 
 # Prerequisites for building tests are defined here:
 include Makefile.test_prerequisites
+TEST_SCRIPT_BASENAME = run-tests.sh
+TEST_SCRIPT = $(TEST_EXECUTABLE_DIR)/$(TEST_SCRIPT_BASENAME)
 tests: CXXFLAGS += -g3
-tests: $(ALL_TESTS)
+tests: $(ALL_TESTS) $(TEST_SCRIPT)
 
 # Linking targets (to generate executables). See
 # Makefile.executable_prerequisites for the prerequisites of these executables
@@ -151,6 +153,10 @@ $(ALL_TESTS):
         -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
         -o $@ $^ \
         -lQt5Core -lmpi -lpthread
+
+$(TEST_SCRIPT): $(TEST_SCRIPT_RESOURCE)
+	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
+	cp "$(TEST_SCRIPT_RESOURCE)" "$(TEST_SCRIPT)"
 
 $(MOTHERSHIP_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))

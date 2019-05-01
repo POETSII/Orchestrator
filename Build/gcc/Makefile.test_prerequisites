@@ -15,6 +15,9 @@ ALL_TESTS := $(patsubst $(TESTS_DIR)/%.cpp,\
 
 ALL_TEST_NAMES := $(patsubst $(TEST_EXECUTABLE_DIR)/%.test,%,$(ALL_TESTS))
 
+# There's a handy test script too.
+TEST_SCRIPT_RESOURCE = ./Resources/run-tests.sh
+
 # Each test file must have its dependencies enumerated separately. The names of
 # these variables match the tests that they generate. The test .cpp file is
 # included when the dependencies are generated.
