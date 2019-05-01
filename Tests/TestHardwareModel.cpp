@@ -241,8 +241,6 @@ TEST_CASE("Items in the hardware stack have meaningful addresses", "[Address Ass
     mailbox->contain(coreComponent, core);
     core->contain(threadComponent, thread);
 
-    HardwareAddress* address;
-
     /* Check box address has the box component, and is not fully defined. */
     REQUIRE(box->get_hardware_address()->get_box() == boxComponent);
     REQUIRE(box->get_hardware_address()->is_fully_defined() == false);
