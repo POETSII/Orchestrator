@@ -7,14 +7,9 @@
  * See the hardware model documentation for further information on ports, and
  * for what they may be used for in future. */
 
-#include <algorithm>
-#include <stdio.h>
-
-#include "dfprintf.h"
+#include "HardwareDumpUtils.h"
 #include "NameBase.h"
 #include "pdigraph.hpp"
-
-#define MAXIMUM_BREAKER_LENGTH 80
 
 class P_port : public NameBase, public DumpChan
 {

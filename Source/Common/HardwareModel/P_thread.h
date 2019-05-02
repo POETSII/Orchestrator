@@ -14,12 +14,11 @@
 
 #include "AddressableItem.h"
 #include "dumpchan.h"
+#include "HardwareDumpUtils.h"
 #include "macros.h"
 #include "NameBase.h"
 #include "P_core.h"
 #include "P_device.h"
-
-#define MAXIMUM_BREAKER_LENGTH 80
 
 /* Facilitate out-of-order includes. */
 class P_core;

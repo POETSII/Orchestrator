@@ -13,6 +13,7 @@
 #include <sstream>
 
 #include "HardwareAddress.h"
+#include "HardwareDumpUtils.h"
 #include "dumpchan.h"
 #include "NameBase.h"
 #include "OrchBase.h"
@@ -22,9 +23,6 @@
 #include "P_link.h"
 #include "P_port.h"
 #include "pdigraph.hpp"
-
-#define MAXIMUM_BREAKER_LENGTH 80
-#define ENGINE_GRAPH_CALLBACK static void
 
 /* Facilitate out-of-order includes. */
 struct OrchBase;

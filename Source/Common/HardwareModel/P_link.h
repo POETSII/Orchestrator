@@ -7,14 +7,9 @@
  * See the hardware model documentation for further information on these
  * links. */
 
-#include <algorithm>
-#include <stdio.h>
-
-#include "dfprintf.h"
+#include "HardwareDumpUtils.h"
 #include "NameBase.h"
 #include "pdigraph.hpp"
-
-#define MAXIMUM_BREAKER_LENGTH 80
 
 class P_link : public NameBase, public DumpChan
 {

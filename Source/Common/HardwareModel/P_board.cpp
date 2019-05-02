@@ -13,19 +13,19 @@ P_board::P_board(std::string name)
 
     /* Set up callbacks for the graph container (command pattern). */
     struct GraphCallbacks {
-        BOARD_GRAPH_CALLBACK all_keys(unsigned int const& key)
+        GRAPH_CALLBACK all_keys(unsigned int const& key)
         {
             fprintf(dfp, "%u", key);
         }
-        BOARD_GRAPH_CALLBACK node(P_mailbox* const& mailbox)
+        GRAPH_CALLBACK node(P_mailbox* const& mailbox)
         {
             fprintf(mailbox->dfp, mailbox->FullName().c_str());
         }
-        BOARD_GRAPH_CALLBACK arc(P_link* const& link)
+        GRAPH_CALLBACK arc(P_link* const& link)
         {
             fprintf(link->dfp, "%f", link->weight);
         }
-        BOARD_GRAPH_CALLBACK port(P_port* const& port)
+        GRAPH_CALLBACK port(P_port* const& port)
         {
             fprintf(dfp, "%#018lx", (uint64_t) port);
         }
@@ -185,26 +185,14 @@ void P_board::connect(AddressComponent start, AddressComponent end,
  * - file: File to dump to. */
 void P_board::Dump(FILE* file)
 {
-    std::string fullName = FullName();  /* Name of this from namebase. */
-    std::string nameWithPrefix = dformat("P_board %s ", fullName.c_str());
-    std::string breakerTail;
-    if (nameWithPrefix.size() >= MAXIMUM_BREAKER_LENGTH)
-    {
-        breakerTail.assign("+");
-    }
-    else
-    {
-        breakerTail.assign(MAXIMUM_BREAKER_LENGTH - nameWithPrefix.size() - 1,
-                           '+');
-    }
-    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
+    std::string prefix = dformat("P_board %s", FullName().c_str());
+    HardwareDumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
     NameBase::Dump(file);
 
     /* About the mailbox graph. */
-    fprintf(file, "Mailbox connectivity in this board %s\n",
-            std::string(44, '+').c_str());
+    HardwareDumpUtils::open_breaker(file, "Mailbox connectivity");
     if (G.SizeNodes() == 0)
         fprintf(file, "The mailbox graph is empty.\n");
     else
@@ -226,20 +214,18 @@ void P_board::Dump(FILE* file)
         P_link::dfp = previousLinkChannel;
         P_port::dfp = previousPortChannel;
     }
-    fprintf(file, "Mailbox connectivity in this board %s\n",
-            std::string(44, '-').c_str());
+    HardwareDumpUtils::close_breaker(file, "Mailbox connectivity");
 
     /* About contained items, if any. */
     if (G.SizeNodes() > 0)
     {
-        fprintf(file, "Mailboxes in this board %s\n",
-                std::string(55, '+').c_str());
+        HardwareDumpUtils::open_breaker(file, "Mailboxes in this board");
 
         /* Set up callbacks for walking through the mailbox nodes, passing in
          * the file pointer. */
         struct WalkCallbacks {
-            BOARD_GRAPH_CALLBACK node(void* file, AddressComponent const&,
-                                      P_mailbox* &mailbox)
+            GRAPH_CALLBACK node(void* file, AddressComponent const&,
+                                P_mailbox* &mailbox)
             {
                 mailbox->Dump(static_cast<FILE*>(file));
             }
@@ -248,13 +234,11 @@ void P_board::Dump(FILE* file)
         /* Dump mailboxes in the graph recursively. */
         G.WALKNODES(file, WalkCallbacks::node);
 
-        fprintf(file, "Mailboxes in this board %s\n",
-                std::string(55, '-').c_str());
+        HardwareDumpUtils::close_breaker(file, "Mailboxes in this board");
     }
 
     /* Close breaker and flush the dump. */
-    std::replace(breakerTail.begin(), breakerTail.end(), '+', '-');
-    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
+    HardwareDumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
 

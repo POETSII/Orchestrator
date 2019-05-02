@@ -76,25 +76,14 @@ void P_mailbox::contain(AddressComponent addressComponent, P_core* core)
  * - file: File to dump to. */
 void P_mailbox::Dump(FILE* file)
 {
-    std::string fullName = FullName();  /* Name of this from namebase. */
-    std::string nameWithPrefix = dformat("P_mailbox %s ", fullName.c_str());
-    std::string breakerTail;
-    if (nameWithPrefix.size() >= MAXIMUM_BREAKER_LENGTH)
-    {
-        breakerTail.assign("+");
-    }
-    else
-    {
-        breakerTail.assign(MAXIMUM_BREAKER_LENGTH - nameWithPrefix.size() - 1,
-                           '+');
-    }
-    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
+    std::string prefix = dformat("P_mailbox %s", FullName().c_str());
+    HardwareDumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
     NameBase::Dump(file);
 
     /* About contained items, if any. */
-    fprintf(file, "Cores in this mailbox %s\n", std::string(57, '+').c_str());
+    HardwareDumpUtils::open_breaker(file, "Cores in this mailbox");
     if (P_corem.empty())
         fprintf(file, "The core map is empty.\n");
     else
@@ -105,11 +94,10 @@ void P_mailbox::Dump(FILE* file)
             iterator->second->Dump(file);
         }
     }
-    fprintf(file, "Cores in this mailbox %s\n", std::string(57, '-').c_str());
+    HardwareDumpUtils::close_breaker(file, "Cores in this mailbox");
 
     /* Close breaker and flush the dump. */
-    std::replace(breakerTail.begin(), breakerTail.end(), '+', '-');
-    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
+    HardwareDumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
 

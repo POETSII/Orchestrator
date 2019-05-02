@@ -14,6 +14,7 @@
 
 #include "AddressableItem.h"
 #include "dumpchan.h"
+#include "HardwareDumpUtils.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
 #include "P_box.h"
@@ -21,9 +22,6 @@
 #include "P_mailbox.h"
 #include "P_port.h"
 #include "pdigraph.hpp"
-
-#define MAXIMUM_BREAKER_LENGTH 80
-#define BOARD_GRAPH_CALLBACK static void
 
 /* Facilitate out-of-order includes. */
 class P_box;

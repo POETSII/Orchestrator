@@ -17,19 +17,19 @@ P_engine::P_engine(std::string name)
      * are printed, though we still dump the connectivity information from the
      * graph of boards. */
     struct GraphCallbacks {
-        ENGINE_GRAPH_CALLBACK all_keys(unsigned int const& key)
+        GRAPH_CALLBACK all_keys(unsigned int const& key)
         {
             fprintf(dfp, "%u", key);
         }
-        ENGINE_GRAPH_CALLBACK node(P_board* const& board)
+        GRAPH_CALLBACK node(P_board* const& board)
         {
             fprintf(board->dfp, board->FullName().c_str());
         }
-        ENGINE_GRAPH_CALLBACK arc(P_link* const& link)
+        GRAPH_CALLBACK arc(P_link* const& link)
         {
             fprintf(link->dfp, "%f", link->weight);
         }
-        ENGINE_GRAPH_CALLBACK port(P_port* const& port)
+        GRAPH_CALLBACK port(P_port* const& port)
         {
             fprintf(dfp, "%#018lx", (uint64_t) port);
         }
@@ -224,19 +224,8 @@ void P_engine::connect(AddressComponent start, AddressComponent end,
  * - file: File to dump to. */
 void P_engine::Dump(FILE* file)
 {
-    std::string fullName = FullName();  /* Name of this from namebase. */
-    std::string nameWithPrefix = dformat("P_engine %s ", fullName.c_str());
-    std::string breakerTail;
-    if (nameWithPrefix.size() >= MAXIMUM_BREAKER_LENGTH)
-    {
-        breakerTail.assign("+");
-    }
-    else
-    {
-        breakerTail.assign(MAXIMUM_BREAKER_LENGTH - nameWithPrefix.size() - 1,
-                           '+');
-    }
-    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
+    std::string prefix = dformat("P_engine %s", FullName().c_str());
+    HardwareDumpUtils::open_breaker(file, prefix);
 
     /* About this object. */
     NameBase::Dump(file);
@@ -261,8 +250,7 @@ void P_engine::Dump(FILE* file)
     }
 
     /* About the board graph. */
-    fprintf(file, "Board connectivity in this engine %s\n",
-            std::string(45, '+').c_str());
+    HardwareDumpUtils::open_breaker(file, "Board connectivity");
     if (G.SizeNodes() == 0)
         fprintf(file, "The board graph is empty.\n");
     else
@@ -284,11 +272,10 @@ void P_engine::Dump(FILE* file)
         P_link::dfp = previousLinkChannel;
         P_port::dfp = previousPortChannel;
     }
-    fprintf(file, "Board connectivity in this engine %s\n",
-            std::string(45, '-').c_str());
+    HardwareDumpUtils::close_breaker(file, "Board connectivity");
 
     /* About contained boxes, if any. */
-    fprintf(file, "Boxes in this engine %s\n", std::string(58, '+').c_str());
+    HardwareDumpUtils::open_breaker(file, "Boxes in this engine");
     if (P_boxm.empty())
         fprintf(file, "The box map is empty.\n");
     else
@@ -299,11 +286,10 @@ void P_engine::Dump(FILE* file)
             iterator->second->Dump(file);
         }
     }
-    fprintf(file, "Boxes in this engine %s\n", std::string(58, '-').c_str());
+    HardwareDumpUtils::close_breaker(file, "Boxes in this engine");
 
     /* Close breaker and flush the dump. */
-    std::replace(breakerTail.begin(), breakerTail.end(), '+', '-');
-    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
+    HardwareDumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
 

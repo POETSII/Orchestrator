@@ -15,12 +15,11 @@
 #include "AddressableItem.h"
 #include "Bin.h"
 #include "dumpchan.h"
+#include "HardwareDumpUtils.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
 #include "P_mailbox.h"
 #include "P_thread.h"
-
-#define MAXIMUM_BREAKER_LENGTH 80
 
 /* Facilitate out-of-order includes. */
 class P_mailbox;

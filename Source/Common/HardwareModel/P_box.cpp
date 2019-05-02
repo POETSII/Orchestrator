@@ -75,25 +75,14 @@ void P_box::contain(AddressComponent addressComponent, P_board* board)
  * - file: File to dump to. */
 void P_box::Dump(FILE* file)
 {
-    std::string fullName = FullName();  /* Name of this from namebase. */
-    std::string nameWithPrefix = dformat("P_box %s ", fullName.c_str());
-    std::string breakerTail;
-    if (nameWithPrefix.size() >= MAXIMUM_BREAKER_LENGTH)
-    {
-        breakerTail.assign("+");
-    }
-    else
-    {
-        breakerTail.assign(MAXIMUM_BREAKER_LENGTH - nameWithPrefix.size() - 1,
-                           '+');
-    }
-    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
+    std::string prefix = dformat("P_box %s", FullName().c_str());
+    HardwareDumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
     NameBase::Dump(file);
 
     /* About contained items, if any. */
-    fprintf(file, "Boards in this box %s\n", std::string(60, '+').c_str());
+    HardwareDumpUtils::open_breaker(file, "Boards in this box");
     if (P_boardv.empty()){fprintf(file, "The board vector is empty.\n");}
     else
     {
@@ -103,11 +92,10 @@ void P_box::Dump(FILE* file)
             (*iterator)->Dump(file);
         }
     }
-    fprintf(file, "Boards in this box %s\n", std::string(60, '-').c_str());
+    HardwareDumpUtils::close_breaker(file, "Boards in this box");
 
     /* Close breaker and flush the dump. */
-    std::replace(breakerTail.begin(), breakerTail.end(), '+', '-');
-    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
+    HardwareDumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
 

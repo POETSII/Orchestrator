@@ -87,19 +87,8 @@ void P_core::contain(AddressComponent addressComponent, P_thread* thread)
  * - file: File to dump to. */
 void P_core::Dump(FILE* file)
 {
-    std::string fullName = FullName();  /* Name of this from namebase. */
-    std::string nameWithPrefix = dformat("P_core %s ", fullName.c_str());
-    std::string breakerTail;
-    if (nameWithPrefix.size() >= MAXIMUM_BREAKER_LENGTH)
-    {
-        breakerTail.assign("+");
-    }
-    else
-    {
-        breakerTail.assign(MAXIMUM_BREAKER_LENGTH - nameWithPrefix.size() - 1,
-                           '+');
-    }
-    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
+    std::string prefix = dformat("P_core %s", FullName().c_str());
+    HardwareDumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
     NameBase::Dump(file);
@@ -126,7 +115,7 @@ void P_core::Dump(FILE* file)
     }
 
     /* About contained items, if any. */
-    fprintf(file, "Threads in this core %s\n", std::string(58, '+').c_str());
+    HardwareDumpUtils::open_breaker(file, "Threads in this core");
     if (P_threadm.empty())
         fprintf(file, "The thread map is empty.\n");
     else
@@ -137,11 +126,10 @@ void P_core::Dump(FILE* file)
             iterator->second->Dump(file);
         }
     }
-    fprintf(file, "Threads in this core %s\n", std::string(58, '-').c_str());
+    HardwareDumpUtils::close_breaker(file, "Threads in this core");
 
     /* Close breaker and flush the dump. */
-    std::replace(breakerTail.begin(), breakerTail.end(), '+', '-');
-    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
+    HardwareDumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
 
