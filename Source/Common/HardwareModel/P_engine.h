@@ -72,8 +72,10 @@ public:
     void Dump(FILE* = stdout);
 
 private:
-    /* Keys for arcs in the graph, incremented when items are connected. */
+    /* Keys for arcs and ports in the graph, incremented when items are
+     * connected. */
     unsigned int arcKey;
+    unsigned int portKey;
 };
 
 #endif

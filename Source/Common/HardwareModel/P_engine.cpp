@@ -9,6 +9,7 @@
 P_engine::P_engine(std::string name)
 {
     arcKey = 0;
+    portKey = 0;
     Name(name);
 
     /* Set up callbacks for the graph container (command pattern). Note that we
@@ -183,9 +184,23 @@ void P_engine::connect(AddressComponent start, AddressComponent end,
                        float weight, bool oneWay)
 {
     P_link* startToEndLink = new P_link(weight, this);
-    if (!(G.InsertArc(arcKey++, start, end, startToEndLink)))
+
+    /* We'll be needing ports at each end. */
+    P_port* startPort = new P_port(this);
+    P_port* endPort = new P_port(this);
+    unsigned int startPortKey = portKey++;
+    unsigned int endPortKey = portKey++;
+
+    if (!(G.InsertArc(arcKey++, start, end, startToEndLink,
+                      startPortKey, startPort,
+                      endPortKey, endPort)))
     {
+        /* We didn't add the edge successfully, so we should free the memory
+         * held by the objects that we've just created. */
         delete startToEndLink;
+        delete startPort;
+        delete endPort;
+
         throw OwnershipException(dformat("Connection from board with index "
             "'%u' to board with index '%u' failed.", start, end));
     }
