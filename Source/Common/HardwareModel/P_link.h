@@ -20,6 +20,7 @@ class P_link : public NameBase, public DumpChan
 {
 public:
     P_link(float weight);
+    P_link(float weight, NameBase* parent);
     float weight;
     void Dump(FILE* = stdout);
 };

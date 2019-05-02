@@ -182,10 +182,10 @@ void P_engine::contain(AddressComponent addressComponent, P_board* board)
 void P_engine::connect(AddressComponent start, AddressComponent end,
                        float weight, bool oneWay)
 {
-    P_link* startToEndLink = new P_link(weight);
-    startToEndLink->AutoName();
+    P_link* startToEndLink = new P_link(weight, this);
     if (!(G.InsertArc(arcKey++, start, end, startToEndLink)))
     {
+        delete startToEndLink;
         throw OwnershipException(dformat("Connection from board with index "
             "'%u' to board with index '%u' failed.", start, end));
     }

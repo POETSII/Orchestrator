@@ -144,10 +144,10 @@ void P_board::contain(AddressComponent addressComponent, P_mailbox* mailbox)
 void P_board::connect(AddressComponent start, AddressComponent end,
                       float weight, bool oneWay)
 {
-    P_link* startToEndLink = new P_link(weight);
-    startToEndLink->AutoName();
+    P_link* startToEndLink = new P_link(weight, this);
     if (!(G.InsertArc(arcKey++, start, end, startToEndLink)))
     {
+        delete startToEndLink;
         throw OwnershipException(dformat("Connection from mailbox with index "
             "'%u' to mailbox with index '%u' failed.", start, end));
     }

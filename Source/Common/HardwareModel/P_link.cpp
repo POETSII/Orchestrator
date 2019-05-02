@@ -3,7 +3,18 @@
 
 #include "P_link.h"
 
-P_link::P_link(float weight):weight(weight){}
+/* Constructs a P_link, and names it. */
+P_link::P_link(float weight):weight(weight)
+{
+    AutoName();
+}
+
+/* Constructs a P_link, names it, and registers a namebase parent. */
+P_link::P_link(float weight, NameBase* parent):weight(weight)
+{
+    Npar(parent);
+    AutoName();
+}
 
 void P_link::Dump(FILE* file)
 {
@@ -22,7 +33,6 @@ void P_link::Dump(FILE* file)
     }
     fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
     fprintf(file, "Edge weight: %f\n", weight);
-
 
     NameBase::Dump(file);
 
