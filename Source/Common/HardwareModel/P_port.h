@@ -1,24 +1,27 @@
-#ifndef __P_portH__H
-#define __P_portH__H
+#ifndef __ORCHESTRATOR_SOURCE_COMMON_HARDWAREMODEL_P_PORT_H
+#define __ORCHESTRATOR_SOURCE_COMMON_HARDWAREMODEL_P_PORT_H
 
+/* Placeholder object for a pin in the Engine's board graph, or in a board's
+ * mailbox graph. Is currently a stub.
+ *
+ * See the hardware model documentation for further information on ports, and
+ * for what they may be used for in future. */
+
+#include <algorithm>
 #include <stdio.h>
+
+#include "dfprintf.h"
 #include "NameBase.h"
 #include "pdigraph.hpp"
 
-//==============================================================================
+#define MAXIMUM_BREAKER_LENGTH 80
 
 class P_port : public NameBase, public DumpChan
 {
 public:
-                    P_port(string);
-virtual ~           P_port();
-
-void                Dump(FILE * = dfp);
-static void         PrtDat_cb(P_port * const &);
-static void         PrtKey_cb(unsigned const &);
-
+    P_port();
+    P_port(NameBase* parent);
+    void Dump(FILE* = stdout);
 };
-
-//==============================================================================
 
 #endif

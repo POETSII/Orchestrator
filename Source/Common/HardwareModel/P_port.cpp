@@ -1,51 +1,34 @@
-//------------------------------------------------------------------------------
+/* Defines P_port behaviour (see the accompanying header for further
+   information). */
 
 #include "P_port.h"
 
-//==============================================================================
-
-P_port::P_port(string _s)
+P_port::P_port(NameBase* parent)
 {
-Name(_s);
+    Npar(parent);
 }
 
-//------------------------------------------------------------------------------
-
-P_port::~P_port()
+void P_port::Dump(FILE* file)
 {
+    /* Pretty breaker */
+    std::string fullName = FullName();  /* Name of this from namebase. */
+    std::string nameWithPrefix = dformat("P_port %s ", fullName.c_str());
+    std::string breakerTail;
+    if (nameWithPrefix.size() >= MAXIMUM_BREAKER_LENGTH)
+    {
+        breakerTail.assign("+");
+    }
+    else
+    {
+        breakerTail.assign(MAXIMUM_BREAKER_LENGTH - nameWithPrefix.size() - 1,
+                           '+');
+    }
+    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
 
+    NameBase::Dump(file);
+
+    /* Close breaker and flush the dump. */
+    std::replace(breakerTail.begin(), breakerTail.end(), '+', '-');
+    fprintf(file, "%s%s\n", nameWithPrefix.c_str(), breakerTail.c_str());
+    fflush(file);
 }
-
-//------------------------------------------------------------------------------
-
-void P_port::Dump(FILE * fp)
-{
-fprintf(fp,"P_port++++++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"NameBase       %s\n",FullName().c_str());
-fprintf(fp,"Me             %#018lx\n", (uint64_t) this);
-NameBase::Dump(fp);
-DumpChan::Dump(fp);
-fprintf(fp,"P_port--------------------------------------\n");
-fflush(fp);
-}
-
-//------------------------------------------------------------------------------
-
-void P_port::PrtDat_cb(P_port * const & p)
-// Debug callback for pin data
-{
-if (p!=0) fprintf(dfp,"prt(D): %s",p->Name().c_str());
-else fprintf(dfp,"prt(D): ***");
-fflush(dfp);
-}
-
-//------------------------------------------------------------------------------
-
-void P_port::PrtKey_cb(unsigned const & u)
-// Debug callback for pin key
-{
-fprintf(dfp,"prt(K): %03u",u);
-fflush(dfp);
-}
-
-//==============================================================================
