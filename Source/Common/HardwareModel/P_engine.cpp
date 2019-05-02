@@ -182,9 +182,8 @@ void P_engine::contain(AddressComponent addressComponent, P_board* board)
 void P_engine::connect(AddressComponent start, AddressComponent end,
                        float weight, bool oneWay)
 {
-    P_link* startToEndLink = new P_link();
+    P_link* startToEndLink = new P_link(weight);
     startToEndLink->AutoName();
-    startToEndLink->weight = weight;
     if (!(G.InsertArc(arcKey++, start, end, startToEndLink)))
     {
         throw OwnershipException(dformat("Connection from board with index "

@@ -144,9 +144,8 @@ void P_board::contain(AddressComponent addressComponent, P_mailbox* mailbox)
 void P_board::connect(AddressComponent start, AddressComponent end,
                       float weight, bool oneWay)
 {
-    P_link* startToEndLink = new P_link();
+    P_link* startToEndLink = new P_link(weight);
     startToEndLink->AutoName();
-    startToEndLink->weight = weight;
     if (!(G.InsertArc(arcKey++, start, end, startToEndLink)))
     {
         throw OwnershipException(dformat("Connection from mailbox with index "
