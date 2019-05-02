@@ -30,8 +30,8 @@ fi
 # Check for Valgrind's existence.
 command -v valgrind > /dev/null
 if [ $? -ne 0 ]; then
-    echo "Could not find Valgrind, so can't run memory checks against the "
-    "test. Exiting."
+    printf "Could not find Valgrind, so can't run memory checks against the "
+    printf "test suite. Exiting.\n"
     exit 3
 else
     echo "Running memory checks on all tests..."
