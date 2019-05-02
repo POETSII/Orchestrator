@@ -6,6 +6,7 @@
 P_port::P_port(NameBase* parent)
 {
     Npar(parent);
+    AutoName();
 }
 
 void P_port::Dump(FILE* file)
