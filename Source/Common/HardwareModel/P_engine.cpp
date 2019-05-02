@@ -17,7 +17,7 @@ P_engine::P_engine(std::string name)
      * are printed, though we still dump the connectivity information from the
      * graph of boards. */
     struct GraphCallbacks {
-        ENGINE_GRAPH_CALLBACK key(unsigned int const& key)
+        ENGINE_GRAPH_CALLBACK all_keys(unsigned int const& key)
         {
             fprintf(dfp, "%u", key);
         }
@@ -29,12 +29,18 @@ P_engine::P_engine(std::string name)
         {
             fprintf(link->dfp, "%f", link->weight);
         }
+        ENGINE_GRAPH_CALLBACK port(P_port* const& port)
+        {
+            fprintf(dfp, "%#018lx", (uint64_t) port);
+        }
     };
 
-    G.SetNK_CB(GraphCallbacks::key);
+    G.SetNK_CB(GraphCallbacks::all_keys);
     G.SetND_CB(GraphCallbacks::node);
-    G.SetAK_CB(GraphCallbacks::key);
+    G.SetAK_CB(GraphCallbacks::all_keys);
     G.SetAD_CB(GraphCallbacks::arc);
+    G.SetPK_CB(GraphCallbacks::all_keys);
+    G.SetPD_CB(GraphCallbacks::port);
 
     /* Set up default metadata information. If these are unchanged, the engine
      * will not print them when dump is called (strings are initialised

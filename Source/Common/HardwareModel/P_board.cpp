@@ -13,7 +13,7 @@ P_board::P_board(std::string name)
 
     /* Set up callbacks for the graph container (command pattern). */
     struct GraphCallbacks {
-        BOARD_GRAPH_CALLBACK key(unsigned int const& key)
+        BOARD_GRAPH_CALLBACK all_keys(unsigned int const& key)
         {
             fprintf(dfp, "%u", key);
         }
@@ -25,12 +25,18 @@ P_board::P_board(std::string name)
         {
             fprintf(link->dfp, "%f", link->weight);
         }
+        BOARD_GRAPH_CALLBACK port(P_port* const& port)
+        {
+            fprintf(dfp, "%#018lx", (uint64_t) port);
+        }
     };
 
-    G.SetNK_CB(GraphCallbacks::key);
+    G.SetNK_CB(GraphCallbacks::all_keys);
     G.SetND_CB(GraphCallbacks::node);
-    G.SetAK_CB(GraphCallbacks::key);
+    G.SetAK_CB(GraphCallbacks::all_keys);
     G.SetAD_CB(GraphCallbacks::arc);
+    G.SetPK_CB(GraphCallbacks::all_keys);
+    G.SetPD_CB(GraphCallbacks::port);
 }
 
 P_board::~P_board(){clear();}
