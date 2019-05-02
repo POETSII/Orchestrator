@@ -7,7 +7,7 @@
  * The POETS Thread is a representation of a thread spawned on a core in the
  * POETS engine.
  *
- * See the hardware model documentation for further information POETS
+ * See the hardware model documentation for further information on POETS
  * threads. */
 
 #include <list>
