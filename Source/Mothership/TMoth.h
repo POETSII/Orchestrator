@@ -3,6 +3,7 @@
 
 #include <deque>
 #include "CommonBase.h"
+#include "Debug.h"
 #include "PMsg_p.hpp"
 #include "Cli.h"
 #include "HostLink.h"
