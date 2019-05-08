@@ -25,9 +25,6 @@ HardwareAddress::HardwareAddress(
     set_mailbox(mailboxComponent);
     set_core(coreComponent);
     set_thread(threadComponent);
-
-    /* Update definition word. */
-    for(unsigned index=0; index<5; set_defined(index++));
 }
 
 /* Alternatively, construct a hardware address without priming it with values
