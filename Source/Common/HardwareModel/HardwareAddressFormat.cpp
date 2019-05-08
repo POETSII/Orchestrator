@@ -14,23 +14,7 @@ HardwareAddressFormat::HardwareAddressFormat(unsigned boxWordLength,
      boardWordLength(boardWordLength),
      mailboxWordLength(mailboxWordLength),
      coreWordLength(coreWordLength),
-     threadWordLength(threadWordLength)
-{
-    /* <!> We should perform this check and throw if appropriate... but
-       <!> according to Cambridge, hardware addresses that are less than the
-       <!> fixed length are acceptable. I'll leave this here in case we decide
-       <!> to zero-pad, or change our mind.
-
-    if (boxWordLength +\
-        boardWordLength +\
-        mailboxWordLength +\
-        coreWordLength +\
-        threadWordLength != HARDWARE_ADDRESS_LENGTH)
-    {
-        // Throw
-    }
-    */
-}
+     threadWordLength(threadWordLength){}
 
 /* Constructs without populating. You really don't want to use this without
  * populating it first (either by passing it to a deployer, or setting the
