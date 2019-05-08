@@ -9,7 +9,6 @@
  * See the hardware model documentation for further information about the
  * format of hardware addresses. */
 
-#include "dumpchan.h"
 #include "HardwareDumpUtils.h"
 
 class HardwareAddressFormat: public DumpChan

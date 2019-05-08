@@ -9,6 +9,7 @@
 #include <string>
 
 #include "dfprintf.h"
+#include "dumpchan.h"
 
 #define MAXIMUM_BREAKER_LENGTH 80
 #define GRAPH_CALLBACK static void

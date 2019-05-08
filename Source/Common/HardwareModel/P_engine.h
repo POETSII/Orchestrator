@@ -14,7 +14,6 @@
 
 #include "HardwareAddress.h"
 #include "HardwareDumpUtils.h"
-#include "dumpchan.h"
 #include "NameBase.h"
 #include "OrchBase.h"
 #include "OwnershipException.h"

@@ -14,7 +14,6 @@
 
 #include "AddressableItem.h"
 #include "Bin.h"
-#include "dumpchan.h"
 #include "HardwareDumpUtils.h"
 #include "NameBase.h"
 #include "OwnershipException.h"

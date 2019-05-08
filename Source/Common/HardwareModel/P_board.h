@@ -13,7 +13,6 @@
 #include <sstream>
 
 #include "AddressableItem.h"
-#include "dumpchan.h"
 #include "HardwareDumpUtils.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
