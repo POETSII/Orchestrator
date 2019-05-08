@@ -188,19 +188,28 @@ void HardwareAddress::set_defined(unsigned index)
  * - file: File to dump to. */
 void HardwareAddress::Dump(FILE* file)
 {
-    /* The dump basically just contains the lengths. */
-    fprintf(file, "Hardware Address +++++++++++++++++++++++++\n\
-boxComponent     %u\n\
-boardComponent   %u\n\
-mailboxComponent %u\n\
-coreComponent    %u\n\
-threadComponent  %u\n\
-Hardware Address -------------------------\n",
-            boxComponent,
-            boardComponent,
-            mailboxComponent,
-            coreComponent,
-            threadComponent);
+    std::string prefix = dformat("Hardware address at %#018lx",
+                                 (uint64_t) this);
+    HardwareDumpUtils::open_breaker(file, prefix);
 
+    /* Just contains the components, and whether or not they have been
+     * defined. */
+    fprintf(file, "boxComponent:     %u ", boxComponent);
+    fprintf(file, "%s\n", is_box_defined() ? "" : "(not defined)");
+
+    fprintf(file, "boardComponent:   %u ", boardComponent);
+    fprintf(file, "%s\n", is_board_defined() ? "" : "(not defined)");
+
+    fprintf(file, "mailboxComponent: %u ", mailboxComponent);
+    fprintf(file, "%s\n", is_mailbox_defined() ? "" : "(not defined)");
+
+    fprintf(file, "coreComponent:    %u ", coreComponent);
+    fprintf(file, "%s\n", is_core_defined() ? "" : "(not defined)");
+
+    fprintf(file, "threadComponent:  %u ", threadComponent);
+    fprintf(file, "%s\n", is_thread_defined() ? "" : "(not defined)");
+
+    /* Close breaker and flush the dump. */
+    HardwareDumpUtils::close_breaker(file, prefix);
     fflush(file);
 }

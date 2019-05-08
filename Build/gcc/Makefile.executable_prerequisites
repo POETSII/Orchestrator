@@ -26,11 +26,13 @@ TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
                        $(GENERICS_DIR)/Msg_p.cpp
 
 # Sources used by executables that need to address hardware.
-HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cpp \
+HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareDumpUtils.cpp \
+                           $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cpp \
                            $(SOURCE_DIR)/Common/HardwareModel/HardwareAddressFormat.cpp \
                            $(SOURCE_DIR)/OrchBase/P_addr.cpp \
                            $(GENERICS_DIR)/flat.cpp \
-                           $(GENERICS_DIR)/dfprintf.cpp
+                           $(GENERICS_DIR)/dfprintf.cpp \
+                           $(GENERICS_DIR)/dumpchan.cpp
 
 # Sources used by executables that require the hardware model.
 HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp \
@@ -45,7 +47,6 @@ HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp 
                          $(SOURCE_DIR)/Common/HardwareModel/P_port.cpp \
                          $(SOURCE_DIR)/Common/NameBase.cpp \
                          $(SOURCE_DIR)/OrchBase/Bin.cpp \
-                         $(GENERICS_DIR)/dumpchan.cpp \
                          $(GENERICS_DIR)/rand.cpp \
                          $(HARDWARE_ADDRESS_SOURCES)
 

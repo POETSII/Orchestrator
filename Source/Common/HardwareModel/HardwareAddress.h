@@ -22,8 +22,8 @@
  * See the hardware model documentation for further information about hardware
  * addresses. */
 
-#include "dfprintf.h"
 #include "HardwareAddressFormat.h"
+#include "HardwareDumpUtils.h"
 #include "InvalidAddressException.h"
 #include "P_addr.h"
 #include <cmath>  /* For validating address components. */
