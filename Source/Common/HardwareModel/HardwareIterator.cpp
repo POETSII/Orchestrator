@@ -259,19 +259,8 @@ void HardwareIterator::reset_thread_iterator()
  * - file: File to dump to. */
 void HardwareIterator::Dump(FILE* file)
 {
-    std::string fullName = FullName();
-    std::string breakerHead = fullName + " ";
-    std::string breakerTail;
-    if (breakerHead.size() >= MAXIMUM_BREAKER_LENGTH)
-    {
-        breakerTail.assign("+");
-    }
-    else
-    {
-        breakerTail.assign(MAXIMUM_BREAKER_LENGTH - breakerHead.size() - 1,
-                           '+');
-    }
-    fprintf(file, "%s%s\n", breakerHead.c_str(), breakerTail.c_str());
+    std::string prefix = FullName();
+    HardwareDumpUtils::open_breaker(file, prefix);
 
     /* About this object. */
     NameBase::Dump(file);
@@ -313,7 +302,6 @@ void HardwareIterator::Dump(FILE* file)
     fprintf(file, "This iterator has%s wrapped.\n", isWrapped ? "" : " not");
 
     /* Close breaker and flush the dump. */
-    std::replace(breakerTail.begin(), breakerTail.end(), '+', '-');
-    fprintf(file, "%s%s\n", breakerHead.c_str(), breakerTail.c_str());
+    HardwareDumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
