@@ -280,19 +280,19 @@ void HardwareIterator::Dump(FILE* file)
     fprintf(file, "Current board memory address:     %#018lx\n",
             (uint64_t) get_board());
     fprintf(file, "Current board hardware address:   %u\n",
-            get_board()->get_hardware_address()->get_hardware_address());
+            get_board()->get_hardware_address()->as_uint());
     fprintf(file, "Current mailbox memory address:   %#018lx\n",
             (uint64_t) get_mailbox());
     fprintf(file, "Current mailbox hardware address: %u\n",
-            get_mailbox()->get_hardware_address()->get_hardware_address());
+            get_mailbox()->get_hardware_address()->as_uint());
     fprintf(file, "Current core memory address:      %#018lx\n",
             (uint64_t) get_core());
     fprintf(file, "Current core hardware address:    %u\n",
-            get_core()->get_hardware_address()->get_hardware_address());
+            get_core()->get_hardware_address()->as_uint());
     fprintf(file, "Current thread memory address:    %#018lx\n",
             (uint64_t) get_thread());
     fprintf(file, "Current thread hardware address:  %u\n",
-            get_thread()->get_hardware_address()->get_hardware_address());
+            get_thread()->get_hardware_address()->as_uint());
 
     /* Print whether or not each iterator has changed since the last time it
      * was polled. */

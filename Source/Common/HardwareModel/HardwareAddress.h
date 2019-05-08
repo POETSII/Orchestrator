@@ -60,6 +60,7 @@ public:
 
     /* Access */
     unsigned get_hardware_address();
+    inline unsigned as_uint(){return get_hardware_address();}
     void populate_a_software_address(P_addr* target, bool resetFirst = true);
     void populate_from_software_address(P_addr* source);
     void Dump(FILE* = stdout);
