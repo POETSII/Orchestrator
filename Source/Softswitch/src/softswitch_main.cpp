@@ -40,12 +40,18 @@ void softswitch_main()
             tinselAlloc(recvBuffer); // return control of the receive buffer to the hardware
             loopActive++; // Mark that we have done something this loop.
         }
-        
+#ifdef PREFER_RX
+        else if (softswitch_IsRTSReady(ThreadContext))
+#else        
         if (softswitch_IsRTSReady(ThreadContext)) // Now try a send
+#endif
         {
             if (!tinselCanSend())         //Channel is blocked, flag it.
             {             
                 toggleTCS = TINSEL_CAN_SEND;
+#ifdef INSTRUMENTATION
+                ThreadContext->blockCnt++;
+#endif
             }
             else    
             {
@@ -58,6 +64,9 @@ void softswitch_main()
         // if literally nothing can be done wait until there is something to do.
         if (!loopActive && !softswitch_onIdle(ThreadContext)) 
         {
+//#ifdef INSTRUMENTATION
+//            ThreadContext->idleCnt++;
+//#endif
             tinselWaitUntil(TINSEL_CAN_RECV | toggleTCS); // thread is idle.
         }
     }

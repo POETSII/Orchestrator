@@ -8,6 +8,11 @@
 #define P_ONIDLE_CHANGE 0x80000000
 #define IDLE_SWEEP_CHUNK_SIZE 128
 
+#define PREFERRX
+#define SWIDLE
+#define SW_IDLE_CNT_MAX     10000   //100000
+#define INSTRUMENTATION
+
 struct PDeviceInstance;
 struct PThreadContext;
 struct POutputPin;
@@ -159,7 +164,61 @@ typedef struct PThreadContext
     uint32_t           nextOnIdle;
     uint32_t           receiveHasPriority;
     uint32_t           ctlEnd;
+
+#ifdef SWIDLE    
+    // Software idle detection
+    uint32_t           idleCnt;            // Dev0 idle handler called cnt
+    uint8_t            idleFlag;           // Indicates thread may be idle
+    uint8_t            swIdle;             // Indicates thread is idle
+#endif
+
+#ifdef INSTRUMENTATION    
+    // Instrumentation
+    uint8_t            instrReq;    // TEMPORARY flag to indicate 
+                                    // instrumentation requested
+    
+    uint32_t           rxCnt;       // No. messages received.
+    uint32_t           onRCnt;      // No. times onReceive called.
+    uint32_t           onCCnt;      // No. times onCtl called.
+    uint32_t           onSCnt;      // No. times onSend called.
+    uint32_t           superCnt;    // No. supervisor messages sent.
+    uint32_t           sentCnt;     // No. messages sent.
+    uint32_t           onICnt;      // No. times onIdle called.
+  //uint32_t           idleCnt;     // No. times absolutely nothing to do.
+    uint32_t           blockCnt;    // No. times tinselCanSend() returns 0.
+    uint32_t           cacheMissCnt;// Cache miss count at last reset.
+    uint32_t           cacheHitCnt; // Cache hit count at last reset.
+    uint32_t           cacheWBCnt;  // Cache writeback count at last reset.
+    uint32_t           cycleCnt;    // Cycle count at last reset.
+    uint32_t           cpuIdleCnt;  // CPU Idle count at last reset.
+#endif    
 } ThreadCtxt_t;
+
+#ifdef INSTRUMENTATION
+// The message type for sending instrumentation messages.
+typedef struct softswitch_instrumentation_msg_t
+{
+    uint32_t           rxCnt;
+    uint32_t           onRCnt;
+    uint32_t           onCCnt;
+    uint32_t           onSCnt;
+    uint32_t           superCnt;
+    uint32_t           sentCnt;
+    uint32_t           onICnt;
+    uint32_t           blockCnt;
+    uint32_t           cacheMissCnt;
+    uint32_t           cacheHitCnt;
+  //uint32_t           cacheWBCnt;   // Does not fit in current super msg.
+    uint32_t           cycleCnt;
+    uint32_t           cpuIdleCnt;
+}  sw_instr_msg_t;
+
+//TODO: Method to send the instrumentation. Relies on "new" header/address definition/
+
+#endif   
+
+
+
 
 // these functions would be more cleanly done as methods of a class PThread.
 

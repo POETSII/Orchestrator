@@ -123,6 +123,11 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
     uint32_t buffered = 0; // additional argument for OnSend - could also use the msgType field
     uint8_t isSuperMsg = (cur_pin->targets[cur_device->currTgt].tgt == DEST_BROADCAST); // Supervisor messages
     size_t hdrSize = isSuperMsg ? p_sup_hdr_size() : p_hdr_size(); // use different headers
+
+#ifdef INSTRUMENTATION
+    thr_ctxt->onSCnt++;
+#endif
+    
     // set up OnSend with the first address   
     if (cur_device->currTgt == 0)
     {
@@ -147,13 +152,27 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
         {
             set_super_hdr(tinselId() << P_THREAD_OS | ((cur_device->deviceID & P_DEVICE_MASK) << P_DEVICE_OS), cur_pin->pinType->msgType, target->tgtPin, cur_pin->pinType->sz_msg+hdrSize, 0, static_cast<P_Sup_Hdr_t*>(const_cast<void*>(send_buf)));
             tinselSend(tinselHostId(), send_buf);
+#ifdef INSTRUMENTATION
+            thr_ctxt->superCnt++;
+#endif             
         }
         else
         {
             set_msg_hdr(target->tgt, target->tgtEdge, target->tgtPin, cur_pin->pinType->sz_msg, cur_pin->pinType->msgType, static_cast<P_Msg_Hdr_t*>(const_cast<void*>(send_buf)));
             tinselSend((target->tgt >> P_THREAD_OS), send_buf);
+#ifdef INSTRUMENTATION
+            thr_ctxt->sentCnt++;
+#endif                 
         }
-    }   
+    }
+    
+#ifdef INSTRUMENTATION 
+    if(!tinselCanSend())
+    {
+        thr_ctxt->blockCnt++;
+    }
+#endif
+    
     // then update the RTS list as necessary
     softswitch_onRTS(thr_ctxt, cur_device);
     return cur_device->currTgt;
@@ -180,6 +199,14 @@ void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
         return;
     }
     
+#ifdef SWIDLE
+    thr_ctxt->idleFlag = 0;
+#endif
+    
+#ifdef INSTRUMENTATION
+    thr_ctxt->rxCnt++;
+#endif    
+    
     // go through the devices (usually only 1)
     for (devInst_t* recv_device = recv_device_begin; recv_device != recv_device_end; recv_device++)
     {
@@ -194,12 +221,21 @@ void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
             // through the __init__ handler. Luckily message types are globally unique, or likewise this wouldn't
             // work if the device had no __init__ pin. This test should be removed as soon as __init__ pins lose
             // any special meaning in existing XML!
-            if ((recv_pkt->messageTag == P_MSG_TAG_INIT) && (recv_pin->pinType->msgType == recv_pkt->messageTag))
+            if ((recv_pkt->messageTag == P_MSG_TAG_INIT) && (recv_pin->pinType->msgType == recv_pkt->messageTag)) {
                RTS_updated = recv_pin->pinType->Recv_handler(thr_ctxt->properties, recv_device, 0, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+p_hdr_size());
-            else RTS_updated = recv_device->devType->OnCtl_Handler(thr_ctxt, recv_device, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+p_hdr_size());
-        }
+            } else {     
+                RTS_updated = recv_device->devType->OnCtl_Handler(thr_ctxt, recv_device, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+p_hdr_size());
+#ifdef INSTRUMENTATION
+                thr_ctxt->onCCnt++;
+#endif                
+            }
+        }else {
             // otherwise handle as a normal device through the appropriate receive handler.
-            else RTS_updated = recv_pin->pinType->Recv_handler(thr_ctxt->properties, recv_device, &recv_pin->sources[recv_pkt->destEdgeIndex], static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+p_hdr_size());
+            RTS_updated = recv_pin->pinType->Recv_handler(thr_ctxt->properties, recv_device, &recv_pin->sources[recv_pkt->destEdgeIndex], static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+p_hdr_size());
+#ifdef INSTRUMENTATION
+            thr_ctxt->onRCnt++;
+#endif
+        }
         // finally, run the RTS handler for the device.
         softswitch_onRTS(thr_ctxt, recv_device);
     }
@@ -215,6 +251,27 @@ bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt)
     {
         devInst_t* device = &thr_ctxt->devInsts[cur_device];
         // each device's OnIdle handler and if something interesting happens update the flag and run the RTS handler.
+#ifdef INSTRUMENTATION
+        thr_ctxt->onICnt++;
+#endif
+        
+#ifdef SWIDLE 
+        if(device->deviceID == 0)
+        {   // This is Device 0, we usurp it for SW OnIdle.
+            if(thr_ctxt->idleFlag)
+            {   // We have previously flagged idle, increment count
+                if(thr_ctxt->idleCnt++ > SW_IDLE_CNT_MAX)
+                {
+                    thr_ctxt->swIdle = 1;
+                }
+            } else {
+                thr_ctxt->idleFlag = 1;
+                thr_ctxt->idleCnt = 0;
+                thr_ctxt->swIdle = 0;
+            }
+        }
+#endif        
+        
         if (device->devType->OnIdle_Handler(thr_ctxt->properties, device))
         {
             if (++cur_device >= thr_ctxt->numDevInsts) thr_ctxt->nextOnIdle = P_ONIDLE_CHANGE;
