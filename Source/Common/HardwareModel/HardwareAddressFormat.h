@@ -11,6 +11,7 @@
  * format of hardware addresses. */
 
 #include "dumpchan.h"
+#include "HardwareDumpUtils.h"
 #define HARDWARE_ADDRESS_LENGTH 32
 
 class HardwareAddressFormat: public DumpChan

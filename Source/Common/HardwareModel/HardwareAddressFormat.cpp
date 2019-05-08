@@ -26,19 +26,23 @@ HardwareAddressFormat::HardwareAddressFormat(){}
  * - file: File to dump to. */
 void HardwareAddressFormat::Dump(FILE* file)
 {
+    std::string prefix = dformat("Hardware address format at %#018lx",
+                                 (uint64_t) this);
+    HardwareDumpUtils::open_breaker(file, prefix);
+
     /* The dump basically just contains the lengths. */
-    fprintf(file, "Hardware Address Format +++++++++++++++++++++++++\n\
-boxWordLength     %u\n\
-boardWordLength   %u\n\
-mailboxWordLength %u\n\
-coreWordLength    %u\n\
-threadWordLength  %u\n\
-Hardware Address Format -------------------------\n",
+    fprintf(file, "boxWordLength:     %u\n\
+boardWordLength:   %u\n\
+mailboxWordLength: %u\n\
+coreWordLength:    %u\n\
+threadWordLength:  %u\n",
             boxWordLength,
             boardWordLength,
             mailboxWordLength,
             coreWordLength,
             threadWordLength);
 
+    /* Close breaker and flush the dump. */
+    HardwareDumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
