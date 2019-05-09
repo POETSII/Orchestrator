@@ -92,6 +92,7 @@ private:
     bool isFileLoaded;
     std::string loadedFile;
     bool does_file_exist(const char* filePath);
+    void set_uif_error_callback();
     static void on_syntax_error(void*, void*, int);
 
     /* Validation methods. */

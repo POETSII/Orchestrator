@@ -6,15 +6,14 @@
 /* Constructs the file parser. */
 HardwareFileParser::HardwareFileParser():JNJ(),isFileLoaded(false)
 {
-    /* Registers callback functions (for the UIF base) for error handling
-     * purposes. */
-    SetECB(this, on_syntax_error);
+    set_uif_error_callback();
 }
 
 /* Constructs the file parser, parses a file, and dumps it in an engine. */
 HardwareFileParser::HardwareFileParser(const char* filePath, P_engine* engine)
     :JNJ(),isFileLoaded(false)
 {
+    set_uif_error_callback();
     load_file(filePath);
     populate_hardware_model(engine);
 }
@@ -68,6 +67,12 @@ void HardwareFileParser::load_file(const char* filePath)
     isFileLoaded = true;
     std::string filePathAsString = filePath;
     Add(filePathAsString);
+}
+
+/* Registers a callback function for error handling purposes. */
+void HardwareFileParser::set_uif_error_callback()
+{
+    SetECB(this, on_syntax_error);  /* From UIF. */
 }
 
 /* Defines behaviour when a syntax error is encountered when reading a file.
