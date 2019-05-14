@@ -420,8 +420,8 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 else
                 {
                     valid = false;
-                    invalidVariableMessage(errorMessage, (*recordIterator),
-                                           sectionName, variable);
+                    invalid_variable_message(errorMessage, (*recordIterator),
+                                             sectionName, variable);
                 }
             }
 
@@ -429,7 +429,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
             {
                 if (variable == "board")
                 {
-                    valid &= areValuesAtNodeNatural(
+                    valid &= are_values_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
 
@@ -442,7 +442,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 }
                 else if (variable == "box")
                 {
-                    valid &= isValueAtNodeNatural(
+                    valid &= is_value_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     if (valueNodes[0]->qop != Lex::Sy_ISTR)
@@ -458,7 +458,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 }
                 else if (variable == "core")
                 {
-                    valid &= isValueAtNodeNatural(
+                    valid &= is_value_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->coreWordLength = str2unsigned(values[0]);
@@ -466,7 +466,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 else if (variable == "mailbox")
                 {
                     /* Same as with packet_address_format::board. */
-                    valid &= areValuesAtNodeNatural(
+                    valid &= are_values_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
 
@@ -477,7 +477,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 }
                 else if (variable == "thread")
                 {
-                    valid &= isValueAtNodeNatural(
+                    valid &= is_value_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->threadWordLength = str2unsigned(values[0]);
@@ -485,8 +485,8 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 else
                 {
                     valid = false;
-                    invalidVariableMessage(errorMessage, (*recordIterator),
-                                           sectionName, variable);
+                    invalid_variable_message(errorMessage, (*recordIterator),
+                                             sectionName, variable);
                 }
             }
 
@@ -494,7 +494,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
             {
                 if (variable == "boxes")
                 {
-                    valid &= isValueAtNodeNatural(
+                    valid &= is_value_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->boxesInEngine = str2unsigned(values[0]);
@@ -503,7 +503,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 {
                     if (values.size() == 1)  /* Scalar */
                     {
-                        valid &= isValueAtNodeNatural(
+                        valid &= is_value_at_node_natural(
                             (*recordIterator), valueNodes[0], variable,
                             values[0], sectionName, errorMessage);
                         deployer->boardsInEngine.push_back(
@@ -523,7 +523,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                                 (*recordIterator)->pos));
                         }
 
-                        valid &= areValuesAtNodeNatural(
+                        valid &= are_values_at_node_natural(
                             (*recordIterator), valueNodes[0], variable,
                             values[0], sectionName, errorMessage);
 
@@ -562,14 +562,14 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 }
                 else if (variable == "external_box_cost")
                 {
-                    valid &= isValueAtNodeFloating(
+                    valid &= is_value_at_node_floating(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->costExternalBox = str2float(values[0]);
                 }
                 else if (variable == "board_board_cost")
                 {
-                    valid &= isValueAtNodeFloating(
+                    valid &= is_value_at_node_floating(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->costBoardBoard = str2float(values[0]);
@@ -577,8 +577,8 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 else
                 {
                     valid = false;
-                    invalidVariableMessage(errorMessage, (*recordIterator),
-                                           sectionName, variable);
+                    invalid_variable_message(errorMessage, (*recordIterator),
+                                             sectionName, variable);
                 }
 
             }
@@ -587,7 +587,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
             {
                 if (variable == "box_board_cost")
                 {
-                    valid &= isValueAtNodeFloating(
+                    valid &= is_value_at_node_floating(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->costBoxBoard = str2float(values[0]);
@@ -599,8 +599,8 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 else
                 {
                     valid = false;
-                    invalidVariableMessage(errorMessage, (*recordIterator),
-                                           sectionName, variable);
+                    invalid_variable_message(errorMessage, (*recordIterator),
+                                             sectionName, variable);
                 }
             }
 
@@ -662,28 +662,28 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 }
                 else if (variable == "board_mailbox_cost")
                 {
-                    valid &= isValueAtNodeFloating(
+                    valid &= is_value_at_node_floating(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->costBoardMailbox = str2float(values[0]);
                 }
                 else if (variable == "mailbox_mailbox_cost")
                 {
-                    valid &= isValueAtNodeFloating(
+                    valid &= is_value_at_node_floating(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->costBoardMailbox = str2float(values[0]);
                 }
                 else if (variable == "supervisor_memory")
                 {
-                    valid &= isValueAtNodeNatural(
+                    valid &= is_value_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->boardSupervisorMemory = str2unsigned(values[0]);
                 }
                 else if (variable == "dram")
                 {
-                    valid &= isValueAtNodeNatural(
+                    valid &= is_value_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->dram = str2unsigned(values[0]);
@@ -691,8 +691,8 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 else
                 {
                     valid = false;
-                    invalidVariableMessage(errorMessage, (*recordIterator),
-                                           sectionName, variable);
+                    invalid_variable_message(errorMessage, (*recordIterator),
+                                             sectionName, variable);
                 }
             }
 
@@ -700,21 +700,21 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
             {
                 if (variable == "cores")
                 {
-                    valid &= isValueAtNodeNatural(
+                    valid &= is_value_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->coresInMailbox = str2unsigned(values[0]);
                 }
                 else if (variable == "mailbox_core_cost")
                 {
-                    valid &= isValueAtNodeFloating(
+                    valid &= is_value_at_node_floating(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->costMailboxCore = str2float(values[0]);
                 }
                 else if (variable == "core_core_cost")
                 {
-                    valid &= isValueAtNodeFloating(
+                    valid &= is_value_at_node_floating(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->costCoreCore = str2float(values[0]);
@@ -722,8 +722,8 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 else
                 {
                     valid = false;
-                    invalidVariableMessage(errorMessage, (*recordIterator),
-                                           sectionName, variable);
+                    invalid_variable_message(errorMessage, (*recordIterator),
+                                             sectionName, variable);
                 }
             }
 
@@ -731,35 +731,35 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
             {
                 if (variable == "threads")
                 {
-                    valid &= isValueAtNodeNatural(
+                    valid &= is_value_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->threadsInCore = str2unsigned(values[0]);
                 }
                 else if (variable == "instruction_memory")
                 {
-                    valid &= isValueAtNodeNatural(
+                    valid &= is_value_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->instructionMemory = str2unsigned(values[0]);
                 }
                 else if (variable == "data_memory")
                 {
-                    valid &= isValueAtNodeNatural(
+                    valid &= is_value_at_node_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->dataMemory = str2unsigned(values[0]);
                 }
                 else if (variable == "core_thread_cost")
                 {
-                    valid &= isValueAtNodeFloating(
+                    valid &= is_value_at_node_floating(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->costCoreThread = str2float(values[0]);
                 }
                 else if (variable == "thread_thread_cost")
                 {
-                    valid &= isValueAtNodeFloating(
+                    valid &= is_value_at_node_floating(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
                     deployer->costThreadThread = str2float(values[0]);
@@ -767,8 +767,8 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                 else
                 {
                     valid = false;
-                    invalidVariableMessage(errorMessage, (*recordIterator),
-                                           sectionName, variable);
+                    invalid_variable_message(errorMessage, (*recordIterator),
+                                             sectionName, variable);
                 }
             }
 
@@ -814,7 +814,7 @@ unsigned str2unsigned(std::string uintLike)
  * - sectionName: The name of the section the record lives in (for writing
      error message).
  * - errorMessage: String to append the error message to, if any. */
-bool HardwareFileParser::isValueAtNodeNatural(
+bool HardwareFileParser::is_value_at_node_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage)
 {
@@ -840,7 +840,7 @@ bool HardwareFileParser::isValueAtNodeNatural(
  * - sectionName: The name of the section the record lives in (for writing
      error message).
  * - errorMessage: String to append the error message to, if any. */
-bool HardwareFileParser::isValueAtNodeFloating(
+bool HardwareFileParser::is_value_at_node_floating(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage)
 {
@@ -866,7 +866,7 @@ bool HardwareFileParser::isValueAtNodeFloating(
  * - sectionName: The name of the section the record lives in (for writing
      error message).
  * - errorMessage: String to append the error message to, if any. */
-bool HardwareFileParser::areValuesAtNodeNatural(
+bool HardwareFileParser::are_values_at_node_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage)
 {
@@ -875,7 +875,7 @@ bool HardwareFileParser::areValuesAtNodeNatural(
     for (valueNodeIterator=valueNode->leaf.begin();
          valueNodeIterator!=valueNode->leaf.end(); valueNodeIterator++)
     {
-        valid &= isValueAtNodeNatural(
+        valid &= is_value_at_node_natural(
             recordNode, (*valueNodeIterator),
             variable, (*valueNodeIterator)->str.c_str(),
             sectionName.c_str(), errorMessage);
@@ -890,7 +890,7 @@ bool HardwareFileParser::areValuesAtNodeNatural(
  * - recordNode: Record node where the invalid variable was found.
  * - sectionName: Name of the section in which the invalid variable was found.
  * - variable: Invalid variable name. */
-void HardwareFileParser::invalidVariableMessage(
+void HardwareFileParser::invalid_variable_message(
     std::string* errorMessage, UIF::Node* recordNode, std::string sectionName,
     std::string variable)
 {
