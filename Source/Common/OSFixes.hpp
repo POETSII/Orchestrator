@@ -1,8 +1,17 @@
-#ifndef OSFixes_H
-#define OSFixes_H
+#ifndef __OSFIXES__H
+#define __OSFIXES__H
 
 /* =============================================================================
- * Avoid format warnings on MINGW from it trying to use old MSVc printf *============================================================================*/
+ * =============================================================================
+ * OS/compiler-specific oddities to make code as portable as possible.
+ *
+ * 
+ * =============================================================================
+ * ===========================================================================*/
+
+/* =============================================================================
+ * Avoid format warnings on MINGW from it trying to use old MSVc printf 
+ * ===========================================================================*/
 #if defined(__MINGW64__) || defined(__MINGW32__)
  #define __USE_MINGW_ANSI_STDIO  1
 #endif
@@ -11,7 +20,7 @@
 /* =============================================================================
  * Headers for fixed-width ints (i.e. uint64_t) depend on c++ version. 
  * These are needed for addresses.
- *============================================================================*/
+ * ===========================================================================*/
 #if __cplusplus >= 201103   
  #include <cstdint>
  #include <cinttypes>
@@ -32,7 +41,7 @@
  *
  * Example Usage: 
  *      fprintf(fp, "Pointer: %" PTR_FMT "\n", static_cast<uint64_t>(&Var);
- *============================================================================*/
+ * ===========================================================================*/
 #define PTR_FMT     "#018" PRIx64
 #define SYMA_FMT    "#018" PRIx64
 #define HWA_FMT     "#010" PRIx32
@@ -44,7 +53,7 @@
  *
  * C++11 complains about using NULL as it compares a pointer to 0, which is NOT
  * portable according to the standard. C++98 does not have nullptr.
- *============================================================================*/
+ * ===========================================================================*/
 #if __cplusplus >= 201103   // C++11+ land
  #define PNULL nullptr
 #else
@@ -52,10 +61,9 @@
 #endif
 
 
-
 /* =============================================================================
  * Offer a to_string method for C++98
- *============================================================================*/
+ * ===========================================================================*/
 #if __cplusplus >= 201103               // C++11+ land
  #define TO_STRING   std::to_string
 #else                                   // C++98 land
@@ -73,4 +81,37 @@
 #endif
 
 
-#endif /* OSFixes_H */
+/* =============================================================================
+ * Macros for indicating that variables may be unused by design.
+ *
+ * Example use cases include common code (e.g. softswitch) where user-provided
+ * code is inserted into pre-defined methods.
+ *
+ * OS_ATTRIBUTE_UNUSED   Placed immedidiately after potentially unused var.
+ * OS_PRAGMA_UNUSED(x)   Placed on line after a potentially unused var. 
+ * ===========================================================================*/
+#ifdef __GNUC__				/* GCC Specific definitions. */
+#define OS_ATTRIBUTE_UNUSED		"__attribute__((unused)) "
+#define OS_PRAGMA_UNUSED(x)		""
+
+#elif __BORLANDC__			/* Borland specific definitions. */
+#define OS_ATTRIBUTE_UNUSED		""
+#define OS_PRAGMA_UNUSED(x)		"(void)" x ";\n"
+
+#elif __clang__				/* Clang Specific definitions. */
+#define OS_ATTRIBUTE_UNUSED		""
+#define OS_PRAGMA_UNUSED(x)		"#pragma unused(" x ");\n"
+
+#elif _MSC_VER				/* MS Specific definitions. */
+#define OS_ATTRIBUTE_UNUSED		""
+#define OS_PRAGMA_UNUSED(x)		x ";\n"
+
+#else						/* Other compilers. */
+#warning "Building without Compiler-specific unused variable handling."
+#define OS_ATTRIBUTE_UNUSED		""
+#define OS_PRAGMA_UNUSED(x)		""
+#endif
+
+
+/* ===========================================================================*/
+#endif /* __OSFIXES__H */
