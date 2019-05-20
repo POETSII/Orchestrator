@@ -209,6 +209,22 @@ TEST_CASE("Addresses can be assigned to threads", "[Address Assignment]")
     REQUIRE(thread.get_hardware_address()->get_thread() == 5);
 }
 
+TEST_CASE("Attempting to get the hardware address of an item without an address throws", "[Address Assignment]")
+{
+    P_box box("Box");
+    P_board board("Board");
+    P_mailbox mailbox("Mailbox");
+    P_core core("Core");
+    P_thread thread("Thread");
+
+    REQUIRE_THROWS_AS(box.get_hardware_address(), MissingAddressException&);
+    REQUIRE_THROWS_AS(board.get_hardware_address(), MissingAddressException&);
+    REQUIRE_THROWS_AS(mailbox.get_hardware_address(),
+                      MissingAddressException&);
+    REQUIRE_THROWS_AS(core.get_hardware_address(), MissingAddressException&);
+    REQUIRE_THROWS_AS(thread.get_hardware_address(), MissingAddressException&);
+}
+
 TEST_CASE("Metadata can be assigned to POETS engines", "[Metadata]")
 {
     P_engine engine("Engine000");

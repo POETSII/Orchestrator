@@ -8,8 +8,13 @@ AddressableItem::AddressableItem()
     isAddressBound = false;
 }
 
-/* Clears any address, if stored. */
 AddressableItem::~AddressableItem()
+{
+    clear_hardware_address();
+}
+
+/* Clears the hardware address, if one has been stored. */
+void AddressableItem::clear_hardware_address()
 {
     if (isAddressBound) delete hardwareAddress;
 }
@@ -33,11 +38,18 @@ HardwareAddress* AddressableItem::copy_hardware_address()
  *     ... */
 HardwareAddress* AddressableItem::get_hardware_address()
 {
+    if (!isAddressBound)
+    {
+        throw MissingAddressException(
+            dformat("[ERROR] Item at %#018lx has no hardware address, so it "
+                    "cannot be retreived.", this));
+    }
     return hardwareAddress;
 }
 
 void AddressableItem::set_hardware_address(HardwareAddress* value)
 {
+    clear_hardware_address();
     hardwareAddress = value;
     isAddressBound = true;
 }

@@ -12,6 +12,7 @@
  * as opposed to several lookups. */
 
 #include "HardwareAddress.h"
+#include "MissingAddressException.h"
 
 class AddressableItem
 {
@@ -20,6 +21,7 @@ class AddressableItem
 public:
     AddressableItem();
     ~AddressableItem();
+    void clear_hardware_address();
     HardwareAddress* copy_hardware_address();
     HardwareAddress* get_hardware_address();
     void set_hardware_address(HardwareAddress* value);
