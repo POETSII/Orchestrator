@@ -184,10 +184,10 @@ Post(136);
 void OrchBase::TopoSet1(Cli::Cl_t Cl)
 {
     ClearTopo();
-    pE = new P_engine("Aesop [1 box]");
+    pE = new P_engine("Simple [1 box]");
     pE->parent = this;
     pE->Npar(this);
-    AesopDeployer deployer;
+    SimpleDeployer deployer;
     Post(138, pE->Name());
     deployer.deploy(pE);
     pPlace->Init();
@@ -198,10 +198,10 @@ void OrchBase::TopoSet1(Cli::Cl_t Cl)
 void OrchBase::TopoSet2(Cli::Cl_t Cl)
 {
     ClearTopo();
-    pE = new P_engine("Aesop [2 boxes]");
+    pE = new P_engine("Simple [2 boxes]");
     pE->parent = this;
     pE->Npar(this);
-    MultiAesopDeployer deployer(2);
+    MultiSimpleDeployer deployer(2);
     Post(138, pE->Name());
     deployer.deploy(pE);
     pPlace->Init();

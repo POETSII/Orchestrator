@@ -322,7 +322,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
         if (sectionNameNodes.empty()){continue;}
 
         /* We only care about the first name (i.e. if the name is
-         * "header(Aesop)", we care only about "header") by reading only from
+         * "header(Simple)", we care only about "header") by reading only from
          * the first name-type node. */
         sectionName = sectionNameNodes[0]->str;
 

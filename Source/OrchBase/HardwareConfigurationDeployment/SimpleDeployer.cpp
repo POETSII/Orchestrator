@@ -1,8 +1,8 @@
-/* Defines a configuration for deploying "an Aesop engine". */
+/* Defines a configuration for deploying "a Simple engine". */
 
-#include "AesopDeployer.h"
+#include "SimpleDeployer.h"
 
-AesopDeployer::AesopDeployer()
+SimpleDeployer::SimpleDeployer()
 {
     /* Properties defined in order in Dialect1Deployer.h (good luck maintaining
      * that...). Costs are all zero and data memory is zero, because these are
@@ -11,8 +11,8 @@ AesopDeployer::AesopDeployer()
     author = "Mark Vousden";
     datetime = 201901101712;
     version = "0.3.1";
-    fileOrigin = "AesopDeployer.cpp";  /* This is not how this is supposed to
-                                        * be used! */
+    fileOrigin = "SimpleDeployer.cpp";  /* This is not how this is supposed to
+                                         * be used! */
 
     boxWordLength = 0;  /* There's only one box! */
     boardWordLengths.clear();

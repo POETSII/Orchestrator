@@ -1,10 +1,10 @@
-/* Defines a configuration for deploying multiple Aesop engines. */
+/* Defines a configuration for deploying multiple Simple engines. */
 
-#include "MultiAesopDeployer.h"
+#include "MultiSimpleDeployer.h"
 
-MultiAesopDeployer::MultiAesopDeployer(unsigned multiple)
+MultiSimpleDeployer::MultiSimpleDeployer(unsigned multiple)
 {
-    fileOrigin = "MultiAesopDeployer.cpp";
+    fileOrigin = "MultiSimpleDeployer.cpp";
 
     /* More boxes! */
     boxesInEngine *= multiple;
@@ -27,7 +27,7 @@ MultiAesopDeployer::MultiAesopDeployer(unsigned multiple)
  * Arguments:
  *
  * - quantity: Number of POETS items that need to fit. */
-unsigned MultiAesopDeployer::word_length_from_quantity(unsigned quantity)
+unsigned MultiSimpleDeployer::word_length_from_quantity(unsigned quantity)
 {
     /* NB: C++98 lacks a log-base-2 function, so we use:
      *   log_2(x) = log_10(x) / log_10(2) */

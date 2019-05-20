@@ -11,9 +11,9 @@
 #include "P_devtyp.h"
 #include "CMsg_p.h"
 #include "T_gen.h"
-#include "AesopDeployer.h"
+#include "SimpleDeployer.h"
 #include "Dialect1Deployer.h"
-#include "MultiAesopDeployer.h"
+#include "MultiSimpleDeployer.h"
 #include "Ns_el.h"
 #include "P_super.h"
 

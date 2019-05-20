@@ -1,7 +1,7 @@
 //------------------------------------------------------------------------------
 
 #include "HardwareModel.h"
-#include "MultiAesopDeployer.h"
+#include "MultiSimpleDeployer.h"
 #include "P_builder.h"
 #include "P_task.h"
 #include "P_devtyp.h"
@@ -156,10 +156,10 @@ void P_builder::Preplace(P_task* task)
            }
            unsigned numBoxes = numCores/(CORES_PER_BOARD*BOARDS_PER_BOX); // number of boxes
            if (numCores%(CORES_PER_BOARD*BOARDS_PER_BOX)) ++numBoxes;     // one more if needed
-           // Initialise the topology as an N-box Aesop system.
+           // Initialise the topology as an N-box Simple system.
            par->pE = new P_engine("VirtualSystem");
            par->pE->parent = par;
-           MultiAesopDeployer deployer(numBoxes);
+           MultiSimpleDeployer deployer(numBoxes);
            par->Post(138,par->pE->Name());
            deployer.deploy(par->pE);
         }
