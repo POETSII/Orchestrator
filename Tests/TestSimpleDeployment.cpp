@@ -1,22 +1,22 @@
-/* Tests the deployment of Aesop for integrity. Does not test that the
-   configuration in AesopDeployer.cpp is accurate. */
+/* Tests the Simple deployer for integrity. Does not test that the
+   configuration in SimpleDeployer.cpp is accurate. */
 
 #define CATCH_CONFIG_MAIN
 
 #include "catch.hpp"
 
-#include "AesopDeployer.h"
 #include "HardwareAddressFormat.h"
 #include "HardwareModel.h"
-#include "MultiAesopDeployer.h"
+#include "MultiSimpleDeployer.h"
+#include "SimpleDeployer.h"
 
-TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
+TEST_CASE("Simple deployment to an empty engine", "[Simple]")
 {
     P_engine engine("Engine000");
-    AesopDeployer deployer;
+    SimpleDeployer deployer;
     deployer.deploy(&engine);
 
-    SECTION("Check the hardware address format in the engine is populated correctly", "[Aesop]")
+    SECTION("Check the hardware address format in the engine is populated correctly", "[Simple]")
     {
         REQUIRE(engine.addressFormat.boxWordLength ==
                 deployer.boxWordLength);
@@ -34,7 +34,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
                             deployer.mailboxWordLengths.end(), 0);
     }
 
-    SECTION("Check engine contains the correct number of boxes", "[Aesop]")
+    SECTION("Check engine contains the correct number of boxes", "[Simple]")
     {
         /* Check there is a value for each logical address component. */
         REQUIRE(engine.P_boxm.size() == deployer.boxesInEngine);
@@ -46,7 +46,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Check each box is unique", "[Aesop]")
+    SECTION("Check each box is unique", "[Simple]")
     {
         std::set<P_box*> uniqueBoxes;
         std::map<AddressComponent, P_box*>::iterator boxIterator;
@@ -58,7 +58,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
         REQUIRE(uniqueBoxes.size() == deployer.boxesInEngine);
     }
 
-    SECTION("Check each box has correct static properties", "[Aesop]")
+    SECTION("Check each box has correct static properties", "[Simple]")
     {
         std::map<AddressComponent, P_box*>::iterator boxIterator;
         for (boxIterator=engine.P_boxm.begin();
@@ -79,12 +79,12 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
                                           deployer.boardsInEngine.end(), 1,
                                           std::multiplies<unsigned>());
 
-    SECTION("Check engine contains the correct number of boards", "[Aesop]")
+    SECTION("Check engine contains the correct number of boards", "[Simple]")
     {
         REQUIRE(engine.G.SizeNodes() == boardCount);
     }
 
-    SECTION("Check each board is unique", "[Aesop]")
+    SECTION("Check each board is unique", "[Simple]")
     {
         std::set<P_board*> uniqueBoards;
         WALKPDIGRAPHNODES(AddressComponent, P_board*,
@@ -97,7 +97,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
         REQUIRE(uniqueBoards.size() == boardCount);
     }
 
-    SECTION("Check each box contains the correct number of boards", "[Aesop]")
+    SECTION("Check each box contains the correct number of boards", "[Simple]")
     {
         unsigned boardsPerBox = boardCount / engine.P_boxm.size();
         std::map<AddressComponent, P_box*>::iterator boxIterator;
@@ -115,7 +115,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
                                             deployer.mailboxesInBoard.end(),
                                             1, std::multiplies<unsigned>());
 
-    SECTION("Check each board contains the correct number of mailboxes", "[Aesop]")
+    SECTION("Check each board contains the correct number of mailboxes", "[Simple]")
     {
         WALKPDIGRAPHNODES(AddressComponent, P_board*,
                           unsigned, P_link*,
@@ -127,7 +127,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Check each board has correct static properties", "[Aesop]")
+    SECTION("Check each board has correct static properties", "[Simple]")
     {
         WALKPDIGRAPHNODES(AddressComponent, P_board*,
                           unsigned, P_link*,
@@ -166,14 +166,14 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Check each mailbox in the engine is unique", "[Aesop]")
+    SECTION("Check each mailbox in the engine is unique", "[Simple]")
     {
         /* Right-hand side is number of boards in engine * number of mailboxes
          * in board. */
         REQUIRE(uniqueMailboxes.size() == boardCount * mailboxCount);
     }
 
-    SECTION("Check each mailbox has correct static properties", "[Aesop]")
+    SECTION("Check each mailbox has correct static properties", "[Simple]")
     {
         for (uniqueMailboxIterator=uniqueMailboxes.begin();
              uniqueMailboxIterator!=uniqueMailboxes.end();
@@ -186,7 +186,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Check each mailbox contains the correct number of cores", "[Aesop]")
+    SECTION("Check each mailbox contains the correct number of cores", "[Simple]")
     {
         for (uniqueMailboxIterator=uniqueMailboxes.begin();
              uniqueMailboxIterator!=uniqueMailboxes.end();
@@ -214,7 +214,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Check each core in the engine is unique", "[Aesop]")
+    SECTION("Check each core in the engine is unique", "[Simple]")
     {
         /* Right-hand side is number of boards in engine * number of mailboxes
          * in board * number of cores in mailbox. */
@@ -222,7 +222,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
                 boardCount * mailboxCount * deployer.coresInMailbox);
     }
 
-    SECTION("Check each core has correct static properties", "[Aesop]")
+    SECTION("Check each core has correct static properties", "[Simple]")
     {
         for (uniqueCoreIterator=uniqueCores.begin();
              uniqueCoreIterator!=uniqueCores.end(); uniqueCoreIterator++)
@@ -234,7 +234,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Check each core contains the correct number of threads", "[Aesop]")
+    SECTION("Check each core contains the correct number of threads", "[Simple]")
     {
         for (uniqueCoreIterator=uniqueCores.begin();
              uniqueCoreIterator!=uniqueCores.end(); uniqueCoreIterator++)
@@ -244,7 +244,7 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
         }
     }
 
-    SECTION("Check each thread in the engine is unique", "[Aesop]")
+    SECTION("Check each thread in the engine is unique", "[Simple]")
     {
         std::set<P_thread*> uniqueThreads;
         std::map<AddressComponent, P_thread*>::iterator threadIterator;
@@ -269,23 +269,23 @@ TEST_CASE("Aesop deployment to an empty engine", "[Aesop]")
     }
 
     /* Dumping test included for fun, if you are so inclined. Uncomment to get
-       a dump of the Aesop configuration. */ /*
-    SECTION("Dump for fun", "[Aesop]")
+       a dump of the Simple configuration. */ /*
+    SECTION("Dump for fun", "[Simple]")
     {
         engine.Dump();
     } */
 }
 
-TEST_CASE("MultiAesop(4) deployment to an empty engine", "[MultiAesop]")
+TEST_CASE("MultiSimple(4) deployment to an empty engine", "[MultiSimple]")
 {
     unsigned multiple = 4;
 
     P_engine engine("Engine000");
-    MultiAesopDeployer deployer(4);
-    AesopDeployer comparisonDeployer;
+    MultiSimpleDeployer deployer(4);
+    SimpleDeployer comparisonDeployer;
     deployer.deploy(&engine);
 
-    SECTION("Check engine contains the correct number of boxes", "[MultiAesop]")
+    SECTION("Check engine contains the correct number of boxes", "[MultiSimple]")
     {
         REQUIRE(engine.P_boxm.size() ==
                 comparisonDeployer.boxesInEngine * multiple);
@@ -298,7 +298,7 @@ TEST_CASE("MultiAesop(4) deployment to an empty engine", "[MultiAesop]")
         comparisonDeployer.boardsInEngine.end(), 1,
         std::multiplies<unsigned>());
 
-    SECTION("Check engine contains the correct number of boards", "[MultiAesop]")
+    SECTION("Check engine contains the correct number of boards", "[MultiSimple]")
     {
         REQUIRE(engine.G.SizeNodes() == comparisonBoardCount * multiple);
     }

@@ -52,8 +52,8 @@ HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp 
 
 # Sources used by executables that deploy POETS Engine configurations.
 HARDWARE_DEPLOYER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/Dialect1Deployer.cpp \
-                            $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/AesopDeployer.cpp \
-                            $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/MultiAesopDeployer.cpp \
+                            $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/SimpleDeployer.cpp \
+                            $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/MultiSimpleDeployer.cpp \
                             $(HARDWARE_MODEL_SOURCES)
 
 # Sources used by executables that iterate over the POETS Engine.
