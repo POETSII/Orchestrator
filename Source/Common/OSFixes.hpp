@@ -53,6 +53,8 @@
  *
  * C++11 complains about using NULL as it compares a pointer to 0, which is NOT
  * portable according to the standard. C++98 does not have nullptr.
+ *
+ * Usage is anywhere that you would use NULL or nullptr
  * ===========================================================================*/
 #if __cplusplus >= 201103   // C++11+ land
  #define PNULL nullptr
@@ -88,7 +90,11 @@
  * code is inserted into pre-defined methods.
  *
  * OS_ATTRIBUTE_UNUSED   Placed immedidiately after potentially unused var.
- * OS_PRAGMA_UNUSED(x)   Placed on line after a potentially unused var. 
+ * OS_PRAGMA_UNUSED(x)   Placed on a line after a potentially unused var. 
+ *
+ * Example Usage:
+ *      unsigned foo OS_ATTRIBUTE_UNUSED = 0;
+ *      OS_PRAGMA_UNUSED(foo)				// N.B. note the lack of ";"   
  * ===========================================================================*/
 #ifdef __GNUC__				/* GCC Specific definitions. */
 #define OS_ATTRIBUTE_UNUSED		"__attribute__((unused)) "
