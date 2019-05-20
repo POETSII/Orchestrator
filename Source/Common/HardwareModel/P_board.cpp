@@ -9,6 +9,7 @@
 P_board::P_board(std::string name)
 {
     arcKey = 0;
+    portKey = 0;
     Name(name);
 
     /* Set up callbacks for the graph container (command pattern). */
