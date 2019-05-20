@@ -43,7 +43,9 @@ for(;;) {
 
   Pkt.Src(0);
   Pkt.Send(0);                         // Send to root process main thread
-  if (strcmp(buf,"exit")==0) break;    // User wants out - kill this thread
+
+  // User wants out - kill this thread
+  if (strcmp(buf,"exit")==0 or buf[0]==0) break;
 }
 
 //printf("kb_func: thread closing\n"); fflush(stdout);
@@ -84,7 +86,7 @@ Root::~Root()
 WALKVECTOR(FnMap_t*, FnMapx, F)
     delete *F;
 }
-       
+
 //------------------------------------------------------------------------------
 
 void Root::CallEcho(Cli::Cl_t Cl)
@@ -421,7 +423,7 @@ else ProcCmnd(&Cm);                    // Handle ordinary batch command
 }
 
 //------------------------------------------------------------------------------
-   
+
 unsigned Root::OnInje(PMsg_p * Z, unsigned cIdx)
 // Handle a message coming in from the Injector.
 {
@@ -520,6 +522,10 @@ if (strcmp(scmnd.c_str(),"syst")==0) return CmSyst(pC);
 if (strcmp(scmnd.c_str(),"task")==0) return CmTask(pC);
 if (strcmp(scmnd.c_str(),"test")==0) return CmTest(pC);
 if (strcmp(scmnd.c_str(),"topo")==0) return CmTopo(pC);
+
+// Handle Ctrl-D behaviour in common shells. Ctrl-D repeatedly sends the EOF
+// character. Check only the first character of the input.
+if (scmnd.at(0)==0) return CmExit(pC);
 
 return CmDrop(pC);
 }
@@ -670,6 +676,3 @@ Post(26,sD,sT);
 }
 
 //==============================================================================
-
-
-

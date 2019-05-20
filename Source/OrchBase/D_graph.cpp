@@ -8,7 +8,7 @@
 
 //==============================================================================
 
-D_graph::D_graph(P_task * _p,string _s):par(_p),pP(0),pD(0),pPropsI(0)
+D_graph::D_graph(P_task * _p,string _s):par(_p),pE(0),pD(0),pPropsI(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
@@ -60,8 +60,8 @@ fprintf(fp,"NameBase       %s\n",FullName().c_str());
 fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
         (uint64_t) this, (uint64_t) par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
-fprintf(fp,"P_graph shortcut %#018lx\n", (uint64_t) pP);
-if (pP!=0) fprintf(fp,"...%s\n",pP->FullName().c_str());
+fprintf(fp,"P_engine shortcut %#018lx\n", (uint64_t) pE);
+if (pE!=0) fprintf(fp,"...%s\n",pE->FullName().c_str());
 fprintf(fp,"C Initialiser %#018lx\n", (uint64_t) pPropsI);
 if (pPropsI!=0) pPropsI->Dump(fp);
 fprintf(fp,"DEVICE GRAPH %35s++++++++++++++++++++++++++++++++\n",s.c_str());
@@ -102,6 +102,3 @@ vector<P_device*> D_graph::DevicesOfType(const P_devtyp* d_type)
 }
 
 //==============================================================================
-
-
-

@@ -17,10 +17,17 @@ void OrchBase::ClearBoxConfig(string)
 
 void OrchBase::ClearTopo()
 {
-if (pP==0) return;
-Post(134,pP->FullName());
-delete pP;
-pP = 0;
+    if (pE==0) return;
+    if (pE->FullName().empty())
+    {
+        Post(134,"with no name");
+    }
+    else
+    {
+        Post(134,pE->FullName());
+    }
+    delete pE;
+    pE = 0;
 }
 
 //------------------------------------------------------------------------------
@@ -97,16 +104,16 @@ pPlace->pCon->Constraintm[constraint] = str2uint(Cl.Pa_v[1].Val);
 
 void OrchBase::TopoDump(Cli::Cl_t Cl)
 {
-if (pP==0) return;
-if (Cl.Pa_v.empty()) pP->Dump();
+if (pE==0){Post(139);return;}
+if (Cl.Pa_v.empty()) pE->Dump();
 WALKVECTOR(Cli::Pa_t,Cl.Pa_v,i) {      // Loop through streams to dump to
   string st = (*i).Val;                // Dump stream
-  if (st.empty()) pP->Dump();
+  if (st.empty()) pE->Dump();
   st = topopath + st;
   FILE * fp = fopen(st.c_str(),"w");
   if (fp==0) Post(132,st);
   else {
-    pP->Dump(fp);
+    pE->Dump(fp);
     fclose(fp);
   }
 }
@@ -127,11 +134,25 @@ Post(133,"complete");
 void OrchBase::TopoLoad(Cli::Cl_t Cl)
 // Load a topology in from a file
 {
-if (Cl.Pa_v.empty()) return;           // No file?
-string st = Cl.Pa_v[0].Val;
-ClearTopo();
-Post(135,"started",st);
-Post(135,"complete",st);
+    ClearTopo();
+    pE = new P_engine("");
+    pE->parent = this;
+    pE->Npar(this);
+    std::string inputFilePath = Cl.Pa_v[0].Val;
+
+    HardwareFileParser parser;
+    try
+    {
+        parser.load_file(inputFilePath.c_str());
+        parser.populate_hardware_model(pE);
+        Post(140, inputFilePath.c_str());
+        pPlace->Init();
+    }
+    catch (OrchestratorException& exception)
+    {
+        Post(141, inputFilePath.c_str(), ("\n" + exception.message).c_str());
+        ClearTopo();
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -162,23 +183,28 @@ Post(136);
 
 void OrchBase::TopoSet1(Cli::Cl_t Cl)
 {
-ClearTopo();
-pP = new P_graph(this,"Set1");
-Post(138,pP->Name());
-pP->Set1();
+    ClearTopo();
+    pE = new P_engine("Simple [1 box]");
+    pE->parent = this;
+    pE->Npar(this);
+    SimpleDeployer deployer;
+    Post(138, pE->Name());
+    deployer.deploy(pE);
+    pPlace->Init();
 }
 
 //------------------------------------------------------------------------------
 
 void OrchBase::TopoSet2(Cli::Cl_t Cl)
 {
-ClearTopo();
-pP = new P_graph(this,"Set2");
-Post(138,pP->Name());
-pP->Set2();
+    ClearTopo();
+    pE = new P_engine("Simple [2 boxes]");
+    pE->parent = this;
+    pE->Npar(this);
+    MultiSimpleDeployer deployer(2);
+    Post(138, pE->Name());
+    deployer.deploy(pE);
+    pPlace->Init();
 }
 
 //==============================================================================
-
-
-

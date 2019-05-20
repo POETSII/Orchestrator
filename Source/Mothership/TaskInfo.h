@@ -18,17 +18,19 @@ typedef struct BinPair
         Bin* data;
 } BinPair_t;
 
-class TaskInfo_t 
+class TaskInfo_t
 {
 public:
 
   TaskInfo_t(string=string());
   virtual ~TaskInfo_t();
 
-  string TaskName;            // task name
-  unsigned char status;       // task runtime state
-  P_box* VirtualBox;          // which boards/cores does this task use?
-  string BinPath;             // which directory has which task's binaries
+  string TaskName;              // task name
+  unsigned char status;         // task runtime state
+  P_box* VirtualBox;            // which boards/cores does this task use?
+  string BinPath;               // which directory has which task's binaries
+  HardwareAddressFormat hardwareAddressFormat; // Dictates the spacing in
+                                               // hardware addresses.
 
   inline vector<P_board*>& BoardsForTask() {return VirtualBox->P_boardv;}
   inline P_core* getCore(uint32_t vCore) {return VCoreMap.find(vCore)->second;}
@@ -46,7 +48,7 @@ public:
 
   static const unsigned char TASK_IDLE = 0x0;
   static const unsigned char TASK_BOOT = 0x1;
-  static const unsigned char TASK_RDY  = 0x2; 
+  static const unsigned char TASK_RDY  = 0x2;
   static const unsigned char TASK_BARR = 0x4;
   static const unsigned char TASK_RUN  = 0x8;
   static const unsigned char TASK_STOP = 0x10;
@@ -55,7 +57,7 @@ public:
   static const map<unsigned char,string> Task_Status;
 
 private:
-  
+
   /* flattened object lists. It seems inefficient to store these again, when
      they're contained in the object hierarchy of VirtualBox, but alternatives
      are complex enough (involving template classes with user-defined iterators
@@ -65,7 +67,10 @@ private:
   vector<P_core*> cores;
   vector<P_thread*> threads;
   vector<P_device*> devices;
-  
+  void populateCoreVector();
+  void populateThreadVector();
+  void populateDeviceVector();
+
   map<P_board*,vector<BinPair_t>*> binaries;
 
   // paired core maps
@@ -73,7 +78,7 @@ private:
   softMap_t VCoreMap;        // which virtual core is which physical core
 
   void removeCore(P_core*);   // takes the core out of the VirtualBox object.
-  
+
 };
 
 #endif
