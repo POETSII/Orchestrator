@@ -41,9 +41,9 @@ HardwareAddress::HardwareAddress(HardwareAddressFormat* format)
 }
 
 /* Returns the hardware address as an unsigned integer. */
-unsigned HardwareAddress::get_hardware_address()
+HardwareAddressInt HardwareAddress::get_hardware_address()
 {
-    unsigned returnValue = 0;
+    HardwareAddressInt returnValue = 0;
     unsigned offset = 0;
     returnValue += threadComponent;
     offset += format->threadWordLength;

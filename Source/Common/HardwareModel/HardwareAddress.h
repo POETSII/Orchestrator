@@ -28,8 +28,11 @@
 #include "P_addr.h"
 #include <cmath>  /* For validating address components. */
 
-/* Components of hardware addresses are unsigned integers. */
+/* Hardware address component representation. */
 typedef unsigned int AddressComponent;
+
+/* Hardware address integer representation. */
+typedef uint32_t HardwareAddressInt;
 
 class HardwareAddress: public DumpChan
 {
@@ -59,8 +62,8 @@ public:
     void set_thread(AddressComponent value);
 
     /* Access */
-    unsigned get_hardware_address();
-    inline unsigned as_uint(){return get_hardware_address();}
+    HardwareAddressInt get_hardware_address();
+    inline HardwareAddressInt as_uint(){return get_hardware_address();}
     void populate_a_software_address(P_addr* target, bool resetFirst = true);
     void populate_from_software_address(P_addr* source);
     void Dump(FILE* = stdout);
