@@ -28,7 +28,6 @@ HardwareIterator::HardwareIterator(P_engine* engine, bool checkEngine):
 
     /* Initialise "has the item changed" booleans. */
     for (int i = 0; i < 4; i++){itemChanged[i] = false;}
-
 }
 
 /* Check that the engine is ready for iteration.
