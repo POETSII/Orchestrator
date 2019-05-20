@@ -278,7 +278,7 @@ Unlink(st);                            // OK, it's there and linked. Unlink it
 void OrchBase::UnlinkAll()
 // As the name implies; we don't need to worry about tidying anything up,
 // 'cos it's all got to go. No side effects or stuff left out here - on exit,
-// the device <-> thread links are all deleted. Not ethe placement moduke needs
+// the device <-> thread links are all deleted. Note the placement module needs
 // not know - the topology is left untouched.
 {
 
