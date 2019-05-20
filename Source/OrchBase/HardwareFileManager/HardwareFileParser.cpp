@@ -509,6 +509,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                         deployer->boardsInEngine.push_back(
                             str2unsigned(values[0]));
                         deployer->boardHypercubePeriodicity.push_back(false);
+                        deployer->boardsAsHypercube = false;
                     }
                     else  /* Hypercube */
                     {
@@ -527,6 +528,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                             (*recordIterator), valueNodes[0], variable,
                             values[0], sectionName, errorMessage);
 
+                        deployer->boardsAsHypercube = true;
                         deployer->boardsInEngine.resize(values.size());
                         std::transform(values.begin(), values.end(),
                                        deployer->boardsInEngine.begin(),
@@ -613,6 +615,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                         deployer->mailboxesInBoard.push_back(
                             str2unsigned(values[0]));
                         deployer->mailboxHypercubePeriodicity.push_back(false);
+                        deployer->mailboxesAsHypercube = false;
                     }
                     else  /* Hypercube */
                     {
@@ -627,6 +630,7 @@ bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
                                 (*recordIterator)->pos));
                         }
 
+                        deployer->mailboxesAsHypercube = true;
                         deployer->mailboxesInBoard.resize(values.size());
                         std::transform(values.begin(), values.end(),
                                        deployer->mailboxesInBoard.begin(),
