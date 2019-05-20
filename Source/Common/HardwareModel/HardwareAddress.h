@@ -29,7 +29,7 @@
 #include <cmath>  /* For validating address components. */
 
 /* Hardware address component representation. */
-typedef unsigned int AddressComponent;
+typedef uint32_t AddressComponent;
 
 /* Hardware address integer representation. */
 typedef uint32_t HardwareAddressInt;
