@@ -11,8 +11,7 @@ SimpleDeployer::SimpleDeployer()
     author = "Mark Vousden";
     datetime = 201901101712;
     version = "0.3.1";
-    fileOrigin = "SimpleDeployer.cpp";  /* This is not how this is supposed to
-                                         * be used! */
+    fileOrigin = "SimpleDeployer.cpp";
 
     boxWordLength = 0;  /* There's only one box! */
     boardWordLengths.clear();
