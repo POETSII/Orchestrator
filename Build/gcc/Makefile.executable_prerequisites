@@ -25,6 +25,12 @@ TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
                        $(GENERICS_DIR)/flat.cpp \
                        $(GENERICS_DIR)/Msg_p.cpp
 
+# Sources used by executables that need software addresses.
+SOFTWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/SoftwareAddress.cpp \
+                           $(SOURCE_DIR)/Common/DumpUtils.cpp \
+                           $(GENERICS_DIR)/dfprintf.cpp \
+                           $(GENERICS_DIR)/dumpchan.cpp
+
 # Sources used by executables that need to address hardware.
 HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cpp \
                            $(SOURCE_DIR)/Common/HardwareModel/HardwareAddressFormat.cpp \
