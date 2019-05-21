@@ -7,7 +7,7 @@
  * See the hardware model documentation for further information on these
  * links. */
 
-#include "HardwareDumpUtils.h"
+#include "DumpUtils.h"
 #include "NameBase.h"
 #include "pdigraph.hpp"
 

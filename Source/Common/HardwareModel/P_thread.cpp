@@ -18,13 +18,13 @@ P_thread::P_thread(std::string name)
 void P_thread::Dump(FILE* file)
 {
     std::string prefix = dformat("P_thread %s", FullName().c_str());
-    HardwareDumpUtils::open_breaker(file, prefix);
+    DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
     NameBase::Dump(file);
 
     /* About devices, if any. */
-    HardwareDumpUtils::open_breaker(file, "Devices in this thread");
+    DumpUtils::open_breaker(file, "Devices in this thread");
     if (P_devicel.empty())
         fprintf(file, "The device map is empty.\n");
     else
@@ -32,10 +32,10 @@ void P_thread::Dump(FILE* file)
         WALKLIST(P_device*,P_devicel,iterator)
             fprintf(file, "%s\n", (*iterator)->FullName().c_str());
     }
-    HardwareDumpUtils::close_breaker(file, "Devices in this thread");
+    DumpUtils::close_breaker(file, "Devices in this thread");
 
     /* Close breaker and flush the dump. */
-    HardwareDumpUtils::close_breaker(file, prefix);
+    DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
 

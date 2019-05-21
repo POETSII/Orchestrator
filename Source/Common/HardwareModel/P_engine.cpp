@@ -225,7 +225,7 @@ void P_engine::connect(AddressComponent start, AddressComponent end,
 void P_engine::Dump(FILE* file)
 {
     std::string prefix = dformat("P_engine %s", FullName().c_str());
-    HardwareDumpUtils::open_breaker(file, prefix);
+    DumpUtils::open_breaker(file, prefix);
 
     /* About this object. */
     NameBase::Dump(file);
@@ -250,7 +250,7 @@ void P_engine::Dump(FILE* file)
     }
 
     /* About the board graph. */
-    HardwareDumpUtils::open_breaker(file, "Board connectivity");
+    DumpUtils::open_breaker(file, "Board connectivity");
     if (G.SizeNodes() == 0)
         fprintf(file, "The board graph is empty.\n");
     else
@@ -272,10 +272,10 @@ void P_engine::Dump(FILE* file)
         P_link::dfp = previousLinkChannel;
         P_port::dfp = previousPortChannel;
     }
-    HardwareDumpUtils::close_breaker(file, "Board connectivity");
+    DumpUtils::close_breaker(file, "Board connectivity");
 
     /* About contained boxes, if any. */
-    HardwareDumpUtils::open_breaker(file, "Boxes in this engine");
+    DumpUtils::open_breaker(file, "Boxes in this engine");
     if (P_boxm.empty())
         fprintf(file, "The box map is empty.\n");
     else
@@ -286,10 +286,10 @@ void P_engine::Dump(FILE* file)
             iterator->second->Dump(file);
         }
     }
-    HardwareDumpUtils::close_breaker(file, "Boxes in this engine");
+    DumpUtils::close_breaker(file, "Boxes in this engine");
 
     /* Close breaker and flush the dump. */
-    HardwareDumpUtils::close_breaker(file, prefix);
+    DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
 

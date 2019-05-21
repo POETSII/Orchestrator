@@ -20,9 +20,9 @@ void P_link::Dump(FILE* file)
 {
     /* Pretty breaker */
     std::string prefix = dformat("P_link %s", FullName().c_str());
-    HardwareDumpUtils::open_breaker(file, prefix);
+    DumpUtils::open_breaker(file, prefix);
     fprintf(file, "Edge weight: %f\n", weight);
     NameBase::Dump(file);
-    HardwareDumpUtils::close_breaker(file, prefix);
+    DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }

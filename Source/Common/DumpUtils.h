@@ -1,8 +1,7 @@
-#ifndef __ORCHESTRATOR_SOURCE_COMMON_HARDWARE_MODEL_HARDWAREDUMPUTILS_H
-#define __ORCHESTRATOR_SOURCE_COMMON_HARDWARE_MODEL_HARDWAREDUMPUTILS_H
+#ifndef __ORCHESTRATOR_SOURCE_COMMON_DUMPUTILS_H
+#define __ORCHESTRATOR_SOURCE_COMMON_DUMPUTILS_H
 
-/* Simple file to define some free functions to help with dumping the hardware
- * model. */
+/* Simple file to define some free functions to help with dumping things. */
 
 #include <algorithm>
 #include <stdio.h>
@@ -14,7 +13,7 @@
 #define MAXIMUM_BREAKER_LENGTH 80
 #define GRAPH_CALLBACK static void
 
-namespace HardwareDumpUtils {
+namespace DumpUtils {
     void breaker(FILE* outPlace, const std::string& prefix,
                  unsigned prefixLength, char breakerSymbol);
 

@@ -77,13 +77,13 @@ void P_mailbox::contain(AddressComponent addressComponent, P_core* core)
 void P_mailbox::Dump(FILE* file)
 {
     std::string prefix = dformat("P_mailbox %s", FullName().c_str());
-    HardwareDumpUtils::open_breaker(file, prefix);
+    DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
     NameBase::Dump(file);
 
     /* About contained items, if any. */
-    HardwareDumpUtils::open_breaker(file, "Cores in this mailbox");
+    DumpUtils::open_breaker(file, "Cores in this mailbox");
     if (P_corem.empty())
         fprintf(file, "The core map is empty.\n");
     else
@@ -94,10 +94,10 @@ void P_mailbox::Dump(FILE* file)
             iterator->second->Dump(file);
         }
     }
-    HardwareDumpUtils::close_breaker(file, "Cores in this mailbox");
+    DumpUtils::close_breaker(file, "Cores in this mailbox");
 
     /* Close breaker and flush the dump. */
-    HardwareDumpUtils::close_breaker(file, prefix);
+    DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
 
