@@ -205,3 +205,17 @@ TEST_CASE("Partially-defined software addresses can also be dumped")
     REQUIRE(address.as_uint() == expectedResult);
     REQUIRE(address.get_software_address() == expectedResult);
 }
+
+/*
+// A simple dumping test. The device here is a supervisor device with it's
+// device component unset at 0.
+TEST_CASE("Dump for fun")
+{
+    SoftwareAddress address;
+    address.set_ismothership(true);
+    address.set_iscnc(true);
+    address.set_task(2);
+    address.set_opcode(11);
+    address.Dump();
+}
+ */
