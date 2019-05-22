@@ -116,6 +116,44 @@ TEST_CASE("Empty addresses can be populated in stages")
     REQUIRE(address.is_fully_defined());
 }
 
+TEST_CASE("Address components can be redefined")
+{
+    bool isMothership = true;
+    bool isCnc = false;
+    uint8_t task = 14;
+    uint8_t opCode = 0;
+    uint16_t device = 65535;
+    SoftwareAddress address(isMothership, isCnc, task, opCode, device);
+
+    /* Now we redefine the components. */
+    isMothership = !isMothership;
+    isCnc = !isCnc;
+    task = 17;
+    opCode = 2;
+    device = 0;
+
+    address.set_ismothership(isMothership);
+    address.set_iscnc(isCnc);
+    address.set_task(task);
+    address.set_opcode(opCode);
+    address.set_device(device);
+
+    /* Everything should now be defined according to the second definition. */
+    REQUIRE(address.get_ismothership() == isMothership);
+    REQUIRE(address.get_iscnc() == isCnc);
+    REQUIRE(address.get_task() == task);
+    REQUIRE(address.get_opcode() == opCode);
+    REQUIRE(address.get_device() == device);
+
+    REQUIRE(address.is_ismothership_defined());
+    REQUIRE(address.is_iscnc_defined());
+    REQUIRE(address.is_task_defined());
+    REQUIRE(address.is_opcode_defined());
+    REQUIRE(address.is_device_defined());
+
+    REQUIRE(address.is_fully_defined());
+}
+
 TEST_CASE("An invalid task input cannot be set")
 {
     SoftwareAddress address;

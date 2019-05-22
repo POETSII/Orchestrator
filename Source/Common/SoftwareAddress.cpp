@@ -54,13 +54,27 @@ DeviceComponent SoftwareAddress::get_device(){return raw;}
  * - value: Value to set. */
 void SoftwareAddress::set_ismothership(IsMothershipComponent value)
 {
-    raw |= (value ? 1 : 0) << ISMOTHERSHIP_SHIFT;
+    if (value)
+    {
+        raw |= ISMOTHERSHIP_BIT_MASK;
+    }
+    else
+    {
+        raw &= ~ISMOTHERSHIP_BIT_MASK;
+    }
     set_defined(0);
 }
 
 void SoftwareAddress::set_iscnc(IsCncComponent value)
 {
-    raw |= (value ? 1 : 0) << ISCNC_SHIFT;
+    if (value)
+    {
+        raw |= ISCNC_BIT_MASK;
+    }
+    else
+    {
+        raw &= ~ISCNC_BIT_MASK;
+    }
     set_defined(1);
 }
 
@@ -75,8 +89,8 @@ void SoftwareAddress::set_task(TaskComponent value)
                     "6-bits, and so must be less than %d.", value, TASK_MAX));
     }
 
-    /* Set */
-    raw |= value << TASK_SHIFT;
+    raw &= ~TASK_BIT_MASK; /* Clear */
+    raw |= value << TASK_SHIFT; /* Set */
     set_defined(2);
 }
 
@@ -84,13 +98,15 @@ void SoftwareAddress::set_opcode(OpCodeComponent value)
 {
     /* Note that there is no validation here for non-cnc addresses to
      * facilitate out-of-order address definitions. */
-    raw |= value << OPCODE_SHIFT;
+    raw &= ~OPCODE_BIT_MASK; /* Clear */
+    raw |= value << OPCODE_SHIFT; /* Set */
     set_defined(3);
 }
 
 void SoftwareAddress::set_device(DeviceComponent value)
 {
-    raw |= value;
+    raw &= ~DEVICE_BIT_MASK; /* Clear */
+    raw |= value; /* Set */
     set_defined(4);
 }
 

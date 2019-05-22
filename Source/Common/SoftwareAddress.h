@@ -65,6 +65,13 @@
 #define TASK_SHIFT 24
 #define OPCODE_SHIFT 16
 
+/* Define masks for each section. The parentheses are important. */
+#define ISMOTHERSHIP_BIT_MASK (1 << ISMOTHERSHIP_SHIFT)
+#define ISCNC_BIT_MASK (1 << ISCNC_SHIFT)
+#define TASK_BIT_MASK (TASK_MAX << TASK_SHIFT)
+#define OPCODE_BIT_MASK (255 << OPCODE_SHIFT)
+#define DEVICE_BIT_MASK (65535)  /* = 2 ^ 16 - 1 */
+
 /* Software address integer representation. */
 typedef uint32_t SoftwareAddressInt;
 
