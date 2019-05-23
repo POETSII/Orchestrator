@@ -3,7 +3,6 @@
 #include "P_super.h"
 #include "P_link.h"
 #include "P_port.h"
-#include "P_graph.h"
 
 //==============================================================================
 
@@ -28,47 +27,104 @@ P_super::~P_super()
 
 //------------------------------------------------------------------------------
 
-void P_super::Attach(P_box * pB)
-// To attach a supervisor device to a box
+void P_super::Attach(P_board* targetBoard)
+// Attaches this supervisor to a given board, and to the box it contains if the
+// box doesn't already have it (e.g. from another board).
 {
-                                         // Already attached?
-WALKVECTOR(P_box *,P_boxv,i) if ((*i)==pB) return;
-P_boxv.push_back(pB);                    // Forward pointer
-                                         // FROM all enclosed boards TO this
-                                         // supervisor
-WALKVECTOR(P_board *,pB->P_boardv,i) (*i)->pSup = this;
+    // Verify this supervisor is not already contained in the target board, by
+    // checking P_super's memory.
+    WALKVECTOR(P_board*, P_boardv, boardIterator)
+    {
+        if (*boardIterator == targetBoard) {return;}
+    }
+
+    // It's safe to attach now. Attachment has three steps:
+    //
+    //  1. Track the target board in this (P_super) object.
+    //
+    //  2. Store the supervisor in the box, if it's not already in the
+    //     box. Either way, get the index of the supervisor in the box.
+    //
+    //  3. Store the index of the supervisor in the box, in the board (so that
+    //     the board can obtain its supervisor by querying the box it's
+    //     contained in.
+
+    // Add this board to P_super's memory.
+    P_boardv.push_back(targetBoard);
+
+    // Get the index of this supervisor in the box that contains this board.
+    P_box* parentBox = targetBoard->parent;
+    std::vector<P_super*>::iterator supervisorIterator;
+    supervisorIterator = std::find(std::begin(parentBox->P_superv),
+                                   std::end(parentBox->P_superv), this);
+    unsigned supervisorIndex;
+    // We found it! Grab the index.
+    if (supervisorIterator != parentBox->P_superv.end())
+    {
+        supervisorIndex = supervisorIterator - parentBox->P_superv.begin();
+    }
+    // We didn't find it... so add it and save the index (which is the last
+    // element, thanks to push_back).
+    else
+    {
+        parentBox->P_superv.push_back(this);
+        supervisorIndex = parentBox->P_superv.size() - 1;
+    }
+
+    // Store the index in the board, so the board can access the supervisor by
+    // querying its parent box.
+    targetBoard->sup_offv.push_back(supervisorIndex);
 }
 
 //------------------------------------------------------------------------------
 
-void P_super::Detach(P_box * pB)
-// To disconnect this supervisor from a particular box
+void P_super::Detach(P_board* targetBoard)
+// Remove this supervisor from a given board, if it is attached to that board.
 {
-                                         // FROM all enclosed boards TO this
-                                         // supervisor
-WALKVECTOR(P_board *,pB->P_boardv,i) (*i)->pSup = 0;
-                                         // This supervisor TO the boxes
-WALKVECTOR(P_box *,P_boxv,i) if ((*i)==pB) {
-  P_boxv.erase(i);                       // Subsequent iteratrs invalid;
-  return;                                // no choice but to go now
-}
+    // Get the index of this supervisor in the box that contains this board.
+    P_box* parentBox = targetBoard->parent;
+    std::vector<P_super*>::iterator supervisorIterator;
+    supervisorIterator = std::find(std::begin(parentBox->P_superv),
+                                   std::end(parentBox->P_superv), this);
+
+    // If we didn't find it, it's already been cleared. Let's not worry then.
+    if (supervisorIterator == parentBox->P_superv.end()){return;}
+
+    // Remove the supervisor from the board, by its index in the box.
+    unsigned superIndex = supervisorIterator - parentBox->P_superv.begin();
+    std::remove(targetBoard->sup_offv.begin(), targetBoard->sup_offv.end(),
+                superIndex);
+
+    // Remove the board from this P_super object.
+    WALKVECTOR(P_board*, P_boardv, boardIterator)
+    {
+        if ((*boardIterator) == targetBoard) {
+            P_boardv.erase(boardIterator);
+            // We've got to go now, because the iterator is now invalid. This
+            // is fine, because a board is only stored once in a P_super.
+            return;
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
 
 void P_super::Detach()
-// To disconnect this supervisor from all boxes. We have to get a bit sneaky,
-// because we can't - ostensibly - see the box vector from here. But.....
+// Removes this supervisor from all boards, if this supervisor is attached to a
+// board.
 {
-if (P_boxv.empty()) return;            // It's not connected to anything anyway
-P_box * pB = P_boxv[0];                // Gives us *a* box
-P_graph * pG = pB->par;                // Which gives us the topology graph
-WALKPDIGRAPHNODES(unsigned,P_box *,unsigned,P_link *,unsigned,P_port *,pG->G,i){
-  pB = pG->G.NodeData(i);              // And now we're looping.....
-  WALKVECTOR(P_board *,pB->P_boardv,j) // Walk the boards (ho ho ho)
-    if ((*j)->pSup==this) (*j)->pSup = 0;
-}
-P_boxv.clear();                        // And last of all.....
+    // This is done by going through each of the boards tracked in this P_super
+    // object, finding the index for supervisor in it's contained box, and then
+    // removing the entry in the P_board level.
+    //
+    // Fortunately, Detach does this for one board, so we iterate through each
+    // of the boards that we know we're attached to. It doesn't matter if a box
+    // contains multiple boards that we're attached to, because Detach is
+    // idempotent.
+    WALKVECTOR(P_board*, P_boardv, boardIterator){Detach(*boardIterator);}
+
+    // Clear the record in P_super, since we must be empty by this point.
+    P_boardv.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -77,13 +133,10 @@ void P_super::Dump(FILE * fp)
 {
 fprintf(fp,"P_super+++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"Supervisor attached to :\n");
-WALKVECTOR(P_box *,P_boxv,i) fprintf(fp,"%s\n",(*i)->FullName().c_str());
+WALKVECTOR(P_board*, P_boardv, i) fprintf(fp,"%s\n",(*i)->FullName().c_str());
 P_device::Dump(fp);
 fprintf(fp,"P_super---------------------------------\n");
 fflush(fp);
 }
 
 //==============================================================================
-
-
-
