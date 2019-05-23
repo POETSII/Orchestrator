@@ -2,6 +2,7 @@
 #include "tinsel.h"
 #include <cstring>
 #include "stdint.h"
+#include "OSFixes.hpp"
 
 void softswitch_init(ThreadCtxt_t* thr_ctxt)
 {
@@ -60,7 +61,8 @@ void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatil
 
 void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt)
 {
-    devTyp_t* deviceType = &thr_ctxt->devTyps[deviceType_num];
+    devTyp_t* deviceType OS_ATTRIBUTE_UNUSED = &thr_ctxt->devTyps[deviceType_num];
+    OS_PRAGMA_UNUSED(deviceType)
     /*
     Handler addresses ought to reside in instruction memory and thus remain valid: to be seen.
     deviceType->RTS_Handler = RTS_Handlers[thr_ctxt->threadID.PThread][deviceType_num]; // RTS_Handlers is a table that must be built by the Orchestrator.
