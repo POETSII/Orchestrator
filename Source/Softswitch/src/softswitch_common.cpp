@@ -2,7 +2,6 @@
 #include "tinsel.h"
 #include <cstring>
 #include "stdint.h"
-#include "OSFixes.hpp"
 
 void softswitch_init(ThreadCtxt_t* thr_ctxt)
 {
