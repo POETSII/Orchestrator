@@ -97,25 +97,25 @@
  *      OS_PRAGMA_UNUSED(foo)				// N.B. note the lack of ";"   
  * ===========================================================================*/
 #ifdef __GNUC__				/* GCC Specific definitions. */
-#define OS_ATTRIBUTE_UNUSED		"__attribute__((unused)) "
-#define OS_PRAGMA_UNUSED(x)		""
+#define OS_ATTRIBUTE_UNUSED		__attribute__((unused)) 
+#define OS_PRAGMA_UNUSED(x)		
 
 #elif __BORLANDC__			/* Borland specific definitions. */
-#define OS_ATTRIBUTE_UNUSED		""
-#define OS_PRAGMA_UNUSED(x)		"(void)" x ";\n"
+#define OS_ATTRIBUTE_UNUSED		
+#define OS_PRAGMA_UNUSED(x)		(void) x ;
 
 #elif __clang__				/* Clang Specific definitions. */
-#define OS_ATTRIBUTE_UNUSED		""
-#define OS_PRAGMA_UNUSED(x)		"#pragma unused(" x ");\n"
+#define OS_ATTRIBUTE_UNUSED		
+#define OS_PRAGMA_UNUSED(x)		#pragma unused(x);
 
 #elif _MSC_VER				/* MS Specific definitions. */
-#define OS_ATTRIBUTE_UNUSED		""
-#define OS_PRAGMA_UNUSED(x)		x ";\n"
+#define OS_ATTRIBUTE_UNUSED		
+#define OS_PRAGMA_UNUSED(x)		x;
 
 #else						/* Other compilers. */
 #warning "Building without Compiler-specific unused variable handling."
-#define OS_ATTRIBUTE_UNUSED		""
-#define OS_PRAGMA_UNUSED(x)		""
+#define OS_ATTRIBUTE_UNUSED		
+#define OS_PRAGMA_UNUSED(x)		
 #endif
 
 
