@@ -60,7 +60,7 @@ void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatil
 
 void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt)
 {
-    devTyp_t* deviceType OS_ATTRIBUTE_UNUSED = &thr_ctxt->devTyps[deviceType_num];
+    devTyp_t* deviceType OS_ATTRIBUTE_UNUSED= &thr_ctxt->devTyps[deviceType_num];
     OS_PRAGMA_UNUSED(deviceType)
     /*
     Handler addresses ought to reside in instruction memory and thus remain valid: to be seen.
