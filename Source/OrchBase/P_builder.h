@@ -7,6 +7,7 @@
 #include <string>
 #include <cstdlib>
 #include "build_defs.h"
+#include "OSFixes.hpp"
 using namespace std;
 
 #ifndef __BORLANDC__
