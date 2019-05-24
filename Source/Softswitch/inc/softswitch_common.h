@@ -13,7 +13,7 @@
 #define PREFERRX
 #define SWIDLE
 #define SW_IDLE_CNT_MAX     10000   //100000
-#define INSTRUMENTATION
+//#define INSTRUMENTATION
 
 struct PDeviceInstance;
 struct PThreadContext;
