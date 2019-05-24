@@ -300,3 +300,6 @@ clean: application_staging_environment_teardown
 .PHONY: all clean debug tests orchestrate root dummy logserver rtcl injector \
     mothership application_staging_environment \
     application_staging_environment_teardown
+
+# The "all" target should be the default.
+.DEFAULT_GOAL := all
