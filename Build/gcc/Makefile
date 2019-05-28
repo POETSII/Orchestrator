@@ -35,10 +35,6 @@ TESTS_DIR := $(ROOT_DIR)/Tests
 # placed in a directory structure that mimics the source directory structure.
 OBJECT_DIR := ./Objects
 
-# We also compile some hostlink sources for the Mothership component of the
-# Orchestrator.
-HOSTLINK_OBJECT_DIR := ./Objects/Hostlink
-
 # Executable binaries are built to here (directory is created as executable
 # binaries are built):
 EXECUTABLE_DIR := $(ROOT_DIR)/bin
@@ -163,7 +159,7 @@ $(MOTHERSHIP_EXECUTABLE):
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
         -Wl,-export-dynamic \
         -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L$(JTAG_LIB_DIR) -L/usr/lib \
-        -o $@ $^ \
+        -o $@ $^ $(TINSEL_HOSTLINK_DIR)/*.o \
         -lQt5Core -lmpi -lpthread -ldl \
         -ljtag_atlantic -ljtag_client
 
@@ -178,9 +174,6 @@ define build-object
 endef
 
 $(OBJECT_DIR)/%.o: $(ROOT_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
-	$(build-object)
-
-$(HOSTLINK_OBJECT_DIR)/%.o: $(TINSEL_HOSTLINK_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
 	$(build-object)
 
 # Miscellaneous files to be copied to the execution directory in order for
@@ -291,7 +284,7 @@ $(DEPENDENCY_DIR)/%.d:
 
 clean: application_staging_environment_teardown
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
-	$(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT) $(TEST_EXECUTABLE_DIR)
+	$(ORCHESTRATE_SCRIPT) $(TEST_EXECUTABLE_DIR)
 
 # Dependency files must not be removed by Make (unless explicitly cleaned).
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d

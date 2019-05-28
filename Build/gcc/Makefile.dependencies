@@ -7,7 +7,7 @@
 # where you have extracted it to.
 #
 # In Mark's case, it looks like this:
-ORCHESTRATOR_DEPENDENCIES_DIR ?= /local/orchestrator-common/orchestrator_dependencies-5
+ORCHESTRATOR_DEPENDENCIES_DIR ?= /home/mv1g18/orchestrator_dependencies-5
 
 # If you're using the "orchestrator_dependencies" tarball, you shouldn't need
 # to do anything more. If you aren't, you'll need to configure the following to

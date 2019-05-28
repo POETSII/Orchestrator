@@ -197,9 +197,7 @@ INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 #
 # - A set of base Orchestrator (/Source/OrchBase) sources.
 #
-# - Parts of the HostLink, taken from the tinsel set of software
-#   dependencies (these are bound to a different variable).
-#
+# Hostlink sources are to be compiled separately.
 MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/TaskInfo.cpp \
                      $(SOURCE_DIR)/Mothership/TMoth.cpp \
@@ -220,12 +218,6 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(HARDWARE_DEPLOYER_SOURCES)
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
-
-HOSTLINK_SOURCES = $(TINSEL_HOSTLINK_DIR)/DebugLink.cpp \
-                   $(TINSEL_HOSTLINK_DIR)/HostLink.cpp \
-                   $(TINSEL_HOSTLINK_DIR)/MemFileReader.cpp \
-                   $(TINSEL_HOSTLINK_DIR)/PowerLink.cpp \
-                   $(TINSEL_HOSTLINK_DIR)/UART.cpp \
 
 # Convert these lists of sources into a list of objects to define a dependency
 # system for the linker.
@@ -253,9 +245,6 @@ orch_sources_to_objects = $(call sources_to_objects, $(ROOT_DIR),\
 
 # Define object lists. OBJECT_TEMPLATE defines the substitutions made in the
 # foreach loop below.
-#
-# Hostlink objects are defined separately, because the substitution is
-# different.
 define OBJECT_TEMPLATE
 $(1)_OBJECTS := $(call orch_sources_to_objects, $($(1)_SOURCES))
 endef
@@ -263,10 +252,6 @@ endef
 $(foreach object_set,\
           ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP,\
           $(eval $(call OBJECT_TEMPLATE,$(object_set))))
-
-HOSTLINK_OBJECTS := $(call sources_to_objects, $(TINSEL_HOSTLINK_DIR),\
-                                               $(HOSTLINK_OBJECT_DIR),\
-                                               $(HOSTLINK_SOURCES))
 
 # Define executable prerequisites. RULE_TEMPLATE defines the substitutions made
 # in the foreach loop below.
@@ -278,7 +263,5 @@ $($(1)_EXECUTABLE): $($(1)_OBJECTS)
 endef
 
 $(foreach executable_name,\
-          ROOT DUMMY LOGSERVER RTCL INJECTOR,\
+          ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP,\
           $(eval $(call RULE_TEMPLATE,$(executable_name))))
-
-$(MOTHERSHIP_EXECUTABLE): $(MOTHERSHIP_OBJECTS) $(HOSTLINK_OBJECTS)
