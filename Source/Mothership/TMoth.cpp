@@ -316,17 +316,16 @@ unsigned TMoth::CmRun(string task)
    (*R)->get_hardware_address()->populate_a_software_address(&threadAddress);
    threadsToRelease.push_back(TMoth::GetHWAddr(threadAddress));
    }
-   DebugPrint("%d threads to release in task %s\n",threadsToRelease.size(),task.c_str());
-   while (!canSend()); // wait until a message can be sent. The Twig process should be fielding unexpected traffic by this point.
-   DebugPrint("Issuing barrier release to %d threads, using message address "
-              "0x%X\n", threadsToRelease.size(), DEST_BROADCAST);
+   DebugPrint("Issuing barrier release to %d threads in task %s, using "
+              "message address 0x%X\n", threadsToRelease.size(),
+              task.c_str(), DEST_BROADCAST);
    // and then issue the barrier release to the threads.
    WALKVECTOR(unsigned,threadsToRelease,R)
    {
      barrier_msg.destDeviceAddr = DEST_BROADCAST; // send to every device on the thread with a supervisor message
-     DebugPrint("Sending barrier release message to the thread with "
-                "hardware address %u.\n", *R);
-     send(*R,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + (p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0)), &barrier_msg);
+     DebugPrint("Attempting to send barrier release message to the thread "
+                "with hardware address %u.\n", *R);
+     trySend(*R,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + (p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0)), &barrier_msg);
    }
    DebugPrint("Tinsel threads now on their own for task %s\n",task.c_str());
    TaskMap[task]->status = TaskInfo_t::TASK_RUN;
@@ -389,10 +388,8 @@ unsigned TMoth::CmStop(string task)
      uint32_t destDevAddr = TMoth::GetHWAddr(threadAddress);
      DebugPrint("Stopping thread %d in task %s\n", destDevAddr, task.c_str());
      stop_msg.destDeviceAddr = DEST_BROADCAST; // issue the stop message to all devices
-     // wait for the interface
-     while (!canSend());
      // then issue the stop packet
-     send(destDevAddr,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0),&stop_msg);
+     trySend(destDevAddr,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0),&stop_msg);
    }
    TaskMap[task]->status = TaskInfo_t::TASK_END;
    // check to see if there are any other active tasks
@@ -858,8 +855,8 @@ WALKVECTOR(P_Msg_t, msgs, msg) // and they're sent blindly
    uint32_t Len = static_cast<uint32_t>(msg->header.messageLenBytes);
    uint32_t FlitLen = Len >> TinselLogBytesPerFlit;
    if (Len << (32-TinselLogBytesPerFlit)) ++FlitLen;
-   while (!canSend()); // if we have to we can run OnIdle to empty receive buffers
-   send(msg->header.destDeviceAddr, FlitLen, &(*msg));
+   // if we have to we can run OnIdle to empty receive buffers
+   trySend(msg->header.destDeviceAddr, FlitLen, &(*msg));
 }
 return 0;
 }
