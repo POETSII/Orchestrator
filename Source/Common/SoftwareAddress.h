@@ -72,6 +72,14 @@
 #define OPCODE_BIT_MASK (255 << OPCODE_SHIFT)
 #define DEVICE_BIT_MASK (65535)  /* = 2 ^ 16 - 1 */
 
+/* Define masks for setting the 'definitions' variable. */
+#define SOFTWARE_ADDRESS_FULLY_DEFINED_MASK 31  /* 0b11111 */
+#define ISMOTHERSHIP_DEFINED_MASK 1             /* 0b00001 */
+#define ISCNC_DEFINED_MASK 2                    /* 0b00010 */
+#define TASK_DEFINED_MASK 4                     /* 0b00100 */
+#define OPCODE_DEFINED_MASK 8                   /* 0b01000 */
+#define DEVICE_DEFINED_MASK 16                  /* 0b10000 */
+
 /* Software address integer representation. */
 typedef uint32_t SoftwareAddressInt;
 
@@ -109,12 +117,18 @@ public:
     void Dump(FILE* = stdout);
 
     /* Defines whether or not the software address is fully defined. */
-    inline bool is_fully_defined(){return definitions == 31;}  /* 0b11111 */
-    inline bool is_ismothership_defined(){return (definitions & 1) > 0;}
-    inline bool is_iscnc_defined(){return (definitions & 2) > 0;}
-    inline bool is_task_defined(){return (definitions & 4) > 0;}
-    inline bool is_opcode_defined(){return (definitions & 8) > 0;}
-    inline bool is_device_defined(){return (definitions & 16) > 0;}
+    inline bool is_fully_defined()
+        {return definitions == SOFTWARE_ADDRESS_FULLY_DEFINED_MASK;}
+    inline bool is_ismothership_defined()
+        {return (definitions & ISMOTHERSHIP_DEFINED_MASK) > 0;}
+    inline bool is_iscnc_defined()
+        {return (definitions & ISCNC_DEFINED_MASK) > 0;}
+    inline bool is_task_defined()
+        {return (definitions & TASK_DEFINED_MASK) > 0;}
+    inline bool is_opcode_defined()
+        {return (definitions & OPCODE_DEFINED_MASK) > 0;}
+    inline bool is_device_defined()
+        {return (definitions & DEVICE_DEFINED_MASK) > 0;}
 
 private:
     SoftwareAddressInt raw;
