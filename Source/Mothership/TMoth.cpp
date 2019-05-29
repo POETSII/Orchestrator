@@ -325,7 +325,7 @@ unsigned TMoth::CmRun(string task)
      barrier_msg.destDeviceAddr = DEST_BROADCAST; // send to every device on the thread with a supervisor message
      DebugPrint("Attempting to send barrier release message to the thread "
                 "with hardware address %u.\n", *R);
-     trySend(*R,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + (p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0)), &barrier_msg);
+     while(!trySend(*R,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + (p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0)), &barrier_msg));
    }
    DebugPrint("Tinsel threads now on their own for task %s\n",task.c_str());
    TaskMap[task]->status = TaskInfo_t::TASK_RUN;
@@ -389,7 +389,7 @@ unsigned TMoth::CmStop(string task)
      DebugPrint("Stopping thread %d in task %s\n", destDevAddr, task.c_str());
      stop_msg.destDeviceAddr = DEST_BROADCAST; // issue the stop message to all devices
      // then issue the stop packet
-     trySend(destDevAddr,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0),&stop_msg);
+     while(!trySend(destDevAddr,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0),&stop_msg));
    }
    TaskMap[task]->status = TaskInfo_t::TASK_END;
    // check to see if there are any other active tasks
@@ -856,7 +856,7 @@ WALKVECTOR(P_Msg_t, msgs, msg) // and they're sent blindly
    uint32_t FlitLen = Len >> TinselLogBytesPerFlit;
    if (Len << (32-TinselLogBytesPerFlit)) ++FlitLen;
    // if we have to we can run OnIdle to empty receive buffers
-   trySend(msg->header.destDeviceAddr, FlitLen, &(*msg));
+   while(!trySend(msg->header.destDeviceAddr, FlitLen, &(*msg)));
 }
 return 0;
 }
