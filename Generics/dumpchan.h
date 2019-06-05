@@ -1,3 +1,6 @@
+#ifndef __DUMPCHAN__H
+#define __DUMPCHAN__H
+
 #include <stdio.h>
 #include <stdint.h>
 
@@ -19,3 +22,4 @@ static FILE * dfp;                     // Dumpfile channel
 
 //==============================================================================
 
+#endif
