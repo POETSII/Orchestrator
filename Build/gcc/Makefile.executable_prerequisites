@@ -20,10 +20,10 @@ TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
                        $(SOURCE_DIR)/Common/Pglobals.cpp \
                        $(SOURCE_DIR)/Common/PMsg_p.cpp \
                        $(SOURCE_DIR)/Common/ProcMap.cpp \
-                       $(SOURCE_DIR)/Common/NameBase.cpp \
                        $(SOURCE_DIR)/Common/Unrec_t.cpp \
                        $(GENERICS_DIR)/flat.cpp \
-                       $(GENERICS_DIR)/Msg_p.cpp
+                       $(GENERICS_DIR)/Msg_p.cpp \
+                       $(GENERICS_DIR)/NameBase.cpp
 
 # Sources used by executables that need to address hardware.
 HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareDumpUtils.cpp \
@@ -45,8 +45,8 @@ HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp 
                          $(SOURCE_DIR)/Common/HardwareModel/P_thread.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_link.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_port.cpp \
-                         $(SOURCE_DIR)/Common/NameBase.cpp \
                          $(SOURCE_DIR)/OrchBase/Bin.cpp \
+                         $(GENERICS_DIR)/NameBase.cpp \
                          $(GENERICS_DIR)/rand.cpp \
                          $(HARDWARE_ADDRESS_SOURCES)
 
