@@ -38,7 +38,7 @@
  *
  * - Bits 16 to 31 (device): Identifies the device uniquely given the other
  *   address components. Is identically zero if isCnc and isMothership are both
- *   zero (i.e. if it's a supervisor device).
+ *   one (i.e. if it's a supervisor device).
  *
  * Setters on software address components operate on a complete address,
  * which is sliced when getters are called.
