@@ -29,6 +29,7 @@ ROOT_DIR = ../..
 # Where sources live.
 GENERICS_DIR := $(ROOT_DIR)/Generics
 SOURCE_DIR := $(ROOT_DIR)/Source
+TESTS_DIR := $(ROOT_DIR)/Tests
 
 # Objects constructed from Orchestrator sources are placed in here. Objects are
 # placed in a directory structure that mimics the source directory structure.
@@ -41,6 +42,9 @@ HOSTLINK_OBJECT_DIR := ./Objects/Hostlink
 # Executable binaries are built to here (directory is created as executable
 # binaries are built):
 EXECUTABLE_DIR := $(ROOT_DIR)/bin
+
+# Test binaries are built to here:
+TEST_EXECUTABLE_DIR := $(ROOT_DIR)/test_bin
 
 # The application staging environment is built here:
 APPLICATION_STAGING_DIR := $(ROOT_DIR)/application_staging
@@ -72,7 +76,10 @@ include $(shell find $(DEPENDENCY_DIR) -name "*.d" ! -name "*.temp.d")
 # objects:
 INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/Common \
+                -I$(SOURCE_DIR)/Common/HardwareModel \
                 -I$(SOURCE_DIR)/OrchBase \
+                -I$(SOURCE_DIR)/OrchBase/HardwareFileManager \
+                -I$(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment \
                 -I$(SOURCE_DIR)/Injector \
                 -I$(SOURCE_DIR)/Parser \
                 -I$(SOURCE_DIR)/NameServer \
@@ -120,7 +127,14 @@ mothership: $(MOTHERSHIP_EXECUTABLE) \
             $(JTAG_ATLANTIC_LOCAL) $(JTAG_CLIENT_LOCAL)
 
 # Prerequisites (objects) for building executables are defined here:
-include Makefile.prerequisites
+include Makefile.executable_prerequisites
+
+# Prerequisites for building tests are defined here:
+include Makefile.test_prerequisites
+TEST_SCRIPT_BASENAME = run-tests.sh
+TEST_SCRIPT = $(TEST_EXECUTABLE_DIR)/$(TEST_SCRIPT_BASENAME)
+tests: CXXFLAGS += -g3
+tests: $(ALL_TESTS) $(TEST_SCRIPT)
 
 # Linking targets (to generate executables). See
 # Makefile.executable_prerequisites for the prerequisites of these executables
@@ -133,12 +147,23 @@ $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
         -o $@ $^ \
         -lQt5Core -lmpi -lpthread
 
+$(ALL_TESTS):
+	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
+	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
+        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
+        -o $@ $^ \
+        -lQt5Core -lmpi -lpthread
+
+$(TEST_SCRIPT): $(TEST_SCRIPT_RESOURCE)
+	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
+	cp "$(TEST_SCRIPT_RESOURCE)" "$(TEST_SCRIPT)"
+
 $(MOTHERSHIP_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
-	-Wl,-export-dynamic \
-	-L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L$(JTAG_LIB_DIR) -L/usr/lib \
-	-o $@ $^ \
+        -Wl,-export-dynamic \
+        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L$(JTAG_LIB_DIR) -L/usr/lib \
+        -o $@ $^ \
         -lQt5Core -lmpi -lpthread -ldl \
         -ljtag_atlantic -ljtag_client
 
@@ -266,12 +291,15 @@ $(DEPENDENCY_DIR)/%.d:
 
 clean: application_staging_environment_teardown
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
-	$(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT)
+	$(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT) $(TEST_EXECUTABLE_DIR)
 
 # Dependency files must not be removed by Make (unless explicitly cleaned).
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
 
 # Non-builtin targets that do not explicitly represent files that are created.
-.PHONY: all clean debug orchestrate root dummy logserver rtcl injector \
+.PHONY: all clean debug tests orchestrate root dummy logserver rtcl injector \
     mothership application_staging_environment \
     application_staging_environment_teardown
+
+# The "all" target should be the default.
+.DEFAULT_GOAL := all

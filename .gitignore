@@ -3,6 +3,7 @@
 *.log
 application_staging/
 bin/*
+test_bin/*
 Build/gcc/Objects
 Build/gcc/Dependency_lists
 orchestrate.sh

@@ -1,0 +1,39 @@
+# This Makefile defines the prerequisites required to build Orchestrator tests,
+# and is used by the primary Makefile.
+#
+# As a user you should not need to change this Makefile. As a developer, you
+# will need to change this Makefile to support any new tests that you write.
+#
+# Note that some definitions are extracted from
+# Makefile.executable_prerequisites.
+
+# By default, the test build pulls all test files matching
+# $(TESTS_DIR)/Test*.cpp.
+ALL_TESTS := $(patsubst $(TESTS_DIR)/%.cpp,\
+                        $(TEST_EXECUTABLE_DIR)/%.test,\
+                        $(wildcard $(TESTS_DIR)/Test*.cpp))
+
+ALL_TEST_NAMES := $(patsubst $(TEST_EXECUTABLE_DIR)/%.test,%,$(ALL_TESTS))
+
+# There's a handy test script too.
+TEST_SCRIPT_RESOURCE = ./Resources/run-tests.sh
+
+# Each test file must have its dependencies enumerated separately. The names of
+# these variables match the tests that they generate. The test .cpp file is
+# included when the dependencies are generated.
+TestHardwareAddressAndFormat_SOURCES = $(HARDWARE_ADDRESS_SOURCES)
+TestHardwareFileParser_SOURCES = $(HARDWARE_FILE_PARSER_SOURCES)
+TestHardwareIterator_SOURCES = $(HARDWARE_ITERATOR_SOURCES)
+TestHardwareModel_SOURCES = $(HARDWARE_MODEL_SOURCES)
+TestSimpleDeployment_SOURCES = $(HARDWARE_DEPLOYER_SOURCES)
+
+# Define test rules. TEST_RULE_TEMPLATE defines the substitutions made in the
+# foreach loop below.
+define TEST_RULE_TEMPLATE
+$(TEST_EXECUTABLE_DIR)/$(1).test: $(call orch_sources_to_objects,\
+                                         $(TESTS_DIR)/$(1).cpp $($(1)_SOURCES))
+endef
+
+$(foreach test_name,\
+          $(ALL_TEST_NAMES),\
+          $(eval $(call TEST_RULE_TEMPLATE,$(test_name))))

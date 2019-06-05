@@ -1,0 +1,46 @@
+// A representation of the Aesop box in Dialect 1.
+[header(Aesop)]
++author="Mark Vousden"
++dialect=1
++datetime=20190120165846
++version="0.3.1"
++file="aesop_dialect_1.uif"
+
+// <!> There's quite a lot of space here. Hardware addresses are
+// <!> supposed to be exactly 32-bit words, but this is currently
+// <!> 2+2+4+2+2+2+0=14 bits only.
+[packet_address_format]
++mailbox=(4,0)
++thread=4
++core=2
++board=(2,0)
++box=0  // There is only one box.
+
+[engine]
++boxes=1
++boards=hypercube(3,1)
++external_box_cost=0
++board_board_cost=0
+
+[box]
++box_board_cost=0
++supervisor_memory=10240 // MiB
+
+[board]
++mailboxes=hypercube(16,1)
++board_mailbox_cost=0
++supervisor_memory=0
++mailbox_mailbox_cost=0
++dram=4096  // MiB, two DDR3 DRAM boards.
+
+[mailbox]
++cores=4
++mailbox_core_cost=0
++core_core_cost=0
+
+[core]
++threads=16
++instruction_memory=8  // KiB
++data_memory=0
++core_thread_cost=0
++thread_thread_cost=0

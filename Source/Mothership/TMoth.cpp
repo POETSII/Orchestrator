@@ -96,31 +96,35 @@ unsigned TMoth::Boot(string task)
    // do this before running 'go' so that we can receive the responses in one block.
    map<unsigned, vector<unsigned>*> t_start_bitmap;
    vector<P_core*> taskCores = TaskMap[task]->CoresForTask();
+   P_addr coreAddress;
    WALKVECTOR(P_core*,taskCores,C)
    {
-       unsigned numThreads = (*C)->P_threadv.size();
+       unsigned numThreads = (*C)->P_threadm.size();
        if (numThreads)
        {
-          t_start_bitmap[TMoth::GetHWAddr((*C)->addr)] = new vector<unsigned>(numThreads/(8*sizeof(unsigned)),UINT_MAX);
+          (*C)->get_hardware_address()->populate_a_software_address(&coreAddress);
+          t_start_bitmap[TMoth::GetHWAddr(coreAddress)] = new vector<unsigned>(numThreads/(8*sizeof(unsigned)),UINT_MAX);
           unsigned remainder = numThreads%(8*sizeof(unsigned));
-          if (remainder) t_start_bitmap[TMoth::GetHWAddr((*C)->addr)]->push_back(UINT_MAX >> ((8*sizeof(unsigned))-remainder));
+          if (remainder) t_start_bitmap[TMoth::GetHWAddr(coreAddress)]->push_back(UINT_MAX >> ((8*sizeof(unsigned))-remainder));
        }
    }
    DebugPrint("Task start bitmaps created for %d cores\n", t_start_bitmap.size());
    // actually boot the cores
    WALKVECTOR(P_core*,taskCores,C)
    {
-     fromAddr(TMoth::GetHWAddr((*C)->addr),&mX,&mY,&core,&thread);
-     DebugPrint("Booting %d threads on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
-     startOne(mX,mY,core,(*C)->P_threadv.size());
-     DebugPrint("%d threads started on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
-     DebugPrint("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
+     (*C)->get_hardware_address()->populate_a_software_address(&coreAddress);
+     fromAddr(TMoth::GetHWAddr(coreAddress),&mX,&mY,&core,&thread);
+     DebugPrint("Booting %d threads on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
+     startOne(mX,mY,core,(*C)->P_threadm.size());
+     DebugPrint("%d threads started on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
+     DebugPrint("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
      goOne(mX,mY,core);
    }
    // per Matt Naylor comment safer to start all cores then issue the go command to all cores separately.
    // WALKVECTOR(P_core*,taskCores,C)
    // {
-   //  DebugPrint("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadv.size(),TMoth::GetHWAddr((*C)->addr),mX,mY,core);
+   //  (*C)->get_hardware_address()->populate_a_software_address(&coreAddress);
+   //  DebugPrint("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
    //  goOne(mX,mY,core);
    // }
    // DebugPrint("%d cores booted\n", taskCores.size());
@@ -230,18 +234,31 @@ unsigned TMoth::CmLoad(string task)
    }
    TaskMap[task]->status = TaskInfo_t::TASK_BOOT;
    DebugPrint("Task status is TASK_BOOT\n");
-   int coresThisTask = 0;
-   int coresLoaded = 0;
-   DebugPrint("Task will use %d boards\n", TaskMap[task]->BoardsForTask().size());
+   long coresThisTask = 0;
+   long coresLoaded = 0;
+   DebugPrint("Task will use %ld boards.\n",
+              TaskMap[task]->BoardsForTask().size());
    // for each board mapped to the task,
    WALKVECTOR(P_board*,TaskMap[task]->BoardsForTask(),B)
    {
-      DebugPrint("This board using %d cores\n", (*B)->P_corev.size());
-      // less work to compute as we go along than to call CoresForTask.size()
-      coresThisTask += (*B)->P_corev.size();
+      DebugPrint("Board \"%s\" will use %ld mailboxes.\n",
+                 (*B)->Name().c_str(), (*B)->G.SizeNodes());
+      WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                        unsigned, P_link*,
+                        unsigned, P_port*, (*B)->G, MB)
+      {
+          DebugPrint("Mailbox \"%s\" will use %ld cores\n",
+                     (*B)->G.NodeData(MB)->Name().c_str(),
+                     (*B)->G.NodeData(MB)->P_corem.size());
+          // less work to compute as we go along than to call CoresForTask.size()
+          // MLV: Not so sure in a post-mailbox world any more...
+          coresThisTask += (*B)->G.NodeData(MB)->P_corem.size();
+      }
       coresLoaded += LoadBoard(*B); // load the board (unthreaded model)
    }
-   DebugPrint("All boards finished; %d cores loaded\n", coresLoaded);
+   DebugPrint("All boards finished. %ld cores were in the hardware model for "
+              "this task. %ld cores have been loaded.\n",
+              coresThisTask, coresLoaded);
    // abandoning the boot if load failed
    if (coresLoaded < coresThisTask)
    {
@@ -293,16 +310,22 @@ unsigned TMoth::CmRun(string task)
    DebugPrint("Building thread list for task %s\n",task.c_str());
    // build a list of the threads in this task (that should be released from barrier)
    vector<unsigned> threadsToRelease;
+   P_addr threadAddress;
    WALKVECTOR(P_thread*,TaskMap[task]->ThreadsForTask(),R)
-     threadsToRelease.push_back(TMoth::GetHWAddr((*R)->addr));
+   {
+   (*R)->get_hardware_address()->populate_a_software_address(&threadAddress);
+   threadsToRelease.push_back(TMoth::GetHWAddr(threadAddress));
+   }
    DebugPrint("%d threads to release in task %s\n",threadsToRelease.size(),task.c_str());
    while (!canSend()); // wait until a message can be sent. The Twig process should be fielding unexpected traffic by this point.
-   DebugPrint("Issuing barrier release to %d threads\n",threadsToRelease.size());
+   DebugPrint("Issuing barrier release to %d threads, using message address "
+              "0x%X\n", threadsToRelease.size(), DEST_BROADCAST);
    // and then issue the barrier release to the threads.
    WALKVECTOR(unsigned,threadsToRelease,R)
    {
      barrier_msg.destDeviceAddr = DEST_BROADCAST; // send to every device on the thread with a supervisor message
-     DebugPrint("Barrier release address: 0x%X\n", barrier_msg.destDeviceAddr);
+     DebugPrint("Sending barrier release message to the thread with "
+                "hardware address %u.\n", *R);
      send(*R,(p_hdr_size()/(4 << TinselLogWordsPerFlit) + (p_hdr_size()%(4 << TinselLogWordsPerFlit) ? 1 : 0)), &barrier_msg);
    }
    DebugPrint("Tinsel threads now on their own for task %s\n",task.c_str());
@@ -358,9 +381,12 @@ unsigned TMoth::CmStop(string task)
    stop_msg.messageTag = P_MSG_TAG_STOP; // with a stop message type
    DebugPrint("Stopping task %s\n",task.c_str());
    // go through each thread of the task,
+   //vector<P_thread*> threads_for_task = TaskMap[task]->ThreadsForTask();
+   P_addr threadAddress;
    WALKVECTOR(P_thread*, TaskMap[task]->ThreadsForTask(), R)
    {
-     uint32_t destDevAddr = TMoth::GetHWAddr((*R)->addr);
+     (*R)->get_hardware_address()->populate_a_software_address(&threadAddress);
+     uint32_t destDevAddr = TMoth::GetHWAddr(threadAddress);
      DebugPrint("Stopping thread %d in task %s\n", destDevAddr, task.c_str());
      stop_msg.destDeviceAddr = DEST_BROADCAST; // issue the stop message to all devices
      // wait for the interface
@@ -374,7 +400,7 @@ unsigned TMoth::CmStop(string task)
      if ((tsk->second->status == TaskInfo_t::TASK_BARR) || (tsk->second->status == TaskInfo_t::TASK_RUN)) return 0;
    // if not, shut down the Twig thread.
    if (twig_running) StopTwig();
-   return 0;  
+   return 0;
    }
    case TaskInfo_t::TASK_STOP:
    case TaskInfo_t::TASK_END:
@@ -416,35 +442,63 @@ CommonBase::Dump(fp);
 
 //------------------------------------------------------------------------------
 
-int TMoth::LoadBoard(P_board* board)
+long TMoth::LoadBoard(P_board* board)
 {
-      int coresLoaded = 0;
-      string task;
-      WALKMAP(string,TaskInfo_t*,TaskMap,K) // find our task
-      {
-	if (K->second->status == TaskInfo_t::TASK_BOOT) task = K->first;
-	break;
-      }
-      if (!task.empty()) // anything to do?
-      {
-	 TaskInfo_t* task_map = TaskMap[task];
-	 WALKVECTOR(P_core*,board->P_corev,C) // grab each core's code and data file
-         {
-	    string code_f(task_map->BinPath + "/softswitch_code_" + int2str(task_map->getCore(*C)) + ".v");
-	    string data_f(task_map->BinPath + "/softswitch_data_" + int2str(task_map->getCore(*C)) + ".v");
-	    (*C)->pCoreBin = new Bin(fopen(code_f.c_str(), "r"));
-	    (*C)->pDataBin = new Bin(fopen(data_f.c_str(), "r"));
-	    uint32_t mX, mY, core, thread;
-	    DebugPrint("Loading core with virtual address Bx:%d, Bd:%d, Cr:%d\n",(*C)->addr.A_box,(*C)->addr.A_board,(*C)->addr.A_core);
-	    fromAddr(TMoth::GetHWAddr((*C)->addr), &mX, &mY, &core, &thread);
-	    DebugPrint("Loading hardware thread 0x%X at x:%d y:%d c:%d\n",TMoth::GetHWAddr((*C)->addr),mX,mY,core);
-	    loadInstrsOntoCore(code_f.c_str(),mX,mY,core); // load instruction memory
-	    loadDataViaCore(data_f.c_str(),mX,mY,core); // then data memory
-	    ++coresLoaded;
-         }
-      }
-      DebugPrint("Boot process for board %s finished %d cores loaded\n", board->Name().c_str(), coresLoaded);
-      return coresLoaded;
+    long coresLoaded = 0;
+    string task;
+
+    // Find the task to load onto this board.
+    WALKMAP(string, TaskInfo_t*, TaskMap, K)
+    {
+        if (K->second->status == TaskInfo_t::TASK_BOOT) task = K->first;
+        break;
+    }
+    if (!task.empty()) // anything to do?
+    {
+        TaskInfo_t* task_map = TaskMap[task];
+        P_addr coreAddress;
+        uint32_t mX, mY, core, thread;  // Intermediates for HostLink-side
+                                        // address components.
+        WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                          unsigned, P_link*,
+                          unsigned, P_port*, board->G, MB)
+        {
+            WALKMAP(AddressComponent, P_core*,
+                    board->G.NodeData(MB)->P_corem, C)
+            {
+                // Grab this core's code and data file
+                string code_f(task_map->BinPath + "/softswitch_code_" +
+                              int2str(task_map->getCore(C->second)) + ".v");
+                string data_f(task_map->BinPath + "/softswitch_data_" +
+                              int2str(task_map->getCore(C->second)) + ".v");
+                C->second->instructionBinary = new Bin(fopen(code_f.c_str(),
+                                                             "r"));
+                C->second->dataBinary = new Bin(fopen(data_f.c_str(), "r"));
+
+                // Populate the P_addr coreAddress from the core's hardware
+                // address object. Use coreAddress to define mX, mY, core, and
+                // thread, for compatbilitity with HostLink's loading methods.
+                C->second->get_hardware_address()->
+                    populate_a_software_address(&coreAddress);
+                DebugPrint("Loading core with virtual address Bx:%d, Bd:%d, "
+                           "Cr:%d\n",
+                           coreAddress.A_box, coreAddress.A_board,
+                           coreAddress.A_core);
+                fromAddr(TMoth::GetHWAddr(coreAddress), &mX, &mY, &core,
+                         &thread);
+                DebugPrint("Loading hardware thread 0x%X at x:%d y:%d c:%d\n",
+                           TMoth::GetHWAddr(coreAddress), mX, mY, core);
+
+                // Load instruction memory, then data memory.
+                loadInstrsOntoCore(code_f.c_str(), mX, mY, core);
+                loadDataViaCore(data_f.c_str(), mX, mY, core);
+                ++coresLoaded;
+            }
+        }
+    }
+    DebugPrint("Boot process for board %s finished %ld cores loaded\n",
+               board->Name().c_str(), coresLoaded);
+    return coresLoaded;
 }
 
 //------------------------------------------------------------------------------
@@ -522,7 +576,7 @@ unsigned TMoth::NameTdir(const string& task, const string& dir)
       if ((T=TaskMap.find(task)) == TaskMap.end())
       {
          DebugPrint("Inserting new task %s from NameTdir\n", task.c_str());
-	 TaskMap[task] = new TaskInfo_t(task);
+         TaskMap[task] = new TaskInfo_t(task);
       }
       TaskMap[task]->BinPath = dir;
       return 0;
@@ -584,7 +638,7 @@ void* TMoth::Twig(void* par)
 	         if (!(*device & P_SUP_MASK)) // bound for an external?
 	         {
 	            P_Msg_Hdr_t* m_hdr = static_cast<P_Msg_Hdr_t*>(p_recv_buf);
-		    DebugPrint("Message is bound for external device %d\n", m_hdr->destDeviceAddr);
+                DebugPrint("Message is bound for external device %d\n", m_hdr->destDeviceAddr);
 	            if (parent->TwigExtMap[m_hdr->destDeviceAddr] == 0)
 		       parent->TwigExtMap[m_hdr->destDeviceAddr] = new deque<P_Msg_t>;
 	            if (m_hdr->messageLenBytes > szFlit)
@@ -754,7 +808,7 @@ if ((superReturn = (*SupervisorCall)(Z,&W)) > 0) // Execute. Send a reply if one
   if (!cIdx && (Z->Tgt() == Urank) && (Z->Src() == Urank)) OnTinsel(&W, 0); // either to Tinsels,
   else W.Send(Z->Src());  // or to some external or internal process.
 }
-if (superReturn < 0) Post(530, int2str(Urank)); 
+if (superReturn < 0) Post(530, int2str(Urank));
 return 0;
 }
 
@@ -860,7 +914,7 @@ if (SuperHandle)                // then unload its Supervisor
    // clean up memory first
    int (*SupervisorExit)() = reinterpret_cast<int (*)()>(dlsym(SuperHandle, "SupervisorExit"));
    if (!SupervisorExit || (*SupervisorExit)() || dlclose(SuperHandle))
-   {  
+   {
       Post(534,int2str(Urank));
       SuperHandle = 0;          // even if we errored invalidate the Supervisor
    }

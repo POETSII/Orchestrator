@@ -7,7 +7,6 @@
 #include "Pglobals.h"
 #include <stdio.h>
 #include "Unrec_t.h"
-#include "pthread.h"
 #include <algorithm>
 
 #include <string>
