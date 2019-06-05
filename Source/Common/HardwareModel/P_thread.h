@@ -13,7 +13,7 @@
 #include <list>
 
 #include "AddressableItem.h"
-#include "HardwareDumpUtils.h"
+#include "DumpUtils.h"
 #include "macros.h"
 #include "NameBase.h"
 #include "P_core.h"

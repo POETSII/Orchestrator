@@ -7,7 +7,7 @@
  * See the hardware model documentation for further information on ports, and
  * for what they may be used for in future. */
 
-#include "HardwareDumpUtils.h"
+#include "DumpUtils.h"
 #include "NameBase.h"
 #include "pdigraph.hpp"
 

@@ -88,7 +88,7 @@ void P_core::contain(AddressComponent addressComponent, P_thread* thread)
 void P_core::Dump(FILE* file)
 {
     std::string prefix = dformat("P_core %s", FullName().c_str());
-    HardwareDumpUtils::open_breaker(file, prefix);
+    DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
     NameBase::Dump(file);
@@ -115,7 +115,7 @@ void P_core::Dump(FILE* file)
     }
 
     /* About contained items, if any. */
-    HardwareDumpUtils::open_breaker(file, "Threads in this core");
+    DumpUtils::open_breaker(file, "Threads in this core");
     if (P_threadm.empty())
         fprintf(file, "The thread map is empty.\n");
     else
@@ -126,10 +126,10 @@ void P_core::Dump(FILE* file)
             iterator->second->Dump(file);
         }
     }
-    HardwareDumpUtils::close_breaker(file, "Threads in this core");
+    DumpUtils::close_breaker(file, "Threads in this core");
 
     /* Close breaker and flush the dump. */
-    HardwareDumpUtils::close_breaker(file, prefix);
+    DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
 

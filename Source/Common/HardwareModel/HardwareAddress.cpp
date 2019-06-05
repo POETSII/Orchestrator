@@ -190,7 +190,7 @@ void HardwareAddress::Dump(FILE* file)
 {
     std::string prefix = dformat("Hardware address at %#018lx",
                                  (uint64_t) this);
-    HardwareDumpUtils::open_breaker(file, prefix);
+    DumpUtils::open_breaker(file, prefix);
 
     /* Just contains the components, and whether or not they have been
      * defined. */
@@ -210,6 +210,6 @@ void HardwareAddress::Dump(FILE* file)
     fprintf(file, "%s\n", is_thread_defined() ? "" : "(not defined)");
 
     /* Close breaker and flush the dump. */
-    HardwareDumpUtils::close_breaker(file, prefix);
+    DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }

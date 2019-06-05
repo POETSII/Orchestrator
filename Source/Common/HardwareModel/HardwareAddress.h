@@ -22,11 +22,19 @@
  * See the hardware model documentation for further information about hardware
  * addresses. */
 
+#include "DumpUtils.h"
 #include "HardwareAddressFormat.h"
-#include "HardwareDumpUtils.h"
 #include "InvalidAddressException.h"
 #include "P_addr.h"
 #include <cmath>  /* For validating address components. */
+
+/* Define masks for setting the 'definitions' variable. */
+#define HARDWARE_ADDRESS_FULLY_DEFINED_MASK 31  /* 0b11111 */
+#define BOX_DEFINED_MASK 1                      /* 0b00001 */
+#define BOARD_DEFINED_MASK 2                    /* 0b00010 */
+#define MAILBOX_DEFINED_MASK 4                  /* 0b00100 */
+#define CORE_DEFINED_MASK 8                     /* 0b01000 */
+#define THREAD_DEFINED_MASK 16                  /* 0b10000 */
 
 /* Hardware address component representation. */
 typedef uint32_t AddressComponent;
@@ -68,14 +76,19 @@ public:
     void populate_from_software_address(P_addr* source);
     void Dump(FILE* = stdout);
 
-    /* Defines whether or not the hardware address is fully defined. No binary
-     * literal in C++98 (yuck). */
-    inline bool is_fully_defined(){return definitions == 31;}  /* 0b11111 */
-    inline bool is_box_defined(){return (definitions & 1) > 0;}
-    inline bool is_board_defined(){return (definitions & 2) > 0;}
-    inline bool is_mailbox_defined(){return (definitions & 4) > 0;}
-    inline bool is_core_defined(){return (definitions & 8) > 0;}
-    inline bool is_thread_defined(){return (definitions & 16) > 0;}
+    /* Defines whether or not the hardware address is fully defined. */
+    inline bool is_fully_defined()
+        {return definitions == HARDWARE_ADDRESS_FULLY_DEFINED_MASK;}
+    inline bool is_box_defined()
+        {return (definitions & BOX_DEFINED_MASK) > 0;}
+    inline bool is_board_defined()
+        {return (definitions & BOARD_DEFINED_MASK) > 0;}
+    inline bool is_mailbox_defined()
+        {return (definitions & MAILBOX_DEFINED_MASK) > 0;}
+    inline bool is_core_defined()
+        {return (definitions & CORE_DEFINED_MASK) > 0;}
+    inline bool is_thread_defined()
+        {return (definitions & THREAD_DEFINED_MASK) > 0;}
 
 private:
 

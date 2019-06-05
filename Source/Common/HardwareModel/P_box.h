@@ -12,8 +12,8 @@
 #include <sstream>
 
 #include "AddressableItem.h"
+#include "DumpUtils.h"
 #include "NameBase.h"
-#include "HardwareDumpUtils.h"
 #include "OwnershipException.h"
 #include "P_board.h"
 #include "P_engine.h"

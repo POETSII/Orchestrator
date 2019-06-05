@@ -1,4 +1,4 @@
-#include "HardwareDumpUtils.h"
+#include "DumpUtils.h"
 
 /* Prints something like:
  *
@@ -17,7 +17,7 @@
  * - breakerSymbol: Symbol to use to construct the tail of the breaker.
  */
 
-namespace HardwareDumpUtils {
+namespace DumpUtils {
 
     void breaker(FILE* outPlace, const std::string& prefix, char breakerSymbol)
     {

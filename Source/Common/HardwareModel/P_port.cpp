@@ -12,8 +12,8 @@ P_port::P_port(NameBase* parent)
 void P_port::Dump(FILE* file)
 {
     std::string prefix = dformat("P_port %s", FullName().c_str());
-    HardwareDumpUtils::open_breaker(file, prefix);
+    DumpUtils::open_breaker(file, prefix);
     NameBase::Dump(file);
-    HardwareDumpUtils::close_breaker(file, prefix);
+    DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
