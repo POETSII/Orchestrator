@@ -17,6 +17,7 @@ virtual ~           EvPump(void);
 void                Dump();
 int                 Go();
 void                Inject(BASE_EVENT *);
+T                   Lpt()              { return lpt;              }
 void                Order(bool=true);
 void * &            Par()              { return par;              }
 void                Purge(void(*)(void *,BASE_EVENT *));
@@ -39,6 +40,7 @@ bool                sflag;             // Asynchronous stop flag
 bool                oflag;             // Heap/FIFO flag (Default is FIFO)
 unsigned            evmax;             // Largest size of Q since last reset
 unsigned            evcnt;             // Popped event count
+T                   lpt;               // Last popped time
 void(* pCB)(void *,BASE_EVENT *);      // Pump event callback pointer
 void *              par;               // Whatever holds the pump
 

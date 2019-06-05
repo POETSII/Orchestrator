@@ -223,7 +223,8 @@ for(int state=0;;) {                   // And around and around we go ...
               CCB();                                                      break;
     case 8  : // The Great Comment Bodge. What can I say? Sorry.
               if (pRecd==0) CmtProc(pSect,pName);
-              else CmtProc(pRecd,pBody);                                  break;
+              else CmtProc(pRecd,pBody); // GCC chokes if break follows else
+                                                                          break;
     case 9  : // *Now* we know which field is which; swap variable and value
               tmp = pVari; pVari = pLabl; pLabl = tmp;
               pVari->Type(No_vari); pLabl->Type(No_labl);                 break;
@@ -525,7 +526,7 @@ fprintf(df,"UIF object dump (%s)\n",fname.c_str());
 fprintf(df,"problem = %c\n",problem ? 'T' : 'F');
 fprintf(df,"stop    = %c\n",stop    ? 'T' : 'F');
 Td.Dump(df);
-fprintf(df,"UIF preprocessor string map - %u entries:\n", argMap.size());
+fprintf(df,"UIF preprocessor string map - %lu entries:\n", argMap.size());
 WALKMAP(string,string,argMap,i) {
   fprintf(df,"%10s -> %10s\n",(*i).first.c_str(),(*i).second.c_str());
 }
@@ -1452,7 +1453,7 @@ fprintf(df,"%sOpcode |%s|\n",s0.c_str(),Lex::Sytype_str[qop]);
 fprintf(df,"%sString |%s|\n",s0.c_str(),str.c_str());
 fprintf(df,"%sPos %d\n",s0.c_str(),pos);
 //if (p->qop==No_expr) dynamic_cast<Exp_Node *>(p)->E->Dump();
-fprintf(df,"%s has %u children: ",s0.c_str(),leaf.size());
+fprintf(df,"%s has %lu children: ",s0.c_str(),leaf.size());
 s0 += "  ";
 WALKVECTOR(Node *,leaf,i) if ((*i)==0) fprintf(df,"Null child\n");
                           else (*i)->Dump(df,s0);
@@ -1463,7 +1464,6 @@ WALKVECTOR(Node *,leaf,i) if ((*i)==0) fprintf(df,"Null child\n");
 void UIF::Node::Dumpt(FILE * fp)
 // Tiny inline Node dump
 {
-if (this==0) return;
 fprintf(fp,"%6p(%2d) %s:%s[%s]\n",
         this,pos,Notype_str[typ],str.c_str(),Lex::Sytype_str[qop]);
 }

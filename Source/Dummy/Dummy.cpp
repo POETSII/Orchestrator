@@ -52,7 +52,7 @@ fprintf(fp,"Dummy dump+++++++++++++++++++++++++++++++++++\n");
 printf("Key        Method\n");
 WALKVECTOR(FnMap_t*,FnMapx,F)
 {
-WALKMAP(unsigned,pMeth,(**F),i)printf("%#010x %#010p\n",(*i).first,(*i).second);
+WALKMAP(unsigned,pMeth,(**F),i)printf("%#010x %#016x\n",(*i).first,(*i).second);
 }
 fprintf(fp,"Dummy dump-----------------------------------\n");
 CommonBase::Dump(fp);

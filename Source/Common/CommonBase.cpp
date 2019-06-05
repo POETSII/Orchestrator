@@ -168,13 +168,13 @@ WALKVECTOR(FnMap_t*,FnMapx,F)
 fprintf(fp,"Function table for comm %d:\n", cIdx++);
 fprintf(fp,"Key        Method\n");
 WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x 0x%#010p\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
 }
 fprintf(fp,"S00 (const static)              : %s\n",S00.c_str());
 fprintf(fp,"Urank                           : %d\n",Urank);
 cIdx = 0;
 WALKVECTOR(int,Usize,s)
-  fprintf(fp,"Usize (comm %d)                 : %d\n",cIdx++,s);
+  fprintf(fp,"Usize (comm %lu)                 : %d\n",cIdx++,s);
 fprintf(fp,"Ulen                            : %d\n",Ulen);
 fprintf(fp,"Sproc                           : %s\n",Sproc.c_str());
 fprintf(fp,"Suser                           : %s\n",Suser.c_str());
@@ -211,10 +211,10 @@ else // clients need to look up the service name
    // Get the published port for the service name asked for.
    // Exit if we don't get a port, probably because the remote universe isn't
    // initialised yet (we can always retry).
-   if (error = MPI_Lookup_name(svc.c_str(),MPI_INFO_NULL,port)) return error;
+   if ((error = MPI_Lookup_name(svc.c_str(),MPI_INFO_NULL,port))) return error;
    // now try to establish the connection itself. Again, we can always retry.
    // if (error = MPI_Comm_connect(port,MPI_INFO_NULL,0,MPI_COMM_WORLD,&newcomm)) return error;
-   if (error = MPI_Comm_connect(port,MPI_INFO_NULL,0,Comms[0],&newcomm)) return error;
+   if ((error = MPI_Comm_connect(port,MPI_INFO_NULL,0,Comms[0],&newcomm))) return error;
    Comms.push_back(newcomm); // as long as we succeeded, add to the list of comms
 }
 int rUsize;
@@ -239,9 +239,9 @@ return error;
 
 int CommonBase::LogSCIdx()
 {
-int cIdx=0;
+unsigned cIdx=0;
 for (; cIdx < pPmap.size(); cIdx++)
-  if (pPmap[cIdx]->U.LogServer!=Q::NAP) return cIdx;
+  if (pPmap[cIdx]->U.LogServer!=Q::NAP) return (int)cIdx;
 return -1;
 }
 
@@ -249,9 +249,9 @@ return -1;
 
 int CommonBase::NameSCIdx()
 {
-int cIdx=0;
+unsigned cIdx=0;
 for (; cIdx < pPmap.size(); cIdx++)
-  if (pPmap[cIdx]->U.NameServer!=Q::NAP) return cIdx;
+  if (pPmap[cIdx]->U.NameServer!=Q::NAP) return (int)cIdx;
 return -1;
 }
 
@@ -489,8 +489,8 @@ unsigned CommonBase::OnSystRun(PMsg_p * Z, unsigned cIdx)
 unsigned CommonBase::OnTestFloo(PMsg_p * Z,unsigned cIdx)
 // Got a test flood event.
 {
-static unsigned stop = 0;              // Some statistices
-static unsigned sent = 0;
+//static unsigned stop = 0;              // Some statistices
+//static unsigned sent = 0;
 int c;
 unsigned lev = *(Z->Get<unsigned>(2,c));// Extract remaining level
 //printf("CommonBase::OnTest rank %u (coming) level %u\n",Urank,lev);  fflush(stdout);
@@ -609,9 +609,9 @@ MPI_Barrier(Comms[0]);           // Wait until everyone has told everyone
 
 int CommonBase::RootCIdx()
 {
-int cIdx=0;
+unsigned cIdx=0;
 for (; cIdx < pPmap.size(); cIdx++)
-  if (pPmap[cIdx]->U.Root!=Q::NAP) return cIdx;
+  if (pPmap[cIdx]->U.Root!=Q::NAP) return (int)cIdx;
 return -1;
 }
 

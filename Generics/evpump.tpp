@@ -46,6 +46,7 @@ printf("oflag (Q/FIFO)         = %s\n",oflag ? "TRUE(Q)" : "FALSE(FIFO)");
 printf("Callback               = %p\n",pCB);
 printf("evmax                  = %u\n",evmax);
 printf("evcnt                  = %u\n",evcnt);
+cout << lpt << '\n';
 printf("Q (size %u): \n",(unsigned)Q.size());
 if (Q.size()==0) printf("..empty\n");
 WALKDEQUE(BASE_EVENT *,Q,i) {
@@ -71,8 +72,10 @@ while(!Q.empty()) {
   BASE_EVENT * pE = Q.back();          // Event to be handled
   Q.pop_back();                        // Extract from deque (ho ho ho)
   evcnt++;                             // Count the event
+  lpt = pE->Time();                    // Store last popped time
   pCB(par,pE);                         // Handle the event
 }
+if (sflag) return STOP_REQ;            // In case STOP_REQ was the last one 
 return STOP_NOQ;                       // Q empty
 }
 
@@ -109,7 +112,7 @@ template <class T> void EvPump<T>::Purge(void(* pFn)(void *,typename EvPump<T>::
 set<BASE_EVENT *> X;                   // Copy to a set to avoid duplicates
 WALKDEQUE(BASE_EVENT *,Q,i) X.insert(*i);
                                        // And do it (whatever it is)
-WALKSET2(BASE_EVENT *,X,i) (*pFn)(this,*i);
+WALKSET(BASE_EVENT *,X,i) (*pFn)(this,*i);
 }
 
 //------------------------------------------------------------------------------
@@ -125,6 +128,7 @@ evcnt = 0;                             // Event counter
 pCB = 0;                               // Disconnect the callback
 sflag = false;                         // Unset the "stop" flag (to "unordered")
 oflag = false;                         // "order" == FIFO
+lpt = T(0);                            // Last popped time
 }
 
 //------------------------------------------------------------------------------

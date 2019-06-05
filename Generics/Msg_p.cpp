@@ -66,7 +66,7 @@
 // of strings. The vector code can easily be extended to cope with sets, queues
 // and lists. Anything else will be a bit fiddly, but if the need arises....
 // The special name for the string vector Get/Put is, I think, made necessary
-// by a BORLAND BUG - the compiler should be able to disamiguate the overloads,
+// by a BORLAND BUG - the compiler should be able to disambiguate the overloads,
 // but it can't.
 // The saving (Stream()) and restoring (Msg_p(byte *,int)) code knows nothing of
 // types - everything is handled and stored as fragments of a byte stream. The
@@ -93,8 +93,8 @@ src  = -1;                             // UNDEF in the derived class, but the
 tgt  = -1;                             // base is pure....
 mode = 0;                              // Mode == 0 is the default normal
 id   = counter++;                       // Process-local unique id
-for(int i=0;i<Z_TIMES;i++)ztime[i]=0.0;// No times - yet...
-for(int i=0;i<Z_FIELDS;i++)subkey[i]=0x00;// No labels - yet...
+for(unsigned i=0;i<Z_TIMES;i++)ztime[i]=0.0;// No times - yet...
+for(unsigned i=0;i<Z_FIELDS;i++)subkey[i]=0x00;// No labels - yet...
 typecount = int() + 1;                 // Set up the initial type table
 THE_LIST(AddToMap)
 }
@@ -106,6 +106,20 @@ Msg_p::Msg_p(byte * tm,int len)
 {
 typecount = int() + 1;
 THE_LIST(AddToMap)
+Load(tm,len);
+id   = counter++;                       // Process-local unique id
+}
+
+//------------------------------------------------------------------------------
+
+Msg_p::Msg_p(byte * tm)
+// Better constructor from byte stream, which doesn't need the explicit length
+// because the length is now (2018) encoded as the first four bytes of the byte
+// stream
+{
+typecount = int() + 1;
+THE_LIST(AddToMap)
+unsigned len = * new(&tm[0]) unsigned;
 Load(tm,len);
 id   = counter++;                       // Process-local unique id
 }
@@ -162,7 +176,8 @@ fprintf(fp,"Tag    : %4d, Identifier: %4d, Mode      : %4d\n",tag,id,mode);
 fprintf(fp,"Counter: %4d\n",counter);
 for(unsigned i=0;i<Z_TIMES;i++) fprintf(fp,"Timestamp[%u] : %e\n",i,ztime[i]);
 for(unsigned i=0;i<Z_NAMES;i++) fprintf(fp,"Names    [%u] : %s\n",i,names[i].c_str());
-fprintf(fp,"Labels : %3d|%3d|%3d|%3d\n",L(0),L(1),L(2),L(3));
+fprintf(fp,"Labels : %03d(0x%04x)|%03d(0x%04x)|%03d(0x%04x)|%03d(0x%04x)\n",
+        L(0),L(0),L(1),L(1),L(2),L(2),L(3),L(3));
 fprintf(fp,"Raw data dump:\n");
 WALKMAP(int,typemap *,Tmap,i) {
   fprintf(fp,"Type key = %d (%s)\n",(*i).first,t2imap[(*i).first]);
@@ -262,9 +277,10 @@ return ans;
 void Msg_p::L(int index,byte val)
 // Set a subkey field
 {
-if ((index<0)||(index>=Z_FIELDS)) return;
+int i = int(index);
+if ((i<0)||(i>=Z_FIELDS)) return;
 vm.clear();                            // Stream vector is now dirty
-subkey[index] = val;
+subkey[i] = val;
 }
 
 //------------------------------------------------------------------------------
@@ -272,8 +288,9 @@ subkey[index] = val;
 byte Msg_p::L(int index)
 // Retrieve a subkey field
 {
-if ((index<0)||(index>=Z_FIELDS)) return 0xff;
-return subkey[index];
+int i = int(index);
+if ((i<0)||(i>=Z_FIELDS)) return 0xff;
+return subkey[i];
 }
 
 //------------------------------------------------------------------------------
@@ -575,6 +592,6 @@ bool operator != (Msg_p & a,Msg_p & b)
 {
 return !(a==b);
 }
-
+          
 //==============================================================================
 
