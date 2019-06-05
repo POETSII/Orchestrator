@@ -28,7 +28,7 @@ void HardwareAddressFormat::Dump(FILE* file)
 {
     std::string prefix = dformat("Hardware address format at %#018lx",
                                  (uint64_t) this);
-    HardwareDumpUtils::open_breaker(file, prefix);
+    DumpUtils::open_breaker(file, prefix);
 
     /* The dump basically just contains the lengths. */
     fprintf(file, "boxWordLength:     %u\n\
@@ -43,6 +43,6 @@ threadWordLength:  %u\n",
             threadWordLength);
 
     /* Close breaker and flush the dump. */
-    HardwareDumpUtils::close_breaker(file, prefix);
+    DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }

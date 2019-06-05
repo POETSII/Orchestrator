@@ -259,7 +259,7 @@ void HardwareIterator::reset_thread_iterator()
 void HardwareIterator::Dump(FILE* file)
 {
     std::string prefix = FullName();
-    HardwareDumpUtils::open_breaker(file, prefix);
+    DumpUtils::open_breaker(file, prefix);
 
     /* About this object. */
     NameBase::Dump(file);
@@ -301,6 +301,6 @@ void HardwareIterator::Dump(FILE* file)
     fprintf(file, "This iterator has%s wrapped.\n", isWrapped ? "" : " not");
 
     /* Close breaker and flush the dump. */
-    HardwareDumpUtils::close_breaker(file, prefix);
+    DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }

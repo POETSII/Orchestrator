@@ -187,13 +187,13 @@ void P_board::connect(AddressComponent start, AddressComponent end,
 void P_board::Dump(FILE* file)
 {
     std::string prefix = dformat("P_board %s", FullName().c_str());
-    HardwareDumpUtils::open_breaker(file, prefix);
+    DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
     NameBase::Dump(file);
 
     /* About the mailbox graph. */
-    HardwareDumpUtils::open_breaker(file, "Mailbox connectivity");
+    DumpUtils::open_breaker(file, "Mailbox connectivity");
     if (G.SizeNodes() == 0)
         fprintf(file, "The mailbox graph is empty.\n");
     else
@@ -215,12 +215,12 @@ void P_board::Dump(FILE* file)
         P_link::dfp = previousLinkChannel;
         P_port::dfp = previousPortChannel;
     }
-    HardwareDumpUtils::close_breaker(file, "Mailbox connectivity");
+    DumpUtils::close_breaker(file, "Mailbox connectivity");
 
     /* About contained items, if any. */
     if (G.SizeNodes() > 0)
     {
-        HardwareDumpUtils::open_breaker(file, "Mailboxes in this board");
+        DumpUtils::open_breaker(file, "Mailboxes in this board");
 
         /* Set up callbacks for walking through the mailbox nodes, passing in
          * the file pointer. */
@@ -235,11 +235,11 @@ void P_board::Dump(FILE* file)
         /* Dump mailboxes in the graph recursively. */
         G.WALKNODES(file, WalkCallbacks::node);
 
-        HardwareDumpUtils::close_breaker(file, "Mailboxes in this board");
+        DumpUtils::close_breaker(file, "Mailboxes in this board");
     }
 
     /* Close breaker and flush the dump. */
-    HardwareDumpUtils::close_breaker(file, prefix);
+    DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
 

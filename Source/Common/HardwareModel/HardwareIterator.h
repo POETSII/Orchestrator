@@ -22,7 +22,7 @@
  *   no sense (and is unrealistic) if patches of the hardware are empty.
  */
 
-#include "HardwareDumpUtils.h"
+#include "DumpUtils.h"
 #include "HardwareModel.h"
 #include "IteratorException.h"
 #include "pdigraph.hpp"

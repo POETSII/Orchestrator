@@ -14,7 +14,7 @@
 
 #include "AddressableItem.h"
 #include "Bin.h"
-#include "HardwareDumpUtils.h"
+#include "DumpUtils.h"
 #include "NameBase.h"
 #include "OwnershipException.h"
 #include "P_mailbox.h"

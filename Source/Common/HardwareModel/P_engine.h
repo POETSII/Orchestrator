@@ -12,8 +12,8 @@
 
 #include <sstream>
 
+#include "DumpUtils.h"
 #include "HardwareAddress.h"
-#include "HardwareDumpUtils.h"
 #include "NameBase.h"
 #include "OrchBase.h"
 #include "OwnershipException.h"

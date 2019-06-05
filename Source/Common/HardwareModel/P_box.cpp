@@ -76,13 +76,13 @@ void P_box::contain(AddressComponent addressComponent, P_board* board)
 void P_box::Dump(FILE* file)
 {
     std::string prefix = dformat("P_box %s", FullName().c_str());
-    HardwareDumpUtils::open_breaker(file, prefix);
+    DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
     NameBase::Dump(file);
 
     /* About contained items, if any. */
-    HardwareDumpUtils::open_breaker(file, "Boards in this box");
+    DumpUtils::open_breaker(file, "Boards in this box");
     if (P_boardv.empty()){fprintf(file, "The board vector is empty.\n");}
     else
     {
@@ -92,10 +92,10 @@ void P_box::Dump(FILE* file)
             (*iterator)->Dump(file);
         }
     }
-    HardwareDumpUtils::close_breaker(file, "Boards in this box");
+    DumpUtils::close_breaker(file, "Boards in this box");
 
     /* Close breaker and flush the dump. */
-    HardwareDumpUtils::close_breaker(file, prefix);
+    DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }
 
