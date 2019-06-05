@@ -623,7 +623,7 @@ char * GetTime()
 // So: we use time() and gmtime() to get absolute hours:mins:secs, then clock()
 // to get the milliseconds since the program started. This latter number simply
 // increases monotonically, so we do some dirt and turn it into the decimal
-// absolute seconds. Its' not actually absolutely correct, but it will deliver
+// absolute seconds. It's not actually absolutely correct, but it will deliver
 // correct timing *intervals*.
 // Note we could up the timing accuracy from 10ms to 1 ms.... to do.....
 {
