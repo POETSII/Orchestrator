@@ -33,6 +33,7 @@ class Msg_p {
 public:
                         Msg_p();
                         Msg_p(byte *,int);
+                        Msg_p(byte *);
                         Msg_p(Msg_p &);
 virtual ~               Msg_p(void);
 void                    Clear();

@@ -94,7 +94,7 @@ WALKVECTOR(FnMap_t*,FnMapx,F)
 fprintf(fp,"Function table for comm %d:\n", cIdx++);
 fprintf(fp,"Key        Method\n");
 WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x %#010p\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x %#016x\n",(*i).first,(*i).second);
 }
 fprintf(fp,"Communication pool:\n");
 fprintf(fp,"pthis   : %p\n",comms.pthis);

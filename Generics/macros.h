@@ -3,6 +3,8 @@
 #ifndef __macros__H
 #define __macros__H
 
+#define za_start(xp,fmt) (xp = (((unsigned char *)fmt) + sizeof(*fmt)))
+
 #define ABS(X,Y) ((X)>(Y) ? ((X)-(Y)) : ((Y)-(X)))
 
 #define BYTESPERUNSIGNED 4

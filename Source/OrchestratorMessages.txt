@@ -56,6 +56,9 @@
 136(I) : "Whatever you asked for, it's not working yet"
 137(I) : "Topology default file path is ||%s||"
 138(I) : "Creating topology ||%s||"
+139(W) : "No topology is loaded."
+140(I) : "Topology loaded from file ||%s||."
+141(E) : "Errors encountered loading hardware input file at ||%s||:%s"
 151(W) : "Attempt to xlink task %s when no topology exists"
 152(W) : "Attempt to xlink non-existent task %s"
 153(W) : "Attempt to xlink task %s - it's already linked"
@@ -108,7 +111,7 @@
 814(W) : "P_builder: no task found with source file %s"
 815(W) : "P_builder: task %s not registered under source file %s"
 901(U) : "%s: %s corrupt ?"
-902(U) : "OrchBase::ClearTasks(tt=%s)" 
+902(U) : "OrchBase::ClearTasks(tt=%s)"
 903(U) : "OrchBase::ClearDcls: Null pointer to %s in P_typdclm"
 904(U) : "OrchBase::ClearDcls: Null pointer to %s in P_taskm"
 905(U) : "T_Gen::Build: Null pointer argument"
@@ -118,4 +121,3 @@
 909(U) : "NameServer::OnLoad: No key vector in LOAD message"
 
 999(X) : "OINK ARGH OOK %s"
-

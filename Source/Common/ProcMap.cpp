@@ -26,7 +26,7 @@ void ProcMap::Dump(FILE * fp)
 fprintf(fp,"Process Map start\n"
            "++++++++++++++++++++++++++++++++++++++"
            "++++++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"Me,Parent      0x%#08p,0x%#08p\n",this,par);
+fprintf(fp,"Me,Parent      0x%#018x,0x%#016x\n",(void *)this,(void *)par);
 fprintf(fp,"Process map (%u entries):\n",static_cast<unsigned>(vPmap.size()));
 WALKVECTOR(ProcMap_t,vPmap,i) {
   fprintf(fp,"\n- - - - - - - - - - - - - - - - - - - "

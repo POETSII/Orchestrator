@@ -31,6 +31,7 @@ virtual ~          Cli(void);
 void               Dump(FILE * = stdout);
 bool               Err(int &,int &);   // Direct copy of problem struct
 vector<Cli>        Expand();           // Expand the clauses -> own command
+string             GetC(unsigned=0,string=string());
 static list<Cli>   File(string,bool=false);  // Create a Cli vector from a file
 void               Fixup();            // Iron the datastructure
 static bool        StrEq(string,string,unsigned=4); // Equality test
@@ -38,6 +39,7 @@ void               Trim(unsigned=4);   // Regularise the strings
 
 string             Orig;               // Copy of input string
 string             Co;                 // Command
+vector<string>     Co_v;               // Compound command
 struct Pa_t {                          // Parameter holder
   Pa_t(){}
   Pa_t(string _O,string _V):Op(_O),Val(_V){}

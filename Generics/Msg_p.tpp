@@ -64,7 +64,7 @@ if (pTM->Dmap.find(k)==pTM->Dmap.end()) return (T *)0;
 
 SS * pSS = pTM->Dmap[k];               // Data stepping stone
 cnt = pSS->c / pTM->typelen;           // Number of things
-return new(pSS->p) T;                  // Reinterpret ->p as type T
+return new(pSS->p) T;                  // Reinterpret ->p as type T 
 }
 
 //------------------------------------------------------------------------------
@@ -148,6 +148,8 @@ template <class T> void Msg_p::Put(int k,vector<T> * data)
 // sets, queues and lists quite easily; templates of n-tuples might require a
 // bit more effort?
 {
+if (data==0) return;                   // Special case paranoia: u$OFT BUG
+if (data->size()==0) return;           // Special case paranoia: u$OFT BUG    
 Put<T>(k,&((*data)[0]),data->size());
 }
 

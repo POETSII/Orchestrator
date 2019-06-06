@@ -1,0 +1,11 @@
+// Two mailboxes, three cores.
+[header(failure)]
+[core]
+[packet_address_format]
+[engine]
+[core]
+[box]
+[board]
+[mailbox]
+[core]
+[mailbox]
