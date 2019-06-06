@@ -16,13 +16,13 @@ void softswitch_main()
     softswitch_barrier(ThreadContext, superBuffer[0], recvBuffer);
     //softswitch_alive(superBuffer[0]); // *debug: say that we have passed initialisation*
     /* endless main loop. It would be nice to have some stop variable here
-       that can be set by a command. The problem is, it's not technically
-       safe to stop until all messages that should have been expected are
-       received. But a receiver cannot know which messages to expect, and
-       the Supervisor can only know that all messages have been sent. There
-       seems to be no easy way to know if all messages have been received. 
-       Best that can be done is a command from the Supervisor that sets an
-       end flag.
+     * that can be set by a command. The problem is, it's not technically
+     * safe to stop until all messages that should have been expected are
+     * received. But a receiver cannot know which messages to expect, and
+     * the Supervisor can only know that all messages have been sent. There
+     * seems to be no easy way to know if all messages have been received. 
+     * Best that can be done is a command from the Supervisor that sets an
+     * end flag.
      */
     while (!ThreadContext->ctlEnd)
     {

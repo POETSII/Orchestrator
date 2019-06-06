@@ -19,7 +19,7 @@ void softswitch_finalize(ThreadCtxt_t* thr_ctxt, volatile void** send_buf, volat
         {
             while (softswitch_popMsg(&thr_ctxt->devInsts[device].outputPins[out_pin]));
         }
-        while (softswitch_popRTSPin(&thr_ctxt->devInsts[device]));         
+        while (softswitch_popRTSPin(&thr_ctxt->devInsts[device]));
     }
     while (softswitch_popRTS(thr_ctxt));
     for (uint32_t b = 0; b < NUM_SUP_BUFS; b++) super_buf[b] = 0;
@@ -153,7 +153,7 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
             set_msg_hdr(target->tgt, target->tgtEdge, target->tgtPin, cur_pin->pinType->sz_msg, cur_pin->pinType->msgType, static_cast<P_Msg_Hdr_t*>(const_cast<void*>(send_buf)));
             tinselSend((target->tgt >> P_THREAD_OS), send_buf);
         }
-    }   
+    }
     // then update the RTS list as necessary
     softswitch_onRTS(thr_ctxt, cur_device);
     return cur_device->currTgt;
@@ -195,7 +195,7 @@ void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
             // work if the device had no __init__ pin. This test should be removed as soon as __init__ pins lose
             // any special meaning in existing XML!
             if ((recv_pkt->messageTag == P_MSG_TAG_INIT) && (recv_pin->pinType->msgType == recv_pkt->messageTag))
-               RTS_updated = recv_pin->pinType->Recv_handler(thr_ctxt->properties, recv_device, 0, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+p_hdr_size());
+                RTS_updated = recv_pin->pinType->Recv_handler(thr_ctxt->properties, recv_device, 0, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+p_hdr_size());
             else RTS_updated = recv_device->devType->OnCtl_Handler(thr_ctxt, recv_device, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+p_hdr_size());
         }
             // otherwise handle as a normal device through the appropriate receive handler.
@@ -254,12 +254,12 @@ void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device)
     {
         if (device->currTgt >= cur_pin->numTgts)
         {
-           // all targets for the current message have been sent to. Go to next target group. 
-           device->currTgt = 0;
-           // this function does not affect the internal queue pointers for its pin yet
-           // this way, new pins that want to send will always get priority.
-           softswitch_popRTSPin(device);
-           softswitch_popRTS(thr_ctxt);
+            // all targets for the current message have been sent to. Go to next target group. 
+            device->currTgt = 0;
+            // this function does not affect the internal queue pointers for its pin yet
+            // this way, new pins that want to send will always get priority.
+            softswitch_popRTSPin(device);
+            softswitch_popRTS(thr_ctxt);
         }
     }
     // set up the active pin flags and buffers.
