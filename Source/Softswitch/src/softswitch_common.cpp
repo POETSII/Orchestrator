@@ -60,7 +60,8 @@ void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatil
 
 void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt)
 {
-    devTyp_t* deviceType = &thr_ctxt->devTyps[deviceType_num];
+    devTyp_t* deviceType OS_ATTRIBUTE_UNUSED= &thr_ctxt->devTyps[deviceType_num];
+    OS_PRAGMA_UNUSED(deviceType)
     /*
     Handler addresses ought to reside in instruction memory and thus remain valid: to be seen.
     deviceType->RTS_Handler = RTS_Handlers[thr_ctxt->threadID.PThread][deviceType_num]; // RTS_Handlers is a table that must be built by the Orchestrator.
@@ -137,7 +138,8 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
             buffered = 1;
         }
         // then run the application's OnSend (which, if we are buffering, may alter the buffer again)
-        uint32_t RTS_updated __attribute__((unused)) = cur_pin->pinType->Send_Handler(thr_ctxt->properties, cur_device, static_cast<char*>(const_cast<void*>(send_buf))+hdrSize, buffered);
+        uint32_t RTS_updated OS_ATTRIBUTE_UNUSED= cur_pin->pinType->Send_Handler(thr_ctxt->properties, cur_device, static_cast<char*>(const_cast<void*>(send_buf))+hdrSize, buffered);
+        OS_PRAGMA_UNUSED(RTS_updated)
     }
     // send the message (to as many destinations as possible before the network blocks).
     while (tinselCanSend() && cur_device->currTgt < cur_pin->numTgts)

@@ -80,11 +80,12 @@ vpath libgcc.a $(RV_GCC_LIBS)
 vpath mpi%.h $(MPICHINC)
 vpath opa_%.h $(MPICHINC)
 vpath PMsg_p.hpp $(PCOMMONINC)
+vpath OSFixes.hpp $(PCOMMONINC)
 vpath Supervisor.% $(realpath ../$(DEFAULT_GEN_DIR))
 VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC)
 
 # Local compiler flags
-CFLAGS = $(RV_CFLAGS) $(LH_CFLAGS) -O2 -I $(TINSELINC) -I $(SOFTSWINC) -I $(GENINC)
+CFLAGS = $(RV_CFLAGS) $(LH_CFLAGS) -O2 -I $(TINSELINC) -I $(SOFTSWINC) -I $(GENINC) -I $(PCOMMONINC)
 LDFLAGS = -melf32lriscv -G 0 -L$(RV_LIBS) -L$(RV_GCC_LIBS) -lgcc -lc
 
 MPICFLAGS = -I$(SOFTSWINC) -I$(TINSELINC) -I$(MPICHINC) -I$(PCOMMONINC) -I$(GENERICSINC) -std=c++11 -fPIC -pipe -Wall
