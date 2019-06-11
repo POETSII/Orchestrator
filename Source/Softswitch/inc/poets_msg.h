@@ -40,7 +40,7 @@
 #define P_PKT_MSGTYP_ALIVE 0x4000
 #define P_MSG_TAG_INIT 0x0 // could also be 0xFFFF
 #define P_MSG_TAG_STOP 0x8000 
-#define P_SUP_PIN_SYS 0xFFFF	//An actual supervisor control message?
+#define P_SUP_PIN_SYS 0xFFFF    //An actual supervisor control message?
 #define P_SUP_PIN_SYS_SHORT 0xFF //A "fake?" Supervisor control message?!?!
 #define P_SUP_PIN_INIT 0 // very temporary bodge for __init__ pins
 #define P_SUP_MSG_BARR 0x8000
@@ -50,39 +50,39 @@
 #pragma pack(push,1)
 typedef struct poets_message_header
 {
-        // Begin flit 0
-        // Header
-        uint32_t destDeviceAddr;   // Opaque destination device address
-        uint32_t destEdgeIndex;    // Input edge index at the destination
-        uint8_t  destPin;          // Input pin index at the destination
-        uint8_t  messageLenBytes;  // Total message length including header
-        uint16_t messageTag;       // Type of message
+    // Begin flit 0
+    // Header
+    uint32_t destDeviceAddr;   // Opaque destination device address
+    uint32_t destEdgeIndex;    // Input edge index at the destination
+    uint8_t  destPin;          // Input pin index at the destination
+    uint8_t  messageLenBytes;  // Total message length including header
+    uint16_t messageTag;       // Type of message
 } P_Msg_Hdr_t;
   
 typedef struct poets_message
 {
-        P_Msg_Hdr_t header; // a message always has a header      
-        uint8_t payload[P_MSG_MAX_SIZE-sizeof(P_Msg_Hdr_t)]; // and it might have some more data
-        // In the default tinsel configuration the first flit has 4 bytes of payload
-        // Further flits contain data.
+    P_Msg_Hdr_t header; // a message always has a header      
+    uint8_t payload[P_MSG_MAX_SIZE-sizeof(P_Msg_Hdr_t)]; // and it might have some more data
+    // In the default tinsel configuration the first flit has 4 bytes of payload
+    // Further flits contain data.
 } P_Msg_t;
 
 typedef struct p_super_msg_header
 {
-        // flit 0
-        uint32_t sourceDeviceAddr; // issuing device in the Application
-        uint16_t command;          // commands might be split into (fixed) system commands and user-defined commands
-        uint16_t destPin;          // destination pin on the Supervisor
-        uint32_t cmdLenBytes;      // length of the entire command (including all headers)
-        uint32_t seq;              // sequence number of this sub-message
+    // flit 0
+    uint32_t sourceDeviceAddr; // issuing device in the Application
+    uint16_t command;          // commands might be split into (fixed) system commands and user-defined commands
+    uint16_t destPin;          // destination pin on the Supervisor
+    uint32_t cmdLenBytes;      // length of the entire command (including all headers)
+    uint32_t seq;              // sequence number of this sub-message
 
-        // further flits contain data - which could be arguments, packets, data dumps, or just about anything else. 
+    // further flits contain data - which could be arguments, packets, data dumps, or just about anything else. 
 } P_Sup_Hdr_t;
 
 typedef struct p_super_message
 {
-        P_Sup_Hdr_t header; // a Supervisor message always has an appropriate header
-        uint8_t data[P_MSG_MAX_SIZE-sizeof(P_Sup_Hdr_t)]; // and it might have some sort of data
+    P_Sup_Hdr_t header; // a Supervisor message always has an appropriate header
+    uint8_t data[P_MSG_MAX_SIZE-sizeof(P_Sup_Hdr_t)]; // and it might have some sort of data
 } P_Sup_Msg_t;
 
 const unsigned int p_msg_pyld_size = sizeof(P_Msg_t)-sizeof(P_Msg_Hdr_t);
