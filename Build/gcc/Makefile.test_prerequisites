@@ -21,8 +21,8 @@ TEST_SCRIPT_RESOURCE = ./Resources/run-tests.sh
 # Each test file must have its dependencies enumerated separately. The names of
 # these variables match the tests that they generate. The test .cpp file is
 # included when the dependencies are generated.
+TestDialect1Parser_SOURCES = $(HARDWARE_FILE_PARSER_SOURCES)
 TestHardwareAddressAndFormat_SOURCES = $(HARDWARE_ADDRESS_SOURCES)
-TestHardwareFileParser_SOURCES = $(HARDWARE_FILE_PARSER_SOURCES)
 TestHardwareIterator_SOURCES = $(HARDWARE_ITERATOR_SOURCES)
 TestHardwareModel_SOURCES = $(HARDWARE_MODEL_SOURCES)
 TestSimpleDeployment_SOURCES = $(HARDWARE_DEPLOYER_SOURCES)
