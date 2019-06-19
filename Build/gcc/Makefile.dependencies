@@ -27,9 +27,6 @@ QT_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/Qt5.6.3/5.6.3/gcc_64
 QT_LIB_DIR = $(QT_DIR)/lib
 QT_INC_DIR = $(QT_DIR)/include
 
-# jtag library paths
-JTAG_LIB_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/jtag_libs
-
 # Tinsel (must be out of date, for now)
 TINSEL_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/tinsel
 TINSEL_INC_DIR = $(TINSEL_DIR)/include

@@ -35,10 +35,6 @@ TESTS_DIR := $(ROOT_DIR)/Tests
 # placed in a directory structure that mimics the source directory structure.
 OBJECT_DIR := ./Objects
 
-# We also compile some hostlink sources for the Mothership component of the
-# Orchestrator.
-HOSTLINK_OBJECT_DIR := ./Objects/Hostlink
-
 # Executable binaries are built to here (directory is created as executable
 # binaries are built):
 EXECUTABLE_DIR := $(ROOT_DIR)/bin
@@ -112,8 +108,6 @@ LOGSERVER_MESSAGE_FILE = $(EXECUTABLE_DIR)/OrchestratorMessages.txt
 RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
-JTAG_ATLANTIC_LOCAL = $(EXECUTABLE_DIR)/libjtag_atlantic.so
-JTAG_CLIENT_LOCAL = $(EXECUTABLE_DIR)/libjtag_client.so
 
 all: orchestrate root dummy logserver rtcl injector mothership \
      application_staging_environment
@@ -123,8 +117,7 @@ dummy: $(DUMMY_EXECUTABLE)
 logserver: $(LOGSERVER_EXECUTABLE) $(LOGSERVER_MESSAGE_FILE)
 rtcl: $(RTCL_EXECUTABLE)
 injector: $(INJECTOR_EXECUTABLE)
-mothership: $(MOTHERSHIP_EXECUTABLE) \
-            $(JTAG_ATLANTIC_LOCAL) $(JTAG_CLIENT_LOCAL)
+mothership: $(MOTHERSHIP_EXECUTABLE)
 
 # Prerequisites (objects) for building executables are defined here:
 include Makefile.executable_prerequisites
@@ -162,10 +155,9 @@ $(MOTHERSHIP_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
         -Wl,-export-dynamic \
-        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L$(JTAG_LIB_DIR) -L/usr/lib \
-        -o $@ $^ \
-        -lQt5Core -lmpi -lpthread -ldl \
-        -ljtag_atlantic -ljtag_client
+        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
+        -o $@ $^ $(TINSEL_HOSTLINK_DIR)/*.o \
+        -lQt5Core -lmpi -lpthread -ldl
 
 # Object generation. Note: The move command installs the assembled dependency
 # file (see *Note 1*). The touch updates the timestamp on the target (to avoid
@@ -180,15 +172,9 @@ endef
 $(OBJECT_DIR)/%.o: $(ROOT_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
 	$(build-object)
 
-$(HOSTLINK_OBJECT_DIR)/%.o: $(TINSEL_HOSTLINK_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
-	$(build-object)
-
-# Miscellaneous files to be copied to the execution directory in order for
-# various components of the Orchestrator to function.
+# Files to be copied to the execution directory in order for various components
+# of the Orchestrator to function.
 $(LOGSERVER_MESSAGE_FILE): $(LOGSERVER_MESSAGE_FILE_ORIGIN)
-$(JTAG_ATLANTIC_LOCAL): $(JTAG_LIB_DIR)/libjtag_atlantic.so
-$(JTAG_CLIENT_LOCAL): $(JTAG_LIB_DIR)/libjtag_client.so
-$(LOGSERVER_MESSAGE_FILE) $(JTAG_ATLANTIC_LOCAL) $(JTAG_CLIENT_LOCAL):
 	@$(MKDIR) $$(dirname $@)
 	cp "$<" "$@"
 
@@ -209,7 +195,6 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
         ["MPICH_DIR"]="$(realpath $(MPICH_DIR))" \
 		["MPICH_LIB_DIR"]="$(realpath $(MPICH_LIB_DIR))" \
 		["QT_LIB_DIR"]="$(realpath $(QT_LIB_DIR))" \
-		["JTAG_LIB_DIR"]="$(realpath $(JTAG_LIB_DIR))" \
 		["GCC_LIB_DIR"]="$(realpath $(GCC_LIB_DIR))" \
 		["CR_LIB_DIR"]="$(realpath $(CR_LIB_DIR))" \
 		["RISCV_DIR"]="$(realpath $(RISCV_DIR))" \
@@ -291,7 +276,7 @@ $(DEPENDENCY_DIR)/%.d:
 
 clean: application_staging_environment_teardown
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
-	$(HOSTLINK_OBJECT_DIR) $(ORCHESTRATE_SCRIPT) $(TEST_EXECUTABLE_DIR)
+	$(ORCHESTRATE_SCRIPT) $(TEST_EXECUTABLE_DIR)
 
 # Dependency files must not be removed by Make (unless explicitly cleaned).
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
