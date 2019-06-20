@@ -9,12 +9,12 @@
 #include "flat.h"
 #include "uif.h"
 
-/* Validators */
-bool complain_if_node_value_not_natural(
+/* Validators that write error messages */
+bool complain_if_node_value_not_floating(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage);
 
-bool complain_if_node_value_not_floating(
+bool complain_if_node_value_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage);
 
@@ -22,9 +22,12 @@ bool complain_if_nodes_values_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage);
 
+/* Validators */
+bool is_node_value_floating(UIF::Node* valueNode);
+bool is_node_value_natural(UIF::Node* valueNode);
+
 /* Converters */
 float str2float(std::string floatLike);
-
 unsigned str2unsigned(std::string unsignedLike);
 
 #endif

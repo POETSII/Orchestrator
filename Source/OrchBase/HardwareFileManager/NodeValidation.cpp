@@ -3,33 +3,9 @@
 
 #include "NodeValidation.h"
 
-/* Returns whether the value at a node is a natural number. Arguments:
- *
- * - recordNode: Record parent node (for writing error message).
- * - valueNode: The UIF node that holds the value.
- * - variable: Variable name string (for writing error message).
- * - value: Value string (for writing error message).
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_node_value_not_natural(
-    UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
-    std::string value, std::string sectionName, std::string* errorMessage)
-{
-    if (valueNode->qop != Lex::Sy_ISTR)
-    {
-        errorMessage->append(dformat(
-            "L%u: Variable '%s' in section '%s' has value '%s', which is not "
-            "a natural number.\n",
-            recordNode->pos, variable.c_str(), sectionName.c_str(),
-            value.c_str()));
-        return false;
-    }
-    return true;
-}
-
-/* Returns whether the value at a node is a positive floating-point
- * number (or an integer). Arguments:
+/* Returns whether the value at a node is a positive floating-point number (or
+ * an integer), and appends an error message to a string if it is
+ * not. Arguments:
  *
  * - recordNode: Record parent node (for writing error message).
  * - valueNode: The UIF node that holds the value.
@@ -42,7 +18,7 @@ bool complain_if_node_value_not_floating(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage)
 {
-    if (valueNode->qop != Lex::Sy_FSTR && valueNode->qop != Lex::Sy_ISTR)
+    if (!is_node_value_floating(valueNode))
     {
         errorMessage->append(dformat(
             "L%u: Variable '%s' in section '%s' has value '%s', which is not "
@@ -54,8 +30,35 @@ bool complain_if_node_value_not_floating(
     return true;
 }
 
+/* Returns whether the value at a node is a natural number, and appends an
+ * error message to a string if it is not. Arguments:
+ *
+ * - recordNode: Record parent node (for writing error message).
+ * - valueNode: The UIF node that holds the value.
+ * - variable: Variable name string (for writing error message).
+ * - value: Value string (for writing error message).
+ * - sectionName: The name of the section the record lives in (for writing
+     error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_node_value_not_natural(
+    UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
+    std::string value, std::string sectionName, std::string* errorMessage)
+{
+    if (!is_node_value_natural(valueNode))
+    {
+        errorMessage->append(dformat(
+            "L%u: Variable '%s' in section '%s' has value '%s', which is not "
+            "a natural number.\n",
+            recordNode->pos, variable.c_str(), sectionName.c_str(),
+            value.c_str()));
+        return false;
+    }
+    return true;
+}
+
 /* Returns whether the value at a node, and all of its children, are natural
- * numbers. Arguments:
+ * numbers, and appends an error message to a string if they are
+ * not. Arguments:
  *
  * - recordNode: Record parent node (for writing error message).
  * - valueNode: The UIF node that holds the value.
@@ -80,6 +83,24 @@ bool complain_if_nodes_values_not_natural(
     }
     return valid;
 }
+
+/* Returns whether the value at a node is a positive floating-point
+ * number. Arguments:
+ *
+ * - valueNode: The UIF node that holds the value. */
+bool is_node_value_floating(UIF::Node* valueNode)
+{
+    return (valueNode->qop == Lex::Sy_FSTR or valueNode->qop == Lex::Sy_ISTR);
+}
+
+/* Returns whether the value at a node is a natural number. Arguments:
+ *
+ * - valueNode: The UIF node that holds the value. */
+bool is_node_value_natural(UIF::Node* valueNode)
+{
+    return (valueNode->qop == Lex::Sy_ISTR);
+}
+
 
 /* Converts a float-like input string to an actual float. */
 float str2float(std::string floatLike)
