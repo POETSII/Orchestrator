@@ -12,7 +12,7 @@
  * - sectionName: The name of the section the record lives in (for writing
      error message).
  * - errorMessage: String to append the error message to, if any. */
-bool is_value_at_node_natural(
+bool complain_if_node_value_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage)
 {
@@ -38,7 +38,7 @@ bool is_value_at_node_natural(
  * - sectionName: The name of the section the record lives in (for writing
      error message).
  * - errorMessage: String to append the error message to, if any. */
-bool is_value_at_node_floating(
+bool complain_if_node_value_not_floating(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage)
 {
@@ -64,7 +64,7 @@ bool is_value_at_node_floating(
  * - sectionName: The name of the section the record lives in (for writing
      error message).
  * - errorMessage: String to append the error message to, if any. */
-bool are_values_at_node_natural(
+bool complain_if_nodes_values_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage)
 {
@@ -73,7 +73,7 @@ bool are_values_at_node_natural(
     for (valueNodeIterator=valueNode->leaf.begin();
          valueNodeIterator!=valueNode->leaf.end(); valueNodeIterator++)
     {
-        valid &= is_value_at_node_natural(
+        valid &= complain_if_node_value_not_natural(
             recordNode, (*valueNodeIterator),
             variable, (*valueNodeIterator)->str.c_str(),
             sectionName.c_str(), errorMessage);
