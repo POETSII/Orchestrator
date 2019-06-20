@@ -74,6 +74,7 @@
 #include "HardwareModel.h"
 #include "HardwareSemanticException.h"
 #include "HardwareSyntaxException.h"
+#include "NodeValidation.h"
 
 #include "dfprintf.h"
 #include "flat.h"
@@ -101,26 +102,11 @@ private:
     bool provision_deployer(Dialect1Deployer* deployer,
                             std::string* errorMessage);
 
-    /* Node-checking methods. */
-    bool is_value_at_node_natural(UIF::Node* recordNode, UIF::Node* valueNode,
-                                  std::string variable, std::string value,
-                                  std::string sectionName,
-                                  std::string* errorMessage);
-    bool is_value_at_node_floating(UIF::Node* recordNode, UIF::Node* valueNode,
-                                   std::string variable, std::string value,
-                                   std::string sectionName,
-                                   std::string* errorMessage);
-    bool are_values_at_node_natural(UIF::Node* recordNode,
-                                    UIF::Node* valueNode, std::string variable,
-                                    std::string value, std::string sectionName,
-                                    std::string* errorMessage);
     void invalid_variable_message(std::string* errorMessage,
                                   UIF::Node* recordNode,
                                   std::string sectionName,
                                   std::string variable);
 };
 
-float str2float(std::string floatLike);
-unsigned str2unsigned(std::string unsignedLike);
 
 #endif
