@@ -59,6 +59,9 @@
  * The contents of the engine are only defined if validation succeeds. This
  * replacement requires the engine to be dynamically allocated.
  *
+ * The the methods of the class that this header declares are defined in
+ * multiple files, depending on the dialect they interact with.
+ *
  * See the hardware model documentation for a description of the file
  * format. */
 
