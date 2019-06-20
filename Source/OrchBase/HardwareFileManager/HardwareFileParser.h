@@ -44,8 +44,8 @@
  * base class, so...). Only one file can be loaded by this parser at a time;
  * loading a second file clobbers the data structure of the first.
  *
- * As part of this process, the input file is validated. Points that are not
- * currently validated include:
+ * As part of this process, the input file is validated. In dialect 1, things
+ * that are not currently validated include:
  *
  * - Lines within a section that are simply one word, without the assignment
  *   operator (=) or the prefix (+). These are simply ignored.
@@ -56,7 +56,7 @@
  * - Repeatedly-defined values within a section - only the last defined value
  *   is used.
  *
- * The contents of the engine are only replaced if validation succeeds. This
+ * The contents of the engine are only defined if validation succeeds. This
  * replacement requires the engine to be dynamically allocated.
  *
  * See the hardware model documentation for a description of the file
