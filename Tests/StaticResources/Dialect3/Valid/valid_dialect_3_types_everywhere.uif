@@ -66,7 +66,7 @@ El(Boards(B00,B01,B10,B11,B20,B21))
 (2,2):El(board(B20),addr(010,010))=By(board(B21)),El(board(B10)),El(board(B21))
 (0,3):El(board(B01),addr(011,000))=El(board(B00)),El(board(B11))
 (1,3):El(board(B11),addr(011,001))=El(board(B10)),El(board(B01)),El(board(B21))
-(2,3):El(board(B21),addr(011,010),type="CommonBoard")=El(board(B20)),El(board(B11))
+(2,3):El(board(B21),addr(011,010),type("CommonBoard"))=El(board(B20)),El(board(B11))
 +board_board_cost=8  // Relative to [board].mailbox_mailbox_cost.
 +type="CommonBoard"
 
@@ -94,22 +94,22 @@ El(Boards(B00,B01,B10,B11,B20,B21))
 // |                          |
 // +--------------------------+
 [board(CommonBoard)]
-(0,0):M00(addr(00,00),type="CommonMbox")=M10,M01
-(1,0):M10(addr(01,00),type="CommonMbox")=M00,M20,M11
-(2,0):M20(addr(10,00),type="CommonMbox")=M10,M30,M21
-(3,0):M30(addr(11,00),type="CommonMbox")=M20,M31
-(0,1):M01(addr(00,01),type="CommonMbox")=M00,M11,M02
-(1,1):M11(addr(01,01),type="CommonMbox")=M10,M01,M21,M12
-(2,1):M21(addr(10,01),type="CommonMbox")=M20,M11,M31,M22
-(3,1):M31(addr(11,01),type="CommonMbox")=M30,M21,M32
-(0,2):M02(addr(00,10),type="CommonMbox")=M01,M12,M03
-(1,2):M12(addr(01,10),type="CommonMbox")=M11,M02,M22,M13
-(2,2):M22(addr(10,10),type="CommonMbox")=M21,M12,M32,M23
-(3,2):M32(addr(11,10),type="CommonMbox")=M31,M22,M33
-(0,3):M03(addr(00,11),type="CommonMbox")=M02,M13
-(1,3):M13(addr(01,11),type="CommonMbox")=M12,M03,M23
-(2,3):M23(addr(10,11),type="CommonMbox")=M22,M13,M33
-(3,3):M33(addr(11,11),type="CommonMbox")=M32,M23
+(0,0):M00(addr(00,00),type(CommonMbox))=M10,M01
+(1,0):M10(addr(01,00),type(CommonMbox))=M00,M20,M11
+(2,0):M20(addr(10,00),type(CommonMbox))=M10,M30,M21
+(3,0):M30(addr(11,00),type(CommonMbox))=M20,M31
+(0,1):M01(addr(00,01),type(CommonMbox))=M00,M11,M02
+(1,1):M11(addr(01,01),type(CommonMbox))=M10,M01,M21,M12
+(2,1):M21(addr(10,01),type(CommonMbox))=M20,M11,M31,M22
+(3,1):M31(addr(11,01),type(CommonMbox))=M30,M21,M32
+(0,2):M02(addr(00,10),type(CommonMbox))=M01,M12,M03
+(1,2):M12(addr(01,10),type(CommonMbox))=M11,M02,M22,M13
+(2,2):M22(addr(10,10),type(CommonMbox))=M21,M12,M32,M23
+(3,2):M32(addr(11,10),type(CommonMbox))=M31,M22,M33
+(0,3):M03(addr(00,11),type(CommonMbox))=M02,M13
+(1,3):M13(addr(01,11),type(CommonMbox))=M12,M03,M23
+(2,3):M23(addr(10,11),type(CommonMbox))=M22,M13,M33
+(3,3):M33(addr(11,11),type(CommonMbox))=M32,M23
 +board_mailbox_cost=0
 +supervisor_memory=0
 +mailbox_mailbox_cost=0 // Relative to box::board_board_cost
