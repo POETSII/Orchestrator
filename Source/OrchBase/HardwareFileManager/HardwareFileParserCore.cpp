@@ -70,7 +70,10 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
     }
 
     /* Only dialect 1 for now. */
-    d1_populate_hardware_model(engine);
+    if (get_dialect() == 1)
+    {
+        d1_populate_hardware_model(engine);
+    }
 }
 
 /* Returns true if a file exists at the path passed to by argument, and false
@@ -90,6 +93,109 @@ bool HardwareFileParser::does_file_exist(const char* filePath)
         return true;
     }
     else{return false;}
+}
+
+/* Returns the dialect of a loaded file. Throws if no input file has been
+ * loaded by this parser, or if the dialect is not defined correctly in the
+ * input file. */
+unsigned HardwareFileParser::get_dialect()
+{
+    /* Throw if we have not loaded a file yet. */
+    if (!isFileLoaded)
+    {
+        throw HardwareFileNotLoadedException();
+    }
+
+    /* Get the header section node, and complain if there is not exactly one of
+     * them. */
+    std::vector<UIF::Node*> headerSections;
+    FndSect("header", headerSections);
+    if (headerSections.empty())
+    {
+        throw HardwareSemanticException("[ERROR] No header section defined in "
+                                        "input file.\n");
+    }
+
+    else if (headerSections.size() > 1)
+    {
+        throw HardwareSemanticException(
+            dformat("[ERROR] %u header sections defined in input file (only "
+                    "one is permitted).\n", headerSections.size()));
+    }
+
+    /* Get the dialect entry, and complain if the dialect is not defined
+     * exactly once. */
+    std::vector<UIF::Node*> recordNodes;
+    FndRecdVari(headerSections[0], "dialect", recordNodes);
+    if (recordNodes.empty())
+    {
+        throw HardwareSemanticException("[ERROR] No dialect defined in the "
+                                        "header section of the input file.");
+    }
+
+    else if (recordNodes.size() > 1)
+    {
+        throw HardwareSemanticException(
+            dformat("[ERROR] The dialect field in the header section has been "
+                    "defined %u times (only one is permitted).\n",
+                    recordNodes.size()));
+    }
+
+    /* Whine if the dialect field has no value. */
+    std::vector<UIF::Node*> valueNodes;
+    GetValu(recordNodes[0], valueNodes);
+
+    if (valueNodes.empty())
+    {
+        throw HardwareSemanticException(
+            dformat("[ERROR] Dialect definition at L%u has no value.",
+                    recordNodes[0]->pos));
+    }
+
+    /* Whine if the dialect field has more than one value. If there is only one
+     * value, the first value node contains the value. If there are multiple
+     * (N) value nodes, the first value node contains N value nodes, each with
+     * an entry. */
+    if (valueNodes[0]->leaf.size() != 0)
+    {
+        throw HardwareSemanticException(
+            dformat("[ERROR] Dialect definition at L%u has %u values, when "
+                    "it should only have one.",
+                    recordNodes[0]->pos, valueNodes[0]->leaf.size()));
+    }
+
+    /* Whine if the dialect is not a natural number. */
+    if(!is_node_value_natural(valueNodes[0]))
+    {
+        throw HardwareSemanticException(
+            dformat("[ERROR] Dialect definition at L%u has value '%s', which "
+                    "is not 1 or 3.",
+                    recordNodes[0]->pos, valueNodes[0]->str));
+    }
+
+    /* Whine if the dialect is not one or three. */
+    int dialect = str2unsigned(valueNodes[0]->str);
+    if (dialect != 1 and dialect != 3)
+    {
+        throw HardwareSemanticException(
+            dformat("[ERROR] Only dialects 1 and 3 are currently supported "
+                    "(the dialect definition at L%u has value '%s'.",
+                    recordNodes[0]->pos, valueNodes[0]->str));
+    }
+
+    /* Whine if the dialect field does not have a "+" character preceeding the
+     * variable name. */
+    std::vector<UIF::Node*> variableNodes;
+    GetVari(recordNodes[0], variableNodes);
+    if (variableNodes[0]->qop != Lex::Sy_plus )
+    {
+        throw HardwareSemanticException(
+            dformat("[ERROR] Dialect definition at L%u is missing the "
+                    "preceeding '+' character.", recordNodes[0]->pos));
+    }
+
+    /* End of the gauntlet. */
+    return dialect;
 }
 
 /* Writes an 'invalid variable' error message, and appends it to a
