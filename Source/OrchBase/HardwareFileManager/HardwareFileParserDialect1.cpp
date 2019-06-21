@@ -33,146 +33,6 @@ void HardwareFileParser::d1_populate_hardware_model(P_engine* engine)
     deployer.deploy(engine);
 }
 
-/* Validate that all sections have correct contents, given that all sections
- * exist. The list of variables too great to enumerate here; look at the
- * documentation or examples for the definitive list.
- *
- * Arguments:
- *
- * - errorMessage: string to write error message to, always appended to.
- *
- * Returns true if all mandatory fields are defined exactly once and if no
- * incorrect variables are defined, and false otherwise. */
-bool HardwareFileParser::d1_validate_section_contents(
-    std::string* errorMessage)
-{
-    /* Define what is valid. */
-    std::map<std::string, unsigned> mandatoryHeaderFields;
-    std::vector<std::string> optionalHeaderFields;
-    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("datetime", 0));
-    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("dialect", 0));
-    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("version", 0));
-    optionalHeaderFields.push_back("author");
-    optionalHeaderFields.push_back("hardware");
-    optionalHeaderFields.push_back("file");
-
-    /* <!> */
-    return true;
-}
-
-/* Validate that there are no duplicated sections in the hardware model, and
- * that the following mandatory section names are defined (in any order):
- *
- * - header, with an optional context-sensitive argument.
- * - packet_address_format
- * - engine
- * - box
- * - board
- * - mailbox
- * - core
- *
- * Arguments:
- *
- * - errorMessage: string to write error message to, always appended to.
- *
- * Returns true if all sections exist and are unique, and false
- * otherwise. Should only be called after a file has been loaded. */
-bool HardwareFileParser::d1_validate_sections(std::string* errorMessage)
-{
-    /* Grab section names. */
-    std::vector<UIF::Node*> sectionNameNodes;
-    GetNames(sectionNameNodes);
-
-    /* Define valid node names, and counters for them (we're failing if any of
-     * these are not 1 at the end). */
-
-    std::map<std::string, unsigned> validNodeCounters;
-    std::map<std::string, unsigned>::iterator validNodeIterator;
-    validNodeCounters.insert(std::pair<std::string, unsigned>("header", 0));
-    validNodeCounters.insert(std::pair<std::string, unsigned>
-                             ("packet_address_format", 0));
-    validNodeCounters.insert(std::pair<std::string, unsigned>("engine", 0));
-    validNodeCounters.insert(std::pair<std::string, unsigned>("box", 0));
-    validNodeCounters.insert(std::pair<std::string, unsigned>("board", 0));
-    validNodeCounters.insert(std::pair<std::string, unsigned>("mailbox", 0));
-    validNodeCounters.insert(std::pair<std::string, unsigned>("core", 0));
-
-    /* Store invalid node names for error reporting. */
-    std::vector<UIF::Node*> invalidNamedNodes;
-    std::vector<UIF::Node*>::iterator invalidNamedNodeIterator;
-
-    /* For each of the sections found in the file, get its name. If it's a
-     * valid section name, increment the counter. If it's not, push-back the
-     * node to invalidNamedNodes. */
-    std::vector<UIF::Node*>::iterator nodeIterator;
-    for (nodeIterator=sectionNameNodes.begin();
-         nodeIterator!=sectionNameNodes.end(); nodeIterator++)
-    {
-        validNodeIterator = validNodeCounters.find((*nodeIterator)->str);
-
-        /* We found it! Increment the counter. */
-        if (validNodeIterator != validNodeCounters.end())
-        {
-            validNodeIterator->second++;
-        }
-        /* We didn't find it! Add it to the list of invalid node names passed
-         * in. */
-        else
-        {
-            invalidNamedNodes.push_back((*nodeIterator));
-        }
-    }
-
-    /* The input was valid if the validNodeCounters are all 1, and if there are
-     * no invalid node names. */
-    bool returnValue = true;  /* Success/failure state (true is a pass) */
-
-    /* Checking for invalid node names. */
-    if (invalidNamedNodes.size() != 0)
-    {
-        /* We've failed. */
-        returnValue = false;
-
-        /* Let's let the user know how mean they are. */
-        errorMessage->append("Sections with invalid names found in the input "
-                             "file:\n");
-        for (invalidNamedNodeIterator=invalidNamedNodes.begin();
-             invalidNamedNodeIterator!=invalidNamedNodes.end();
-             invalidNamedNodeIterator++)
-        {
-            errorMessage->append(dformat(
-                "    %s (L%i)\n",
-                (*invalidNamedNodeIterator)->str.c_str(),
-                (*invalidNamedNodeIterator)->pos));
-        }
-    }
-
-    /* Checking all sections are defined exactly once. */
-    bool headerPrinted = false;
-    for (validNodeIterator=validNodeCounters.begin();
-         validNodeIterator!=validNodeCounters.end(); validNodeIterator++)
-    {
-        /* We didn't find the section. */
-        if (validNodeIterator->second != 1)
-        {
-            /* We've failed. */
-            returnValue = false;
-            if (!headerPrinted)
-            {
-                errorMessage->append("The following sections were not defined "
-                                     "exactly once:\n");
-                headerPrinted = true;
-            }
-
-            errorMessage->append(dformat("    %s, defined %u times.\n",
-                                         validNodeIterator->first.c_str(),
-                                         validNodeIterator->second));
-        }
-    }
-
-    return returnValue;
-}
-
 /* Provisions a dialect 1 deployer with the configuration in this
  * parser. Performs validation on types of values in assignments, as well as
  * conveniently-easy-to-catch semantic mistakes (i.e. missing '+' signs before
@@ -690,4 +550,144 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
     }
 
     return valid;
+}
+
+/* Validate that all sections have correct contents, given that all sections
+ * exist. The list of variables too great to enumerate here; look at the
+ * documentation or examples for the definitive list.
+ *
+ * Arguments:
+ *
+ * - errorMessage: string to write error message to, always appended to.
+ *
+ * Returns true if all mandatory fields are defined exactly once and if no
+ * incorrect variables are defined, and false otherwise. */
+bool HardwareFileParser::d1_validate_section_contents(
+    std::string* errorMessage)
+{
+    /* Define what is valid. */
+    std::map<std::string, unsigned> mandatoryHeaderFields;
+    std::vector<std::string> optionalHeaderFields;
+    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("datetime", 0));
+    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("dialect", 0));
+    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("version", 0));
+    optionalHeaderFields.push_back("author");
+    optionalHeaderFields.push_back("hardware");
+    optionalHeaderFields.push_back("file");
+
+    /* <!> */
+    return true;
+}
+
+/* Validate that there are no duplicated sections in the hardware model, and
+ * that the following mandatory section names are defined (in any order):
+ *
+ * - header, with an optional context-sensitive argument.
+ * - packet_address_format
+ * - engine
+ * - box
+ * - board
+ * - mailbox
+ * - core
+ *
+ * Arguments:
+ *
+ * - errorMessage: string to write error message to, always appended to.
+ *
+ * Returns true if all sections exist and are unique, and false
+ * otherwise. Should only be called after a file has been loaded. */
+bool HardwareFileParser::d1_validate_sections(std::string* errorMessage)
+{
+    /* Grab section names. */
+    std::vector<UIF::Node*> sectionNameNodes;
+    GetNames(sectionNameNodes);
+
+    /* Define valid node names, and counters for them (we're failing if any of
+     * these are not 1 at the end). */
+
+    std::map<std::string, unsigned> validNodeCounters;
+    std::map<std::string, unsigned>::iterator validNodeIterator;
+    validNodeCounters.insert(std::pair<std::string, unsigned>("header", 0));
+    validNodeCounters.insert(std::pair<std::string, unsigned>
+                             ("packet_address_format", 0));
+    validNodeCounters.insert(std::pair<std::string, unsigned>("engine", 0));
+    validNodeCounters.insert(std::pair<std::string, unsigned>("box", 0));
+    validNodeCounters.insert(std::pair<std::string, unsigned>("board", 0));
+    validNodeCounters.insert(std::pair<std::string, unsigned>("mailbox", 0));
+    validNodeCounters.insert(std::pair<std::string, unsigned>("core", 0));
+
+    /* Store invalid node names for error reporting. */
+    std::vector<UIF::Node*> invalidNamedNodes;
+    std::vector<UIF::Node*>::iterator invalidNamedNodeIterator;
+
+    /* For each of the sections found in the file, get its name. If it's a
+     * valid section name, increment the counter. If it's not, push-back the
+     * node to invalidNamedNodes. */
+    std::vector<UIF::Node*>::iterator nodeIterator;
+    for (nodeIterator=sectionNameNodes.begin();
+         nodeIterator!=sectionNameNodes.end(); nodeIterator++)
+    {
+        validNodeIterator = validNodeCounters.find((*nodeIterator)->str);
+
+        /* We found it! Increment the counter. */
+        if (validNodeIterator != validNodeCounters.end())
+        {
+            validNodeIterator->second++;
+        }
+        /* We didn't find it! Add it to the list of invalid node names passed
+         * in. */
+        else
+        {
+            invalidNamedNodes.push_back((*nodeIterator));
+        }
+    }
+
+    /* The input was valid if the validNodeCounters are all 1, and if there are
+     * no invalid node names. */
+    bool returnValue = true;  /* Success/failure state (true is a pass) */
+
+    /* Checking for invalid node names. */
+    if (invalidNamedNodes.size() != 0)
+    {
+        /* We've failed. */
+        returnValue = false;
+
+        /* Let's let the user know how mean they are. */
+        errorMessage->append("Sections with invalid names found in the input "
+                             "file:\n");
+        for (invalidNamedNodeIterator=invalidNamedNodes.begin();
+             invalidNamedNodeIterator!=invalidNamedNodes.end();
+             invalidNamedNodeIterator++)
+        {
+            errorMessage->append(dformat(
+                "    %s (L%i)\n",
+                (*invalidNamedNodeIterator)->str.c_str(),
+                (*invalidNamedNodeIterator)->pos));
+        }
+    }
+
+    /* Checking all sections are defined exactly once. */
+    bool headerPrinted = false;
+    for (validNodeIterator=validNodeCounters.begin();
+         validNodeIterator!=validNodeCounters.end(); validNodeIterator++)
+    {
+        /* We didn't find the section. */
+        if (validNodeIterator->second != 1)
+        {
+            /* We've failed. */
+            returnValue = false;
+            if (!headerPrinted)
+            {
+                errorMessage->append("The following sections were not defined "
+                                     "exactly once:\n");
+                headerPrinted = true;
+            }
+
+            errorMessage->append(dformat("    %s, defined %u times.\n",
+                                         validNodeIterator->first.c_str(),
+                                         validNodeIterator->second));
+        }
+    }
+
+    return returnValue;
 }

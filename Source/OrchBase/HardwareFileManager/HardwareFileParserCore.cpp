@@ -19,25 +19,6 @@ HardwareFileParser::HardwareFileParser(const char* filePath, P_engine* engine)
     populate_hardware_model(engine);
 }
 
-/* Returns true if a file exists at the path passed to by argument, and false
- * otherwise.
- *
- * Would be more elegant and faster with POSIX's stat...
- *
- * Arguments:
- *
- * - filePath: Path to look at. */
-bool HardwareFileParser::does_file_exist(const char* filePath)
-{
-    FILE* testFile = fopen(filePath, "r");
-    if (testFile)
-    {
-        fclose(testFile);
-        return true;
-    }
-    else{return false;}
-}
-
 /* Loads an input file and parses it through the UIF parsing mechanism to
  * generate the tree structure. Arguments:
  *
@@ -70,32 +51,6 @@ void HardwareFileParser::load_file(const char* filePath)
     Add(filePathAsString);
 }
 
-/* Registers a callback function for error handling purposes. */
-void HardwareFileParser::set_uif_error_callback()
-{
-    SetECB(this, on_syntax_error);  /* From UIF. */
-}
-
-/* Defines behaviour when a syntax error is encountered when reading a file.
- *
- * Basically, this just throws an exception with some debug messaging
- * attached. See the example callback (UIF::DefECB) for more information, since
- * this is lifted from there.
- *
- * Scoping be damned. */
-void HardwareFileParser::on_syntax_error(void* parser, void* uifInstance, int)
-{
-    std::string accumulatedMessage;
-    std::vector<std::string> errorMessages;
-    static_cast<UIF*>(uifInstance)->Lx.Hst.Dump(errorMessages, 20);
-    accumulatedMessage = std::accumulate(errorMessages.begin(),
-                                         errorMessages.end(), std::string(""));
-    throw HardwareSyntaxException(dformat(
-        "[ERROR] Error in input hardware file syntax in \"%s\":\n%s",
-        static_cast<HardwareFileParser*>(parser)->loadedFile.c_str(),
-        accumulatedMessage.c_str()));
-}
-
 /* Populates a POETS Engine with information from a previously-loaded hardware
  * description file, while performing semantic validation. Arguments:
  *
@@ -118,6 +73,25 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
     d1_populate_hardware_model(engine);
 }
 
+/* Returns true if a file exists at the path passed to by argument, and false
+ * otherwise.
+ *
+ * Would be more elegant and faster with POSIX's stat...
+ *
+ * Arguments:
+ *
+ * - filePath: Path to look at. */
+bool HardwareFileParser::does_file_exist(const char* filePath)
+{
+    FILE* testFile = fopen(filePath, "r");
+    if (testFile)
+    {
+        fclose(testFile);
+        return true;
+    }
+    else{return false;}
+}
+
 /* Writes an 'invalid variable' error message, and appends it to a
  * string. Arguments:
  *
@@ -133,4 +107,30 @@ void HardwareFileParser::invalid_variable_message(
         "L%u: Variable '%s' in section '%s' is not recognised by the parser. "
         "Is it valid?\n",
         recordNode->pos, variable.c_str(), sectionName.c_str()));
+}
+
+/* Defines behaviour when a syntax error is encountered when reading a file.
+ *
+ * Basically, this just throws an exception with some debug messaging
+ * attached. See the example callback (UIF::DefECB) for more information, since
+ * this is lifted from there.
+ *
+ * Scoping be damned. */
+void HardwareFileParser::on_syntax_error(void* parser, void* uifInstance, int)
+{
+    std::string accumulatedMessage;
+    std::vector<std::string> errorMessages;
+    static_cast<UIF*>(uifInstance)->Lx.Hst.Dump(errorMessages, 20);
+    accumulatedMessage = std::accumulate(errorMessages.begin(),
+                                         errorMessages.end(), std::string(""));
+    throw HardwareSyntaxException(dformat(
+        "[ERROR] Error in input hardware file syntax in \"%s\":\n%s",
+        static_cast<HardwareFileParser*>(parser)->loadedFile.c_str(),
+        accumulatedMessage.c_str()));
+}
+
+/* Registers a callback function for error handling purposes. */
+void HardwareFileParser::set_uif_error_callback()
+{
+    SetECB(this, on_syntax_error);  /* From UIF. */
 }

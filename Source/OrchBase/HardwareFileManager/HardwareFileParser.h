@@ -93,23 +93,25 @@ public:
     void populate_hardware_model(P_engine* engine);
 
 private:
-    /* Dialect-independent logic */
+    /* Dialect-independent methods */
     bool isFileLoaded;
     std::string loadedFile;
     bool does_file_exist(const char* filePath);
-    void set_uif_error_callback();
-    static void on_syntax_error(void*, void*, int);
     void invalid_variable_message(std::string* errorMessage,
                                   UIF::Node* recordNode,
                                   std::string sectionName,
                                   std::string variable);
 
+    /* UIF-syntax error methods */
+    static void on_syntax_error(void*, void*, int);
+    void set_uif_error_callback();
+
     /* Dialect 1 validation and deployment methods. */
     void d1_populate_hardware_model(P_engine* engine);
-    bool d1_validate_section_contents(std::string* errorMessage);
-    bool d1_validate_sections(std::string* errorMessage);
     bool d1_provision_deployer(Dialect1Deployer* deployer,
                                std::string* errorMessage);
+    bool d1_validate_section_contents(std::string* errorMessage);
+    bool d1_validate_sections(std::string* errorMessage);
 };
 
 
