@@ -96,6 +96,28 @@ void HardwareFileParser::on_syntax_error(void* parser, void* uifInstance, int)
         accumulatedMessage.c_str()));
 }
 
+/* Populates a POETS Engine with information from a previously-loaded hardware
+ * description file, while performing semantic validation. Arguments:
+ *
+ * - engine: Pointer to the POETS Engine to populate. Cleared if the input file
+ *   is invalid
+ *
+ * Throws if:
+ *
+ *  - no input file has been loaded by this parser.
+ *  - the input file is semantically invalid. */
+void HardwareFileParser::populate_hardware_model(P_engine* engine)
+{
+    /* Throw if we have not loaded a file yet. */
+    if (!isFileLoaded)
+    {
+        throw HardwareFileNotLoadedException();
+    }
+
+    /* Only dialect 1 for now. */
+    d1_populate_hardware_model(engine);
+}
+
 /* Writes an 'invalid variable' error message, and appends it to a
  * string. Arguments:
  *

@@ -3,32 +3,25 @@
 
 #include "HardwareFileParser.h"
 
-/* Populates a POETS Engine with information from the hardware
- * model, after validation. Arguments:
+/* Populates a POETS Engine with information from a previously-loaded hardware
+ * description file in dialect 1, after validating it. Arguments:
  *
  * - engine: Pointer to the POETS Engine to populate. Cleared if the input file
  *   is valid.
  *
  * Throws if:
  *
- *  - no input file has been loaded by this parser.
- *  - if the input file is semantically invalid. */
-void HardwareFileParser::populate_hardware_model(P_engine* engine)
+ *  - the input file is semantically invalid. */
+void HardwareFileParser::d1_populate_hardware_model(P_engine* engine)
 {
-    /* Throw if we have not loaded a file yet. */
-    if (!isFileLoaded)
-    {
-        throw HardwareFileNotLoadedException();
-    }
-
     /* Call the various semantic validation methods. */
     std::string errorMessage;
     bool failedValidation = false;
-    failedValidation |= !validate_sections(&errorMessage);
+    failedValidation |= !d1_validate_sections(&errorMessage);
 
     /* Create a deployer (and do a little incidental validation...) */
     Dialect1Deployer deployer;
-    failedValidation |= !provision_deployer(&deployer, &errorMessage);
+    failedValidation |= !d1_provision_deployer(&deployer, &errorMessage);
 
     /* Throw if any of the validation methods failed. */
     if (failedValidation)
@@ -50,7 +43,8 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
  *
  * Returns true if all mandatory fields are defined exactly once and if no
  * incorrect variables are defined, and false otherwise. */
-bool HardwareFileParser::validate_section_contents(std::string* errorMessage)
+bool HardwareFileParser::d1_validate_section_contents(
+    std::string* errorMessage)
 {
     /* Define what is valid. */
     std::map<std::string, unsigned> mandatoryHeaderFields;
@@ -83,7 +77,7 @@ bool HardwareFileParser::validate_section_contents(std::string* errorMessage)
  *
  * Returns true if all sections exist and are unique, and false
  * otherwise. Should only be called after a file has been loaded. */
-bool HardwareFileParser::validate_sections(std::string* errorMessage)
+bool HardwareFileParser::d1_validate_sections(std::string* errorMessage)
 {
     /* Grab section names. */
     std::vector<UIF::Node*> sectionNameNodes;
@@ -189,8 +183,8 @@ bool HardwareFileParser::validate_sections(std::string* errorMessage)
  *
  * - deployer: Deployer object to provision.
  * - errorMessage: String to append error messages to. */
-bool HardwareFileParser::provision_deployer(Dialect1Deployer* deployer,
-                                            std::string* errorMessage)
+bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
+                                               std::string* errorMessage)
 {
     bool valid = true;
 
