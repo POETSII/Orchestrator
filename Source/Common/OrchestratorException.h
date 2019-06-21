@@ -14,7 +14,7 @@ public:
         :std::exception(),message(message){}
     virtual ~OrchestratorException() throw(){}
     std::string message;
-    const char* what() {return message.c_str();}
+    const char* what() const throw() {return message.c_str();}
 };
 
 #endif
