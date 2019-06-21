@@ -579,10 +579,11 @@ bool HardwareFileParser::d1_validate_section_contents(
     return true;
 }
 
-/* Validate that there are no duplicated sections in the hardware model, and
- * that the following mandatory section names are defined (in any order):
+/* Validate that there are no duplicated sections in the hardware description
+ * input file, and that the following mandatory section names are defined (in
+ * any order):
  *
- * - header, with an optional context-sensitive argument.
+ * - header (with an optional context-sensitive argument)
  * - packet_address_format
  * - engine
  * - box

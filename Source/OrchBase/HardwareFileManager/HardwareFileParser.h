@@ -113,7 +113,10 @@ private:
                                std::string* errorMessage);
     bool d1_validate_section_contents(std::string* errorMessage);
     bool d1_validate_sections(std::string* errorMessage);
+
+    /* Dialect 3 validation and deployment methods. */
+    void d3_populate_hardware_model(P_engine* engine);
+    bool d3_validate_sections(std::string* errorMessage);
+
 };
-
-
 #endif

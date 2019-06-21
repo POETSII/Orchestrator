@@ -69,10 +69,15 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
         throw HardwareFileNotLoadedException();
     }
 
-    /* Only dialect 1 for now. */
+    /* Only dialect 1 and 3 for now (get_dialect errors if the dialect is not 1
+     * or 3). */
     if (get_dialect() == 1)
     {
         d1_populate_hardware_model(engine);
+    }
+    else if (get_dialect() == 3)
+    {
+        d3_populate_hardware_model(engine);
     }
 }
 

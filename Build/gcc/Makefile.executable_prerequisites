@@ -69,6 +69,7 @@ HARDWARE_ITERATOR_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.
 # Sources used by executables that read hardware files.
 HARDWARE_FILE_PARSER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileManager/HardwareFileParserCore.cpp \
                                $(SOURCE_DIR)/OrchBase/HardwareFileManager/HardwareFileParserDialect1.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileManager/HardwareFileParserDialect3.cpp \
                                $(SOURCE_DIR)/OrchBase/HardwareFileManager/NodeValidation.cpp \
                                $(GENERICS_DIR)/dfprintf.cpp \
                                $(GENERICS_DIR)/flat.cpp \
