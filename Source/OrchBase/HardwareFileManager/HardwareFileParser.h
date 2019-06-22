@@ -84,6 +84,33 @@
 #include "jnj.h"  /* JNJ is a wrapper around UIF that provides nicer access to
                    * the UIF data structure. */
 
+/* Some structs and typedefs used to streamline the structures used by the
+ * dialect 3 parser for vaidation:
+ *
+ * - BoardInfo: Holds information on what line in the input file a board was
+ *   declared, and where the board object is.
+ *
+ * - MailboxInfo: Holds information on what line in the input file a mailbox
+ *   was declared, and where the mailbox object is.
+ *
+ * - EdgeInfo: Holds information on the determined weight of an edge, whether
+ *   its reverse-direction has been declared (yet), and the line in the input
+ *   file where its instance is first mentioned.
+ *
+ * - boardName: Holds the name of a board. The first string in the pair is the
+ *   name of the box containing the boards. The second string in the pair is
+ *   the name of the board in the box. This is a concession to the fact that
+ *   board names only need to be unique within their box.
+ *
+ * - mailboxName: Holds the name of a mailbox. It's relative.
+ */
+struct BoardInfo{unsigned lineNumber; P_board* memoryAddress;};
+struct MailboxInfo{unsigned lineNumber; P_mailbox* memoryAddress;};
+struct EdgeInfo{float weight; bool isReverseDefined; unsigned lineNumber;};
+
+typedef std::pair<std::string, std::string> boardName;
+typedef std::string mailboxName;
+
 class HardwareFileParser: public JNJ
 {
 public:
@@ -114,9 +141,45 @@ private:
     bool d1_validate_section_contents(std::string* errorMessage);
     bool d1_validate_sections(std::string* errorMessage);
 
-    /* Dialect 3 validation and deployment methods. */
+    /* Dialect 3 validation and deployment members and methods. */
     void d3_populate_hardware_model(P_engine* engine);
-    bool d3_validate_sections(std::string* errorMessage);
+    bool d3_load_validate_sections(std::string* errorMessage);
 
+    /* Holds UIF sections that have no types. The key is the "sort" of section
+     * it is (i.e. 'header', 'engine_box'), and the value is the UIF node that
+     * corresponds to that section. */
+    std::map<std::string, UIF::Node*> untypedSections;
+
+    /* Holds UIF sections that have types. The key is the "sort" of section it
+     * is, and the value is another map whose value is the "type" of the
+     * section, and whose value id the UIF node that corresponds to that
+     * section. */
+    std::map<std::string, std::map<std::string, UIF::Node*>> typedSections;
+
+    /* Holds boards that have been declared to exist within a box in
+     * [engine_box], but which have not (yet) been created from parsing
+     * [engine_board]. */
+    std::list<boardName> undefinedBoards;
+
+    /* Holds information on all boards. The key is the unique name of the
+     * board, and the value holds the information about that board. */
+    std::map<boardName, BoardInfo> boardInfoFromName;
+
+    /* Holds information on all mailboxes in the current board. The key is the
+     * name of the mailbox in this board, and the value holds the information
+     * about that mailbox. */
+    std::map<mailboxName, MailboxInfo> mailboxInfoFromName;
+
+    /* Holds the edge that connects to boards together, if any. The two
+     * elements of the pair held in the key of the map represent the boards at
+     * each end of the edge, and the value of the map holds the edge
+     * information. */
+    std::map<std::pair<boardName, boardName>, EdgeInfo> boardEdges;
+
+    /* Holds the edge that connects to mailboxes together in a given board, if
+     * any. The two elements of the pair held in the key of the map represent
+     * the mailboxes at each end of the edge, and the value of the map holds
+     * the mailbox information. */
+    std::map<std::pair<mailboxName, mailboxName>, EdgeInfo> mailboxEdges;
 };
 #endif

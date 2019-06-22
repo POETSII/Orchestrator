@@ -17,7 +17,7 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
     /* Check sections are defined correctly. */
     std::string errorMessage;
     bool failedValidation = false;
-    failedValidation |= !d3_validate_sections(&errorMessage);
+    failedValidation |= !d3_load_validate_sections(&errorMessage);
 }
 
 /* Validate that the section occurences in the hardware description input file
@@ -33,6 +33,7 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
  *
  * The following sections must be defined once or more (1):
  *
+ * - box
  * - board
  * - mailbox
  *
@@ -43,6 +44,7 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
  * The following sections must have arguments (and there must not be any
  * duplicate arguments within a section type) (3):
  *
+ * - box
  * - board
  * - mailbox
  *
@@ -61,7 +63,7 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
  * otherwise. Arguments:
  *
  * - errorMessage: string to append error messages to. */
-bool HardwareFileParser::d3_validate_sections(std::string* errorMessage)
+bool HardwareFileParser::d3_load_validate_sections(std::string* errorMessage)
 {
     /* Valid section names */
     std::vector<std::string> validSectionNames;
@@ -71,9 +73,26 @@ bool HardwareFileParser::d3_validate_sections(std::string* errorMessage)
     validSectionNames.push_back("engine_box");
     validSectionNames.push_back("engine_board");
     validSectionNames.push_back("core");
+    validSectionNames.push_back("box");
     validSectionNames.push_back("board");
     validSectionNames.push_back("mailbox");
     validSectionNames.push_back("default_types");
+
+    /* Valid untyped section names (will use nameIterator to go through
+     * them). */
+    std::vector<std::string> validUntypedSectionNames;
+    validUntypedSectionNames.push_back("header");
+    validUntypedSectionNames.push_back("packet_address_format");
+    validUntypedSectionNames.push_back("engine_box");
+    validUntypedSectionNames.push_back("engine_board");
+    validUntypedSectionNames.push_back("core");
+    validUntypedSectionNames.push_back("default_types");
+
+    /* Valid typed section names (will use nameIterator to go through them). */
+    std::vector<std::string> validTypedSectionNames;
+    validTypedSectionNames.push_back("box");
+    validTypedSectionNames.push_back("board");
+    validTypedSectionNames.push_back("mailbox");
 
     /* Section names by rule. */
     std::vector<std::vector<std::string>> rules(5, std::vector<std::string>());
@@ -83,11 +102,13 @@ bool HardwareFileParser::d3_validate_sections(std::string* errorMessage)
     rules[0].push_back("engine_board");
     rules[0].push_back("core");
 
+    rules[1].push_back("box");
     rules[1].push_back("board");
     rules[1].push_back("mailbox");
 
     rules[2].push_back("default_types");
 
+    rules[3].push_back("box");
     rules[3].push_back("board");
     rules[3].push_back("mailbox");
 
@@ -101,7 +122,7 @@ bool HardwareFileParser::d3_validate_sections(std::string* errorMessage)
     /* Booleans to help with printing. */
     std::vector<bool> ruleFailure(6, false);
 
-    /* Sections by name. */
+    /* Section name nodes, by name. */
     std::map<std::string, std::vector<UIF::Node*>> sectionsByName;
     std::map<std::string, std::vector<UIF::Node*>>::iterator \
         sectionsByNameIterator;
@@ -109,18 +130,18 @@ bool HardwareFileParser::d3_validate_sections(std::string* errorMessage)
          nameIterator!=validSectionNames.end(); nameIterator++)
     {
         /* Map the string to an empty vector. */
-        sectionsByName.insert(std::pair<std::string, std::vector<UIF::Node*>>
-                              (*nameIterator, std::vector<UIF::Node*>()));
+        sectionsByName.insert(std::make_pair(*nameIterator,
+                                             std::vector<UIF::Node*>()));
     }
 
-    /* For each of the sections found in the file, get its name. If it's a
-     * valid section name, increment the counter. If it's not, whine loudly and
-     * fail slow. */
-    std::vector<UIF::Node*> nodes;
+    /* For each of the section names found in the file, if it's a valid section
+     * name, add it to sectionsByName. If it's not, whine loudly and fail
+     * slow. */
+    std::vector<UIF::Node*> allNodes;
     std::vector<UIF::Node*>::iterator nodeIterator;
-    GetNames(nodes);
-    for (nodeIterator=nodes.begin();
-         nodeIterator!=nodes.end(); nodeIterator++)
+    GetNames(allNodes);
+    for (nodeIterator=allNodes.begin();
+         nodeIterator!=allNodes.end(); nodeIterator++)
     {
         /* Does this section node match one of the valid patterns? If so, add
          * it to the appropriate vector in sectionsByName. */
@@ -140,9 +161,10 @@ bool HardwareFileParser::d3_validate_sections(std::string* errorMessage)
                 errorMessage->append("Sections with invalid names found in "
                                      "the input file:\n");
             }
-            errorMessage->append(dformat("    %s (L%i)\n",
-                                         (*nodeIterator)->str.c_str(),
-                                         (*nodeIterator)->pos));
+
+            errorMessage->append(dformat(
+                "    %s (L%i)\n", (*nodeIterator)->str.c_str(),
+                (*nodeIterator)->pos));
         }
     }
 
@@ -182,6 +204,7 @@ bool HardwareFileParser::d3_validate_sections(std::string* errorMessage)
                                                  (*nodeIterator)->pos));
                 }
             }
+
             errorMessage->append(")\n");
         }
     }
@@ -320,7 +343,73 @@ bool HardwareFileParser::d3_validate_sections(std::string* errorMessage)
         }
     }
 
-    /* Return true if none of the rules were broken. */
-    return std::find(ruleFailure.begin(), ruleFailure.end(), true) == \
-        ruleFailure.end();
+    /* If none of the rules were broken, populate untypedSections and
+     * typedSections to facilitate better lookups later.
+     *
+     * We've been dealing only with section name nodes so far, but we need to
+     * store section nodes, so there's a bit of FndSect action here.
+     *
+     * We populate these structures after validating because the logic becomes
+     * overly complicated if section nodes do not have the correct number of
+     * name arguments. Once we're here, we can be confident that each section
+     * that has arguments has the appropriate number of them. It's not too
+     * expensive to do a second pass over the sections, because there are few
+     * of them. */
+    UIF::Node* sectionNode;
+    if (std::find(ruleFailure.begin(), ruleFailure.end(), true) == \
+        ruleFailure.end())
+    {
+        /* Deal with the untyped sections first. */
+        for (nameIterator=validUntypedSectionNames.begin();
+             nameIterator!=validUntypedSectionNames.end(); nameIterator++)
+        {
+            /* Don't worry if there is no section name corresponding to this
+             * expected name; untyped sections may exist once or zero times
+             * (depending on the name of the section we're dealing with). */
+            if (!sectionsByName[*nameIterator].empty())
+            {
+                /* Get the section node from the section name node. */
+                sectionNode = FndSect(sectionsByName[*nameIterator][0]);
+
+                /* Store the section node. */
+                untypedSections.insert(std::make_pair(*nameIterator,
+                                                      sectionNode));
+            }
+        }
+
+        /* Typed sections! */
+        for (nameIterator=validTypedSectionNames.begin();
+             nameIterator!=validTypedSectionNames.end(); nameIterator++)
+        {
+            /* First time here, so we need to create the submap for this sort
+             * of section. */
+            typedSections.insert(
+                std::make_pair(*nameIterator,
+                               std::map<std::string, UIF::Node*>()));
+
+            /* There can be many of these, and we want to store them all. */
+            for (nodeIterator=sectionsByName[*nameIterator].begin();
+                 nodeIterator!=sectionsByName[*nameIterator].end();
+                 nodeIterator++)
+            {
+                /* Get the section node from the section name node. */
+                sectionNode = FndSect(sectionsByName[*nameIterator][0]);
+
+                /* Drop it into the submap, indexed by the type of the
+                 * section. */
+                typedSections[*nameIterator].insert(
+                    std::make_pair((*nodeIterator)->leaf[0]->str,
+                                   sectionNode));
+            }
+
+        }
+
+        /* None of the rules were broken (decided when we entered this
+         * conditional block), so the validation passed. */
+        return true;
+    }
+
+    /* Otherwise, our validation failed, and we have not wasted time populating
+     * our data structures. */
+    else {return false;}
 }
