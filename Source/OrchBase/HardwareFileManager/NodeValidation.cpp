@@ -101,6 +101,31 @@ bool is_node_value_natural(UIF::Node* valueNode)
     return (valueNode->qop == Lex::Sy_ISTR);
 }
 
+/* Returns whether the name at a node is a valid type name (i.e. must satisfy
+ * [0-9A-Za-z]{2,32}. Arguments:
+ *
+ * - nameNode: The UIF node that holds the name. */
+bool is_type_valid(UIF::Node* nameNode)
+{
+    std::string toValidate = nameNode->str;
+
+    /* Check length. */
+    if (toValidate.size() < 2 or toValidate.size() > 32)
+    {
+        return false;
+    }
+
+    /* Check for alphanumeric-ness. */
+    for (unsigned zI=0; zI<toValidate.size(); zI++)
+    {
+        if (!std::isalnum(toValidate[zI]))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 /* Converts a float-like input string to an actual float. */
 float str2float(std::string floatLike)

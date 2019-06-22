@@ -25,6 +25,7 @@ bool complain_if_nodes_values_not_natural(
 /* Validators */
 bool is_node_value_floating(UIF::Node* valueNode);
 bool is_node_value_natural(UIF::Node* valueNode);
+bool is_type_valid(UIF::Node* nameNode);
 
 /* Converters */
 float str2float(std::string floatLike);

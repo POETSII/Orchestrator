@@ -23,30 +23,304 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
 /* Validate that the section occurences in the hardware description input file
  * is semantically-valid in dialect 3.
  *
- * The following sections must be defined exactly once:
+ * The following sections must be defined exactly once (0):
  *
- * - header (with an optional context-sensitive argument)
+ * - header
  * - packet_address_format
  * - engine_box
  * - engine_board
  * - core
  *
- * The following sections must be defined once or more:
+ * The following sections must be defined once or more (1):
  *
- * - board (all must have an argument)
- * - mailbox (all must have an argument)
+ * - board
+ * - mailbox
  *
- * The following sections must be defined once or less:
+ * The following sections must be defined once or less (2):
  *
  * - default_types
  *
- * Returns true if the following conditions are all true:
+ * The following sections must have arguments (and there must not be any
+ * duplicate arguments within a section type) (3):
  *
- * - all sections occur the appropriate number of times
- * - no sections exist that don't follow the above convention
+ * - board
+ * - mailbox
  *
- * and false otherwise. Arguments:
+ * The following sections must not have arguments (4):
+ *
+ * - packet_address_format
+ * - engine_box
+ * - engine_board
+ * - core
+ * - default_types
+ *
+ * No sections with names that are not covered by the above rules can exist
+ * (5).
+ *
+ * Returns true if the conditions above are all true, and false
+ * otherwise. Arguments:
  *
  * - errorMessage: string to append error messages to. */
 bool HardwareFileParser::d3_validate_sections(std::string* errorMessage)
-{return true;}
+{
+    /* Valid section names */
+    std::vector<std::string> validSectionNames;
+    std::vector<std::string>::iterator nameIterator;
+    validSectionNames.push_back("header");
+    validSectionNames.push_back("packet_address_format");
+    validSectionNames.push_back("engine_box");
+    validSectionNames.push_back("engine_board");
+    validSectionNames.push_back("core");
+    validSectionNames.push_back("board");
+    validSectionNames.push_back("mailbox");
+    validSectionNames.push_back("default_types");
+
+    /* Section names by rule. */
+    std::vector<std::vector<std::string>> rules(5, std::vector<std::string>());
+    rules[0].push_back("header");
+    rules[0].push_back("packet_address_format");
+    rules[0].push_back("engine_box");
+    rules[0].push_back("engine_board");
+    rules[0].push_back("core");
+
+    rules[1].push_back("board");
+    rules[1].push_back("mailbox");
+
+    rules[2].push_back("default_types");
+
+    rules[3].push_back("board");
+    rules[3].push_back("mailbox");
+
+    rules[4].push_back("packet_address_format");
+    rules[4].push_back("engine_box");
+    rules[4].push_back("engine_board");
+    rules[4].push_back("core");
+    rules[4].push_back("default_types");
+    unsigned currentRule = 0;
+
+    /* Booleans to help with printing. */
+    std::vector<bool> ruleFailure(6, false);
+
+    /* Sections by name. */
+    std::map<std::string, std::vector<UIF::Node*>> sectionsByName;
+    std::map<std::string, std::vector<UIF::Node*>>::iterator \
+        sectionsByNameIterator;
+    for (nameIterator=validSectionNames.begin();
+         nameIterator!=validSectionNames.end(); nameIterator++)
+    {
+        /* Map the string to an empty vector. */
+        sectionsByName.insert(std::pair<std::string, std::vector<UIF::Node*>>
+                              (*nameIterator, std::vector<UIF::Node*>()));
+    }
+
+    /* For each of the sections found in the file, get its name. If it's a
+     * valid section name, increment the counter. If it's not, whine loudly and
+     * fail slow. */
+    std::vector<UIF::Node*> nodes;
+    std::vector<UIF::Node*>::iterator nodeIterator;
+    GetNames(nodes);
+    for (nodeIterator=nodes.begin();
+         nodeIterator!=nodes.end(); nodeIterator++)
+    {
+        /* Does this section node match one of the valid patterns? If so, add
+         * it to the appropriate vector in sectionsByName. */
+        sectionsByNameIterator = sectionsByName.find((*nodeIterator)->str);
+        if (sectionsByNameIterator != sectionsByName.end())
+        {
+            sectionsByNameIterator->second.push_back(*nodeIterator);
+        }
+
+        /* Otherwise, it must be invalid (5). */
+        else
+        {
+            /* On the first pass, add this header to the message. */
+            if (!ruleFailure[5])
+            {
+                ruleFailure[5] = true;
+                errorMessage->append("Sections with invalid names found in "
+                                     "the input file:\n");
+            }
+            errorMessage->append(dformat("    %s (L%i)\n",
+                                         (*nodeIterator)->str.c_str(),
+                                         (*nodeIterator)->pos));
+        }
+    }
+
+    /* Rule (0): For each of the rules[0] strings... */
+    for (nameIterator=rules[currentRule].begin();
+         nameIterator!=rules[currentRule].end(); nameIterator++)
+    {
+        if (sectionsByName[*nameIterator].size() != 1)
+        {
+            /* On the first pass, add this header to the message. */
+            if (!ruleFailure[currentRule])
+            {
+                ruleFailure[currentRule] = true;
+                errorMessage->append("The following sections were not defined "
+                                     "exactly once:\n");
+            }
+
+            /* I'm going to write the line numbers of each node, or "not
+             * defined" if the section is not defined. A little unusual because
+             * I want the printing to be pretty. */
+            errorMessage->append(dformat("    %s (", nameIterator->c_str()));
+
+            if (sectionsByName[*nameIterator].empty())
+            {
+                errorMessage->append("not defined");
+            }
+
+            else
+            {
+                nodeIterator=sectionsByName[*nameIterator].begin();
+                errorMessage->append(dformat("L%u", (*nodeIterator)->pos));
+                for (;
+                     nodeIterator!=sectionsByName[*nameIterator].end();
+                     nodeIterator++)
+                {
+                    errorMessage->append(dformat(", L%u",
+                                                 (*nodeIterator)->pos));
+                }
+            }
+            errorMessage->append(")\n");
+        }
+    }
+
+    /* Rule (1) */
+    currentRule++;
+    for (nameIterator=rules[currentRule].begin();
+         nameIterator!=rules[currentRule].end(); nameIterator++)
+    {
+        if (sectionsByName[*nameIterator].empty())
+        {
+            /* On the first pass, add this header to the message. */
+            if (!ruleFailure[currentRule])
+            {
+                ruleFailure[currentRule] = true;
+                errorMessage->append("The following sections were not defined "
+                                     "when they should have been defined "
+                                     "one time or more:\n");
+            }
+            errorMessage->append(dformat("    %s\n", nameIterator->c_str()));
+        }
+    }
+
+    /* Rule (2) */
+    currentRule++;
+    for (nameIterator=rules[currentRule].begin();
+         nameIterator!=rules[currentRule].end(); nameIterator++)
+    {
+        if (sectionsByName[*nameIterator].size() >= 2)
+        {
+            /* On the first pass, add this header to the message. */
+            if (!ruleFailure[currentRule])
+            {
+                ruleFailure[currentRule] = true;
+                errorMessage->append("The following sections were defined "
+                                     "more than once, when they should have "
+                                     "been defined one or zero times:\n");
+            }
+
+            /* I'm going to write the line numbers of each node. */
+            errorMessage->append(dformat("    %s (", nameIterator->c_str()));
+            nodeIterator=sectionsByName[*nameIterator].begin();
+            errorMessage->append(dformat("L%u", (*nodeIterator)->pos));
+            for (;
+                 nodeIterator!=sectionsByName[*nameIterator].end();
+                 nodeIterator++)
+            {
+                errorMessage->append(dformat(", L%u", (*nodeIterator)->pos));
+            }
+            errorMessage->append(")\n");
+        }
+    }
+
+    /* Rule (3) */
+    std::vector<std::string> declaredTypes;
+    std::vector<UIF::Node*> arguments;
+    std::string argument;
+    currentRule++;
+    for (nameIterator=rules[currentRule].begin();
+         nameIterator!=rules[currentRule].end(); nameIterator++)
+    {
+        declaredTypes.clear();
+        for (nodeIterator=sectionsByName[*nameIterator].begin();
+             nodeIterator!=sectionsByName[*nameIterator].end(); nodeIterator++)
+        {
+            /* Get arguments */
+            arguments.clear();
+            GetSub(*nodeIterator, arguments);
+
+            /* If argument is empty, or there is no argument, or argument
+             * doesn't satisfy [0-9A-Za-z]{2,32}, then add to error message. */
+            if (arguments.empty())
+            {
+                ruleFailure[currentRule] = true;
+                errorMessage->append(dformat("L%u: Section '%s' has no "
+                                             "associated type.\n",
+                                             (*nodeIterator)->pos,
+                                             *nameIterator));
+            }
+
+            else if (arguments.size() > 1)
+            {
+                ruleFailure[currentRule] = true;
+                errorMessage->append(dformat("L%u: Section '%s' has more "
+                                             "than one type associated with "
+                                             "it.\n", (*nodeIterator)->pos));
+            }
+
+            else if (!is_type_valid(arguments[0]))
+            {
+                ruleFailure[currentRule] = true;
+                errorMessage->append(dformat(
+                    "L%u: Section '%s' has invalid type '%s'. It must satisfy "
+                    "[0-9A-Za-z]{2,32}\n.",
+                    (*nodeIterator)->pos, arguments[0]->str));
+            }
+
+            /* If we've already seen this type defined for a section of this
+             * sort (e.g. 'board' or 'mailbox'), then add to error message. */
+            else if (std::find(declaredTypes.begin(), declaredTypes.end(),
+                               arguments[0]->str) != declaredTypes.end())
+            {
+                ruleFailure[currentRule] = true;
+                errorMessage->append(dformat(
+                    "L%u: Duplicate definition of section '%s' with type "
+                    "'%s'.\n", (*nodeIterator)->pos, arguments[0]->str));
+            }
+
+            else
+            {
+                declaredTypes.push_back(arguments[0]->str);
+            }
+        }
+    }
+
+    /* Rule (4) */
+    currentRule++;
+    for (nameIterator=rules[currentRule].begin();
+         nameIterator!=rules[currentRule].end(); nameIterator++)
+    {
+        for (nodeIterator=sectionsByName[*nameIterator].begin();
+             nodeIterator!=sectionsByName[*nameIterator].end(); nodeIterator++)
+        {
+            /* Get arguments */
+            arguments.clear();
+            GetSub(*nodeIterator, arguments);
+
+            /* If there is an argument, then add to error message. */
+            if (!arguments.empty())
+            {
+                ruleFailure[currentRule] = true;
+                errorMessage->append(dformat(
+                    "L%u: Section '%s' has a type, when it should not.\n",
+                    (*nodeIterator)->pos, *nameIterator));
+            }
+        }
+    }
+
+    /* Return true if none of the rules were broken. */
+    return std::find(ruleFailure.begin(), ruleFailure.end(), true) == \
+        ruleFailure.end();
+}
