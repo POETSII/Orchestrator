@@ -14,10 +14,16 @@
  *  - the input file is semantically invalid. */
 void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
 {
-    /* Check sections are defined correctly. */
-    std::string errorMessage;
-    bool failedValidation = false;
-    failedValidation |= !d3_load_validate_sections(&errorMessage);
+    /* During validation and provisioning, errors will be written to this
+     * string. */
+    d3_errors.clear();
+
+    /* Check sections are defined correctly. Not much point continuing if they
+     * are not defined correctly. */
+    if (!d3_load_validate_sections())
+    {
+        throw HardwareSemanticException(d3_errors.c_str());
+    }
 }
 
 /* Validate that the section occurences in the hardware description input file
@@ -60,10 +66,8 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
  * (5).
  *
  * Returns true if the conditions above are all true, and false
- * otherwise. Arguments:
- *
- * - errorMessage: string to append error messages to. */
-bool HardwareFileParser::d3_load_validate_sections(std::string* errorMessage)
+ * otherwise. */
+bool HardwareFileParser::d3_load_validate_sections()
 {
     /* Valid section names */
     std::vector<std::string> validSectionNames;
@@ -158,13 +162,13 @@ bool HardwareFileParser::d3_load_validate_sections(std::string* errorMessage)
             if (!ruleFailure[5])
             {
                 ruleFailure[5] = true;
-                errorMessage->append("Sections with invalid names found in "
-                                     "the input file:\n");
+                d3_errors.append("Sections with invalid names found in the "
+                                 "input file:\n");
             }
 
-            errorMessage->append(dformat(
-                "    %s (L%i)\n", (*nodeIterator)->str.c_str(),
-                (*nodeIterator)->pos));
+            d3_errors.append(dformat("    %s (L%i)\n",
+                                     (*nodeIterator)->str.c_str(),
+                                     (*nodeIterator)->pos));
         }
     }
 
@@ -178,34 +182,33 @@ bool HardwareFileParser::d3_load_validate_sections(std::string* errorMessage)
             if (!ruleFailure[currentRule])
             {
                 ruleFailure[currentRule] = true;
-                errorMessage->append("The following sections were not defined "
-                                     "exactly once:\n");
+                d3_errors.append("The following sections were not defined "
+                                 "exactly once:\n");
             }
 
             /* I'm going to write the line numbers of each node, or "not
              * defined" if the section is not defined. A little unusual because
              * I want the printing to be pretty. */
-            errorMessage->append(dformat("    %s (", nameIterator->c_str()));
+            d3_errors.append(dformat("    %s (", nameIterator->c_str()));
 
             if (sectionsByName[*nameIterator].empty())
             {
-                errorMessage->append("not defined");
+                d3_errors.append("not defined");
             }
 
             else
             {
                 nodeIterator=sectionsByName[*nameIterator].begin();
-                errorMessage->append(dformat("L%u", (*nodeIterator)->pos));
+                d3_errors.append(dformat("L%u", (*nodeIterator)->pos));
                 for (;
                      nodeIterator!=sectionsByName[*nameIterator].end();
                      nodeIterator++)
                 {
-                    errorMessage->append(dformat(", L%u",
-                                                 (*nodeIterator)->pos));
+                    d3_errors.append(dformat(", L%u", (*nodeIterator)->pos));
                 }
             }
 
-            errorMessage->append(")\n");
+            d3_errors.append(")\n");
         }
     }
 
@@ -220,11 +223,11 @@ bool HardwareFileParser::d3_load_validate_sections(std::string* errorMessage)
             if (!ruleFailure[currentRule])
             {
                 ruleFailure[currentRule] = true;
-                errorMessage->append("The following sections were not defined "
-                                     "when they should have been defined "
-                                     "one time or more:\n");
+                d3_errors.append("The following sections were not defined "
+                                 "when they should have been defined one time "
+                                 "or more:\n");
             }
-            errorMessage->append(dformat("    %s\n", nameIterator->c_str()));
+            d3_errors.append(dformat("    %s\n", nameIterator->c_str()));
         }
     }
 
@@ -239,22 +242,22 @@ bool HardwareFileParser::d3_load_validate_sections(std::string* errorMessage)
             if (!ruleFailure[currentRule])
             {
                 ruleFailure[currentRule] = true;
-                errorMessage->append("The following sections were defined "
-                                     "more than once, when they should have "
-                                     "been defined one or zero times:\n");
+                d3_errors.append("The following sections were defined more "
+                                 "than once, when they should have been "
+                                 "defined one or zero times:\n");
             }
 
             /* I'm going to write the line numbers of each node. */
-            errorMessage->append(dformat("    %s (", nameIterator->c_str()));
+            d3_errors.append(dformat("    %s (", nameIterator->c_str()));
             nodeIterator=sectionsByName[*nameIterator].begin();
-            errorMessage->append(dformat("L%u", (*nodeIterator)->pos));
+            d3_errors.append(dformat("L%u", (*nodeIterator)->pos));
             for (;
                  nodeIterator!=sectionsByName[*nameIterator].end();
                  nodeIterator++)
             {
-                errorMessage->append(dformat(", L%u", (*nodeIterator)->pos));
+                d3_errors.append(dformat(", L%u", (*nodeIterator)->pos));
             }
-            errorMessage->append(")\n");
+            d3_errors.append(")\n");
         }
     }
 
@@ -279,24 +282,23 @@ bool HardwareFileParser::d3_load_validate_sections(std::string* errorMessage)
             if (arguments.empty())
             {
                 ruleFailure[currentRule] = true;
-                errorMessage->append(dformat("L%u: Section '%s' has no "
-                                             "associated type.\n",
-                                             (*nodeIterator)->pos,
-                                             *nameIterator));
+                d3_errors.append(dformat("L%u: Section '%s' has no associated "
+                                         "type.\n", (*nodeIterator)->pos,
+                                         *nameIterator));
             }
 
             else if (arguments.size() > 1)
             {
                 ruleFailure[currentRule] = true;
-                errorMessage->append(dformat("L%u: Section '%s' has more "
-                                             "than one type associated with "
-                                             "it.\n", (*nodeIterator)->pos));
+                d3_errors.append(dformat("L%u: Section '%s' has more than one "
+                                         "type associated with it.\n",
+                                         (*nodeIterator)->pos));
             }
 
             else if (!is_type_valid(arguments[0]))
             {
                 ruleFailure[currentRule] = true;
-                errorMessage->append(dformat(
+                d3_errors.append(dformat(
                     "L%u: Section '%s' has invalid type '%s'. It must satisfy "
                     "[0-9A-Za-z]{2,32}\n.",
                     (*nodeIterator)->pos, arguments[0]->str));
@@ -308,7 +310,7 @@ bool HardwareFileParser::d3_load_validate_sections(std::string* errorMessage)
                                arguments[0]->str) != declaredTypes.end())
             {
                 ruleFailure[currentRule] = true;
-                errorMessage->append(dformat(
+                d3_errors.append(dformat(
                     "L%u: Duplicate definition of section '%s' with type "
                     "'%s'.\n", (*nodeIterator)->pos, arguments[0]->str));
             }
@@ -336,7 +338,7 @@ bool HardwareFileParser::d3_load_validate_sections(std::string* errorMessage)
             if (!arguments.empty())
             {
                 ruleFailure[currentRule] = true;
-                errorMessage->append(dformat(
+                d3_errors.append(dformat(
                     "L%u: Section '%s' has a type, when it should not.\n",
                     (*nodeIterator)->pos, *nameIterator));
             }

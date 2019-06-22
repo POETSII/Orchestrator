@@ -142,8 +142,11 @@ private:
     bool d1_validate_sections(std::string* errorMessage);
 
     /* Dialect 3 validation and deployment members and methods. */
+    bool d3_load_validate_sections();
     void d3_populate_hardware_model(P_engine* engine);
-    bool d3_load_validate_sections(std::string* errorMessage);
+
+    /* Holds error messages from validation. */
+    std::string d3_errors;
 
     /* Holds UIF sections that have no types. The key is the "sort" of section
      * it is (i.e. 'header', 'engine_box'), and the value is the UIF node that
