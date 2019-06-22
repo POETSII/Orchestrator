@@ -18,11 +18,16 @@ bool complain_if_node_value_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage);
 
+bool complain_if_node_not_plus_prefixed(
+    UIF::Node* recordNode, UIF::Node* variableNode, std::string sectionName,
+    std::string* errorMessage);
+
 bool complain_if_nodes_values_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage);
 
 /* Validators */
+bool does_node_variable_have_plus_prefix(UIF::Node* variableNode);
 bool is_node_value_floating(UIF::Node* valueNode);
 bool is_node_value_natural(UIF::Node* valueNode);
 bool is_type_valid(UIF::Node* nameNode);

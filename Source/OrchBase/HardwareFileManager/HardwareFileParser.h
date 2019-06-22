@@ -144,6 +144,7 @@ private:
     /* Dialect 3 validation and deployment members and methods. */
     bool d3_load_validate_sections();
     void d3_populate_hardware_model(P_engine* engine);
+    bool d3_populate_validate_from_header_section(P_engine* engine);
 
     /* Holds error messages from validation. */
     std::string d3_errors;

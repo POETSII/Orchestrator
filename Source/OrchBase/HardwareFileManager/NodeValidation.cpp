@@ -56,6 +56,29 @@ bool complain_if_node_value_not_natural(
     return true;
 }
 
+/* Returns whether the variable held by a node has a plux prefix, and appends
+ * an error message to a string if it is not. Arguments:
+ *
+ * - recordNode: Record parent node (for writing error message).
+ * - variableNode: The UIF node that holds the variable.
+ * - sectionName: The name of the section the record lives in (for writing
+     error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_node_not_plus_prefixed(
+    UIF::Node* recordNode, UIF::Node* variableNode, std::string sectionName,
+    std::string* errorMessage)
+{
+    if (!does_node_variable_have_plus_prefix(variableNode))
+    {
+        errorMessage->append(dformat(
+            "L%u: Variable in record in section '%s' is not prefixed by a '+' "
+            "character.\n", recordNode->pos, sectionName.c_str()));
+        return false;
+    }
+    return true;
+}
+
+
 /* Returns whether the value at a node, and all of its children, are natural
  * numbers, and appends an error message to a string if they are
  * not. Arguments:
@@ -82,6 +105,15 @@ bool complain_if_nodes_values_not_natural(
             sectionName.c_str(), errorMessage);
     }
     return valid;
+}
+
+/* Returns whether the variable at a node is prefixed with a "+"
+ * token. Arguments:
+ *
+ * - varaibleNode: The UIF node that holds the variable. */
+bool does_node_variable_have_plus_prefix(UIF::Node* variableNode)
+{
+    return (variableNode->qop == Lex::Sy_plus);
 }
 
 /* Returns whether the value at a node is a positive floating-point

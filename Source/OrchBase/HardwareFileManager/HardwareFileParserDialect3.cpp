@@ -24,6 +24,10 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
     {
         throw HardwareSemanticException(d3_errors.c_str());
     }
+
+    /* Populate the engine with information from the header section. */
+    bool failedValidation = false;
+    failedValidation |= !d3_populate_validate_from_header_section(engine);
 }
 
 /* Validate that the section occurences in the hardware description input file
@@ -414,4 +418,186 @@ bool HardwareFileParser::d3_load_validate_sections()
     /* Otherwise, our validation failed, and we have not wasted time populating
      * our data structures. */
     else {return false;}
+}
+
+/* Validate the contents of the header section, and populate an engine with
+ * them.
+ *
+ * Returns true if all validation checks pass, and false otherwise. Arguments:
+ *
+ * - engine: Engine to populate */
+bool HardwareFileParser::d3_populate_validate_from_header_section(
+    P_engine* engine)
+{
+    bool anyErrors = false;
+
+    /* Valid fields for the header section. */
+    std::vector<std::string> validFields;
+    std::vector<std::string>::iterator fieldIterator;
+    validFields.push_back("author");
+    validFields.push_back("datetime");
+    validFields.push_back("dialect");
+    validFields.push_back("file");
+    validFields.push_back("hardware");
+    validFields.push_back("version");
+
+    /* Mandatory fields for the header section. */
+    std::vector<std::string> mandatoryFields;
+    mandatoryFields.push_back("datetime");
+    mandatoryFields.push_back("dialect");
+    mandatoryFields.push_back("version");
+
+    /* Holds fields we've already grabbed (for validation purposes). */
+    std::map<std::string, bool> fieldsFound;
+    for (fieldIterator=validFields.begin(); fieldIterator!=validFields.end();
+         fieldIterator++)
+    {
+        fieldsFound.insert(std::make_pair(*fieldIterator, false));
+    }
+
+    /* Temporary staging vectors for holding value nodes and variable
+     * nodes. */
+    std::vector<UIF::Node*> valueNodes;
+    std::vector<UIF::Node*> variableNodes;
+
+    /* Iterate through all record nodes in the header section. */
+    std::vector<UIF::Node*> recordNodes;
+    std::vector<UIF::Node*>::iterator recordIterator;
+    GetRecd(untypedSections["header"], recordNodes);
+    for (recordIterator=recordNodes.begin();
+         recordIterator!=recordNodes.end(); recordIterator++)
+    {
+        /* Get the value and variable nodes. */
+        GetVari((*recordIterator), variableNodes);
+        GetValu((*recordIterator), valueNodes);
+
+        /* Ignore this record if the record has not got a variable/value
+         * pair (i.e. if the line is empty, or is just a comment). */
+        if (variableNodes.size() == 0 || valueNodes.size() == 0){continue;}
+
+        /* Complain if the record does not begin with a "+", as all fields in
+         * the header section must do. */
+        if (!complain_if_node_not_plus_prefixed(
+                *recordIterator, variableNodes[0], "header", &d3_errors))
+        {
+            anyErrors = true;
+            continue;
+        }
+
+        /* Complain if the variable name is not a valid name. */
+        if (std::find(validFields.begin(), validFields.end(),
+                      variableNodes[0]->str) == validFields.end())
+        {
+            d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
+                                     "the 'header' section (E1).\n",
+                                     (*recordIterator)->pos,
+                                     variableNodes[0]->str.c_str()));
+            anyErrors = true;
+            continue;
+        }
+
+        /* Complain if there is more than one variable node. */
+        if (variableNodes.size() > 1)
+        {
+            d3_errors.append(dformat("L%u: Invalid multi-component variable "
+                                     "name.\n",
+                                     (*recordIterator)->pos));
+            anyErrors = true;
+            continue;
+        }
+
+        /* Complain if there is more than one value node. */
+        if (valueNodes.size() > 1)
+        {
+            d3_errors.append(dformat(
+                "L%u: Only one value can be bound to variable '%s' in the "
+                "'header' section.\n",
+                (*recordIterator)->pos, variableNodes[0]->str.c_str()));
+            anyErrors = true;
+            continue;
+        }
+
+        /* Complain if duplicate. NB: We know the variable name is valid if
+         * control has reached here. */
+        if (fieldsFound[variableNodes[0]->str])
+        {
+            d3_errors.append(dformat(
+                "L%u: Duplicate definition of variable '%s' in the 'header' "
+                "section.\n",
+                (*recordIterator)->pos, variableNodes[0]->str.c_str()));
+
+            anyErrors = true;
+            continue;
+        }
+        fieldsFound[variableNodes[0]->str] = true;
+
+        /* Specific logic for each variable. */
+        if (variableNodes[0]->str == "author")
+        {
+            engine->author = valueNodes[0]->str;
+        }
+
+        else if (variableNodes[0]->str == "datetime")
+        {
+            /* Special validation for this one. */
+            if (valueNodes[0]->qop != Lex::Sy_ISTR)
+            {
+                d3_errors.append(dformat(
+                    "L%u: Variable '%s' in the 'header' section has value "
+                    "'%s', which is not a datetime in the form "
+                    "YYYYMMDDhhmmss.\n",
+                    (*recordIterator)->pos, variableNodes[0]->str.c_str(),
+                    valueNodes[0]->str.c_str()));
+                anyErrors = true;
+            }
+
+            else
+            {
+                engine->datetime = str2long(valueNodes[0]->str);
+            }
+
+        }
+
+        /* This has already been read and validated, so we don't care. */
+        else if (variableNodes[0]->str == "dialect"){}
+
+        else if (variableNodes[0]->str == "file")
+        {
+            engine->fileOrigin = valueNodes[0]->str;
+        }
+
+        /* Ignore this one for now. */
+        else if (variableNodes[0]->str == "hardware"){}
+
+        else if (variableNodes[0]->str == "version")
+        {
+            engine->version = valueNodes[0]->str;
+        }
+
+        /* Shouldn't be able to enter this, because we've already checked the
+         * variable names, but why not write some more code. It's not like this
+         * file is big enough already. */
+        else
+        {
+            d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
+                                     "the 'header' section (E2).\n",
+                                     (*recordIterator)->pos,
+                                     variableNodes[0]->str));
+            anyErrors = true;
+        }
+    }
+
+    /* Ensure mandatory fields have been defined, inefficiently. */
+    for (fieldIterator=mandatoryFields.begin();
+         fieldIterator!=mandatoryFields.end(); fieldIterator++)
+    {
+        if(!fieldsFound[*fieldIterator])
+        {
+            d3_errors.append(dformat("[ERROR] Variable '%s' not defined in "
+                                     "the 'header' section.", *fieldIterator));
+            anyErrors = true;
+        }
+    }
+
+    return anyErrors;
 }
