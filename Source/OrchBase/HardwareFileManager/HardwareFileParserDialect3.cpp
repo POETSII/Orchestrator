@@ -27,10 +27,10 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
 
     /* Populate the engine with information from the header section. */
     bool failedValidation = false;
-    failedValidation |= !d3_populate_validate_from_header_section(engine);
+    failedValidation |= d3_populate_validate_from_header_section(engine);
 
     /* Populate the hardware address format owned by the engine. */
-    failedValidation |= !d3_populate_validate_address_format(engine);
+    failedValidation |= d3_populate_validate_address_format(engine);
 
     if (failedValidation)
     {
