@@ -22,6 +22,8 @@ std::vector<std::string> semanticallyValidInputs = {
 std::vector<std::string> semanticallyInvalidInputs = {
     "invalid_dialect_3_board_name_too_short.uif",
     "invalid_dialect_3_box_name_too_long.uif",
+    "invalid_dialect_3_broken_header_variable_1.uif",
+    "invalid_dialect_3_broken_header_variable_2.uif",
     "invalid_dialect_3_duplicate_section.uif",
     "invalid_dialect_3_empty.uif",
     "invalid_dialect_3_floating_dram.uif",
@@ -31,6 +33,8 @@ std::vector<std::string> semanticallyInvalidInputs = {
     "invalid_dialect_3_missing_cost.uif",
     "invalid_dialect_3_missing_mailbox_type.uif",
     "invalid_dialect_3_missing_mandatory_header_item.uif",
+    "invalid_dialect_3_missing_mandatory_header_variable_1.uif",
+    "invalid_dialect_3_missing_mandatory_header_variable_2.uif",
     "invalid_dialect_3_missing_packet_length.uif",
     "invalid_dialect_3_missing_referenced_board_2.uif",
     "invalid_dialect_3_missing_referenced_board.uif",
