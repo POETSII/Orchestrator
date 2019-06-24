@@ -26,6 +26,10 @@ bool complain_if_nodes_values_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage);
 
+bool complain_if_record_is_multivalue(
+    UIF::Node* recordNode, std::vector<UIF::Node*>* variableNodes,
+    std::string sectionName, std::string* errorMessage); /* Synonym */
+
 bool complain_if_record_is_multivariable(
     UIF::Node* recordNode, std::vector<UIF::Node*>* variableNodes,
     std::string sectionName, std::string* errorMessage);

@@ -106,6 +106,39 @@ bool complain_if_nodes_values_not_natural(
     return valid;
 }
 
+/* Synonym for complain_if_record_is_multivariable. */
+bool complain_if_record_is_multivalue(
+    UIF::Node* recordNode, std::vector<UIF::Node*>* variableNodes,
+    std::string sectionName, std::string* errorMessage)
+{
+    return complain_if_record_is_multivariable(recordNode, variableNodes,
+                                               sectionName, errorMessage);
+}
+
+/* Returns true if the value obtained from a record is single-valued, or false
+ * if it is multi-valued or has no value, and appends an error message to a
+ * string if false. Arguments:
+ *
+ * - recordNode: Record parent node (for writing error message).
+ * - variableNodes: Pointer to a vector holding all variable nodes.
+ * - sectionName: The name of the section the record lives in (for writing
+ *   error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_record_is_multivariable(
+    UIF::Node* recordNode, std::vector<UIF::Node*>* variableNodes,
+    std::string sectionName, std::string* errorMessage)
+{
+    if (is_multivariable_record(variableNodes))
+    {
+        errorMessage->append(dformat(
+            "L%u: Invalid record in the '%s' section defines either multiple "
+            "variables, or multiple values.\n", recordNode->pos,
+            sectionName.c_str()));
+        return false;
+    }
+    return true;
+}
+
 /* Returns whether the variable at a node is in a given vector of valid
  * variable names, and appends an error message to a string if it is
  * not. Arguments:
@@ -123,11 +156,10 @@ bool complain_if_variable_name_invalid(
 {
     if (!is_variable_name_valid(validFields, variableNode))
     {
-        errorMessage->.append(dformat("L%u: Variable name '%s' is not valid "
-                                      "in the '%s' section.\n",
-                                      recordNode->pos,
-                                      variableNode->str.c_str(),
-                                      sectionName.c_str()));
+        errorMessage->append(dformat("L%u: Variable name '%s' is not valid in "
+                                     "the '%s' section.\n", recordNode->pos,
+                                     variableNode->str.c_str(),
+                                     sectionName.c_str()));
         return false;
     }
     return true;
@@ -193,8 +225,18 @@ bool is_type_valid(UIF::Node* nameNode)
 bool is_variable_name_valid(std::vector<std::string>* validFields,
                             UIF::Node* variableNode)
 {
-    return (std::find(validFields.begin(), validFields.end(),
-                      variableNode->str) == validFields.end())
+    return (std::find(validFields->begin(), validFields->end(),
+                      variableNode->str) != validFields->end());
+}
+
+/* Returns true if the value obtained from a record is single-valued, or false
+ * if it is multi-valued or has no value. Arguments:
+ *
+ * - variableNodes: All of the variables associated with a record (probably
+ *   obtained using JNJ::GetVari). */
+bool is_multivariable_record(std::vector<UIF::Node*>* variableNodes)
+{
+    return (variableNodes->size() != 1);
 }
 
 /* Converts a float-like input string to an actual float. */

@@ -30,7 +30,13 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
     failedValidation |= !d3_populate_validate_from_header_section(engine);
 
     /* Populate the hardware address format owned by the engine. */
-    failedValidation != !d3_populate_validate_address_format(engine)
+    failedValidation |= !d3_populate_validate_address_format(engine);
+
+    if (failedValidation)
+    {
+        throw HardwareSemanticException(d3_errors.c_str());
+    }
+
 }
 
 /* Validate that the section occurences in the hardware description input file
@@ -291,7 +297,7 @@ bool HardwareFileParser::d3_load_validate_sections()
                 ruleFailure[currentRule] = true;
                 d3_errors.append(dformat("L%u: Section '%s' has no associated "
                                          "type.\n", (*nodeIterator)->pos,
-                                         *nameIterator));
+                                         (*nameIterator).c_str()));
             }
 
             else if (arguments.size() > 1)
@@ -299,7 +305,8 @@ bool HardwareFileParser::d3_load_validate_sections()
                 ruleFailure[currentRule] = true;
                 d3_errors.append(dformat("L%u: Section '%s' has more than one "
                                          "type associated with it.\n",
-                                         (*nodeIterator)->pos));
+                                         (*nodeIterator)->pos,
+                                         (*nameIterator).c_str()));
             }
 
             else if (!is_type_valid(arguments[0]))
@@ -308,7 +315,8 @@ bool HardwareFileParser::d3_load_validate_sections()
                 d3_errors.append(dformat(
                     "L%u: Section '%s' has invalid type '%s'. It must satisfy "
                     "[0-9A-Za-z]{2,32}\n.",
-                    (*nodeIterator)->pos, arguments[0]->str));
+                    (*nodeIterator)->pos, (*nameIterator).c_str(),
+                    arguments[0]->str));
             }
 
             /* If we've already seen this type defined for a section of this
@@ -319,7 +327,8 @@ bool HardwareFileParser::d3_load_validate_sections()
                 ruleFailure[currentRule] = true;
                 d3_errors.append(dformat(
                     "L%u: Duplicate definition of section '%s' with type "
-                    "'%s'.\n", (*nodeIterator)->pos, arguments[0]->str));
+                    "'%s'.\n", (*nodeIterator)->pos, (*nameIterator).c_str(),
+                    arguments[0]->str));
             }
 
             else
@@ -432,7 +441,7 @@ bool HardwareFileParser::d3_load_validate_sections()
 bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
 {
     bool anyErrors = false;
-    std::string sectionName = "packet_address_format"
+    std::string sectionName = "packet_address_format";
 
     /* Valid fields for the header section (all are mandatory). */
     std::vector<std::string> validFields;
@@ -442,6 +451,11 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
     validFields.push_back("mailbox");
     validFields.push_back("core");
     validFields.push_back("thread");
+
+    /* Temporary staging vectors for holding value nodes and variable
+     * nodes. */
+    std::vector<UIF::Node*> valueNodes;
+    std::vector<UIF::Node*> variableNodes;
 
     /* Iterate through all record nodes in the packet_address_format
      * section. */
@@ -483,7 +497,7 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
     P_engine* engine)
 {
     bool anyErrors = false;
-    std::string sectionName = "header"
+    std::string sectionName = "header";
 
     /* Valid fields for the header section. */
     std::vector<std::string> validFields;
@@ -517,10 +531,13 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
     /* Iterate through all record nodes in the header section. */
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
+    bool isRecordValid;
     GetRecd(untypedSections[sectionName], recordNodes);
     for (recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
+        isRecordValid = true;
+
         /* Get the value and variable nodes. */
         GetVari((*recordIterator), variableNodes);
         GetValu((*recordIterator), valueNodes);
@@ -529,43 +546,24 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
          * pair (i.e. if the line is empty, or is just a comment). */
         if (variableNodes.size() == 0 || valueNodes.size() == 0){continue;}
 
-        /* Complain if the record does not begin with a "+", as all fields in
-         * the header section must do. */
-        if (!complain_if_node_not_plus_prefixed(
-                *recordIterator, variableNodes[0], sectionName, &d3_errors))
+        /* Complain if (in order):
+         *
+         * - The record does not begin with a "+", as all fields in this
+         *   section must do.
+         * - The variable name is not a valid name.
+         * - There is more than one variable node.
+         * - There is more than one value node. */
+        isRecordValid &= complain_if_node_not_plus_prefixed(
+            *recordIterator, variableNodes[0], sectionName, &d3_errors);
+        isRecordValid &= complain_if_variable_name_invalid(
+            *recordIterator, variableNodes[0], &validFields, sectionName,
+            &d3_errors);
+        isRecordValid &= complain_if_record_is_multivariable(
+            *recordIterator, &variableNodes, sectionName, &d3_errors);
+        isRecordValid &= complain_if_record_is_multivalue(
+            *recordIterator, &valueNodes, sectionName, &d3_errors);
+        if (!isRecordValid)
         {
-            anyErrors = true;
-            continue;
-        }
-
-        /* Complain if the variable name is not a valid name. */
-        if (!complain_if_variable_name_invalid(
-                *recordIterator, variableNodes[0], &validFields, sectionName,
-                &d3_errors))
-        {
-            anyErrors = true;
-            continue;
-        }
-
-        /* Complain if there is more than one variable node. */
-        if (variableNodes.size() > 1)
-        {
-            d3_errors.append(dformat("L%u: Invalid multi-component variable "
-                                     "name in the '%s' section.\n",
-                                     (*recordIterator)->pos,
-                                     sectionName.c_str()));
-            anyErrors = true;
-            continue;
-        }
-
-        /* Complain if there is more than one value node. */
-        if (valueNodes.size() > 1)
-        {
-            d3_errors.append(dformat(
-                "L%u: Only one value can be bound to variable '%s' in the "
-                "'%s' section.\n",
-                (*recordIterator)->pos, variableNodes[0]->str.c_str(),
-                sectionName.c_str));
             anyErrors = true;
             continue;
         }
@@ -647,8 +645,9 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
     {
         if(!fieldsFound[*fieldIterator])
         {
-            d3_errors.append(dformat("[ERROR] Variable '%s' not defined in "
-                                     "the '%s' section.", *fieldIterator,
+            d3_errors.append(dformat("Variable '%s' not defined in the '%s' "
+                                     "section.\n",
+                                     (*fieldIterator).c_str(),
                                      sectionName.c_str()));
             anyErrors = true;
         }
