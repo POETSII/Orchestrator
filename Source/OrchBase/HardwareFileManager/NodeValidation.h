@@ -26,11 +26,23 @@ bool complain_if_nodes_values_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string value, std::string sectionName, std::string* errorMessage);
 
+bool complain_if_record_is_multivariable(
+    UIF::Node* recordNode, std::vector<UIF::Node*>* variableNodes,
+    std::string sectionName, std::string* errorMessage);
+
+bool complain_if_variable_name_invalid(
+    UIF::Node* recordNode, UIF::Node* variableNode,
+    std::vector<std::string>* validFields, std::string sectionName,
+    std::string* errorMessage);
+
 /* Validators */
 bool does_node_variable_have_plus_prefix(UIF::Node* variableNode);
 bool is_node_value_floating(UIF::Node* valueNode);
 bool is_node_value_natural(UIF::Node* valueNode);
 bool is_type_valid(UIF::Node* nameNode);
+bool is_variable_name_valid(std::vector<std::string>* validFields,
+                            UIF::Node* variableNode);
+bool is_multivariable_record(std::vector<UIF::Node*>* variableNodes);
 
 /* Converters */
 float str2float(std::string floatLike);

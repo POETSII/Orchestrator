@@ -78,7 +78,6 @@ bool complain_if_node_not_plus_prefixed(
     return true;
 }
 
-
 /* Returns whether the value at a node, and all of its children, are natural
  * numbers, and appends an error message to a string if they are
  * not. Arguments:
@@ -105,6 +104,33 @@ bool complain_if_nodes_values_not_natural(
             sectionName.c_str(), errorMessage);
     }
     return valid;
+}
+
+/* Returns whether the variable at a node is in a given vector of valid
+ * variable names, and appends an error message to a string if it is
+ * not. Arguments:
+ *
+ * - recordNode: Record parent node (for writing error message).
+ * - variableNode: The UIF node that holds the variable.
+ * - validFields: Strings denoting valid field names.
+ * - sectionName: The name of the section the record lives in (for writing
+     error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_variable_name_invalid(
+    UIF::Node* recordNode, UIF::Node* variableNode,
+    std::vector<std::string>* validFields, std::string sectionName,
+    std::string* errorMessage)
+{
+    if (!is_variable_name_valid(validFields, variableNode))
+    {
+        errorMessage->.append(dformat("L%u: Variable name '%s' is not valid "
+                                      "in the '%s' section.\n",
+                                      recordNode->pos,
+                                      variableNode->str.c_str(),
+                                      sectionName.c_str()));
+        return false;
+    }
+    return true;
 }
 
 /* Returns whether the variable at a node is prefixed with a "+"
@@ -157,6 +183,18 @@ bool is_type_valid(UIF::Node* nameNode)
     }
 
     return true;
+}
+
+/* Returns whether the variable at a node is in a given vector of valid
+ * variable names. Arguments:
+ *
+ * - validFields: Strings denoting valid field names.
+ * - variableNode: The UIF node that holds the variable. */
+bool is_variable_name_valid(std::vector<std::string>* validFields,
+                            UIF::Node* variableNode)
+{
+    return (std::find(validFields.begin(), validFields.end(),
+                      variableNode->str) == validFields.end())
 }
 
 /* Converts a float-like input string to an actual float. */

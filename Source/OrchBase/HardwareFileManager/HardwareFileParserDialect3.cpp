@@ -430,6 +430,7 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
     P_engine* engine)
 {
     bool anyErrors = false;
+    std::string sectionName = "header"
 
     /* Valid fields for the header section. */
     std::vector<std::string> validFields;
@@ -463,7 +464,7 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
     /* Iterate through all record nodes in the header section. */
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
-    GetRecd(untypedSections["header"], recordNodes);
+    GetRecd(untypedSections[sectionName], recordNodes);
     for (recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
@@ -478,20 +479,17 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
         /* Complain if the record does not begin with a "+", as all fields in
          * the header section must do. */
         if (!complain_if_node_not_plus_prefixed(
-                *recordIterator, variableNodes[0], "header", &d3_errors))
+                *recordIterator, variableNodes[0], sectionName, &d3_errors))
         {
             anyErrors = true;
             continue;
         }
 
         /* Complain if the variable name is not a valid name. */
-        if (std::find(validFields.begin(), validFields.end(),
-                      variableNodes[0]->str) == validFields.end())
+        if (!complain_if_variable_name_invalid(
+                *recordIterator, variableNodes[0], &validFields, sectionName,
+                &d3_errors))
         {
-            d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
-                                     "the 'header' section (E1).\n",
-                                     (*recordIterator)->pos,
-                                     variableNodes[0]->str.c_str()));
             anyErrors = true;
             continue;
         }
@@ -500,8 +498,9 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
         if (variableNodes.size() > 1)
         {
             d3_errors.append(dformat("L%u: Invalid multi-component variable "
-                                     "name.\n",
-                                     (*recordIterator)->pos));
+                                     "name in the '%s' section.\n",
+                                     (*recordIterator)->pos,
+                                     sectionName.c_str()));
             anyErrors = true;
             continue;
         }
@@ -511,8 +510,9 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
         {
             d3_errors.append(dformat(
                 "L%u: Only one value can be bound to variable '%s' in the "
-                "'header' section.\n",
-                (*recordIterator)->pos, variableNodes[0]->str.c_str()));
+                "'%s' section.\n",
+                (*recordIterator)->pos, variableNodes[0]->str.c_str(),
+                sectionName.c_str));
             anyErrors = true;
             continue;
         }
@@ -522,9 +522,10 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
         if (fieldsFound[variableNodes[0]->str])
         {
             d3_errors.append(dformat(
-                "L%u: Duplicate definition of variable '%s' in the 'header' "
+                "L%u: Duplicate definition of variable '%s' in the '%s' "
                 "section.\n",
-                (*recordIterator)->pos, variableNodes[0]->str.c_str()));
+                (*recordIterator)->pos, variableNodes[0]->str.c_str(),
+                sectionName.c_str()));
 
             anyErrors = true;
             continue;
@@ -543,11 +544,10 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
             if (valueNodes[0]->qop != Lex::Sy_ISTR)
             {
                 d3_errors.append(dformat(
-                    "L%u: Variable '%s' in the 'header' section has value "
-                    "'%s', which is not a datetime in the form "
-                    "YYYYMMDDhhmmss.\n",
+                    "L%u: Variable '%s' in the '%s' section has value '%s', "
+                    "which is not a datetime in the form YYYYMMDDhhmmss.\n",
                     (*recordIterator)->pos, variableNodes[0]->str.c_str(),
-                    valueNodes[0]->str.c_str()));
+                    valueNodes[0]->str.c_str(), sectionName.c_str()));
                 anyErrors = true;
             }
 
@@ -580,9 +580,10 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
         else
         {
             d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
-                                     "the 'header' section (E2).\n",
+                                     "the '%s' section (E2).\n",
                                      (*recordIterator)->pos,
-                                     variableNodes[0]->str));
+                                     variableNodes[0]->str,
+                                     sectionName.c_str()));
             anyErrors = true;
         }
     }
@@ -594,7 +595,8 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
         if(!fieldsFound[*fieldIterator])
         {
             d3_errors.append(dformat("[ERROR] Variable '%s' not defined in "
-                                     "the 'header' section.", *fieldIterator));
+                                     "the '%s' section.", *fieldIterator,
+                                     sectionName.c_str()));
             anyErrors = true;
         }
     }
