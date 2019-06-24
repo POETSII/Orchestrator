@@ -16,7 +16,8 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
 {
     /* During validation and provisioning, errors will be written to this
      * string. */
-    d3_errors.clear();
+    d3_errors = dformat("Error(s) while loading hardware description file "
+                        "'%s':\n", loadedFile.c_str());
 
     /* Check sections are defined correctly. Not much point continuing if they
      * are not defined correctly. */
