@@ -28,6 +28,9 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
     /* Populate the engine with information from the header section. */
     bool failedValidation = false;
     failedValidation |= !d3_populate_validate_from_header_section(engine);
+
+    /* Populate the hardware address format owned by the engine. */
+    failedValidation != !d3_populate_validate_address_format(engine)
 }
 
 /* Validate that the section occurences in the hardware description input file
@@ -418,6 +421,56 @@ bool HardwareFileParser::d3_load_validate_sections()
     /* Otherwise, our validation failed, and we have not wasted time populating
      * our data structures. */
     else {return false;}
+}
+
+/* Validate the contents of the packet_address_format section, and populate the
+ * format object in the engine with them.
+ *
+ * Returns true if all validation checks pass, and false otherwise. Arguments:
+ *
+ * - engine: Engine to populate */
+bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
+{
+    bool anyErrors = false;
+    std::string sectionName = "packet_address_format"
+
+    /* Valid fields for the header section (all are mandatory). */
+    std::vector<std::string> validFields;
+    std::vector<std::string>::iterator fieldIterator;
+    validFields.push_back("box");
+    validFields.push_back("board");
+    validFields.push_back("mailbox");
+    validFields.push_back("core");
+    validFields.push_back("thread");
+
+    /* Iterate through all record nodes in the packet_address_format
+     * section. */
+    std::vector<UIF::Node*> recordNodes;
+    std::vector<UIF::Node*>::iterator recordIterator;
+    GetRecd(untypedSections[sectionName], recordNodes);
+    for (recordIterator=recordNodes.begin();
+         recordIterator!=recordNodes.end(); recordIterator++)
+    {
+        /* Get the value and variable nodes. */
+        GetVari((*recordIterator), variableNodes);
+        GetValu((*recordIterator), valueNodes);
+
+        /* Ignore this record if the record has not got a variable/value
+         * pair (i.e. if the line is empty, or is just a comment). */
+        if (variableNodes.size() == 0 || valueNodes.size() == 0){continue;}
+
+        /* Complain if the record does not begin with a "+", as all fields in
+         * this section must do. */
+        if (!complain_if_node_not_plus_prefixed(
+                *recordIterator, variableNodes[0], sectionName, &d3_errors))
+        {
+            anyErrors = true;
+            continue;
+        }
+    }
+
+    return anyErrors;
+
 }
 
 /* Validate the contents of the header section, and populate an engine with

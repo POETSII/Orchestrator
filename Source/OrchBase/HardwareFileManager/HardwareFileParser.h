@@ -144,6 +144,7 @@ private:
     /* Dialect 3 validation and deployment members and methods. */
     bool d3_load_validate_sections();
     void d3_populate_hardware_model(P_engine* engine);
+    bool d3_populate_validate_address_format(P_engine* engine);
     bool d3_populate_validate_from_header_section(P_engine* engine);
 
     /* Holds error messages from validation. */
@@ -159,6 +160,11 @@ private:
      * section, and whose value id the UIF node that corresponds to that
      * section. */
     std::map<std::string, std::map<std::string, UIF::Node*>> typedSections;
+
+    /* Holds sizes of address components. The key is either "box", "board", or
+     * "mailbox", and the value is the number of elements comprising that
+     * address component. */
+    std::map<std::string, unsigned> addressLengths;
 
     /* Holds boards that have been declared to exist within a box in
      * [engine_box], but which have not (yet) been created from parsing
