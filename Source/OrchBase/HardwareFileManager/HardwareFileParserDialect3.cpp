@@ -453,6 +453,14 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
     validFields.push_back("core");
     validFields.push_back("thread");
 
+    /* Holds fields we've already grabbed (for validation purposes). */
+    std::map<std::string, bool> fieldsFound;
+    for (fieldIterator=validFields.begin(); fieldIterator!=validFields.end();
+         fieldIterator++)
+    {
+        fieldsFound.insert(std::make_pair(*fieldIterator, false));
+    }
+
     /* Temporary staging vectors for holding value nodes and variable
      * nodes. */
     std::vector<UIF::Node*> valueNodes;
@@ -482,6 +490,42 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
             anyErrors = true;
             continue;
         }
+
+        /* Complain if (in order):
+         *
+         * - The record does not begin with a "+", as all fields in this
+         *   section must do.
+         * - The variable name is not a valid name.
+         * - There is more than one variable node. */
+        isRecordValid &= complain_if_node_not_plus_prefixed(
+            *recordIterator, variableNodes[0], sectionName, &d3_errors);
+        isRecordValid &= complain_if_variable_name_invalid(
+            *recordIterator, variableNodes[0], &validFields, sectionName,
+            &d3_errors);
+        isRecordValid &= complain_if_record_is_multivariable(
+            *recordIterator, &variableNodes, sectionName, &d3_errors);
+        if (!isRecordValid)
+        {
+            anyErrors = true;
+            continue;
+        }
+
+        /* Complain if duplicate. NB: We know the variable name is valid if
+         * control has reached here. */
+        if (fieldsFound[variableNodes[0]->str])
+        {
+            d3_errors.append(dformat(
+                "L%u: Duplicate definition of variable '%s' in the '%s' "
+                "section.\n",
+                (*recordIterator)->pos, variableNodes[0]->str.c_str(),
+                sectionName.c_str()));
+
+            anyErrors = true;
+            continue;
+        }
+        fieldsFound[variableNodes[0]->str] = true;
+
+        /* Specific logic for each variable <!> */
     }
 
     return anyErrors;
