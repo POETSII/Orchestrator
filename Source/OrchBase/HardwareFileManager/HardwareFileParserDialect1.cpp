@@ -207,15 +207,6 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                     valid &= complain_if_node_value_not_natural(
                         (*recordIterator), valueNodes[0], variable, values[0],
                         sectionName, errorMessage);
-                    if (valueNodes[0]->qop != Lex::Sy_ISTR)
-                    {
-                        valid = false;
-                        errorMessage->append(dformat(
-                            "L%u: Variable '%s' in section '%s' has value "
-                            "'%s', which is not a natural number.\n",
-                            (*recordIterator)->pos, variable.c_str(),
-                            sectionName.c_str(), values[0].c_str()));
-                    }
                     deployer->boxWordLength = str2unsigned(values[0]);
                 }
                 else if (variable == "core")
