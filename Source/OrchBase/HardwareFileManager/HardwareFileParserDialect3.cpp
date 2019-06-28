@@ -470,6 +470,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
      * section. */
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
+    std::string variableName;
     bool isRecordValid;
     GetRecd(untypedSections[sectionName], recordNodes);
     for (recordIterator=recordNodes.begin();
@@ -515,6 +516,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
+        variableName = variableNodes[0]->str;
         if (complain_if_node_variable_true_in_map(
                 *recordIterator, variableNodes[0], &fieldsFound, sectionName,
                 &d3_errors))
@@ -522,7 +524,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
             anyErrors = true;
             continue;
         }
-        fieldsFound[variableNodes[0]->str] = true;
+        fieldsFound[variableName] = true;
 
         /* Specific logic for each variable <!> */
     }
@@ -575,6 +577,7 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
     /* Iterate through all record nodes in the header section. */
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
+    std::string variableName;
     bool isRecordValid;
     GetRecd(untypedSections[sectionName], recordNodes);
     for (recordIterator=recordNodes.begin();
@@ -614,6 +617,7 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
+        variableName = variableNodes[0]->str;
         if (complain_if_node_variable_true_in_map(
                 *recordIterator, variableNodes[0], &fieldsFound, sectionName,
                 &d3_errors))
@@ -621,15 +625,15 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
             anyErrors = true;
             continue;
         }
-        fieldsFound[variableNodes[0]->str] = true;
+        fieldsFound[variableName] = true;
 
         /* Specific logic for each variable. */
-        if (variableNodes[0]->str == "author")
+        if (variableName == "author")
         {
             engine->author = valueNodes[0]->str;
         }
 
-        else if (variableNodes[0]->str == "datetime")
+        else if (variableName == "datetime")
         {
             /* Special validation for this one. */
             if (valueNodes[0]->qop != Lex::Sy_ISTR)
@@ -637,7 +641,7 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
                 d3_errors.append(dformat(
                     "L%u: Variable '%s' in the '%s' section has value '%s', "
                     "which is not a datetime in the form YYYYMMDDhhmmss.\n",
-                    (*recordIterator)->pos, variableNodes[0]->str.c_str(),
+                    (*recordIterator)->pos, variableName.c_str(),
                     valueNodes[0]->str.c_str(), sectionName.c_str()));
                 anyErrors = true;
             }
@@ -650,17 +654,17 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
         }
 
         /* This has already been read and validated, so we don't care. */
-        else if (variableNodes[0]->str == "dialect"){}
+        else if (variableName == "dialect"){}
 
-        else if (variableNodes[0]->str == "file")
+        else if (variableName == "file")
         {
             engine->fileOrigin = valueNodes[0]->str;
         }
 
         /* Ignore this one for now. */
-        else if (variableNodes[0]->str == "hardware"){}
+        else if (variableName == "hardware"){}
 
-        else if (variableNodes[0]->str == "version")
+        else if (variableName == "version")
         {
             engine->version = valueNodes[0]->str;
         }
@@ -672,8 +676,7 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
         {
             d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
                                      "the '%s' section (E2).\n",
-                                     (*recordIterator)->pos,
-                                     variableNodes[0]->str,
+                                     (*recordIterator)->pos, variableName,
                                      sectionName.c_str()));
             anyErrors = true;
         }
