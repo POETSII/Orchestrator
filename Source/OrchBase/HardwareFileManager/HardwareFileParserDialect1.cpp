@@ -114,24 +114,8 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                     "character.\n", (*recordIterator)->pos, variable.c_str()));
             }
 
-            /* There may be many values. If there is only one value, the first
-             * value node contains the value. If there are multiple (N) value
-             * nodes, the first value node contains N value nodes, each with an
-             * entry. */
-            values.clear();
-            if (valueNodes[0]->leaf.size() == 0)  /* There's only one value. */
-            {
-                values.push_back(valueNodes[0]->str);
-            }
-            else  /* There are many values. */
-            {
-                for (valueNodeIterator=valueNodes[0]->leaf.begin();
-                     valueNodeIterator!=valueNodes[0]->leaf.end();
-                     valueNodeIterator++)
-                {
-                    values.push_back((*valueNodeIterator)->str);
-                }
-            }
+            /* Get the values. */
+            get_values_as_strings(&values, valueNodes[0]);
 
             /* A gigantic if/else for each section the record could be in,
              * followed by a slightly less gigantic if/else for each variable

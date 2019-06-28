@@ -203,6 +203,36 @@ unsigned HardwareFileParser::get_dialect()
     return dialect;
 }
 
+/* Populates a vector with all values of a record, as strings. Only recurses
+ * one (or zero) level deep. Arguments:
+ *
+ * - toPopulate: Vector to fill with string values.
+ * - valueNode: Root value node. */
+void HardwareFileParser::get_values_as_strings(
+    std::vector<std::string>* toPopulate, UIF::Node* valueNode)
+{
+    toPopulate->clear();
+    std::vector<UIF::Node*>::iterator leafIterator;
+
+    /* If there's only one value, put it's string in the vector and call it a
+     * day. */
+    if (valueNode->leaf.size() == 0)
+    {
+        toPopulate->push_back(valueNode->str);
+    }
+
+    /* Otherwise, there are multiple values (hence multiple strings to put in
+     * the vector). */
+    else
+    {
+        for (leafIterator=valueNode->leaf.begin();
+             leafIterator!=valueNode->leaf.end(); leafIterator++)
+        {
+            toPopulate->push_back((*leafIterator)->str);
+        }
+    }
+}
+
 /* Writes an 'invalid variable' error message, and appends it to a
  * string. Arguments:
  *

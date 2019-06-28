@@ -125,6 +125,8 @@ private:
     std::string loadedFile;
     bool does_file_exist(const char* filePath);
     unsigned get_dialect();
+    void get_values_as_strings(std::vector<std::string>* toPopulate,
+                               UIF::Node* valueNode);
     void invalid_variable_message(std::string* errorMessage,
                                   UIF::Node* recordNode,
                                   std::string sectionName,
