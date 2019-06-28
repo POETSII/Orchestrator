@@ -526,11 +526,47 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
         }
         fieldsFound[variableName] = true;
 
-        /* Specific logic for each variable <!> */
+        /* Specific logic for each variable. For box, core, and thread complain
+         * if (in order):
+         *
+         * - The record is multi-valued.
+         * - The value is not natural. */
+        if (variableName == "box" or variableName == "core" or
+            variableName == "thread")
+        {
+            /* Validate */
+            isRecordValid &= complain_if_record_is_multivalue(
+                *recordIterator, &valueNodes, variableName, sectionName,
+                &d3_errors);
+            isRecordValid &= complain_if_node_value_not_natural(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* We bind! */
+            if (variableName == "box")
+            {
+                engine->addressFormat.boxWordLength =
+                    str2unsigned(valueNodes[0]->str);
+            }
+            else if (variableName == "core")
+            {
+                engine->addressFormat.coreWordLength =
+                    str2unsigned(valueNodes[0]->str);
+            }
+            else /* Must be thread */
+            {
+                engine->addressFormat.threadWordLength =
+                    str2unsigned(valueNodes[0]->str);
+            }
+        }
     }
 
     return anyErrors;
-
 }
 
 /* Validate the contents of the header section, and populate an engine with
