@@ -20,8 +20,8 @@ bool complain_if_node_value_not_floating(
     if (!is_node_value_floating(valueNode))
     {
         errorMessage->append(dformat(
-            "L%u: Variable '%s' in section '%s' has value '%s', which is not "
-            "a positive floating-point number or a positive integer.\n",
+            "L%u: Variable '%s' in the '%s' section has value '%s', which is "
+            "not a positive floating-point number or a positive integer.\n",
             recordNode->pos, variable.c_str(), sectionName.c_str(),
             valueNode->str.c_str()));
         return false;
@@ -45,8 +45,8 @@ bool complain_if_node_value_not_natural(
     if (!is_node_value_natural(valueNode))
     {
         errorMessage->append(dformat(
-            "L%u: Variable '%s' in section '%s' has value '%s', which is not "
-            "a natural number.\n",
+            "L%u: Variable '%s' in the '%s' section has value '%s', which is "
+            "not a natural number.\n",
             recordNode->pos, variable.c_str(), sectionName.c_str(),
             valueNode->str.c_str()));
         return false;
@@ -95,8 +95,8 @@ bool complain_if_node_not_plus_prefixed(
     if (!does_node_variable_have_plus_prefix(variableNode))
     {
         errorMessage->append(dformat(
-            "L%u: Variable in record in section '%s' is not prefixed by a '+' "
-            "character.\n", recordNode->pos, sectionName.c_str()));
+            "L%u: Variable in record in the '%s' section is not prefixed by a "
+            "'+' character.\n", recordNode->pos, sectionName.c_str()));
         return false;
     }
     return true;
@@ -153,9 +153,8 @@ bool complain_if_record_is_multivariable(
     if (is_multivariable_record(variableNodes))
     {
         errorMessage->append(dformat(
-            "L%u: Invalid record in the '%s' section defines either multiple "
-            "variables, or multiple values.\n", recordNode->pos,
-            sectionName.c_str()));
+            "L%u: Record in the '%s' section is invalid because it defines "
+            "multiple variables.\n", recordNode->pos, sectionName.c_str()));
         return false;
     }
     return true;
