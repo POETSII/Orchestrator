@@ -171,7 +171,8 @@ bool complain_if_record_is_multivariable(
     {
         errorMessage->append(dformat(
             "L%u: Record in the '%s' section is invalid because it defines "
-            "multiple variables.\n", recordNode->pos, sectionName.c_str()));
+            "zero, or multiple, variables.\n", recordNode->pos,
+            sectionName.c_str()));
         return false;
     }
     return true;
