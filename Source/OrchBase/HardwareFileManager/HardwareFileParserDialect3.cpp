@@ -608,7 +608,8 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
         isRecordValid &= complain_if_record_is_multivariable(
             *recordIterator, &variableNodes, sectionName, &d3_errors);
         isRecordValid &= complain_if_record_is_multivalue(
-            *recordIterator, &valueNodes, sectionName, &d3_errors);
+            *recordIterator, &valueNodes, variableNodes[0]->str, sectionName,
+            &d3_errors);
         if (!isRecordValid)
         {
             anyErrors = true;

@@ -128,21 +128,38 @@ bool complain_if_nodes_values_not_natural(
     return valid;
 }
 
-/* Synonym for complain_if_record_is_multivariable. */
-bool complain_if_record_is_multivalue(
-    UIF::Node* recordNode, std::vector<UIF::Node*>* variableNodes,
-    std::string sectionName, std::string* errorMessage)
-{
-    return complain_if_record_is_multivariable(recordNode, variableNodes,
-                                               sectionName, errorMessage);
-}
-
-/* Returns true if the value obtained from a record is single-valued, or false
- * if it is multi-valued or has no value, and appends an error message to a
- * string if false. Arguments:
+/* As with complain_if_record_is_multivariable, but for values and GetValu
+ * (which are handled slightly dirrerently). Arguments:
  *
  * - recordNode: Record parent node (for writing error message).
- * - variableNodes: Pointer to a vector holding all variable nodes.
+ * - valueNodes: Pointer to a vector holding all value nodes (probably
+ *   obtained using JNJ::GetValu).
+ * - variable: Variable name string (for writing error message).
+ * - sectionName: The name of the section the record lives in (for writing
+ *   error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_record_is_multivalue(
+    UIF::Node* recordNode, std::vector<UIF::Node*>* valueNodes,
+    std::string variable, std::string sectionName, std::string* errorMessage)
+{
+    if (is_multivalue_record(valueNodes))
+    {
+        errorMessage->append(dformat(
+            "L%u: Variable '%s' in the '%s' section is invalid because it "
+            "defines zero, or multiple, values.\n", recordNode->pos,
+            variable.c_str(), sectionName.c_str()));
+        return false;
+    }
+    return true;
+}
+
+/* Returns true if the variable vector obtained from a record (using GetVari)
+ * is single-variable, or false if it is multi-variable or does not define a
+ * variable, and appends an error message to a string if false. Arguments:
+ *
+ * - recordNode: Record parent node (for writing error message).
+ * - variableNodes: Pointer to a vector holding all variable nodes (probably
+ *   obtained using JNJ::GetVari).
  * - sectionName: The name of the section the record lives in (for writing
  *   error message).
  * - errorMessage: String to append the error message to, if any. */
@@ -264,8 +281,27 @@ bool is_variable_name_valid(std::vector<std::string>* validFields,
                       variableNode->str) != validFields->end());
 }
 
-/* Returns true if the value obtained from a record is single-valued, or false
- * if it is multi-valued or has no value. Arguments:
+/* Returns true if the value vector obtained from a record is single-valued, or
+ * false if it is multi-valued or has no value. Arguments:
+ *
+ * - valueNodes: All of the variables associated with a record (probably
+ *   obtained using JNJ::GetValu). */
+bool is_multivalue_record(std::vector<UIF::Node*>* valueNodes)
+{
+    if (valueNodes->size() >= 0)  /* Are there any values? */
+    {
+        /* If there is only one value, the first value node contains the
+         * value. If there are multiple (N) value nodes, the first value node
+         * contains N value nodes, each with an entry. */
+        return ((*valueNodes)[0]->leaf.size() != 0);
+    }
+    return false;
+}
+
+
+/* Returns true if the variable vector obtained from a record is
+ * single-variable, or false if it is multi-variable or has no
+ * value. Arguments:
  *
  * - variableNodes: All of the variables associated with a record (probably
  *   obtained using JNJ::GetVari). */

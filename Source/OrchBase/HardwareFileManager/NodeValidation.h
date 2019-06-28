@@ -33,7 +33,7 @@ bool complain_if_nodes_values_not_natural(
 
 bool complain_if_record_is_multivalue(
     UIF::Node* recordNode, std::vector<UIF::Node*>* variableNodes,
-    std::string sectionName, std::string* errorMessage); /* Synonym */
+    std::string variable, std::string sectionName, std::string* errorMessage);
 
 bool complain_if_record_is_multivariable(
     UIF::Node* recordNode, std::vector<UIF::Node*>* variableNodes,
@@ -53,6 +53,7 @@ bool is_node_variable_true_in_map(std::map<std::string, bool>* mapToSearch,
                                   UIF::Node* variableNode);
 bool is_variable_name_valid(std::vector<std::string>* validFields,
                             UIF::Node* variableNode);
+bool is_multivalue_record(std::vector<UIF::Node*>* valueNodes);
 bool is_multivariable_record(std::vector<UIF::Node*>* variableNodes);
 
 /* Converters */
