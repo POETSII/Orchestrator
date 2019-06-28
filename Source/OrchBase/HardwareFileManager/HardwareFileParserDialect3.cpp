@@ -470,10 +470,13 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
      * section. */
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
+    bool isRecordValid;
     GetRecd(untypedSections[sectionName], recordNodes);
     for (recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
+        isRecordValid = true;
+
         /* Get the value and variable nodes. */
         GetVari((*recordIterator), variableNodes);
         GetValu((*recordIterator), valueNodes);
@@ -512,14 +515,10 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
-        if (fieldsFound[variableNodes[0]->str])
+        if (complain_if_node_variable_true_in_map(
+                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
+                &d3_errors))
         {
-            d3_errors.append(dformat(
-                "L%u: Duplicate definition of variable '%s' in the '%s' "
-                "section.\n",
-                (*recordIterator)->pos, variableNodes[0]->str.c_str(),
-                sectionName.c_str()));
-
             anyErrors = true;
             continue;
         }
@@ -615,14 +614,10 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
-        if (fieldsFound[variableNodes[0]->str])
+        if (complain_if_node_variable_true_in_map(
+                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
+                &d3_errors))
         {
-            d3_errors.append(dformat(
-                "L%u: Duplicate definition of variable '%s' in the '%s' "
-                "section.\n",
-                (*recordIterator)->pos, variableNodes[0]->str.c_str(),
-                sectionName.c_str()));
-
             anyErrors = true;
             continue;
         }

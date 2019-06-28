@@ -56,6 +56,32 @@ bool complain_if_node_value_not_natural(
     return true;
 }
 
+/* Returns whether the variable at a node maps to true, and appends an error
+ * message if it does so. Arguments:
+ *
+ * - recordNode: Record parent node (for writing error message).
+ * - variableNode: The UIF node that holds the variable.
+ * - mapToSearch: The map, mapping names of variables, to a boolean. In most
+ *   cases where this is used, this boolean represents whether or not the name
+ *   has already been defined in this pass of a section before.
+ * - sectionName: The name of the section the record lives in (for writing
+     error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_node_variable_true_in_map(
+    UIF::Node* recordNode, UIF::Node* variableNode,
+    std::map<std::string, bool>* mapToSearch, std::string sectionName,
+    std::string* errorMessage)
+{
+    if(is_node_variable_true_in_map(mapToSearch, variableNode))
+    {
+        errorMessage->append(dformat(
+            "L%u: Duplicate definition of variable '%s' in the '%s' "
+            "section.\n", recordNode->pos, sectionName.c_str()));
+        return true;
+    }
+    return false;
+}
+
 /* Returns whether the variable held by a node has a plux prefix, and appends
  * an error message to a string if it is not. Arguments:
  *
@@ -215,6 +241,20 @@ bool is_type_valid(UIF::Node* nameNode)
     }
 
     return true;
+}
+
+/* Returns whether the variable at a node maps to true. Arguments:
+ *
+ * - mapToSearch: The map, mapping names of variables, to a boolean. In most
+ *   cases where this is used, this boolean represents whether or not the name
+ *   has already been defined in this pass of a section before.
+ * - variableNode: The UIF node that holds the variable.
+ *
+ * Will throw if the map does not contain variableNode's string name. */
+bool is_node_variable_true_in_map(std::map<std::string, bool>* mapToSearch,
+                                  UIF::Node* variableNode)
+{
+    return mapToSearch->at(variableNode->str);
 }
 
 /* Returns whether the variable at a node is in a given vector of valid
