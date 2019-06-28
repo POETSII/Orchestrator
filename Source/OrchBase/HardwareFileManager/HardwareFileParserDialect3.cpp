@@ -441,7 +441,7 @@ bool HardwareFileParser::d3_load_validate_sections()
  * - engine: Engine to populate */
 bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
 {
-    bool anyErrors = false;
+    bool anyErrors = false;  /* Innocent until proven guilty. */
     std::string sectionName = "packet_address_format";
 
     /* Valid fields for the header section (all are mandatory). */
@@ -475,7 +475,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
     for (recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;
+        isRecordValid = true;  /* Innocent until proven guilty. */
 
         /* Get the value and variable nodes. */
         GetVari((*recordIterator), variableNodes);
@@ -540,7 +540,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
 bool HardwareFileParser::d3_populate_validate_from_header_section(
     P_engine* engine)
 {
-    bool anyErrors = false;
+    bool anyErrors = false;  /* Innocent until proven guilty. */
     std::string sectionName = "header";
 
     /* Valid fields for the header section. */
@@ -580,7 +580,7 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
     for (recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;
+        isRecordValid = true;  /* Innocent until proven guilty. */
 
         /* Get the value and variable nodes. */
         GetVari((*recordIterator), variableNodes);
