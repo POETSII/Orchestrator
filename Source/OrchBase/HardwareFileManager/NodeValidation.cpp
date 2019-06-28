@@ -10,13 +10,12 @@
  * - recordNode: Record parent node (for writing error message).
  * - valueNode: The UIF node that holds the value.
  * - variable: Variable name string (for writing error message).
- * - value: Value string (for writing error message).
  * - sectionName: The name of the section the record lives in (for writing
      error message).
  * - errorMessage: String to append the error message to, if any. */
 bool complain_if_node_value_not_floating(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
-    std::string value, std::string sectionName, std::string* errorMessage)
+    std::string sectionName, std::string* errorMessage)
 {
     if (!is_node_value_floating(valueNode))
     {
@@ -24,7 +23,7 @@ bool complain_if_node_value_not_floating(
             "L%u: Variable '%s' in section '%s' has value '%s', which is not "
             "a positive floating-point number or a positive integer.\n",
             recordNode->pos, variable.c_str(), sectionName.c_str(),
-            value.c_str()));
+            valueNode->str.c_str()));
         return false;
     }
     return true;
@@ -36,13 +35,12 @@ bool complain_if_node_value_not_floating(
  * - recordNode: Record parent node (for writing error message).
  * - valueNode: The UIF node that holds the value.
  * - variable: Variable name string (for writing error message).
- * - value: Value string (for writing error message).
  * - sectionName: The name of the section the record lives in (for writing
      error message).
  * - errorMessage: String to append the error message to, if any. */
 bool complain_if_node_value_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
-    std::string value, std::string sectionName, std::string* errorMessage)
+    std::string sectionName, std::string* errorMessage)
 {
     if (!is_node_value_natural(valueNode))
     {
@@ -50,7 +48,7 @@ bool complain_if_node_value_not_natural(
             "L%u: Variable '%s' in section '%s' has value '%s', which is not "
             "a natural number.\n",
             recordNode->pos, variable.c_str(), sectionName.c_str(),
-            value.c_str()));
+            valueNode->str.c_str()));
         return false;
     }
     return true;
@@ -111,13 +109,12 @@ bool complain_if_node_not_plus_prefixed(
  * - recordNode: Record parent node (for writing error message).
  * - valueNode: The UIF node that holds the value.
  * - variable: Variable name string (for writing error message).
- * - value: Value string (for writing error message).
  * - sectionName: The name of the section the record lives in (for writing
      error message).
  * - errorMessage: String to append the error message to, if any. */
 bool complain_if_nodes_values_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
-    std::string value, std::string sectionName, std::string* errorMessage)
+    std::string sectionName, std::string* errorMessage)
 {
     std::vector<UIF::Node*>::iterator valueNodeIterator;
     bool valid = true;
@@ -125,9 +122,8 @@ bool complain_if_nodes_values_not_natural(
          valueNodeIterator!=valueNode->leaf.end(); valueNodeIterator++)
     {
         valid &= complain_if_node_value_not_natural(
-            recordNode, (*valueNodeIterator),
-            variable, (*valueNodeIterator)->str.c_str(),
-            sectionName.c_str(), errorMessage);
+            recordNode, (*valueNodeIterator), variable, sectionName.c_str(),
+            errorMessage);
     }
     return valid;
 }

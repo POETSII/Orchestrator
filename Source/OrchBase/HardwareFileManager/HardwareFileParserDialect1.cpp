@@ -192,7 +192,7 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 if (variable == "board")
                 {
                     valid &= complain_if_nodes_values_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
 
                     /* Convert the values from strings to uints, and drop them
@@ -205,14 +205,14 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 else if (variable == "box")
                 {
                     valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->boxWordLength = str2unsigned(values[0]);
                 }
                 else if (variable == "core")
                 {
                     valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->coreWordLength = str2unsigned(values[0]);
                 }
@@ -220,7 +220,7 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 {
                     /* Same as with packet_address_format::board. */
                     valid &= complain_if_nodes_values_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
 
                     deployer->mailboxWordLengths.resize(values.size());
@@ -231,7 +231,7 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 else if (variable == "thread")
                 {
                     valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->threadWordLength = str2unsigned(values[0]);
                 }
@@ -248,7 +248,7 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 if (variable == "boxes")
                 {
                     valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->boxesInEngine = str2unsigned(values[0]);
                 }
@@ -258,7 +258,7 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                     {
                         valid &= complain_if_node_value_not_natural(
                             (*recordIterator), valueNodes[0], variable,
-                            values[0], sectionName, errorMessage);
+                            sectionName, errorMessage);
                         deployer->boardsInEngine.push_back(
                             str2unsigned(values[0]));
                         deployer->boardHypercubePeriodicity.push_back(false);
@@ -279,7 +279,7 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
 
                         valid &= complain_if_nodes_values_not_natural(
                             (*recordIterator), valueNodes[0], variable,
-                            values[0], sectionName, errorMessage);
+                            sectionName, errorMessage);
 
                         deployer->boardsAsHypercube = true;
                         deployer->boardsInEngine.resize(values.size());
@@ -318,14 +318,14 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 else if (variable == "external_box_cost")
                 {
                     valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->costExternalBox = str2float(values[0]);
                 }
                 else if (variable == "board_board_cost")
                 {
                     valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->costBoardBoard = str2float(values[0]);
                 }
@@ -343,7 +343,7 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 if (variable == "box_board_cost")
                 {
                     valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->costBoxBoard = str2float(values[0]);
                 }
@@ -420,28 +420,28 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 else if (variable == "board_mailbox_cost")
                 {
                     valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->costBoardMailbox = str2float(values[0]);
                 }
                 else if (variable == "mailbox_mailbox_cost")
                 {
                     valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->costBoardMailbox = str2float(values[0]);
                 }
                 else if (variable == "supervisor_memory")
                 {
                     valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->boardSupervisorMemory = str2unsigned(values[0]);
                 }
                 else if (variable == "dram")
                 {
                     valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->dram = str2unsigned(values[0]);
                 }
@@ -458,21 +458,21 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 if (variable == "cores")
                 {
                     valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->coresInMailbox = str2unsigned(values[0]);
                 }
                 else if (variable == "mailbox_core_cost")
                 {
                     valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->costMailboxCore = str2float(values[0]);
                 }
                 else if (variable == "core_core_cost")
                 {
                     valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->costCoreCore = str2float(values[0]);
                 }
@@ -489,35 +489,35 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 if (variable == "threads")
                 {
                     valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->threadsInCore = str2unsigned(values[0]);
                 }
                 else if (variable == "instruction_memory")
                 {
                     valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->instructionMemory = str2unsigned(values[0]);
                 }
                 else if (variable == "data_memory")
                 {
                     valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->dataMemory = str2unsigned(values[0]);
                 }
                 else if (variable == "core_thread_cost")
                 {
                     valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->costCoreThread = str2float(values[0]);
                 }
                 else if (variable == "thread_thread_cost")
                 {
                     valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable, values[0],
+                        (*recordIterator), valueNodes[0], variable,
                         sectionName, errorMessage);
                     deployer->costThreadThread = str2float(values[0]);
                 }

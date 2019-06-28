@@ -12,11 +12,11 @@
 /* Validators that write error messages */
 bool complain_if_node_value_not_floating(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
-    std::string value, std::string sectionName, std::string* errorMessage);
+    std::string sectionName, std::string* errorMessage);
 
 bool complain_if_node_value_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
-    std::string value, std::string sectionName, std::string* errorMessage);
+    std::string sectionName, std::string* errorMessage);
 
 bool complain_if_node_variable_true_in_map(
     UIF::Node* recordNode, UIF::Node* variableNode,
@@ -29,7 +29,7 @@ bool complain_if_node_not_plus_prefixed(
 
 bool complain_if_nodes_values_not_natural(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
-    std::string value, std::string sectionName, std::string* errorMessage);
+    std::string sectionName, std::string* errorMessage);
 
 bool complain_if_record_is_multivalue(
     UIF::Node* recordNode, std::vector<UIF::Node*>* variableNodes,
