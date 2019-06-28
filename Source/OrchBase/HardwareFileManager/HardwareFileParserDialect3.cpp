@@ -564,7 +564,19 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
                     str2unsigned(valueNodes[0]->str);
             }
         }
+
+        /* For board and mailbox, complain if any of the values are not
+         * natural. */
+        else if (variableName == "board" or variableName == "mailbox")
+        {
+            /* Validate, using get_values_as_strings(std::vector<std::string>*
+             * toPopulate, UIF::Node* valueNode); */
+        }
+
+        /* <!> Bad variable names (from header section). */
     }
+
+    /* <!> Mandatory variables not defined (from header section). */
 
     return anyErrors;
 }
