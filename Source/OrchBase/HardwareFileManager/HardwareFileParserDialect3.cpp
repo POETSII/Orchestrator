@@ -811,4 +811,4 @@ bool HardwareFileParser::d3_validate_types_define_cache()
      *    - if it's got an entry in (A), add to defaultTypes
      *    - otherwise, moan loudly and eventually return false.
      */
- }
+}
