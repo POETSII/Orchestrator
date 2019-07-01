@@ -11,6 +11,8 @@ class P_graph;
 class P_task;
 class P_pin;
 class P_devtyp;
+class CFrag;
+// class P_datavalue;
 
 //==============================================================================
 
@@ -25,10 +27,16 @@ vector<P_device*>   DevicesOfType(const P_devtyp* d_type);
 
                                        // The device graph
 pdigraph<unsigned,P_device *,unsigned,P_message *,unsigned,P_pin *> G;
+// a bit awkward here: the graph offers no easy way to look up
+// devices by name rather than ID. So we need to have a lookup
+// map to be able to do so, especially during loading of the source
+// xmls.
+map<string, P_device*> deviceMap;
 P_task *           par;                // Object parent
 P_graph *          pP;                 // Shortcut to the hardware graph
 P_typdcl *         pD;                 // Shortcut to declare object
-CFrag *            pPropsI;            // Graph properties initialiser code
+// P_datavalue *      pProps;             // Graph properties initialiser (V3)
+CFrag *            pPropsI;            // Graph properties initialiser code (V4)
 
 };
 

@@ -8,18 +8,11 @@
 #include "P_SupervisorDeviceType.h"
 */
 
-const set<string> P_GraphInstanceMetadataPatch::groups_init()
-{
-      const char* grps_array[2] = {"DeviceInstances","EdgeInstances"};
-      set<string> tmp_grps(grps_array,grps_array+2);
-      return tmp_grps;
-}
-
 const set<string> P_GraphInstanceMetadataPatch::tags_init()
 {
-      const char* tags_array[6] = {"DevI","ExtI","EdgeI"};
-      set<string> tmp_tags(tags_array,tags_array+3);
-      tmp_tags.insert(P_GraphInstanceMetadataPatch::P_Annotation::tags.begin(), P_GraphInstanceMetadataPatch::P_Annotation::tags.end());
+      const char* tags_array[2] = {"DeviceInstances","EdgeInstances"};
+      set<string> tmp_tags(tags_array,tags_array+2);
+      tmp_tags.insert(P_GraphInstanceMetadataPatch::P_Annotation::getTags().begin(), P_GraphInstanceMetadataPatch::P_Annotation::getTags().end());
       return tmp_tags;
 }
 
@@ -30,17 +23,15 @@ const set<string> P_GraphInstanceMetadataPatch::attrs_init()
       return tmp_attrs;
 }
 
-
-const set<string> P_GraphInstanceMetadataPatch::groups(groups_init());
 const set<string> P_GraphInstanceMetadataPatch::tags(tags_init());
 const set<string> P_GraphInstanceMetadataPatch::attributes(attrs_init());
 
-P_GraphInstanceMetadataPatch::P_GraphInstanceMetadataPatch(xmlTextReaderPtr parser, OrchBase* orchestrator):P_Annotation(parser)
+P_GraphInstanceMetadataPatch::P_GraphInstanceMetadataPatch(xmlTextReaderPtr parser, OrchBase* orchestrator):P_Annotation(parser), graph(0)
 {
       parent=orchestrator;
-      collections=&groups;
       valid_tags=&tags;
       valid_attributes=&attributes;
+      errorsAreFatal=false; // only during debug when we ignore subtags
 }
 
 P_GraphInstanceMetadataPatch::~P_GraphInstanceMetadataPatch()

@@ -4,6 +4,8 @@
 #include "D_graph.h"
 #include "P_devtyp.h"
 #include "P_thread.h"
+#include "stdint.h"
+// #include "P_datavalue.h"
 
 //==============================================================================
 
@@ -18,12 +20,18 @@ Name(name);
 Npar(G);
 attr = 0;
 idx  = 0;
+// pProps = 0; // temporary until P_datavalue is debugged
+// pState = 0;
 }
 
 //------------------------------------------------------------------------------
 
 P_device::~P_device()
 {
+//  if (pProps != 0) delete pProps; // Should this be done for typedefs in devices?
+//  if (pState != 0) delete pState
+if (pPropsI != 0) delete pPropsI;
+if (pStateI != 0) delete pStateI;
 }
 
 //------------------------------------------------------------------------------
@@ -36,6 +44,10 @@ fprintf(fp,"NameBase       %s\n",FullName().c_str());
 fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
         (uint64_t) this, (uint64_t) par);
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
+// fprintf(fp,"Properties %#018lx\n", (uint64_t) pProps);
+// if (pProps!=0) pProps->Dump(fp);
+// fprintf(fp,"State %#018lx\n", (uint64_t) pState);
+// if (pState!=0) pState->Dump(fp);
 fprintf(fp,"Properties initialiser    %#018lx\n", (uint64_t) pPropsI);
 if (pPropsI!=0) pPropsI->Dump(fp);
 fprintf(fp,"State initialiser         %#018lx\n", (uint64_t) pStateI);

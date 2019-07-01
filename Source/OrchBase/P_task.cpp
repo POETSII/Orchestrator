@@ -2,6 +2,7 @@
 
 #include "P_task.h"
 #include "P_super.h"
+#include "stdint.h"
 
 //==============================================================================
 
@@ -18,7 +19,7 @@ pD = new D_graph(this,"D_graph");
 
 P_task::~P_task()
 {
-par->Post(802,Name());
+// par->Post(802,Name());
 if (pD!=0) delete pD;
 }
 

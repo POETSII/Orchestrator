@@ -1,6 +1,8 @@
 //------------------------------------------------------------------------------
 
 #include "P_pin.h"
+#include "stdint.h"
+// #include "P_datavalue.h"
 
 //==============================================================================
 
@@ -8,13 +10,18 @@ P_pin::P_pin(D_graph * _p,string _s):par(_p),pP_pintyp(0),pPropsI(0),pStateI(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
+// pProps = 0; // temporary until P_datavalue is debugged
+// pState = 0;
 }
 
 //------------------------------------------------------------------------------
 
 P_pin::~P_pin()
 {
-
+// if (pProps!=0) delete pProps;
+// if (pState!=0) delete pState;
+if (pPropsI != 0) delete pPropsI;
+if (pStateI != 0) delete pStateI;
 }
 
 //------------------------------------------------------------------------------
@@ -29,6 +36,10 @@ fprintf(fp,"NameBase       %s\n",FullName().c_str());
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
 fprintf(fp,"Pin type       %#018lx\n", (uint64_t) pP_pintyp);
 if (pP_pintyp!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
+// fprintf(fp,"Properties %#018lx\n", (uint64_t) pProps);
+// if (pProps!=0) pProps->Dump(fp);
+// fprintf(fp,"State %#018lx\n", (uint64_t) pState);
+// if (pState!=0) pState->Dump(fp);
 fprintf(fp,"Properties initialiser    %#018lx\n", (uint64_t) pPropsI);
 if (pPropsI!=0) pPropsI->Dump(fp);
 fprintf(fp,"State initialiser         %#018lx\n", (uint64_t) pStateI);

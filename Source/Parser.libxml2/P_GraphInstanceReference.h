@@ -18,8 +18,10 @@ private:
 
              string graphInstanceID;
 
-static const char* attrs_array[3];
-static const set<string>attributes;
+static const set<string> tags_init();
+static const set<string> attrs_init();
+static const set<string>tags;
+static const set<string> attributes;
  
 };
 

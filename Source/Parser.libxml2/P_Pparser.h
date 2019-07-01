@@ -20,7 +20,7 @@ class P_Pparser
 {
 public:
 
-                         P_Pparser(xmlTextReaderPtr=0);
+                         P_Pparser(xmlTextReaderPtr=0, bool=true);
 virtual                  ~P_Pparser();
 
 virtual int              ParseDocument(string="Graphs");            
@@ -35,9 +35,9 @@ virtual int              SetObjectProperty(string, string) = 0;
 
 protected:
 
-	bool               isCData; // CData and text tags
-	bool               isText;  // should just be copied verbatim
-	const set<string>* collections;
+	bool               isCData;        // CData and text tags
+	bool               isText;         // should just be copied verbatim
+	bool               errorsAreFatal; // abort parsing if an error occurs
 	const set<string>* valid_tags;
 	const set<string>* valid_attributes;
 static  const int ERR_SUCCESS = 0x0;
@@ -52,6 +52,10 @@ static  const int ERR_INVALID_XML_DOC = 0x80;
 static  const int ERR_UNPARSEABLE_PROPS = 0x100;
 static  const int ERR_PARSER_NOT_OPEN = 0x200;
 static  const int ERR_NOT_AT_DOC_TAG = 0x400;
+static  const int ERR_INVALID_OBJECT = 0x800;
+static  const int ERR_UNDEFINED_ORCH = 0x1000;
+static  const int ERR_INVALID_JSON_DOC = 0x2000;
+static  const int ERR_INVALID_JSON_INIT = 0x4000;
 
 private:
 
@@ -60,10 +64,9 @@ private:
 	// ugly function to place an xmlChar* into a string. Awkwardly xmlChar*
         // is typedef'd as unsigned char*, so you have to use reinterpret_cast
         // because of certain C++ standards.
-	inline string&          xmlChartoStr(xmlChar* xmlstr, string& str) 
+	inline string&     xmlChartoStr(xmlChar* xmlstr, string& str) 
 	  {return (str = reinterpret_cast<char*>(xmlstr));};
-	int                     err;
-
+	int                err;
    
 };
 

@@ -3,9 +3,10 @@
 #include "P_box.h"
 #include "P_graph.h"
 #include "Config_t.h"
-#include "CommonBase.h"
+// #include "CommonBase.h" // CommonBase appears not to be needed.
 #include "OrchBase.h"
 #include "P_core.h"
+#include "stdint.h"
 
 //==============================================================================
 
@@ -50,7 +51,7 @@ void P_box::Build(Config_t * pCfg)
 // object handed in.
 {
 if (pCfg==0) {
-  par->par->Post(906);
+  // par->par->Post(906); Commented out temporarily so the CommonBase infrastructure can be removed
   return;
 }
 pConfig = pCfg;                        // Save configuration backpointer

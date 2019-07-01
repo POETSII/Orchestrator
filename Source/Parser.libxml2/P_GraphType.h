@@ -5,13 +5,16 @@
 #include "P_typdcl.h"
 #include "OrchBase.h"
 
-class P_GraphType:public P_Annotation
+class P_GraphType : public P_Annotation
 {
 public:
 
        P_GraphType(xmlTextReaderPtr,OrchBase*);
        ~P_GraphType();
 
+// stub hash check for pure virtual function in P_Annotation
+inline bool      CheckHash() {return false;};
+ 
        int       InsertSubObject(string);
        int       SetObjectProperty(string, string);
 
@@ -20,15 +23,13 @@ public:
 
 private:
 
-static const set<string> groups_init();
 static const set<string> tags_init();
 static const set<string> attrs_init();
 
-static const set<string>groups;
 static const set<string>tags;
 static const set<string>attributes;
 
-       OrchBase* parent;
+             OrchBase* parent;
 };
 
 #endif

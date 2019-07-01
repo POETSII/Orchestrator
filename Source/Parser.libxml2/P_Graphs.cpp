@@ -1,17 +1,26 @@
 #include "P_Graphs.h"
-#include "orchbasedummy.h"
+#include "OrchBase.h"
 #include "stdlib.h"
+// #include <iostream>
 #include "P_GraphType.h"
 #include "P_GraphInstance.h"
 #include "P_GraphTypeReference.h"
 #include "P_GraphInstanceReference.h"
 #include "P_GraphInstanceMetadataPatch.h"
 
-// lists of allowable tag values. Unfortunately C++98 syntax for initializing
-// static const STL containers is extremely oblique. C++11 improves upon this,
-// although it's not clear that it improves upon the problem of generating
-// a static initializer (function). Surely this shouldn't be this hard?
-// However as long as the lists are small this probably isn't too terribly bad.
+/* lists of allowable tag values. Unfortunately C++98 syntax for initializing
+   static const STL containers is extremely oblique. The problem is particularly
+   complicated if a static constant member is initialised with a static constant
+   member in another translation unit (e.g. if it's in a derived class with a
+   base class containing a static member), because the order of initialisation
+   of static members is UNDEFINED between translation units. Thus the program
+   can crash before it even starts, if the static member of the derived class 
+   is inititialised before the static member of the base class (yes, this can
+   happen. C++11 improves upon this, although it's not clear that it improves
+   upon the problem of generating a static initializer (function). Surely this
+   shouldn't be this hard? However as long as the lists are small this probably
+   isn't too terribly bad.
+*/
 
 // permitted tags for the top-level object are the top-level type declarations
 // and the instance definitions.
@@ -30,18 +39,27 @@ const set<string> P_Graphs::attrs_init()
       return tmp_attrs;
 }
 
-const set<string> P_Graphs::tags(tags_init());
-const set<string> P_Graphs::attributes(attrs_init());
+const set<string>& P_Graphs::getTags()
+{
+      static const set<string> tags(tags_init());
+      return tags;
+}
+
+const set<string>& P_Graphs::getAttributes()
+{
+      static const set<string> attributes(attrs_init());
+      return attributes;
+}
 
 P_Graphs::P_Graphs(OrchBase* orchestrator, string infile):P_Pparser()
 {
-      // set or create the orchestrator and open a parser for the file
-      // to be read.
+      // Graphs is the top-level tag, and thus this object will be created before
+      // the XML file is open. Set or create the orchestrator and open a parser for 
+      // the file to be read.
       internalOrch=false;
       SetOrch(orchestrator);
-      collections=0;
-      valid_tags = &tags;
-      valid_attributes = &attributes;
+      valid_tags = &getTags();
+      valid_attributes = &getAttributes();
       Load(infile);
 }
 
@@ -58,25 +76,27 @@ int P_Graphs::InsertSubObject(string subobj)
     {
        P_GraphType gt_subobj(GetParser(), orchDB);
        if (gt_subobj.ParseObjectProperties() < 0) return ERR_UNPARSEABLE_PROPS;
+       if (!gt_subobj.typdcl) return ERR_INVALID_OBJECT; // didn't set up an Orchestrator object
        return gt_subobj.ParseNextSubObject(subobj);
     }
     if (subobj == "GraphInstance")
     {
        P_GraphInstance gi_subobj(GetParser(), orchDB);
        if (gi_subobj.ParseObjectProperties() < 0) return ERR_UNPARSEABLE_PROPS;
+       if (!gi_subobj.task) return ERR_INVALID_OBJECT; // didn't set up an Orchestrator object
        return gi_subobj.ParseNextSubObject(subobj);
     }
     if (subobj == "GraphTypeReference")
     {
        P_GraphTypeReference gtr_obj(orchDB);
        if (gtr_obj.ParseObjectProperties() < 0) return ERR_UNPARSEABLE_PROPS;
-       gtr_obj.ParseDocument();
+       return gtr_obj.ParseDocument();
     }
     if (subobj == "GraphInstanceReference")
     {
        P_GraphInstanceReference gir_obj(orchDB);
        if (gir_obj.ParseObjectProperties() < 0) return ERR_UNPARSEABLE_PROPS;
-       gir_obj.ParseDocument();
+       return gir_obj.ParseDocument();
     }
     if (subobj == "GraphInstanceMetadataPatch")
     {
@@ -84,8 +104,7 @@ int P_Graphs::InsertSubObject(string subobj)
        if (gm_subobj.ParseObjectProperties() < 0) return ERR_UNPARSEABLE_PROPS;
        return gm_subobj.ParseNextSubObject(subobj);
     }
-    return ERR_UNEXPECTED_TAG;
-    
+    return ERR_UNEXPECTED_TAG;   
 }
 
 void P_Graphs::SetOrch(OrchBase* orchestrator)
@@ -95,7 +114,8 @@ void P_Graphs::SetOrch(OrchBase* orchestrator)
       // need to create a dummy (as an MPI 'singleton').
       if (!(orchDB=orchestrator))
       {
-	 orchDB = new OrchBaseDummy(0,0,"OrchBaseDummy","OrchBaseDummy.h");
+	 orchDB = new OrchBase();
+	 // orchDB = new OrchBaseDummy(0,0,"OrchBaseDummy","OrchBaseDummy.h");
 	 internalOrch=true;
       }
 }

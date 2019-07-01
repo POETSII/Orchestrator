@@ -3,6 +3,7 @@
 #include "Config_t.h"
 #include "P_graph.h"
 #include  "build_defs.h"
+#include "stdint.h"
 
 //==============================================================================
 

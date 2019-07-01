@@ -9,6 +9,7 @@ class D_graph;
 class P_devtyp;
 class P_typdcl;
 class P_pintyp;
+// class P_datatype;
 #include "CFrag.h"
 #include <vector>
 using namespace std;
@@ -29,22 +30,28 @@ void                Dump(FILE * = stdout);
    So we can attempt to build such a core speculatively, and if the resultant 
    image is larger than the instruction memory the build fails.
 */ 
-inline unsigned int NumHandlers() {return 2+pHandlv.size()+P_pintypIv.size()+P_pintypOv.size();};
+inline unsigned int NumHandlers() {return 2+pHandlv.size()+P_pintypIm.size()+P_pintypOm.size();};
 unsigned int        MemPerDevice();
 
 
-vector<P_pintyp *>  P_pintypIv;
-vector<P_pintyp *>  P_pintypOv;
+map<string, P_pintyp*> P_pintypIm;  // replaced pin type vectors with maps  
+ map<string, P_pintyp*> P_pintypOm; // for straightforward lookup during parse 
+// vector<P_pintyp *>  P_pintypIv; 
+// vector<P_pintyp *>  P_pintypOv;
 vector<CFrag *>     pHandlv;
 CFrag *             pOnIdle;
 CFrag *             pOnRTS;
 CFrag *             pOnCtl;
-CFrag *             pPropsI;
-CFrag *             pStateI;
-CFrag *             pPropsD;
-CFrag *             pStateD;
+// P_datatype *        pProps;      // Edge properties (V3)
+// P_datatype *        pState;      // Edge state (V3)
+CFrag *             pPropsI;        // Properties initialiser (V3)
+CFrag *             pStateI;        // State initialiser (V4)
+CFrag *             pPropsD;        // Edge properties (V4)
+CFrag *             pStateD;        // Edge state (V4)
 P_typdcl *          par;
 unsigned            idx; // this device type's index in its parent's P_devtypv
+bool                isExt;
+bool                isSuper;
 
 
 };

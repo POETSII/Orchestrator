@@ -6,6 +6,7 @@
 #include "P_devtyp.h"
 #include "CFrag.h"
 class P_message;
+// class P_datatype;
 
 //==============================================================================
 
@@ -17,10 +18,13 @@ virtual ~          P_pintyp();
 
 void               Dump(FILE * = stdout);
 
-CFrag *            pPropsD;
-CFrag *            pPropsI;
-CFrag *            pStateD;
-CFrag *            pStateI;
+
+// P_datatype*        pProps; // V3 version
+// P_datatype*        pState; // V3 version
+CFrag *            pPropsD; // V4 version
+CFrag *            pPropsI; // V4 version
+CFrag *            pStateD; // V4 version
+CFrag *            pStateI; // V4 version
 CFrag *            pHandl;
 P_message*         pMsg;
 P_devtyp *         par;

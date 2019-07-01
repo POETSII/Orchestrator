@@ -1,14 +1,30 @@
 #include "P_GraphInstanceReference.h"
 #include "P_GraphInstance.h"
 
-// For a GraphInstance reference the valid attributes are the minor version from
+const set<string> P_GraphInstanceReference::tags_init()
+{
+      set<string> tmp_tags;
+      tmp_tags.insert(P_GraphInstanceReference::P_Graphs::getTags().begin(), P_GraphInstanceReference::P_Graphs::getTags().end());
+      return tmp_tags;
+}
+
+// For a GraphInstanceReference the valid attributes are the minor version from
 // the parent P_Graphs object, and the id/path fields from the P_GraphInstanceReference
 // itself.
-const char* P_GraphInstanceReference::attrs_array[3] = {"formatMinorVersion","id","src"};
-const set<string> P_GraphInstanceReference::attributes(attrs_array,attrs_array+3);
+const set<string> P_GraphInstanceReference::attrs_init()
+{
+      const char* attrs_array[2] = {"id","src"};
+      set<string> tmp_attrs(attrs_array,attrs_array+2);
+      tmp_attrs.insert(P_GraphInstanceReference::P_Graphs::getAttributes().begin(), P_GraphInstanceReference::P_Graphs::getAttributes().end());
+      return tmp_attrs;
+}
+
+const set<string> P_GraphInstanceReference::tags(tags_init());
+const set<string> P_GraphInstanceReference::attributes(attrs_init());
 
 P_GraphInstanceReference::P_GraphInstanceReference(OrchBase* orchestrator):P_Graphs(orchestrator)
 {
+      valid_tags = &tags;
       valid_attributes = &attributes;
 }
 

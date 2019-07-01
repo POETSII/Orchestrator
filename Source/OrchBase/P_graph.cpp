@@ -5,6 +5,7 @@
 #include "Cli.h"
 #include "OrchBase.h"
 #include "Config_t.h"
+#include "stdint.h"
 #include <climits>
 
 //==============================================================================

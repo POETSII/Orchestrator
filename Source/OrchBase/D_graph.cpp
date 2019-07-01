@@ -4,14 +4,17 @@
 #include "P_task.h"
 #include "P_pin.h"
 #include "P_device.h"
+#include "stdint.h"
+// #include "P_datavalue.h"
 //#include <cinttypes>
 
 //==============================================================================
 
-D_graph::D_graph(P_task * _p,string _s):par(_p),pP(0),pD(0),pPropsI(0)
+D_graph::D_graph(P_task * _p,string _s):deviceMap(),par(_p),pP(0),pD(0),pPropsI(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
+// pProps = 0;                         // temporary until P_datavalue is debugged
 
 G.SetPD_CB(P_pin::PinDat_cb);          // Debug callbacks for the graph build
 G.SetPK_CB(P_pin::PinKey_cb);
@@ -48,6 +51,7 @@ WALKPDIGRAPHARCS(unsigned,P_device *,unsigned,P_message *,unsigned,P_pin *,G,i)
 //   if (i!=G.ArcEnd()) delete G.ArcData(i);
 for (map<intptr_t, P_message*>::iterator del_msg = unique_msgs.begin(); del_msg != unique_msgs.end(); del_msg++) delete (*del_msg).second;
 */
+if (pPropsI != 0) delete pPropsI;
 }
 
 //------------------------------------------------------------------------------
@@ -62,6 +66,8 @@ fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
 if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
 fprintf(fp,"P_graph shortcut %#018lx\n", (uint64_t) pP);
 if (pP!=0) fprintf(fp,"...%s\n",pP->FullName().c_str());
+// fprintf(fp,"Global Properties %#018lx\n", (uint64_t) pProps);
+// if (pProps!=0) pProps->Dump(fp);
 fprintf(fp,"C Initialiser %#018lx\n", (uint64_t) pPropsI);
 if (pPropsI!=0) pPropsI->Dump(fp);
 fprintf(fp,"DEVICE GRAPH %35s++++++++++++++++++++++++++++++++\n",s.c_str());

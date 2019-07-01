@@ -20,7 +20,10 @@ virtual int       SetObjectProperty(string, string);
     
 protected:
 
-        OrchBase* orchDB;
+             OrchBase* orchDB;
+
+static const set<string>& getTags();
+static const set<string>& getAttributes();
 
 private:
     
@@ -29,8 +32,6 @@ private:
 
 static const set<string> tags_init();
 static const set<string> attrs_init();
-static const set<string>tags;
-static const set<string>attributes;
 };
 
 #endif

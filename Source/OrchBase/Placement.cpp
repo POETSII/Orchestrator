@@ -7,6 +7,7 @@
 #include "P_super.h"
 #include "P_devtyp.h"
 #include "build_defs.h"
+#include "stdint.h"
 #include <algorithm>
 
 //==============================================================================
@@ -86,16 +87,16 @@ bool Placement::Place(P_task * pT)
 {
 P_thread * pTh = 0;
  
-WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
+WALKMAP(string,P_devtyp*,pT->pP_typdcl->P_devtypm,dT)
 {
-    if ((*dT)->pOnRTS) // don't need to place if it's a supervisor - easily identified by lack of RTS handler
+    if (dT->second->pOnRTS) // don't need to place if it's a supervisor - easily identified by lack of RTS handler
     {
-    vector<P_device*> dVs = pT->pD->DevicesOfType(*dT); // get all the devices of this type
-    unsigned int devMem = (*dT)->MemPerDevice();
+    vector<P_device*> dVs = pT->pD->DevicesOfType(dT->second); // get all the devices of this type
+    unsigned int devMem = dT->second->MemPerDevice();
     if (devMem > BYTES_PER_THREAD)
     {
        // even a single device is too big to fit
-       par->Post(810, (*dT)->Name(), int2str(devMem), int2str(BYTES_PER_THREAD));
+       // par->Post(810, dT->second->Name(), int2str(devMem), int2str(BYTES_PER_THREAD));
        return true;
     }
     // place according to constraints found
@@ -110,9 +111,10 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
            // ...get a thread, checking to see that we don't run out of room
            // - i.e. that we increment past box space and this isn't the last
            // device to place
-           if (GetNext(pTh) && !((devIdx == (dVs.size()-1)) && ((dT+1) == pT->pP_typdcl->P_devtypv.end())))
+	   map<string,P_devtyp*>::iterator dTn = dT; // C++98 doesn't have the next function so a copy is necessary for a map.
+	   if (GetNext(pTh) && !((devIdx == (dVs.size()-1)) && ((++dTn) == pT->pP_typdcl->P_devtypm.end())))
            {
-              par->Post(163, pT->Name()); // out of room. Abandon placement.
+	      // par->Post(163, pT->Name()); // out of room. Abandon placement.
               return true;
            }
         }
@@ -125,9 +127,10 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
     // that situation the previous GetNext() function will have incremented the core for us.
     if (dVs.size()%(pCon->Constraintm["DevicesPerThread"]*pCon->Constraintm["ThreadsPerCore"]))
     {
-       if (((dT+1) != pT->pP_typdcl->P_devtypv.end()) && GetNext(pTh,Placement::core))
+       map<string,P_devtyp*>::iterator dTm = dT;
+       if (((++dTm) != pT->pP_typdcl->P_devtypm.end()) && GetNext(pTh,Placement::core))
        {
-          par->Post(163, pT->Name()); // out of room. Abandon placement.
+	  // par->Post(163, pT->Name()); // out of room. Abandon placement.
           return true;
        }
     }
@@ -136,7 +139,7 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
     // need to increment again to get an even boundary.
     if (SHARED_INSTR_MEM && ((*Nco)->addr.A_core & 0x1) && GetNext(pTh,Placement::core))
     {
-       par->Post(163, pT->Name()); // out of room. Abandon placement.
+       // par->Post(163, pT->Name()); // out of room. Abandon placement.
        return true;
     }
     }

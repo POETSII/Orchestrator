@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <sstream>
 #include "T_gen.h"
+#include "flat.h"
 #include "rand.h"
 #include "filename.h"
 #include "dfprintf.h"
@@ -29,7 +30,7 @@ void T_gen::Build(P_task * pT)
 // task, and if it wants a task (circuit) built, we do it.
 {
 if (pT==0) {                           // Dud call?
-  par->Post(905);
+  // par->Post(905);
   return;
 }
 if (!pT->IsPoL()) return;              // Legitimate noop
@@ -45,7 +46,7 @@ if (pP->type == "clique") { BuildClique(pT); return; }
 if (pP->type == "random") { BuildRandom(pT); return; }
 if (pP->type == "ring")   { BuildRing(pT);   return; }
 if (pP->type == "tree")   { BuildTree(pT);   return; }
-par->Post(111,pP->type);               // Dud PoL type
+// par->Post(111,pP->type);               // Dud PoL type
 }
 
 //------------------------------------------------------------------------------
@@ -80,8 +81,8 @@ fprintf(fp,"\n\n");
 //P_devtyp * PoL_devtyp = new P_devtyp(pT->pP_typdcl,
 //   static_cast<stringstream*>(&(stringstream("PoL_devtyp", ios_base::out | ios_base::ate)<<pT->pP_typdcl->P_devtypv.size()))->str());
 P_devtyp * PoL_devtyp = new P_devtyp(pT->pP_typdcl,UniS("Pol_devtyp"));
-                                       // Place it in the device type list
-pT->pP_typdcl->P_devtypv.push_back(PoL_devtyp);
+                                       // Place it in the device type map
+pT->pP_typdcl->P_devtypm[PoL_devtyp->Name()] = PoL_devtyp;
                                        // Build a supervisor
 P_super * pS = new P_super(UniS("Pol_super"));
 par->P_superm[pS->Name()] = pS;        // Store it
@@ -153,8 +154,8 @@ FILE * fp = stdout;
 fprintf(fp,"\n\n");
 
 // create a new (blank) device type for the PoL devices
-P_devtyp* PoL_devtyp = new P_devtyp(pT->pP_typdcl, static_cast<stringstream*>(&(stringstream("PoL_devtyp", ios_base::out | ios_base::ate)<<pT->pP_typdcl->P_devtypv.size()))->str());
-pT->pP_typdcl->P_devtypv.push_back(PoL_devtyp); // place it in the device type list
+P_devtyp* PoL_devtyp = new P_devtyp(pT->pP_typdcl, static_cast<stringstream*>(&(stringstream("PoL_devtyp", ios_base::out | ios_base::ate)<<pT->pP_typdcl->P_devtypm.size()))->str());
+pT->pP_typdcl->P_devtypm[PoL_devtyp->Name()] = PoL_devtyp; // place it in the device type map
 vector<unsigned> dkeys;                // Save the ids
 for (unsigned i=0;i<size;i++) {        // Shove them in....
   P_device * pD = new P_device();

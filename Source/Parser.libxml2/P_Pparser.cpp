@@ -1,5 +1,6 @@
 #include "P_Pparser.h"
 #include "stdlib.h"
+#include <iostream>
 
 const int P_Pparser::ERR_SUCCESS;
 const int P_Pparser::ERR_UNEXPECTED_TAG;
@@ -9,8 +10,16 @@ const int P_Pparser::ERR_UNEXPECTED_CDATA;
 const int P_Pparser::ERR_INVALID_NODE;
 const int P_Pparser::ERR_INVALID_NODE_TYPE;
 const int P_Pparser::ERR_INVALID_ATTR;
+const int P_Pparser::ERR_INVALID_XML_DOC;
+const int P_Pparser::ERR_UNPARSEABLE_PROPS;
+const int P_Pparser::ERR_PARSER_NOT_OPEN;
+const int P_Pparser::ERR_NOT_AT_DOC_TAG;
+const int P_Pparser::ERR_INVALID_OBJECT;
+const int P_Pparser::ERR_UNDEFINED_ORCH;
+const int P_Pparser::ERR_INVALID_JSON_DOC;
+const int P_Pparser::ERR_INVALID_JSON_INIT; 
 
-P_Pparser::P_Pparser(xmlTextReaderPtr p_def) : parser(p_def), isText(false), isCData(false)
+P_Pparser::P_Pparser(xmlTextReaderPtr p_def, bool errsFatal) : isText(false), isCData(false), errorsAreFatal(errsFatal), parser(p_def), err(0)
 {
   
 }
@@ -37,7 +46,7 @@ int P_Pparser::ParseNextSubObject(string tag)
 {
     string subtag;
     int subtag_type;
-    if (!parser) return err = ERR_PARSER_NOT_OPEN;
+    if (!parser) return err |= ERR_PARSER_NOT_OPEN;
     // an empty element can just be skipped over.
     /* a real 'gotcha' in the libxml2 library; for this one function
       (xmlTextReaderIsEmptyElement) libxml2 is not strictly standards-compliant.
@@ -48,21 +57,25 @@ int P_Pparser::ParseNextSubObject(string tag)
       'IsEmptyElement: check if the current node is empty, this is a bit bizarre in the
        sense that <a/> will be considered empty while <a></a> will not.' 
     */ 
-    if ((subtag_type = xmlTextReaderIsEmptyElement(parser)) < 0) return err = ERR_INVALID_NODE;
+    if ((subtag_type = xmlTextReaderIsEmptyElement(parser)) < 0) return err |= ERR_INVALID_NODE;
     else if (subtag_type) return ERR_SUCCESS;
     while ((GetNextTag(&subtag_type, subtag) != tag) || (subtag_type != XML_READER_TYPE_END_ELEMENT))
     {
-          if (subtag.empty()) continue; // nothing of value found - move on 
-	  // descend into a collection and extract all its members when needed.
-          if (collections && (collections->find(subtag) != collections->end())) err = ParseNextSubObject(subtag);  
+          // cout << "New subtag " << subtag << " of type " << subtag_type << " for tag " << tag << "\n";
+          // cout.flush();
+	  if (err && errorsAreFatal) break; // error occurred; abort parsing.
+	  if (subtag.empty())
+          if (subtag.empty()) continue; // nothing of value found - move on
 	  // set up subobjects when valid ones are found.
-	  else if ((valid_tags && (valid_tags->find(subtag) != valid_tags->end())) ||
-		   (isCData && (subtag_type == XML_READER_TYPE_CDATA)) ||
-		   (isText && (subtag_type == XML_READER_TYPE_TEXT)))
-	          err = InsertSubObject(subtag);
+	  if ((valid_tags && (valid_tags->find(subtag) != valid_tags->end())) ||
+	      (isCData && (subtag_type == XML_READER_TYPE_CDATA)) ||
+	      (isText && (subtag_type == XML_READER_TYPE_TEXT)))
+	       err = InsertSubObject(subtag);
 	  // other tags encountered indicate a problem.
-	  else err = ERR_UNEXPECTED_TAG;     
-    }	
+	  else err |= ERR_UNEXPECTED_TAG;     
+    }
+    // cout << "Ending tag " << subtag << " of type " << subtag_type << " for tag " << tag << "\n";
+    // cout.flush();
     return err;
 }
 
@@ -75,7 +88,7 @@ int P_Pparser::ParseObjectProperties()
     if (!parser) return -(err |= ERR_PARSER_NOT_OPEN);
     // no attributes, so just exit. (Object should assume global defaults)
     if ((read_state = xmlTextReaderHasAttributes(parser)) < 1) return read_state;
-    if ((attr_count = xmlTextReaderAttributeCount(parser)) < 1) return read_state;
+    if ((attr_count = xmlTextReaderAttributeCount(parser)) < 1) return read_state;    
     for (int a = 0; a < attr_count; a++)
     {
         // get the next attribute
@@ -125,7 +138,7 @@ string& P_Pparser::GetNextTag(int* tag_type, string& tag)
         if ((read_state = xmlTextReaderRead(parser)) < 0) err |= ERR_INVALID_NODE;
         if (read_state < 1) return tag = "";
     }
-    while ((*tag_type = xmlTextReaderNodeType(parser)) == XML_READER_TYPE_WHITESPACE);
+    while (((*tag_type = xmlTextReaderNodeType(parser)) == XML_READER_TYPE_WHITESPACE) || (*tag_type == XML_READER_TYPE_SIGNIFICANT_WHITESPACE));
     switch(*tag_type)
     {
     case -1:
@@ -135,7 +148,6 @@ string& P_Pparser::GetNextTag(int* tag_type, string& tag)
     case XML_READER_TYPE_DOCUMENT_TYPE:
     case XML_READER_TYPE_DOCUMENT_FRAGMENT:
     case XML_READER_TYPE_NOTATION:
-    case XML_READER_TYPE_SIGNIFICANT_WHITESPACE:
     case XML_READER_TYPE_END_ENTITY:  
     // bad node
     err |= ERR_INVALID_NODE_TYPE;

@@ -27,6 +27,8 @@ void CFrag::Dump(FILE * fp)
 {
 fprintf(fp,"CFrag+++++++++++++++++++++++++++++++++++++++\n");
 
+fprintf(fp, c_src.c_str()); // Dump method prints out the actual fragment
+fprintf(fp, "\n");
 
 fprintf(fp,"CFrag---------------------------------------\n");
 fflush(fp);

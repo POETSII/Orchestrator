@@ -11,6 +11,8 @@ public:
        P_GraphInstanceMetadataPatch(xmlTextReaderPtr,OrchBase*);
        ~P_GraphInstanceMetadataPatch();
 
+inline bool      CheckHash() {return false;};
+       
        int       InsertSubObject(string);
        int       SetObjectProperty(string, string);
 
@@ -20,11 +22,9 @@ private:
 
        string            graphInstanceID; // id of the task being patched
 
-static const set<string> groups_init();
 static const set<string> tags_init();
 static const set<string> attrs_init();
 
-static const set<string>groups;
 static const set<string>tags;
 static const set<string>attributes;
 

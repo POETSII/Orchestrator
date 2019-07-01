@@ -1,25 +1,16 @@
 #include "P_GraphType.h"
-/* to be included once implemented
-#include "P_DeviceType.h"
-#include "P_ExternalType.h"
-#include "P_TypeDef.h"
-#include "P_MessageType.h"
-#include "P_Properties.h"
-#include "P_SupervisorDeviceType.h"
-*/
-
-const set<string> P_GraphType::groups_init()
-{
-      const char* grps_array[3] = {"DeviceTypes","Types","MessageTypes"};
-      set<string> tmp_grps(grps_array,grps_array+3);
-      return tmp_grps;
-}
+#include "P_DeviceTypes.h"
+#include "P_MessageTypes.h"
+#include "P_Types.h"
+#include "P_DataDecl.h"
+#include "P_CodeFragment.h"
+// #include <iostream>
 
 const set<string> P_GraphType::tags_init()
 {
-      const char* tags_array[6] = {"DeviceType","ExternalType","SupervisorDeviceType","MessageType","TypeDef","Properties"};
-      set<string> tmp_tags(tags_array,tags_array+6);
-      tmp_tags.insert(P_GraphType::P_Annotation::tags.begin(), P_GraphType::P_Annotation::tags.end());
+      const char* tags_array[5] = {"DeviceTypes","MessageTypes","Types","Properties","SharedCode"};
+      set<string> tmp_tags(tags_array,tags_array+5);
+      tmp_tags.insert(P_GraphType::P_Annotation::getTags().begin(), P_GraphType::P_Annotation::getTags().end());
       return tmp_tags;
 }
 
@@ -30,15 +21,12 @@ const set<string> P_GraphType::attrs_init()
       return tmp_attrs;
 }
 
-
-const set<string> P_GraphType::groups(groups_init());
 const set<string> P_GraphType::tags(tags_init());
 const set<string> P_GraphType::attributes(attrs_init());
 
-P_GraphType::P_GraphType(xmlTextReaderPtr parser, OrchBase* orchestrator):P_Annotation(parser)
+P_GraphType::P_GraphType(xmlTextReaderPtr parser, OrchBase* orchestrator) : P_Annotation(parser), typdcl(0)
 {
       parent=orchestrator;
-      collections=&groups;
       valid_tags=&tags;
       valid_attributes=&attributes;
 }
@@ -50,8 +38,45 @@ P_GraphType::~P_GraphType()
 int P_GraphType::InsertSubObject(string subobj)
 {
     // stub insert routine swallows everything internal. 
-    int error = ERR_SUCCESS;
-    return error;
+    // int error = ERR_SUCCESS;
+    // return error;
+    if (!typdcl) return ERR_INVALID_NODE; // no Orchestrator object means the GraphType had no ID. Abort parsing.
+    if (isText) return ERR_SUCCESS;       // simply swallow the text of annotations
+    // tag not in class-specific subset
+    if (valid_tags->find(subobj) == valid_tags->end()) return ERR_UNEXPECTED_TAG;  
+    if (subobj == "DeviceTypes")
+    {
+       P_DeviceTypes dt_subobj(GetParser(), typdcl);
+       return dt_subobj.ParseNextSubObject(subobj);
+    }
+    if (subobj == "MessageTypes")
+    {
+       P_MessageTypes mt_subobj(GetParser(), typdcl);
+       return mt_subobj.ParseNextSubObject(subobj);
+    }
+    if (subobj == "Types")
+    {
+       P_Types tt_subobj(GetParser(), typdcl);
+       return tt_subobj.ParseNextSubObject(subobj);
+    }
+    if (subobj == "Properties")
+    {
+       string defaultPropsName = typdcl->Name();
+       P_DataDecl p_subobj(GetParser(), typdcl, defaultPropsName + "_properties_t");
+       if (p_subobj.ParseObjectProperties() < 0) return ERR_UNPARSEABLE_PROPS;
+       int error = p_subobj.ParseNextSubObject(subobj);
+       // if (error == ERR_SUCCESS) typdcl->pProps = p_subobj.type;
+       if (error == ERR_SUCCESS) typdcl->pPropsD = p_subobj.code;
+       return error;
+    }
+    if (subobj == "SharedCode")
+    {
+       P_CodeFragment sc_subobj(GetParser());
+       int error = sc_subobj.ParseNextSubObject(subobj);
+       if (error == ERR_SUCCESS && (sc_subobj.code != 0)) typdcl->General.push_back(sc_subobj.code);
+       return error;
+    }
+    return P_Annotation::InsertSubObject(subobj); 
 }
 
 int P_GraphType::SetObjectProperty(string prop, string value)

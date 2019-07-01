@@ -10,6 +10,7 @@ class D_graph;
 class P_devtyp;
 class P_task;
 class OrchBase;
+// class P_datatype;
 
 #include <vector>
 #include <list>
@@ -26,12 +27,16 @@ virtual ~           P_typdcl();
 void                Dump(FILE * = stdout);
 
 OrchBase *          par;
-vector<P_devtyp *>  P_devtypv;
-vector<P_message *> P_messagev;
+map<string, P_devtyp*> P_devtypm;     // device and message type vectors replaced
+map<string, P_message*> P_messagem;   // with maps for easy lookup during parse
+// map<string, P_datatype*> P_typdefm;
+// vector<P_devtyp *>  P_devtypv;
+// vector<P_message *> P_messagev;
 list<P_task *>      P_taskl;
 vector<CFrag *>     General;
-CFrag *             pPropsI;
-CFrag *             pPropsD;
+// P_datatype*         pProps;        // Global properties (V3)
+CFrag *             pPropsI;          // Global properties initialiser (V4)
+CFrag *             pPropsD;          // Global properties declaration (V4)
 
 };
 

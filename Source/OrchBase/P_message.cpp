@@ -2,19 +2,23 @@
 
 #include "P_message.h"
 #include "P_typdcl.h"
+#include "stdint.h"
+// #include "P_datatype.h"
 
 //==============================================================================
 
-P_message::P_message(P_typdcl * _p,string _s):par(_p),pPropsD(0),MsgSize(0),MsgType(0)
+P_message::P_message(P_typdcl * _p,string _s):par(_p),MsgSize(0),MsgType(0),pPropsD(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
+// pProps = 0;                         // temporary until P_datatype is debugged (V3)
 }
 
 //------------------------------------------------------------------------------
 
 P_message::~P_message()
 {
+  // if (pProps!=0) delete pProps;
 if (pPropsD!=0) delete pPropsD;
 }
 

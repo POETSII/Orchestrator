@@ -5,6 +5,7 @@
 #include "P_device.h"
 #include "P_core.h"
 #include "macros.h"
+#include "stdint.h"
 
 //==============================================================================
 

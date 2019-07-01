@@ -10,6 +10,7 @@ class D_graph;
 class P_thread;
 class P_devtyp;
 class CFrag;
+// class P_datavalue;
 
 //==============================================================================
 
@@ -32,8 +33,10 @@ P_addr             addr;
 D_graph *          par;
 P_thread *         pP_thread;
 P_devtyp *         pP_devtyp;
-CFrag *            pPropsI;            // Device properties initialiser code
-CFrag *            pStateI;            // Device state initialiser code
+// P_datavalue *      pProps;            // Device properties initialiser code (V3)
+// P_datavalue *      pState;            // Device state initialiser code      (V3)
+CFrag *            pPropsI;            // Device properties initialiser code (V4)
+CFrag *            pStateI;            // Device state initialiser code      (V4)
 unsigned           idx;                // Index in the graph
 unsigned           attr;               // The eponymous attribute
 /* this looks like a hack, and maybe it is. When creating edges, in the
