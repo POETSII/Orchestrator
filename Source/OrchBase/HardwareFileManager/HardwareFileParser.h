@@ -30,11 +30,11 @@
  * model follows this procedure:
  *
  *  1. Load the file.
- *  2. Parse the file using the UIF parser, and generate a token tree. Raises
- *     if the file is syntactically invalid.
- *  3. Parse the token tree, and generate a hardware stack (PoetsEngine
+ *  2. Parse the file using the UIF parser, and generate a tree. Raises if the
+ *     file is syntactically invalid.
+ *  3. Traverse the generated tree, and generate a hardware stack (P_engine
  *     populated with components). Raises if the file is semantically invalid.
- *  ...
+ *
  *  From which the programmer can use the hardware model as they desire (for
  *  the most part, this means putting it into the Orchestrator, but do what you
  *  will).
