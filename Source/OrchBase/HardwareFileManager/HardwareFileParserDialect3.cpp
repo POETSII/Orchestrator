@@ -960,17 +960,118 @@ bool HardwareFileParser::d3_validate_types_define_cache()
     /* Container to hold default sections for boxes, boards, and mailboxes. */
     UIF::Node* globalDefaults[ITEM_ENUM_LENGTH] = {0, 0, 0};
 
+    /* Populate our new friend. */
     anyErrors = !d3_get_validate_default_types(globalDefaults);
 
-    /* For each section in engine_box, engine_board, and all board(X):
-     *  - if it's got a type field:
-     *    - check it's valid (using is_type_valid)
-     *    - check a section supports it
-     *    - if all good, add to defaultTypes (not globalDefaults)
-     *  - otherwise:
-     *    - if it's got a non-zero entry in globalDefaults, add to defaultTypes
-     *    - otherwise, moan loudly and eventually return false.
-     */
+    /* Staging vector and iterator for records. */
+    std::vector<UIF::Node*> recordNodes;
+    std::vector<UIF::Node*>::iterator recordIterator;
+    bool isRecordValid;
+
+    /* Staging vectors for holding value nodes and variable nodes. */
+    std::vector<UIF::Node*> valueNodes;
+    std::vector<UIF::Node*> variableNodes;
+    std::string type;
+
+    /* Get all sections that create items, and thus may define +type fields
+     * (i.e. engine_box, engine_board, and any board(X) section). */
+    std::vector<UIF::Node*> creativeSections;
+    std::vector<UIF::Node*>::iterator sectionIterator;
+    std::string sectionName;
+    creativeSections.push_back(untypedSections["engine_box"]);
+    creativeSections.push_back(untypedSections["engine_board"]);
+
+    std::map<std::string, UIF::Node*>::iterator typedSectionsIterator;
+    for (typedSectionsIterator=typedSections["board"].begin();
+         typedSectionsIterator!=typedSections["board"].end();
+         typedSectionsIterator++)
+    {
+        creativeSections.push_back(typedSectionsIterator->second);
+    }
+
+
+    /* For each of these sections, find the section that it maps to in
+     * defaultTypes, if any. */
+    unsigned typeFieldCount;
+    for (sectionIterator=creativeSections.begin();
+         sectionIterator!=creativeSections.end(); sectionIterator++)
+    {
+        typeFieldCount = 0;
+        sectionName = (*sectionIterator)->str;
+
+        /* Has it got a type-defining record? If so, grab the type by iterating
+         * through each record in this section. Panic if there's more than one
+         * type record though. */
+        GetRecd(*sectionIterator, recordNodes);
+        for (recordIterator=recordNodes.begin();
+             recordIterator!=recordNodes.end(); recordIterator++)
+        {
+            isRecordValid = true;  /* Innocent until proven guilty. */
+
+            /* Get the value and variable nodes. */
+            GetVari((*recordIterator), variableNodes);
+            GetValu((*recordIterator), valueNodes);
+
+            /* Is the variable name "type"? */
+            if (variableNodes[0]->str == "type")
+            {
+                /* Complain if (in order):
+                 *
+                 * - The record does not begin with a "+".
+                 * - There is more than one variable node.
+                 * - There is more than one value node.
+                 *
+                 * If so, ignore it. */
+                isRecordValid &= complain_if_node_not_plus_prefixed(
+                    *recordIterator, variableNodes[0], sectionName,
+                    &d3_errors);
+                isRecordValid &= complain_if_record_is_multivariable(
+                    *recordIterator, &variableNodes, sectionName, &d3_errors);
+                isRecordValid &= complain_if_record_is_multivalue(
+                    *recordIterator, &valueNodes, variableNodes[0]->str,
+                    sectionName, &d3_errors);
+                if (!isRecordValid)
+                {
+                    anyErrors = true;
+                    continue;
+                }
+
+                /* We got it! But complain if we've already found a type field
+                 * in this way. */
+                typeFieldCount += 1;
+                if (typeFieldCount > 1)
+                {
+                    d3_errors.append(dformat(
+                        "L%u: Duplicate definition of field 'type' in the "
+                        "'%s' section.\n", (*recordIterator)->pos,
+                        sectionName.c_str()));
+                    anyErrors = true;
+                    continue;
+                }
+                type = valueNodes[0]->str;
+            }
+
+            /* The variable of this node wasn't named "type", so we ignore it
+             * for our current machinations */
+            else {continue;}
+        }
+
+        /* So after all that, was there a type record in this section? */
+        if (typeFieldCount > 0)  /* Yes! */
+        {
+            /* Then:
+             *    - check it's valid (using is_type_valid)
+             *    - check a section supports it
+             *    - if all good, add to defaultTypes (not globalDefaults) */
+        }
+        else /* No! */
+        {
+            /* Then:
+             *    - if it's got a non-zero entry in globalDefaults, add to
+             *      defaultTypes
+             *    - otherwise, moan loudly and eventually return false. */
+        }
+    }
 
     return !anyErrors;
 }
