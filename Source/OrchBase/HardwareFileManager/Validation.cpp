@@ -3,6 +3,69 @@
 
 #include "Validation.h"
 
+/* Returns whether all of the mandatory strings (elements of mandatoryFields)
+ * map to true in the fieldsFound map, and false otherwise (even if the string
+ * is not in the map's keys). Appends an error message to a string for each
+ * field not found.
+ *
+ * But really, just conveniently checks that all fields have been defined in a
+ * section, to reduce copypasta.
+ *
+ * Arguments:
+ *
+ * - mandatoryFields: Strings in this vector denote the fields that must be
+ *   defined in this section.
+ * - fieldsFound: Whether or not the fields in mandatoryFields have been
+ *   defined. May contain strings that are not in mandatoryFields.
+ * - sectionName: The name of the section the record lives in (for writing
+     error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_mandatory_field_not_defined(
+    std::vector<std::string>* mandatoryFields,
+    std::map<std::string, bool>* fieldsFound, std::string sectionName,
+    std::string* errorMessage)
+{
+    bool returnValue = true;  /* Innocent until proven guilty. */
+    std::vector<std::string>::iterator fieldIterator;
+    std::map<std::string, bool>::iterator mapRecord;
+
+    bool isThisFieldTrue;
+    for (fieldIterator=mandatoryFields->begin();
+         fieldIterator!=mandatoryFields->end(); fieldIterator++)
+    {
+        /* Mark as a failure if either the record in the map was false, or we
+         * couldn't find the record. */
+        isThisFieldTrue = true;  /* Also innocent until proven guilty. */
+
+        /* Is the field a key in the map? */
+        mapRecord = fieldsFound->find(*fieldIterator);
+        if (mapRecord != fieldsFound->end())  /* We got him, boss. */
+        {
+            if (mapRecord->second == false)
+            {
+                /* The fields is false in the map. */
+                isThisFieldTrue = false;
+            }
+        }
+        else /* Key wasn't in the map. */
+        {
+            isThisFieldTrue = false;
+        }
+
+        /* Armageddon is here. https://www.youtube.com/watch?v=lcB58I7gSyA */
+        if (!isThisFieldTrue)
+        {
+            errorMessage->append(dformat("Variable '%s' not defined in the "
+                                         "'%s' section.\n",
+                                         (*fieldIterator).c_str(),
+                                         sectionName.c_str()));
+            returnValue = false;
+        }
+    }
+
+    return returnValue;
+}
+
 /* Returns whether the value at a node is a positive floating-point number (or
  * an integer), and appends an error message to a string if it is
  * not. Arguments:

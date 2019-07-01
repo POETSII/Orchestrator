@@ -629,21 +629,8 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
     }
 
     /* Ensure mandatory fields have been defined, inefficiently. */
-    for (fieldIterator=validFields.begin(); fieldIterator!=validFields.end();
-         fieldIterator++)
-    {
-        if(!fieldsFound[*fieldIterator])
-        {
-            d3_errors.append(dformat("Variable '%s' not defined in the '%s' "
-                                     "section.\n",
-                                     (*fieldIterator).c_str(),
-                                     sectionName.c_str()));
-            anyErrors = true;
-        }
-    }
-
-
-    /* <!> Mandatory variables not defined (from header section). */
+    anyErrors &= complain_if_mandatory_field_not_defined(
+        &validFields, &fieldsFound, sectionName, &d3_errors);
 
     return anyErrors;
 }
@@ -798,19 +785,9 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
         }
     }
 
-    /* Ensure mandatory fields have been defined, inefficiently. */
-    for (fieldIterator=mandatoryFields.begin();
-         fieldIterator!=mandatoryFields.end(); fieldIterator++)
-    {
-        if(!fieldsFound[*fieldIterator])
-        {
-            d3_errors.append(dformat("Variable '%s' not defined in the '%s' "
-                                     "section.\n",
-                                     (*fieldIterator).c_str(),
-                                     sectionName.c_str()));
-            anyErrors = true;
-        }
-    }
+    /* Ensure mandatory fields have been defined. */
+    anyErrors &= complain_if_mandatory_field_not_defined(
+        &mandatoryFields, &fieldsFound, sectionName, &d3_errors);
 
     return anyErrors;
 }

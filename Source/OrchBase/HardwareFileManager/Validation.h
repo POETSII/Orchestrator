@@ -10,6 +10,11 @@
 #include "uif.h"
 
 /* Validators that write error messages */
+bool complain_if_mandatory_field_not_defined(
+    std::vector<std::string>* mandatoryFields,
+    std::map<std::string, bool>* fieldsFound, std::string sectionName,
+    std::string* errorMessage);
+
 bool complain_if_node_value_not_floating(
     UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
     std::string sectionName, std::string* errorMessage);
