@@ -1,7 +1,7 @@
 /* Defines node validation mechanism (see the accompanying
  * header for further information). */
 
-#include "NodeValidation.h"
+#include "Validation.h"
 
 /* Returns whether the value at a node is a positive floating-point number (or
  * an integer), and appends an error message to a string if it is

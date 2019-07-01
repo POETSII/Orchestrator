@@ -1,9 +1,9 @@
-#ifndef __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEMANAGER_NODEVALIDATION_H
-#define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEMANAGER_NODEVALIDATION_H
+#ifndef __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEMANAGER_VALIDATION_H
+#define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEMANAGER_VALIDATION_H
 
-/* Logic for defining validation methods for nodes (which write error
- * messages), and simple functions to convert strings to intelligible
- * values. */
+/* Logic for defining validation methods for nodes and other data structures
+ * (which write error messages), and simple functions to convert strings to
+ * intelligible values. */
 
 #include "dfprintf.h"
 #include "flat.h"
