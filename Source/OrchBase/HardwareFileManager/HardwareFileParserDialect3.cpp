@@ -660,7 +660,8 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
     validFields.push_back("hardware");
     validFields.push_back("version");
 
-    /* Mandatory fields for the header section. */
+    /* Mandatory fields for the header section. Could be indeces that refer to
+     * validFields, but this is (probably) easier to read/maintain. */
     std::vector<std::string> mandatoryFields;
     mandatoryFields.push_back("datetime");
     mandatoryFields.push_back("dialect");
