@@ -162,7 +162,7 @@ bool HardwareFileParser::d3_get_validate_default_types(
         }
     }
 
-    return anyErrors;
+    return !anyErrors;
 }
 
 /* Validate that the section occurences in the hardware description input file
@@ -582,17 +582,17 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
     }
 
     /* Populate the engine with information from the header section. */
-    bool failedValidation = false;
-    failedValidation |= d3_populate_validate_from_header_section(engine);
+    bool passedValidation = true;
+    passedValidation &= d3_populate_validate_from_header_section(engine);
 
     /* Populate the hardware address format owned by the engine. */
-    failedValidation |= d3_populate_validate_address_format(engine);
+    passedValidation &= d3_populate_validate_address_format(engine);
 
     /* Verify that default types, and type fields in sections, are valid, and
      * map to sections that exist. */
-    failedValidation |= d3_validate_types_define_cache();
+    passedValidation &= d3_validate_types_define_cache();
 
-    if (failedValidation)
+    if (!passedValidation)
     {
         throw HardwareSemanticException(d3_errors.c_str());
     }
@@ -789,7 +789,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
     anyErrors &= complain_if_mandatory_field_not_defined(
         &validFields, &fieldsFound, sectionName, &d3_errors);
 
-    return anyErrors;
+    return !anyErrors;
 }
 
 /* Validate the contents of the header section, and populate an engine with
@@ -947,7 +947,7 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
     anyErrors &= complain_if_mandatory_field_not_defined(
         &mandatoryFields, &fieldsFound, sectionName, &d3_errors);
 
-    return anyErrors;
+    return !anyErrors;
 }
 
 /* Validate type defaults, and populate the defaultTypes map.
@@ -972,5 +972,5 @@ bool HardwareFileParser::d3_validate_types_define_cache()
      *    - otherwise, moan loudly and eventually return false.
      */
 
-    return anyErrors;
+    return !anyErrors;
 }
