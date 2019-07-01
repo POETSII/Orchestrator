@@ -3,44 +3,166 @@
 
 #include "HardwareFileParser.h"
 
-/* Populates a POETS Engine with information from a previously-loaded hardware
- * description file in dialect 3, after validating it. Arguments:
+/* Load types from the default types section, and validate them.
  *
- * - engine: Pointer to the POETS Engine to populate. Cleared if the input file
- *   is valid.
+ * Returns true if all fields were valid and describe sections, and false
+ * otherwise. NB: if the [default_types] section does not exist, returns true
+ * and does not touch the input array. This function appends errors to
+ * d3_errors as it goes. Arguments:
  *
- * Throws if:
- *
- *  - the input file is semantically invalid. */
-void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
+ * - globalDefaults: Pointer to a 3-length array of UIF::Nodes, which*/
+bool HardwareFileParser::d3_get_validate_default_types(
+    UIF::Node** globalDefaults)
 {
-    /* During validation and provisioning, errors will be written to this
-     * string. */
-    d3_errors = dformat("Error(s) while loading hardware description file "
-                        "'%s':\n", loadedFile.c_str());
+    bool anyErrors = false;  /* Innocent until proven guilty. */
+    std::string sectionName = "default_types";
 
-    /* Check sections are defined correctly. Not much point continuing if they
-     * are not defined correctly. */
-    if (!d3_load_validate_sections())
+    /* Valid fields for the header section. All are optional. */
+    std::vector<std::string> validFields;
+    std::vector<std::string>::iterator fieldIterator;
+    validFields.push_back("box_type");
+    validFields.push_back("board_type");
+    validFields.push_back("mailbox_type");
+
+    /* Holds fields we've already grabbed (for validation purposes). */
+    std::map<std::string, bool> fieldsFound;
+    for (fieldIterator=validFields.begin(); fieldIterator!=validFields.end();
+         fieldIterator++)
     {
-        throw HardwareSemanticException(d3_errors.c_str());
+        fieldsFound.insert(std::make_pair(*fieldIterator, false));
     }
 
-    /* Populate the engine with information from the header section. */
-    bool failedValidation = false;
-    failedValidation |= d3_populate_validate_from_header_section(engine);
+    /* Staging vectors for holding value nodes and variable nodes. */
+    std::vector<UIF::Node*> valueNodes;
+    std::vector<UIF::Node*> variableNodes;
 
-    /* Populate the hardware address format owned by the engine. */
-    failedValidation |= d3_populate_validate_address_format(engine);
+    /* Staging vector and iterator for records. */
+    std::vector<UIF::Node*> recordNodes;
+    std::vector<UIF::Node*>::iterator recordIterator;
+    std::string variableName;
+    std::string value;
+    bool isRecordValid;
 
-    /* Verify that default types, and section types, are valid. */
-    failedValidation |= d3_validate_types_define_cache();
+    /* Iterator to find typed sections. Note that this only refers to the inner
+     * map of typedSections. */
+    std::map<std::string, UIF::Node*>::iterator typedSectionIterator;
 
-    if (failedValidation)
+    /* Firstly, is there a [default_types] section? */
+    std::map<std::string, UIF::Node*>::iterator untypedSectionsIterator;
+    untypedSectionsIterator = untypedSections.find(sectionName);
+    if (untypedSectionsIterator == untypedSections.end())
     {
-        throw HardwareSemanticException(d3_errors.c_str());
+        /* If not, let's go. */
+        return true;
     }
 
+    /* The section exists for control to reach here. Get the default types from
+     * the [default_types] section. */
+    GetRecd(untypedSectionsIterator->second, recordNodes);
+    for (recordIterator=recordNodes.begin();
+         recordIterator!=recordNodes.end(); recordIterator++)
+    {
+        isRecordValid = true;  /* Innocent until proven guilty. */
+
+        /* Get the value and variable nodes. */
+        GetVari((*recordIterator), variableNodes);
+        GetValu((*recordIterator), valueNodes);
+
+        /* Ignore this record if the record has not got a variable/value
+         * pair (i.e. if the line is empty, or is just a comment). */
+        if (variableNodes.size() == 0 || valueNodes.size() == 0){continue;}
+
+        /* Complain if (in order):
+         *
+         * - The record does not begin with a "+", as all fields in this
+         *   section must do.
+         * - The variable name is not a valid name.
+         * - There is more than one variable node.
+         * - There is more than one value node.
+         * - The type is not valid. */
+        isRecordValid &= complain_if_node_not_plus_prefixed(
+            *recordIterator, variableNodes[0], sectionName, &d3_errors);
+        isRecordValid &= complain_if_variable_name_invalid(
+            *recordIterator, variableNodes[0], &validFields, sectionName,
+            &d3_errors);
+        isRecordValid &= complain_if_record_is_multivariable(
+            *recordIterator, &variableNodes, sectionName, &d3_errors);
+        isRecordValid &= complain_if_record_is_multivalue(
+            *recordIterator, &valueNodes, variableNodes[0]->str,
+            sectionName, &d3_errors);
+        isRecordValid &= complain_if_node_value_not_a_valid_type(
+            *recordIterator, valueNodes[0], sectionName, &d3_errors);
+        if (!isRecordValid)
+        {
+            anyErrors = true;
+            continue;
+        }
+
+        /* Complain if duplicate. NB: We know the variable name is valid if
+         * control has reached here. */
+        variableName = variableNodes[0]->str;
+        if (complain_if_node_variable_true_in_map(
+                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
+                &d3_errors))
+        {
+            anyErrors = true;
+            continue;
+        }
+        fieldsFound[variableName] = true;
+
+        /* Specific logic for each variable. */
+        std::string itemType;
+        unsigned arrayIndex;
+        if (variableName == "box_type")
+        {
+            itemType = "box";
+            arrayIndex = box;
+        }
+        else if (variableName == "board_type")
+        {
+            itemType = "board";
+            arrayIndex = board;
+        }
+        else if (variableName == "mailbox_type")
+        {
+            itemType = "mailbox";
+            arrayIndex = mailbox;
+        }
+
+        /* Shouldn't be able to enter this, because we've already checked the
+         * variable names, but why not write some more code. It's not like this
+         * file is big enough already. */
+        else
+        {
+            d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
+                                     "the '%s' section (E2).\n",
+                                     (*recordIterator)->pos, variableName,
+                                     sectionName.c_str()));
+            anyErrors = true;
+            continue;
+        }
+
+        /* Figure out if there is a section corresponding to this type. If not,
+         * whine loudly. */
+        value = valueNodes[0]->str;
+        typedSectionIterator = typedSections[itemType].find(value);
+        if (typedSectionIterator == typedSections[itemType].end())
+        {
+            d3_errors.append(dformat("L%u: Type '%s' defined in record does "
+                                     "not correspond to a section.\n",
+                                     (*recordIterator)->pos, value.c_str()));
+            anyErrors = true;
+            continue;
+        }
+
+        /* Otherwise, we're ready to assign. */
+        else
+        {
+            globalDefaults[arrayIndex] = typedSectionIterator->second;
+        }
+    }
+
+    return anyErrors;
 }
 
 /* Validate that the section occurences in the hardware description input file
@@ -317,10 +439,10 @@ bool HardwareFileParser::d3_load_validate_sections()
             {
                 ruleFailure[currentRule] = true;
                 d3_errors.append(dformat(
-                    "L%u: Section '%s' has invalid type '%s'. It must satisfy "
-                    "[0-9A-Za-z]{2,32}\n.",
-                    (*nodeIterator)->pos, (*nameIterator).c_str(),
-                    arguments[0]->str));
+                    "L%u: Type '%s' in section '%s' is not a valid type (it "
+                    "must satisfy %s).\n", (*nodeIterator)->pos,
+                    arguments[0]->str.c_str(), (*nameIterator).c_str(),
+                    TYPE_REGEX));
             }
 
             /* If we've already seen this type defined for a section of this
@@ -434,6 +556,46 @@ bool HardwareFileParser::d3_load_validate_sections()
     /* Otherwise, our validation failed, and we have not wasted time populating
      * our data structures. */
     else {return false;}
+}
+
+/* Populates a POETS Engine with information from a previously-loaded hardware
+ * description file in dialect 3, after validating it. Arguments:
+ *
+ * - engine: Pointer to the POETS Engine to populate. Cleared if the input file
+ *   is valid.
+ *
+ * Throws if:
+ *
+ *  - the input file is semantically invalid. */
+void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
+{
+    /* During validation and provisioning, errors will be written to this
+     * string. */
+    d3_errors = dformat("Error(s) while loading hardware description file "
+                        "'%s':\n", loadedFile.c_str());
+
+    /* Check sections are defined correctly. Not much point continuing if they
+     * are not defined correctly. */
+    if (!d3_load_validate_sections())
+    {
+        throw HardwareSemanticException(d3_errors.c_str());
+    }
+
+    /* Populate the engine with information from the header section. */
+    bool failedValidation = false;
+    failedValidation |= d3_populate_validate_from_header_section(engine);
+
+    /* Populate the hardware address format owned by the engine. */
+    failedValidation |= d3_populate_validate_address_format(engine);
+
+    /* Verify that default types, and section types, are valid. */
+    failedValidation |= d3_validate_types_define_cache();
+
+    if (failedValidation)
+    {
+        throw HardwareSemanticException(d3_errors.c_str());
+    }
+
 }
 
 /* Validate the contents of the packet_address_format section, and populate the
@@ -792,15 +954,12 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
  * Returns true if all validation checks pass, and false otherwise */
 bool HardwareFileParser::d3_validate_types_define_cache()
 {
-    /* Create a default types map (A), for types read from the default_types
-     * section. */
+    bool anyErrors;
 
-    /* For each type in default_types:
-     *  - check it's valid (using is_type_valid)
-     *  - check a section supports it
-     *  - if all good, add to (A)
-     * NB: All fields in default_types are optional (the section might not even
-     * exist). */
+    /* Container to hold default sections for boxes, boards, and mailboxes. */
+    UIF::Node* globalDefaults[ITEM_ENUM_LENGTH] = {0, 0, 0};
+
+    anyErrors = !d3_get_validate_default_types(globalDefaults);
 
     /* For each section in engine_box, engine_board, and all board(X):
      *  - if it's got a type field:
@@ -811,4 +970,6 @@ bool HardwareFileParser::d3_validate_types_define_cache()
      *    - if it's got an entry in (A), add to defaultTypes
      *    - otherwise, moan loudly and eventually return false.
      */
+
+    return anyErrors;
 }

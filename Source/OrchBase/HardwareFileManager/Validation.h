@@ -9,6 +9,9 @@
 #include "flat.h"
 #include "uif.h"
 
+/* Used for error messages. */
+#define TYPE_REGEX "[0-9A-Za-z]{2,32}"
+
 /* Validators that write error messages */
 bool complain_if_mandatory_field_not_defined(
     std::vector<std::string>* mandatoryFields,
@@ -30,6 +33,10 @@ bool complain_if_node_variable_true_in_map(
 
 bool complain_if_node_not_plus_prefixed(
     UIF::Node* recordNode, UIF::Node* variableNode, std::string sectionName,
+    std::string* errorMessage);
+
+bool complain_if_node_value_not_a_valid_type(
+    UIF::Node* recordNode, UIF::Node* valueNode, std::string sectionName,
     std::string* errorMessage);
 
 bool complain_if_nodes_values_not_natural(

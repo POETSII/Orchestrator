@@ -165,6 +165,29 @@ bool complain_if_node_not_plus_prefixed(
     return true;
 }
 
+/* Returns whether the value at a node is a valid type, and appends an error
+ * message to a string if it is not. Arguments:
+ *
+ * - recordNode: Record parent node (for writing error message).
+ * - valueNode: The UIF node that holds the value.
+ * - sectionName: The name of the section the record lives in (for writing
+     error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_node_value_not_a_valid_type(
+    UIF::Node* recordNode, UIF::Node* valueNode, std::string sectionName,
+    std::string* errorMessage)
+{
+    if (!is_type_valid(valueNode))
+    {
+        errorMessage->append(dformat(
+            "L%u: Value in record '%s' in the '%s' section is not a valid "
+            "type (it must satisfy %s).\n", recordNode->pos,
+            valueNode->str.c_str(), sectionName.c_str(), TYPE_REGEX));
+        return false;
+    }
+    return true;
+}
+
 /* Returns whether the value at a node, and all of its children, are natural
  * numbers, and appends an error message to a string if they are
  * not. Arguments:

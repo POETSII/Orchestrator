@@ -111,6 +111,9 @@ struct EdgeInfo{float weight; bool isReverseDefined; unsigned lineNumber;};
 typedef std::pair<std::string, std::string> boardName;
 typedef std::string mailboxName;
 
+#define ITEM_ENUM_LENGTH 3
+enum item {box, board, mailbox};
+
 class HardwareFileParser: public JNJ
 {
 public:
@@ -144,6 +147,7 @@ private:
     bool d1_validate_sections(std::string* errorMessage);
 
     /* Dialect 3 validation and deployment members and methods. */
+    bool d3_get_validate_default_types(UIF::Node** globalDefaults);
     bool d3_load_validate_sections();
     void d3_populate_hardware_model(P_engine* engine);
     bool d3_populate_validate_address_format(P_engine* engine);
