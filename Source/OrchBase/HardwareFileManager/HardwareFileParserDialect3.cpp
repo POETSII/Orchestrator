@@ -33,6 +33,9 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
     /* Populate the hardware address format owned by the engine. */
     failedValidation |= d3_populate_validate_address_format(engine);
 
+    /* Verify that default types, and section types, are valid. */
+    failedValidation |= d3_validate_types_define_cache();
+
     if (failedValidation)
     {
         throw HardwareSemanticException(d3_errors.c_str());
@@ -791,3 +794,29 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
 
     return anyErrors;
 }
+
+/* Validate type defaults, and populate the defaultTypes map.
+ *
+ * Returns true if all validation checks pass, and false otherwise */
+bool HardwareFileParser::d3_validate_types_define_cache()
+{
+    /* Create a default types map (A), for types read from the default_types
+     * section. */
+
+    /* For each type in default_types:
+     *  - check it's valid (using is_type_valid)
+     *  - check a section supports it
+     *  - if all good, add to (A)
+     * NB: All fields in default_types are optional (the section might not even
+     * exist). */
+
+    /* For each section in engine_box, engine_board, and all board(X):
+     *  - if it's got a type field:
+     *    - check it's valid (using is_type_valid)
+     *    - check a section supports it
+     *    - if all good, add to defaultTypes (not (A))
+     *  - otherwise:
+     *    - if it's got an entry in (A), add to defaultTypes
+     *    - otherwise, moan loudly and eventually return false.
+     */
+ }

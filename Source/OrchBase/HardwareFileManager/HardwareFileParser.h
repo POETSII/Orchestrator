@@ -148,6 +148,7 @@ private:
     void d3_populate_hardware_model(P_engine* engine);
     bool d3_populate_validate_address_format(P_engine* engine);
     bool d3_populate_validate_from_header_section(P_engine* engine);
+    bool d3_validate_types_define_cache();
 
     /* Holds error messages from validation. */
     std::string d3_errors;
@@ -162,6 +163,56 @@ private:
      * section, and whose value id the UIF node that corresponds to that
      * section. */
     std::map<std::string, std::map<std::string, UIF::Node*>> typedSections;
+
+    /* Holds, for a (former) section, the type-specific section that defines
+     * how items created in the former section behave. The key is the section
+     * that defines the items, and the value is the section that defines the
+     * properties of that item. If no value exists, it is zero. This is just a
+     * convenient cache mechanism. Examples:
+     *
+     * 1. Given:
+     *
+     *        [board(SomeBoardType)]
+     *        +type=SomeMailboxType
+     *
+     *    Then the first element of the map pair will be a pointer to the
+     *    [board(SomeBoardType)] (section) UIF node, and the second will be a
+     *    pointer to the [mailbox(SomeMailboxType)] (section) UIF node.
+     *
+     * 2. Given:
+     *
+     *        [board(SomeBoardType)]
+     *        ... // With no +type field
+     *        [default_types]
+     *        ...
+     *        +mailbox_type=SomeMailboxType
+     *
+     *    Then the entry in the map will be identical to case 1.
+     *
+     * 3. Given:
+     *
+     *        [board(SomeBoardType)]
+     *        +type=SomeMailboxType1
+     *        [default_types]
+     *        ...
+     *        +mailbox_type=SomeMailboxType2
+     *
+     *    Then the first element of the map pair will be a pointer to the
+     *    [board(SomeBoardType)] (section) UIF node, and the second will be a
+     *    pointer to the [mailbox(SomeMailboxType1)] (section) UIF node.
+     *
+     * 4. Given:
+     *
+     *        [board(SomeBoardType)]
+     *        ... // With no +type field
+     *        [default_types]
+     *        ... // With no +mailbox_type field
+     *
+     *    Then the first element of the map pair will be a pointer to the
+     *    [board(SomeBoardType)] (section) UIF node, and the second will be
+     *    zero. Note that this is perfectly valid - just that each mailbox
+     *    declaration must explicitly define a valid type. */
+    std::map<UIF::Node*, UIF::Node*> defaultTypes;
 
     /* Holds sizes of address components. The key is either "box", "board", or
      * "mailbox", and the value is the number of elements comprising that
