@@ -461,10 +461,17 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
         fieldsFound.insert(std::make_pair(*fieldIterator, false));
     }
 
-    /* Temporary staging vectors for holding value nodes and variable
-     * nodes. */
+    /* Staging vectors for holding value nodes and variable nodes. */
     std::vector<UIF::Node*> valueNodes;
     std::vector<UIF::Node*> variableNodes;
+
+    /* Staging area for the values of multi-valued records. */
+    std::vector<std::string> values;
+    std::vector<std::string>::iterator valueIterator;
+
+    /* Staging pointer for accumulated values to go (for legitimate
+     * multi-valued records) */
+    unsigned* accumulationTarget;
 
     /* Iterate through all record nodes in the packet_address_format
      * section. */
@@ -569,12 +576,72 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
          * natural. */
         else if (variableName == "board" or variableName == "mailbox")
         {
-            /* Validate, using get_values_as_strings(std::vector<std::string>*
-             * toPopulate, UIF::Node* valueNode); */
+            /* Validate, treating the single-variable and multiple-variable
+             * cases separately. */
+            get_values_as_strings(&values, valueNodes[0]);
+            if (values.size() == 1)
+            {
+                isRecordValid = complain_if_node_value_not_natural(
+                    *recordIterator, valueNodes[0], variableName, sectionName,
+                    &d3_errors);
+            }
+            else
+            {
+                isRecordValid = complain_if_nodes_values_not_natural(
+                    *recordIterator, valueNodes[0], variableName, sectionName,
+                    &d3_errors);
+            }
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* We bind! (is either board or mailbox) */
+
+            /* Determine target */
+            accumulationTarget =
+                &(variableName == "board" ?
+                  engine->addressFormat.boardWordLength :
+                  engine->addressFormat.mailboxWordLength);
+            *accumulationTarget = 0;  /* Reset target */
+
+            /* Add values to target. The total word length is (simply) the sum
+             * of its multidimensional constituents. */
+            for (valueIterator=values.begin(); valueIterator!=values.end();
+                 valueIterator++)
+            {
+                *accumulationTarget += str2unsigned(*valueIterator);
+            }
         }
 
-        /* <!> Bad variable names (from header section). */
+        /* Shouldn't be able to enter this, because we've already checked the
+         * variable names, but why not write some more code. It's not like this
+         * file is big enough already. */
+        else
+        {
+            d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
+                                     "the '%s' section (E2).\n",
+                                     (*recordIterator)->pos, variableName,
+                                     sectionName.c_str()));
+            anyErrors = true;
+        }
     }
+
+    /* Ensure mandatory fields have been defined, inefficiently. */
+    for (fieldIterator=validFields.begin(); fieldIterator!=validFields.end();
+         fieldIterator++)
+    {
+        if(!fieldsFound[*fieldIterator])
+        {
+            d3_errors.append(dformat("Variable '%s' not defined in the '%s' "
+                                     "section.\n",
+                                     (*fieldIterator).c_str(),
+                                     sectionName.c_str()));
+            anyErrors = true;
+        }
+    }
+
 
     /* <!> Mandatory variables not defined (from header section). */
 
