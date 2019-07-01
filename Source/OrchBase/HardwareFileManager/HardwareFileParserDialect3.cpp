@@ -496,15 +496,6 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
          * pair (i.e. if the line is empty, or is just a comment). */
         if (variableNodes.size() == 0 || valueNodes.size() == 0){continue;}
 
-        /* Complain if the record does not begin with a "+", as all fields in
-         * this section must do. */
-        if (!complain_if_node_not_plus_prefixed(
-                *recordIterator, variableNodes[0], sectionName, &d3_errors))
-        {
-            anyErrors = true;
-            continue;
-        }
-
         /* Complain if (in order):
          *
          * - The record does not begin with a "+", as all fields in this
