@@ -585,7 +585,7 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
 
     /* Populate the engine with information from the header section. */
     bool passedValidation = true;
-    passedValidation &= d3_populate_validate_from_header_section(engine);
+    passedValidation &= d3_populate_validate_header(engine);
 
     /* Populate the hardware address format owned by the engine. */
     passedValidation &= d3_populate_validate_address_format(engine);
@@ -800,7 +800,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
  * Returns true if all validation checks pass, and false otherwise. Arguments:
  *
  * - engine: Engine to populate */
-bool HardwareFileParser::d3_populate_validate_from_header_section(
+bool HardwareFileParser::d3_populate_validate_header(
     P_engine* engine)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
