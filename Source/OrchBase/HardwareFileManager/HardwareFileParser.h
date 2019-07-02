@@ -171,8 +171,8 @@ private:
     /* Holds, for a (former) section, the type-specific section that defines
      * how items created in the former section behave. The key is the section
      * that defines the items, and the value is the section that defines the
-     * properties of that item. If no value exists, it is zero. This is just a
-     * convenient cache mechanism. Examples:
+     * properties of that item. If no valid value exists, it is zero. This is
+     * just a convenient cache mechanism. Examples:
      *
      * 1. Given:
      *

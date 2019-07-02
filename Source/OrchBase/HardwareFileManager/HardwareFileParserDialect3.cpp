@@ -148,9 +148,11 @@ bool HardwareFileParser::d3_get_validate_default_types(
         typedSectionIterator = typedSections[itemType].find(value);
         if (typedSectionIterator == typedSections[itemType].end())
         {
-            d3_errors.append(dformat("L%u: Type '%s' defined in record does "
-                                     "not correspond to a section.\n",
-                                     (*recordIterator)->pos, value.c_str()));
+            d3_errors.append(dformat("L%u: Type '%s' defined in the '%s' "
+                                     "section does not correspond to a "
+                                     "section.\n",
+                                     (*recordIterator)->pos, value.c_str(),
+                                     sectionName.c_str()));
             anyErrors = true;
             continue;
         }
@@ -950,7 +952,8 @@ bool HardwareFileParser::d3_populate_validate_from_header_section(
     return !anyErrors;
 }
 
-/* Validate type defaults, and populate the defaultTypes map.
+/* Validate type defaults, and populate the defaultTypes map with section
+ * references for each section that can create items.
  *
  * Returns true if all validation checks pass, and false otherwise */
 bool HardwareFileParser::d3_validate_types_define_cache()
@@ -972,9 +975,11 @@ bool HardwareFileParser::d3_validate_types_define_cache()
     std::vector<UIF::Node*> valueNodes;
     std::vector<UIF::Node*> variableNodes;
     std::string type;
+    unsigned typeLine;
 
     /* Get all sections that create items, and thus may define +type fields
-     * (i.e. engine_box, engine_board, and any board(X) section). */
+     * (i.e. engine_box, engine_board, and any board(X) section), and store
+     * pointers to them in creativeSections. */
     std::vector<UIF::Node*> creativeSections;
     std::vector<UIF::Node*>::iterator sectionIterator;
     std::string sectionName;
@@ -989,19 +994,21 @@ bool HardwareFileParser::d3_validate_types_define_cache()
         creativeSections.push_back(typedSectionsIterator->second);
     }
 
-
-    /* For each of these sections, find the section that it maps to in
-     * defaultTypes, if any. */
-    unsigned typeFieldCount;
+    /* For each of these sections, find the section that defines properties of
+     * items created within it, and insert this information into
+     * defaultTypes. */
+    bool typeFieldFound;
     for (sectionIterator=creativeSections.begin();
          sectionIterator!=creativeSections.end(); sectionIterator++)
     {
-        typeFieldCount = 0;
-        sectionName = (*sectionIterator)->str;
+        typeFieldFound = false;
+        sectionName = (*sectionIterator)->leaf[0]->leaf[0]->str;
 
         /* Has it got a type-defining record? If so, grab the type by iterating
-         * through each record in this section. Panic if there's more than one
-         * type record though. */
+         * through each record in this section. If there's more than one type
+         * record, it's an error, but just keep soldiering on (this is okay;
+         * the calling method should be checking the return value of this
+         * method). */
         GetRecd(*sectionIterator, recordNodes);
         for (recordIterator=recordNodes.begin();
              recordIterator!=recordNodes.end(); recordIterator++)
@@ -1012,6 +1019,10 @@ bool HardwareFileParser::d3_validate_types_define_cache()
             GetVari((*recordIterator), variableNodes);
             GetValu((*recordIterator), valueNodes);
 
+            /* Ignore this record if the record has not got a variable/value
+             * pair (i.e. if the line is empty, or is just a comment). */
+            if (variableNodes.size() == 0 || valueNodes.size() == 0){continue;}
+
             /* Is the variable name "type"? */
             if (variableNodes[0]->str == "type")
             {
@@ -1020,6 +1031,7 @@ bool HardwareFileParser::d3_validate_types_define_cache()
                  * - The record does not begin with a "+".
                  * - There is more than one variable node.
                  * - There is more than one value node.
+                 * - The value is not a valid type.
                  *
                  * If so, ignore it. */
                 isRecordValid &= complain_if_node_not_plus_prefixed(
@@ -1030,25 +1042,29 @@ bool HardwareFileParser::d3_validate_types_define_cache()
                 isRecordValid &= complain_if_record_is_multivalue(
                     *recordIterator, &valueNodes, variableNodes[0]->str,
                     sectionName, &d3_errors);
+                isRecordValid &= complain_if_node_value_not_a_valid_type(
+                    *recordIterator, valueNodes[0], sectionName, &d3_errors);
                 if (!isRecordValid)
                 {
                     anyErrors = true;
-                    continue;
+                    continue;  /* Skip to the next record in this section. */
                 }
 
                 /* We got it! But complain if we've already found a type field
                  * in this way. */
-                typeFieldCount += 1;
-                if (typeFieldCount > 1)
+                if (typeFieldFound)
                 {
                     d3_errors.append(dformat(
                         "L%u: Duplicate definition of field 'type' in the "
-                        "'%s' section.\n", (*recordIterator)->pos,
-                        sectionName.c_str()));
+                        "'%s' section (previously defined at L%u.\n",
+                        (*recordIterator)->pos, sectionName.c_str(),
+                        typeLine));
                     anyErrors = true;
-                    continue;
+                    continue;  /* Skip to the next record in this section. */
                 }
+                typeFieldFound = true;
                 type = valueNodes[0]->str;
+                typeLine = (*recordIterator)->pos;
             }
 
             /* The variable of this node wasn't named "type", so we ignore it
@@ -1056,21 +1072,56 @@ bool HardwareFileParser::d3_validate_types_define_cache()
             else {continue;}
         }
 
-        /* So after all that, was there a type record in this section? */
-        if (typeFieldCount > 0)  /* Yes! */
+        /* Figure out what sort of object (i.e. box, board...) is being created
+         * in this section from the section name. */
+        std::string itemType;
+        unsigned arrayIndex;
+        if (sectionName == "engine_box")
         {
-            /* Then:
-             *    - check it's valid (using is_type_valid)
-             *    - check a section supports it
-             *    - if all good, add to defaultTypes (not globalDefaults) */
+            itemType = "box";
+            arrayIndex = box;
         }
-        else /* No! */
+        else if (sectionName == "engine_board")
         {
-            /* Then:
-             *    - if it's got a non-zero entry in globalDefaults, add to
-             *      defaultTypes
-             *    - otherwise, moan loudly and eventually return false. */
+            itemType = "board";
+            arrayIndex = board;
         }
+        else /* Must me a [board(something)] section. */
+        {
+            itemType = "mailbox";
+            arrayIndex = mailbox;
+        }
+
+        /* Earlier, did we find a +type record in this section? */
+        UIF::Node* sectionTarget = 0;
+        if (typeFieldFound)  /* Yes! */
+        {
+            /* Get the section that matches this type. If there isn't one,
+             * complain, but keep going (we can use globalDefaults). */
+            typedSectionsIterator = typedSections[itemType].find(type);
+            if (typedSectionsIterator != typedSections[itemType].end())
+            {
+                sectionTarget = typedSectionsIterator->second;
+            }
+            else
+            {
+                d3_errors.append(dformat("L%u: Type '%s' defined in the '%s' "
+                                         "section does not correspond to a "
+                                         "section.\n", typeLine, type.c_str(),
+                                         sectionName.c_str()));
+                anyErrors = true;
+            }
+        }
+
+        /* If there was no +type record in this section, or if the +type was
+         * invalid, use the one from globalDefaults (even if it is zero). */
+        if (sectionTarget == 0)
+        {
+            sectionTarget = globalDefaults[arrayIndex];
+        }
+
+        /* Apply the section found (even if it is zero) to defaultTypes. */
+        defaultTypes[*sectionIterator] = sectionTarget;
     }
 
     return !anyErrors;
