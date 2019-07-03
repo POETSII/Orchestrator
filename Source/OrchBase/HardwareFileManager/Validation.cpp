@@ -66,6 +66,51 @@ bool complain_if_mandatory_field_not_defined(
     return returnValue;
 }
 
+/* Returns whether the variable held by a node has a plux prefix, and appends
+ * an error message to a string if it is not. Arguments:
+ *
+ * - recordNode: Record parent node (for writing error message).
+ * - variableNode: The UIF node that holds the variable.
+ * - sectionName: The name of the section the record lives in (for writing
+     error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_node_not_plus_prefixed(
+    UIF::Node* recordNode, UIF::Node* variableNode, std::string sectionName,
+    std::string* errorMessage)
+{
+    if (!does_node_variable_have_plus_prefix(variableNode))
+    {
+        errorMessage->append(dformat(
+            "L%u: Variable in record in the '%s' section is not prefixed by a "
+            "'+' character.\n", recordNode->pos, sectionName.c_str()));
+        return false;
+    }
+    return true;
+}
+
+/* Returns whether the value at a node is a valid type, and appends an error
+ * message to a string if it is not. Arguments:
+ *
+ * - recordNode: Record parent node (for writing error message).
+ * - valueNode: The UIF node that holds the value.
+ * - sectionName: The name of the section the record lives in (for writing
+     error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_node_value_not_a_valid_type(
+    UIF::Node* recordNode, UIF::Node* valueNode, std::string sectionName,
+    std::string* errorMessage)
+{
+    if (!is_type_valid(valueNode))
+    {
+        errorMessage->append(dformat(
+            "L%u: Value in record '%s' in the '%s' section is not a valid "
+            "type (it must satisfy %s).\n", recordNode->pos,
+            valueNode->str.c_str(), sectionName.c_str(), TYPE_REGEX));
+        return false;
+    }
+    return true;
+}
+
 /* Returns whether the value at a node is a positive floating-point number (or
  * an integer), and appends an error message to a string if it is
  * not. Arguments:
@@ -117,77 +162,6 @@ bool complain_if_node_value_not_natural(
     return true;
 }
 
-/* Returns whether the variable at a node maps to true, and appends an error
- * message if it does so. Arguments:
- *
- * - recordNode: Record parent node (for writing error message).
- * - variableNode: The UIF node that holds the variable.
- * - mapToSearch: The map, mapping names of variables, to a boolean. In most
- *   cases where this is used, this boolean represents whether or not the name
- *   has already been defined in this pass of a section before.
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_node_variable_true_in_map(
-    UIF::Node* recordNode, UIF::Node* variableNode,
-    std::map<std::string, bool>* mapToSearch, std::string sectionName,
-    std::string* errorMessage)
-{
-    if(is_node_variable_true_in_map(mapToSearch, variableNode))
-    {
-        errorMessage->append(dformat(
-            "L%u: Duplicate definition of variable '%s' in the '%s' "
-            "section.\n", recordNode->pos, sectionName.c_str()));
-        return true;
-    }
-    return false;
-}
-
-/* Returns whether the variable held by a node has a plux prefix, and appends
- * an error message to a string if it is not. Arguments:
- *
- * - recordNode: Record parent node (for writing error message).
- * - variableNode: The UIF node that holds the variable.
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_node_not_plus_prefixed(
-    UIF::Node* recordNode, UIF::Node* variableNode, std::string sectionName,
-    std::string* errorMessage)
-{
-    if (!does_node_variable_have_plus_prefix(variableNode))
-    {
-        errorMessage->append(dformat(
-            "L%u: Variable in record in the '%s' section is not prefixed by a "
-            "'+' character.\n", recordNode->pos, sectionName.c_str()));
-        return false;
-    }
-    return true;
-}
-
-/* Returns whether the value at a node is a valid type, and appends an error
- * message to a string if it is not. Arguments:
- *
- * - recordNode: Record parent node (for writing error message).
- * - valueNode: The UIF node that holds the value.
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_node_value_not_a_valid_type(
-    UIF::Node* recordNode, UIF::Node* valueNode, std::string sectionName,
-    std::string* errorMessage)
-{
-    if (!is_type_valid(valueNode))
-    {
-        errorMessage->append(dformat(
-            "L%u: Value in record '%s' in the '%s' section is not a valid "
-            "type (it must satisfy %s).\n", recordNode->pos,
-            valueNode->str.c_str(), sectionName.c_str(), TYPE_REGEX));
-        return false;
-    }
-    return true;
-}
-
 /* Returns whether the value at a node, and all of its children, are natural
  * numbers, and appends an error message to a string if they are
  * not. Arguments:
@@ -212,6 +186,55 @@ bool complain_if_nodes_values_not_natural(
             errorMessage);
     }
     return valid;
+}
+
+/* Returns whether the variable at a node is a valid item name, and appends an
+ * error message to a string if it is not. Arguments:
+ *
+ * - recordNode: Record parent node (for writing error message).
+ * - variableName: The UIF node that holds the variable.
+ * - sectionName: The name of the section the record lives in (for writing
+     error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_node_variable_not_a_valid_item_name(
+    UIF::Node* recordNode, UIF::Node* variableNode, std::string sectionName,
+    std::string* errorMessage)
+{
+    if (!is_type_valid(variableNode))  /* It's the same rule! */
+    {
+        errorMessage->append(dformat(
+            "L%u: Item name '%s' in the '%s' section is not a valid item name "
+            "(it must satisfy %s).\n", recordNode->pos,
+            variableNode->str.c_str(), sectionName.c_str(), TYPE_REGEX));
+        return false;
+    }
+    return true;
+}
+
+/* Returns whether the variable at a node maps to true, and appends an error
+ * message if it does so. Arguments:
+ *
+ * - recordNode: Record parent node (for writing error message).
+ * - variableNode: The UIF node that holds the variable.
+ * - mapToSearch: The map, mapping names of variables, to a boolean. In most
+ *   cases where this is used, this boolean represents whether or not the name
+ *   has already been defined in this pass of a section before.
+ * - sectionName: The name of the section the record lives in (for writing
+     error message).
+ * - errorMessage: String to append the error message to, if any. */
+bool complain_if_node_variable_true_in_map(
+    UIF::Node* recordNode, UIF::Node* variableNode,
+    std::map<std::string, bool>* mapToSearch, std::string sectionName,
+    std::string* errorMessage)
+{
+    if(is_node_variable_true_in_map(mapToSearch, variableNode))
+    {
+        errorMessage->append(dformat(
+            "L%u: Duplicate definition of variable '%s' in the '%s' "
+            "section.\n", recordNode->pos, sectionName.c_str()));
+        return true;
+    }
+    return false;
 }
 
 /* As with complain_if_record_is_multivariable, but for values and GetValu
@@ -299,6 +322,35 @@ bool does_node_variable_have_plus_prefix(UIF::Node* variableNode)
     return (variableNode->qop == Lex::Sy_plus);
 }
 
+/* Returns true if the value vector obtained from a record is single-valued, or
+ * false if it is multi-valued or has no value. Arguments:
+ *
+ * - valueNodes: All of the variables associated with a record (probably
+ *   obtained using JNJ::GetValu). */
+bool is_multivalue_record(std::vector<UIF::Node*>* valueNodes)
+{
+    if (valueNodes->size() >= 0)  /* Are there any values? */
+    {
+        /* If there is only one value, the first value node contains the
+         * value. If there are multiple (N) value nodes, the first value node
+         * contains N value nodes, each with an entry. */
+        return ((*valueNodes)[0]->leaf.size() != 0);
+    }
+    return false;
+}
+
+
+/* Returns true if the variable vector obtained from a record is
+ * single-variable, or false if it is multi-variable or has no
+ * value. Arguments:
+ *
+ * - variableNodes: All of the variables associated with a record (probably
+ *   obtained using JNJ::GetVari). */
+bool is_multivariable_record(std::vector<UIF::Node*>* variableNodes)
+{
+    return (variableNodes->size() != 1);
+}
+
 /* Returns whether the value at a node is a positive floating-point
  * number. Arguments:
  *
@@ -314,6 +366,20 @@ bool is_node_value_floating(UIF::Node* valueNode)
 bool is_node_value_natural(UIF::Node* valueNode)
 {
     return (valueNode->qop == Lex::Sy_ISTR);
+}
+
+/* Returns whether the variable at a node maps to true. Arguments:
+ *
+ * - mapToSearch: The map, mapping names of variables, to a boolean. In most
+ *   cases where this is used, this boolean represents whether or not the name
+ *   has already been defined in this pass of a section before.
+ * - variableNode: The UIF node that holds the variable.
+ *
+ * Will throw if the map does not contain variableNode's string name. */
+bool is_node_variable_true_in_map(std::map<std::string, bool>* mapToSearch,
+                                  UIF::Node* variableNode)
+{
+    return mapToSearch->at(variableNode->str);
 }
 
 /* Returns whether the name at a node is a valid type name (i.e. must satisfy
@@ -342,20 +408,6 @@ bool is_type_valid(UIF::Node* nameNode)
     return true;
 }
 
-/* Returns whether the variable at a node maps to true. Arguments:
- *
- * - mapToSearch: The map, mapping names of variables, to a boolean. In most
- *   cases where this is used, this boolean represents whether or not the name
- *   has already been defined in this pass of a section before.
- * - variableNode: The UIF node that holds the variable.
- *
- * Will throw if the map does not contain variableNode's string name. */
-bool is_node_variable_true_in_map(std::map<std::string, bool>* mapToSearch,
-                                  UIF::Node* variableNode)
-{
-    return mapToSearch->at(variableNode->str);
-}
-
 /* Returns whether the variable at a node is in a given vector of valid
  * variable names. Arguments:
  *
@@ -366,35 +418,6 @@ bool is_variable_name_valid(std::vector<std::string>* validFields,
 {
     return (std::find(validFields->begin(), validFields->end(),
                       variableNode->str) != validFields->end());
-}
-
-/* Returns true if the value vector obtained from a record is single-valued, or
- * false if it is multi-valued or has no value. Arguments:
- *
- * - valueNodes: All of the variables associated with a record (probably
- *   obtained using JNJ::GetValu). */
-bool is_multivalue_record(std::vector<UIF::Node*>* valueNodes)
-{
-    if (valueNodes->size() >= 0)  /* Are there any values? */
-    {
-        /* If there is only one value, the first value node contains the
-         * value. If there are multiple (N) value nodes, the first value node
-         * contains N value nodes, each with an entry. */
-        return ((*valueNodes)[0]->leaf.size() != 0);
-    }
-    return false;
-}
-
-
-/* Returns true if the variable vector obtained from a record is
- * single-variable, or false if it is multi-variable or has no
- * value. Arguments:
- *
- * - variableNodes: All of the variables associated with a record (probably
- *   obtained using JNJ::GetVari). */
-bool is_multivariable_record(std::vector<UIF::Node*>* variableNodes)
-{
-    return (variableNodes->size() != 1);
 }
 
 /* Converts a float-like input string to an actual float. */
