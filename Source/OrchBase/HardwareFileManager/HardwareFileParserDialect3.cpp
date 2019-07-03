@@ -800,8 +800,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
  * Returns true if all validation checks pass, and false otherwise. Arguments:
  *
  * - engine: Engine to populate */
-bool HardwareFileParser::d3_populate_validate_header(
-    P_engine* engine)
+bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
     std::string sectionName = "header";
