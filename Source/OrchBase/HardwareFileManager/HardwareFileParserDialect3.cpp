@@ -70,7 +70,7 @@ bool HardwareFileParser::d3_get_validate_default_types(
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
-        if (variableNodes.size() == 0 || valueNodes.size() == 0){continue;}
+        if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
 
         /* Complain if (in order):
          *
@@ -659,7 +659,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
-        if (variableNodes.size() == 0 || valueNodes.size() == 0){continue;}
+        if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
 
         /* Complain if (in order):
          *
@@ -853,7 +853,7 @@ bool HardwareFileParser::d3_populate_validate_header(
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
-        if (variableNodes.size() == 0 || valueNodes.size() == 0){continue;}
+        if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
 
         /* Complain if (in order):
          *
@@ -1021,7 +1021,8 @@ bool HardwareFileParser::d3_validate_types_define_cache()
 
             /* Ignore this record if the record has not got a variable/value
              * pair (i.e. if the line is empty, or is just a comment). */
-            if (variableNodes.size() == 0 || valueNodes.size() == 0){continue;}
+            if (variableNodes.size() == 0 and
+                valueNodes.size() == 0){continue;}
 
             /* Is the variable name "type"? */
             if (variableNodes[0]->str == "type")
