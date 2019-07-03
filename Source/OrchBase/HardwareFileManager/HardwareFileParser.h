@@ -147,10 +147,20 @@ private:
     bool d1_validate_sections(std::string* errorMessage);
 
     /* Dialect 3 validation and deployment members and methods. */
+    bool d3_define_box_fields_from_section(P_box* box, UIF::Node* sectionNode);
+    bool d3_get_address_from_item_definition(UIF::Node* itemNode,
+                                             AddressComponent* address);
+    bool d3_get_explicit_type_from_item_definition(UIF::Node* itemNode,
+                                                   std::string* type);
+    bool d3_get_section_from_type(std::string itemType, std::string type,
+                                  std::string sourceSectionName,
+                                  unsigned lineNumber,
+                                  UIF::Node** sectionNode);
     bool d3_get_validate_default_types(UIF::Node** globalDefaults);
     bool d3_load_validate_sections();
     void d3_populate_hardware_model(P_engine* engine);
     bool d3_populate_validate_address_format(P_engine* engine);
+    bool d3_populate_validate_engine_box(P_engine* engine);
     bool d3_populate_validate_header(P_engine* engine);
     bool d3_validate_types_define_cache();
 

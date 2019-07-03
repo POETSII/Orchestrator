@@ -3,6 +3,135 @@
 
 #include "HardwareFileParser.h"
 
+/* Define a box from a typed section.
+ *
+ * Returns true if there were no validation problems, and false
+ * otherwise. Arguments:
+ *
+ * - box: Pointer to the box to populate.
+ * - sectionNode: The node that defines the properties of the box.
+ */
+bool HardwareFileParser::d3_define_box_fields_from_section(
+    P_box* box, UIF::Node* sectionNode)
+{
+    /* <!> */
+    return false;
+}
+
+/* Extract the address (addr) from an item definition.
+ *
+ * Concatenates and drops the address into 'address', and sets it to zero if
+ * there was no address defined. Does no validation (which is a mistake, but
+ * I'm tight for time). Returns true if an address was found, and false
+ * otherwise. Arguments:
+ *
+ * - itemNode: Variable node to extract the type from.
+ * - address: Integer to write to. */
+bool HardwareFileParser::d3_get_address_from_item_definition(
+    UIF::Node* itemNode, AddressComponent* address)
+{
+    *address = 0;
+
+    /* Get the "addr" field from the item, if any. */
+    std::vector<UIF::Node*>::iterator leafIterator = itemNode->leaf.begin();
+    while (leafIterator!=itemNode->leaf.end())
+    {
+        if ((*leafIterator)->str == "addr"){break;}
+        leafIterator++;
+    }
+
+    /* If we didn't find it, return. */
+    if (leafIterator == itemNode->leaf.end()){return false;}
+
+    /* Is there actually an address in there? If not, return. */
+    if ((*leafIterator)->leaf.size() == 0){return false;}
+
+    /* Grab and concatenate, assuming they're all innocent (no time for
+     * validation). */
+    std::vector<UIF::Node*>::iterator lLeafIterator;  /* Sorry */
+    for (lLeafIterator=(*leafIterator)->leaf.begin();
+         lLeafIterator!=(*leafIterator)->leaf.end(); lLeafIterator++)
+    {
+        *address = (*address) + str2unsigned((*lLeafIterator)->str);
+    }
+
+    return true;
+}
+
+
+/* Extract the type from an item definition.
+ *
+ * Drops the type into 'type', and clears it if there is no type defined. Does
+ * no validation. Returns true if a type was found, and false
+ * otherwise. Arguments:
+ *
+ * - itemNode: Variable node to extract the type from.
+ * - type: String to write the type to. */
+bool HardwareFileParser::d3_get_explicit_type_from_item_definition(
+    UIF::Node* itemNode, std::string* type)
+{
+    type->clear();
+
+    /* Get the "type" field from the item, if any. */
+    std::vector<UIF::Node*>::iterator leafIterator = itemNode->leaf.begin();
+    while (leafIterator!=itemNode->leaf.end())
+    {
+        if ((*leafIterator)->str == "type"){break;}
+        leafIterator++;
+    }
+
+    /* If we didn't find it, return. */
+    if (leafIterator == itemNode->leaf.end()){return false;}
+
+    /* Is there actually a type in there? If not, return. */
+    if ((*leafIterator)->leaf.size() == 0){return false;}
+
+    /* Bind the type with the first entry. */
+    *type = (*leafIterator)->leaf[0]->str;
+    return true;
+}
+
+/* Find the section node corresponding to the type of an item. Requires the
+ * typedSections to be populated.
+ *
+ * Returns true if a section could be found, and false otherwise (while writing
+ * to the error string). Arguments:
+ *
+ * - itemType: What kind of item we are dealing with (box, board, mailbox...).
+ * - type: Type string to search for.
+ * - sourceSectionName: The name of the section the record lives in (for
+     writing error message).
+ * - lineNumber: Line number of the record (for writing error message).
+ * - sectionNode: Pointer to write the found section to, set to zero if no
+     node could be found. */
+bool HardwareFileParser::d3_get_section_from_type(
+    std::string itemType, std::string type, std::string sourceSectionName,
+    unsigned lineNumber, UIF::Node** sectionNode)
+{
+    sectionNode = 0;
+
+    /* Iterator to find typed sections. Note that this only refers to the inner
+     * map of typedSections. */
+    std::map<std::string, UIF::Node*>::iterator typedSectionIterator;
+
+    /* Go hunting. */
+    typedSectionIterator = typedSections[itemType].find(type);
+    if (typedSectionIterator == typedSections[itemType].end())
+    {
+        d3_errors.append(dformat("L%u: Type '%s' defined in the '%s' section "
+                                 "does not correspond to a section.\n",
+                                 lineNumber, type.c_str(),
+                                 sourceSectionName.c_str()));
+        return false;
+    }
+
+    else
+    {
+        *sectionNode = typedSectionIterator->second;
+        return true;
+    }
+}
+
 /* Load types from the default types section, and validate them.
  *
  * Returns true if all fields were valid and describe sections, and false
@@ -42,10 +171,6 @@ bool HardwareFileParser::d3_get_validate_default_types(
     std::string variableName;
     std::string value;
     bool isRecordValid;
-
-    /* Iterator to find typed sections. Note that this only refers to the inner
-     * map of typedSections. */
-    std::map<std::string, UIF::Node*>::iterator typedSectionIterator;
 
     /* Firstly, is there a [default_types] section? */
     std::map<std::string, UIF::Node*>::iterator untypedSectionsIterator;
@@ -143,25 +268,10 @@ bool HardwareFileParser::d3_get_validate_default_types(
         }
 
         /* Figure out if there is a section corresponding to this type. If not,
-         * whine loudly. */
-        value = valueNodes[0]->str;
-        typedSectionIterator = typedSections[itemType].find(value);
-        if (typedSectionIterator == typedSections[itemType].end())
-        {
-            d3_errors.append(dformat("L%u: Type '%s' defined in the '%s' "
-                                     "section does not correspond to a "
-                                     "section.\n",
-                                     (*recordIterator)->pos, value.c_str(),
-                                     sectionName.c_str()));
-            anyErrors = true;
-            continue;
-        }
-
-        /* Otherwise, we're ready to assign. */
-        else
-        {
-            globalDefaults[arrayIndex] = typedSectionIterator->second;
-        }
+         * whine loudly. Either way, assign to globalDefaults. */
+        anyErrors |= !d3_get_section_from_type(
+            itemType, valueNodes[0]->str, sectionName, (*recordIterator)->pos,
+            &(globalDefaults[arrayIndex]));
     }
 
     return !anyErrors;
@@ -594,6 +704,9 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
      * map to sections that exist. */
     passedValidation &= d3_validate_types_define_cache();
 
+    /* Boxes */
+    passedValidation &= d3_populate_validate_engine_box(engine);
+
     if (!passedValidation)
     {
         throw HardwareSemanticException(d3_errors.c_str());
@@ -790,6 +903,228 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
     /* Ensure mandatory fields have been defined, inefficiently. */
     anyErrors &= complain_if_mandatory_field_not_defined(
         &validFields, &fieldsFound, sectionName, &d3_errors);
+
+    return !anyErrors;
+}
+
+/* Validate the contents of the engine_box section, and populate an engine with
+ * them. Also creates boxes.
+ *
+ * Returns true if all validation checks pass, and false otherwise. Arguments:
+ *
+ * - engine: Engine to populate. */
+bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
+{
+    bool anyErrors = false;  /* Innocent until proven guilty. */
+    std::string sectionName = "engine_box";
+
+    /* Valid fields for this section. */
+    std::vector<std::string> validFields;
+    std::vector<std::string>::iterator fieldIterator;
+    validFields.push_back("external_box_cost");
+    validFields.push_back("type");
+
+    /* Holds fields we've already grabbed (for validation purposes). */
+    std::map<std::string, bool> fieldsFound;
+    for (fieldIterator=validFields.begin(); fieldIterator!=validFields.end();
+         fieldIterator++)
+    {
+        fieldsFound.insert(std::make_pair(*fieldIterator, false));
+    }
+
+    /* Temporary staging vectors for holding value nodes and variable
+     * nodes. */
+    std::vector<UIF::Node*> valueNodes;
+    std::vector<UIF::Node*> variableNodes;
+
+    /* Holds the type of the current record, and the section it refers to (if
+     * any). */
+    std::string type;
+    UIF::Node* sectionType;
+
+    /* Holds the concatenated address of a box. */
+    AddressComponent address;
+
+    /* Holds the box while we're creating it. */
+    P_box* box;
+    std::string boxName;
+
+    /* Iterate through all record nodes in the header section. */
+    std::vector<UIF::Node*> recordNodes;
+    std::vector<UIF::Node*>::iterator recordIterator;
+    std::string variableName;
+    bool isRecordValid;
+    GetRecd(untypedSections[sectionName], recordNodes);
+    for (recordIterator=recordNodes.begin();
+         recordIterator!=recordNodes.end(); recordIterator++)
+    {
+        isRecordValid = true;  /* Innocent until proven guilty. */
+        sectionType = 0;  /* Given that this is a box record, we have to find a
+                           * section that defines the properties of this
+                           * box. */
+
+        /* Get the value and variable nodes. */
+        GetVari((*recordIterator), variableNodes);
+        GetValu((*recordIterator), valueNodes);
+
+        /* Ignore this record if the record has not got a variable/value
+         * pair (i.e. if the line is empty, or is just a comment). */
+        if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
+
+        /* Is this a variable definition? (does it have variables, values, and
+         * a '+' prefix)? (otherwise, we assume it is a box definition) */
+        if (valueNodes.size() > 0 and variableNodes.size() > 0 and
+            variableNodes[0]->qop == Lex::Sy_plus)
+        {
+            /* Complain if (in order):
+             *
+             * - The variable name is not a valid name.
+             * - There is more than one variable node.
+             * - There is more than one value node. */
+            isRecordValid &= complain_if_variable_name_invalid(
+                *recordIterator, variableNodes[0], &validFields, sectionName,
+                &d3_errors);
+            isRecordValid &= complain_if_record_is_multivariable(
+                *recordIterator, &variableNodes, sectionName, &d3_errors);
+            isRecordValid &= complain_if_record_is_multivalue(
+                *recordIterator, &valueNodes, variableNodes[0]->str,
+                sectionName, &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Complain if duplicate. NB: We know the variable name is valid if
+             * control has reached here. */
+            variableName = variableNodes[0]->str;
+            if (complain_if_node_variable_true_in_map(
+                    *recordIterator, variableNodes[0], &fieldsFound,
+                    sectionName,
+                    &d3_errors))
+            {
+                anyErrors = true;
+                continue;
+            }
+            fieldsFound[variableName] = true;
+
+            /* Specific logic for each variable. */
+            if (variableName == "external_box_cost")
+            {
+                /* Complain if not a float. */
+                isRecordValid &= complain_if_node_value_not_floating(
+                    *recordIterator, valueNodes[0], variableName, sectionName,
+                    &d3_errors);
+                if (!isRecordValid)
+                {
+                    anyErrors = true;
+                    continue;
+                }
+
+                /* Bind! */
+                engine->costExternalBox = str2unsigned(valueNodes[0]->str);
+            }
+
+            /* Types are processed in d3_get_validate_default_types, so we
+             * ignore the definition here. */
+            else if (variableName == "type");
+
+            /* Shouldn't be able to enter this, because we've already checked
+             * the variable names, but why not write some more code. It's not
+             * like this file is big enough already. */
+            else
+            {
+                d3_errors.append(dformat("L%u: Variable name '%s' is not "
+                                         "valid in the '%s' section (E2).\n",
+                                         (*recordIterator)->pos,
+                                         variableName.c_str(),
+                                         sectionName.c_str()));
+                anyErrors = true;
+            }
+
+            /* This continue is here to reduce the amount of indentation for
+             *  dealing with box records. */
+            continue;
+        }
+
+        /* Otherwise, this must be a box definition. */
+
+        /* Complain if the name is invalid (but keep going). */
+        isRecordValid &= complain_if_node_variable_not_a_valid_item_name(
+            *recordIterator, variableNodes[0], sectionName, &d3_errors);
+
+        /* Is a type explicitly defined in this record? */
+        if (d3_get_explicit_type_from_item_definition(variableNodes[0],
+                                                      &type))
+        {
+            /* If there's a matching section for this type, we're all good (it
+             * gets written to sectionType). Otherwise, we fall back to
+             * defaults. */
+            anyErrors |= !d3_get_section_from_type(
+                "box", type, sectionName, (*recordIterator)->pos,
+                &sectionType);
+        }
+
+        /* If the type it was not defined explicitly, or it was and no section
+         * matched with it, get the section from the defaults. */
+        if (sectionType == 0)
+        {
+            sectionType = defaultTypes[untypedSections[sectionName]];
+
+            /* If it's still zero, then the type hasn't been defined anywhere
+             * "validly". That's an error, folks. */
+            if (sectionType == 0)
+            {
+                d3_errors.append(dformat("L%u: No section found to define the "
+                                         "box on this line. Not making it.\n",
+                                         (*recordIterator)->pos));
+                anyErrors = true;
+                continue;  /* Can't do anything without a type definition... */
+            }
+        }
+
+        /* Get the address without validating it. */
+        d3_get_address_from_item_definition(variableNodes[0], &address);
+
+        /* So we know we're dealing with a box definition, and we've got a
+         * type and an address for it. */
+
+        /* Create the box (the name argument is the name of the box in the
+         * record). */
+        boxName = variableNodes[0]->str;
+        box = new P_box(boxName);
+
+        /* Into the engine with ye! */
+        engine->contain(address, box);
+
+        /* For each board in the box definition line, add it to
+         * undefinedBoards. */
+        std::vector<UIF::Node*>::iterator leafIterator;
+        leafIterator = variableNodes[0]->leaf.begin();
+        while (leafIterator!=variableNodes[0]->leaf.end())
+        {
+            if ((*leafIterator)->str == "boards"){break;}
+            leafIterator++;
+        }
+
+        /* Don't panic if there aren't any boards to add. */
+        if (leafIterator != variableNodes[0]->leaf.end())
+        {
+            /* For each board... */
+            std::vector<UIF::Node*>::iterator lLeafIterator;  /* Sorry */
+            for (lLeafIterator=(*leafIterator)->leaf.begin();
+                 lLeafIterator!=(*leafIterator)->leaf.end(); lLeafIterator++)
+            {
+                /* Add to undefinedBoards. */
+                undefinedBoards.push_back(boardName(boxName,
+                                                    (*lLeafIterator)->str));
+            }
+        }
+
+        /* Populate the fields of the box from its type definition. */
+        anyErrors |= !d3_define_box_fields_from_section(box, sectionType);
+
+    } /* End for-each-record */
 
     return !anyErrors;
 }
