@@ -127,9 +127,18 @@ void P_board::contain(AddressComponent addressComponent, P_mailbox* mailbox)
         throw OwnershipException(errorMessage.str());
     }
 
-    /* We don't care about the result of inserting the mailbox into this graph,
-     * because we've checked the item is not owned before adding it. */
-    G.InsertNode(addressComponent, mailbox);
+    /* Verify that there is no address clash. The operation in the predicate
+     * performs the containment. */
+    if (!G.InsertNode(addressComponent, mailbox))
+    {
+        std::stringstream errorMessage;
+        errorMessage << "Mailbox \"" << mailbox->Name()
+            << "\" is already present in the graph held by this board ("
+            << Name()
+            << "). The mailbox's full name is \"" << mailbox->FullName()
+            << "\".";
+        throw OwnershipException(errorMessage.str());
+    }
 
     /* Define a hardware address for the mailbox, if we have a hardware
      * address. */

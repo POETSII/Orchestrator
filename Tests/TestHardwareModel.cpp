@@ -112,6 +112,56 @@ TEST_CASE("Boxes cannot be claimed multiple times", "[Items]")
     REQUIRE_THROWS_AS(engine.contain(124, box), OwnershipException&);
 }
 
+TEST_CASE("Different boxes cannot be mapped to the same address", "[Items]")
+{
+    P_engine engine("Engine000");
+    P_box* box0 = new P_box("Box000");
+    P_box* box1 = new P_box("Box001");
+    AddressComponent sharedAddressBadDeath = 4;
+
+    engine.addressFormat = HardwareAddressFormat(4, 5, 6, 8, 9);
+    engine.contain(sharedAddressBadDeath, box0);
+    REQUIRE_THROWS_AS(engine.contain(sharedAddressBadDeath, box1),
+                      OwnershipException&);
+    delete box1;  /* Otherwise we're leaking. */
+}
+
+TEST_CASE("Different boards cannot be mapped to the same address", "[Items]")
+{
+    P_engine engine("Engine000");
+    P_box* box = new P_box("Box000");
+    P_board* board0 = new P_board("Board000");
+    P_board* board1 = new P_board("Board001");
+    AddressComponent sharedAddressBadDeath = 4;
+
+    engine.addressFormat = HardwareAddressFormat(4, 5, 6, 8, 9);
+    engine.contain(0, box);
+    box->contain(0, board0);
+    box->contain(1, board1);
+    engine.contain(sharedAddressBadDeath, board0);
+    REQUIRE_THROWS_AS(engine.contain(sharedAddressBadDeath, board1),
+                      OwnershipException&);
+    /* NB: Don't need to delete board1, because it's owned by the box. */
+}
+
+TEST_CASE("Different mailboxes cannot be mapped to the same address within a board", "[Items]")
+{
+    P_engine engine("Engine000");
+    P_box* box = new P_box("Box000");
+    P_board* board0 = new P_board("Board000");
+    P_mailbox* mailbox0 = new P_mailbox("Mailbox000");
+    P_mailbox* mailbox1 = new P_mailbox("Mailbox001");
+    AddressComponent sharedAddressBadDeath = 4;
+
+    engine.addressFormat = HardwareAddressFormat(4, 5, 6, 8, 9);
+    engine.contain(0, box);
+    box->contain(0, board0);
+    board0->contain(sharedAddressBadDeath, mailbox0);
+    REQUIRE_THROWS_AS(board0->contain(sharedAddressBadDeath, mailbox1),
+                      OwnershipException&);
+    delete mailbox1;  /* Otherwise we're leaking. */
+}
+
 TEST_CASE("Engines are empty when initialised", "[Emptiness]")
 {
     P_engine engine("Engine000");
