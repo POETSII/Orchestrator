@@ -1181,6 +1181,19 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
         isRecordValid &= complain_if_node_variable_not_a_valid_item_name(
             *recordIterator, variableNodes[0], sectionName, &d3_errors);
 
+        /* Complain if a box already exists with this name (this is
+         * near-fatal). */
+        std::map<std::string, P_box*>::iterator boxNameFinder;
+        boxName = variableNodes[0]->str;
+        boxNameFinder = boxFromName.find(boxName);
+        if(boxNameFinder != boxFromName.end())
+        {
+            d3_errors.append(dformat("L%u: Box name '%s' already defined.\n",
+                                     (*recordIterator)->pos, boxName.c_str()));
+            anyErrors = true;
+            continue
+        }
+
         /* Is a type explicitly defined in this record? */
         if (d3_get_explicit_type_from_item_definition(variableNodes[0],
                                                       &type))
@@ -1219,8 +1232,10 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
 
         /* Create the box (the name argument is the name of the box in the
          * record). */
-        boxName = variableNodes[0]->str;
         box = new P_box(boxName);
+
+        /* Store conveniently. */
+        boxFromName[boxName] = box;
 
         /* Into the engine with ye! */
         engine->contain(address, box);

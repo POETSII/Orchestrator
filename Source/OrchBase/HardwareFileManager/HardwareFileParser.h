@@ -238,6 +238,10 @@ private:
      * [engine_board]. */
     std::list<boardName> undefinedBoards;
 
+    /* Holds all boxes, indexable by their name. The key is the unique name of
+     * the box, and the value points to the box object itself. */
+    std::map<std::string, P_box*> boxFromName;
+
     /* Holds information on all boards. The key is the unique name of the
      * board, and the value holds the information about that board. */
     std::map<boardName, BoardInfo> boardInfoFromName;
