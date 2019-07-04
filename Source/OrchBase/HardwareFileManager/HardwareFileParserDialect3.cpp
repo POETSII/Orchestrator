@@ -188,6 +188,72 @@ bool HardwareFileParser::d3_get_address_from_item_definition(
     return true;
 }
 
+/* Extract the compound board name from a node, and validate it. Returns true
+ * if valid, and false if invalid or if the box is missing (while writing an
+ * angry letter to your manager).
+ *
+ * Board names are compound names, with box and board components. Arguments:
+ *
+ * - itemNode: The node (variable, or value).
+ * - boardName: BoardName to populate. */
+bool HardwareFileParser::d3_get_board_name(UIF::Node* itemNode,
+                                           BoardName* boardName)
+{
+    /* Clear the board name. */
+    boardName->first = "";
+    boardName->second = "";
+
+    /* Get the box component, and verify a box exists with that name
+     * already. */
+    std::string boxName = itemNode->str;
+    std::map<std::string, P_box*>::iterator boxNameFinder;
+    boxNameFinder = boxFromName.find(boxName);
+    if(boxNameFinder == boxFromName.end())
+    {
+        d3_errors.append(dformat("L%u: Box component of board name '%s' does "
+                                 "not correspond to an existing box.\n",
+                                 itemNode->pos, boxName.c_str()));
+        return false;
+    }
+
+    /* Get the board component, through some dilligent searching... */
+    std::vector<UIF::Node*>::iterator leafIterator;
+    for(leafIterator=itemNode->leaf.begin();
+        leafIterator!=itemNode->leaf.end(); leafIterator++)
+    {
+        if ((*leafIterator)->str == "board"){break;}
+    }
+
+    if (leafIterator == itemNode->leaf.end())
+    {
+        d3_errors.append(dformat("L%u: Couldn't find a board field in this "
+                                 "board definition (so I don't know what the "
+                                 "name is).\n", itemNode->pos));
+        return false;
+    }
+
+    /* Does the board component have zero or multiple values? If so, that's not
+     * valid. */
+    if ((*leafIterator)->leaf.size() != 1)
+    {
+        d3_errors.append(dformat("L%u: Multiple board components defined for "
+                                 "the name of this board (only one is "
+                                 "allowed).\n", itemNode->pos));
+        return false;
+    }
+
+    /* Is the board name valid? */
+    if (!complain_if_node_variable_not_a_valid_item_name(
+            itemNode, (*leafIterator)->leaf[0], "engine_board", &d3_errors))
+    {
+        return false;
+    }
+
+    /* All good, assign and return. */
+    boardName->first = boxName;
+    boardName->second = (*leafIterator)->leaf[0]->str;
+    return true;
+}
 
 /* Extract the type from an item definition.
  *

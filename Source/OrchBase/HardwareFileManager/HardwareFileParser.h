@@ -150,6 +150,7 @@ private:
     bool d3_define_box_fields_from_section(P_box* box, UIF::Node* sectionNode);
     bool d3_get_address_from_item_definition(UIF::Node* itemNode,
                                              AddressComponent* address);
+    bool d3_get_board_name(UIF::Node* itemNode, BoardName* boardName);
     bool d3_get_explicit_type_from_item_definition(UIF::Node* itemNode,
                                                    std::string* type);
     bool d3_get_section_from_type(std::string itemType, std::string type,
