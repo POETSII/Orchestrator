@@ -1192,7 +1192,7 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
             d3_errors.append(dformat("L%u: Box name '%s' already defined.\n",
                                      (*recordIterator)->pos, boxName.c_str()));
             anyErrors = true;
-            continue
+            continue;
         }
 
         /* Is a type explicitly defined in this record? */
