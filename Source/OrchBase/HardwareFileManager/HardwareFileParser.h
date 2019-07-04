@@ -106,7 +106,7 @@
  */
 struct BoardInfo{int lineNumber; P_board* memoryAddress;};
 struct MailboxInfo{int lineNumber; P_mailbox* memoryAddress;};
-struct EdgeInfo{float weight; bool isReverseDefined; unsigned lineNumber;};
+struct EdgeInfo{float weight; bool isReverseDefined; int lineNumber;};
 
 typedef std::pair<std::string, std::string> BoardName;
 typedef std::string MailboxName;
@@ -151,6 +151,8 @@ private:
     bool d3_get_address_from_item_definition(UIF::Node* itemNode,
                                              AddressComponent* address);
     bool d3_get_board_name(UIF::Node* itemNode, BoardName* boardName);
+    bool d3_get_explicit_cost_from_edge_definition(UIF::Node* itemNode,
+                                                   float* cost);
     bool d3_get_explicit_type_from_item_definition(UIF::Node* itemNode,
                                                    std::string* type);
     bool d3_get_section_from_type(std::string itemType, std::string type,

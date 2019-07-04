@@ -255,6 +255,42 @@ bool HardwareFileParser::d3_get_board_name(UIF::Node* itemNode,
     return true;
 }
 
+/* Extract the cost from an edge definition.
+ *
+ * Drops the value into 'cost', and sets it to -1 if there was no cost defined,
+ * or if the cost was invalid. Returns true if a cost was found, and false
+ * otherwise. Arguments:
+ *
+ * - itemNode: Value node to extract the edge cost from.
+ * - cost: String to write the type to. */
+bool HardwareFileParser::d3_get_explicit_cost_from_edge_definition(
+    UIF::Node* itemNode, float* cost)
+{
+    *cost = -1;
+
+    /* Get the "cost" field from the item, if any. */
+    std::vector<UIF::Node*>::iterator leafIterator = itemNode->leaf.begin();
+    while (leafIterator!=itemNode->leaf.end())
+    {
+        if ((*leafIterator)->str == "cost"){break;}
+        leafIterator++;
+    }
+
+    /* If we didn't find it, return. */
+    if (leafIterator == itemNode->leaf.end()){return false;}
+
+    /* Is there actually a cost in there? If not, return. */
+    if ((*leafIterator)->leaf.size() == 0){return false;}
+
+    /* Is the first entry a float? Leave with true otherwise (the value was
+     * found, it just was not valid). */
+    if (!is_node_value_floating((*leafIterator)->leaf[0])){return true;}
+
+    /* Bind the cost with the first entry. */
+    *cost = str2float((*leafIterator)->leaf[0]->str);
+    return true;
+}
+
 /* Extract the type from an item definition.
  *
  * Drops the type into 'type', and clears it if there is no type defined. Does
@@ -1146,11 +1182,18 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
 
     /* Holds the board while we're creating it. */
     P_board* board;
-    std::string boardName;
+    BoardName boardName;
 
     /* Holds any default board-board cost, if found. */
-    float boardBoardCost = 0;
-    bool isBoardBoardCostDefined = false;
+    float defaultCost = 0;
+    bool isDefaultCostDefined = false;
+
+    /* Holds an edge-specific board-board cost, if found. */
+    float thisEdgeCost;
+    bool isThisEdgeCostDefined;
+
+    /* Holds the name of the board on the other end of an edge. */
+    BoardName edgeBoardName;
 
     /* Iterate through all record nodes in this section, in order to:
      *
@@ -1160,6 +1203,7 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
      * Ignore records that are not variable definitions. */
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
+    std::vector<UIF::Node*>::iterator edgeIterator;
     std::string variableName;
     bool isRecordValid;
     GetRecd(untypedSections[sectionName], recordNodes);
@@ -1226,8 +1270,8 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
             }
 
             /* Hold him! */
-            boardBoardCost = str2unsigned(valueNodes[0]->str);
-            isBoardBoardCostDefined = true;
+            defaultCost = str2unsigned(valueNodes[0]->str);
+            isDefaultCostDefined = true;
         }
 
         /* Types are processed in d3_get_validate_default_types, so we
@@ -1272,7 +1316,6 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
         if (variableNodes[0]->qop == Lex::Sy_plus){continue;}
 
         /* Validate and get the name of the board. */
-        BoardName boardName;
         if (!d3_get_board_name(variableNodes[0], &boardName))
         {
             anyErrors = true;
@@ -1338,7 +1381,142 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
         boardInfoFromName[boardName] =
             BoardInfo{(*recordIterator)->pos, board};
 
-        // <!>
+        /* Stage the edges from this record. Values (i.e. LHS of the '=' token)
+         * each represent the name of a board, optionally with a cost, which
+         * defines an edge */
+        for(edgeIterator=valueNodes.begin(); edgeIterator!=valueNodes.end();
+            edgeIterator++)
+        {
+            /* Get the name of the board on the other side of this edge,
+             * skipping if invalid. */
+            if(!d3_get_board_name(*edgeIterator, &edgeBoardName))
+            {
+                anyErrors = true;
+                continue;  /* Skip this edge - can't identify either end. */
+            }
+
+            /* If the edge explicitly describes a cost, use that. Otherwise,
+             * use one we found earlier. Complain if:
+             *
+             * - neither are defined
+             * - the explicit cost is invalid (we checked the default cost
+             *   earlier) */
+            isThisEdgeCostDefined = d3_get_explicit_cost_from_edge_definition(
+                *edgeIterator, &thisEdgeCost);
+            if (isThisEdgeCostDefined)
+            {
+                /* Check for -1, meaning the cost was invalid. */
+                if (thisEdgeCost == -1)
+                {
+                    d3_errors.append(dformat(
+                        "L%u: Invalid cost on edge connecting board %s-%s to "
+                        "board %s-%s (it must be a float).\n",
+                        (*recordIterator)->pos,
+                        boardName.first.c_str(),
+                        boardName.second.c_str(),
+                        edgeBoardName.first.c_str(),
+                        edgeBoardName.second.c_str()));
+                    anyErrors = true;
+                    continue;  /* Skip this edge - meaningless without a
+                                * comprehensible cost. */
+                }
+            }
+            else if (isDefaultCostDefined)
+            {
+                thisEdgeCost = defaultCost;
+            }
+            else
+            {
+                d3_errors.append(dformat(
+                    "L%u: No cost found for edge connecting board %s-%s to "
+                    "board %s-%s (it must be a float).\n",
+                    (*recordIterator)->pos,
+                    boardName.first.c_str(),
+                    boardName.second.c_str(),
+                    edgeBoardName.first.c_str(),
+                    edgeBoardName.second.c_str()));
+                anyErrors = true;
+                continue;  /* Skip this edge - meaningless without a cost. */
+            }
+
+            /* If the reverse edge is in boardEdges... */
+            std::map<std::pair<BoardName, BoardName>, EdgeInfo>::iterator \
+                edgeFinder;
+            /* Bears reiterating - it's the reverse! */
+            edgeFinder = boardEdges.find(std::make_pair(edgeBoardName,
+                                                        boardName));
+            if (edgeFinder != boardEdges.end())
+            {
+                /* Complain if:
+                 *
+                 * - The reverse-cost is different.
+                 * - Reverse is already defined. */
+                if (edgeFinder->second.weight != thisEdgeCost)
+                {
+                    d3_errors.append(dformat(
+                        "L%u: The cost of the edge connecting board %s-%s to "
+                        "board %s-%s (%f) is different from the cost of its "
+                        "reverse (%f), defined at L%i.\n",
+                        (*recordIterator)->pos,
+                        boardName.first.c_str(),
+                        boardName.second.c_str(),
+                        edgeBoardName.first.c_str(),
+                        edgeBoardName.second.c_str(),
+                        thisEdgeCost,
+                        edgeFinder->second.weight,
+                        edgeFinder->second.lineNumber));
+                    anyErrors = true;
+                    continue;  /* Skip this edge, avoid clobbering. */
+                }
+
+                if (edgeFinder->second.isReverseDefined)
+                {
+                    d3_errors.append(dformat(
+                        "L%u: The other end of the edge connecting board "
+                        "%s-%s to board %s-%s has already been defined. The "
+                        "first definition was at L%i.\n",
+                        (*recordIterator)->pos,
+                        boardName.first.c_str(),
+                        boardName.second.c_str(),
+                        edgeBoardName.first.c_str(),
+                        edgeBoardName.second.c_str(),
+                        edgeFinder->second.lineNumber));
+                    anyErrors = true;
+                    continue;  /* Skip this edge, avoid clobbering. */
+                }
+
+                /* We're all good, mark the reverse as found (we're on it!). */
+                edgeFinder->second.isReverseDefined = true;
+            }
+
+            /* Otherwise, track this edge in boardEdges. */
+            else
+            {
+                /* But complain if it's already there (means we've defined it
+                 * twice on this line, probably). */
+
+                /* NB: Not reverse! */
+                edgeFinder = boardEdges.find(std::make_pair(boardName,
+                                                            edgeBoardName));
+                if (edgeFinder != boardEdges.end())
+                {
+                    d3_errors.append(dformat(
+                        "L%u: Duplicate edge definition connecting board "
+                        "%s-%s to board %s-%s.\n",
+                        (*recordIterator)->pos,
+                        boardName.first.c_str(),
+                        boardName.second.c_str(),
+                        edgeBoardName.first.c_str(),
+                        edgeBoardName.second.c_str()));
+                    anyErrors = true;
+                    continue;  /* Skip this edge, avoid clobbering. */
+                }
+
+                /* Okay, actually add it now. */
+                boardEdges[std::make_pair(boardName, edgeBoardName)] = \
+                    EdgeInfo{thisEdgeCost, false, (*recordIterator)->pos};
+            }
+        }  /* That's all the edges. */
     }
 
     return !anyErrors;
