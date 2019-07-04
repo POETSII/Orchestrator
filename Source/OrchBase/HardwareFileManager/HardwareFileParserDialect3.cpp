@@ -1,4 +1,4 @@
-/* Defines behaviour for the dialect 1 functionality of the hardware model file
+/* Defines behaviour for the dialect 3 functionality of the hardware model file
  * parser (see the accompanying header for further information). */
 
 #include "HardwareFileParser.h"
