@@ -42,8 +42,8 @@
 // +-------------------+
 //      Byron (= By)
 [engine_box]
-By(boards(B00,B01,B10,B11,B20,B21))
-El(boards(B00,B01,B10,B11,B20,B21))
+By(addr(0),boards(B00,B01,B10,B11,B20,B21))
+El(addr(1),boards(B00,B01,B10,B11,B20,B21))
 +external_box_cost=0
 +type="CommonBox"
 

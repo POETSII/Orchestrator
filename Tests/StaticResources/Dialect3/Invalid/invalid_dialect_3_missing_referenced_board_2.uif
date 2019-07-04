@@ -44,8 +44,8 @@
 // +-------------------+
 //      Byron (= By)
 [engine_box]
-By(boards(B00,B01,B10,B11,B20,B21,Octopus))
-El(boards(B00,B01,B10,B11,B20,B21,Locust))
+By(addr(0),boards(B00,B01,B10,B11,B20,B21,Octopus))
+El(addr(1),boards(B00,B01,B10,B11,B20,B21,Locust))
 +external_box_cost=0
 
 // Note that the Y-component of the board address in hardware comes before the
