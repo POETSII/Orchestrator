@@ -882,8 +882,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
      * multi-valued records) */
     unsigned* accumulationTarget;
 
-    /* Iterate through all record nodes in the packet_address_format
-     * section. */
+    /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
     std::string variableName;
@@ -1077,7 +1076,7 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
     P_box* box;
     std::string boxName;
 
-    /* Iterate through all record nodes in the header section. */
+    /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
     std::string variableName;
@@ -1224,7 +1223,7 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
             }
         }
 
-        /* Get the address without validating it. */
+        /* Get the address without validating it (boss' orders). */
         d3_get_address_from_item_definition(variableNodes[0], &address);
 
         /* So we know we're dealing with a box definition, and we've got a
@@ -1313,7 +1312,7 @@ bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
     std::vector<UIF::Node*> valueNodes;
     std::vector<UIF::Node*> variableNodes;
 
-    /* Iterate through all record nodes in the header section. */
+    /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
     std::string variableName;
