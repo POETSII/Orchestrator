@@ -388,7 +388,7 @@ bool HardwareFileParser::d3_get_validate_default_types(
         else
         {
             d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
-                                     "the '%s' section (E2).\n",
+                                     "the '%s' section.\n",
                                      (*recordIterator)->pos, variableName,
                                      sectionName.c_str()));
             anyErrors = true;
@@ -1021,7 +1021,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
         else
         {
             d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
-                                     "the '%s' section (E2).\n",
+                                     "the '%s' section.\n",
                                      (*recordIterator)->pos, variableName,
                                      sectionName.c_str()));
             anyErrors = true;
@@ -1163,7 +1163,7 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
             else
             {
                 d3_errors.append(dformat("L%u: Variable name '%s' is not "
-                                         "valid in the '%s' section (E2).\n",
+                                         "valid in the '%s' section.\n",
                                          (*recordIterator)->pos,
                                          variableName.c_str(),
                                          sectionName.c_str()));
@@ -1400,7 +1400,7 @@ bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
         else
         {
             d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
-                                     "the '%s' section (E2).\n",
+                                     "the '%s' section.\n",
                                      (*recordIterator)->pos, variableName,
                                      sectionName.c_str()));
             anyErrors = true;
