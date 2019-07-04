@@ -108,7 +108,7 @@ bool HardwareFileParser::d3_get_section_from_type(
     std::string itemType, std::string type, std::string sourceSectionName,
     unsigned lineNumber, UIF::Node** sectionNode)
 {
-    sectionNode = 0;
+    *sectionNode = 0;
 
     /* Iterator to find typed sections. Note that this only refers to the inner
      * map of typedSections. */
