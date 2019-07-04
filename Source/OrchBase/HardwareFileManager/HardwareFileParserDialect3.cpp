@@ -158,6 +158,7 @@ bool HardwareFileParser::d3_define_box_fields_from_section(
 bool HardwareFileParser::d3_get_address_from_item_definition(
     UIF::Node* itemNode, AddressComponent* address)
 {
+    std::string fullBinary = "";
     *address = 0;
 
     /* Get the "addr" field from the item, if any. */
@@ -180,9 +181,10 @@ bool HardwareFileParser::d3_get_address_from_item_definition(
     for (lLeafIterator=(*leafIterator)->leaf.begin();
          lLeafIterator!=(*leafIterator)->leaf.end(); lLeafIterator++)
     {
-        *address = (*address) + str2unsigned((*lLeafIterator)->str);
+        fullBinary.append((*lLeafIterator)->str);
     }
 
+    *address = std::stoi(fullBinary.c_str(), 0, 2);
     return true;
 }
 
