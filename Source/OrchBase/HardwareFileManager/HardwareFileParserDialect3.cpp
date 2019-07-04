@@ -903,6 +903,9 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
     /* Boxes */
     passedValidation &= d3_populate_validate_engine_box(engine);
 
+    /* Boards (and the items beneath) */
+    passedValidation &= d3_populate_validate_engine_board_and_below(engine);
+
     if (!passedValidation)
     {
         throw HardwareSemanticException(d3_errors.c_str());
@@ -1098,6 +1101,245 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
     /* Ensure mandatory fields have been defined, inefficiently. */
     anyErrors &= complain_if_mandatory_field_not_defined(
         &validFields, &fieldsFound, sectionName, &d3_errors);
+
+    return !anyErrors;
+}
+
+/* Validate the contents of the engine_board section, and create boards and
+ * items beneath. Relies on engine_box having been read.
+ *
+ * Returns true if all validation checks pass, and false otherwise. Arguments:
+ *
+ * - engine: Engine to populate with boards, and other items. */
+bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
+    P_engine* engine)
+{
+    bool anyErrors = false;  /* Innocent until proven guilty. */
+    std::string sectionName = "engine_board";
+
+    /* Valid fields for this section (none are mandatory). */
+    std::vector<std::string> validFields;
+    std::vector<std::string>::iterator fieldIterator;
+    validFields.push_back("board_board_cost");
+    validFields.push_back("type");
+
+    /* Holds fields we've already grabbed (for validation purposes). */
+    std::map<std::string, bool> fieldsFound;
+    for (fieldIterator=validFields.begin(); fieldIterator!=validFields.end();
+         fieldIterator++)
+    {
+        fieldsFound.insert(std::make_pair(*fieldIterator, false));
+    }
+
+    /* Temporary staging vectors for holding value nodes and variable
+     * nodes. */
+    std::vector<UIF::Node*> valueNodes;
+    std::vector<UIF::Node*> variableNodes;
+
+    /* Holds the type of the current record, and the section it refers to (if
+     * any). */
+    std::string type;
+    UIF::Node* sectionType;
+
+    /* Holds the concatenated address of a board. */
+    AddressComponent address;
+
+    /* Holds the board while we're creating it. */
+    P_board* board;
+    std::string boardName;
+
+    /* Holds any default board-board cost, if found. */
+    float boardBoardCost = 0;
+    bool isBoardBoardCostDefined = false;
+
+    /* Iterate through all record nodes in this section, in order to:
+     *
+     * - Get the default board-board cost.
+     * - Complain if there are duplicate entries.
+     *
+     * Ignore records that are not variable definitions. */
+    std::vector<UIF::Node*> recordNodes;
+    std::vector<UIF::Node*>::iterator recordIterator;
+    std::string variableName;
+    bool isRecordValid;
+    GetRecd(untypedSections[sectionName], recordNodes);
+    for (recordIterator=recordNodes.begin();
+         recordIterator!=recordNodes.end(); recordIterator++)
+    {
+        isRecordValid = true;  /* Innocent until proven guilty. */
+
+        /* Get the value and variable nodes. */
+        GetVari((*recordIterator), variableNodes);
+        GetValu((*recordIterator), valueNodes);
+
+        /* Ignore this record if the record has not got a variable/value
+         * pair (i.e. if the line is empty, or is just a comment). */
+        if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
+
+        /* Only proceed if this record is a variable definition (it must have a
+         * '+' prefix) */
+        if (variableNodes[0]->qop != Lex::Sy_plus){continue;}
+
+        /* Complain if (in order):
+         *
+         * - The variable name is not a valid name.
+         * - There is more than one variable node.
+         * - There is more than one value node. */
+        isRecordValid &= complain_if_variable_name_invalid(
+            *recordIterator, variableNodes[0], &validFields, sectionName,
+            &d3_errors);
+        isRecordValid &= complain_if_record_is_multivariable(
+            *recordIterator, &variableNodes, sectionName, &d3_errors);
+        isRecordValid &= complain_if_record_is_multivalue(
+            *recordIterator, &valueNodes, variableNodes[0]->str,
+            sectionName, &d3_errors);
+        if (!isRecordValid)
+        {
+            anyErrors = true;
+            continue;
+        }
+
+        /* Complain if duplicate. NB: We know the variable name is valid if
+         * control has reached here. */
+        variableName = variableNodes[0]->str;
+        if (complain_if_node_variable_true_in_map(
+                *recordIterator, variableNodes[0], &fieldsFound,
+                sectionName,
+                &d3_errors))
+        {
+            anyErrors = true;
+            continue;
+        }
+        fieldsFound[variableName] = true;
+
+        /* Specific logic for each variable. */
+        if (variableName == "board_board_cost")
+        {
+            /* Complain if not a float. */
+            isRecordValid &= complain_if_node_value_not_floating(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Hold him! */
+            boardBoardCost = str2unsigned(valueNodes[0]->str);
+            isBoardBoardCostDefined = true;
+        }
+
+        /* Types are processed in d3_get_validate_default_types, so we
+         * ignore the definition here. */
+        else if (variableName == "type");
+
+        /* Shouldn't be able to enter this, because we've already checked
+         * the variable names, but why not write some more code. It's not
+         * like this file is big enough already. */
+        else
+        {
+            d3_errors.append(dformat("L%u: Variable name '%s' is not "
+                                     "valid in the '%s' section.\n",
+                                     (*recordIterator)->pos,
+                                     variableName.c_str(),
+                                     sectionName.c_str()));
+            anyErrors = true;
+        }
+    }
+
+    /* Iterate through all record nodes in this section, in order to define
+     * boards. We ignore variable definitions this time. Yeah we're iterating
+     * twice... */
+    for (recordIterator=recordNodes.begin();
+         recordIterator!=recordNodes.end(); recordIterator++)
+    {
+        isRecordValid = true;  /* Innocent until proven guilty. */
+        sectionType = 0;  /* Given that this is a board record, we have to find
+                           * a section that defines the properties of this
+                           * board. */
+
+        /* Get the value and variable nodes. */
+        GetVari((*recordIterator), variableNodes);
+        GetValu((*recordIterator), valueNodes);
+
+        /* Ignore this record if the record has not got a variable/value
+         * pair (i.e. if the line is empty, or is just a comment). */
+        if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
+
+        /* Only proceed if this record is NOT a variable definition (it must
+         * NOT have a '+' prefix) */
+        if (variableNodes[0]->qop == Lex::Sy_plus){continue;}
+
+        /* Validate and get the name of the board. */
+        BoardName boardName;
+        if (!d3_get_board_name(variableNodes[0], &boardName))
+        {
+            anyErrors = true;
+            continue;
+        }
+
+        /* Whine if a board with this name already exists. */
+        std::map<BoardName, BoardInfo>::iterator boardNameFinder;
+        boardNameFinder = boardInfoFromName.find(boardName);
+        if (boardNameFinder != boardInfoFromName.end())
+        {
+            d3_errors.append(dformat("L%u: Board name on this line has "
+                                     "already been defined on line %u. Not "
+                                     "making it.\n",
+                                     (*recordIterator)->pos,
+                                     boardNameFinder->second.lineNumber));
+            anyErrors = true;
+            continue;
+        }
+
+        /* Is a type explicitly defined in this record? */
+        if (d3_get_explicit_type_from_item_definition(variableNodes[0],
+                                                      &type))
+        {
+            /* If there's a matching section for this type, we're all good (it
+             * gets written to sectionType). Otherwise, we fall back to
+             * defaults. */
+            anyErrors |= !d3_get_section_from_type(
+                "board", type, sectionName, (*recordIterator)->pos,
+                &sectionType);
+        }
+
+        /* If the type it was not defined explicitly, or it was and no section
+         * matched with it, get the section from the defaults. */
+        if (sectionType == 0)
+        {
+            sectionType = defaultTypes[untypedSections[sectionName]];
+
+            /* If it's still zero, then the type hasn't been defined anywhere
+             * "validly". That's an error, folks. */
+            if (sectionType == 0)
+            {
+                d3_errors.append(dformat("L%u: No section found to define the "
+                                         "board on this line. Not making "
+                                         "it.\n", (*recordIterator)->pos));
+                anyErrors = true;
+                continue;  /* Can't do anything without a type definition... */
+            }
+        }
+
+        /* Get the address without validating it (boss' orders). */
+        d3_get_address_from_item_definition(variableNodes[0], &address);
+
+        /* Create the board (the name argument is the name of the board in the
+         * record). */
+        board = new P_board(boardName.second);
+
+        /* Into the engine with ye! */
+        boxFromName[boardName.first]->contain(address, board);
+        engine->contain(address, board);
+
+        /* Track the board by name. */
+        boardInfoFromName[boardName] =
+            BoardInfo{(*recordIterator)->pos, board};
+
+        // <!>
+    }
 
     return !anyErrors;
 }

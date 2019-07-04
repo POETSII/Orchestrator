@@ -161,6 +161,7 @@ private:
     bool d3_load_validate_sections();
     void d3_populate_hardware_model(P_engine* engine);
     bool d3_populate_validate_address_format(P_engine* engine);
+    bool d3_populate_validate_engine_board_and_below(P_engine* engine);
     bool d3_populate_validate_engine_box(P_engine* engine);
     bool d3_populate_validate_header(P_engine* engine);
     bool d3_validate_types_define_cache();
