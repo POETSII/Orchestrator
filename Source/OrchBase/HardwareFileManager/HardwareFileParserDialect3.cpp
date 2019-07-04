@@ -1517,6 +1517,9 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
                     EdgeInfo{thisEdgeCost, false, (*recordIterator)->pos};
             }
         }  /* That's all the edges. */
+
+        /* Populate the board with mailboxes and properties. */
+        // <!>
     }
 
     return !anyErrors;
