@@ -135,6 +135,20 @@ void P_engine::contain(AddressComponent addressComponent, P_box* box)
         throw OwnershipException(errorMessage.str());
     }
 
+    /* Verify that a box with that address doesn't already exist, to avoid
+     * clobbering. */
+    std::map<AddressComponent, P_box*>::iterator boxFinder;
+    boxFinder = P_boxm.find(addressComponent);
+    if (boxFinder != P_boxm.end())
+    {
+        std::stringstream errorMessage;
+        errorMessage << "Cannot add box \"" << box->Name()
+                     << "\" with address component \"" << addressComponent
+                     << "\" because box \"" << boxFinder->second->Name()
+                     << "\" already exists at that address component.";
+        throw OwnershipException(errorMessage.str());
+    }
+
     P_boxm[addressComponent] = box;
 
     /* Define a hardware address for the box. */
