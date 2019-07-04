@@ -97,19 +97,19 @@
  *   its reverse-direction has been declared (yet), and the line in the input
  *   file where its instance is first mentioned.
  *
- * - boardName: Holds the name of a board. The first string in the pair is the
+ * - BoardName: Holds the name of a board. The first string in the pair is the
  *   name of the box containing the boards. The second string in the pair is
  *   the name of the board in the box. This is a concession to the fact that
  *   board names only need to be unique within their box.
  *
- * - mailboxName: Holds the name of a mailbox. It's relative.
+ * - MailboxName: Holds the name of a mailbox. It's relative.
  */
-struct BoardInfo{unsigned lineNumber; P_board* memoryAddress;};
-struct MailboxInfo{unsigned lineNumber; P_mailbox* memoryAddress;};
+struct BoardInfo{int lineNumber; P_board* memoryAddress;};
+struct MailboxInfo{int lineNumber; P_mailbox* memoryAddress;};
 struct EdgeInfo{float weight; bool isReverseDefined; unsigned lineNumber;};
 
-typedef std::pair<std::string, std::string> boardName;
-typedef std::string mailboxName;
+typedef std::pair<std::string, std::string> BoardName;
+typedef std::string MailboxName;
 
 #define ITEM_ENUM_LENGTH 3
 enum item {box, board, mailbox};
@@ -236,7 +236,7 @@ private:
     /* Holds boards that have been declared to exist within a box in
      * [engine_box], but which have not (yet) been created from parsing
      * [engine_board]. */
-    std::list<boardName> undefinedBoards;
+    std::list<BoardName> undefinedBoards;
 
     /* Holds all boxes, indexable by their name. The key is the unique name of
      * the box, and the value points to the box object itself. */
@@ -244,23 +244,23 @@ private:
 
     /* Holds information on all boards. The key is the unique name of the
      * board, and the value holds the information about that board. */
-    std::map<boardName, BoardInfo> boardInfoFromName;
+    std::map<BoardName, BoardInfo> boardInfoFromName;
 
     /* Holds information on all mailboxes in the current board. The key is the
      * name of the mailbox in this board, and the value holds the information
      * about that mailbox. */
-    std::map<mailboxName, MailboxInfo> mailboxInfoFromName;
+    std::map<MailboxName, MailboxInfo> mailboxInfoFromName;
 
     /* Holds the edge that connects to boards together, if any. The two
      * elements of the pair held in the key of the map represent the boards at
      * each end of the edge, and the value of the map holds the edge
      * information. */
-    std::map<std::pair<boardName, boardName>, EdgeInfo> boardEdges;
+    std::map<std::pair<BoardName, BoardName>, EdgeInfo> boardEdges;
 
     /* Holds the edge that connects to mailboxes together in a given board, if
      * any. The two elements of the pair held in the key of the map represent
      * the mailboxes at each end of the edge, and the value of the map holds
      * the mailbox information. */
-    std::map<std::pair<mailboxName, mailboxName>, EdgeInfo> mailboxEdges;
+    std::map<std::pair<MailboxName, MailboxName>, EdgeInfo> mailboxEdges;
 };
 #endif

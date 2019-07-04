@@ -1258,7 +1258,7 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
                  lLeafIterator!=(*leafIterator)->leaf.end(); lLeafIterator++)
             {
                 /* Add to undefinedBoards. */
-                undefinedBoards.push_back(boardName(boxName,
+                undefinedBoards.push_back(BoardName(boxName,
                                                     (*lLeafIterator)->str));
             }
         }
