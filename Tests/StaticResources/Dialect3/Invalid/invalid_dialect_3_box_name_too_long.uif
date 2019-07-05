@@ -44,7 +44,7 @@
 // +-------------------+
 //      Byron (= By)
 [engine_box]
-ThirtyThreeCharacterLongBadBoxName(boards(B00,B01,B10,B11,B20,B21))
+ThirtyThreeCharacterLongXFailName(boards(B00,B01,B10,B11,B20,B21))
 El(addr(1),boards(B00,B01,B10,B11,B20,B21))
 +external_box_cost=0
 
