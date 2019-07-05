@@ -1668,8 +1668,11 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
         /* Otherwise, this must be a box definition. */
 
         /* Complain if the name is invalid (but keep going). */
-        isRecordValid &= complain_if_node_variable_not_a_valid_item_name(
-            *recordIterator, variableNodes[0], sectionName, &d3_errors);
+        if (!complain_if_node_variable_not_a_valid_item_name(
+                *recordIterator, variableNodes[0], sectionName, &d3_errors))
+        {
+            anyErrors = true;
+        }
 
         /* Complain if a box already exists with this name (this is
          * near-fatal). */
