@@ -65,6 +65,8 @@ TEST_CASE("Files with valid syntax and semantics do not raise", "[Parser]")
         fileName!=semanticallyValidInputs.end();
         fileName++)
     {
+        printf("Testing %s...\n", (*fileName).c_str());
+
         engine = new P_engine("Test Engine");
         parser = new HardwareFileParser();
 
@@ -89,6 +91,8 @@ TEST_CASE("Test each semantically-invalid case in turn", "[Parser]")
         fileName!=semanticallyInvalidInputs.end();
         fileName++)
     {
+        printf("Testing %s (xfail)...\n", (*fileName).c_str());
+
         engine = new P_engine("Test Engine");
         parser = new HardwareFileParser();
 
