@@ -322,27 +322,25 @@ bool does_node_variable_have_plus_prefix(UIF::Node* variableNode)
     return (variableNode->qop == Lex::Sy_plus);
 }
 
-/* Returns true if the value vector obtained from a record is single-valued, or
- * false if it is multi-valued or has no value. Arguments:
+/* Returns true if the value vector obtained from a record is multi-valued or
+ * has no value, and false otherwise. Arguments:
  *
  * - valueNodes: All of the variables associated with a record (probably
  *   obtained using JNJ::GetValu). */
 bool is_multivalue_record(std::vector<UIF::Node*>* valueNodes)
 {
-    if (valueNodes->size() >= 0)  /* Are there any values? */
+    if (valueNodes->size() > 0)  /* Are there any values? */
     {
         /* If there is only one value, the first value node contains the
          * value. If there are multiple (N) value nodes, the first value node
          * contains N value nodes, each with an entry. */
         return ((*valueNodes)[0]->leaf.size() != 0);
     }
-    return false;
+    return true;
 }
 
-
 /* Returns true if the variable vector obtained from a record is
- * single-variable, or false if it is multi-variable or has no
- * value. Arguments:
+ * multi-variable or has no value, and false otherwise. Arguments:
  *
  * - variableNodes: All of the variables associated with a record (probably
  *   obtained using JNJ::GetVari). */

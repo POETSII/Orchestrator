@@ -140,7 +140,7 @@ bool HardwareFileParser::d3_define_box_fields_from_section(
     }
 
     /* Ensure mandatory fields have been defined. */
-    anyErrors &= complain_if_mandatory_field_not_defined(
+    anyErrors |= !complain_if_mandatory_field_not_defined(
         &validFields, &fieldsFound, sectionName, &d3_errors);
 
     return !anyErrors;
@@ -1134,8 +1134,8 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
         }
     }
 
-    /* Ensure mandatory fields have been defined, inefficiently. */
-    anyErrors &= complain_if_mandatory_field_not_defined(
+    /* Ensure mandatory fields have been defined. */
+    anyErrors |= !complain_if_mandatory_field_not_defined(
         &validFields, &fieldsFound, sectionName, &d3_errors);
 
     return !anyErrors;
@@ -1916,7 +1916,7 @@ bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
     }
 
     /* Ensure mandatory fields have been defined. */
-    anyErrors &= complain_if_mandatory_field_not_defined(
+    anyErrors |= !complain_if_mandatory_field_not_defined(
         &mandatoryFields, &fieldsFound, sectionName, &d3_errors);
 
     return !anyErrors;
