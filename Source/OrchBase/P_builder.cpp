@@ -229,9 +229,6 @@ unsigned P_builder::GenFiles(P_task* task)
   }
   //============================================================================
   
-  //system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_PATH))->str().c_str());
-  //system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_H_PATH))->str().c_str());
-  //system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_CPP_PATH))->str().c_str());
   unsigned int coreNum = 0;
   if (!task->linked)
   {
@@ -374,7 +371,7 @@ unsigned P_builder::GenSupervisor(P_task* task)
   cpCmd << task_dir << "/" << GENERATED_PATH;                   // Destination
   if(system(cpCmd.str().c_str()))
   {
-    par->Post(807, (task_dir+GENERATED_PATH).c_str());
+    par->Post(807, (task_dir+GENERATED_PATH), POETS::getSysErrorString(errno));
     return 1;
   }
   //============================================================================
@@ -1886,76 +1883,136 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
 }
 //------------------------------------------------------------------------------
 
-void P_builder::CompileBins(P_task * task)
+
+
+/*------------------------------------------------------------------------------
+ * Compile the binaries for loading onto POETS hardware
+ *----------------------------------------------------------------------------*/
+unsigned P_builder::CompileBins(P_task * task)
 {
-     string task_dir(par->taskpath+task->Name()+"/");
-     if (!task->linked)
-     {
-        par->Post(811, task->Name());
-        return;
-     }
-     // create all the necessary build directories
-     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+COMMON_PATH))->str().c_str());
-     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+TINSEL_PATH))->str().c_str());
-     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+ORCH_PATH))->str().c_str());
-     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+BIN_PATH))->str().c_str());
-     system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+BUILD_PATH))->str().c_str());
-     // copy static files to their relevant places: softswitch sources,
-     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+COMMON_SRC_PATH<<"/* "<<PERMISSION_CPY<<" "<<RECURSIVE_CPY<<" "<<task_dir+COMMON_PATH))->str().c_str()))
-     {
-        par->Post(807, (task_dir+COMMON_PATH).c_str());
-        return;
-     }
-     // Tinsel code
-     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+TINSEL_SRC_PATH<<"/* "<<PERMISSION_CPY<<" "<<RECURSIVE_CPY<<" "<<task_dir+TINSEL_PATH))->str().c_str()))
-     {
-         par->Post(807, (task_dir+TINSEL_SRC_PATH).c_str());
-         return;
-     }
-     // Orchestrator code for Mothership
-     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+ORCH_SRC_PATH<<"/* "<<RECURSIVE_CPY<<" "<<task_dir+ORCH_PATH))->str().c_str()))
-     {
-         par->Post(807, (task_dir+ORCH_SRC_PATH).c_str());
-         return;
-     }
-     // Makefile
-     if (system(static_cast<stringstream*>(&(stringstream(SYS_COPY, ios_base::out | ios_base::ate)<<" "<<par->taskpath+STATIC_SRC_PATH<<"Makefile "<<task_dir+BUILD_PATH))->str().c_str()))
-     {
-         par->Post(807, (task_dir+BUILD_PATH).c_str());
-         return;
-     }
-     // kludgey line for C++98; this can be greatly simplified in C++11 using to_string.
-     // the makefile will have a target "softswitch_%.elf" which will produce a binary with the
-     // (virtual) core number appended. Build failures generate a fatal error as expected.
-     // if (system(string(COREMAKE_BASE).append(static_cast<ostringstream*>(&(ostringstream()<<c))->str()).c_str()))
-     if (system(static_cast<stringstream*>(&(stringstream("(cd ", ios_base::out | ios_base::ate)<<task_dir+BUILD_PATH<<";"<<COREMAKE_BASE<<")"))->str().c_str()))
-     {
-        par->Post(805);
-        return;
-     }
-     unsigned int coreNum = 0;
-     P_core* thisCore;  // Core available during iteration.
-     P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
-     WALKPDIGRAPHNODES(AddressComponent,P_board*,unsigned,P_link*,unsigned,P_port*,par->pE->G,boardNode)
-     {
-     WALKPDIGRAPHNODES(AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,P_port*,par->pE->G.NodeData(boardNode)->G,mailboxNode)
-     {
-     WALKMAP(AddressComponent,P_core*,par->pE->G.NodeData(boardNode)->G.NodeData(mailboxNode)->P_corem,coreNode)
-     {
-         thisCore = coreNode->second;
-         firstThread = thisCore->P_threadm.begin()->second;
-         if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
-         {
-            // a failure to read the generated binary may not be absolutely fatal; this could be retrieved later if
-            // there was a transient read error (e.g. reading over a network connection)
-            string binary_name(static_cast<stringstream*>(&(stringstream(task_dir+BIN_PATH, ios_base::out | ios_base::ate)<<"/"<<COREBIN_BASE<<coreNum<<".elf"))->str());
-            if (!(thisCore->instructionBinary->Binary = fopen(binary_name.c_str(),"r")))
-               par->Post(806, binary_name);
-            ++coreNum;
-         }
-     }
-     }
-     }
+  string task_dir(par->taskpath+task->Name()+"/");
+  if (!task->linked)
+  {
+     par->Post(811, task->Name());
+     return 1;
+  }
+  
+  //============================================================================
+  // Create all of the necessary build directories - bail if any fail.
+  //============================================================================
+  std::string mkdirCommonPath(task_dir + COMMON_PATH);
+  if(system((MAKEDIR + " " + mkdirCommonPath).c_str()))
+  {
+    par->Post(818, mkdirCommonPath, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  
+  std::string mkdirTinselPath(task_dir + TINSEL_PATH);      // Tinsel path
+  if(system((MAKEDIR + " " + mkdirTinselPath).c_str()))
+  {
+    par->Post(818, mkdirTinselPath, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  
+  std::string mkdirOrchPath(task_dir + ORCH_PATH);          // Orchestrator path
+  if(system((MAKEDIR + " " + mkdirOrchPath).c_str()))
+  {
+    par->Post(818, mkdirOrchPath, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  
+  std::string mkdirBinPath(task_dir + BIN_PATH);           // Binary path
+  if(system((MAKEDIR + " " + mkdirBinPath).c_str()))
+  {
+    par->Post(818, mkdirBinPath, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  
+  std::string mkdirBuildPath(task_dir + BUILD_PATH);       // Build path
+  if(system((MAKEDIR + " " + mkdirBuildPath).c_str()))
+  {
+    par->Post(818, mkdirBuildPath, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  //============================================================================
+  
+  
+  //============================================================================
+  // Copy static files to the correct places - bail if any fail
+  //============================================================================
+  std::string cpCmd(SYS_COPY+" "+RECURSIVE_CPY+" "+PERMISSION_CPY); // Common copy command
+  std::string cpSrc;        // Source
+  std::string cpDest;       // Destination
+  
+  cpSrc = par->taskpath+COMMON_SRC_PATH+"/*";       //  softswitch sources?
+  cpDest = task_dir + COMMON_PATH;
+  if(system((cpCmd + " " + cpSrc + " " + cpDest).c_str()))
+  {
+    par->Post(807, cpDest, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  
+  cpSrc = par->taskpath+TINSEL_SRC_PATH+"/*";       // Tinsel code
+  cpDest = task_dir + TINSEL_PATH;
+  if(system((cpCmd + " " + cpSrc + " " + cpDest).c_str()))
+  {
+    par->Post(807, cpDest, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  
+  cpSrc = par->taskpath+ORCH_SRC_PATH+"/*";         // Orchestrator code
+  cpDest = task_dir + ORCH_PATH;
+  if(system((cpCmd + " " + cpSrc + " " + cpDest).c_str()))
+  {
+    par->Post(807, cpDest, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  
+  cpSrc = par->taskpath+STATIC_SRC_PATH+"Makefile"; // Makefile
+  cpDest = task_dir + BUILD_PATH;                 // last one as we reuse cpDest
+  if(system((SYS_COPY + " " + cpSrc + " " + cpDest).c_str()))
+  {
+    par->Post(807, cpDest, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  //============================================================================
+  
+  
+  //============================================================================
+  // CD to build dir and build the actual binaries - this calls make.
+  //============================================================================
+  if(system(("(cd "+cpDest+";"+COREMAKE_BASE+")").c_str()))
+  {
+    par->Post(805);
+    return 1;
+  }
+  //============================================================================
+
+
+  unsigned int coreNum = 0;
+  P_core* thisCore;  // Core available during iteration.
+  P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
+  WALKPDIGRAPHNODES(AddressComponent,P_board*,unsigned,P_link*,unsigned,P_port*,par->pE->G,boardNode)
+  {
+  WALKPDIGRAPHNODES(AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,P_port*,par->pE->G.NodeData(boardNode)->G,mailboxNode)
+  {
+  WALKMAP(AddressComponent,P_core*,par->pE->G.NodeData(boardNode)->G.NodeData(mailboxNode)->P_corem,coreNode)
+  {
+      thisCore = coreNode->second;
+      firstThread = thisCore->P_threadm.begin()->second;
+      if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
+      {
+         // a failure to read the generated binary may not be absolutely fatal; this could be retrieved later if
+         // there was a transient read error (e.g. reading over a network connection)
+         string binary_name(static_cast<stringstream*>(&(stringstream(task_dir+BIN_PATH, ios_base::out | ios_base::ate)<<"/"<<COREBIN_BASE<<coreNum<<".elf"))->str());
+         if (!(thisCore->instructionBinary->Binary = fopen(binary_name.c_str(),"r")))
+            par->Post(806, binary_name);
+         ++coreNum;
+      }
+  }
+  }
+  }
+  return 0;
 }
 
 //==============================================================================

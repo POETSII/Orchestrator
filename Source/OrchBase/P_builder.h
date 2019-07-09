@@ -38,7 +38,7 @@ private:
 
 void Preplace(P_task*);
 unsigned GenFiles(P_task*);
-void CompileBins(P_task*);
+unsigned CompileBins(P_task*);
 
 unsigned GenSupervisor(P_task*);
 unsigned WriteCoreVars(std::string&, unsigned, P_core*, P_thread* , ofstream&);

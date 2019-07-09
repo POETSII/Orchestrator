@@ -101,7 +101,7 @@
 804(F) : "P_builder:out of memory to create the graph parser. Shutting down"
 805(E) : "P_builder:compile failed. Errors dumped to make_errs.txt"
 806(W) : "P_builder:unable to read binary %s. Application may not be completely loaded"
-807(E) : "Unable to copy files to directory %s. Check directory exists and has access rights"
+807(E) : "Unable to copy files to directory %s. Check directory exists and has access rights. %s"
 808(W) : "Invalid or nonexistent definition file %s for task %s. Task not loaded"
 809(W) : "Tasks from specification %s already loaded - command ignored"
 810(E) : "DeviceType %s too big: requires %s bytes but max capacity is %s"
