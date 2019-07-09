@@ -86,7 +86,16 @@
 
 
 /* =============================================================================
- * Quick and dirty cross-platform method to get error code from last sys call.
+ * Quick and dirty cross-platform method to get error string from error code.
+ *
+ * When called with "errno", this will return an std::string containing the
+ * relevant error text for the last failed system call.
+ *
+ * The "default" option (using sterror) is NOT thread safe, but is portable. 
+ * Other options (using sterror_s and friends) need adding for Windows/Borland.
+ *
+ * Example Usage:
+ *  std::cout << getSysErrorString(errno) << std::endl;
  * ===========================================================================*/
 namespace POETS
 {
