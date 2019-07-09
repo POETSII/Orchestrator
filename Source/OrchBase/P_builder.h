@@ -37,7 +37,7 @@ map<string, I_Graph*> defs;
 private:
 
 void Preplace(P_task*);
-void GenFiles(P_task*);
+unsigned GenFiles(P_task*);
 void CompileBins(P_task*);
 
 unsigned GenSupervisor(P_task*);

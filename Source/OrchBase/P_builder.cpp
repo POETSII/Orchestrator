@@ -89,7 +89,7 @@ void P_builder::Build(P_task * pT)
   if (!pT) pT = par->P_taskm.begin()->second; // default to the first task
   par->Post(801,pT->Name(),pT->filename);
   Preplace(pT);                               // Map to the system if necessary
-  GenFiles(pT);
+  if (GenFiles(pT)) return;    // Try to generate source files. Bail if we fail.
   CompileBins(pT);
 }
 //==============================================================================
@@ -178,20 +178,65 @@ void P_builder::Preplace(P_task* task)
 
 
 // creates the files that have to be generated from data rather than be pre-existing
-void P_builder::GenFiles(P_task* task)
+unsigned P_builder::GenFiles(P_task* task)
 {
-  string task_dir(par->taskpath+task->Name());
-  system((string("rm -r -f ")+task_dir).c_str());       // TODO: cross-platform this
-  system((MAKEDIR+" "+ task_dir).c_str());
+  std::string task_dir(par->taskpath+task->Name());
+  
+  
+  //============================================================================
+  // Remove the task directory and recreate it to clean any previous build.
+  //============================================================================
+  if(system((REMOVEDIR+" "+task_dir).c_str())) // Check that the directory deleted
+  {                                  // if it didn't, tell logserver and exit
+    par->Post(817, task_dir, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  
+  if(system((MAKEDIR+" "+ task_dir).c_str()))// Check that the directory created
+  {                                 // if it didn't, tell logserver and exit
+    par->Post(818, (task_dir), POETS::getSysErrorString(errno));
+    return 1;
+  }
+  //============================================================================
+  
+
   task_dir += "/";
-  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_PATH))->str().c_str());
-  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_H_PATH))->str().c_str());
-  system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_CPP_PATH))->str().c_str());
+  
+  
+  //============================================================================
+  // Create the directory for the generated code and the src and inc directories
+  // below it. If any of these fail, tell the logserver and bail.
+  //============================================================================
+  std::string mkdirGenPath(task_dir + GENERATED_PATH);
+  if(system((MAKEDIR + " " + mkdirGenPath).c_str()))
+  {
+    par->Post(818, mkdirGenPath, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  
+  std::string mkdirGenHPath(task_dir + GENERATED_H_PATH);
+  if(system((MAKEDIR + " " + mkdirGenHPath).c_str()))
+  {
+    par->Post(818, mkdirGenHPath, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  
+  std::string mkdirGenCPath(task_dir + GENERATED_CPP_PATH);
+  if(system((MAKEDIR + " " + mkdirGenCPath).c_str()))
+  {
+    par->Post(818, mkdirGenCPath, POETS::getSysErrorString(errno));
+    return 1;
+  }
+  //============================================================================
+  
+  //system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_PATH))->str().c_str());
+  //system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_H_PATH))->str().c_str());
+  //system(static_cast<stringstream*>(&(stringstream(MAKEDIR, ios_base::out | ios_base::ate)<<" "<<task_dir+GENERATED_CPP_PATH))->str().c_str());
   unsigned int coreNum = 0;
   if (!task->linked)
   {
     par->Post(811, task->Name());
-    return;
+    return 1;
   }
   
   //============================================================================
@@ -199,7 +244,7 @@ void P_builder::GenFiles(P_task* task)
   //============================================================================
   if(GenSupervisor(task))    
   {                     // Generation of Supervisor files failed, bail.
-    return;             // Don't need to post as that has already been done.
+    return 1;           // Don't need to post as that has already been done.
   }
   //============================================================================
 
@@ -262,7 +307,7 @@ void P_builder::GenFiles(P_task* task)
           {                     // Writing core vars failed - bail
             vars_h.close();
             cores_sh.close();
-            return;
+            return 1;
           }
           //====================================================================
           
@@ -279,7 +324,7 @@ void P_builder::GenFiles(P_task* task)
               {                     // Writing thread vars failed - bail
                 vars_h.close();
                 cores_sh.close();
-                return;
+                return 1;
               }
             }
           }
@@ -293,6 +338,8 @@ void P_builder::GenFiles(P_task* task)
     }
   }
   cores_sh.close();
+  
+  return 0;
 }
 
 //------------------------------------------------------------------------------
@@ -348,7 +395,7 @@ unsigned P_builder::GenSupervisor(P_task* task)
     
     if(supervisor_h.fail()) // Check that the file opened
     {                       // if it didn't, tell logserver and exit
-      par->Post(816, supervisor_hFName.str(), POETS::getSysErrorString(errno).c_str());
+      par->Post(816, supervisor_hFName.str(), POETS::getSysErrorString(errno));
       return 1;
     }
     
@@ -357,7 +404,7 @@ unsigned P_builder::GenSupervisor(P_task* task)
     std::ofstream supervisor_cpp(supervisor_cFName.str(), fstream::app);  // Supervisor code, open in append
     if(supervisor_cpp.fail()) // Check that the file opened
     {                         // if it didn't, tell logserver, close .h and exit
-      par->Post(816, supervisor_cFName.str(), POETS::getSysErrorString(errno).c_str());
+      par->Post(816, supervisor_cFName.str(), POETS::getSysErrorString(errno));
       supervisor_h.close();
       return 1;
     }
@@ -373,11 +420,11 @@ unsigned P_builder::GenSupervisor(P_task* task)
     P_devtyp* supervisor_type = task->pSup->pP_devtyp;
     set<P_message*> sup_msgs; // set used to retain only unique message types used by supervisors
     
-    stringstream sup_inPin_typedefs("",ios_base::out | ios_base::ate);
-    stringstream sup_pin_handlers("",ios_base::out | ios_base::ate);
-    stringstream sup_pin_vectors("",ios_base::out | ios_base::ate);
-    stringstream sup_inPin_props("",ios_base::out | ios_base::ate);
-    stringstream sup_inPin_state("",ios_base::out | ios_base::ate);
+    std::stringstream sup_inPin_typedefs("");
+    std::stringstream sup_pin_handlers("");
+    std::stringstream sup_pin_vectors("");
+    std::stringstream sup_inPin_props("");
+    std::stringstream sup_inPin_state("");
     
     // build supervisor pin handlers.
     sup_pin_handlers << "vector<supInputPin*> Supervisor::inputs;\n";
@@ -626,7 +673,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::ofstream vars_cpp(vars_cppFName.str());            // variables source
   if(vars_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
-    par->Post(816, vars_cppFName.str(), POETS::getSysErrorString(errno).c_str());
+    par->Post(816, vars_cppFName.str(), POETS::getSysErrorString(errno));
     return 1;
   }
   
@@ -636,7 +683,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::ofstream handlers_h(handlers_hFName.str());      // handlers header
   if(handlers_h.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
-    par->Post(816, handlers_hFName.str(), POETS::getSysErrorString(errno).c_str());
+    par->Post(816, handlers_hFName.str(), POETS::getSysErrorString(errno));
     vars_cpp.close();
     return 1;
   }
@@ -647,7 +694,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::ofstream handlers_cpp(handlers_cppFName.str());  // handlers source
   if(handlers_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
-    par->Post(816, handlers_cppFName.str(), POETS::getSysErrorString(errno).c_str());
+    par->Post(816, handlers_cppFName.str(), POETS::getSysErrorString(errno));
     vars_cpp.close();
     handlers_h.close();
     return 1;
@@ -748,7 +795,8 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   //============================================================================
   // Form the common handler preamble (deviceProperties & deviceState)
   //============================================================================
-  stringstream handlerPreamble("{\n", ios_base::out | ios_base::ate);
+  stringstream handlerPreamble("");
+  handlerPreamble << "{\n";
   
   if (c_devtyp->par->pPropsD)
   {
@@ -1004,7 +1052,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   std::ofstream vars_cpp(vars_cppFName.str());            // variables source
   if(vars_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
-    par->Post(816, vars_cppFName.str(), POETS::getSysErrorString(errno).c_str());
+    par->Post(816, vars_cppFName.str(), POETS::getSysErrorString(errno));
     return 1;
   }
   //============================================================================
@@ -1075,10 +1123,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   
   
   // more partial streams because pin lists may or may not exist for a given device. 
-  // By not using ios_base::ate we ensure that actual values for these initialisers override the 0 default.
-  stringstream inpinlist("");
-  stringstream outpinlist("");
-  stringstream initialiser("", ios_base::out | ios_base::ate);
+  std::stringstream inpinlist("");
+  std::stringstream outpinlist("");
+  std::stringstream initialiser("");
   
   unsigned int inTypCnt = devTyp->P_pintypIv.size();       // Grab the number of input pin types to save derefs
   unsigned int outTypCnt = devTyp->P_pintypOv.size();      // Grab the number of output pin types to save derefs
@@ -1133,7 +1180,8 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     std::string dTypInPin = std::string("devtyp_");                             // Build the dev type input pin name string
     dTypInPin += devTyp->Name() + std::string("_InPin_");
     
-    initialiser.str("{");                                                       // Clear the initialiser
+    initialiser.str("");                                                       // Clear the initialiser
+    initialiser << "{";
     for (vector<P_pintyp*>::iterator ipin = devTyp->P_pintypIv.begin();         // Iterate over all the pins
           ipin != devTyp->P_pintypIv.end();                                     //  and build the initialiser
           ipin++)                                                               //  for each one.
@@ -1177,7 +1225,8 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     std::string dTypInPin = std::string("devtyp_");                             // Build the dev type input pin name string
     dTypInPin += devTyp->Name() + std::string("_OutPin_");
     
-    initialiser.str("{");                                                       // Clear the initialiser
+    initialiser.str("");                                                       // Clear the initialiser
+    initialiser << "{";
     for (vector<P_pintyp*>::iterator opin = devTyp->P_pintypOv.begin();         // Iterate over all the pins
           opin != devTyp->P_pintypOv.end();                                     //  and build the initialiser
           opin++)                                                               //  for each one.
@@ -1214,20 +1263,24 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   
   unsigned index = 0;
   
-  stringstream devInstInitialiser("", ios_base::out | ios_base::ate);   // Device Instance Initialisers
-  stringstream pinInitialiser("", ios_base::out | ios_base::ate);       // Initialiser for input & output pins
-  stringstream edgeInitialiser("", ios_base::out | ios_base::ate);      // Initialiser for input & output edges
+  std::stringstream devInstInitialiser("");   // Device Instance Initialisers
+  std::stringstream pinInitialiser("");       // Initialiser for input & output pins
+  std::stringstream edgeInitialiser("");      // Initialiser for input & output edges
   
-  stringstream devPropsInitialiser("{", ios_base::out | ios_base::ate); // device type properties (devtyp_XXX_props_t) initialiser
-  stringstream devStateInitialiser("{", ios_base::out | ios_base::ate); // device type state (devtyp_XXX_state_t) initialiser
+  std::stringstream devPropsInitialiser("");  // device type properties (devtyp_XXX_props_t) initialiser
+  std::stringstream devStateInitialiser("");  // device type state (devtyp_XXX_state_t) initialiser
   
-  stringstream inPinPropsInitialiser("", ios_base::out | ios_base::ate);// device type input pin properties (devtyp_XXX_InPin_YYY_props_t) initialiser
-  stringstream inPinStateInitialiser("", ios_base::out | ios_base::ate);// device type input pin properties (devtyp_XXX_InPin_YYY_state_t) initialiser
+  std::stringstream inPinPropsInitialiser("");// device type input pin properties (devtyp_XXX_InPin_YYY_props_t) initialiser
+  std::stringstream inPinStateInitialiser("");// device type input pin properties (devtyp_XXX_InPin_YYY_state_t) initialiser
   
   vector<unsigned int>in_pin_idxs;
   vector<unsigned int>out_pin_idxs;
   
-  devInstInitialiser.str("{"); // Add the first { to the device instance array initialiser
+  
+  devPropsInitialiser << "{";   // Add the first { to the device properties array initialiser
+  devStateInitialiser << "{";   // Add the first { to the device state array initialiser
+  devInstInitialiser << "{";    // Add the first { to the device instance array initialiser
+  
   for (list<P_device*>::iterator device = thread->P_devicel.begin(); 
         device != thread->P_devicel.end(); 
         device++)
@@ -1262,15 +1315,21 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
       //========================================================================
       
       
-      pinInitialiser.str("{");   // Reset for the initialiser for PInputPin/inPin_t.
+      pinInitialiser.str("");   // Reset for the initialiser for PInputPin/inPin_t.
+      pinInitialiser << "{";
       
       for (unsigned int pin_num = 0; pin_num < inTypCnt; pin_num++)   // Iterate through all of the input pins
       {
         // within the pin, build the internal edge information (the pin's source list)
         
-        edgeInitialiser.str("{");       // Reset the edgeInitialiser for this pin - array of PInputEdge/inEdge_t
-        inPinPropsInitialiser.str("{"); // Reset the input pin properties initialiser for this pin - array of devtyp_XXX_InPin_YYY_props_t
-        inPinStateInitialiser.str("{"); // Reset the input pin state initialiser for this pin - array of devtyp_XXX_InPin_YYY_state_t
+        edgeInitialiser.str("");        // Reset the edgeInitialiser for this pin - array of PInputEdge/inEdge_t
+        edgeInitialiser << "{";
+        
+        inPinPropsInitialiser.str("");  // Reset the input pin properties initialiser for this pin - array of devtyp_XXX_InPin_YYY_props_t
+        inPinPropsInitialiser << "{";
+        
+        inPinStateInitialiser.str("");  // Reset the input pin state initialiser for this pin - array of devtyp_XXX_InPin_YYY_state_t
+        inPinStateInitialiser << "{";
         
         pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it next_pin = (*device)->par->G.index_n[(*device)->idx].fani.upper_bound(pin_num << PIN_POS | 0xFFFFFFFF >> (32-PIN_POS));
         for (pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it p_edge = (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS); p_edge != next_pin; p_edge++)
@@ -1545,7 +1604,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
       vars_h << "_OutputPins[" << outTypCnt << "];\n";
           
           
-      pinInitialiser.str("{");  // Reset for the initialiser for POutputPin/outPin_t.
+      pinInitialiser.str("");   // Reset for the initialiser for POutputPin/outPin_t.
+      pinInitialiser << "{";
+      
       for (vector<P_pintyp*>::iterator pin = devTyp->P_pintypOv.begin();
             pin != devTyp->P_pintypOv.end();
             pin++)
@@ -1608,7 +1669,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           // Generate the targets (HW addresses) for each edge. 
           // TODO: re-work this with the correct HW address class.
           //==================================================================== 
-          edgeInitialiser.str("{");     // Reset the edge initialiser for POutputEdge/outEdge_t
+          edgeInitialiser.str("");      // Reset the edge initialiser for POutputEdge/outEdge_t
+          edgeInitialiser << "{";
+          
           for (vector<unsigned int>::iterator tgt = out_pin_idxs.begin();
                 tgt != out_pin_idxs.end();
                 tgt++)

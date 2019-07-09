@@ -8,6 +8,7 @@ extern const std::string SYS_COPY;
 extern const std::string RECURSIVE_CPY;
 extern const std::string PERMISSION_CPY;
 extern const std::string MAKEDIR;
+extern const std::string REMOVEDIR;
 
 extern const unsigned int MAX_HANDLERS;
 extern const unsigned int BYTES_PER_THREAD;

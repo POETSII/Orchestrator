@@ -6,11 +6,13 @@ using namespace std;
 const string SYS_COPY = "copy";
 const string MAKEDIR = "md";
 const string RECURSIVE_CPY = "";
+const string REMOVEDIR = "rd /S /Q";
 #elif (defined __GNUC__)
 const string SYS_COPY = "cp";
 const string RECURSIVE_CPY = "-r";
 const string PERMISSION_CPY = "-p";
 const string MAKEDIR = "mkdir";
+const string REMOVEDIR = "rm -rf";
 #endif
 
 const unsigned int MAX_HANDLERS = 1024;

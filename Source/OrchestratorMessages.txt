@@ -111,6 +111,10 @@
 814(W) : "P_builder: no task found with source file %s"
 815(W) : "P_builder: task %s not registered under source file %s"
 816(E) : "P_Builder: Cannot open %s for writing: %s"
+817(E) : "Unable to remove directory %s: %s"
+818(E) : "Unable to create directory %s: %s"
+
+
 901(U) : "%s: %s corrupt ?"
 902(U) : "OrchBase::ClearTasks(tt=%s)"
 903(U) : "OrchBase::ClearDcls: Null pointer to %s in P_typdclm"
