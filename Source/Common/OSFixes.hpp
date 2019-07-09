@@ -1,5 +1,7 @@
 #ifndef __OSFIXES__H
 #define __OSFIXES__H
+#include <string>
+#include <string.h>
 
 /* =============================================================================
  * =============================================================================
@@ -82,6 +84,26 @@
  }
 #endif
 
+
+/* =============================================================================
+ * Quick and dirty cross-platform method to get error code from last sys call.
+ * ===========================================================================*/
+namespace POETS
+{
+    inline std::string getSysErrorString(int errNum)
+    {
+      #if (_POSIX_C_SOURCE >= 200112L || _XOPEN_SOURCE >= 600) && _GNU_SOURCE
+        char errMsg[1000];
+        return std::string(strerror_r(errNum, errMsg, 1000));
+      #elif _POSIX_C_SOURCE >= 200112L
+        char errMsg[1000];
+        if(strerror_r(errNum, errMsg, 1000)) return std::string("");
+        else return std::string(errMsg); 
+      #else
+        return std::string(strerror(errNum));
+      #endif
+    }
+}
 
 /* =============================================================================
  * Macros for indicating that variables may be unused by design.

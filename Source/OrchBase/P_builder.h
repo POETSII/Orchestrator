@@ -30,15 +30,19 @@ void                Load(const string&);
 OrchBase *            par;
 
 #ifndef __BORLANDC__
+
+QCoreApplication      app;          // Order swapped to suppress initialisation warning
 map<string, I_Graph*> defs;
-QCoreApplication      app;
 
 private:
 
 void Preplace(P_task*);
 void GenFiles(P_task*);
 void CompileBins(P_task*);
-void WriteThreadVars(string&, unsigned int, unsigned int, P_thread*, fstream&);
+
+unsigned GenSupervisor(P_task*);
+unsigned WriteCoreVars(std::string&, unsigned, P_core*, P_thread* , ofstream&);
+unsigned WriteThreadVars(std::string&, unsigned, unsigned, P_thread*, ofstream&);
 
 #endif
 };

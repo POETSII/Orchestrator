@@ -245,7 +245,7 @@ bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt)
 
 void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device)
 {
-    uint32_t rts[P_MAX_OPINS_PER_DEVICE>>5]; // flags for new ready-to-send pins
+    uint32_t rts[(P_MAX_OPINS_PER_DEVICE+31)>>5]; // flags for new ready-to-send pins
     void* rts_buf[P_MAX_OPINS_PER_DEVICE] = {}; // send buffers for the RTS handler, using default zero-initialisation
     uint32_t num_grps = (31+device->numOutputs) >> 5;
     uint32_t pin_grp, pin, pins_this_grp;
