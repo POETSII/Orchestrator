@@ -1348,7 +1348,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           // Form the first bit of an initialiser for PInputEdge/inEdge_t array member
           //====================================================================
           edgeInitialiser << "{";
-          edgeInitialiser << "0,";                                              // pin      // TODO: populate this?
+          
+          // first field is intentionally null as it is populated at runtime.
+          edgeInitialiser << "PNULL,";                                          // pin
           edgeInitialiser << (*device)->idx << ",";                             // tgt
           edgeInitialiser << p_edge->second.iArc->second.fr_n->first << ",";    // src
           //====================================================================
@@ -1702,7 +1704,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
             // Form an initialiser for the POutputEdge/outEdge_t array member.
             //==================================================================
             edgeInitialiser << "{";
-            edgeInitialiser << "0,";                                      // pin      // TODO: populate this?
+            
+            // first field is intentionally null as it is populated at runtime.
+            edgeInitialiser << "PNULL,";                                  // pin
             edgeInitialiser << (tgt_addr.A_device | tgt_hwaddr) << ",";   // tgt
             edgeInitialiser << (tgt_idx >> PIN_POS) << ",";               // tgtPin
             edgeInitialiser << (tgt_idx & (0xFFFFFFFF >> (32-PIN_POS)));  // tgtEdge
