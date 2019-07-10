@@ -3,14 +3,205 @@
 
 #include "HardwareFileParser.h"
 
-/* Define a box from a typed section.
+/* Define the fields of a board from a typed section.
  *
  * Returns true if there were no validation problems, and false
  * otherwise. Arguments:
  *
  * - box: Pointer to the box to populate.
- * - sectionNode: The node that defines the properties of the box.
- */
+ * - sectionNode: The node that defines the properties of the box. */
+bool HardwareFileParser::d3_define_board_fields_from_section(
+    P_board* board, UIF::Node* sectionNode)
+{
+    bool anyErrors = false;  /* Innocent until proven guilty. */
+
+    /* Short on time, sorry... */
+    std::string sectionName = dformat(
+        "%s(%s)", sectionNode->leaf[0]->leaf[0]->str.c_str(),
+        sectionNode->leaf[0]->leaf[0]->leaf[0]->str.c_str());
+
+    /* Valid fields for board sections */
+    std::vector<std::string> validFields;
+    std::vector<std::string>::iterator fieldIterator;
+    validFields.push_back("board_mailbox_cost");
+    validFields.push_back("dram");
+    validFields.push_back("mailbox_mailbox_cost");
+    validFields.push_back("supervisor_memory");
+    validFields.push_back("type");
+
+    /* Mandatory fields for board sections.. */
+    std::vector<std::string> mandatoryFields;
+    mandatoryFields.push_back("board_mailbox_cost");
+    mandatoryFields.push_back("dram");
+    mandatoryFields.push_back("mailbox_mailbox_cost");
+    mandatoryFields.push_back("supervisor_memory");
+
+    /* Holds fields we've already grabbed (for validation purposes). */
+    std::map<std::string, bool> fieldsFound;
+    for (fieldIterator=validFields.begin(); fieldIterator!=validFields.end();
+         fieldIterator++)
+    {
+        fieldsFound.insert(std::make_pair(*fieldIterator, false));
+    }
+
+    /* Temporary staging vectors for holding value nodes and variable
+     * nodes. */
+    std::vector<UIF::Node*> valueNodes;
+    std::vector<UIF::Node*> variableNodes;
+
+    /* Iterate through all record nodes in this section. */
+    std::vector<UIF::Node*> recordNodes;
+    std::vector<UIF::Node*>::iterator recordIterator;
+    std::string variableName;
+    bool isRecordValid;
+    GetRecd(sectionNode, recordNodes);
+    for (recordIterator=recordNodes.begin();
+         recordIterator!=recordNodes.end(); recordIterator++)
+    {
+        isRecordValid = true;  /* Innocent until proven guilty. */
+
+        /* Get the value and variable nodes. */
+        GetVari((*recordIterator), variableNodes);
+        GetValu((*recordIterator), valueNodes);
+
+        /* Ignore this record if the record has not got a variable/value
+         * pair (i.e. if the line is empty, or is just a comment). */
+        if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
+
+        /* Is this a variable definition? (does it have variables, values, and
+         * a '+' prefix)? If not, ignore it (for now). */
+        if (valueNodes.size() == 0 or variableNodes.size() == 0 or
+            variableNodes[0]->qop != Lex::Sy_plus){continue;}
+
+        /* Complain if (in order):
+         *
+         * - The variable name is not a valid name.
+         * - There is more than one variable node.
+         * - There is more than one value node. */
+        isRecordValid &= complain_if_variable_name_invalid(
+            *recordIterator, variableNodes[0], &validFields, sectionName,
+            &d3_errors);
+        isRecordValid &= complain_if_record_is_multivariable(
+            *recordIterator, &variableNodes, sectionName, &d3_errors);
+        isRecordValid &= complain_if_record_is_multivalue(
+            *recordIterator, &valueNodes, variableNodes[0]->str, sectionName,
+            &d3_errors);
+        if (!isRecordValid)
+        {
+            anyErrors = true;
+            continue;
+        }
+
+        /* Complain if duplicate. NB: We know the variable name is valid if
+         * control has reached here. */
+        variableName = variableNodes[0]->str;
+        if (complain_if_node_variable_true_in_map(
+                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
+                &d3_errors))
+        {
+            anyErrors = true;
+            continue;
+        }
+        fieldsFound[variableName] = true;
+
+        /* Specific logic for each variable. */
+        if (variableName == "board_mailbox_cost")
+        {
+            /* Validate */
+            isRecordValid &= complain_if_node_value_not_floating(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Bind */
+            board->costBoardMailbox = str2float(valueNodes[0]->str);
+        }
+
+        else if (variableName == "dram")
+        {
+            /* Validate */
+            isRecordValid &= complain_if_node_value_not_natural(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Bind */
+            board->dram = str2unsigned(valueNodes[0]->str);
+        }
+
+        else if (variableName == "mailbox_mailbox_cost")
+        {
+            /* Validate */
+            isRecordValid &= complain_if_node_value_not_floating(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Hold for later use */
+            defaultMailboxMailboxCost = str2float(valueNodes[0]->str);
+            isDefaultMailboxCostDefined = true;
+        }
+
+        else if (variableName == "supervisor_memory")
+        {
+            /* Validate */
+            isRecordValid &= complain_if_node_value_not_natural(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Bind */
+            board->supervisorMemory = str2unsigned(valueNodes[0]->str);
+        }
+
+        /* Types are processed in d3_get_validate_default_types, so we
+         * ignore the definition here. */
+        else if (variableName == "type");
+
+        /* Shouldn't be able to enter this, because we've already checked the
+         * variable names, but why not write some more code. It's not like this
+         * file is big enough already. */
+        else
+        {
+            d3_errors.append(dformat(
+                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
+                (*recordIterator)->pos, variableName.c_str(),
+                sectionName.c_str()));
+            anyErrors = true;
+        }
+    }
+
+    /* Ensure mandatory fields have been defined. */
+    anyErrors |= !complain_if_mandatory_field_not_defined(
+        &mandatoryFields, &fieldsFound, sectionName, &d3_errors);
+
+    return !anyErrors;
+
+}
+
+/* Define the fields of a box from a typed section.
+ *
+ * Returns true if there were no validation problems, and false
+ * otherwise. Arguments:
+ *
+ * - box: Pointer to the box to populate.
+ * - sectionNode: The node that defines the properties of the box. */
 bool HardwareFileParser::d3_define_box_fields_from_section(
     P_box* box, UIF::Node* sectionNode)
 {
@@ -1518,7 +1709,14 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
             }
         }  /* That's all the edges. */
 
-        /* Populate the board with mailboxes and properties. */
+        /* Define the properties of this board. If any are missing or broken,
+         * continue (we fail slowly). */
+        if (!d3_define_board_fields_from_section(board, sectionType))
+        {
+            anyErrors = true;
+        }
+
+        /* Populate the board with mailboxes. */
         // <!>
     }
 
