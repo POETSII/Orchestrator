@@ -1138,6 +1138,7 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
 
     if (!passedValidation)
     {
+        delete engine;
         throw HardwareSemanticException(d3_errors.c_str());
     }
 
