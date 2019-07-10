@@ -100,8 +100,8 @@
 803(F) : "P_builder:out of memory to create a QCoreApplication object"
 804(F) : "P_builder:out of memory to create the graph parser. Shutting down"
 805(E) : "P_builder:compile failed. Errors dumped to make_errs.txt"
-806(W) : "P_builder:unable to read binary %s. Application may not be completely loaded"
-807(E) : "Unable to copy files to directory %s. Check directory exists and has access rights"
+806(W) : "P_builder:unable to read binary %s. Application may not be completely loaded. %s"
+807(E) : "Unable to copy files to directory %s. Check directory exists and has access rights. %s"
 808(W) : "Invalid or nonexistent definition file %s for task %s. Task not loaded"
 809(W) : "Tasks from specification %s already loaded - command ignored"
 810(E) : "DeviceType %s too big: requires %s bytes but max capacity is %s"
@@ -110,6 +110,11 @@
 813(E) : "Error: task %s could not be %s. State on Mothership is %s"
 814(W) : "P_builder: no task found with source file %s"
 815(W) : "P_builder: task %s not registered under source file %s"
+816(E) : "P_Builder: Cannot open %s for writing: %s"
+817(E) : "Unable to remove directory %s: %s"
+818(E) : "Unable to create directory %s: %s"
+
+
 901(U) : "%s: %s corrupt ?"
 902(U) : "OrchBase::ClearTasks(tt=%s)"
 903(U) : "OrchBase::ClearDcls: Null pointer to %s in P_typdclm"
