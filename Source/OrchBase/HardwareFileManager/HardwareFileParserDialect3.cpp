@@ -1714,14 +1714,20 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
 
         /* Define the properties of this board. If any are missing or broken,
          * continue (we fail slowly). */
-        if (!d3_define_board_fields_from_section(board, sectionType))
-        {
-            anyErrors = true;
-        }
+        anyErrors |= !d3_define_board_fields_from_section(board, sectionType);
 
         /* Populate the board with mailboxes. */
-        // <!>
+        anyErrors |= !d3_populate_validate_board_with_mailboxes(board,
+                                                                sectionType);
+
+        /* Check mailbox edge integrity (12-12). <!> */
+
+        /* Clear `mailboxEdges` and `mailboxInfoFromName` (12-13). <!> */
     }
+
+    /* Check board edge integrity (13). <!> */
+
+    /* Check undefinedBoards, add to error message (14). <!> */
 
     return !anyErrors;
 }
