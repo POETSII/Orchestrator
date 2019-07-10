@@ -652,8 +652,8 @@ unsigned P_builder::GenSupervisor(P_task* task)
  * removed.
  *----------------------------------------------------------------------------*/
 unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum, 
-                                P_core* thisCore, P_thread* firstThread,  
-                                ofstream& vars_h)
+                                  P_core* thisCore, P_thread* firstThread,  
+                                  ofstream& vars_h)
 {
   P_devtyp* c_devtyp = (*firstThread->P_devicel.begin())->pP_devtyp;    // Pointer to the core's device type
   std::string devtyp_name = c_devtyp->Name();                           // grab a local copy of the devtype name
