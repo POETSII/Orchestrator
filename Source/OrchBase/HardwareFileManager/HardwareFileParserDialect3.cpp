@@ -334,13 +334,13 @@ bool HardwareFileParser::d3_get_explicit_type_from_item_definition(
  * - sourceSectionName: The name of the section the record lives in (for
      writing error message).
  * - lineNumber: Line number of the record (for writing error message).
- * - sectionNode: Pointer to write the found section to, set to zero if no
+ * - sectionNode: Pointer to write the found section to, set to PNULL if no
      node could be found. */
 bool HardwareFileParser::d3_get_section_from_type(
     std::string itemType, std::string type, std::string sourceSectionName,
     unsigned lineNumber, UIF::Node** sectionNode)
 {
-    *sectionNode = 0;
+    *sectionNode = PNULL;
 
     /* Iterator to find typed sections. Note that this only refers to the inner
      * map of typedSections. */
@@ -1299,9 +1299,9 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
          recordIterator!=recordNodes.end(); recordIterator++)
     {
         isRecordValid = true;  /* Innocent until proven guilty. */
-        sectionType = 0;  /* Given that this is a board record, we have to find
-                           * a section that defines the properties of this
-                           * board. */
+        sectionType = PNULL;  /* Given that this is a board record, we have to
+                               * find a section that defines the properties of
+                               * this board. */
 
         /* Get the value and variable nodes. */
         GetVari((*recordIterator), variableNodes);
@@ -1350,13 +1350,13 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
 
         /* If the type it was not defined explicitly, or it was and no section
          * matched with it, get the section from the defaults. */
-        if (sectionType == 0)
+        if (sectionType == PNULL)
         {
             sectionType = defaultTypes[untypedSections[sectionName]];
 
             /* If it's still zero, then the type hasn't been defined anywhere
              * "validly". That's an error, folks. */
-            if (sectionType == 0)
+            if (sectionType == PNULL)
             {
                 d3_errors.append(dformat("L%u: No section found to define the "
                                          "board on this line. Not making "
@@ -1577,9 +1577,9 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
          recordIterator!=recordNodes.end(); recordIterator++)
     {
         isRecordValid = true;  /* Innocent until proven guilty. */
-        sectionType = 0;  /* Given that this is a box record, we have to find a
-                           * section that defines the properties of this
-                           * box. */
+        sectionType = PNULL;  /* Given that this is a box record, we have to
+                               * find a section that defines the properties of
+                               * this box. */
 
         /* Get the value and variable nodes. */
         GetVari((*recordIterator), variableNodes);
@@ -1701,13 +1701,13 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
 
         /* If the type it was not defined explicitly, or it was and no section
          * matched with it, get the section from the defaults. */
-        if (sectionType == 0)
+        if (sectionType == PNULL)
         {
             sectionType = defaultTypes[untypedSections[sectionName]];
 
             /* If it's still zero, then the type hasn't been defined anywhere
              * "validly". That's an error, folks. */
-            if (sectionType == 0)
+            if (sectionType == PNULL)
             {
                 d3_errors.append(dformat("L%u: No section found to define the "
                                          "box on this line. Not making it.\n",
@@ -1931,7 +1931,7 @@ bool HardwareFileParser::d3_validate_types_define_cache()
     bool anyErrors;
 
     /* Container to hold default sections for boxes, boards, and mailboxes. */
-    UIF::Node* globalDefaults[ITEM_ENUM_LENGTH] = {0, 0, 0};
+    UIF::Node* globalDefaults[ITEM_ENUM_LENGTH] = {PNULL, PNULL, PNULL};
 
     /* Populate our new friend. */
     anyErrors = !d3_get_validate_default_types(globalDefaults);
@@ -2085,13 +2085,13 @@ bool HardwareFileParser::d3_validate_types_define_cache()
         }
 
         /* If there was no +type record in this section, or if the +type was
-         * invalid, use the one from globalDefaults (even if it is zero). */
+         * invalid, use the one from globalDefaults (even if it is PNULL). */
         if (sectionTarget == 0)
         {
             sectionTarget = globalDefaults[arrayIndex];
         }
 
-        /* Apply the section found (even if it is zero) to defaultTypes. */
+        /* Apply the section found (even if it is PNULL) to defaultTypes. */
         defaultTypes[*sectionIterator] = sectionTarget;
     }
 

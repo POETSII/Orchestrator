@@ -185,7 +185,7 @@ private:
     /* Holds, for a (former) section, the type-specific section that defines
      * how items created in the former section behave. The key is the section
      * that defines the items, and the value is the section that defines the
-     * properties of that item. If no valid value exists, it is zero. This is
+     * properties of that item. If no valid value exists, it is PNULL. This is
      * just a convenient cache mechanism. Examples:
      *
      * 1. Given:
@@ -228,7 +228,7 @@ private:
      *
      *    Then the first element of the map pair will be a pointer to the
      *    [board(SomeBoardType)] (section) UIF node, and the second will be
-     *    zero. Note that this is perfectly valid - just that each mailbox
+     *    PNULL. Note that this is perfectly valid - just that each mailbox
      *    declaration must explicitly define a valid type. */
     std::map<UIF::Node*, UIF::Node*> defaultTypes;
 
