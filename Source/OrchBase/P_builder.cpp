@@ -192,10 +192,14 @@ unsigned P_builder::GenFiles(P_task* task)
 {
   std::string task_dir(par->taskpath+task->Name());
   
+  //TODO: a lot of this system() calling needs to be made more cross-platform, and should probably be moved to OSFixes.hpp.
+  //TODO: fix the path specifiers for system() calls throughout as they are currently inconsistent on what has a "/" at the end.
+  //TODO: make the system() path specifiers cross-platform - these will fall over on Windows.
   
   //============================================================================
   // Remove the task directory and recreate it to clean any previous build.
   //============================================================================
+  //TODO: make this safer. Currently the remove users an "rm -rf" without any safety.  
   if(system((REMOVEDIR+" "+task_dir).c_str())) // Check that the directory deleted
   {                                  // if it didn't, tell logserver and exit
     par->Post(817, task_dir, POETS::getSysErrorString(errno));
