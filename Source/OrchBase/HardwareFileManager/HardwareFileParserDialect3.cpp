@@ -9,7 +9,7 @@
  * otherwise. Arguments:
  *
  * - box: Pointer to the box to populate.
- * - sectionNode: The node that defines the properties of the box. */
+ * - sectionNode: The node that defines the properties of the board. */
 bool HardwareFileParser::d3_define_board_fields_from_section(
     P_board* board, UIF::Node* sectionNode)
 {
