@@ -1420,7 +1420,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
             }
             else 
             {
-              inPinStateInitialiser << "0"; // TODO: should this actually be p_edge->second.data->pP_pintyp->pStateI->c_src???
+              inPinStateInitialiser << p_edge->second.data->pP_pintyp->pStateI->c_src;
               inPinStateInitialiser << ",";
             }
             //==================================================================
