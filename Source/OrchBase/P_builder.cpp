@@ -1268,8 +1268,8 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   std::stringstream inPinPropsInitialiser("");// device type input pin properties (devtyp_XXX_InPin_YYY_props_t) initialiser
   std::stringstream inPinStateInitialiser("");// device type input pin properties (devtyp_XXX_InPin_YYY_state_t) initialiser
   
-  vector<unsigned int>in_pin_idxs;
-  vector<unsigned int>out_pin_idxs;
+  vector<unsigned int>inPinArcs;                //TODO: fix the type
+  vector<unsigned int>outPinArcs;               //TODO: fix the type
   
   
   devPropsInitialiser << "{";   // Add the first { to the device properties array initialiser
@@ -1621,8 +1621,11 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
         //======================================================================
         
         
-        if ((!(*device)->par->G.FindArcs((*device)->idx,(*pin)->idx,in_pin_idxs,out_pin_idxs)) || !out_pin_idxs.size())
-        {
+        // Find out how many connections this pin has
+        (*device)->par->G.FindArcs((*device)->idx,(*pin)->idx,inPinArcs,outPinArcs);
+        
+        if (outPinArcs.size() == 0)   
+        {   // If the pin has no connections
           //====================================================================
           // Finish the Initialiser for the POutputPin/outPin_t array member with defaults.
           //====================================================================
@@ -1634,11 +1637,11 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           //====================================================================
         }
         else
-        {
+        {   // Otherwise add the targets.
           //====================================================================
           // Finish the Initialiser for the POutputPin/outPin_t array member.
           //====================================================================
-          pinInitialiser << out_pin_idxs.size() << ",";                     // numTgts
+          pinInitialiser << outPinArcs.size() << ",";                     // numTgts
           
           pinInitialiser << "Thread_" << thread_num;
           pinInitialiser << "_Device_" << (*device)->Name();
@@ -1656,7 +1659,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           vars_h << "extern outEdge_t Thread_" << thread_num;
           vars_h << "_Device_" << (*device)->Name();
           vars_h << "_OutPin_" << (*pin)->Name();
-          vars_h << "_Tgts[" << out_pin_idxs.size() << "];\n";
+          vars_h << "_Tgts[" << outPinArcs.size() << "];\n";
           //====================================================================
           
           
@@ -1667,8 +1670,8 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           edgeInitialiser.str("");      // Reset the edge initialiser for POutputEdge/outEdge_t
           edgeInitialiser << "{";
           
-          for (vector<unsigned int>::iterator tgt = out_pin_idxs.begin();
-                tgt != out_pin_idxs.end();
+          for (vector<unsigned int>::iterator tgt = outPinArcs.begin();
+                tgt != outPinArcs.end();
                 tgt++)
           {
             // as for the case of inputs, the target device should be replaced by GetHardwareAddress(...)
@@ -1702,7 +1705,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           vars_cpp << "outEdge_t Thread_" << thread_num;
           vars_cpp << "_Device_" << (*device)->Name();
           vars_cpp << "_OutPin_" << (*pin)->Name();
-          vars_cpp << "_Tgts[" << out_pin_idxs.size() << "] = ";
+          vars_cpp << "_Tgts[" << outPinArcs.size() << "] = ";
           vars_cpp << edgeInitialiser.str();
           //==================================================================== 
           
