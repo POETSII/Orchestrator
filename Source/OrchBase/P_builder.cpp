@@ -1086,7 +1086,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   
   
   //============================================================================
-  // write thread preable to vars.h and vars.cpp
+  // write thread preamble to vars.h and vars.cpp
   //============================================================================
   vars_h << "\n";
   vars_h << "//-------------------- Core " << coreNum;
