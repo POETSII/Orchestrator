@@ -1628,7 +1628,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
         // Build part of the Initialiser for the POutputPin/outPin_t array member.
         //======================================================================
         pinInitialiser << "{";
-        pinInitialiser << "0,";                                             // device
+        pinInitialiser << "PNULL,";                                         // device
         
         pinInitialiser << "&Thread_" << thread_num;
         pinInitialiser << "_DevTyp_0_OutputPins[" << (*pin)->idx << "],";   // pinType
