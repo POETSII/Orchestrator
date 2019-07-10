@@ -2027,7 +2027,7 @@ unsigned P_builder::CompileBins(P_task * task)
           }
           else
           {     // Add the file pointer to the core. 
-            thisCore->instructionBinary->Binary = binary;          // TODO: is this intentional? it potentially leaves hanging open files.
+            thisCore->instructionBinary->Binary = binary;
           }
             
           ++coreNum;                // Move onto the next core.
