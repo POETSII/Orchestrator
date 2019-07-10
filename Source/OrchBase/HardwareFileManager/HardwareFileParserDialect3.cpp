@@ -192,7 +192,6 @@ bool HardwareFileParser::d3_define_board_fields_from_section(
         &mandatoryFields, &fieldsFound, sectionName, &d3_errors);
 
     return !anyErrors;
-
 }
 
 /* Define the fields of a box from a typed section.
@@ -434,9 +433,9 @@ bool HardwareFileParser::d3_get_board_name(UIF::Node* itemNode,
         return false;
     }
 
-    /* Is the board name valid? */
+    /* Is the board-component of the name valid? */
     if (!complain_if_node_variable_not_a_valid_item_name(
-            itemNode, (*leafIterator)->leaf[0], "engine_board", &d3_errors))
+            itemNode, (*leafIterator)->leaf[0], &d3_errors))
     {
         return false;
     }
@@ -512,6 +511,32 @@ bool HardwareFileParser::d3_get_explicit_type_from_item_definition(
 
     /* Bind the type with the first entry. */
     *type = (*leafIterator)->leaf[0]->str;
+    return true;
+}
+
+/* Extract the (non-compound) mailbox name from a node, and validate it. Is
+ * analogous to d3_get_board_name.
+ *
+ * Returns true if valid, and false if invalid while writing to the error*
+ * string. Arguments:
+ *
+ * - itemNode: The node (variable, or value).
+ * - mailboxName: MailboxName to populate. */
+bool HardwareFileParser::d3_get_mailbox_name(UIF::Node* itemNode,
+                                             MailboxName* mailboxName)
+{
+    /* Clear the mailbox name. */
+    *mailboxName = "";
+
+    /* Get the mailbox name, and check that it's valid. */
+    if (!complain_if_node_variable_not_a_valid_item_name(itemNode, itemNode,
+                                                         &d3_errors))
+    {
+        return false;
+    }
+
+    /* All good, assign and return. */
+    *mailboxName = itemNode->str;  /* It's really that simple. */
     return true;
 }
 
@@ -1336,6 +1361,281 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
     return !anyErrors;
 }
 
+/* Creates and 'contains' mailboxes for this board, as well as the items
+ * beneath.
+ *
+ * Relies on the default-typing structures being populated, as well as the
+ * default mailbox-mailbox cost (if there is one). Returns true if all
+ * validation checks pass, and false otherwise. Arguments:
+ *
+ * - board: Board to populate with mailboxes, which are in turn populated with
+ *       cores etc.
+ * - sectionNode: The node that defines the mailboxes in boards of this
+ *       type. */
+bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
+    P_board* board, UIF::Node* sectionNode)
+{
+    bool anyErrors = false;  /* Innocent until proven guilty. */
+
+    /* Short on time, sorry... */
+    std::string sectionName = dformat(
+        "%s(%s)", sectionNode->leaf[0]->leaf[0]->str.c_str(),
+        sectionNode->leaf[0]->leaf[0]->leaf[0]->str.c_str());
+
+    /* Temporary staging vectors for holding value nodes and variable
+     * nodes. */
+    std::vector<UIF::Node*> valueNodes;
+    std::vector<UIF::Node*> variableNodes;
+
+    /* Holds the type of the current record, and the section it refers to (if
+     * any). */
+    std::string type;
+    UIF::Node* sectionType;
+
+    /* Holds the concatenated address of a mailbox. */
+    AddressComponent address;
+
+    /* Holds the mailbox while we're creating it. */
+    P_mailbox* mailbox;
+    MailboxName mailboxName;
+
+    /* Holds an edge-specific mailbox-mailbox cost, if found. */
+    float thisEdgeCost;
+    bool isThisEdgeCostDefined;
+
+    /* Holds the name of the mailbox on the other end of an edge. */
+    MailboxName edgeMailboxName;
+
+    /* Iterate through all record nodes in this section that define
+     * mailboxes. */
+    std::vector<UIF::Node*> recordNodes;
+    std::vector<UIF::Node*>::iterator recordIterator;
+    std::vector<UIF::Node*>::iterator edgeIterator;
+    std::string variableName;
+    GetRecd(sectionNode, recordNodes);
+    for (recordIterator=recordNodes.begin();
+         recordIterator!=recordNodes.end(); recordIterator++)
+    {
+        sectionType = PNULL;
+
+        /* Get the value and variable nodes. */
+        GetVari((*recordIterator), variableNodes);
+        GetValu((*recordIterator), valueNodes);
+
+        /* Ignore this record if the record has not got a variable/value
+         * pair (i.e. if the line is empty, or is just a comment). */
+        if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
+
+        /* Is this a variable definition? (does it have variables, values, and
+         * a '+' prefix)? If so, ignore it (it's already been dealt with in
+         * d3_define_board_fields_from_section. */
+        if (valueNodes.size() != 0 and variableNodes.size() != 0 and
+            variableNodes[0]->qop == Lex::Sy_plus){continue;}
+
+        /* Validate and get the name of the mailbox. */
+        if (!d3_get_mailbox_name(variableNodes[0], &mailboxName))
+        {
+            anyErrors = true;
+            continue;
+        }
+
+        /* Whine if a mailbox with this name already exists in this board. */
+        std::map<MailboxName, MailboxInfo>:: iterator mailboxNameFinder;
+        mailboxNameFinder = mailboxInfoFromName.find(mailboxName);
+        if (mailboxNameFinder != mailboxInfoFromName.end())
+        {
+            d3_errors.append(dformat(
+                "L%u: Mailbox on this line has already been defined on line "
+                "%u. Not making it.\n", (*recordIterator)->pos,
+                mailboxNameFinder->second.lineNumber));
+            anyErrors = true;
+            continue;
+        }
+
+        /* Is a type explicitly defined in this record? */
+        if (d3_get_explicit_type_from_item_definition(variableNodes[0],
+                                                      &type))
+        {
+            /* If there's a matching section for this type, we're all good (it
+             * gets written to sectionType). Otherwise, we fall back to
+             * defaults. */
+            anyErrors |= !d3_get_section_from_type(
+                "mailbox", type, sectionName, (*recordIterator)->pos,
+                &sectionType);
+        }
+
+        /* If the type it was not defined explicitly, or it was and no section
+         * matched with it, get the section from the defaults. */
+        if (sectionType == PNULL)
+        {
+            sectionType = defaultTypes[sectionNode];
+
+            /* If it's still zero, then the type hasn't been defined anywhere
+             * "validly". That's an error, folks. */
+            if (sectionType == PNULL)
+            {
+                d3_errors.append(dformat("L%u: No section found to define the "
+                                         "mailbox on this line. Not making "
+                                         "it.\n", (*recordIterator)->pos));
+                anyErrors = true;
+                continue;  /* Can't do anything without a type definition... */
+            }
+        }
+
+        /* Get the address without validating it (boss' orders). */
+        d3_get_address_from_item_definition(variableNodes[0], &address);
+
+        /* Create the mailbox (the name argument is the name of the mailbox in
+         * the record). */
+        mailbox = new P_mailbox(mailboxName);
+
+        /* Into the board with ye! */
+        board->contain(address, mailbox);
+
+        /* Track the mailbox by name. */
+        mailboxInfoFromName[mailboxName] =
+            MailboxInfo{(*recordIterator)->pos, mailbox};
+
+        /* Stage the edges from this record. Values (i.e. LHS of the '=' token)
+         * each represent the name of a mailbox, optionally with a cost, which
+         * defines an edge */
+        for(edgeIterator=valueNodes.begin(); edgeIterator!=valueNodes.end();
+            edgeIterator++)
+        {
+            /* Get the name of the mailbox on the other side of this edge,
+             * skipping if invalid. */
+            if(!d3_get_mailbox_name(*edgeIterator, &edgeMailboxName))
+            {
+                anyErrors = true;
+                continue;  /* Skip this edge - can't identify either end. */
+            }
+
+            /* If the edge explicitly describes a cost, use that. Otherwise,
+             * use one we found earlier. Complain if:
+             *
+             * - neither are defined
+             * - the explicit cost is invalid (we checked the default cost
+             *   earlier) */
+            isThisEdgeCostDefined = d3_get_explicit_cost_from_edge_definition(
+                *edgeIterator, &thisEdgeCost);
+            if (isThisEdgeCostDefined)
+            {
+                /* Check for -1, meaning the cost was invalid. */
+                if (thisEdgeCost == -1)
+                {
+                    d3_errors.append(dformat(
+                        "L%u: Invalid cost on edge connecting mailbox %s to "
+                        "mailbox %s (it must be a float).\n",
+                        (*recordIterator)->pos,
+                        mailboxName.c_str(), edgeMailboxName.c_str()));
+                    anyErrors = true;
+                    continue;  /* Skip this edge - meaningless without a
+                                * comprehensible cost. */
+                }
+            }
+            else if (isDefaultMailboxCostDefined)
+            {
+                thisEdgeCost = defaultMailboxMailboxCost;
+            }
+            else
+            {
+                d3_errors.append(dformat(
+                    "L%u: No cost found for edge connecting mailbox %s to "
+                    "mailbox %s (it must be a float).\n",
+                    (*recordIterator)->pos, mailboxName.c_str(),
+                    edgeMailboxName.c_str()));
+                anyErrors = true;
+                continue;  /* Skip this edge - meaningless without a cost. */
+            }
+
+            /* If the reverse edge is in mailboxEdges... */
+            std::map<std::pair<MailboxName, MailboxName>, EdgeInfo>::iterator \
+                edgeFinder;
+            /* Bears reiterating - it's the reverse! */
+            edgeFinder = mailboxEdges.find(std::make_pair(edgeMailboxName,
+                                                          mailboxName));
+            if (edgeFinder != mailboxEdges.end())
+            {
+                /* Complain if:
+                 *
+                 * - The reverse-cost is different.
+                 * - Reverse is already defined. */
+                if (edgeFinder->second.weight != thisEdgeCost)
+                {
+                    d3_errors.append(dformat(
+                        "L%u: The cost of the edge connecting mailbox %s to "
+                        "mailbox %s (%f) is different from the cost of its "
+                        "reverse (%f), defined at L%i.\n",
+                        (*recordIterator)->pos,
+                        mailboxName.c_str(),
+                        edgeMailboxName.c_str(),
+                        thisEdgeCost,
+                        edgeFinder->second.weight,
+                        edgeFinder->second.lineNumber));
+                    anyErrors = true;
+                    continue;  /* Skip this edge, avoid clobbering. */
+                }
+
+                if (edgeFinder->second.isReverseDefined)
+                {
+                    d3_errors.append(dformat(
+                        "L%u: The other end of the edge connecting mailbox "
+                        "%s to mailbox %s has already been defined. The first "
+                        "definition was at L%i.\n",
+                        (*recordIterator)->pos,
+                        mailboxName.c_str(),
+                        edgeMailboxName.c_str(),
+                        edgeFinder->second.lineNumber));
+                    anyErrors = true;
+                    continue;  /* Skip this edge, avoid clobbering. */
+                }
+
+                /* We're all good, mark the reverse as found (we're on it!). */
+                edgeFinder->second.isReverseDefined = true;
+            }
+
+            /* Otherwise, track this edge in mailboxEdges. */
+            else
+            {
+                /* But complain if it's already there (means we've defined it
+                 * twice on this line, probably). */
+
+                /* NB: Not reverse! */
+                edgeFinder = mailboxEdges.find(std::make_pair(
+                                                   mailboxName,
+                                                   edgeMailboxName));
+                if (edgeFinder != mailboxEdges.end())
+                {
+                    d3_errors.append(dformat(
+                        "L%u: Duplicate edge definition connecting mailbox "
+                        "%s to mailbox %s.\n",
+                        (*recordIterator)->pos,
+                        mailboxName.c_str(),
+                        edgeMailboxName.c_str()));
+                    anyErrors = true;
+                    continue;  /* Skip this edge, avoid clobbering. */
+                }
+
+                /* Okay, actually add it now. */
+                mailboxEdges[std::make_pair(mailboxName, edgeMailboxName)] = \
+                    EdgeInfo{thisEdgeCost, false, (*recordIterator)->pos};
+            }
+        }  /* That's all the edges. */
+
+        /* Define properties of this mailbox (12-11-9). <!> */
+
+        /* Iterate-add cores (12-11-10). <!> */
+    }
+
+    /* Check mailbox edge integrity (12-12). <!> */
+
+    /* Clear mailbox metadata for this board. */
+    mailboxEdges.clear();
+    mailboxInfoFromName.clear();
+
+    return !anyErrors;
+}
+
 /* Validate the contents of the engine_board section, and create boards and
  * items beneath. Relies on engine_box having been read.
  *
@@ -1719,10 +2019,6 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
         /* Populate the board with mailboxes. */
         anyErrors |= !d3_populate_validate_board_with_mailboxes(board,
                                                                 sectionType);
-
-        /* Check mailbox edge integrity (12-12). <!> */
-
-        /* Clear `mailboxEdges` and `mailboxInfoFromName` (12-13). <!> */
     }
 
     /* Check board edge integrity (13). <!> */
@@ -1875,7 +2171,7 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
 
         /* Complain if the name is invalid (but keep going). */
         if (!complain_if_node_variable_not_a_valid_item_name(
-                *recordIterator, variableNodes[0], sectionName, &d3_errors))
+                *recordIterator, variableNodes[0], &d3_errors))
         {
             anyErrors = true;
         }

@@ -39,8 +39,7 @@ bool complain_if_nodes_values_not_natural(
     std::string sectionName, std::string* errorMessage);
 
 bool complain_if_node_variable_not_a_valid_item_name(
-    UIF::Node* recordNode, UIF::Node* variableNode, std::string sectionName,
-    std::string* errorMessage);
+    UIF::Node* recordNode, UIF::Node* variableNode, std::string* errorMessage);
 
 bool complain_if_node_variable_true_in_map(
     UIF::Node* recordNode, UIF::Node* variableNode,

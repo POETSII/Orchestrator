@@ -157,6 +157,7 @@ private:
                                                    float* cost);
     bool d3_get_explicit_type_from_item_definition(UIF::Node* itemNode,
                                                    std::string* type);
+    bool d3_get_mailbox_name(UIF::Node* itemNode, MailboxName* mailboxName);
     bool d3_get_section_from_type(std::string itemType, std::string type,
                                   std::string sourceSectionName,
                                   unsigned lineNumber,
@@ -165,6 +166,8 @@ private:
     bool d3_load_validate_sections();
     void d3_populate_hardware_model(P_engine* engine);
     bool d3_populate_validate_address_format(P_engine* engine);
+    bool d3_populate_validate_board_with_mailboxes(P_board* board,
+                                                   UIF::Node* sectionNode);
     bool d3_populate_validate_engine_board_and_below(P_engine* engine);
     bool d3_populate_validate_engine_box(P_engine* engine);
     bool d3_populate_validate_header(P_engine* engine);
@@ -234,7 +237,8 @@ private:
      *    declaration must explicitly define a valid type. */
     std::map<UIF::Node*, UIF::Node*> defaultTypes;
 
-    /* Holds a default mailbox-mailbox cost, if defined. */
+    /* Holds a default mailbox-mailbox cost, if defined. Relevant only for the
+     * current board. */
     float defaultMailboxMailboxCost = 0;
     bool isDefaultMailboxCostDefined = false;
 

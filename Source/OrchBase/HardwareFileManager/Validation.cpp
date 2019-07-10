@@ -193,19 +193,15 @@ bool complain_if_nodes_values_not_natural(
  *
  * - recordNode: Record parent node (for writing error message).
  * - variableName: The UIF node that holds the variable.
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
  * - errorMessage: String to append the error message to, if any. */
 bool complain_if_node_variable_not_a_valid_item_name(
-    UIF::Node* recordNode, UIF::Node* variableNode, std::string sectionName,
-    std::string* errorMessage)
+    UIF::Node* recordNode, UIF::Node* variableNode, std::string* errorMessage)
 {
     if (!is_type_valid(variableNode))  /* It's the same rule! */
     {
         errorMessage->append(dformat(
-            "L%u: Item name '%s' in the '%s' section is not a valid item name "
-            "(it must satisfy %s).\n", recordNode->pos,
-            variableNode->str.c_str(), sectionName.c_str(), TYPE_REGEX));
+            "L%u: Item name '%s' is not a valid item name (it must satisfy "
+            "%s).\n", recordNode->pos, variableNode->str.c_str(), TYPE_REGEX));
         return false;
     }
     return true;
