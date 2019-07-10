@@ -176,8 +176,17 @@ void P_builder::Preplace(P_task* task)
 //------------------------------------------------------------------------------
 
 
-
-// creates the files that have to be generated from data rather than be pre-existing
+/*------------------------------------------------------------------------------
+ * Method to generate the required softswitch source files.
+ *
+ * This method takes all of the handler, type and initialiser cfrags from the
+ * datastructure and assembles them (with some boilerplate code) into a coherent
+ * set of source files that can be used to build binaries for the cores.
+ *
+ * Takes a pointer to a task.
+ * Returns non-0 (and posts to Logserver) if the creation of any directories or
+ * files fails.
+ *----------------------------------------------------------------------------*/
 unsigned P_builder::GenFiles(P_task* task)
 {
   std::string task_dir(par->taskpath+task->Name());
@@ -338,7 +347,6 @@ unsigned P_builder::GenFiles(P_task* task)
   
   return 0;
 }
-
 //------------------------------------------------------------------------------
 
 
