@@ -1089,8 +1089,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   // write thread preamble to vars.h and vars.cpp
   //============================================================================
   vars_h << "\n";
-  vars_h << "//-------------------- Core " << coreNum;
-  vars_h << " Thread " << thread_num << " variables --------------------\n";
+  vars_h << "//-------------------- ";
+  vars_h << "Core " << coreNum << " Thread " << thread_num << " variables";
+  vars_h << " --------------------\n";
   vars_h << "extern ThreadCtxt_t Thread_" << thread_num << "_Context;\n";
   
   vars_cpp << "#include \"vars_" << coreNum << ".h\"\n";
@@ -1658,7 +1659,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           //====================================================================
           // Finish the Initialiser for the POutputPin/outPin_t array member.
           //====================================================================
-          pinInitialiser << outPinArcs.size() << ",";                     // numTgts
+          pinInitialiser << outPinArcs.size() << ",";                       // numTgts
           
           pinInitialiser << "Thread_" << thread_num;
           pinInitialiser << "_Device_" << (*device)->Name();
