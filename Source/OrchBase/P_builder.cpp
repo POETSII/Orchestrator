@@ -644,8 +644,6 @@ unsigned P_builder::GenSupervisor(P_task* task)
 //------------------------------------------------------------------------------
 
 
-
-
 /*------------------------------------------------------------------------------
  * Generate the variables and initialisers for a single core.
  *
