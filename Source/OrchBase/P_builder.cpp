@@ -346,7 +346,7 @@ unsigned P_builder::GenFiles(P_task* task)
 /*------------------------------------------------------------------------------
  * Method to generate the required supervisor.cpp and supervisor.h source files.
  *
- * For the default supervisor, this method simply copys supervisor.cpp and 
+ * For the default supervisor, this method simply copies supervisor.cpp and 
  * supervisor.h.
  * 
  * For a non-default supervisor, this method scours the datastructure and
