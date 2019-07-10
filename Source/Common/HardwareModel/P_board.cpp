@@ -20,7 +20,7 @@ P_board::P_board(std::string name)
         }
         GRAPH_CALLBACK node(P_mailbox* const& mailbox)
         {
-            fprintf(mailbox->dfp, mailbox->FullName().c_str());
+            fprintf(mailbox->dfp, "%s", mailbox->FullName().c_str());
         }
         GRAPH_CALLBACK arc(P_link* const& link)
         {
