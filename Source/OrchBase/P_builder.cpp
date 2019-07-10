@@ -185,7 +185,8 @@ void P_builder::Preplace(P_task* task)
  *
  * Takes a pointer to a task.
  * Returns non-0 (and posts to Logserver) if the creation of any directories or
- * files fails.
+ * files fails. Essentially a Bool for now but could propagate error codes in
+ * future.
  *----------------------------------------------------------------------------*/
 unsigned P_builder::GenFiles(P_task* task)
 {
@@ -363,7 +364,9 @@ unsigned P_builder::GenFiles(P_task* task)
  * When built, the supervisor is compiled into a .so.
  *
  * Takes a pointer to a task.
- * Returns non-0 if the file copy failed or the file open failed.
+ * Returns non-0 (and posts to Logserver) if the file copy failed or the file 
+ * open failed. Essentially a Bool for now but could propagate error codes in
+ * future.
  *----------------------------------------------------------------------------*/
 unsigned P_builder::GenSupervisor(P_task* task)
 {  
