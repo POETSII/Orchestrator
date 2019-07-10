@@ -16,9 +16,10 @@ bool HardwareFileParser::d3_define_box_fields_from_section(
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
 
+    /* Short on time, sorry...*/
     std::string sectionName = dformat(
-        "%s(%s)", sectionNode->leaf[0]->leaf[0]->str,  /* Short on time, */
-        sectionNode->leaf[0]->leaf[0]->leaf[0]->str);  /* sorry... */
+        "%s(%s)", sectionNode->leaf[0]->leaf[0]->str.c_str(),
+        sectionNode->leaf[0]->leaf[0]->leaf[0]->str.c_str());
 
     /* Valid fields for the box section (all are mandatory). */
     std::vector<std::string> validFields;
@@ -131,10 +132,10 @@ bool HardwareFileParser::d3_define_box_fields_from_section(
          * file is big enough already. */
         else
         {
-            d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
-                                     "the '%s' section.\n",
-                                     (*recordIterator)->pos, variableName,
-                                     sectionName.c_str()));
+            d3_errors.append(dformat(
+                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
+                (*recordIterator)->pos, variableName.c_str(),
+                sectionName.c_str()));
             anyErrors = true;
         }
     }
@@ -491,10 +492,10 @@ bool HardwareFileParser::d3_get_validate_default_types(
          * file is big enough already. */
         else
         {
-            d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
-                                     "the '%s' section.\n",
-                                     (*recordIterator)->pos, variableName,
-                                     sectionName.c_str()));
+            d3_errors.append(dformat(
+                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
+                (*recordIterator)->pos, variableName.c_str(),
+                sectionName.c_str()));
             anyErrors = true;
             continue;
         }
@@ -1126,10 +1127,10 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
          * file is big enough already. */
         else
         {
-            d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
-                                     "the '%s' section.\n",
-                                     (*recordIterator)->pos, variableName,
-                                     sectionName.c_str()));
+            d3_errors.append(dformat(
+                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
+                (*recordIterator)->pos, variableName.c_str(),
+                sectionName.c_str()));
             anyErrors = true;
         }
     }
@@ -1283,11 +1284,10 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
          * like this file is big enough already. */
         else
         {
-            d3_errors.append(dformat("L%u: Variable name '%s' is not "
-                                     "valid in the '%s' section.\n",
-                                     (*recordIterator)->pos,
-                                     variableName.c_str(),
-                                     sectionName.c_str()));
+            d3_errors.append(dformat(
+                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
+                (*recordIterator)->pos, variableName.c_str(),
+                sectionName.c_str()));
             anyErrors = true;
         }
     }
@@ -1590,7 +1590,7 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
         if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
 
         /* Is this a variable definition? (does it have variables, values, and
-         * a '+' prefix)? (otherwise, we assume it is a box definition) */
+         * a '+' prefix)? (otherwise, we assume it is a box definition). */
         if (valueNodes.size() > 0 and variableNodes.size() > 0 and
             variableNodes[0]->qop == Lex::Sy_plus)
         {
@@ -1652,11 +1652,10 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
              * like this file is big enough already. */
             else
             {
-                d3_errors.append(dformat("L%u: Variable name '%s' is not "
-                                         "valid in the '%s' section.\n",
-                                         (*recordIterator)->pos,
-                                         variableName.c_str(),
-                                         sectionName.c_str()));
+                d3_errors.append(dformat(
+                    "L%u: Variable name '%s' is not valid in the '%s' "
+                    "section.\n", (*recordIterator)->pos, variableName.c_str(),
+                    sectionName.c_str()));
                 anyErrors = true;
             }
 
@@ -1907,10 +1906,10 @@ bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
          * file is big enough already. */
         else
         {
-            d3_errors.append(dformat("L%u: Variable name '%s' is not valid in "
-                                     "the '%s' section.\n",
-                                     (*recordIterator)->pos, variableName,
-                                     sectionName.c_str()));
+            d3_errors.append(dformat(
+                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
+                (*recordIterator)->pos, variableName.c_str(),
+                sectionName.c_str()));
             anyErrors = true;
         }
     }
