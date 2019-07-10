@@ -23,7 +23,7 @@ P_engine::P_engine(std::string name)
         }
         GRAPH_CALLBACK node(P_board* const& board)
         {
-            fprintf(board->dfp, board->FullName().c_str());
+            fprintf(board->dfp, "%s", board->FullName().c_str());
         }
         GRAPH_CALLBACK arc(P_link* const& link)
         {
