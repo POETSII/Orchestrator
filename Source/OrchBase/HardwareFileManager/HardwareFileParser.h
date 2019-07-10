@@ -147,9 +147,13 @@ private:
     bool d1_validate_sections(std::string* errorMessage);
 
     /* Dialect 3 validation and deployment members and methods. */
+    bool d3_create_cores_and_threads_for_mailbox(P_mailbox* mailbox,
+                                                 unsigned coreQuantity);
     bool d3_define_board_fields_from_section(P_board* board,
                                              UIF::Node* sectionNode);
     bool d3_define_box_fields_from_section(P_box* box, UIF::Node* sectionNode);
+    bool d3_define_mailbox_fields_from_section(P_mailbox* mailbox,
+                                               UIF::Node* sectionNode);
     bool d3_get_address_from_item_definition(UIF::Node* itemNode,
                                              AddressComponent* address);
     bool d3_get_board_name(UIF::Node* itemNode, BoardName* boardName);

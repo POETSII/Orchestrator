@@ -3,6 +3,42 @@
 
 #include "HardwareFileParser.h"
 
+/* Create some cores and threads, and pile them all into a mailbox.
+ *
+ * Returns true if there were no validation problems, and false
+ * otherwise. Arguments:
+ *
+ * - mailbox: Pointer to the mailbox to populate.
+ * - quatity: Number of cores to create (the number of threads will be
+         determined from the UIF parse tree. */
+bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
+    P_mailbox* mailbox, unsigned coreQuantity)
+{
+    bool anyErrors = false;  /* Innocent until proven guilty. */
+
+    /* Create all of the cores, and add them to the mailbox. Don't validate the
+     * address component (but still catch if we go out of bounds). */
+    P_core* tmpCore;
+    AddressComponent coreIndex;
+    for (coreIndex = 0; coreIndex < coreQuantity; coreIndex++)
+    {
+        tmpCore = new P_core(dformat("Core %u", coreIndex));
+        try
+        {
+            mailbox->contain(coreIndex, tmpCore);
+        }
+        catch (OrchestratorException e)
+        {
+            d3_errors.append("%s\n", e.message.c_str());
+            anyErrors = true;
+        }
+    }
+
+    /* Populate core fields (12-11-10-3).  <!> */
+
+    return !anyErrors;
+}
+
 /* Define the fields of a board from a typed section.
  *
  * Returns true if there were no validation problems, and false
@@ -315,6 +351,172 @@ bool HardwareFileParser::d3_define_box_fields_from_section(
 
             /* Bind */
             box->supervisorMemory = str2unsigned(valueNodes[0]->str);
+        }
+
+        /* Shouldn't be able to enter this, because we've already checked the
+         * variable names, but why not write some more code. It's not like this
+         * file is big enough already. */
+        else
+        {
+            d3_errors.append(dformat(
+                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
+                (*recordIterator)->pos, variableName.c_str(),
+                sectionName.c_str()));
+            anyErrors = true;
+        }
+    }
+
+    /* Ensure mandatory fields have been defined. */
+    anyErrors |= !complain_if_mandatory_field_not_defined(
+        &validFields, &fieldsFound, sectionName, &d3_errors);
+
+    return !anyErrors;
+}
+
+/* Define the fields of a mailbox from a typed section, and add cores and
+ * threads.
+ *
+ * Returns true if there were no validation problems, and false
+ * otherwise. Arguments:
+ *
+ * - mailbox: Pointer to the mailbox to populate
+ * - sectionNode: The node that defines the properties of the mailbox. */
+bool HardwareFileParser::d3_define_mailbox_fields_from_section(
+    P_mailbox* mailbox, UIF::Node* sectionNode)
+{
+    bool anyErrors = false;  /* Innocent until proven guilty. */
+
+    /* Short on time, sorry... */
+    std::string sectionName = dformat(
+        "%s(%s)", sectionNode->leaf[0]->leaf[0]->str.c_str(),
+        sectionNode->leaf[0]->leaf[0]->leaf[0]->str.c_str());
+
+    /* Valid fields for mailbox sections (all are mandatory). */
+    std::vector<std::string> validFields;
+    std::vector<std::string>::iterator fieldIterator;
+    validFields.push_back("core_core_cost");
+    validFields.push_back("mailbox_core_cost");
+    validFields.push_back("cores");
+
+    /* Holds fields we've already grabbed (for validation purposes). */
+    std::map<std::string, bool> fieldsFound;
+    for (fieldIterator=validFields.begin(); fieldIterator!=validFields.end();
+         fieldIterator++)
+    {
+        fieldsFound.insert(std::make_pair(*fieldIterator, false));
+    }
+
+    /* Temporary staging vectors for holding value nodes and variable
+     * nodes. */
+    std::vector<UIF::Node*> valueNodes;
+    std::vector<UIF::Node*> variableNodes;
+
+    /* Iterate through all record nodes in this section. */
+    std::vector<UIF::Node*> recordNodes;
+    std::vector<UIF::Node*>::iterator recordIterator;
+    std::string variableName;
+    bool isRecordValid;
+    GetRecd(sectionNode, recordNodes);
+    for (recordIterator=recordNodes.begin();
+         recordIterator!=recordNodes.end(); recordIterator++)
+    {
+        isRecordValid = true;  /* Innocent until proven guilty. */
+
+        /* Get the value and variable nodes. */
+        GetVari((*recordIterator), variableNodes);
+        GetValu((*recordIterator), valueNodes);
+
+        /* Ignore this record if the record has not got a variable/value
+         * pair (i.e. if the line is empty, or is just a comment). */
+        if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
+
+        /* Complain if (in order):
+         *
+         * - The record does not begin with a "+", as all fields in this
+         *   section must do.
+         * - The variable name is not a valid name.
+         * - There is more than one variable node.
+         * - There is more than one value node. */
+        isRecordValid &= complain_if_node_not_plus_prefixed(
+            *recordIterator, variableNodes[0], sectionName, &d3_errors);
+        isRecordValid &= complain_if_variable_name_invalid(
+            *recordIterator, variableNodes[0], &validFields, sectionName,
+            &d3_errors);
+        isRecordValid &= complain_if_record_is_multivariable(
+            *recordIterator, &variableNodes, sectionName, &d3_errors);
+        isRecordValid &= complain_if_record_is_multivalue(
+            *recordIterator, &valueNodes, variableNodes[0]->str, sectionName,
+            &d3_errors);
+        if (!isRecordValid)
+        {
+            anyErrors = true;
+            continue;
+        }
+
+        /* Complain if duplicate. NB: We know the variable name is valid if
+         * control has reached here. */
+        variableName = variableNodes[0]->str;
+        if (complain_if_node_variable_true_in_map(
+                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
+                &d3_errors))
+        {
+            anyErrors = true;
+            continue;
+        }
+        fieldsFound[variableName] = true;
+
+        /* Specific logic for each variable. */
+        if (variableName == "core_core_cost")
+        {
+            /* Validate */
+            isRecordValid &= complain_if_node_value_not_floating(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Bind */
+            mailbox->costCoreCore = str2float(valueNodes[0]->str);
+        }
+
+        else if (variableName == "cores")
+        {
+            /* Validate */
+            isRecordValid &= complain_if_node_value_not_natural(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Create and add that many cores. */
+            if (d3_create_cores_and_threads_for_mailbox(
+                    mailbox, str2unsigned(valueNodes[0]->str)))
+            {
+                anyErrors = true;
+                continue;
+            }
+        }
+
+        else if (variableName == "mailbox_core_cost")
+        {
+            /* Validate */
+            isRecordValid &= complain_if_node_value_not_floating(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Bind */
+            mailbox->costMailboxCore = str2float(valueNodes[0]->str);
         }
 
         /* Shouldn't be able to enter this, because we've already checked the
@@ -1622,9 +1824,9 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
             }
         }  /* That's all the edges. */
 
-        /* Define properties of this mailbox (12-11-9). <!> */
-
-        /* Iterate-add cores (12-11-10). <!> */
+        /* Define properties of this mailbox, and add cores. */
+        anyErrors |= !d3_define_mailbox_fields_from_section(mailbox,
+                                                            sectionType);
     }
 
     /* Check mailbox edge integrity (12-12). <!> */
