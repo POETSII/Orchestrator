@@ -2360,6 +2360,10 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
         /* Get the address without validating it (boss' orders). */
         d3_get_address_from_item_definition(variableNodes[0], &address);
 
+        /* Remove the board from undefinedBoards (it was put there during box
+         * declaration, but now we know it exists). */
+        undefinedBoards.remove(boardName);
+
         /* Create the board (the name argument is the name of the board in the
          * record). */
         board = new P_board(boardName.second);
@@ -2588,7 +2592,29 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
             edgeFinder->second.weight);
     }
 
-    /* Check undefinedBoards, add to error message (14). <!> */
+    /* Check for boards that were defined as part of box declarations that have
+     * not beend defined. Generally, catch this problem:
+     *
+     * [engine_box]
+     * myBox(boards(B00,B01))
+     * ... // Truncation
+     * [engine_board]
+     * myBox(board(B00),...)=...
+     * ...
+     * EOF
+     * // But I've not defined myBox(board(B01))!
+     *
+     * Also, we don't enter the loop if we've done nothing wrong. */
+    std::list<BoardName>::iterator badBoardIterator;
+    for (badBoardIterator = undefinedBoards.begin();
+         badBoardIterator != undefinedBoards.end(); badBoardIterator++)
+    {
+        d3_errors.append(dformat(
+            "Board %s-%s has been declared in the 'engine_box' section, but "
+            "not defined in the 'engine_board' section.\n",
+            (*badBoardIterator).first, (*badBoardIterator).second));
+        anyErrors = true;
+    }
 
     return !anyErrors;
 }
