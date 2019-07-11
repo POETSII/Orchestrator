@@ -18,7 +18,7 @@
 
 // All items are of the same type.
 [default_types]
-+box_type="CommonBoxCommonBoxCommonBox"
++box_type="CommonBoxCommonBoxCommonBoxCommonBox"
 +board_type="CommonBoard"
 +mailbox_type="CommonMbox"
 
@@ -71,7 +71,7 @@ El(addr(1),boards(B00,B01,B10,B11,B20,B21))
 (2,3):El(board(B21),addr(011,010))=El(board(B20)),El(board(B11))
 +board_board_cost=8  // Relative to [board].mailbox_mailbox_cost.
 
-[box(CommonBoxCommonBoxCommonBox)]
+[box(CommonBoxCommonBoxCommonBoxCommonBox)]
 +box_board_cost=0
 +supervisor_memory=10240
 
