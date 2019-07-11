@@ -15,6 +15,7 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
     P_mailbox* mailbox, unsigned coreQuantity)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
+    std::string sectionName = "core";
 
     /* Create all of the cores, and add them to the mailbox. Don't validate the
      * address component (but still catch if we go out of bounds). */
@@ -34,7 +35,227 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
         }
     }
 
-    /* Populate core fields (12-11-10-3).  <!> */
+    /* Valid fields for the core section. All fields are mandatory. */
+    std::vector<std::string> validFields;
+    std::vector<std::string>::iterator fieldIterator;
+    validFields.push_back("core_thread_cost");
+    validFields.push_back("data_memory");
+    validFields.push_back("instruction_memory");
+    validFields.push_back("thread_thread_cost");
+    validFields.push_back("threads");
+
+    /* Holds fields we've already grabbed (for validation purposes). */
+    std::map<std::string, bool> fieldsFound;
+    for (fieldIterator=validFields.begin(); fieldIterator!=validFields.end();
+         fieldIterator++)
+    {
+        fieldsFound.insert(std::make_pair(*fieldIterator, false));
+    }
+
+    /* Temporary staging vectors for holding value nodes and variable
+     * nodes. */
+    std::vector<UIF::Node*> valueNodes;
+    std::vector<UIF::Node*> variableNodes;
+
+    /* For iterating through cores in a mailbox, and threads, later. */
+    std::map<AddressComponent, P_core*>::iterator coreIterator;
+    unsigned threadIndex;
+    P_thread* tmpThread;
+
+    /* Iterate through all record nodes in this section, and apply properties
+     * to all cores within. */
+    std::vector<UIF::Node*> recordNodes;
+    std::vector<UIF::Node*>::iterator recordIterator;
+    std::string variableName;
+    bool isRecordValid;
+    GetRecd(untypedSections[sectionName], recordNodes);
+    for (recordIterator=recordNodes.begin();
+         recordIterator!=recordNodes.end(); recordIterator++)
+    {
+        isRecordValid = true;  /* Innocent until proven guilty. */
+
+        /* Get the value and variable nodes. */
+        GetVari((*recordIterator), variableNodes);
+        GetValu((*recordIterator), valueNodes);
+
+        /* Ignore this record if the record has not got a variable/value
+         * pair (i.e. if the line is empty, or is just a comment). */
+        if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
+
+        /* Complain if (in order):
+         *
+         * - The record does not begin with a "+", as all fields in this
+         *   section must do.
+         * - The variable name is not a valid name.
+         * - There is more than one variable node.
+         * - There is more than one value node. */
+        isRecordValid &= complain_if_node_not_plus_prefixed(
+            *recordIterator, variableNodes[0], sectionName, &d3_errors);
+        isRecordValid &= complain_if_variable_name_invalid(
+            *recordIterator, variableNodes[0], &validFields, sectionName,
+            &d3_errors);
+        isRecordValid &= complain_if_record_is_multivariable(
+            *recordIterator, &variableNodes, sectionName, &d3_errors);
+        isRecordValid &= complain_if_record_is_multivalue(
+            *recordIterator, &valueNodes, variableNodes[0]->str, sectionName,
+            &d3_errors);
+        if (!isRecordValid)
+        {
+            anyErrors = true;
+            continue;
+        }
+
+        /* Complain if duplicate. NB: We know the variable name is valid if
+         * control has reached here. */
+        variableName = variableNodes[0]->str;
+        if (complain_if_node_variable_true_in_map(
+                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
+                &d3_errors))
+        {
+            anyErrors = true;
+            continue;
+        }
+        fieldsFound[variableName] = true;
+
+        /* Specific logic for each variable. */
+        if (variableName == "core_thread_cost")
+        {
+            /* Complain if not a float. */
+            isRecordValid &= complain_if_node_value_not_floating(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Bind! */
+            for (coreIterator=mailbox->P_corem.begin();
+                 coreIterator!=mailbox->P_corem.end(); coreIterator++)
+            {
+                coreIterator->second->costCoreThread = \
+                    str2unsigned(valueNodes[0]->str);
+            }
+        }
+
+        else if (variableName == "data_memory")
+        {
+            /* Complain if not natural */
+            isRecordValid &= complain_if_node_value_not_natural(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Bind! */
+            for (coreIterator=mailbox->P_corem.begin();
+                 coreIterator!=mailbox->P_corem.end(); coreIterator++)
+            {
+                coreIterator->second->dataMemory = \
+                    str2unsigned(valueNodes[0]->str);
+            }
+        }
+
+        else if (variableName == "instruction_memory")
+        {
+            /* Complain if not natural */
+            isRecordValid &= complain_if_node_value_not_natural(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Bind! */
+            for (coreIterator=mailbox->P_corem.begin();
+                 coreIterator!=mailbox->P_corem.end(); coreIterator++)
+            {
+                coreIterator->second->instructionMemory = \
+                    str2unsigned(valueNodes[0]->str);
+            }
+        }
+
+        else if (variableName == "thread_thread_cost")
+        {
+            /* Complain if not a float. */
+            isRecordValid &= complain_if_node_value_not_floating(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Bind! */
+            for (coreIterator=mailbox->P_corem.begin();
+                 coreIterator!=mailbox->P_corem.end(); coreIterator++)
+            {
+                coreIterator->second->costThreadThread = \
+                    str2unsigned(valueNodes[0]->str);
+            }
+        }
+
+        else if (variableName == "threads")
+        {
+            /* Complain if not natural */
+            isRecordValid &= complain_if_node_value_not_natural(
+                *recordIterator, valueNodes[0], variableName, sectionName,
+                &d3_errors);
+            if (!isRecordValid)
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Create that many threads on each core, without validating the
+             * address component (but still catch if we go out of bounds). */
+            for (coreIterator=mailbox->P_corem.begin();
+                 coreIterator!=mailbox->P_corem.end(); coreIterator++)
+            {
+                for (threadIndex = 0;
+                     threadIndex < str2unsigned(valueNodes[0]->str);
+                     threadIndex++)
+                {
+                    tmpThread = new P_thread(dformat("Thread %u",
+                                                     threadIndex));
+                    try
+                    {
+                        coreIterator->second->contain(threadIndex, tmpThread);
+                    }
+                    catch (OrchestratorException &e)
+                    {
+                        d3_errors.append("%s\n", e.message.c_str());
+                        anyErrors = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+
+        /* Shouldn't be able to enter this, because we've already checked the
+         * variable names, but why not write some more code. It's not like this
+         * file is big enough already. */
+        else
+        {
+            d3_errors.append(dformat(
+                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
+                (*recordIterator)->pos, variableName.c_str(),
+                sectionName.c_str()));
+            anyErrors = true;
+        }
+    }
+
+    /* Ensure mandatory fields have been defined. */
+    anyErrors |= !complain_if_mandatory_field_not_defined(
+        &validFields, &fieldsFound, sectionName, &d3_errors);
 
     return !anyErrors;
 }
