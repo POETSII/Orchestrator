@@ -1835,8 +1835,23 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
     /* Holds mailboxes while connecting them together. */
     std::vector<P_mailbox*> joinedMailboxes;
 
+    /* Holds information on all mailboxes in the current board. The key is the
+     * name of the mailbox in this board, and the value holds the information
+     * about that mailbox. */
+    std::map<MailboxName, MailboxInfo> mailboxInfoFromName;
+
     /* For finding mailbox names in mailboxInfoFromName. */
     std::map<MailboxName, MailboxInfo>::iterator mailboxNameFinder;
+
+    /* Holds the edge that connects to mailboxes together in a given board, if
+     * any. The two elements of the pair held in the key of the map represent
+     * the mailboxes at each end of the edge, and the value of the map holds
+     * the mailbox information. */
+    std::map<std::pair<MailboxName, MailboxName>, EdgeInfo> mailboxEdges;
+
+    /* For finding a reverse edge, and for iterating through mailboxEdges. */
+    std::map<std::pair<MailboxName, MailboxName>, EdgeInfo>::iterator \
+        edgeFinder;
 
     /* Holds an edge-specific mailbox-mailbox cost, if found. */
     float thisEdgeCost;
@@ -1844,11 +1859,6 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
 
     /* Holds the name of the mailbox on the other end of an edge. */
     MailboxName edgeMailboxName;
-
-    /* For finding a reverse edge, and for iterating through the edge
-     * container. */
-    std::map<std::pair<MailboxName, MailboxName>, EdgeInfo>::iterator \
-        edgeFinder;
 
     /* Iterate through all record nodes in this section that define
      * mailboxes. */
@@ -2125,10 +2135,6 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
             edgeFinder->second.weight);
     }
 
-    /* Clear mailbox metadata for this board. */
-    mailboxEdges.clear();
-    mailboxInfoFromName.clear();
-
     return !anyErrors;
 }
 
@@ -2178,8 +2184,23 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
     /* Holds boards while connecting them together. */
     std::vector<P_board*> joinedBoards;
 
+    /* Holds information on all boards. The key is the unique name of the
+     * board, and the value holds the information about that board. */
+    std::map<BoardName, BoardInfo> boardInfoFromName;
+
     /* For finding board names in boardInfoFromName. */
     std::map<BoardName, BoardInfo>::iterator boardNameFinder;
+
+    /* Holds the edge that connects to boards together, if any. The two
+     * elements of the pair held in the key of the map represent the boards at
+     * each end of the edge, and the value of the map holds the edge
+     * information. */
+    std::map<std::pair<BoardName, BoardName>, EdgeInfo> boardEdges;
+
+    /* For finding a reverse edge, and for iterating through the edge
+     * container. */
+    std::map<std::pair<BoardName, BoardName>, EdgeInfo>::iterator \
+        edgeFinder;
 
     /* Holds any default board-board cost, if found. */
     float defaultCost = 0;
@@ -2191,11 +2212,6 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
 
     /* Holds the name of the board on the other end of an edge. */
     BoardName edgeBoardName;
-
-    /* For finding a reverse edge, and for iterating through the edge
-     * container. */
-    std::map<std::pair<BoardName, BoardName>, EdgeInfo>::iterator   \
-        edgeFinder;
 
     /* Iterate through all record nodes in this section, in order to:
      *

@@ -255,25 +255,5 @@ private:
      * the box, and the value points to the box object itself. */
     std::map<std::string, P_box*> boxFromName;
 
-    /* Holds information on all boards. The key is the unique name of the
-     * board, and the value holds the information about that board. */
-    std::map<BoardName, BoardInfo> boardInfoFromName;
-
-    /* Holds information on all mailboxes in the current board. The key is the
-     * name of the mailbox in this board, and the value holds the information
-     * about that mailbox. */
-    std::map<MailboxName, MailboxInfo> mailboxInfoFromName;
-
-    /* Holds the edge that connects to boards together, if any. The two
-     * elements of the pair held in the key of the map represent the boards at
-     * each end of the edge, and the value of the map holds the edge
-     * information. */
-    std::map<std::pair<BoardName, BoardName>, EdgeInfo> boardEdges;
-
-    /* Holds the edge that connects to mailboxes together in a given board, if
-     * any. The two elements of the pair held in the key of the map represent
-     * the mailboxes at each end of the edge, and the value of the map holds
-     * the mailbox information. */
-    std::map<std::pair<MailboxName, MailboxName>, EdgeInfo> mailboxEdges;
 };
 #endif
