@@ -1822,12 +1822,23 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
     P_mailbox* mailbox;
     MailboxName mailboxName;
 
+    /* Holds mailboxes while connecting them together. */
+    std::vector<P_mailbox*> joinedMailboxes;
+
+    /* For finding mailbox names in mailboxInfoFromName. */
+    std::map<MailboxName, MailboxInfo>::iterator mailboxNameFinder;
+
     /* Holds an edge-specific mailbox-mailbox cost, if found. */
     float thisEdgeCost;
     bool isThisEdgeCostDefined;
 
     /* Holds the name of the mailbox on the other end of an edge. */
     MailboxName edgeMailboxName;
+
+    /* For finding a reverse edge, and for iterating through the edge
+     * container. */
+    std::map<std::pair<MailboxName, MailboxName>, EdgeInfo>::iterator \
+        edgeFinder;
 
     /* Iterate through all record nodes in this section that define
      * mailboxes. */
@@ -1863,7 +1874,6 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
         }
 
         /* Whine if a mailbox with this name already exists in this board. */
-        std::map<MailboxName, MailboxInfo>:: iterator mailboxNameFinder;
         mailboxNameFinder = mailboxInfoFromName.find(mailboxName);
         if (mailboxNameFinder != mailboxInfoFromName.end())
         {
@@ -1972,8 +1982,6 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
             }
 
             /* If the reverse edge is in mailboxEdges... */
-            std::map<std::pair<MailboxName, MailboxName>, EdgeInfo>::iterator \
-                edgeFinder;
             /* Bears reiterating - it's the reverse! */
             edgeFinder = mailboxEdges.find(std::make_pair(edgeMailboxName,
                                                           mailboxName));
@@ -2050,7 +2058,62 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
                                                             sectionType);
     }
 
-    /* Check mailbox edge integrity (12-12). <!> */
+    /* Connect mailboxes together */
+    for (edgeFinder = mailboxEdges.begin(); edgeFinder != mailboxEdges.end();
+         edgeFinder++)
+    {
+        /* Get the mailboxes. Complain if one of the mailbox names does not
+         * exist. For each name in the pair, check it matches a record in
+         * mailboxInfoFromName. */
+        joinedMailboxes.clear();
+        MailboxName thisName = edgeFinder->first.first;
+        while (true)  /* Loop over both names in the map key (LM1). A
+                       * concession to the fact that one can't iterate over a
+                       * std::pair. */
+        {
+            mailboxNameFinder = mailboxInfoFromName.find(thisName);
+            if (mailboxNameFinder == mailboxInfoFromName.end())
+            {
+                d3_errors.append(dformat(
+                    "L%u: Could not find a definition for mailbox %s defined "
+                    "by an edge in this record.\n",
+                    edgeFinder->second.lineNumber, thisName.c_str()));
+                {
+                    anyErrors = true;
+                }
+            }
+
+            else
+            {
+                joinedMailboxes.push_back(
+                    mailboxNameFinder->second.memoryAddress);
+            }
+
+            /* Increment iteration, or leave (LM1). */
+            if (thisName != edgeFinder->first.second)
+            {
+                thisName = edgeFinder->first.second;
+            }
+            else{break;}
+        }
+
+        /* Complain if the reverse of an edge has not been defined. */
+        if (!(edgeFinder->second.isReverseDefined))
+        {
+            d3_errors.append(dformat(
+                "L%u: Could not find the reverse edge definition connecting "
+                "mailboxes %s and %s\n.", edgeFinder->second.lineNumber,
+                edgeFinder->first.first, edgeFinder->first.second));
+            anyErrors = true;
+            continue;
+        }
+
+        /* Hook them up. */
+        board->connect(
+            joinedMailboxes[0]->get_hardware_address()->get_mailbox(),
+            joinedMailboxes[1]->get_hardware_address()->get_mailbox(),
+            edgeFinder->second.weight);
+    }
 
     /* Clear mailbox metadata for this board. */
     mailboxEdges.clear();
