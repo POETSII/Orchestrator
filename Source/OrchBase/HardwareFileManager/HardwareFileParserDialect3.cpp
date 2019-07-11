@@ -495,7 +495,7 @@ bool HardwareFileParser::d3_define_mailbox_fields_from_section(
             }
 
             /* Create and add that many cores. */
-            if (d3_create_cores_and_threads_for_mailbox(
+            if (!d3_create_cores_and_threads_for_mailbox(
                     mailbox, str2unsigned(valueNodes[0]->str)))
             {
                 anyErrors = true;
