@@ -246,11 +246,6 @@ private:
     float defaultMailboxMailboxCost = 0;
     bool isDefaultMailboxCostDefined = false;
 
-    /* Holds sizes of address components. The key is either "box", "board", or
-     * "mailbox", and the value is the number of elements comprising that
-     * address component. */
-    std::map<std::string, unsigned> addressLengths;
-
     /* Holds boards that have been declared to exist within a box in
      * [engine_box], but which have not (yet) been created from parsing
      * [engine_board]. */
