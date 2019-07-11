@@ -2990,7 +2990,7 @@ bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
         }
 
         /* This has already been read and validated, so we don't care. */
-        else if (variableName == "dialect"){}
+        else if (variableName == "dialect");
 
         else if (variableName == "file")
         {
