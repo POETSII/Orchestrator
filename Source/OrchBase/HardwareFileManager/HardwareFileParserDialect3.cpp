@@ -2165,6 +2165,12 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
     P_board* board;
     BoardName boardName;
 
+    /* Holds boards while connecting them together. */
+    std::vector<P_board*> joinedBoards;
+
+    /* For finding board names in boardInfoFromName. */
+    std::map<BoardName, BoardInfo>::iterator boardNameFinder;
+
     /* Holds any default board-board cost, if found. */
     float defaultCost = 0;
     bool isDefaultCostDefined = false;
@@ -2175,6 +2181,11 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
 
     /* Holds the name of the board on the other end of an edge. */
     BoardName edgeBoardName;
+
+    /* For finding a reverse edge, and for iterating through the edge
+     * container. */
+    std::map<std::pair<BoardName, BoardName>, EdgeInfo>::iterator   \
+        edgeFinder;
 
     /* Iterate through all record nodes in this section, in order to:
      *
@@ -2420,8 +2431,6 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
             }
 
             /* If the reverse edge is in boardEdges... */
-            std::map<std::pair<BoardName, BoardName>, EdgeInfo>::iterator \
-                edgeFinder;
             /* Bears reiterating - it's the reverse! */
             edgeFinder = boardEdges.find(std::make_pair(edgeBoardName,
                                                         boardName));
@@ -2507,7 +2516,77 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
                                                                 sectionType);
     }
 
-    /* Check board edge integrity (13). <!> */
+    /* Connect boards together. */
+    for (edgeFinder = boardEdges.begin(); edgeFinder != boardEdges.end();
+         edgeFinder++)
+    {
+        /* Get the boards. Complain if one of the board names does not
+         * exist. For each name in the pair, check it matches a record in
+         * boardInfoFromName. */
+        joinedBoards.clear();
+        BoardName thisName = edgeFinder->first.first;
+        while (true)  /* Loop over both names in the map key (LM1). A
+                       * concession to the fact that one can't iterate over a
+                       * std::pair. */
+        {
+            boardNameFinder = boardInfoFromName.find(thisName);
+            if (boardNameFinder == boardInfoFromName.end())
+            {
+                d3_errors.append(dformat(
+                    "L%u: Could not find a definition for board %s-%s defined "
+                    "by an edge in this record.\n",
+                    edgeFinder->second.lineNumber,
+                    thisName.first.c_str(), thisName.second.c_str()));
+                {
+                    anyErrors = true;
+                }
+            }
+
+            else
+            {
+                joinedBoards.push_back(boardNameFinder->second.memoryAddress);
+            }
+
+            /* Increment iteration, or leave (LM1). */
+            if (thisName != edgeFinder->first.second)
+            {
+                thisName = edgeFinder->first.second;
+            }
+            else{break;}
+        }
+
+        /* Complain if the reverse of an edge has not been defined. */
+        if (!(edgeFinder->second.isReverseDefined))
+        {
+            /* This is a bit obtuse, but that's pairs for you. Basically:
+             *
+             * - The first tier is a std::pair<BoardName, BoardName>
+             * - The second tier identifies the board by name, and is a
+             *   BoardName, which is a std::pair<std::string, std::string>.
+             * - The third tier identifies either the box or board component of
+             *   the board name, and is a std::string. */
+            d3_errors.append(dformat(
+                "L%u: Could not find the reverse edge definition connecting "
+                "boards %s-%s and %s-%s\n.",
+                edgeFinder->second.lineNumber,
+                /* Box component of first board name. */
+                edgeFinder->first.first.first.c_str(),
+                /* Board component of first board name. */
+                edgeFinder->first.first.second.c_str(),
+                /* Box component of second board name. */
+                edgeFinder->first.second.first.c_str(),
+                /* Board component of second board name. */
+                edgeFinder->first.second.second.c_str()));
+            anyErrors = true;
+            continue;
+        }
+
+        /* Hook them up. */
+        engine->connect(
+            joinedBoards[0]->get_hardware_address()->get_board(),
+            joinedBoards[1]->get_hardware_address()->get_board(),
+            edgeFinder->second.weight);
+    }
 
     /* Check undefinedBoards, add to error message (14). <!> */
 
