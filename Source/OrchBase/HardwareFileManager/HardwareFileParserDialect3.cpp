@@ -27,7 +27,7 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
         {
             mailbox->contain(coreIndex, tmpCore);
         }
-        catch (OrchestratorException e)
+        catch (OrchestratorException &e)
         {
             d3_errors.append("%s\n", e.message.c_str());
             anyErrors = true;
