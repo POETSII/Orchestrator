@@ -1564,6 +1564,7 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
      * are not defined correctly. */
     if (!d3_load_validate_sections())
     {
+        delete engine;
         throw HardwareSemanticException(d3_errors.c_str());
     }
 
@@ -1577,6 +1578,15 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
     /* Verify that default types, and type fields in sections, are valid, and
      * map to sections that exist. */
     passedValidation &= d3_validate_types_define_cache();
+
+    /* We can't go any further than this without risking a segfault, because if
+     * the address format is not defined properly, item address assignment will
+     * fail badly. */
+    if (!passedValidation)
+    {
+        delete engine;
+        throw HardwareSemanticException(d3_errors.c_str());
+    }
 
     /* Boxes */
     passedValidation &= d3_populate_validate_engine_box(engine);

@@ -102,8 +102,8 @@ TEST_CASE("Test each semantically-invalid case in turn", "[Parser]")
                           HardwareSemanticException&);
 
         /* Don't need to delete the engine - the parser is responsible for
-         * doing that. If a bug has been introduced that causes the parser not
-         * to clean up after itself, Valgrind will find it.
+         * doing that on failure. If a bug has been introduced that causes the
+         * parser not to clean up after itself, Valgrind will find it.
          *
          * We do need to delete the parser at the end of the loop though. */
         delete parser;

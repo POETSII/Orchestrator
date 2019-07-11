@@ -82,7 +82,6 @@ TEST_CASE("Test each invalid dialect example case in turn", "[Parser]")
         REQUIRE_THROWS_AS(parser->populate_hardware_model(engine),
                           HardwareSemanticException&);
 
-        delete engine;
         delete parser;
     }
 }

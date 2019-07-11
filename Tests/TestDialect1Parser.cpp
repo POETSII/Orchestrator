@@ -25,7 +25,6 @@ TEST_CASE("A file with multiple identical valid sections raise a semantics error
     parser.load_file("../Tests/StaticResources/Dialect1/duplicate_section_invalid.uif");
     REQUIRE_THROWS_AS(parser.populate_hardware_model(engine),
                       HardwareSemanticException&);
-    delete engine;
 }
 
 TEST_CASE("A file with a missing section raises a semantics error", "[Parser]")
@@ -35,7 +34,6 @@ TEST_CASE("A file with a missing section raises a semantics error", "[Parser]")
     parser.load_file("../Tests/StaticResources/Dialect1/missing_section_invalid.uif");
     REQUIRE_THROWS_AS(parser.populate_hardware_model(engine),
                       HardwareSemanticException&);
-    delete engine;
 }
 
 TEST_CASE("A file with an invalid section raises a semantics error", "[Parser]")
@@ -45,5 +43,4 @@ TEST_CASE("A file with an invalid section raises a semantics error", "[Parser]")
     parser.load_file("../Tests/StaticResources/Dialect1/invalid_section.uif");
     REQUIRE_THROWS_AS(parser.populate_hardware_model(engine),
                       HardwareSemanticException&);
-    delete engine;
 }
