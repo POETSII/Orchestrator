@@ -59,7 +59,7 @@ RV_LIBS     = $(RISCV_PATH)/riscv32-unknown-elf/lib/rv32im/ilp32
 # be set according to the target system's build environment
 RV_GCC_LIBS = $(RISCV_PATH)/lib/gcc/riscv32-unknown-elf/8.2.0/rv32im/ilp32
 # this had -nostdlib; we need it for memcpy.
-RV_CFLAGS   = -mabi=ilp32 -march=$(RV_ARCH) -static -mcmodel=medany \
+RV_CFLAGS   = -mabi=ilp32 -march=$(RV_ARCH) -Wall -static -mcmodel=medany \
               -fvisibility=hidden -nostartfiles -pipe\
               -fsingle-precision-constant -fno-builtin-printf
 

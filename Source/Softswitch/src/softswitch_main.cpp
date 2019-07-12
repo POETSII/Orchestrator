@@ -3,7 +3,7 @@
 
 INLINE bool softswitch_IsRTSReady(ThreadCtxt_t* ThreadContext) 
 {
-    return *ThreadContext->rtsStart != *ThreadContext->rtsEnd;
+    return (ThreadContext->rtsStart != ThreadContext->rtsEnd);
 }
 
 uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
@@ -21,7 +21,7 @@ uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
     uint32_t pin_grp, pin, pins_this_grp;
     
     // Run device's RTS handler.
-    uint32_t rtsUpdated = device->devType->RTS_Handler(ThreadContext->properties, device, rts)
+    uint32_t rtsUpdated = device->devType->RTS_Handler(ThreadContext->properties, device, rts);
     if (rtsUpdated)
     {
         for (pin_grp = 0; pin_grp < num_grps; pin_grp++)    // Loop through each pin group?!
@@ -41,7 +41,7 @@ uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
                         output_pin->sendPending = 1;
                         
                         // Add pin to RTS list and update end
-                        ThreadContext->rtsBuff[ThreadContext->rtsEnd] = outputPin;
+                        ThreadContext->rtsBuf[ThreadContext->rtsEnd] = output_pin;
                         if(ThreadContext->rtsEnd < ThreadContext->rtsBufSize) ThreadContext->rtsEnd++;
                         else ThreadContext->rtsEnd = 0;
                     }
@@ -54,10 +54,10 @@ uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
 
 inline bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
 {
-    uint32_t maxIdx = *ThreadContext->numDevInsts - 1;  // # devices we are looping through
-    devInst_t* devices = ThreadContext->devInsts;       // Shortcut to the devices array
+    uint32_t maxIdx = ThreadContext->numDevInsts - 1;   // # devices we are looping through
+    //devInst_t* devices = ThreadContext->devInsts;       // Shortcut to the devices array
     
-    uint32_t idleStart = *ThreadContext->idleStart; // pickup where we left off
+    uint32_t idleStart = ThreadContext->idleStart;      // pickup where we left off
     uint32_t idleIdx = idleStart;
     bool notIdle = false;                           // Return val
     
@@ -83,13 +83,13 @@ inline bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
         if (rtsFlagged) break;              // RTS has been flagged - bail!
     } while (idleIdx != idleStart);     // Exit if we have serviced all devices.
     
-    *ThreadContext->idleStart = idleIdx;    // save our position
+    ThreadContext->idleStart = idleIdx;    // save our position
     return notIdle;     
 }
 
 inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile char* send_buf)
 {
-    outPin_t* pin = ThreadContext->rtsBuff[ThreadContext->rtsStart];    // Get the next pin to send
+    outPin_t* pin = ThreadContext->rtsBuf[ThreadContext->rtsStart];    // Get the next pin to send
     devInst_t* device = pin->device;                                    // Get the Device
     
     //TODO: change this to the standard-size header. 
@@ -111,12 +111,17 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile char* se
     //TODO: Fix this when headers are fixed as the different treatment here is superfluous.
     if (isSuperMsg)
     {
-        set_super_hdr(tinselId() << P_THREAD_OS | ((cur_device->deviceID & P_DEVICE_MASK) << P_DEVICE_OS), pin->pinType->msgType, target->tgtPin, pin->pinType->sz_msg+hdrSize, 0, static_cast<P_Sup_Hdr_t*>(const_cast<void*>(send_buf)));
+        set_super_hdr(tinselId() << P_THREAD_OS | ((device->deviceID & P_DEVICE_MASK) << P_DEVICE_OS), 
+                        pin->pinType->msgType, target->tgtPin, 
+                        pin->pinType->sz_msg+hdrSize, 0, 
+                        reinterpret_cast<P_Sup_Hdr_t*>(const_cast<char*>(send_buf)));
         tinselSend(tinselHostId(), send_buf);
     }
     else
     {
-        set_msg_hdr(target->tgt, target->tgtEdge, target->tgtPin, pin->pinType->sz_msg, pin->pinType->msgType, static_cast<P_Msg_Hdr_t*>(const_cast<void*>(send_buf)));
+        set_msg_hdr(target->tgt, target->tgtEdge, target->tgtPin,
+                    pin->pinType->sz_msg, pin->pinType->msgType,
+                    reinterpret_cast<P_Msg_Hdr_t*>(const_cast<char*>(send_buf)));
         tinselSend((target->tgt >> P_THREAD_OS), send_buf);
     }
     //==========================================================================
@@ -128,7 +133,10 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile char* se
         pin->sendPending = 0;   // Reset pending 
 
         // Move the circular RTS buffer index - make a popRTS method?
-        if(ThreadContext->rtsStart < ThreadContext->rtsBufSize) ThreadContext->rtsStart++;
+        if(ThreadContext->rtsStart < (ThreadContext->rtsBufSize-1))
+        {
+            ThreadContext->rtsStart++;
+        }
         else ThreadContext->rtsStart = 0;
         
         softswitch_onRTS(ThreadContext, device); // Run the Device's RTS handler. This could be conditional.
@@ -137,7 +145,7 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile char* se
     return pin->idxTgts;
 }
 
-inline void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
+void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
 {
     // Decode the message target
     P_Msg_Hdr_t* recvPkt = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(recv_buf));
@@ -195,7 +203,35 @@ inline void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* rec
     }
 }
 
-
+void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatile void* recv_buf)
+{
+    // first phase of barrier: set up a standard message to send to the supervisor
+    set_super_hdr(tinselId() << P_THREAD_OS, P_PKT_MSGTYP_BARRIER, P_SUP_PIN_SYS, p_sup_hdr_size(), 0, static_cast<P_Sup_Hdr_t*>(const_cast<void*>(send_buf)));
+    // block until we can send it,
+    while (!tinselCanSend());
+    tinselSetLen(p_sup_hdr_size());
+    // and then issue the message indicating this thread's startup is complete.
+    tinselSend(tinselHostId(), send_buf);
+    // second phase of barrier: now wait for the supervisor's response
+    thr_ctxt->ctlEnd = 1;
+    while (thr_ctxt->ctlEnd)
+    {
+        // by blocking awaiting a receive. 
+        while (!tinselCanRecv());
+        recv_buf = tinselRecv();
+        P_Msg_t* rcv_pkt = static_cast<P_Msg_t*>(const_cast<void*>(recv_buf));
+        // look for barrier message
+        if (rcv_pkt->header.messageTag == P_MSG_TAG_INIT)
+        {
+            // *Debug: send packet out to show we have passed the barrier* 
+            // softswitch_alive(send_buf);
+            // and once it's been received, process it as a startup message
+            softswitch_onReceive(thr_ctxt, recv_buf);
+            thr_ctxt->ctlEnd = 0;
+        }
+        tinselAlloc(recv_buf);
+    }                  
+}
 
 void softswitch_main()
 {
@@ -203,11 +239,11 @@ void softswitch_main()
     PThreadContext* ThreadContext = static_cast<PThreadContext*>(tinselHeapBase()); // softswitch_pThreadContexts + tinselID();
     
     // Configure rtsBuf - this sits after ThreadContext in the heap 
-    ThreadContext->rtsBuf = static_cast<outPin_t**>(tinselHeapBase() + sizeof(PThreadContext));
+    ThreadContext->rtsBuf = reinterpret_cast<outPin_t**>(static_cast<char*>(tinselHeapBase()) + sizeof(PThreadContext));
     
     // can these slot assignments be done in softswitch_init?
-    volatile void *recvBuffer=0;
-    volatile char *sendBuffer = static_cast<char*>(tinselSlot(0));   // hardware send buffer is dedicated to the first hw slot
+    volatile void *recvBuffer=PNULL;
+    volatile char *sendBuffer = static_cast<volatile char*>(tinselSlot(0));   // hardware send buffer is dedicated to the first hw slot
     volatile void *superBuffer[NUM_SUP_BUFS];  // buffers allocated for supervisor messages.
     for (uint32_t sb = 0; sb < NUM_SUP_BUFS; sb++) superBuffer[sb] = tinselSlot(sb+1);
     softswitch_init(ThreadContext);

@@ -996,19 +996,19 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     handlers_h << "uint32_t devtyp_" << devtyp_name;
     handlers_h << "_OutPin_" << Opin_name;
     handlers_h << "_Send_handler (const void* graphProps, ";
-    handlers_h << "void* device, void* msg);\n";
+    handlers_h << "void* device, volatile void* msg);\n";
     
     handlers_cpp << "uint32_t devtyp_" << devtyp_name;
     handlers_cpp << "_OutPin_" << Opin_name;
     handlers_cpp << "_Send_handler (const void* graphProps, ";
-    handlers_cpp << "void* device, void* msg)\n";
+    handlers_cpp << "void* device, volatile void* msg)\n";
     
     handlers_cpp << handlerPreamble.str();
     
     if ((*O_pin)->pMsg->pPropsD)
     {
-      handlers_cpp << "   msg_" << (*O_pin)->pMsg->Name();
-      handlers_cpp << "_pyld_t* message = static_cast<msg_";
+      handlers_cpp << "   volatile msg_" << (*O_pin)->pMsg->Name();
+      handlers_cpp << "_pyld_t* message = static_cast<volatile msg_";
       handlers_cpp <<  (*O_pin)->pMsg->Name() << "_pyld_t*>(msg);\n";
     }
     handlers_cpp << (*O_pin)->pHandl->c_src << "\n";

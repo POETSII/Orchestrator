@@ -48,9 +48,9 @@ typedef uint32_t (*Recv_handler_t)
 );
 
 typedef uint32_t (*Send_handler_t)
-(   const void* graphProps,
-    void*       device,
-    void*       msg
+(   const void*     graphProps,
+    void*           device,
+    volatile void*  msg
 );
 
 typedef struct PInputType
@@ -167,18 +167,20 @@ typedef struct PThreadContext
 */
 // template<class T> T offset_ptr(ThreadCtxt_t* base, T offset);
 void softswitch_init(ThreadCtxt_t* thr_ctxt);
-void softswitch_finalize(ThreadCtxt_t* thr_ctxt, volatile void** send_buf, volatile void** recv_buf, volatile void** super_buf);
+void softswitch_finalize(ThreadCtxt_t* thr_ctxt, volatile char** send_buf, volatile void** recv_buf, volatile void** super_buf);
 // void softswitch_alive(volatile void* send_buf); // debug: send alive message to host
-void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatile void* recv_buf);
+// void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatile void* recv_buf);
 void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt);
 // handlers should reside in instruction memory and thus shouldn't need setup.
 // inline void outputPinType_init(uint32_t pin, uint32_t dev_typ, ThreadCtxt_t* thr_ctxt) {thr_ctxt->devTyps[dev_typ].outputTypes[pin].Send_Handler = Send_Handlers[thr_ctxt->threadID.PThread][dev_typ][pin];};
 // inline void inputPinType_init(uint32_t pin, uint32_t dev_typ, ThreadCtxt_t* thr_ctxt) {thr_ctxt->devTyps[dev_typ].inputTypes[pin].Recv_Handler = Recv_Handlers[thr_ctxt->threadID.PThread][dev_typ][pin];};
 void device_init(devInst_t* device, ThreadCtxt_t* thr_ctxt);
-void outPin_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt);
-void outPinTgt_init(uint32_t tgt, outPin_t* pin, ThreadCtxt_t* thr_ctxt);
+void outPin_init(uint32_t pin, devInst_t* device);
+void outPinTgt_init(uint32_t tgt, outPin_t* pin);
 void inPin_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt);
 void inPinSrc_init(uint32_t src, inPin_t* pin, ThreadCtxt_t* thr_ctxt);
+
+void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf);
 
 // workaround bodge for some unfinished business in the XML handler fragments. Should be fixed in the XML.
 inline uint32_t handler_exit(uint32_t code) {return code;};
