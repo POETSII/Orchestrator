@@ -1113,7 +1113,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << thread->P_devicel.size() <<  ",";                     // numDevInsts
   vars_cpp << "Thread_" << thread_num << "_Devices,";               // devInsts
   vars_cpp << ((devTyp->par->pPropsD)?"&GraphProperties,":"PNULL,");// properties
-  vars_cpp << ",";                              // rtsBuffSize              //TODO:
+  vars_cpp << "2000,";                              // rtsBuffSize              //TODO:
   vars_cpp << "PNULL,";                                             // rtsBuf
   vars_cpp << "0,";                                                 // rtsStart
   vars_cpp << "0,";                                                 // rtsEnd
