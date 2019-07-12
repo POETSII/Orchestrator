@@ -3,6 +3,24 @@
 
 #include "HardwareFileParser.h"
 
+/* Catastrophic failure, we out, yo. Well, "catastrophic" is perhaps taking it
+ * a bit far. My point is, this error is unrecoverable from the perspective of
+ * the file reader.
+ *
+ * This method constructs an error output string, puts it in the message of an
+ * exception, then tosses it over the fence. Arguments:
+ *
+ * - engine: Partially-populated unsafe engine. */
+void HardwareFileParser::d3_catastrophic_failure(P_engine* engine)
+{
+    delete engine;
+    std::string allErrors;
+    construct_error_output_string(&allErrors);
+
+    /* Lob over the fence. */
+    throw HardwareSemanticException(allErrors.c_str());
+}
+
 /* Create some cores and threads, and pile them all into a mailbox.
  *
  * Returns true if there were no validation problems, and false
@@ -15,22 +33,30 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
     P_mailbox* mailbox, unsigned coreQuantity)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
-    std::string sectionName = "core";
+
+    /* We'll be modifying the 'record', 'sectionName', and 'variable'
+     * members. To ensure they are preserved on exit, store the old values
+     * here, and reinstate them once finished. */
+    UIF::Node* callingRecord = record;
+    std::string callingSectionName = sectionName;
+    std::string callingVariable = variable;
+
+    sectionName = "core";
 
     /* Create all of the cores, and add them to the mailbox. Don't validate the
      * address component (but still catch if we go out of bounds). */
     P_core* tmpCore;
-    AddressComponent coreIndex;
-    for (coreIndex = 0; coreIndex < coreQuantity; coreIndex++)
+    AddressComponent coreId;
+    for (coreId = 0; coreId < coreQuantity; coreId++)
     {
-        tmpCore = new P_core(dformat("Core %u", coreIndex));
+        tmpCore = new P_core(dformat("Core %u", coreId));
         try
         {
-            mailbox->contain(coreIndex, tmpCore);
+            mailbox->contain(coreId, tmpCore);
         }
         catch (OrchestratorException &e)
         {
-            d3_errors.append("%s\n", e.message.c_str());
+            errors.push_back(e.message.c_str());
             anyErrors = true;
         }
     }
@@ -57,49 +83,33 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
     std::vector<UIF::Node*> valueNodes;
     std::vector<UIF::Node*> variableNodes;
 
-    /* For iterating through cores in a mailbox, and threads, later. */
+    /* For iterating through cores when binding and creating threads. */
     std::map<AddressComponent, P_core*>::iterator coreIterator;
-    unsigned threadIndex;
-    P_thread* tmpThread;
 
     /* Iterate through all record nodes in this section, and apply properties
      * to all cores within. */
     std::vector<UIF::Node*> recordNodes;
-    std::vector<UIF::Node*>::iterator recordIterator;
-    std::string variableName;
-    bool isRecordValid;
     GetRecd(untypedSections[sectionName], recordNodes);
-    for (recordIterator=recordNodes.begin();
+
+    for (std::vector<UIF::Node*>::iterator recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;  /* Innocent until proven guilty. */
+        record = *recordIterator;
 
         /* Get the value and variable nodes. */
-        GetVari((*recordIterator), variableNodes);
-        GetValu((*recordIterator), valueNodes);
+        GetVari(record, variableNodes);
+        GetValu(record, valueNodes);
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
         if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
 
-        /* Complain if (in order):
-         *
-         * - The record does not begin with a "+", as all fields in this
-         *   section must do.
-         * - The variable name is not a valid name.
-         * - There is more than one variable node.
-         * - There is more than one value node. */
-        isRecordValid &= complain_if_node_not_plus_prefixed(
-            *recordIterator, variableNodes[0], sectionName, &d3_errors);
-        isRecordValid &= complain_if_variable_name_invalid(
-            *recordIterator, variableNodes[0], &validFields, sectionName,
-            &d3_errors);
-        isRecordValid &= complain_if_record_is_multivariable(
-            *recordIterator, &variableNodes, sectionName, &d3_errors);
-        isRecordValid &= complain_if_record_is_multivalue(
-            *recordIterator, &valueNodes, variableNodes[0]->str, sectionName,
-            &d3_errors);
-        if (!isRecordValid)
+        /* Complaints */
+        if (!(complain_if_variable_not_plus_prefixed(variableNodes[0]) and
+              complain_if_variable_name_invalid(variableNodes[0],
+                                                &validFields) and
+              complain_if_record_is_multivariable(&variableNodes) and
+              complain_if_record_is_multivalue(&valueNodes)))
         {
             anyErrors = true;
             continue;
@@ -107,24 +117,19 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
-        variableName = variableNodes[0]->str;
-        if (complain_if_node_variable_true_in_map(
-                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
-                &d3_errors))
+        if (complain_if_variable_true_in_map(variableNodes[0], &fieldsFound))
         {
             anyErrors = true;
             continue;
         }
-        fieldsFound[variableName] = true;
+        variable = variableNodes[0]->str;
+        fieldsFound[variable] = true;
 
         /* Specific logic for each variable. */
-        if (variableName == "core_thread_cost")
+        if (variable == "core_thread_cost")
         {
             /* Complain if not a float. */
-            isRecordValid &= complain_if_node_value_not_floating(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            if (!complain_if_value_not_floating(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -139,13 +144,10 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
             }
         }
 
-        else if (variableName == "data_memory")
+        else if (variable == "data_memory")
         {
             /* Complain if not natural */
-            isRecordValid &= complain_if_node_value_not_natural(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            if (!complain_if_value_not_natural(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -160,13 +162,10 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
             }
         }
 
-        else if (variableName == "instruction_memory")
+        else if (variable == "instruction_memory")
         {
             /* Complain if not natural */
-            isRecordValid &= complain_if_node_value_not_natural(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            if (!complain_if_value_not_natural(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -181,13 +180,10 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
             }
         }
 
-        else if (variableName == "thread_thread_cost")
+        else if (variable == "thread_thread_cost")
         {
             /* Complain if not a float. */
-            isRecordValid &= complain_if_node_value_not_floating(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            if (!complain_if_value_not_floating(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -202,13 +198,10 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
             }
         }
 
-        else if (variableName == "threads")
+        else if (variable == "threads")
         {
             /* Complain if not natural */
-            isRecordValid &= complain_if_node_value_not_natural(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            if (!complain_if_value_not_natural(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -216,46 +209,41 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
 
             /* Create that many threads on each core, without validating the
              * address component (but still catch if we go out of bounds). */
+            std::map<AddressComponent, P_core*>::iterator coreIterator;
+            unsigned threadId;
+            P_thread* tmpThread;
             for (coreIterator=mailbox->P_corem.begin();
                  coreIterator!=mailbox->P_corem.end(); coreIterator++)
             {
-                for (threadIndex = 0;
-                     threadIndex < str2unsigned(valueNodes[0]->str);
-                     threadIndex++)
+                for (threadId = 0; threadId < str2unsigned(valueNodes[0]->str);
+                     threadId++)
                 {
-                    tmpThread = new P_thread(dformat("Thread %u",
-                                                     threadIndex));
+                    tmpThread = new P_thread(dformat("Thread %u", threadId));
                     try
                     {
-                        coreIterator->second->contain(threadIndex, tmpThread);
+                        coreIterator->second->contain(threadId, tmpThread);
                     }
                     catch (OrchestratorException &e)
                     {
-                        d3_errors.append("%s\n", e.message.c_str());
+                        errors.push_back(e.message.c_str());
                         anyErrors = true;
                         break;
                     }
                 }
             }
         }
-
-
-        /* Shouldn't be able to enter this, because we've already checked the
-         * variable names, but why not write some more code. It's not like this
-         * file is big enough already. */
-        else
-        {
-            d3_errors.append(dformat(
-                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
-                (*recordIterator)->pos, variableName.c_str(),
-                sectionName.c_str()));
-            anyErrors = true;
-        }
     }
 
     /* Ensure mandatory fields have been defined. */
-    anyErrors |= !complain_if_mandatory_field_not_defined(
-        &validFields, &fieldsFound, sectionName, &d3_errors);
+    if (!complain_if_mandatory_field_not_defined(&validFields, &fieldsFound))
+    {
+        anyErrors = true;
+    }
+
+    /* Restore the old 'record', 'sectionName', and 'variable' members. */
+    record = callingRecord;
+    sectionName = callingSectionName;
+    variable = callingVariable;
 
     return !anyErrors;
 }
@@ -272,8 +260,15 @@ bool HardwareFileParser::d3_define_board_fields_from_section(
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
 
+    /* We'll be modifying the 'record', 'sectionName', and 'variable'
+     * members. To ensure they are preserved on exit, store the old values
+     * here, and reinstate them once finished. */
+    UIF::Node* callingRecord = record;
+    std::string callingSectionName = sectionName;
+    std::string callingVariable = variable;
+
     /* Short on time, sorry... */
-    std::string sectionName = dformat(
+    sectionName = dformat(
         "%s(%s)", sectionNode->leaf[0]->leaf[0]->str.c_str(),
         sectionNode->leaf[0]->leaf[0]->leaf[0]->str.c_str());
 
@@ -308,18 +303,16 @@ bool HardwareFileParser::d3_define_board_fields_from_section(
 
     /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
-    std::vector<UIF::Node*>::iterator recordIterator;
-    std::string variableName;
-    bool isRecordValid;
     GetRecd(sectionNode, recordNodes);
-    for (recordIterator=recordNodes.begin();
+
+    for (std::vector<UIF::Node*>::iterator recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;  /* Innocent until proven guilty. */
+        record = *recordIterator;
 
         /* Get the value and variable nodes. */
-        GetVari((*recordIterator), variableNodes);
-        GetValu((*recordIterator), valueNodes);
+        GetVari(record, variableNodes);
+        GetValu(record, valueNodes);
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
@@ -330,20 +323,11 @@ bool HardwareFileParser::d3_define_board_fields_from_section(
         if (valueNodes.size() == 0 or variableNodes.size() == 0 or
             variableNodes[0]->qop != Lex::Sy_plus){continue;}
 
-        /* Complain if (in order):
-         *
-         * - The variable name is not a valid name.
-         * - There is more than one variable node.
-         * - There is more than one value node. */
-        isRecordValid &= complain_if_variable_name_invalid(
-            *recordIterator, variableNodes[0], &validFields, sectionName,
-            &d3_errors);
-        isRecordValid &= complain_if_record_is_multivariable(
-            *recordIterator, &variableNodes, sectionName, &d3_errors);
-        isRecordValid &= complain_if_record_is_multivalue(
-            *recordIterator, &valueNodes, variableNodes[0]->str, sectionName,
-            &d3_errors);
-        if (!isRecordValid)
+        /* Complaints for variable definitions. */
+        if (!(complain_if_variable_name_invalid(variableNodes[0],
+                                                &validFields) and
+              complain_if_record_is_multivariable(&variableNodes) and
+              complain_if_record_is_multivalue(&valueNodes)))
         {
             anyErrors = true;
             continue;
@@ -351,24 +335,19 @@ bool HardwareFileParser::d3_define_board_fields_from_section(
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
-        variableName = variableNodes[0]->str;
-        if (complain_if_node_variable_true_in_map(
-                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
-                &d3_errors))
+        if (complain_if_variable_true_in_map(variableNodes[0], &fieldsFound))
         {
             anyErrors = true;
             continue;
         }
-        fieldsFound[variableName] = true;
+        variable = variableNodes[0]->str;
+        fieldsFound[variable] = true;
 
         /* Specific logic for each variable. */
-        if (variableName == "board_mailbox_cost")
+        if (variable == "board_mailbox_cost")
         {
-            /* Validate */
-            isRecordValid &= complain_if_node_value_not_floating(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            /* Complain if not a float. */
+            if (!complain_if_value_not_floating(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -378,13 +357,10 @@ bool HardwareFileParser::d3_define_board_fields_from_section(
             board->costBoardMailbox = str2float(valueNodes[0]->str);
         }
 
-        else if (variableName == "dram")
+        else if (variable == "dram")
         {
-            /* Validate */
-            isRecordValid &= complain_if_node_value_not_natural(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            /* Complain if not natural */
+            if (!complain_if_value_not_natural(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -394,13 +370,10 @@ bool HardwareFileParser::d3_define_board_fields_from_section(
             board->dram = str2unsigned(valueNodes[0]->str);
         }
 
-        else if (variableName == "mailbox_mailbox_cost")
+        else if (variable == "mailbox_mailbox_cost")
         {
-            /* Validate */
-            isRecordValid &= complain_if_node_value_not_floating(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            /* Complain if not a float. */
+            if (!complain_if_value_not_floating(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -411,13 +384,10 @@ bool HardwareFileParser::d3_define_board_fields_from_section(
             isDefaultMailboxCostDefined = true;
         }
 
-        else if (variableName == "supervisor_memory")
+        else if (variable == "supervisor_memory")
         {
-            /* Validate */
-            isRecordValid &= complain_if_node_value_not_natural(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            /* Complain if not natural */
+            if (!complain_if_value_not_natural(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -429,24 +399,21 @@ bool HardwareFileParser::d3_define_board_fields_from_section(
 
         /* Types are processed in d3_get_validate_default_types, so we
          * ignore the definition here. */
-        else if (variableName == "type");
+        else if (variable == "type");
 
-        /* Shouldn't be able to enter this, because we've already checked the
-         * variable names, but why not write some more code. It's not like this
-         * file is big enough already. */
-        else
-        {
-            d3_errors.append(dformat(
-                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
-                (*recordIterator)->pos, variableName.c_str(),
-                sectionName.c_str()));
-            anyErrors = true;
-        }
     }
 
     /* Ensure mandatory fields have been defined. */
-    anyErrors |= !complain_if_mandatory_field_not_defined(
-        &mandatoryFields, &fieldsFound, sectionName, &d3_errors);
+    if (!complain_if_mandatory_field_not_defined(&mandatoryFields,
+                                                 &fieldsFound))
+    {
+        anyErrors = true;
+    }
+
+    /* Restore the old 'record', 'sectionName', and 'variable' members. */
+    record = callingRecord;
+    sectionName = callingSectionName;
+    variable = callingVariable;
 
     return !anyErrors;
 }
@@ -463,8 +430,15 @@ bool HardwareFileParser::d3_define_box_fields_from_section(
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
 
+    /* We'll be modifying the 'record', 'sectionName', and 'variable'
+     * members. To ensure they are preserved on exit, store the old values
+     * here, and reinstate them once finished. */
+    UIF::Node* callingRecord = record;
+    std::string callingSectionName = sectionName;
+    std::string callingVariable = variable;
+
     /* Short on time, sorry...*/
-    std::string sectionName = dformat(
+    sectionName = dformat(
         "%s(%s)", sectionNode->leaf[0]->leaf[0]->str.c_str(),
         sectionNode->leaf[0]->leaf[0]->leaf[0]->str.c_str());
 
@@ -489,41 +463,27 @@ bool HardwareFileParser::d3_define_box_fields_from_section(
 
     /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
-    std::vector<UIF::Node*>::iterator recordIterator;
-    std::string variableName;
-    bool isRecordValid;
     GetRecd(sectionNode, recordNodes);
-    for (recordIterator=recordNodes.begin();
+
+    for (std::vector<UIF::Node*>::iterator recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;  /* Innocent until proven guilty. */
+        record = *recordIterator;
 
         /* Get the value and variable nodes. */
-        GetVari((*recordIterator), variableNodes);
-        GetValu((*recordIterator), valueNodes);
+        GetVari(record, variableNodes);
+        GetValu(record, valueNodes);
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
         if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
 
-        /* Complain if (in order):
-         *
-         * - The record does not begin with a "+", as all fields in this
-         *   section must do.
-         * - The variable name is not a valid name.
-         * - There is more than one variable node.
-         * - There is more than one value node. */
-        isRecordValid &= complain_if_node_not_plus_prefixed(
-            *recordIterator, variableNodes[0], sectionName, &d3_errors);
-        isRecordValid &= complain_if_variable_name_invalid(
-            *recordIterator, variableNodes[0], &validFields, sectionName,
-            &d3_errors);
-        isRecordValid &= complain_if_record_is_multivariable(
-            *recordIterator, &variableNodes, sectionName, &d3_errors);
-        isRecordValid &= complain_if_record_is_multivalue(
-            *recordIterator, &valueNodes, variableNodes[0]->str, sectionName,
-            &d3_errors);
-        if (!isRecordValid)
+        /* Complaints */
+        if (!(complain_if_variable_not_plus_prefixed(variableNodes[0]) and
+              complain_if_variable_name_invalid(variableNodes[0],
+                                                &validFields) and
+              complain_if_record_is_multivariable(&variableNodes) and
+              complain_if_record_is_multivalue(&valueNodes)))
         {
             anyErrors = true;
             continue;
@@ -531,24 +491,19 @@ bool HardwareFileParser::d3_define_box_fields_from_section(
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
-        variableName = variableNodes[0]->str;
-        if (complain_if_node_variable_true_in_map(
-                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
-                &d3_errors))
+        if (complain_if_variable_true_in_map(variableNodes[0], &fieldsFound))
         {
             anyErrors = true;
             continue;
         }
-        fieldsFound[variableName] = true;
+        variable = variableNodes[0]->str;
+        fieldsFound[variable] = true;
 
         /* Specific logic for each variable. */
-        if (variableName == "box_board_cost")
+        if (variable == "box_board_cost")
         {
-            /* Validate */
-            isRecordValid &= complain_if_node_value_not_floating(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            /* Complain if not a float. */
+            if (!complain_if_value_not_floating(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -558,13 +513,10 @@ bool HardwareFileParser::d3_define_box_fields_from_section(
             box->costBoxBoard = str2float(valueNodes[0]->str);
         }
 
-        else if (variableName == "supervisor_memory")
+        else if (variable == "supervisor_memory")
         {
-            /* Validate */
-            isRecordValid &= complain_if_node_value_not_natural(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            /* Complain if not natural */
+            if (!complain_if_value_not_natural(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -573,23 +525,18 @@ bool HardwareFileParser::d3_define_box_fields_from_section(
             /* Bind */
             box->supervisorMemory = str2unsigned(valueNodes[0]->str);
         }
-
-        /* Shouldn't be able to enter this, because we've already checked the
-         * variable names, but why not write some more code. It's not like this
-         * file is big enough already. */
-        else
-        {
-            d3_errors.append(dformat(
-                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
-                (*recordIterator)->pos, variableName.c_str(),
-                sectionName.c_str()));
-            anyErrors = true;
-        }
     }
 
     /* Ensure mandatory fields have been defined. */
-    anyErrors |= !complain_if_mandatory_field_not_defined(
-        &validFields, &fieldsFound, sectionName, &d3_errors);
+    if (!complain_if_mandatory_field_not_defined(&validFields, &fieldsFound))
+    {
+        anyErrors = true;
+    }
+
+    /* Restore the old 'record', 'sectionName', and 'variable' members. */
+    record = callingRecord;
+    sectionName = callingSectionName;
+    variable = callingVariable;
 
     return !anyErrors;
 }
@@ -607,8 +554,15 @@ bool HardwareFileParser::d3_define_mailbox_fields_from_section(
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
 
+    /* We'll be modifying the 'record', 'sectionName', and 'variable'
+     * members. To ensure they are preserved on exit, store the old values
+     * here, and reinstate them once finished. */
+    UIF::Node* callingRecord = record;
+    std::string callingSectionName = sectionName;
+    std::string callingVariable = variable;
+
     /* Short on time, sorry... */
-    std::string sectionName = dformat(
+    sectionName = dformat(
         "%s(%s)", sectionNode->leaf[0]->leaf[0]->str.c_str(),
         sectionNode->leaf[0]->leaf[0]->leaf[0]->str.c_str());
 
@@ -634,41 +588,27 @@ bool HardwareFileParser::d3_define_mailbox_fields_from_section(
 
     /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
-    std::vector<UIF::Node*>::iterator recordIterator;
-    std::string variableName;
-    bool isRecordValid;
     GetRecd(sectionNode, recordNodes);
-    for (recordIterator=recordNodes.begin();
+
+    for (std::vector<UIF::Node*>::iterator recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;  /* Innocent until proven guilty. */
+        record = *recordIterator;
 
         /* Get the value and variable nodes. */
-        GetVari((*recordIterator), variableNodes);
-        GetValu((*recordIterator), valueNodes);
+        GetVari(record, variableNodes);
+        GetValu(record, valueNodes);
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
         if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
 
-        /* Complain if (in order):
-         *
-         * - The record does not begin with a "+", as all fields in this
-         *   section must do.
-         * - The variable name is not a valid name.
-         * - There is more than one variable node.
-         * - There is more than one value node. */
-        isRecordValid &= complain_if_node_not_plus_prefixed(
-            *recordIterator, variableNodes[0], sectionName, &d3_errors);
-        isRecordValid &= complain_if_variable_name_invalid(
-            *recordIterator, variableNodes[0], &validFields, sectionName,
-            &d3_errors);
-        isRecordValid &= complain_if_record_is_multivariable(
-            *recordIterator, &variableNodes, sectionName, &d3_errors);
-        isRecordValid &= complain_if_record_is_multivalue(
-            *recordIterator, &valueNodes, variableNodes[0]->str, sectionName,
-            &d3_errors);
-        if (!isRecordValid)
+        /* Complaints */
+        if (!(complain_if_variable_not_plus_prefixed(variableNodes[0]) and
+              complain_if_variable_name_invalid(variableNodes[0],
+                                                &validFields) and
+              complain_if_record_is_multivariable(&variableNodes) and
+              complain_if_record_is_multivalue(&valueNodes)))
         {
             anyErrors = true;
             continue;
@@ -676,24 +616,19 @@ bool HardwareFileParser::d3_define_mailbox_fields_from_section(
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
-        variableName = variableNodes[0]->str;
-        if (complain_if_node_variable_true_in_map(
-                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
-                &d3_errors))
+        if (complain_if_variable_true_in_map(variableNodes[0], &fieldsFound))
         {
             anyErrors = true;
             continue;
         }
-        fieldsFound[variableName] = true;
+        variable = variableNodes[0]->str;
+        fieldsFound[variable] = true;
 
         /* Specific logic for each variable. */
-        if (variableName == "core_core_cost")
+        if (variable == "core_core_cost")
         {
-            /* Validate */
-            isRecordValid &= complain_if_node_value_not_floating(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            /* Complain if not a float. */
+            if (!complain_if_value_not_floating(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -703,13 +638,10 @@ bool HardwareFileParser::d3_define_mailbox_fields_from_section(
             mailbox->costCoreCore = str2float(valueNodes[0]->str);
         }
 
-        else if (variableName == "cores")
+        else if (variable == "cores")
         {
-            /* Validate */
-            isRecordValid &= complain_if_node_value_not_natural(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            /* Complain if not natural */
+            if (!complain_if_value_not_natural(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -724,13 +656,10 @@ bool HardwareFileParser::d3_define_mailbox_fields_from_section(
             }
         }
 
-        else if (variableName == "mailbox_core_cost")
+        else if (variable == "mailbox_core_cost")
         {
-            /* Validate */
-            isRecordValid &= complain_if_node_value_not_floating(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            /* Complain if not a float. */
+            if (!complain_if_value_not_floating(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -739,23 +668,18 @@ bool HardwareFileParser::d3_define_mailbox_fields_from_section(
             /* Bind */
             mailbox->costMailboxCore = str2float(valueNodes[0]->str);
         }
-
-        /* Shouldn't be able to enter this, because we've already checked the
-         * variable names, but why not write some more code. It's not like this
-         * file is big enough already. */
-        else
-        {
-            d3_errors.append(dformat(
-                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
-                (*recordIterator)->pos, variableName.c_str(),
-                sectionName.c_str()));
-            anyErrors = true;
-        }
     }
 
     /* Ensure mandatory fields have been defined. */
-    anyErrors |= !complain_if_mandatory_field_not_defined(
-        &validFields, &fieldsFound, sectionName, &d3_errors);
+    if (!complain_if_mandatory_field_not_defined(&validFields, &fieldsFound))
+    {
+        anyErrors = true;
+    }
+
+    /* Restore the old 'record', 'sectionName', and 'variable' members. */
+    record = callingRecord;
+    sectionName = callingSectionName;
+    variable = callingVariable;
 
     return !anyErrors;
 }
@@ -810,8 +734,8 @@ bool HardwareFileParser::d3_get_address_from_item_definition(
  *
  * - itemNode: The node (variable, or value).
  * - boardName: BoardName to populate. */
-bool HardwareFileParser::d3_get_board_name(UIF::Node* itemNode,
-                                           BoardName* boardName)
+bool HardwareFileParser::d3_get_board_name(
+    UIF::Node* itemNode, BoardName* boardName)
 {
     /* Clear the board name. */
     boardName->first = "";
@@ -824,9 +748,10 @@ bool HardwareFileParser::d3_get_board_name(UIF::Node* itemNode,
     boxNameFinder = boxFromName.find(boxName);
     if(boxNameFinder == boxFromName.end())
     {
-        d3_errors.append(dformat("L%u: Box component of board name '%s' does "
-                                 "not correspond to an existing box.\n",
-                                 itemNode->pos, boxName.c_str()));
+        errors.push_back(dformat(
+            "L%u: Box component of board name '%s' at C%u does not correspond "
+            "to an existing box.",
+            record->pos, boxName.c_str(), itemNode->pos));
         return false;
     }
 
@@ -840,9 +765,10 @@ bool HardwareFileParser::d3_get_board_name(UIF::Node* itemNode,
 
     if (leafIterator == itemNode->leaf.end())
     {
-        d3_errors.append(dformat("L%u: Couldn't find a board field in this "
-                                 "board definition (so I don't know what the "
-                                 "name is).\n", itemNode->pos));
+        errors.push_back(dformat(
+            "L%u: Couldn't find a board field in this board definition near "
+            "C%u (so I don't know what the name is).",
+            record->pos, itemNode->pos));
         return false;
     }
 
@@ -850,15 +776,14 @@ bool HardwareFileParser::d3_get_board_name(UIF::Node* itemNode,
      * valid. */
     if ((*leafIterator)->leaf.size() != 1)
     {
-        d3_errors.append(dformat("L%u: Multiple board components defined for "
+        errors.push_back(dformat("L%u: Multiple board components defined for "
                                  "the name of this board (only one is "
-                                 "allowed).\n", itemNode->pos));
+                                 "allowed).", record->pos));
         return false;
     }
 
     /* Is the board-component of the name valid? */
-    if (!complain_if_node_variable_not_a_valid_item_name(
-            itemNode, (*leafIterator)->leaf[0], &d3_errors))
+    if (!complain_if_variable_not_a_valid_item_name((*leafIterator)->leaf[0]))
     {
         return false;
     }
@@ -952,8 +877,7 @@ bool HardwareFileParser::d3_get_mailbox_name(UIF::Node* itemNode,
     *mailboxName = "";
 
     /* Get the mailbox name, and check that it's valid. */
-    if (!complain_if_node_variable_not_a_valid_item_name(itemNode, itemNode,
-                                                         &d3_errors))
+    if (!complain_if_variable_not_a_valid_item_name(itemNode))
     {
         return false;
     }
@@ -971,14 +895,10 @@ bool HardwareFileParser::d3_get_mailbox_name(UIF::Node* itemNode,
  *
  * - itemType: What kind of item we are dealing with (box, board, mailbox...).
  * - type: Type string to search for.
- * - sourceSectionName: The name of the section the record lives in (for
-     writing error message).
- * - lineNumber: Line number of the record (for writing error message).
  * - sectionNode: Pointer to write the found section to, set to PNULL if no
      node could be found. */
 bool HardwareFileParser::d3_get_section_from_type(
-    std::string itemType, std::string type, std::string sourceSectionName,
-    unsigned lineNumber, UIF::Node** sectionNode)
+    std::string itemType, std::string type, UIF::Node** sectionNode)
 {
     *sectionNode = PNULL;
 
@@ -990,10 +910,10 @@ bool HardwareFileParser::d3_get_section_from_type(
     typedSectionIterator = typedSections[itemType].find(type);
     if (typedSectionIterator == typedSections[itemType].end())
     {
-        d3_errors.append(dformat("L%u: Type '%s' defined in the '%s' section "
-                                 "does not correspond to a section.\n",
-                                 lineNumber, type.c_str(),
-                                 sourceSectionName.c_str()));
+        errors.push_back(dformat("L%u: Type '%s' defined in the '%s' section "
+                                 "does not correspond to a section.",
+                                 record->pos, type.c_str(),
+                                 sectionName.c_str()));
         return false;
     }
 
@@ -1016,7 +936,7 @@ bool HardwareFileParser::d3_get_validate_default_types(
     UIF::Node** globalDefaults)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
-    std::string sectionName = "default_types";
+    sectionName = "default_types";
 
     /* Valid fields for the header section. All are optional. */
     std::vector<std::string> validFields;
@@ -1037,13 +957,6 @@ bool HardwareFileParser::d3_get_validate_default_types(
     std::vector<UIF::Node*> valueNodes;
     std::vector<UIF::Node*> variableNodes;
 
-    /* Staging vector and iterator for records. */
-    std::vector<UIF::Node*> recordNodes;
-    std::vector<UIF::Node*>::iterator recordIterator;
-    std::string variableName;
-    std::string value;
-    bool isRecordValid;
-
     /* Firstly, is there a [default_types] section? */
     std::map<std::string, UIF::Node*>::iterator untypedSectionsIterator;
     untypedSectionsIterator = untypedSections.find(sectionName);
@@ -1055,41 +968,28 @@ bool HardwareFileParser::d3_get_validate_default_types(
 
     /* The section exists for control to reach here. Get the default types from
      * the [default_types] section. */
+    std::vector<UIF::Node*> recordNodes;
     GetRecd(untypedSectionsIterator->second, recordNodes);
-    for (recordIterator=recordNodes.begin();
+
+    for (std::vector<UIF::Node*>::iterator recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;  /* Innocent until proven guilty. */
+        record = *recordIterator;
 
         /* Get the value and variable nodes. */
-        GetVari((*recordIterator), variableNodes);
-        GetValu((*recordIterator), valueNodes);
+        GetVari(record, variableNodes);
+        GetValu(record, valueNodes);
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
         if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
 
-        /* Complain if (in order):
-         *
-         * - The record does not begin with a "+", as all fields in this
-         *   section must do.
-         * - The variable name is not a valid name.
-         * - There is more than one variable node.
-         * - There is more than one value node.
-         * - The type is not valid. */
-        isRecordValid &= complain_if_node_not_plus_prefixed(
-            *recordIterator, variableNodes[0], sectionName, &d3_errors);
-        isRecordValid &= complain_if_variable_name_invalid(
-            *recordIterator, variableNodes[0], &validFields, sectionName,
-            &d3_errors);
-        isRecordValid &= complain_if_record_is_multivariable(
-            *recordIterator, &variableNodes, sectionName, &d3_errors);
-        isRecordValid &= complain_if_record_is_multivalue(
-            *recordIterator, &valueNodes, variableNodes[0]->str,
-            sectionName, &d3_errors);
-        isRecordValid &= complain_if_node_value_not_a_valid_type(
-            *recordIterator, valueNodes[0], sectionName, &d3_errors);
-        if (!isRecordValid)
+        /* Complaints */
+        if (!(complain_if_variable_not_plus_prefixed(variableNodes[0]) and
+              complain_if_variable_name_invalid(variableNodes[0],
+                                                &validFields) and
+              complain_if_record_is_multivariable(&variableNodes) and
+              complain_if_record_is_multivalue(&valueNodes)))
         {
             anyErrors = true;
             continue;
@@ -1097,53 +997,40 @@ bool HardwareFileParser::d3_get_validate_default_types(
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
-        variableName = variableNodes[0]->str;
-        if (complain_if_node_variable_true_in_map(
-                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
-                &d3_errors))
+        if (complain_if_variable_true_in_map(variableNodes[0], &fieldsFound))
         {
             anyErrors = true;
             continue;
         }
-        fieldsFound[variableName] = true;
+        variable = variableNodes[0]->str;
+        fieldsFound[variable] = true;
 
         /* Specific logic for each variable. */
         std::string itemType;
         unsigned arrayIndex;
-        if (variableName == "box_type")
+        if (variable == "box_type")
         {
             itemType = "box";
             arrayIndex = box;
         }
-        else if (variableName == "board_type")
+        else if (variable == "board_type")
         {
             itemType = "board";
             arrayIndex = board;
         }
-        else if (variableName == "mailbox_type")
+        else if (variable == "mailbox_type")
         {
             itemType = "mailbox";
             arrayIndex = mailbox;
         }
 
-        /* Shouldn't be able to enter this, because we've already checked the
-         * variable names, but why not write some more code. It's not like this
-         * file is big enough already. */
-        else
-        {
-            d3_errors.append(dformat(
-                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
-                (*recordIterator)->pos, variableName.c_str(),
-                sectionName.c_str()));
-            anyErrors = true;
-            continue;
-        }
-
         /* Figure out if there is a section corresponding to this type. If not,
          * whine loudly. Either way, assign to globalDefaults. */
-        anyErrors |= !d3_get_section_from_type(
-            itemType, valueNodes[0]->str, sectionName, (*recordIterator)->pos,
-            &(globalDefaults[arrayIndex]));
+        if (!d3_get_section_from_type(itemType, valueNodes[0]->str,
+                                      &(globalDefaults[arrayIndex])))
+        {
+            anyErrors = true;
+        }
     }
 
     return !anyErrors;
@@ -1249,6 +1136,9 @@ bool HardwareFileParser::d3_load_validate_sections()
     /* Booleans to help with printing. */
     std::vector<bool> ruleFailure(6, false);
 
+    /* Holding error messages constructed in stages. */
+    std::string ruleErrors;
+
     /* Section name nodes, by name. */
     std::map<std::string, std::vector<UIF::Node*>> sectionsByName;
     std::map<std::string, std::vector<UIF::Node*>>::iterator \
@@ -1265,10 +1155,13 @@ bool HardwareFileParser::d3_load_validate_sections()
      * name, add it to sectionsByName. If it's not, whine loudly and fail
      * slow. */
     std::vector<UIF::Node*> allNodes;
-    std::vector<UIF::Node*>::iterator nodeIterator;
     GetNames(allNodes);
-    for (nodeIterator=allNodes.begin();
-         nodeIterator!=allNodes.end(); nodeIterator++)
+
+    ruleErrors.clear();
+
+    std::vector<UIF::Node*>::iterator nodeIterator;
+    for (nodeIterator=allNodes.begin(); nodeIterator!=allNodes.end();
+         nodeIterator++)
     {
         /* Does this section node match one of the valid patterns? If so, add
          * it to the appropriate vector in sectionsByName. */
@@ -1285,17 +1178,28 @@ bool HardwareFileParser::d3_load_validate_sections()
             if (!ruleFailure[5])
             {
                 ruleFailure[5] = true;
-                d3_errors.append("Sections with invalid names found in the "
-                                 "input file:\n");
+                ruleErrors = "Sections with invalid names found:";
             }
 
-            d3_errors.append(dformat("    %s (L%i)\n",
+            else
+            {
+                ruleErrors.append(",");
+            }
+
+            ruleErrors.append(dformat(" %s (L%i)",
                                      (*nodeIterator)->str.c_str(),
                                      (*nodeIterator)->pos));
         }
     }
 
+    /* Add any errors found for this rule to the error container. */
+    if (ruleFailure[5])
+    {
+        errors.push_back(ruleErrors.c_str());
+    }
+
     /* Rule (0): For each of the rules[0] strings... */
+    ruleErrors.clear();
     for (nameIterator=rules[currentRule].begin();
          nameIterator!=rules[currentRule].end(); nameIterator++)
     {
@@ -1305,38 +1209,50 @@ bool HardwareFileParser::d3_load_validate_sections()
             if (!ruleFailure[currentRule])
             {
                 ruleFailure[currentRule] = true;
-                d3_errors.append("The following sections were not defined "
-                                 "exactly once:\n");
+                ruleErrors = "The following sections were not defined exactly "
+                             "once:";
+            }
+
+            else
+            {
+                ruleErrors.append(",");
             }
 
             /* I'm going to write the line numbers of each node, or "not
              * defined" if the section is not defined. A little unusual because
              * I want the printing to be pretty. */
-            d3_errors.append(dformat("    %s (", nameIterator->c_str()));
+            ruleErrors.append(dformat(" %s (", nameIterator->c_str()));
 
             if (sectionsByName[*nameIterator].empty())
             {
-                d3_errors.append("not defined");
+                errors.push_back("not defined");
             }
 
             else
             {
                 nodeIterator=sectionsByName[*nameIterator].begin();
-                d3_errors.append(dformat("L%u", (*nodeIterator)->pos));
+                errors.push_back(dformat("L%u", (*nodeIterator)->pos));
                 for (;
                      nodeIterator!=sectionsByName[*nameIterator].end();
                      nodeIterator++)
                 {
-                    d3_errors.append(dformat(", L%u", (*nodeIterator)->pos));
+                    errors.push_back(dformat(", L%u", (*nodeIterator)->pos));
                 }
             }
 
-            d3_errors.append(")\n");
+            errors.push_back(")");
         }
+    }
+
+    /* Add any errors found for this rule to the error container. */
+    if (ruleFailure[currentRule])
+    {
+        errors.push_back(ruleErrors.c_str());
     }
 
     /* Rule (1) */
     currentRule++;
+    ruleErrors.clear();
     for (nameIterator=rules[currentRule].begin();
          nameIterator!=rules[currentRule].end(); nameIterator++)
     {
@@ -1346,16 +1262,28 @@ bool HardwareFileParser::d3_load_validate_sections()
             if (!ruleFailure[currentRule])
             {
                 ruleFailure[currentRule] = true;
-                d3_errors.append("The following sections were not defined "
-                                 "when they should have been defined one time "
-                                 "or more:\n");
+                ruleErrors = "The following sections were not defined when "
+                    "they should have been defined one time or more:";
             }
-            d3_errors.append(dformat("    %s\n", nameIterator->c_str()));
+
+            else
+            {
+                ruleErrors.append(",");
+            }
+
+            ruleErrors.append(dformat(" %s", nameIterator->c_str()));
         }
+    }
+
+    /* Add any errors found for this rule to the error container. */
+    if (ruleFailure[currentRule])
+    {
+        errors.push_back(ruleErrors.c_str());
     }
 
     /* Rule (2) */
     currentRule++;
+    ruleErrors.clear();
     for (nameIterator=rules[currentRule].begin();
          nameIterator!=rules[currentRule].end(); nameIterator++)
     {
@@ -1365,23 +1293,34 @@ bool HardwareFileParser::d3_load_validate_sections()
             if (!ruleFailure[currentRule])
             {
                 ruleFailure[currentRule] = true;
-                d3_errors.append("The following sections were defined more "
-                                 "than once, when they should have been "
-                                 "defined one or zero times:\n");
+                ruleErrors = "The following sections were defined more than "
+                             "once, when they should have been defined one or "
+                             "zero times:";
+            }
+
+            else
+            {
+                ruleErrors.append(",");
             }
 
             /* I'm going to write the line numbers of each node. */
-            d3_errors.append(dformat("    %s (", nameIterator->c_str()));
+            errors.push_back(dformat(" %s (", nameIterator->c_str()));
             nodeIterator=sectionsByName[*nameIterator].begin();
-            d3_errors.append(dformat("L%u", (*nodeIterator)->pos));
+            errors.push_back(dformat("L%u", (*nodeIterator)->pos));
             for (;
                  nodeIterator!=sectionsByName[*nameIterator].end();
                  nodeIterator++)
             {
-                d3_errors.append(dformat(", L%u", (*nodeIterator)->pos));
+                errors.push_back(dformat(", L%u", (*nodeIterator)->pos));
             }
-            d3_errors.append(")\n");
+            errors.push_back(")\n");
         }
+    }
+
+    /* Add any errors found for this rule to the error container. */
+    if (ruleFailure[currentRule])
+    {
+        errors.push_back(ruleErrors.c_str());
     }
 
     /* Rule (3) */
@@ -1405,26 +1344,25 @@ bool HardwareFileParser::d3_load_validate_sections()
             if (arguments.empty())
             {
                 ruleFailure[currentRule] = true;
-                d3_errors.append(dformat("L%u: Section '%s' has no associated "
-                                         "type.\n", (*nodeIterator)->pos,
-                                         (*nameIterator).c_str()));
+                errors.push_back(dformat(
+                    "L%u: Section '%s' has no associated type.",
+                    (*nodeIterator)->pos, (*nameIterator).c_str()));
             }
 
             else if (arguments.size() > 1)
             {
                 ruleFailure[currentRule] = true;
-                d3_errors.append(dformat("L%u: Section '%s' has more than one "
-                                         "type associated with it.\n",
-                                         (*nodeIterator)->pos,
-                                         (*nameIterator).c_str()));
+                errors.push_back(dformat(
+                    "L%u: Section '%s' has more than one type associated with "
+                    "it.", (*nodeIterator)->pos, (*nameIterator).c_str()));
             }
 
             else if (!is_type_valid(arguments[0]))
             {
                 ruleFailure[currentRule] = true;
-                d3_errors.append(dformat(
+                errors.push_back(dformat(
                     "L%u: Type '%s' in section '%s' is not a valid type (it "
-                    "must satisfy %s).\n", (*nodeIterator)->pos,
+                    "must satisfy %s).", (*nodeIterator)->pos,
                     arguments[0]->str.c_str(), (*nameIterator).c_str(),
                     TYPE_REGEX));
             }
@@ -1435,9 +1373,9 @@ bool HardwareFileParser::d3_load_validate_sections()
                                arguments[0]->str) != declaredTypes.end())
             {
                 ruleFailure[currentRule] = true;
-                d3_errors.append(dformat(
+                errors.push_back(dformat(
                     "L%u: Duplicate definition of section '%s' with type "
-                    "'%s'.\n", (*nodeIterator)->pos, (*nameIterator).c_str(),
+                    "'%s'.", (*nodeIterator)->pos, (*nameIterator).c_str(),
                     arguments[0]->str));
             }
 
@@ -1464,8 +1402,8 @@ bool HardwareFileParser::d3_load_validate_sections()
             if (!arguments.empty())
             {
                 ruleFailure[currentRule] = true;
-                d3_errors.append(dformat(
-                    "L%u: Section '%s' has a type, when it should not.\n",
+                errors.push_back(dformat(
+                    "L%u: Section '%s' has a type, when it should not.",
                     (*nodeIterator)->pos, *nameIterator));
             }
         }
@@ -1553,20 +1491,9 @@ bool HardwareFileParser::d3_load_validate_sections()
  *  - the input file is semantically invalid. */
 void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
 {
-    /* During validation and provisioning, errors will be written to this
-     * string. */
-    d3_errors = dformat("Error(s) were encountered while loading the hardware "
-                        "description file '%s'. Since the parser fails "
-                        "slowly, consider addressing the top-most errors "
-                        "first:\n", loadedFile.c_str());
-
     /* Check sections are defined correctly. Not much point continuing if they
      * are not defined correctly. */
-    if (!d3_load_validate_sections())
-    {
-        delete engine;
-        throw HardwareSemanticException(d3_errors.c_str());
-    }
+    if (!d3_load_validate_sections()){d3_catastrophic_failure(engine);}
 
     /* Populate the engine with information from the header section. */
     bool passedValidation = true;
@@ -1582,11 +1509,7 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
     /* We can't go any further than this without risking a segfault, because if
      * the address format is not defined properly, item address assignment will
      * fail badly. */
-    if (!passedValidation)
-    {
-        delete engine;
-        throw HardwareSemanticException(d3_errors.c_str());
-    }
+    if (!passedValidation){d3_catastrophic_failure(engine);}
 
     /* Boxes */
     passedValidation &= d3_populate_validate_engine_box(engine);
@@ -1594,12 +1517,8 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
     /* Boards (and the items beneath) */
     passedValidation &= d3_populate_validate_engine_board_and_below(engine);
 
-    if (!passedValidation)
-    {
-        delete engine;
-        throw HardwareSemanticException(d3_errors.c_str());
-    }
-
+    /* Were there any errors? */
+    if (!passedValidation){d3_catastrophic_failure(engine);}
 }
 
 /* Validate the contents of the packet_address_format section, and populate the
@@ -1611,7 +1530,7 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
 bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
-    std::string sectionName = "packet_address_format";
+    sectionName = "packet_address_format";
 
     /* Valid fields for the header section (all are mandatory). */
     std::vector<std::string> validFields;
@@ -1634,47 +1553,37 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
     std::vector<UIF::Node*> valueNodes;
     std::vector<UIF::Node*> variableNodes;
 
-    /* Staging area for the values of multi-valued records. */
+    /* Staging area for the values of multi-valued records (we need to add them
+     * together). */
     std::vector<std::string> values;
     std::vector<std::string>::iterator valueIterator;
-
-    /* Staging pointer for accumulated values to go (for legitimate
-     * multi-valued records) */
-    unsigned* accumulationTarget;
+    unsigned* accumulationTarget;  /* This will point to a _WordLength member
+                                    * of the address format object owned by the
+                                    * engine. */
 
     /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
-    std::vector<UIF::Node*>::iterator recordIterator;
-    std::string variableName;
-    bool isRecordValid;
     GetRecd(untypedSections[sectionName], recordNodes);
+
+    std::vector<UIF::Node*>::iterator recordIterator;
     for (recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;  /* Innocent until proven guilty. */
+        record = *recordIterator;
 
         /* Get the value and variable nodes. */
-        GetVari((*recordIterator), variableNodes);
-        GetValu((*recordIterator), valueNodes);
+        GetVari(record, variableNodes);
+        GetValu(record, valueNodes);
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
         if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
 
-        /* Complain if (in order):
-         *
-         * - The record does not begin with a "+", as all fields in this
-         *   section must do.
-         * - The variable name is not a valid name.
-         * - There is more than one variable node. */
-        isRecordValid &= complain_if_node_not_plus_prefixed(
-            *recordIterator, variableNodes[0], sectionName, &d3_errors);
-        isRecordValid &= complain_if_variable_name_invalid(
-            *recordIterator, variableNodes[0], &validFields, sectionName,
-            &d3_errors);
-        isRecordValid &= complain_if_record_is_multivariable(
-            *recordIterator, &variableNodes, sectionName, &d3_errors);
-        if (!isRecordValid)
+        /* Complaints */
+        if (!(complain_if_variable_not_plus_prefixed(variableNodes[0]) and
+              complain_if_variable_name_invalid(variableNodes[0],
+                                                &validFields) and
+              complain_if_record_is_multivariable(&variableNodes)))
         {
             anyErrors = true;
             continue;
@@ -1682,44 +1591,38 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
-        variableName = variableNodes[0]->str;
-        if (complain_if_node_variable_true_in_map(
-                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
-                &d3_errors))
+        if (complain_if_variable_true_in_map(variableNodes[0], &fieldsFound))
         {
             anyErrors = true;
             continue;
         }
-        fieldsFound[variableName] = true;
+        variable = variableNodes[0]->str;
+        fieldsFound[variable] = true;
 
         /* Specific logic for each variable. For box, core, and thread complain
          * if (in order):
          *
          * - The record is multi-valued.
          * - The value is not natural. */
-        if (variableName == "box" or variableName == "core" or
-            variableName == "thread")
+        if (variable == "box" or variable == "core" or
+            variable == "thread")
         {
-            /* Validate */
-            isRecordValid &= complain_if_record_is_multivalue(
-                *recordIterator, &valueNodes, variableName, sectionName,
-                &d3_errors);
-            isRecordValid &= complain_if_node_value_not_natural(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+
+            /* Complaints */
+            if (!(complain_if_record_is_multivalue(&valueNodes) and
+                  complain_if_value_not_natural(valueNodes[0])))
             {
                 anyErrors = true;
                 continue;
             }
 
             /* We bind! */
-            if (variableName == "box")
+            if (variable == "box")
             {
                 engine->addressFormat.boxWordLength =
                     str2unsigned(valueNodes[0]->str);
             }
-            else if (variableName == "core")
+            else if (variable == "core")
             {
                 engine->addressFormat.coreWordLength =
                     str2unsigned(valueNodes[0]->str);
@@ -1733,34 +1636,34 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
 
         /* For board and mailbox, complain if any of the values are not
          * natural. */
-        else if (variableName == "board" or variableName == "mailbox")
+        else if (variable == "board" or variable == "mailbox")
         {
             /* Validate, treating the single-variable and multiple-variable
              * cases separately. */
             get_values_as_strings(&values, valueNodes[0]);
             if (values.size() == 1)
             {
-                isRecordValid = complain_if_node_value_not_natural(
-                    *recordIterator, valueNodes[0], variableName, sectionName,
-                    &d3_errors);
+                if (!complain_if_value_not_natural(valueNodes[0]))
+                {
+                    anyErrors = true;
+                    continue;
+                }
             }
             else
             {
-                isRecordValid = complain_if_nodes_values_not_natural(
-                    *recordIterator, valueNodes[0], variableName, sectionName,
-                    &d3_errors);
-            }
-            if (!isRecordValid)
-            {
-                anyErrors = true;
-                continue;
+                if (!complain_if_values_and_children_not_natural(
+                        valueNodes[0]))
+                {
+                    anyErrors = true;
+                    continue;
+                }
             }
 
             /* We bind! (is either board or mailbox) */
 
             /* Determine target */
             accumulationTarget =
-                &(variableName == "board" ?
+                &(variable == "board" ?
                   engine->addressFormat.boardWordLength :
                   engine->addressFormat.mailboxWordLength);
             *accumulationTarget = 0;  /* Reset target */
@@ -1773,23 +1676,13 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
                 *accumulationTarget += str2unsigned(*valueIterator);
             }
         }
-
-        /* Shouldn't be able to enter this, because we've already checked the
-         * variable names, but why not write some more code. It's not like this
-         * file is big enough already. */
-        else
-        {
-            d3_errors.append(dformat(
-                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
-                (*recordIterator)->pos, variableName.c_str(),
-                sectionName.c_str()));
-            anyErrors = true;
-        }
     }
 
     /* Ensure mandatory fields have been defined. */
-    anyErrors |= !complain_if_mandatory_field_not_defined(
-        &validFields, &fieldsFound, sectionName, &d3_errors);
+    if (!complain_if_mandatory_field_not_defined(&validFields, &fieldsFound))
+    {
+        anyErrors = true;
+    }
 
     return !anyErrors;
 }
@@ -1810,8 +1703,15 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
 
+    /* We'll be modifying the 'record', 'sectionName', and 'variable'
+     * members. To ensure they are preserved on exit, store the old values
+     * here, and reinstate them once finished. */
+    UIF::Node* callingRecord = record;
+    std::string callingSectionName = sectionName;
+    std::string callingVariable = variable;
+
     /* Short on time, sorry... */
-    std::string sectionName = dformat(
+    sectionName = dformat(
         "%s(%s)", sectionNode->leaf[0]->leaf[0]->str.c_str(),
         sectionNode->leaf[0]->leaf[0]->leaf[0]->str.c_str());
 
@@ -1860,21 +1760,22 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
     /* Holds the name of the mailbox on the other end of an edge. */
     MailboxName edgeMailboxName;
 
+
+
     /* Iterate through all record nodes in this section that define
      * mailboxes. */
     std::vector<UIF::Node*> recordNodes;
-    std::vector<UIF::Node*>::iterator recordIterator;
-    std::vector<UIF::Node*>::iterator edgeIterator;
-    std::string variableName;
     GetRecd(sectionNode, recordNodes);
-    for (recordIterator=recordNodes.begin();
+
+    for (std::vector<UIF::Node*>::iterator recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
+        record = *recordIterator;
         sectionType = PNULL;
 
         /* Get the value and variable nodes. */
-        GetVari((*recordIterator), variableNodes);
-        GetValu((*recordIterator), valueNodes);
+        GetVari(record, variableNodes);
+        GetValu(record, valueNodes);
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
@@ -1897,24 +1798,22 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
         mailboxNameFinder = mailboxInfoFromName.find(mailboxName);
         if (mailboxNameFinder != mailboxInfoFromName.end())
         {
-            d3_errors.append(dformat(
+            errors.push_back(dformat(
                 "L%u: Mailbox on this line has already been defined on line "
-                "%u. Not making it.\n", (*recordIterator)->pos,
-                mailboxNameFinder->second.lineNumber));
+                "%u. Not making it.",
+                record->pos, mailboxNameFinder->second.lineNumber));
             anyErrors = true;
             continue;
         }
 
         /* Is a type explicitly defined in this record? */
-        if (d3_get_explicit_type_from_item_definition(variableNodes[0],
-                                                      &type))
+        if (d3_get_explicit_type_from_item_definition(variableNodes[0], &type))
         {
             /* If there's a matching section for this type, we're all good (it
              * gets written to sectionType). Otherwise, we fall back to
              * defaults. */
             anyErrors |= !d3_get_section_from_type(
-                "mailbox", type, sectionName, (*recordIterator)->pos,
-                &sectionType);
+                "mailbox", type, &sectionType);
         }
 
         /* If the type it was not defined explicitly, or it was and no section
@@ -1927,9 +1826,9 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
              * "validly". That's an error, folks. */
             if (sectionType == PNULL)
             {
-                d3_errors.append(dformat("L%u: No section found to define the "
-                                         "mailbox on this line. Not making "
-                                         "it.\n", (*recordIterator)->pos));
+                errors.push_back(dformat(
+                    "L%u: No section found to define the mailbox on this "
+                    "line. Not making it.", record->pos));
                 anyErrors = true;
                 continue;  /* Can't do anything without a type definition... */
             }
@@ -1947,13 +1846,13 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
 
         /* Track the mailbox by name. */
         mailboxInfoFromName[mailboxName] =
-            MailboxInfo{(*recordIterator)->pos, mailbox};
+            MailboxInfo{record->pos, mailbox};
 
         /* Stage the edges from this record. Values (i.e. LHS of the '=' token)
          * each represent the name of a mailbox, optionally with a cost, which
          * defines an edge */
-        for(edgeIterator=valueNodes.begin(); edgeIterator!=valueNodes.end();
-            edgeIterator++)
+        for(std::vector<UIF::Node*>::iterator edgeIterator=valueNodes.begin();
+            edgeIterator!=valueNodes.end(); edgeIterator++)
         {
             /* Get the name of the mailbox on the other side of this edge,
              * skipping if invalid. */
@@ -1976,10 +1875,9 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
                 /* Check for -1, meaning the cost was invalid. */
                 if (thisEdgeCost == -1)
                 {
-                    d3_errors.append(dformat(
+                    errors.push_back(dformat(
                         "L%u: Invalid cost on edge connecting mailbox %s to "
-                        "mailbox %s (it must be a float).\n",
-                        (*recordIterator)->pos,
+                        "mailbox %s (it must be a float).", record->pos,
                         mailboxName.c_str(), edgeMailboxName.c_str()));
                     anyErrors = true;
                     continue;  /* Skip this edge - meaningless without a
@@ -1992,11 +1890,10 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
             }
             else
             {
-                d3_errors.append(dformat(
+                errors.push_back(dformat(
                     "L%u: No cost found for edge connecting mailbox %s to "
-                    "mailbox %s (it must be a float).\n",
-                    (*recordIterator)->pos, mailboxName.c_str(),
-                    edgeMailboxName.c_str()));
+                    "mailbox %s (it must be a float).", record->pos,
+                    mailboxName.c_str(), edgeMailboxName.c_str()));
                 anyErrors = true;
                 continue;  /* Skip this edge - meaningless without a cost. */
             }
@@ -2013,11 +1910,11 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
                  * - Reverse is already defined. */
                 if (edgeFinder->second.weight != thisEdgeCost)
                 {
-                    d3_errors.append(dformat(
+                    errors.push_back(dformat(
                         "L%u: The cost of the edge connecting mailbox %s to "
                         "mailbox %s (%f) is different from the cost of its "
-                        "reverse (%f), defined at L%i.\n",
-                        (*recordIterator)->pos,
+                        "reverse (%f), defined at L%i.",
+                        record->pos,
                         mailboxName.c_str(),
                         edgeMailboxName.c_str(),
                         thisEdgeCost,
@@ -2029,11 +1926,11 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
 
                 if (edgeFinder->second.isReverseDefined)
                 {
-                    d3_errors.append(dformat(
+                    errors.push_back(dformat(
                         "L%u: The other end of the edge connecting mailbox "
                         "%s to mailbox %s has already been defined. The first "
-                        "definition was at L%i.\n",
-                        (*recordIterator)->pos,
+                        "definition was at L%i.",
+                        record->pos,
                         mailboxName.c_str(),
                         edgeMailboxName.c_str(),
                         edgeFinder->second.lineNumber));
@@ -2041,7 +1938,7 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
                     continue;  /* Skip this edge, avoid clobbering. */
                 }
 
-                /* We're all good, mark the reverse as found (we're on it!). */
+                /* We're all good, mark the reverse as found. */
                 edgeFinder->second.isReverseDefined = true;
             }
 
@@ -2052,15 +1949,14 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
                  * twice on this line, probably). */
 
                 /* NB: Not reverse! */
-                edgeFinder = mailboxEdges.find(std::make_pair(
-                                                   mailboxName,
-                                                   edgeMailboxName));
+                edgeFinder = mailboxEdges.find(
+                    std::make_pair(mailboxName, edgeMailboxName));
                 if (edgeFinder != mailboxEdges.end())
                 {
-                    d3_errors.append(dformat(
+                    errors.push_back(dformat(
                         "L%u: Duplicate edge definition connecting mailbox "
-                        "%s to mailbox %s.\n",
-                        (*recordIterator)->pos,
+                        "%s to mailbox %s.",
+                        record->pos,
                         mailboxName.c_str(),
                         edgeMailboxName.c_str()));
                     anyErrors = true;
@@ -2069,17 +1965,19 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
 
                 /* Okay, actually add it now. */
                 mailboxEdges[std::make_pair(mailboxName, edgeMailboxName)] = \
-                    EdgeInfo{thisEdgeCost, false, (*recordIterator)->pos};
+                    EdgeInfo{thisEdgeCost, false, record->pos};
             }
         }  /* That's all the edges. */
 
         /* Define properties of this mailbox, and add cores. */
-        anyErrors |= !d3_define_mailbox_fields_from_section(mailbox,
-                                                            sectionType);
+        if (!d3_define_mailbox_fields_from_section(mailbox, sectionType))
+        {
+            anyErrors = true;
+        }
     }
 
     /* Connect mailboxes together */
-    for (edgeFinder = mailboxEdges.begin(); edgeFinder != mailboxEdges.end();
+    for (edgeFinder=mailboxEdges.begin(); edgeFinder!=mailboxEdges.end();
          edgeFinder++)
     {
         /* Get the mailboxes. Complain if one of the mailbox names does not
@@ -2094,9 +1992,9 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
             mailboxNameFinder = mailboxInfoFromName.find(thisName);
             if (mailboxNameFinder == mailboxInfoFromName.end())
             {
-                d3_errors.append(dformat(
+                errors.push_back(dformat(
                     "L%u: Could not find a definition for mailbox %s defined "
-                    "by an edge in this record.\n",
+                    "by an edge in this record.",
                     edgeFinder->second.lineNumber, thisName.c_str()));
                 {
                     anyErrors = true;
@@ -2120,9 +2018,9 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
         /* Complain if the reverse of an edge has not been defined. */
         if (!(edgeFinder->second.isReverseDefined))
         {
-            d3_errors.append(dformat(
+            errors.push_back(dformat(
                 "L%u: Could not find the reverse edge definition connecting "
-                "mailboxes %s and %s\n.", edgeFinder->second.lineNumber,
+                "mailboxes %s and %s.", edgeFinder->second.lineNumber,
                 edgeFinder->first.first, edgeFinder->first.second));
             anyErrors = true;
             continue;
@@ -2134,6 +2032,11 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
             joinedMailboxes[1]->get_hardware_address()->get_mailbox(),
             edgeFinder->second.weight);
     }
+
+    /* Restore the old 'record', 'sectionName', and 'variable' members. */
+    record = callingRecord;
+    sectionName = callingSectionName;
+    variable = callingVariable;
 
     return !anyErrors;
 }
@@ -2148,7 +2051,7 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
     P_engine* engine)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
-    std::string sectionName = "engine_board";
+    sectionName = "engine_board";
 
     /* Valid fields for this section (none are mandatory). */
     std::vector<std::string> validFields;
@@ -2220,19 +2123,17 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
      *
      * Ignore records that are not variable definitions. */
     std::vector<UIF::Node*> recordNodes;
-    std::vector<UIF::Node*>::iterator recordIterator;
-    std::vector<UIF::Node*>::iterator edgeIterator;
-    std::string variableName;
-    bool isRecordValid;
     GetRecd(untypedSections[sectionName], recordNodes);
+
+    std::vector<UIF::Node*>::iterator recordIterator;
     for (recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;  /* Innocent until proven guilty. */
+        record = *recordIterator;
 
         /* Get the value and variable nodes. */
-        GetVari((*recordIterator), variableNodes);
-        GetValu((*recordIterator), valueNodes);
+        GetVari(record, variableNodes);
+        GetValu(record, valueNodes);
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
@@ -2242,20 +2143,11 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
          * '+' prefix) */
         if (variableNodes[0]->qop != Lex::Sy_plus){continue;}
 
-        /* Complain if (in order):
-         *
-         * - The variable name is not a valid name.
-         * - There is more than one variable node.
-         * - There is more than one value node. */
-        isRecordValid &= complain_if_variable_name_invalid(
-            *recordIterator, variableNodes[0], &validFields, sectionName,
-            &d3_errors);
-        isRecordValid &= complain_if_record_is_multivariable(
-            *recordIterator, &variableNodes, sectionName, &d3_errors);
-        isRecordValid &= complain_if_record_is_multivalue(
-            *recordIterator, &valueNodes, variableNodes[0]->str,
-            sectionName, &d3_errors);
-        if (!isRecordValid)
+        /* Complaints for variable definitions. */
+        if (!(complain_if_variable_name_invalid(variableNodes[0],
+                                                &validFields) and
+              complain_if_record_is_multivariable(&variableNodes) and
+              complain_if_record_is_multivalue(&valueNodes)))
         {
             anyErrors = true;
             continue;
@@ -2263,25 +2155,19 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
-        variableName = variableNodes[0]->str;
-        if (complain_if_node_variable_true_in_map(
-                *recordIterator, variableNodes[0], &fieldsFound,
-                sectionName,
-                &d3_errors))
+        if (complain_if_variable_true_in_map(variableNodes[0], &fieldsFound))
         {
             anyErrors = true;
             continue;
         }
-        fieldsFound[variableName] = true;
+        variable = variableNodes[0]->str;
+        fieldsFound[variable] = true;
 
         /* Specific logic for each variable. */
-        if (variableName == "board_board_cost")
+        if (variable == "board_board_cost")
         {
             /* Complain if not a float. */
-            isRecordValid &= complain_if_node_value_not_floating(
-                *recordIterator, valueNodes[0], variableName, sectionName,
-                &d3_errors);
-            if (!isRecordValid)
+            if (!complain_if_value_not_floating(valueNodes[0]))
             {
                 anyErrors = true;
                 continue;
@@ -2294,19 +2180,7 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
 
         /* Types are processed in d3_get_validate_default_types, so we
          * ignore the definition here. */
-        else if (variableName == "type");
-
-        /* Shouldn't be able to enter this, because we've already checked
-         * the variable names, but why not write some more code. It's not
-         * like this file is big enough already. */
-        else
-        {
-            d3_errors.append(dformat(
-                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
-                (*recordIterator)->pos, variableName.c_str(),
-                sectionName.c_str()));
-            anyErrors = true;
-        }
+        else if (variable == "type");
     }
 
     /* Iterate through all record nodes in this section, in order to define
@@ -2315,14 +2189,14 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
     for (recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;  /* Innocent until proven guilty. */
+        record = *recordIterator;
         sectionType = PNULL;  /* Given that this is a board record, we have to
                                * find a section that defines the properties of
                                * this board. */
 
         /* Get the value and variable nodes. */
-        GetVari((*recordIterator), variableNodes);
-        GetValu((*recordIterator), valueNodes);
+        GetVari(record, variableNodes);
+        GetValu(record, valueNodes);
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
@@ -2344,25 +2218,24 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
         boardNameFinder = boardInfoFromName.find(boardName);
         if (boardNameFinder != boardInfoFromName.end())
         {
-            d3_errors.append(dformat("L%u: Board name on this line has "
-                                     "already been defined on line %u. Not "
-                                     "making it.\n",
-                                     (*recordIterator)->pos,
-                                     boardNameFinder->second.lineNumber));
+            errors.push_back(dformat(
+                "L%u: Board name on this line has already been defined on "
+                "line %u. Not making it.",
+                record->pos, boardNameFinder->second.lineNumber));
             anyErrors = true;
             continue;
         }
 
         /* Is a type explicitly defined in this record? */
-        if (d3_get_explicit_type_from_item_definition(variableNodes[0],
-                                                      &type))
+        if (d3_get_explicit_type_from_item_definition(variableNodes[0], &type))
         {
             /* If there's a matching section for this type, we're all good (it
              * gets written to sectionType). Otherwise, we fall back to
              * defaults. */
-            anyErrors |= !d3_get_section_from_type(
-                "board", type, sectionName, (*recordIterator)->pos,
-                &sectionType);
+            if (!d3_get_section_from_type("board", type, &sectionType))
+            {
+                anyErrors = true;
+            }
         }
 
         /* If the type it was not defined explicitly, or it was and no section
@@ -2375,9 +2248,9 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
              * "validly". That's an error, folks. */
             if (sectionType == PNULL)
             {
-                d3_errors.append(dformat("L%u: No section found to define the "
-                                         "board on this line. Not making "
-                                         "it.\n", (*recordIterator)->pos));
+                errors.push_back(dformat(
+                    "L%u: No section found to define the board on this line. "
+                    "Not making it.", record->pos));
                 anyErrors = true;
                 continue;  /* Can't do anything without a type definition... */
             }
@@ -2400,13 +2273,13 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
 
         /* Track the board by name. */
         boardInfoFromName[boardName] =
-            BoardInfo{(*recordIterator)->pos, board};
+            BoardInfo{record->pos, board};
 
         /* Stage the edges from this record. Values (i.e. LHS of the '=' token)
          * each represent the name of a board, optionally with a cost, which
          * defines an edge */
-        for(edgeIterator=valueNodes.begin(); edgeIterator!=valueNodes.end();
-            edgeIterator++)
+        for(std::vector<UIF::Node*>::iterator edgeIterator=valueNodes.begin();
+            edgeIterator!=valueNodes.end(); edgeIterator++)
         {
             /* Get the name of the board on the other side of this edge,
              * skipping if invalid. */
@@ -2429,10 +2302,11 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
                 /* Check for -1, meaning the cost was invalid. */
                 if (thisEdgeCost == -1)
                 {
-                    d3_errors.append(dformat(
-                        "L%u: Invalid cost on edge connecting board %s-%s to "
-                        "board %s-%s (it must be a float).\n",
-                        (*recordIterator)->pos,
+                    errors.push_back(dformat(
+                        "L%u: Invalid cost on edge connecting board "
+                        "%s(board(%s)) to board %s(board(%s)) (it must be a "
+                        "float).",
+                        record->pos,
                         boardName.first.c_str(),
                         boardName.second.c_str(),
                         edgeBoardName.first.c_str(),
@@ -2448,10 +2322,11 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
             }
             else
             {
-                d3_errors.append(dformat(
-                    "L%u: No cost found for edge connecting board %s-%s to "
-                    "board %s-%s (it must be a float).\n",
-                    (*recordIterator)->pos,
+                errors.push_back(dformat(
+                    "L%u: No cost found for edge connecting board "
+                    "%s(board(%s)) to board %s(board(%s)) (it must be a "
+                    "float).",
+                    record->pos,
                     boardName.first.c_str(),
                     boardName.second.c_str(),
                     edgeBoardName.first.c_str(),
@@ -2472,11 +2347,12 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
                  * - Reverse is already defined. */
                 if (edgeFinder->second.weight != thisEdgeCost)
                 {
-                    d3_errors.append(dformat(
-                        "L%u: The cost of the edge connecting board %s-%s to "
-                        "board %s-%s (%f) is different from the cost of its "
-                        "reverse (%f), defined at L%i.\n",
-                        (*recordIterator)->pos,
+                    errors.push_back(dformat(
+                        "L%u: The cost of the edge connecting board "
+                        "%s(board(%s)) to board %s(board(%s)) (%f) is "
+                        "different from the cost of its reverse (%f), defined "
+                        "at L%i.",
+                        record->pos,
                         boardName.first.c_str(),
                         boardName.second.c_str(),
                         edgeBoardName.first.c_str(),
@@ -2490,11 +2366,11 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
 
                 if (edgeFinder->second.isReverseDefined)
                 {
-                    d3_errors.append(dformat(
+                    errors.push_back(dformat(
                         "L%u: The other end of the edge connecting board "
-                        "%s-%s to board %s-%s has already been defined. The "
-                        "first definition was at L%i.\n",
-                        (*recordIterator)->pos,
+                        "%s(board(%s)) to board %s(board(%s)) has already "
+                        "been defined. The first definition was at L%i.",
+                        record->pos,
                         boardName.first.c_str(),
                         boardName.second.c_str(),
                         edgeBoardName.first.c_str(),
@@ -2519,10 +2395,10 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
                                                             edgeBoardName));
                 if (edgeFinder != boardEdges.end())
                 {
-                    d3_errors.append(dformat(
+                    errors.push_back(dformat(
                         "L%u: Duplicate edge definition connecting board "
-                        "%s-%s to board %s-%s.\n",
-                        (*recordIterator)->pos,
+                        "%s(board(%s)) to board %s(board(%s)).",
+                        record->pos,
                         boardName.first.c_str(),
                         boardName.second.c_str(),
                         edgeBoardName.first.c_str(),
@@ -2533,17 +2409,22 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
 
                 /* Okay, actually add it now. */
                 boardEdges[std::make_pair(boardName, edgeBoardName)] = \
-                    EdgeInfo{thisEdgeCost, false, (*recordIterator)->pos};
+                    EdgeInfo{thisEdgeCost, false, record->pos};
             }
         }  /* That's all the edges. */
 
         /* Define the properties of this board. If any are missing or broken,
          * continue (we fail slowly). */
-        anyErrors |= !d3_define_board_fields_from_section(board, sectionType);
+        if (!d3_define_board_fields_from_section(board, sectionType))
+        {
+            anyErrors = true;
+        }
 
         /* Populate the board with mailboxes. */
-        anyErrors |= !d3_populate_validate_board_with_mailboxes(board,
-                                                                sectionType);
+        if (!d3_populate_validate_board_with_mailboxes(board, sectionType))
+        {
+            anyErrors = true;
+        }
     }
 
     /* Connect boards together. */
@@ -2562,9 +2443,9 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
             boardNameFinder = boardInfoFromName.find(thisName);
             if (boardNameFinder == boardInfoFromName.end())
             {
-                d3_errors.append(dformat(
-                    "L%u: Could not find a definition for board %s-%s defined "
-                    "by an edge in this record.\n",
+                errors.push_back(dformat(
+                    "L%u: Could not find a definition for board %s(board(%s)) "
+                    "defined by an edge in this record.",
                     edgeFinder->second.lineNumber,
                     thisName.first.c_str(), thisName.second.c_str()));
                 {
@@ -2595,9 +2476,9 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
              *   BoardName, which is a std::pair<std::string, std::string>.
              * - The third tier identifies either the box or board component of
              *   the board name, and is a std::string. */
-            d3_errors.append(dformat(
+            errors.push_back(dformat(
                 "L%u: Could not find the reverse edge definition connecting "
-                "boards %s-%s and %s-%s\n.",
+                "boards %s(board(%s)) and %s(board(%s)).",
                 edgeFinder->second.lineNumber,
                 /* Box component of first board name. */
                 edgeFinder->first.first.first.c_str(),
@@ -2635,10 +2516,11 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
     for (badBoardIterator = undefinedBoards.begin();
          badBoardIterator != undefinedBoards.end(); badBoardIterator++)
     {
-        d3_errors.append(dformat(
-            "Board %s-%s has been declared in the 'engine_box' section, but "
-            "not defined in the 'engine_board' section.\n",
-            (*badBoardIterator).first, (*badBoardIterator).second));
+        errors.push_back(dformat(
+            "Board %s(board(%s)) has been declared in the 'engine_box' "
+            "section, but not defined in the 'engine_board' section.",
+            (*badBoardIterator).first.c_str(),
+            (*badBoardIterator).second.c_str()));
         anyErrors = true;
     }
 
@@ -2654,7 +2536,7 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
 bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
-    std::string sectionName = "engine_box";
+    sectionName = "engine_box";
 
     /* Valid fields for this section. */
     std::vector<std::string> validFields;
@@ -2689,21 +2571,23 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
 
     /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
-    std::vector<UIF::Node*>::iterator recordIterator;
-    std::string variableName;
-    bool isRecordValid;
     GetRecd(untypedSections[sectionName], recordNodes);
-    for (recordIterator=recordNodes.begin();
+
+    for (std::vector<UIF::Node*>::iterator recordIterator =recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;  /* Innocent until proven guilty. */
+        sectionName = "engine_box";  /* Will be changed by
+                                      * d3_define_box_fields_from_section, so
+                                      * we need to change it back in our
+                                      * loop. */
+        record = *recordIterator;
         sectionType = PNULL;  /* Given that this is a box record, we have to
                                * find a section that defines the properties of
                                * this box. */
 
         /* Get the value and variable nodes. */
-        GetVari((*recordIterator), variableNodes);
-        GetValu((*recordIterator), valueNodes);
+        GetVari(record, variableNodes);
+        GetValu(record, valueNodes);
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
@@ -2714,46 +2598,33 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
         if (valueNodes.size() > 0 and variableNodes.size() > 0 and
             variableNodes[0]->qop == Lex::Sy_plus)
         {
-            /* Complain if (in order):
-             *
-             * - The variable name is not a valid name.
-             * - There is more than one variable node.
-             * - There is more than one value node. */
-            isRecordValid &= complain_if_variable_name_invalid(
-                *recordIterator, variableNodes[0], &validFields, sectionName,
-                &d3_errors);
-            isRecordValid &= complain_if_record_is_multivariable(
-                *recordIterator, &variableNodes, sectionName, &d3_errors);
-            isRecordValid &= complain_if_record_is_multivalue(
-                *recordIterator, &valueNodes, variableNodes[0]->str,
-                sectionName, &d3_errors);
-            if (!isRecordValid)
+            /* Complaints for variable definitions. */
+            if (!(complain_if_variable_name_invalid(variableNodes[0],
+                                                &validFields) and
+                  complain_if_record_is_multivariable(&variableNodes) and
+                  complain_if_record_is_multivalue(&valueNodes)))
             {
                 anyErrors = true;
                 continue;
             }
+
 
             /* Complain if duplicate. NB: We know the variable name is valid if
              * control has reached here. */
-            variableName = variableNodes[0]->str;
-            if (complain_if_node_variable_true_in_map(
-                    *recordIterator, variableNodes[0], &fieldsFound,
-                    sectionName,
-                    &d3_errors))
+            if (complain_if_variable_true_in_map(variableNodes[0],
+                                                 &fieldsFound))
             {
                 anyErrors = true;
                 continue;
             }
-            fieldsFound[variableName] = true;
+            variable = variableNodes[0]->str;
+            fieldsFound[variable] = true;
 
             /* Specific logic for each variable. */
-            if (variableName == "external_box_cost")
+            if (variable == "external_box_cost")
             {
                 /* Complain if not a float. */
-                isRecordValid &= complain_if_node_value_not_floating(
-                    *recordIterator, valueNodes[0], variableName, sectionName,
-                    &d3_errors);
-                if (!isRecordValid)
+                if (!complain_if_value_not_floating(valueNodes[0]))
                 {
                     anyErrors = true;
                     continue;
@@ -2765,30 +2636,17 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
 
             /* Types are processed in d3_get_validate_default_types, so we
              * ignore the definition here. */
-            else if (variableName == "type");
-
-            /* Shouldn't be able to enter this, because we've already checked
-             * the variable names, but why not write some more code. It's not
-             * like this file is big enough already. */
-            else
-            {
-                d3_errors.append(dformat(
-                    "L%u: Variable name '%s' is not valid in the '%s' "
-                    "section.\n", (*recordIterator)->pos, variableName.c_str(),
-                    sectionName.c_str()));
-                anyErrors = true;
-            }
+            else if (variable == "type");
 
             /* This continue is here to reduce the amount of indentation for
-             *  dealing with box records. */
+             * dealing with box records. */
             continue;
         }
 
         /* Otherwise, this must be a box definition. */
 
         /* Complain if the name is invalid (but keep going). */
-        if (!complain_if_node_variable_not_a_valid_item_name(
-                *recordIterator, variableNodes[0], &d3_errors))
+        if (!complain_if_variable_not_a_valid_item_name(variableNodes[0]))
         {
             anyErrors = true;
         }
@@ -2800,22 +2658,22 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
         boxNameFinder = boxFromName.find(boxName);
         if(boxNameFinder != boxFromName.end())
         {
-            d3_errors.append(dformat("L%u: Box name '%s' already defined.\n",
-                                     (*recordIterator)->pos, boxName.c_str()));
+            errors.push_back(dformat("L%u: Box name '%s' already defined.",
+                                     record->pos, boxName.c_str()));
             anyErrors = true;
             continue;
         }
 
         /* Is a type explicitly defined in this record? */
-        if (d3_get_explicit_type_from_item_definition(variableNodes[0],
-                                                      &type))
+        if (d3_get_explicit_type_from_item_definition(variableNodes[0], &type))
         {
             /* If there's a matching section for this type, we're all good (it
              * gets written to sectionType). Otherwise, we fall back to
              * defaults. */
-            anyErrors |= !d3_get_section_from_type(
-                "box", type, sectionName, (*recordIterator)->pos,
-                &sectionType);
+            if (!d3_get_section_from_type("box", type, &sectionType))
+            {
+                anyErrors = true;
+            }
         }
 
         /* If the type it was not defined explicitly, or it was and no section
@@ -2828,9 +2686,9 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
              * "validly". That's an error, folks. */
             if (sectionType == PNULL)
             {
-                d3_errors.append(dformat("L%u: No section found to define the "
-                                         "box on this line. Not making it.\n",
-                                         (*recordIterator)->pos));
+                errors.push_back(dformat(
+                    "L%u: No section found to define the box on this line. "
+                    "Not making it.", record->pos));
                 anyErrors = true;
                 continue;  /* Can't do anything without a type definition... */
             }
@@ -2893,7 +2751,7 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
 bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
-    std::string sectionName = "header";
+    sectionName = "header";
 
     /* Valid fields for the header section. */
     std::vector<std::string> validFields;
@@ -2927,41 +2785,27 @@ bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
 
     /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
-    std::vector<UIF::Node*>::iterator recordIterator;
-    std::string variableName;
-    bool isRecordValid;
     GetRecd(untypedSections[sectionName], recordNodes);
-    for (recordIterator=recordNodes.begin();
+
+    for (std::vector<UIF::Node*>::iterator recordIterator=recordNodes.begin();
          recordIterator!=recordNodes.end(); recordIterator++)
     {
-        isRecordValid = true;  /* Innocent until proven guilty. */
+        record = *recordIterator;
 
         /* Get the value and variable nodes. */
-        GetVari((*recordIterator), variableNodes);
-        GetValu((*recordIterator), valueNodes);
+        GetVari(record, variableNodes);
+        GetValu(record, valueNodes);
 
         /* Ignore this record if the record has not got a variable/value
          * pair (i.e. if the line is empty, or is just a comment). */
         if (variableNodes.size() == 0 and valueNodes.size() == 0){continue;}
 
-        /* Complain if (in order):
-         *
-         * - The record does not begin with a "+", as all fields in this
-         *   section must do.
-         * - The variable name is not a valid name.
-         * - There is more than one variable node.
-         * - There is more than one value node. */
-        isRecordValid &= complain_if_node_not_plus_prefixed(
-            *recordIterator, variableNodes[0], sectionName, &d3_errors);
-        isRecordValid &= complain_if_variable_name_invalid(
-            *recordIterator, variableNodes[0], &validFields, sectionName,
-            &d3_errors);
-        isRecordValid &= complain_if_record_is_multivariable(
-            *recordIterator, &variableNodes, sectionName, &d3_errors);
-        isRecordValid &= complain_if_record_is_multivalue(
-            *recordIterator, &valueNodes, variableNodes[0]->str, sectionName,
-            &d3_errors);
-        if (!isRecordValid)
+        /* Complaints */
+        if (!(complain_if_variable_not_plus_prefixed(variableNodes[0]) and
+              complain_if_variable_name_invalid(variableNodes[0],
+                                                &validFields) and
+              complain_if_record_is_multivariable(&variableNodes) and
+              complain_if_record_is_multivalue(&valueNodes)))
         {
             anyErrors = true;
             continue;
@@ -2969,31 +2813,29 @@ bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
 
         /* Complain if duplicate. NB: We know the variable name is valid if
          * control has reached here. */
-        variableName = variableNodes[0]->str;
-        if (complain_if_node_variable_true_in_map(
-                *recordIterator, variableNodes[0], &fieldsFound, sectionName,
-                &d3_errors))
+        if (complain_if_variable_true_in_map(variableNodes[0], &fieldsFound))
         {
             anyErrors = true;
             continue;
         }
-        fieldsFound[variableName] = true;
+        variable = variableNodes[0]->str;
+        fieldsFound[variable] = true;
 
         /* Specific logic for each variable. */
-        if (variableName == "author")
+        if (variable == "author")
         {
             engine->author = valueNodes[0]->str;
         }
 
-        else if (variableName == "datetime")
+        else if (variable == "datetime")
         {
             /* Special validation for this one. */
             if (valueNodes[0]->qop != Lex::Sy_ISTR)
             {
-                d3_errors.append(dformat(
+                errors.push_back(dformat(
                     "L%u: Variable '%s' in the '%s' section has value '%s', "
-                    "which is not a datetime in the form YYYYMMDDhhmmss.\n",
-                    (*recordIterator)->pos, variableName.c_str(),
+                    "which is not a datetime in the form YYYYMMDDhhmmss.",
+                    record->pos, variable.c_str(),
                     valueNodes[0]->str.c_str(), sectionName.c_str()));
                 anyErrors = true;
             }
@@ -3006,37 +2848,28 @@ bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
         }
 
         /* This has already been read and validated, so we don't care. */
-        else if (variableName == "dialect");
+        else if (variable == "dialect");
 
-        else if (variableName == "file")
+        else if (variable == "file")
         {
             engine->fileOrigin = valueNodes[0]->str;
         }
 
         /* Ignore this one for now. */
-        else if (variableName == "hardware"){}
+        else if (variable == "hardware"){}
 
-        else if (variableName == "version")
+        else if (variable == "version")
         {
             engine->version = valueNodes[0]->str;
-        }
-
-        /* Shouldn't be able to enter this, because we've already checked the
-         * variable names, but why not write some more code. It's not like this
-         * file is big enough already. */
-        else
-        {
-            d3_errors.append(dformat(
-                "L%u: Variable name '%s' is not valid in the '%s' section.\n",
-                (*recordIterator)->pos, variableName.c_str(),
-                sectionName.c_str()));
-            anyErrors = true;
         }
     }
 
     /* Ensure mandatory fields have been defined. */
-    anyErrors |= !complain_if_mandatory_field_not_defined(
-        &mandatoryFields, &fieldsFound, sectionName, &d3_errors);
+    if (!complain_if_mandatory_field_not_defined(&mandatoryFields,
+                                                 &fieldsFound))
+    {
+        anyErrors = true;
+    }
 
     return !anyErrors;
 }
@@ -3058,7 +2891,6 @@ bool HardwareFileParser::d3_validate_types_define_cache()
     /* Staging vector and iterator for records. */
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
-    bool isRecordValid;
 
     /* Staging vectors for holding value nodes and variable nodes. */
     std::vector<UIF::Node*> valueNodes;
@@ -3071,7 +2903,6 @@ bool HardwareFileParser::d3_validate_types_define_cache()
      * pointers to them in creativeSections. */
     std::vector<UIF::Node*> creativeSections;
     std::vector<UIF::Node*>::iterator sectionIterator;
-    std::string sectionName;
     creativeSections.push_back(untypedSections["engine_box"]);
     creativeSections.push_back(untypedSections["engine_board"]);
 
@@ -3102,11 +2933,11 @@ bool HardwareFileParser::d3_validate_types_define_cache()
         for (recordIterator=recordNodes.begin();
              recordIterator!=recordNodes.end(); recordIterator++)
         {
-            isRecordValid = true;  /* Innocent until proven guilty. */
+            record = *recordIterator;
 
             /* Get the value and variable nodes. */
-            GetVari((*recordIterator), variableNodes);
-            GetValu((*recordIterator), valueNodes);
+            GetVari(record, variableNodes);
+            GetValu(record, valueNodes);
 
             /* Ignore this record if the record has not got a variable/value
              * pair (i.e. if the line is empty, or is just a comment). */
@@ -3116,49 +2947,35 @@ bool HardwareFileParser::d3_validate_types_define_cache()
             /* Is the variable name "type"? */
             if (variableNodes[0]->str == "type")
             {
-                /* Complain if (in order):
-                 *
-                 * - The record does not begin with a "+".
-                 * - There is more than one variable node.
-                 * - There is more than one value node.
-                 * - The value is not a valid type.
-                 *
-                 * If so, ignore it. */
-                isRecordValid &= complain_if_node_not_plus_prefixed(
-                    *recordIterator, variableNodes[0], sectionName,
-                    &d3_errors);
-                isRecordValid &= complain_if_record_is_multivariable(
-                    *recordIterator, &variableNodes, sectionName, &d3_errors);
-                isRecordValid &= complain_if_record_is_multivalue(
-                    *recordIterator, &valueNodes, variableNodes[0]->str,
-                    sectionName, &d3_errors);
-                isRecordValid &= complain_if_node_value_not_a_valid_type(
-                    *recordIterator, valueNodes[0], sectionName, &d3_errors);
-                if (!isRecordValid)
+                /* Complaints */
+                if (!(complain_if_variable_not_plus_prefixed(variableNodes[0])
+                      and
+                      complain_if_record_is_multivariable(&variableNodes) and
+                      complain_if_record_is_multivalue(&valueNodes)))
                 {
                     anyErrors = true;
-                    continue;  /* Skip to the next record in this section. */
+                    continue;
                 }
 
                 /* We got it! But complain if we've already found a type field
                  * in this way. */
                 if (typeFieldFound)
                 {
-                    d3_errors.append(dformat(
+                    errors.push_back(dformat(
                         "L%u: Duplicate definition of field 'type' in the "
-                        "'%s' section (previously defined at L%u.\n",
-                        (*recordIterator)->pos, sectionName.c_str(),
-                        typeLine));
+                        "'%s' section (previously defined at L%u).",
+                        record->pos, sectionName.c_str(), typeLine));
                     anyErrors = true;
-                    continue;  /* Skip to the next record in this section. */
+                    continue;
                 }
+
                 typeFieldFound = true;
                 type = valueNodes[0]->str;
-                typeLine = (*recordIterator)->pos;
+                typeLine = record->pos;
             }
 
             /* The variable of this node wasn't named "type", so we ignore it
-             * for our current machinations */
+             * for our current machinations. */
             else {continue;}
         }
 
@@ -3195,10 +3012,10 @@ bool HardwareFileParser::d3_validate_types_define_cache()
             }
             else
             {
-                d3_errors.append(dformat("L%u: Type '%s' defined in the '%s' "
-                                         "section does not correspond to a "
-                                         "section.\n", typeLine, type.c_str(),
-                                         sectionName.c_str()));
+                errors.push_back(dformat(
+                    "L%u: Type '%s' defined in the '%s' section does not "
+                    "correspond to a section.",
+                    typeLine, type.c_str(), sectionName.c_str()));
                 anyErrors = true;
             }
         }

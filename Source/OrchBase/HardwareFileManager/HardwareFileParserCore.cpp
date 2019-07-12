@@ -19,6 +19,47 @@ HardwareFileParser::HardwareFileParser(const char* filePath, P_engine* engine)
     populate_hardware_model(engine);
 }
 
+/* Assembles the error output string from 'Validation::errors', and writes it
+ * to the string at 'target'. */
+void HardwareFileParser::construct_error_output_string(std::string* target)
+{
+    /* If there aren't any errors, we get suspicious. If you're reading this
+     * having found a file that generates this error message, it means that one
+     * of the validation checks has failed without generating an error message
+     * (somehow). This is (almost) certainly a developer mistake. My advice
+     * would be to set a watch in gdb for the 'passedValidation' variable in
+     * d3_populate_hardware_model, and repeatedly step in to find the offending
+     * method.
+     *
+     * Good luck! */
+    if (errors.size() == 0)
+    {
+        *target = dformat(
+            "Error(s) were encountered while loading the hardware description "
+            "file '%s', but we don't know what they are. Talk to an "
+            "Orchestrator developer (probably Mark).\n", loadedFile.c_str());
+    }
+
+    /* Otherwise, we're in expected territory for a file that's been
+     * read and contains mistakes. */
+    else
+    {
+        /* Prepend error message with some useful information. */
+        *target = dformat(
+            "Error(s) were encountered while loading the hardware description "
+            "file '%s'. Since the parser fails slowly, consider addressing "
+            "the top-most errors first:\n", loadedFile.c_str());
+
+        /* For each error, append it with an indentation and hyphen. */
+        for (std::vector<std::string>::iterator errorIterator = errors.begin();
+             errorIterator != errors.end(); errorIterator++)
+        {
+            target->append(dformat(" - %s\n", errorIterator->c_str()));
+        }
+    }
+}
+
+
 /* Loads an input file and parses it through the UIF parsing mechanism to
  * generate the tree structure. Arguments:
  *
@@ -242,23 +283,6 @@ void HardwareFileParser::get_values_as_strings(
             toPopulate->push_back((*leafIterator)->str);
         }
     }
-}
-
-/* Writes an 'invalid variable' error message, and appends it to a
- * string. Arguments:
- *
- * - errorMessage: String to append to.
- * - recordNode: Record node where the invalid variable was found.
- * - sectionName: Name of the section in which the invalid variable was found.
- * - variable: Invalid variable name. */
-void HardwareFileParser::invalid_variable_message(
-    std::string* errorMessage, UIF::Node* recordNode, std::string sectionName,
-    std::string variable)
-{
-    errorMessage->append(dformat(
-        "L%u: Variable '%s' in section '%s' is not recognised by the parser. "
-        "Is it valid?\n",
-        recordNode->pos, variable.c_str(), sectionName.c_str()));
 }
 
 /* Defines behaviour when a syntax error is encountered when reading a file.

@@ -16,14 +16,10 @@
  * - mandatoryFields: Strings in this vector denote the fields that must be
  *   defined in this section.
  * - fieldsFound: Whether or not the fields in mandatoryFields have been
- *   defined. May contain strings that are not in mandatoryFields.
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_mandatory_field_not_defined(
+ *   defined. May contain strings that are not in mandatoryFields. */
+bool Validator::complain_if_mandatory_field_not_defined(
     std::vector<std::string>* mandatoryFields,
-    std::map<std::string, bool>* fieldsFound, std::string sectionName,
-    std::string* errorMessage)
+    std::map<std::string, bool>* fieldsFound)
 {
     bool returnValue = true;  /* Innocent until proven guilty. */
     std::vector<std::string>::iterator fieldIterator;
@@ -55,10 +51,10 @@ bool complain_if_mandatory_field_not_defined(
         /* Armageddon is here. https://www.youtube.com/watch?v=lcB58I7gSyA */
         if (!isThisFieldTrue)
         {
-            errorMessage->append(dformat("Variable '%s' not defined in the "
-                                         "'%s' section.\n",
-                                         (*fieldIterator).c_str(),
-                                         sectionName.c_str()));
+            errors.push_back(dformat("Variable '%s' not defined in the '%s' "
+                                     "section.",
+                                     (*fieldIterator).c_str(),
+                                     sectionName.c_str()));
             returnValue = false;
         }
     }
@@ -69,20 +65,14 @@ bool complain_if_mandatory_field_not_defined(
 /* Returns whether the variable held by a node has a plux prefix, and appends
  * an error message to a string if it is not. Arguments:
  *
- * - recordNode: Record parent node (for writing error message).
- * - variableNode: The UIF node that holds the variable.
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_node_not_plus_prefixed(
-    UIF::Node* recordNode, UIF::Node* variableNode, std::string sectionName,
-    std::string* errorMessage)
+ * - variableNode: The UIF node that holds the variable. */
+bool Validator::complain_if_variable_not_plus_prefixed(UIF::Node* variableNode)
 {
     if (!does_node_variable_have_plus_prefix(variableNode))
     {
-        errorMessage->append(dformat(
+        errors.push_back(dformat(
             "L%u: Variable in record in the '%s' section is not prefixed by a "
-            "'+' character.\n", recordNode->pos, sectionName.c_str()));
+            "'+' character.", record->pos, sectionName.c_str()));
         return false;
     }
     return true;
@@ -91,20 +81,14 @@ bool complain_if_node_not_plus_prefixed(
 /* Returns whether the value at a node is a valid type, and appends an error
  * message to a string if it is not. Arguments:
  *
- * - recordNode: Record parent node (for writing error message).
- * - valueNode: The UIF node that holds the value.
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_node_value_not_a_valid_type(
-    UIF::Node* recordNode, UIF::Node* valueNode, std::string sectionName,
-    std::string* errorMessage)
+ * - valueNode: The UIF node that holds the value. */
+bool Validator::complain_if_value_not_a_valid_type(UIF::Node* valueNode)
 {
     if (!is_type_valid(valueNode))
     {
-        errorMessage->append(dformat(
+        errors.push_back(dformat(
             "L%u: Value in record '%s' in the '%s' section is not a valid "
-            "type (it must satisfy %s).\n", recordNode->pos,
+            "type (it must satisfy %s).", record->pos,
             valueNode->str.c_str(), sectionName.c_str(), TYPE_REGEX));
         return false;
     }
@@ -115,22 +99,15 @@ bool complain_if_node_value_not_a_valid_type(
  * an integer), and appends an error message to a string if it is
  * not. Arguments:
  *
- * - recordNode: Record parent node (for writing error message).
- * - valueNode: The UIF node that holds the value.
- * - variable: Variable name string (for writing error message).
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_node_value_not_floating(
-    UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
-    std::string sectionName, std::string* errorMessage)
+ * - valueNode: The UIF node that holds the value. */
+bool Validator::complain_if_value_not_floating(UIF::Node* valueNode)
 {
     if (!is_node_value_floating(valueNode))
     {
-        errorMessage->append(dformat(
+        errors.push_back(dformat(
             "L%u: Variable '%s' in the '%s' section has value '%s', which is "
-            "not a positive floating-point number or a positive integer.\n",
-            recordNode->pos, variable.c_str(), sectionName.c_str(),
+            "not a positive floating-point number or a positive integer.",
+            record->pos, variable.c_str(), sectionName.c_str(),
             valueNode->str.c_str()));
         return false;
     }
@@ -140,22 +117,15 @@ bool complain_if_node_value_not_floating(
 /* Returns whether the value at a node is a natural number, and appends an
  * error message to a string if it is not. Arguments:
  *
- * - recordNode: Record parent node (for writing error message).
- * - valueNode: The UIF node that holds the value.
- * - variable: Variable name string (for writing error message).
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_node_value_not_natural(
-    UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
-    std::string sectionName, std::string* errorMessage)
+ * - valueNode: The UIF node that holds the value. */
+bool Validator::complain_if_value_not_natural(UIF::Node* valueNode)
 {
     if (!is_node_value_natural(valueNode))
     {
-        errorMessage->append(dformat(
+        errors.push_back(dformat(
             "L%u: Variable '%s' in the '%s' section has value '%s', which is "
-            "not a natural number.\n",
-            recordNode->pos, variable.c_str(), sectionName.c_str(),
+            "not a natural number.",
+            record->pos, variable.c_str(), sectionName.c_str(),
             valueNode->str.c_str()));
         return false;
     }
@@ -166,24 +136,16 @@ bool complain_if_node_value_not_natural(
  * numbers, and appends an error message to a string if they are
  * not. Arguments:
  *
- * - recordNode: Record parent node (for writing error message).
- * - valueNode: The UIF node that holds the value.
- * - variable: Variable name string (for writing error message).
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_nodes_values_not_natural(
-    UIF::Node* recordNode, UIF::Node* valueNode, std::string variable,
-    std::string sectionName, std::string* errorMessage)
+ * - valueNode: The UIF node that holds the value. */
+bool Validator::complain_if_values_and_children_not_natural(
+    UIF::Node* valueNode)
 {
     std::vector<UIF::Node*>::iterator valueNodeIterator;
     bool valid = true;
     for (valueNodeIterator=valueNode->leaf.begin();
          valueNodeIterator!=valueNode->leaf.end(); valueNodeIterator++)
     {
-        valid &= complain_if_node_value_not_natural(
-            recordNode, (*valueNodeIterator), variable, sectionName.c_str(),
-            errorMessage);
+        valid &= complain_if_value_not_natural(*valueNodeIterator);
     }
     return valid;
 }
@@ -191,17 +153,15 @@ bool complain_if_nodes_values_not_natural(
 /* Returns whether the variable at a node is a valid item name, and appends an
  * error message to a string if it is not. Arguments:
  *
- * - recordNode: Record parent node (for writing error message).
- * - variableName: The UIF node that holds the variable.
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_node_variable_not_a_valid_item_name(
-    UIF::Node* recordNode, UIF::Node* variableNode, std::string* errorMessage)
+ * - variableNode: The UIF node that holds the variable. */
+bool Validator::complain_if_variable_not_a_valid_item_name(
+    UIF::Node* variableNode)
 {
     if (!is_type_valid(variableNode))  /* It's the same rule! */
     {
-        errorMessage->append(dformat(
+        errors.push_back(dformat(
             "L%u: Item name '%s' is not a valid item name (it must satisfy "
-            "%s).\n", recordNode->pos, variableNode->str.c_str(), TYPE_REGEX));
+            "%s).", record->pos, variableNode->str.c_str(), TYPE_REGEX));
         return false;
     }
     return true;
@@ -210,24 +170,18 @@ bool complain_if_node_variable_not_a_valid_item_name(
 /* Returns whether the variable at a node maps to true, and appends an error
  * message if it does so. Arguments:
  *
- * - recordNode: Record parent node (for writing error message).
  * - variableNode: The UIF node that holds the variable.
  * - mapToSearch: The map, mapping names of variables, to a boolean. In most
  *   cases where this is used, this boolean represents whether or not the name
- *   has already been defined in this pass of a section before.
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_node_variable_true_in_map(
-    UIF::Node* recordNode, UIF::Node* variableNode,
-    std::map<std::string, bool>* mapToSearch, std::string sectionName,
-    std::string* errorMessage)
+ *   has already been defined in this pass of a section before. */
+bool Validator::complain_if_variable_true_in_map(
+    UIF::Node* variableNode, std::map<std::string, bool>* mapToSearch)
 {
     if(is_node_variable_true_in_map(mapToSearch, variableNode))
     {
-        errorMessage->append(dformat(
-            "L%u: Duplicate definition of variable '%s' in the '%s' "
-            "section.\n", recordNode->pos, sectionName.c_str()));
+        errors.push_back(dformat(
+            "L%u: Duplicate definition of variable '%s' in the '%s' section.",
+            record->pos, sectionName.c_str()));
         return true;
     }
     return false;
@@ -236,23 +190,17 @@ bool complain_if_node_variable_true_in_map(
 /* As with complain_if_record_is_multivariable, but for values and GetValu
  * (which are handled slightly dirrerently). Arguments:
  *
- * - recordNode: Record parent node (for writing error message).
  * - valueNodes: Pointer to a vector holding all value nodes (probably
- *   obtained using JNJ::GetValu).
- * - variable: Variable name string (for writing error message).
- * - sectionName: The name of the section the record lives in (for writing
- *   error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_record_is_multivalue(
-    UIF::Node* recordNode, std::vector<UIF::Node*>* valueNodes,
-    std::string variable, std::string sectionName, std::string* errorMessage)
+ *   obtained using JNJ::GetValu). */
+bool Validator::complain_if_record_is_multivalue(
+    std::vector<UIF::Node*>* valueNodes)
 {
     if (is_multivalue_record(valueNodes))
     {
-        errorMessage->append(dformat(
+        errors.push_back(dformat(
             "L%u: Variable '%s' in the '%s' section is invalid because it "
-            "defines zero, or multiple, values.\n", recordNode->pos,
-            variable.c_str(), sectionName.c_str()));
+            "defines zero, or multiple, values.",
+            record->pos, variable.c_str(), sectionName.c_str()));
         return false;
     }
     return true;
@@ -262,22 +210,17 @@ bool complain_if_record_is_multivalue(
  * is single-variable, or false if it is multi-variable or does not define a
  * variable, and appends an error message to a string if false. Arguments:
  *
- * - recordNode: Record parent node (for writing error message).
  * - variableNodes: Pointer to a vector holding all variable nodes (probably
- *   obtained using JNJ::GetVari).
- * - sectionName: The name of the section the record lives in (for writing
- *   error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_record_is_multivariable(
-    UIF::Node* recordNode, std::vector<UIF::Node*>* variableNodes,
-    std::string sectionName, std::string* errorMessage)
+ *   obtained using JNJ::GetVari). */
+bool Validator::complain_if_record_is_multivariable(
+    std::vector<UIF::Node*>* variableNodes)
 {
     if (is_multivariable_record(variableNodes))
     {
-        errorMessage->append(dformat(
+        errors.push_back(dformat(
             "L%u: Record in the '%s' section is invalid because it defines "
-            "zero, or multiple, variables.\n", recordNode->pos,
-            sectionName.c_str()));
+            "zero, or multiple, variables.",
+            record->pos, sectionName.c_str()));
         return false;
     }
     return true;
@@ -287,23 +230,16 @@ bool complain_if_record_is_multivariable(
  * variable names, and appends an error message to a string if it is
  * not. Arguments:
  *
- * - recordNode: Record parent node (for writing error message).
  * - variableNode: The UIF node that holds the variable.
- * - validFields: Strings denoting valid field names.
- * - sectionName: The name of the section the record lives in (for writing
-     error message).
- * - errorMessage: String to append the error message to, if any. */
-bool complain_if_variable_name_invalid(
-    UIF::Node* recordNode, UIF::Node* variableNode,
-    std::vector<std::string>* validFields, std::string sectionName,
-    std::string* errorMessage)
+ * - validFields: Strings denoting valid field names. */
+bool Validator::complain_if_variable_name_invalid(
+    UIF::Node* variableNode, std::vector<std::string>* validFields)
 {
     if (!is_variable_name_valid(validFields, variableNode))
     {
-        errorMessage->append(dformat("L%u: Variable name '%s' is not valid in "
-                                     "the '%s' section.\n", recordNode->pos,
-                                     variableNode->str.c_str(),
-                                     sectionName.c_str()));
+        errors.push_back(dformat(
+            "L%u: Variable name '%s' is not valid in the '%s' section.",
+            record->pos, variableNode->str.c_str(), sectionName.c_str()));
         return false;
     }
     return true;
@@ -313,7 +249,7 @@ bool complain_if_variable_name_invalid(
  * token. Arguments:
  *
  * - varaibleNode: The UIF node that holds the variable. */
-bool does_node_variable_have_plus_prefix(UIF::Node* variableNode)
+bool Validator::does_node_variable_have_plus_prefix(UIF::Node* variableNode)
 {
     return (variableNode->qop == Lex::Sy_plus);
 }
@@ -323,7 +259,7 @@ bool does_node_variable_have_plus_prefix(UIF::Node* variableNode)
  *
  * - valueNodes: All of the variables associated with a record (probably
  *   obtained using JNJ::GetValu). */
-bool is_multivalue_record(std::vector<UIF::Node*>* valueNodes)
+bool Validator::is_multivalue_record(std::vector<UIF::Node*>* valueNodes)
 {
     if (valueNodes->size() > 0)  /* Are there any values? */
     {
@@ -340,7 +276,7 @@ bool is_multivalue_record(std::vector<UIF::Node*>* valueNodes)
  *
  * - variableNodes: All of the variables associated with a record (probably
  *   obtained using JNJ::GetVari). */
-bool is_multivariable_record(std::vector<UIF::Node*>* variableNodes)
+bool Validator::is_multivariable_record(std::vector<UIF::Node*>* variableNodes)
 {
     return (variableNodes->size() != 1);
 }
@@ -349,7 +285,7 @@ bool is_multivariable_record(std::vector<UIF::Node*>* variableNodes)
  * number. Arguments:
  *
  * - valueNode: The UIF node that holds the value. */
-bool is_node_value_floating(UIF::Node* valueNode)
+bool Validator::is_node_value_floating(UIF::Node* valueNode)
 {
     return (valueNode->qop == Lex::Sy_FSTR or valueNode->qop == Lex::Sy_ISTR);
 }
@@ -357,7 +293,7 @@ bool is_node_value_floating(UIF::Node* valueNode)
 /* Returns whether the value at a node is a natural number. Arguments:
  *
  * - valueNode: The UIF node that holds the value. */
-bool is_node_value_natural(UIF::Node* valueNode)
+bool Validator::is_node_value_natural(UIF::Node* valueNode)
 {
     return (valueNode->qop == Lex::Sy_ISTR);
 }
@@ -370,8 +306,8 @@ bool is_node_value_natural(UIF::Node* valueNode)
  * - variableNode: The UIF node that holds the variable.
  *
  * Will throw if the map does not contain variableNode's string name. */
-bool is_node_variable_true_in_map(std::map<std::string, bool>* mapToSearch,
-                                  UIF::Node* variableNode)
+bool Validator::is_node_variable_true_in_map(
+    std::map<std::string, bool>* mapToSearch, UIF::Node* variableNode)
 {
     return mapToSearch->at(variableNode->str);
 }
@@ -380,7 +316,7 @@ bool is_node_variable_true_in_map(std::map<std::string, bool>* mapToSearch,
  * [0-9A-Za-z]{2,32}. Arguments:
  *
  * - nameNode: The UIF node that holds the name. */
-bool is_type_valid(UIF::Node* nameNode)
+bool Validator::is_type_valid(UIF::Node* nameNode)
 {
     std::string toValidate = nameNode->str;
 
@@ -407,8 +343,8 @@ bool is_type_valid(UIF::Node* nameNode)
  *
  * - validFields: Strings denoting valid field names.
  * - variableNode: The UIF node that holds the variable. */
-bool is_variable_name_valid(std::vector<std::string>* validFields,
-                            UIF::Node* variableNode)
+bool Validator::is_variable_name_valid(std::vector<std::string>* validFields,
+                                       UIF::Node* variableNode)
 {
     return (std::find(validFields->begin(), validFields->end(),
                       variableNode->str) != validFields->end());

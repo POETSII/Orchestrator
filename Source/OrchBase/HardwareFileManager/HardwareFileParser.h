@@ -114,7 +114,7 @@ typedef std::string MailboxName;
 #define ITEM_ENUM_LENGTH 3
 enum item {box, board, mailbox};
 
-class HardwareFileParser: public JNJ
+class HardwareFileParser: public JNJ, public Validator
 {
 public:
     HardwareFileParser();
@@ -126,27 +126,25 @@ private:
     /* Dialect-independent methods */
     bool isFileLoaded;
     std::string loadedFile;
+    void construct_error_output_string(std::string* target);
     bool does_file_exist(const char* filePath);
     unsigned get_dialect();
     void get_values_as_strings(std::vector<std::string>* toPopulate,
                                UIF::Node* valueNode);
-    void invalid_variable_message(std::string* errorMessage,
-                                  UIF::Node* recordNode,
-                                  std::string sectionName,
-                                  std::string variable);
 
     /* UIF-syntax error methods */
     static void on_syntax_error(void*, void*, int);
     void set_uif_error_callback();
 
     /* Dialect 1 validation and deployment methods. */
+    void d1_invalid_variable_message();
     void d1_populate_hardware_model(P_engine* engine);
-    bool d1_provision_deployer(Dialect1Deployer* deployer,
-                               std::string* errorMessage);
-    bool d1_validate_section_contents(std::string* errorMessage);
-    bool d1_validate_sections(std::string* errorMessage);
+    bool d1_provision_deployer(Dialect1Deployer* deployer);
+    bool d1_validate_sections();
 
     /* Dialect 3 validation and deployment members and methods. */
+    void d3_catastrophic_failure(P_engine* engine);
+    void d3_construct_error_output_string(std::string* target);
     bool d3_create_cores_and_threads_for_mailbox(P_mailbox* mailbox,
                                                  unsigned coreQuantity);
     bool d3_define_board_fields_from_section(P_board* board,
@@ -163,8 +161,6 @@ private:
                                                    std::string* type);
     bool d3_get_mailbox_name(UIF::Node* itemNode, MailboxName* mailboxName);
     bool d3_get_section_from_type(std::string itemType, std::string type,
-                                  std::string sourceSectionName,
-                                  unsigned lineNumber,
                                   UIF::Node** sectionNode);
     bool d3_get_validate_default_types(UIF::Node** globalDefaults);
     bool d3_load_validate_sections();
@@ -176,9 +172,6 @@ private:
     bool d3_populate_validate_engine_box(P_engine* engine);
     bool d3_populate_validate_header(P_engine* engine);
     bool d3_validate_types_define_cache();
-
-    /* Holds error messages from validation. */
-    std::string d3_errors;
 
     /* Holds UIF sections that have no types. The key is the "sort" of section
      * it is (i.e. 'header', 'engine_box'), and the value is the UIF node that

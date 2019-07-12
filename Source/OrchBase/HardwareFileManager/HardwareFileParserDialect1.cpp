@@ -3,6 +3,15 @@
 
 #include "HardwareFileParser.h"
 
+/* Writes an 'invalid variable' error message, and appends it to the error
+ * container. */
+void HardwareFileParser::d1_invalid_variable_message()
+{
+    errors.push_back(dformat(
+        "L%u: Variable '%s' in section '%s' is not recognised by the parser. "
+        "Is it valid?\n", record->pos, variable.c_str(), sectionName.c_str()));
+}
+
 /* Populates a POETS Engine with information from a previously-loaded hardware
  * description file in dialect 1, after validating it. Arguments:
  *
@@ -15,18 +24,19 @@
 void HardwareFileParser::d1_populate_hardware_model(P_engine* engine)
 {
     /* Call the various semantic validation methods. */
-    std::string errorMessage;
     bool failedValidation = false;
-    failedValidation |= !d1_validate_sections(&errorMessage);
+    failedValidation |= !d1_validate_sections();
 
     /* Create a deployer (and do a little incidental validation...) */
     Dialect1Deployer deployer;
-    failedValidation |= !d1_provision_deployer(&deployer, &errorMessage);
+    failedValidation |= !d1_provision_deployer(&deployer);
 
     /* Throw if any of the validation methods failed. */
     if (failedValidation)
     {
-        throw HardwareSemanticException(errorMessage.c_str());
+        std::string allErrors;
+        construct_error_output_string(&allErrors);
+        throw HardwareSemanticException(allErrors.c_str());
     }
 
     /* Otherwise, it's go time. */
@@ -41,10 +51,8 @@ void HardwareFileParser::d1_populate_hardware_model(P_engine* engine)
  *
  * Arguments:
  *
- * - deployer: Deployer object to provision.
- * - errorMessage: String to append error messages to. */
-bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
-                                               std::string* errorMessage)
+ * - deployer: Deployer object to provision. */
+bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer)
 {
     bool valid = true;
 
@@ -59,12 +67,10 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
     std::vector<UIF::Node*> valueNodes;
     std::vector<UIF::Node*>::iterator valueNodeIterator;
     std::vector<UIF::Node*> variableNodes;
-    std::string variable;
 
     /* For each section... */
     std::vector<UIF::Node*> recordNodes;
     std::vector<UIF::Node*>::iterator recordIterator;
-    std::string sectionName;
     std::vector<UIF::Node*> sectionNameNodes;
     std::vector<std::string> values;
     for (sectionIterator=sectionNodes.begin();
@@ -95,9 +101,11 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
         for (recordIterator=recordNodes.begin();
              recordIterator!=recordNodes.end(); recordIterator++)
         {
+            record = *recordIterator;
+
             /* Get the value and variable nodes. */
-            GetVari((*recordIterator), variableNodes);
-            GetValu((*recordIterator), valueNodes);
+            GetVari(record, variableNodes);
+            GetValu(record, valueNodes);
 
             /* Ignore this record if the record has not got a variable/value
                pair (i.e. if the line is empty, or is just a comment). */
@@ -106,12 +114,12 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
             /* Only the first variable node will be used, and it must have a
              * "+" preceeding it. */
             variable = variableNodes[0]->str;
-            if (variableNodes[0]->qop != Lex::Sy_plus)
+            if (!complain_if_variable_not_plus_prefixed(variableNodes[0]))
             {
                 valid = false;
-                errorMessage->append(dformat(
+                errors.push_back(dformat(
                     "L%u: Your definition of variable '%s' is missing a '+' "
-                    "character.\n", (*recordIterator)->pos, variable.c_str()));
+                    "character.\n", record->pos, variable.c_str()));
             }
 
             /* Get the values. */
@@ -135,11 +143,11 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                     if (valueNodes[0]->qop != Lex::Sy_ISTR)
                     {
                         valid = false;
-                        errorMessage->append(dformat(
+                        errors.push_back(dformat(
                             "L%u: Variable '%s' in section '%s' has value "
                             "'%s', which is not a datetime in the form "
                             "YYYYMMDDhhmmss.\n",
-                            (*recordIterator)->pos, variable.c_str(),
+                            record->pos, variable.c_str(),
                             sectionName.c_str(), values[0].c_str()));
                     }
                     deployer->datetime = str2long(values[0]);
@@ -152,22 +160,12 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 {
                     deployer->version = values[0];
                 }
-                else if (variable == "dialect")
-                {
-                    if (values[0] != "1")
-                    {
-                        valid = false;
-                        errorMessage->append(dformat(
-                            "L%u: Only dialect 1 is currently supported.\n",
-                            (*recordIterator)->pos));
-                    }
-                }
-                else if (variable == "hardware");
+                else if (variable == "dialect");  /* Read elsewhere. */
+                else if (variable == "hardware");  /* Ignored, for now. */
                 else
                 {
                     valid = false;
-                    invalid_variable_message(errorMessage, (*recordIterator),
-                                             sectionName, variable);
+                    d1_invalid_variable_message();
                 }
             }
 
@@ -175,9 +173,8 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
             {
                 if (variable == "board")
                 {
-                    valid &= complain_if_nodes_values_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_values_and_children_not_natural(
+                        valueNodes[0]);
 
                     /* Convert the values from strings to uints, and drop them
                      * in the deployer. */
@@ -188,25 +185,19 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 }
                 else if (variable == "box")
                 {
-                    valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_natural(valueNodes[0]);
                     deployer->boxWordLength = str2unsigned(values[0]);
                 }
                 else if (variable == "core")
                 {
-                    valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_natural(valueNodes[0]);
                     deployer->coreWordLength = str2unsigned(values[0]);
                 }
                 else if (variable == "mailbox")
                 {
                     /* Same as with packet_address_format::board. */
-                    valid &= complain_if_nodes_values_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
-
+                    valid &= complain_if_values_and_children_not_natural(
+                        valueNodes[0]);
                     deployer->mailboxWordLengths.resize(values.size());
                     std::transform(values.begin(), values.end(),
                                    deployer->mailboxWordLengths.begin(),
@@ -214,16 +205,13 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 }
                 else if (variable == "thread")
                 {
-                    valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_natural(valueNodes[0]);
                     deployer->threadWordLength = str2unsigned(values[0]);
                 }
                 else
                 {
                     valid = false;
-                    invalid_variable_message(errorMessage, (*recordIterator),
-                                             sectionName, variable);
+                    d1_invalid_variable_message();
                 }
             }
 
@@ -231,18 +219,14 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
             {
                 if (variable == "boxes")
                 {
-                    valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_natural(valueNodes[0]);
                     deployer->boxesInEngine = str2unsigned(values[0]);
                 }
                 else if (variable == "boards")
                 {
                     if (values.size() == 1)  /* Scalar */
                     {
-                        valid &= complain_if_node_value_not_natural(
-                            (*recordIterator), valueNodes[0], variable,
-                            sectionName, errorMessage);
+                        valid &= complain_if_value_not_natural(valueNodes[0]);
                         deployer->boardsInEngine.push_back(
                             str2unsigned(values[0]));
                         deployer->boardHypercubePeriodicity.push_back(false);
@@ -254,17 +238,15 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                         if (valueNodes[0]->str != "hypercube")
                         {
                             valid = false;
-                            errorMessage->append(dformat(
+                            errors.push_back(dformat(
                                 "L%u: The value of the 'boards' variable in "
                                 "the engine section is multidimensional, and "
                                 "so should be a 'hypercube'.\n",
-                                (*recordIterator)->pos));
+                                record->pos));
                         }
 
-                        valid &= complain_if_nodes_values_not_natural(
-                            (*recordIterator), valueNodes[0], variable,
-                            sectionName, errorMessage);
-
+                        valid &= complain_if_values_and_children_not_natural(
+                            valueNodes[0]);
                         deployer->boardsAsHypercube = true;
                         deployer->boardsInEngine.resize(values.size());
                         std::transform(values.begin(), values.end(),
@@ -289,10 +271,10 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                             else
                             {
                                 valid = false;
-                                errorMessage->append(dformat(
+                                errors.push_back(dformat(
                                     "L%u: Invalid value for boards variable "
                                     "in the engine section.\n",
-                                    (*recordIterator)->pos));
+                                    record->pos));
                                 deployer->boardHypercubePeriodicity.
                                     push_back(false);
                             }
@@ -301,23 +283,18 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 }
                 else if (variable == "external_box_cost")
                 {
-                    valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_floating(valueNodes[0]);
                     deployer->costExternalBox = str2float(values[0]);
                 }
                 else if (variable == "board_board_cost")
                 {
-                    valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_floating(valueNodes[0]);
                     deployer->costBoardBoard = str2float(values[0]);
                 }
                 else
                 {
                     valid = false;
-                    invalid_variable_message(errorMessage, (*recordIterator),
-                                             sectionName, variable);
+                    d1_invalid_variable_message();
                 }
 
             }
@@ -326,20 +303,18 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
             {
                 if (variable == "box_board_cost")
                 {
-                    valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_floating(valueNodes[0]);
                     deployer->costBoxBoard = str2float(values[0]);
                 }
                 else if (variable == "supervisor_memory")
                 {
+                    valid &= complain_if_value_not_natural(valueNodes[0]);
                     deployer->boxSupervisorMemory = str2unsigned(values[0]);
                 }
                 else
                 {
                     valid = false;
-                    invalid_variable_message(errorMessage, (*recordIterator),
-                                             sectionName, variable);
+                    d1_invalid_variable_message();
                 }
             }
 
@@ -360,11 +335,11 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                         if (valueNodes[0]->str != "hypercube")
                         {
                             valid = false;
-                            errorMessage->append(dformat(
+                            errors.push_back(dformat(
                                 "L%u: The value of the 'mailboxes' variable "
                                 "in the board section is multidimensional, "
                                 "and so should be a 'hypercube'.\n",
-                                (*recordIterator)->pos));
+                                record->pos));
                         }
 
                         deployer->mailboxesAsHypercube = true;
@@ -391,10 +366,10 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                             else
                             {
                                 valid = false;
-                                errorMessage->append(dformat(
+                                errors.push_back(dformat(
                                     "L%u: Invalid value for mailboxes "
                                     "variable in the board section.\n",
-                                    (*recordIterator)->pos));
+                                    record->pos));
                                 deployer->mailboxHypercubePeriodicity.
                                     push_back(false);
                             }
@@ -403,37 +378,28 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
                 }
                 else if (variable == "board_mailbox_cost")
                 {
-                    valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_floating(valueNodes[0]);
                     deployer->costBoardMailbox = str2float(values[0]);
                 }
                 else if (variable == "mailbox_mailbox_cost")
                 {
-                    valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_floating(valueNodes[0]);
                     deployer->costBoardMailbox = str2float(values[0]);
                 }
                 else if (variable == "supervisor_memory")
                 {
-                    valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_natural(valueNodes[0]);
                     deployer->boardSupervisorMemory = str2unsigned(values[0]);
                 }
                 else if (variable == "dram")
                 {
-                    valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_natural(valueNodes[0]);
                     deployer->dram = str2unsigned(values[0]);
                 }
                 else
                 {
                     valid = false;
-                    invalid_variable_message(errorMessage, (*recordIterator),
-                                             sectionName, variable);
+                    d1_invalid_variable_message();
                 }
             }
 
@@ -441,30 +407,23 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
             {
                 if (variable == "cores")
                 {
-                    valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_natural(valueNodes[0]);
                     deployer->coresInMailbox = str2unsigned(values[0]);
                 }
                 else if (variable == "mailbox_core_cost")
                 {
-                    valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_floating(valueNodes[0]);
                     deployer->costMailboxCore = str2float(values[0]);
                 }
                 else if (variable == "core_core_cost")
                 {
-                    valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_floating(valueNodes[0]);
                     deployer->costCoreCore = str2float(values[0]);
                 }
                 else
                 {
                     valid = false;
-                    invalid_variable_message(errorMessage, (*recordIterator),
-                                             sectionName, variable);
+                    d1_invalid_variable_message();
                 }
             }
 
@@ -472,51 +431,40 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
             {
                 if (variable == "threads")
                 {
-                    valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_natural(valueNodes[0]);
                     deployer->threadsInCore = str2unsigned(values[0]);
                 }
                 else if (variable == "instruction_memory")
                 {
-                    valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_natural(valueNodes[0]);
                     deployer->instructionMemory = str2unsigned(values[0]);
                 }
                 else if (variable == "data_memory")
                 {
-                    valid &= complain_if_node_value_not_natural(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_natural(valueNodes[0]);
                     deployer->dataMemory = str2unsigned(values[0]);
                 }
                 else if (variable == "core_thread_cost")
                 {
-                    valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_floating(valueNodes[0]);
                     deployer->costCoreThread = str2float(values[0]);
                 }
                 else if (variable == "thread_thread_cost")
                 {
-                    valid &= complain_if_node_value_not_floating(
-                        (*recordIterator), valueNodes[0], variable,
-                        sectionName, errorMessage);
+                    valid &= complain_if_value_not_floating(valueNodes[0]);
                     deployer->costThreadThread = str2float(values[0]);
                 }
                 else
                 {
                     valid = false;
-                    invalid_variable_message(errorMessage, (*recordIterator),
-                                             sectionName, variable);
+                    d1_invalid_variable_message();
                 }
             }
 
             else
             {
                 valid = false;
-                errorMessage->append(dformat(
+                errors.push_back(dformat(
                     "L%u: Section name '%s' is not recognised by the parser. "
                     "Is it valid?\n",
                     (*sectionIterator)->pos, sectionName.c_str()));
@@ -525,33 +473,6 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer,
     }
 
     return valid;
-}
-
-/* Validate that all sections have correct contents, given that all sections
- * exist. The list of variables too great to enumerate here; look at the
- * documentation or examples for the definitive list.
- *
- * Arguments:
- *
- * - errorMessage: string to write error message to, always appended to.
- *
- * Returns true if all mandatory fields are defined exactly once and if no
- * incorrect variables are defined, and false otherwise. */
-bool HardwareFileParser::d1_validate_section_contents(
-    std::string* errorMessage)
-{
-    /* Define what is valid. */
-    std::map<std::string, unsigned> mandatoryHeaderFields;
-    std::vector<std::string> optionalHeaderFields;
-    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("datetime", 0));
-    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("dialect", 0));
-    mandatoryHeaderFields.insert(std::pair<std::string, unsigned>("version", 0));
-    optionalHeaderFields.push_back("author");
-    optionalHeaderFields.push_back("hardware");
-    optionalHeaderFields.push_back("file");
-
-    /* <!> */
-    return true;
 }
 
 /* Validate that there are no duplicated sections in the hardware description
@@ -566,13 +487,9 @@ bool HardwareFileParser::d1_validate_section_contents(
  * - mailbox
  * - core
  *
- * Arguments:
- *
- * - errorMessage: string to write error message to, always appended to.
- *
  * Returns true if all sections exist and are unique, and false
  * otherwise. Should only be called after a file has been loaded. */
-bool HardwareFileParser::d1_validate_sections(std::string* errorMessage)
+bool HardwareFileParser::d1_validate_sections()
 {
     /* Grab section names. */
     std::vector<UIF::Node*> sectionNameNodes;
@@ -580,7 +497,6 @@ bool HardwareFileParser::d1_validate_sections(std::string* errorMessage)
 
     /* Define valid node names, and counters for them (we're failing if any of
      * these are not 1 at the end). */
-
     std::map<std::string, unsigned> validNodeCounters;
     std::map<std::string, unsigned>::iterator validNodeIterator;
     validNodeCounters.insert(std::pair<std::string, unsigned>("header", 0));
@@ -629,13 +545,14 @@ bool HardwareFileParser::d1_validate_sections(std::string* errorMessage)
         returnValue = false;
 
         /* Let's let the user know how mean they are. */
-        errorMessage->append("Sections with invalid names found in the input "
-                             "file:\n");
+        std::string staging;
+        errors.push_back("Sections with invalid names found in the input "
+                         "file:\n");
         for (invalidNamedNodeIterator=invalidNamedNodes.begin();
              invalidNamedNodeIterator!=invalidNamedNodes.end();
              invalidNamedNodeIterator++)
         {
-            errorMessage->append(dformat(
+            errors.push_back(dformat(
                 "    %s (L%i)\n",
                 (*invalidNamedNodeIterator)->str.c_str(),
                 (*invalidNamedNodeIterator)->pos));
@@ -654,14 +571,14 @@ bool HardwareFileParser::d1_validate_sections(std::string* errorMessage)
             returnValue = false;
             if (!headerPrinted)
             {
-                errorMessage->append("The following sections were not defined "
-                                     "exactly once:\n");
+                errors.push_back("The following sections were not defined "
+                                 "exactly once:\n");
                 headerPrinted = true;
             }
 
-            errorMessage->append(dformat("    %s, defined %u times.\n",
-                                         validNodeIterator->first.c_str(),
-                                         validNodeIterator->second));
+            errors.push_back(dformat("    %s, defined %u times.\n",
+                                     validNodeIterator->first.c_str(),
+                                     validNodeIterator->second));
         }
     }
 
