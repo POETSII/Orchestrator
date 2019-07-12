@@ -144,7 +144,6 @@ private:
 
     /* Dialect 3 validation and deployment members and methods. */
     void d3_catastrophic_failure(P_engine* engine);
-    void d3_construct_error_output_string(std::string* target);
     bool d3_create_cores_and_threads_for_mailbox(P_mailbox* mailbox,
                                                  unsigned coreQuantity);
     bool d3_define_board_fields_from_section(P_board* board,

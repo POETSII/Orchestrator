@@ -70,6 +70,10 @@ HARDWARE_ITERATOR_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.
 HARDWARE_FILE_READER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderCore.cpp \
                                $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect1.cpp \
                                $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Engine.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Getters.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Items.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Sections.cpp \
                                $(SOURCE_DIR)/OrchBase/HardwareFileReader/Validator.cpp \
                                $(GENERICS_DIR)/dfprintf.cpp \
                                $(GENERICS_DIR)/flat.cpp \
