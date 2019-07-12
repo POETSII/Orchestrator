@@ -1,5 +1,5 @@
-#ifndef __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEMANAGER_VALIDATOR_H
-#define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEMANAGER_VALIDATOR_H
+#ifndef __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEREADER_VALIDATOR_H
+#define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEREADER_VALIDATOR_H
 
 /* Logic for defining validation methods for nodes and other data structures
  * (which write error messages), and simple functions to convert strings to

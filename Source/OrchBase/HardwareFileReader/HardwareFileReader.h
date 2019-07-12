@@ -1,21 +1,21 @@
-#ifndef __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEMANAGER_HARDWAREFILEPARSER_H
-#define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEMANAGER_HARDWAREFILEPARSER_H
+#ifndef __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEREADER_HARDWAREFILEREADER_H
+#define __ORCHESTRATOR_SOURCE_ORCHBASE_HARDWAREFILEREADER_HARDWAREFILEREADER_H
 
 /* Logic for parsing hardware model files, and for generating hardware models
  * from them. Example:
  *
  *     P_engine* engine = new P_engine("My engine");
- *     parser = HardwareFileParser("/path/to/my/hardware/file.uif", engine);
+ *     reader = HardwareFileReader("/path/to/my/hardware/file.uif", engine);
  *     // We're done here.
  *
  * Or, for more points:
  *
  *     P_engine* engine = new P_engine("My engine");
- *     parser = HardwareFileParser;
+ *     reader = HardwareFileReader;
  *     try
  *     {
- *         parser.load_file("/path/to/my/hardware/file.uif");
- *         parser.populate_hardware_model(engine);
+ *         reader.load_file("/path/to/my/hardware/file.uif");
+ *         reader.populate_hardware_model(engine);
  *     }
  *     catch (OrchestratorException& exception)
  *     {
@@ -30,7 +30,7 @@
  * model follows this procedure:
  *
  *  1. Load the file.
- *  2. Parse the file using the UIF parser, and generate a tree. Raises if the
+ *  2. Parse the file using the UIF reader, and generate a tree. Raises if the
  *     file is syntactically invalid.
  *  3. Traverse the generated tree, and generate a hardware stack (P_engine
  *     populated with components). Raises if the file is semantically invalid.
@@ -39,9 +39,9 @@
  *  the most part, this means putting it into the Orchestrator, but do what you
  *  will).
  *
- * The HardwareFileParser class encapsulates this process (I wouldn't normally
+ * The HardwareFileReader class encapsulates this process (I wouldn't normally
  * do it this way, but the recommended approach for using UIF is to use it as a
- * base class, so...). Only one file can be loaded by this parser at a time;
+ * base class, so...). Only one file can be loaded by this reader at a time;
  * loading a second file clobbers the data structure of the first.
  *
  * As part of this process, the input file is validated. In dialect 1, things
@@ -85,7 +85,7 @@
                    * the UIF data structure. */
 
 /* Some structs and typedefs used to streamline the structures used by the
- * dialect 3 parser for vaidation:
+ * dialect 3 reader for vaidation:
  *
  * - BoardInfo: Holds information on what line in the input file a board was
  *   declared, and where the board object is.
@@ -114,11 +114,11 @@ typedef std::string MailboxName;
 #define ITEM_ENUM_LENGTH 3
 enum item {box, board, mailbox};
 
-class HardwareFileParser: public JNJ, public Validator
+class HardwareFileReader: public JNJ, public Validator
 {
 public:
-    HardwareFileParser();
-    HardwareFileParser(const char* filePath, P_engine* engine);
+    HardwareFileReader();
+    HardwareFileReader(const char* filePath, P_engine* engine);
     void load_file(const char* filePath);
     void populate_hardware_model(P_engine* engine);
 

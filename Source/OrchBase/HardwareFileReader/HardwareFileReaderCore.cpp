@@ -1,17 +1,17 @@
 /* Defines behaviour for the core functionality (independent of dialect) of the
- * hardware model file parser (see the accompanying header for further
+ * hardware model file reader (see the accompanying header for further
  * information). */
 
-#include "HardwareFileParser.h"
+#include "HardwareFileReader.h"
 
-/* Constructs the file parser. */
-HardwareFileParser::HardwareFileParser():JNJ(),isFileLoaded(false)
+/* Constructs the file reader. */
+HardwareFileReader::HardwareFileReader():JNJ(),isFileLoaded(false)
 {
     set_uif_error_callback();
 }
 
-/* Constructs the file parser, parses a file, and dumps it in an engine. */
-HardwareFileParser::HardwareFileParser(const char* filePath, P_engine* engine)
+/* Constructs the file reader, parses a file, and dumps it in an engine. */
+HardwareFileReader::HardwareFileReader(const char* filePath, P_engine* engine)
     :JNJ(),isFileLoaded(false)
 {
     set_uif_error_callback();
@@ -21,7 +21,7 @@ HardwareFileParser::HardwareFileParser(const char* filePath, P_engine* engine)
 
 /* Assembles the error output string from 'Validation::errors', and writes it
  * to the string at 'target'. */
-void HardwareFileParser::construct_error_output_string(std::string* target)
+void HardwareFileReader::construct_error_output_string(std::string* target)
 {
     /* If there aren't any errors, we get suspicious. If you're reading this
      * having found a file that generates this error message, it means that one
@@ -47,7 +47,7 @@ void HardwareFileParser::construct_error_output_string(std::string* target)
         /* Prepend error message with some useful information. */
         *target = dformat(
             "Error(s) were encountered while loading the hardware description "
-            "file '%s'. Since the parser fails slowly, consider addressing "
+            "file '%s'. Since the reader fails slowly, consider addressing "
             "the top-most errors first:\n", loadedFile.c_str());
 
         /* For each error, append it with an indentation and hyphen. */
@@ -72,7 +72,7 @@ void HardwareFileParser::construct_error_output_string(std::string* target)
  *
  * - the input file does not exist.
  * - the input file is syntactically invalid. */
-void HardwareFileParser::load_file(const char* filePath)
+void HardwareFileReader::load_file(const char* filePath)
 {
     if(!does_file_exist(filePath))
     {
@@ -100,9 +100,9 @@ void HardwareFileParser::load_file(const char* filePath)
  *
  * Throws if:
  *
- *  - no input file has been loaded by this parser.
+ *  - no input file has been loaded by this reader.
  *  - the input file is semantically invalid. */
-void HardwareFileParser::populate_hardware_model(P_engine* engine)
+void HardwareFileReader::populate_hardware_model(P_engine* engine)
 {
     /* Throw if we have not loaded a file yet. */
     if (!isFileLoaded)
@@ -141,7 +141,7 @@ void HardwareFileParser::populate_hardware_model(P_engine* engine)
  * Arguments:
  *
  * - filePath: Path to look at. */
-bool HardwareFileParser::does_file_exist(const char* filePath)
+bool HardwareFileReader::does_file_exist(const char* filePath)
 {
     FILE* testFile = fopen(filePath, "r");
     if (testFile)
@@ -153,9 +153,9 @@ bool HardwareFileParser::does_file_exist(const char* filePath)
 }
 
 /* Returns the dialect of a loaded file. Throws if no input file has been
- * loaded by this parser, or if the dialect is not defined correctly in the
+ * loaded by this reader, or if the dialect is not defined correctly in the
  * input file. */
-unsigned HardwareFileParser::get_dialect()
+unsigned HardwareFileReader::get_dialect()
 {
     /* Throw if we have not loaded a file yet. */
     if (!isFileLoaded)
@@ -260,7 +260,7 @@ unsigned HardwareFileParser::get_dialect()
  *
  * - toPopulate: Vector to fill with string values.
  * - valueNode: Root value node. */
-void HardwareFileParser::get_values_as_strings(
+void HardwareFileReader::get_values_as_strings(
     std::vector<std::string>* toPopulate, UIF::Node* valueNode)
 {
     toPopulate->clear();
@@ -292,7 +292,7 @@ void HardwareFileParser::get_values_as_strings(
  * this is lifted from there.
  *
  * Scoping be damned. */
-void HardwareFileParser::on_syntax_error(void* parser, void* uifInstance, int)
+void HardwareFileReader::on_syntax_error(void* reader, void* uifInstance, int)
 {
     std::string accumulatedMessage;
     std::vector<std::string> errorMessages;
@@ -301,12 +301,12 @@ void HardwareFileParser::on_syntax_error(void* parser, void* uifInstance, int)
                                          errorMessages.end(), std::string(""));
     throw HardwareSyntaxException(dformat(
         "[ERROR] Error in input hardware file syntax in \"%s\":\n%s",
-        static_cast<HardwareFileParser*>(parser)->loadedFile.c_str(),
+        static_cast<HardwareFileReader*>(reader)->loadedFile.c_str(),
         accumulatedMessage.c_str()));
 }
 
 /* Registers a callback function for error handling purposes. */
-void HardwareFileParser::set_uif_error_callback()
+void HardwareFileReader::set_uif_error_callback()
 {
     SetECB(this, on_syntax_error);  /* From UIF. */
 }

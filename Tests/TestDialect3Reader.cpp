@@ -1,4 +1,4 @@
-/* Tests the Dialect 3 parser's semantic checking, and output on success.
+/* Tests the Dialect 3 reader's semantic checking, and output on success.
  *
  * Missing files and files with invalid syntax are tested by the
  * TestHardwareFileReader test suite. */
@@ -7,7 +7,7 @@
 
 #include "catch.hpp"
 
-#include "HardwareFileParser.h"
+#include "HardwareFileReader.h"
 #include "HardwareModel.h"
 
 /* C++98 does not have a cross-platform way of listing directories... grumble
@@ -51,16 +51,16 @@ std::vector<std::string> semanticallyInvalidInputs = {
 };
 
 /* Missing files and files with invalid syntax are tested by the Dialect 1
- * parser test suite (they both go through the same syntax-checking bit of
+ * reader test suite (they both go through the same syntax-checking bit of
  * source. */
-TEST_CASE("Files with valid syntax and semantics do not raise", "[Parser]")
+TEST_CASE("Files with valid syntax and semantics do not raise", "[Reader]")
 {
     P_engine* engine;
-    HardwareFileParser* parser;
+    HardwareFileReader* reader;
     std::vector<std::string>::iterator fileName;
     std::string fullPath;
 
-    /* Create a fresh parser and engine object for each test. */
+    /* Create a fresh reader and engine object for each test. */
     for(fileName=semanticallyValidInputs.begin();
         fileName!=semanticallyValidInputs.end();
         fileName++)
@@ -68,25 +68,25 @@ TEST_CASE("Files with valid syntax and semantics do not raise", "[Parser]")
         printf("Testing %s...\n", (*fileName).c_str());
 
         engine = new P_engine("Test Engine");
-        parser = new HardwareFileParser();
+        reader = new HardwareFileReader();
 
         fullPath = "../Tests/StaticResources/Dialect3/Valid/" + *fileName;
-        parser->load_file(fullPath.c_str());
-        parser->populate_hardware_model(engine);
+        reader->load_file(fullPath.c_str());
+        reader->populate_hardware_model(engine);
 
         delete engine;
-        delete parser;
+        delete reader;
     }
 }
 
-TEST_CASE("Test each semantically-invalid case in turn", "[Parser]")
+TEST_CASE("Test each semantically-invalid case in turn", "[Reader]")
 {
     P_engine* engine;
-    HardwareFileParser* parser;
+    HardwareFileReader* reader;
     std::vector<std::string>::iterator fileName;
     std::string fullPath;
 
-    /* Create a fresh parser and engine object for each test. */
+    /* Create a fresh reader and engine object for each test. */
     for(fileName=semanticallyInvalidInputs.begin();
         fileName!=semanticallyInvalidInputs.end();
         fileName++)
@@ -94,18 +94,18 @@ TEST_CASE("Test each semantically-invalid case in turn", "[Parser]")
         printf("Testing %s (xfail)...\n", (*fileName).c_str());
 
         engine = new P_engine("Test Engine");
-        parser = new HardwareFileParser();
+        reader = new HardwareFileReader();
 
         fullPath = "../Tests/StaticResources/Dialect3/Invalid/" + *fileName;
-        parser->load_file(fullPath.c_str());
-        REQUIRE_THROWS_AS(parser->populate_hardware_model(engine),
+        reader->load_file(fullPath.c_str());
+        REQUIRE_THROWS_AS(reader->populate_hardware_model(engine),
                           HardwareSemanticException&);
 
-        /* Don't need to delete the engine - the parser is responsible for
+        /* Don't need to delete the engine - the reader is responsible for
          * doing that on failure. If a bug has been introduced that causes the
-         * parser not to clean up after itself, Valgrind will find it.
+         * reader not to clean up after itself, Valgrind will find it.
          *
-         * We do need to delete the parser at the end of the loop though. */
-        delete parser;
+         * We do need to delete the reader at the end of the loop though. */
+        delete reader;
     }
 }

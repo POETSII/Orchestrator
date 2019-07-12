@@ -1,7 +1,7 @@
 /* Defines behaviour for the dialect 3 functionality of the hardware model file
- * parser (see the accompanying header for further information). */
+ * reader (see the accompanying header for further information). */
 
-#include "HardwareFileParser.h"
+#include "HardwareFileReader.h"
 
 /* Catastrophic failure, we out, yo. Well, "catastrophic" is perhaps taking it
  * a bit far. My point is, this error is unrecoverable from the perspective of
@@ -11,7 +11,7 @@
  * exception, then tosses it over the fence. Arguments:
  *
  * - engine: Partially-populated unsafe engine. */
-void HardwareFileParser::d3_catastrophic_failure(P_engine* engine)
+void HardwareFileReader::d3_catastrophic_failure(P_engine* engine)
 {
     delete engine;
     std::string allErrors;
@@ -29,7 +29,7 @@ void HardwareFileParser::d3_catastrophic_failure(P_engine* engine)
  * - mailbox: Pointer to the mailbox to populate.
  * - quatity: Number of cores to create (the number of threads will be
          determined from the UIF parse tree. */
-bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
+bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
     P_mailbox* mailbox, unsigned coreQuantity)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
@@ -255,7 +255,7 @@ bool HardwareFileParser::d3_create_cores_and_threads_for_mailbox(
  *
  * - box: Pointer to the box to populate.
  * - sectionNode: The node that defines the properties of the board. */
-bool HardwareFileParser::d3_define_board_fields_from_section(
+bool HardwareFileReader::d3_define_board_fields_from_section(
     P_board* board, UIF::Node* sectionNode)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
@@ -425,7 +425,7 @@ bool HardwareFileParser::d3_define_board_fields_from_section(
  *
  * - box: Pointer to the box to populate.
  * - sectionNode: The node that defines the properties of the box. */
-bool HardwareFileParser::d3_define_box_fields_from_section(
+bool HardwareFileReader::d3_define_box_fields_from_section(
     P_box* box, UIF::Node* sectionNode)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
@@ -549,7 +549,7 @@ bool HardwareFileParser::d3_define_box_fields_from_section(
  *
  * - mailbox: Pointer to the mailbox to populate
  * - sectionNode: The node that defines the properties of the mailbox. */
-bool HardwareFileParser::d3_define_mailbox_fields_from_section(
+bool HardwareFileReader::d3_define_mailbox_fields_from_section(
     P_mailbox* mailbox, UIF::Node* sectionNode)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
@@ -693,7 +693,7 @@ bool HardwareFileParser::d3_define_mailbox_fields_from_section(
  *
  * - itemNode: Variable node to extract the type from.
  * - address: Integer to write to. */
-bool HardwareFileParser::d3_get_address_from_item_definition(
+bool HardwareFileReader::d3_get_address_from_item_definition(
     UIF::Node* itemNode, AddressComponent* address)
 {
     std::string fullBinary = "";
@@ -734,7 +734,7 @@ bool HardwareFileParser::d3_get_address_from_item_definition(
  *
  * - itemNode: The node (variable, or value).
  * - boardName: BoardName to populate. */
-bool HardwareFileParser::d3_get_board_name(
+bool HardwareFileReader::d3_get_board_name(
     UIF::Node* itemNode, BoardName* boardName)
 {
     /* Clear the board name. */
@@ -802,7 +802,7 @@ bool HardwareFileParser::d3_get_board_name(
  *
  * - itemNode: Value node to extract the edge cost from.
  * - cost: String to write the type to. */
-bool HardwareFileParser::d3_get_explicit_cost_from_edge_definition(
+bool HardwareFileReader::d3_get_explicit_cost_from_edge_definition(
     UIF::Node* itemNode, float* cost)
 {
     *cost = -1;
@@ -838,7 +838,7 @@ bool HardwareFileParser::d3_get_explicit_cost_from_edge_definition(
  *
  * - itemNode: Variable node to extract the type from.
  * - type: String to write the type to. */
-bool HardwareFileParser::d3_get_explicit_type_from_item_definition(
+bool HardwareFileReader::d3_get_explicit_type_from_item_definition(
     UIF::Node* itemNode, std::string* type)
 {
     type->clear();
@@ -870,7 +870,7 @@ bool HardwareFileParser::d3_get_explicit_type_from_item_definition(
  *
  * - itemNode: The node (variable, or value).
  * - mailboxName: MailboxName to populate. */
-bool HardwareFileParser::d3_get_mailbox_name(UIF::Node* itemNode,
+bool HardwareFileReader::d3_get_mailbox_name(UIF::Node* itemNode,
                                              MailboxName* mailboxName)
 {
     /* Clear the mailbox name. */
@@ -897,7 +897,7 @@ bool HardwareFileParser::d3_get_mailbox_name(UIF::Node* itemNode,
  * - type: Type string to search for.
  * - sectionNode: Pointer to write the found section to, set to PNULL if no
      node could be found. */
-bool HardwareFileParser::d3_get_section_from_type(
+bool HardwareFileReader::d3_get_section_from_type(
     std::string itemType, std::string type, UIF::Node** sectionNode)
 {
     *sectionNode = PNULL;
@@ -932,7 +932,7 @@ bool HardwareFileParser::d3_get_section_from_type(
  * d3_errors as it goes. Arguments:
  *
  * - globalDefaults: Pointer to a 3-length array of UIF::Nodes, which*/
-bool HardwareFileParser::d3_get_validate_default_types(
+bool HardwareFileReader::d3_get_validate_default_types(
     UIF::Node** globalDefaults)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
@@ -1077,7 +1077,7 @@ bool HardwareFileParser::d3_get_validate_default_types(
  *
  * Returns true if the conditions above are all true, and false
  * otherwise. */
-bool HardwareFileParser::d3_load_validate_sections()
+bool HardwareFileReader::d3_load_validate_sections()
 {
     /* Valid section names */
     std::vector<std::string> validSectionNames;
@@ -1489,7 +1489,7 @@ bool HardwareFileParser::d3_load_validate_sections()
  * Throws if:
  *
  *  - the input file is semantically invalid. */
-void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
+void HardwareFileReader::d3_populate_hardware_model(P_engine* engine)
 {
     /* Check sections are defined correctly. Not much point continuing if they
      * are not defined correctly. */
@@ -1527,7 +1527,7 @@ void HardwareFileParser::d3_populate_hardware_model(P_engine* engine)
  * Returns true if all validation checks pass, and false otherwise. Arguments:
  *
  * - engine: Engine to populate */
-bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
+bool HardwareFileReader::d3_populate_validate_address_format(P_engine* engine)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
     sectionName = "packet_address_format";
@@ -1698,7 +1698,7 @@ bool HardwareFileParser::d3_populate_validate_address_format(P_engine* engine)
  *       cores etc.
  * - sectionNode: The node that defines the mailboxes in boards of this
  *       type. */
-bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
+bool HardwareFileReader::d3_populate_validate_board_with_mailboxes(
     P_board* board, UIF::Node* sectionNode)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
@@ -2047,7 +2047,7 @@ bool HardwareFileParser::d3_populate_validate_board_with_mailboxes(
  * Returns true if all validation checks pass, and false otherwise. Arguments:
  *
  * - engine: Engine to populate with boards, and other items. */
-bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
+bool HardwareFileReader::d3_populate_validate_engine_board_and_below(
     P_engine* engine)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
@@ -2533,7 +2533,7 @@ bool HardwareFileParser::d3_populate_validate_engine_board_and_below(
  * Returns true if all validation checks pass, and false otherwise. Arguments:
  *
  * - engine: Engine to populate. */
-bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
+bool HardwareFileReader::d3_populate_validate_engine_box(P_engine* engine)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
     sectionName = "engine_box";
@@ -2748,7 +2748,7 @@ bool HardwareFileParser::d3_populate_validate_engine_box(P_engine* engine)
  * Returns true if all validation checks pass, and false otherwise. Arguments:
  *
  * - engine: Engine to populate */
-bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
+bool HardwareFileReader::d3_populate_validate_header(P_engine* engine)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
     sectionName = "header";
@@ -2878,7 +2878,7 @@ bool HardwareFileParser::d3_populate_validate_header(P_engine* engine)
  * references for each section that can create items.
  *
  * Returns true if all validation checks pass, and false otherwise */
-bool HardwareFileParser::d3_validate_types_define_cache()
+bool HardwareFileReader::d3_validate_types_define_cache()
 {
     bool anyErrors;
 

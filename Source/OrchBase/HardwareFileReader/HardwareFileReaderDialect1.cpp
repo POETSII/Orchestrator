@@ -1,14 +1,14 @@
 /* Defines behaviour for the dialect 1 functionality of the hardware model file
- * parser (see the accompanying header for further information). */
+ * reader (see the accompanying header for further information). */
 
-#include "HardwareFileParser.h"
+#include "HardwareFileReader.h"
 
 /* Writes an 'invalid variable' error message, and appends it to the error
  * container. */
-void HardwareFileParser::d1_invalid_variable_message()
+void HardwareFileReader::d1_invalid_variable_message()
 {
     errors.push_back(dformat(
-        "L%u: Variable '%s' in section '%s' is not recognised by the parser. "
+        "L%u: Variable '%s' in section '%s' is not recognised by the reader. "
         "Is it valid?\n", record->pos, variable.c_str(), sectionName.c_str()));
 }
 
@@ -21,7 +21,7 @@ void HardwareFileParser::d1_invalid_variable_message()
  * Throws if:
  *
  *  - the input file is semantically invalid. */
-void HardwareFileParser::d1_populate_hardware_model(P_engine* engine)
+void HardwareFileReader::d1_populate_hardware_model(P_engine* engine)
 {
     /* Call the various semantic validation methods. */
     bool failedValidation = false;
@@ -44,7 +44,7 @@ void HardwareFileParser::d1_populate_hardware_model(P_engine* engine)
 }
 
 /* Provisions a dialect 1 deployer with the configuration in this
- * parser. Performs validation on types of values in assignments, as well as
+ * reader. Performs validation on types of values in assignments, as well as
  * conveniently-easy-to-catch semantic mistakes (i.e. missing '+' signs before
  * a binding). Returns false if the validation found any problems, and true
  * otherwise.
@@ -52,7 +52,7 @@ void HardwareFileParser::d1_populate_hardware_model(P_engine* engine)
  * Arguments:
  *
  * - deployer: Deployer object to provision. */
-bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer)
+bool HardwareFileReader::d1_provision_deployer(Dialect1Deployer* deployer)
 {
     bool valid = true;
 
@@ -465,7 +465,7 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer)
             {
                 valid = false;
                 errors.push_back(dformat(
-                    "L%u: Section name '%s' is not recognised by the parser. "
+                    "L%u: Section name '%s' is not recognised by the reader. "
                     "Is it valid?\n",
                     (*sectionIterator)->pos, sectionName.c_str()));
             }
@@ -489,7 +489,7 @@ bool HardwareFileParser::d1_provision_deployer(Dialect1Deployer* deployer)
  *
  * Returns true if all sections exist and are unique, and false
  * otherwise. Should only be called after a file has been loaded. */
-bool HardwareFileParser::d1_validate_sections()
+bool HardwareFileReader::d1_validate_sections()
 {
     /* Grab section names. */
     std::vector<UIF::Node*> sectionNameNodes;
