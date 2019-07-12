@@ -5,7 +5,8 @@
 
 #include "OSFixes.hpp"
 
-#define P_MAX_OPINS_PER_DEVICE 32
+#define P_MAX_OPINS_PER_DEVICE 32                   // The maximum number of output pins a device can have
+
 #define P_MSG_Q_MAXCOUNT 1
 #define P_ONIDLE_CHANGE 0x80000000
 #define IDLE_SWEEP_CHUNK_SIZE 128
@@ -25,8 +26,7 @@ typedef struct p_message_q
 typedef uint32_t (*RTS_handler_t)
 (   const void* graphProps,
     void*       device,
-    uint32_t*   readyToSend,
-    void**      msg_buf
+    uint32_t*   readyToSend
 );
 
 typedef uint32_t (*OnIdle_handler_t)
@@ -50,8 +50,7 @@ typedef uint32_t (*Recv_handler_t)
 typedef uint32_t (*Send_handler_t)
 (   const void* graphProps,
     void*       device,
-    void*       msg,
-    uint32_t    buffered
+    void*       msg
 );
 
 typedef struct PInputType
@@ -99,14 +98,11 @@ typedef struct POutputEdge
 typedef struct POutputPin
 {
     PDeviceInstance*  device;
-    out_pintyp_t*     pinType;
-    P_Msg_Q_t         msg_q_buf[P_MSG_Q_MAXCOUNT];
-    P_Msg_Q_t*        msg_q_head;
-    P_Msg_Q_t*        msg_q_tail;
+    out_pintyp_t*     pinType;    
     uint32_t          numTgts;
     outEdge_t*        targets;
-    POutputPin*       RTSPinPrev;
-    POutputPin*       RTSPinNext;
+    uint32_t          idxTgts;              // Where we are up to with sending this pin
+    uint32_t          sendPending;          // Flag that the pin wants to send
 } outPin_t;
 
 // this maps input edges by pin.
@@ -141,11 +137,6 @@ typedef struct PDeviceInstance
     outPin_t*                           outputPins;
     const void*                         properties;
     void*                               state;
-    PDeviceInstance*                    RTSPrev;
-    PDeviceInstance*                    RTSNext;
-    outPin_t*                           RTSPinHead;
-    outPin_t*                           RTSPinTail;
-    uint32_t                            currTgt; // device to send to for current RTS pin
 } devInst_t;
 
 typedef struct PThreadContext
@@ -156,10 +147,11 @@ typedef struct PThreadContext
     uint32_t           numDevInsts;
     devInst_t*         devInsts;
     const void*        properties;
-    devInst_t*         RTSHead;
-    devInst_t*         RTSTail;
-    uint32_t           nextOnIdle;
-    uint32_t           receiveHasPriority;
+    uint32_t           rtsBufSize;      // The size of the RTS buffer
+    outPin_t**         rtsBuf;          // Pointer to the RTS buffer array
+    uint32_t           rtsStart;        // index of the first pending RTS
+    uint32_t           rtsEnd;          // index of the last pending RTS.   
+    uint32_t           idleStart;       // index of where to start OnIdle from
     uint32_t           ctlEnd;
 } ThreadCtxt_t;
 
@@ -187,23 +179,6 @@ void outPin_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt);
 void outPinTgt_init(uint32_t tgt, outPin_t* pin, ThreadCtxt_t* thr_ctxt);
 void inPin_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt);
 void inPinSrc_init(uint32_t src, inPin_t* pin, ThreadCtxt_t* thr_ctxt);
-
-// wrappers for the basic handlers.
-// the onSend handler needs to be responsible for updating the send address and managing the RTS list.
-int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf);
-void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf);
-bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt);
-void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device);
-
-// utility functions to manage ready-to-send queue 
-inline bool softswitch_IsRTSReady(ThreadCtxt_t* thr_ctxt) {return thr_ctxt->RTSHead != 0;};
-void softswitch_pushRTS(ThreadCtxt_t* thr_ctxt, devInst_t* new_device);
-devInst_t* softswitch_popRTS(ThreadCtxt_t* thr_ctxt);
-void softswitch_pushRTSPin(devInst_t* device, outPin_t* new_pin);
-outPin_t* softswitch_popRTSPin(devInst_t* device);
-void softswitch_pushMsg(outPin_t* pin, P_Msg_Q_t* msg);
-P_Msg_Q_t* softswitch_popMsg(outPin_t* pin);
-P_Msg_Q_t* softswitch_nextMsg(outPin_t* pin);
 
 // workaround bodge for some unfinished business in the XML handler fragments. Should be fixed in the XML.
 inline uint32_t handler_exit(uint32_t code) {return code;};

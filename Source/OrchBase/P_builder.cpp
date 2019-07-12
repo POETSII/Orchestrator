@@ -1113,15 +1113,6 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << thread->P_devicel.size() <<  ",";                     // numDevInsts
   vars_cpp << "Thread_" << thread_num << "_Devices,";               // devInsts
   vars_cpp << ((devTyp->par->pPropsD)?"&GraphProperties,":"PNULL,");// properties
-
-  vars_cpp << "PNULL,";                                             // RTSHead              // TODO: Remove
-  vars_cpp << "PNULL,";                                             // RTSTail              // TODO: Remove
-  vars_cpp << "0,";                                                 // nextOnIdle           // TODO: Remove
-  vars_cpp << "1,";                                                 // receiveHasPriority   // TODO: Remove
-  vars_cpp << "0";                                                  // ctlEnd               // TODO: Remove
-  vars_cpp << "};\n";
-  
-  /* Replacement for the above for the "new" softswitch
   vars_cpp << ",";                              // rtsBuffSize              //TODO:
   vars_cpp << "PNULL,";                                             // rtsBuf
   vars_cpp << "0,";                                                 // rtsStart
@@ -1129,7 +1120,6 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << "0,";                                                 // idleStart
   vars_cpp << "0";                                                  // ctlEnd
   vars_cpp << "};\n";
-  */
   //============================================================================
   
   
@@ -1632,10 +1622,6 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
         
         pinInitialiser << "&Thread_" << thread_num;
         pinInitialiser << "_DevTyp_0_OutputPins[" << (*pin)->idx << "],";   // pinType
-        
-        pinInitialiser << "{},";                                            // msg_q_buf[P_MSG_Q_MAXCOUNT]  // TODO: Remove
-        pinInitialiser << "PNULL,";                                         // msg_q_head                   // TODO: Remove
-        pinInitialiser << "PNULL,";                                         // msg_q_tail.                  // TODO: Remove
         //======================================================================
         
         
@@ -1649,8 +1635,8 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           //====================================================================
           pinInitialiser << "0,";                                           // numTgts
           pinInitialiser << "PNULL,";                                       // targets
-          pinInitialiser << "PNULL,";                                       // RTSPinPrev                   // TODO: Remove
-          pinInitialiser << "PNULL";                                        // RTSPinNext                   // TODO: Remove
+          pinInitialiser << "0,";                                           // idxTgts
+          pinInitialiser << "0";                                            // sendPending
           pinInitialiser << "},";  
           //====================================================================
         }
@@ -1665,9 +1651,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           pinInitialiser << "_Device_" << (*device)->Name();
           pinInitialiser << "_OutPin_" << (*pin)->Name() << "_Tgts,";       // targets
           
-          pinInitialiser << "PNULL,";                                       // RTSPinPrev                   // TODO: Remove
-          pinInitialiser << "PNULL";                                        // RTSPinNext                   // TODO: Remove
-          pinInitialiser << "},";
+          pinInitialiser << "0,";                                           // idxTgts
+          pinInitialiser << "0";                                            // sendPending
+          pinInitialiser << "},";  
           //====================================================================
           
           
@@ -1828,11 +1814,6 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     //==========================================================================
     // Form the last bit of this PDeviceInstance/devInst_t initialiser with defaults
     //==========================================================================
-    devInstInitialiser << "PNULL,";                                         // RTSPrev                   // TODO: Remove
-    devInstInitialiser << "PNULL,";                                         // RTSNext                   // TODO: Remove
-    devInstInitialiser << "PNULL,";                                         // RTSPinHead                // TODO: Remove
-    devInstInitialiser << "PNULL,";                                         // RTSPinTail                // TODO: Remove
-    devInstInitialiser << "0";                                              // currTgt                   // TODO: Remove
     devInstInitialiser << "},";
     //==========================================================================
     
