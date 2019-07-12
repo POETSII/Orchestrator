@@ -862,13 +862,11 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   // ReadyToSend 
   handlers_h << "uint32_t devtyp_" << devtyp_name;
   handlers_h << "_RTS_handler (const void* graphProps, ";
-  handlers_h << "void* device, uint32_t* readyToSend, ";
-  handlers_h << "void** msg_buf);\n";
+  handlers_h << "void* device, uint32_t* readyToSend);\n";
   
   handlers_cpp << "uint32_t devtyp_" << devtyp_name;
   handlers_cpp << "_RTS_handler (const void* graphProps, ";
-  handlers_cpp << "void* device, uint32_t* readyToSend, ";
-  handlers_cpp << "void** msg_buf)\n";
+  handlers_cpp << "void* device, uint32_t* readyToSend)\n";
   handlers_cpp << handlerPreamble.str();
   handlers_cpp << c_devtyp->pOnRTS->c_src << "\n";
   handlers_cpp << "   return *readyToSend;\n"; // we assume here the return value is intended to be an RTS bitmap.
@@ -998,12 +996,12 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     handlers_h << "uint32_t devtyp_" << devtyp_name;
     handlers_h << "_OutPin_" << Opin_name;
     handlers_h << "_Send_handler (const void* graphProps, ";
-    handlers_h << "void* device, void* msg, uint32_t buffered);\n";
+    handlers_h << "void* device, void* msg);\n";
     
     handlers_cpp << "uint32_t devtyp_" << devtyp_name;
     handlers_cpp << "_OutPin_" << Opin_name;
     handlers_cpp << "_Send_handler (const void* graphProps, ";
-    handlers_cpp << "void* device, void* msg, uint32_t buffered)\n";
+    handlers_cpp << "void* device, void* msg)\n";
     
     handlers_cpp << handlerPreamble.str();
     
