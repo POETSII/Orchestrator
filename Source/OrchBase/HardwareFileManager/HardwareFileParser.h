@@ -77,7 +77,7 @@
 #include "HardwareModel.h"
 #include "HardwareSemanticException.h"
 #include "HardwareSyntaxException.h"
-#include "Validation.h"
+#include "Validator.h"
 
 #include "dfprintf.h"
 #include "flat.h"

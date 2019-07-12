@@ -70,7 +70,7 @@ HARDWARE_ITERATOR_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.
 HARDWARE_FILE_PARSER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileManager/HardwareFileParserCore.cpp \
                                $(SOURCE_DIR)/OrchBase/HardwareFileManager/HardwareFileParserDialect1.cpp \
                                $(SOURCE_DIR)/OrchBase/HardwareFileManager/HardwareFileParserDialect3.cpp \
-                               $(SOURCE_DIR)/OrchBase/HardwareFileManager/Validation.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileManager/Validator.cpp \
                                $(GENERICS_DIR)/dfprintf.cpp \
                                $(GENERICS_DIR)/flat.cpp \
                                $(GENERICS_DIR)/jnj.cpp \

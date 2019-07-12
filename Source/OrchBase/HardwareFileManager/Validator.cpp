@@ -1,7 +1,7 @@
 /* Defines node validation mechanism (see the accompanying
  * header for further information). */
 
-#include "Validation.h"
+#include "Validator.h"
 
 /* Returns whether all of the mandatory strings (elements of mandatoryFields)
  * map to true in the fieldsFound map, and false otherwise (even if the string
