@@ -204,7 +204,6 @@ bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
                     tmpThread = new P_thread(dformat(
                         "T%0*u", how_many_digits(threadQuantity), threadId));
 
-                    tmpThread = new P_thread(dformat("T%u", threadId));
                     try
                     {
                         coreIterator->second->contain(threadId, tmpThread);
