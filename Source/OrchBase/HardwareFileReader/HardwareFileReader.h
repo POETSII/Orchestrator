@@ -65,6 +65,7 @@
  * See the hardware model documentation for a description of the file
  * format. */
 
+#include <math.h>
 #include <numeric>
 #include <string.h>
 #include <vector>
@@ -113,6 +114,8 @@ typedef std::string MailboxName;
 
 #define ITEM_ENUM_LENGTH 3
 enum item {box, board, mailbox};
+
+#define DEFAULT_ENGINE_NAME "UnnamedEngine"
 
 class HardwareFileReader: public JNJ, public Validator
 {
@@ -248,4 +251,6 @@ private:
     std::map<std::string, P_box*> boxFromName;
 
 };
+
+int how_many_digits(unsigned printable);
 #endif

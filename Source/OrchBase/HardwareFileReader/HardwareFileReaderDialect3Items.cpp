@@ -31,7 +31,8 @@ bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
     AddressComponent coreId;
     for (coreId = 0; coreId < coreQuantity; coreId++)
     {
-        tmpCore = new P_core(dformat("Core %u", coreId));
+        tmpCore = new P_core(dformat(
+                             "C%0*u", how_many_digits(coreQuantity), coreId));
         try
         {
             mailbox->contain(coreId, tmpCore);
@@ -194,13 +195,16 @@ bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
             std::map<AddressComponent, P_core*>::iterator coreIterator;
             unsigned threadId;
             P_thread* tmpThread;
+            unsigned threadQuantity = str2unsigned(valueNodes[0]->str);
             for (coreIterator=mailbox->P_corem.begin();
                  coreIterator!=mailbox->P_corem.end(); coreIterator++)
             {
-                for (threadId = 0; threadId < str2unsigned(valueNodes[0]->str);
-                     threadId++)
+                for (threadId=0; threadId<threadQuantity; threadId++)
                 {
-                    tmpThread = new P_thread(dformat("Thread %u", threadId));
+                    tmpThread = new P_thread(dformat(
+                        "T%0*u", how_many_digits(threadQuantity), threadId));
+
+                    tmpThread = new P_thread(dformat("T%u", threadId));
                     try
                     {
                         coreIterator->second->contain(threadId, tmpThread);
@@ -1720,3 +1724,6 @@ bool HardwareFileReader::d3_populate_validate_engine_box(P_engine* engine)
 
     return !anyErrors;
 }
+
+/* Returns the number of digits in the argument. */
+int how_many_digits(unsigned printable){return (int)log10(printable) + 1;}

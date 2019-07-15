@@ -210,6 +210,9 @@ bool HardwareFileReader::d3_populate_validate_header(P_engine* engine)
     std::vector<UIF::Node*> valueNodes;
     std::vector<UIF::Node*> variableNodes;
 
+    /* Holds whether or not the engine has been given a name. */
+    bool isEngineNamed = false;
+
     /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
     GetRecd(untypedSections[sectionName], recordNodes);
@@ -280,6 +283,8 @@ bool HardwareFileReader::d3_populate_validate_header(P_engine* engine)
         else if (variable == "file")
         {
             engine->fileOrigin = valueNodes[0]->str;
+            engine->Name(valueNodes[0]->str);
+            isEngineNamed = true;
         }
 
         /* Ignore this one for now. */
@@ -296,6 +301,12 @@ bool HardwareFileReader::d3_populate_validate_header(P_engine* engine)
                                                  &fieldsFound))
     {
         anyErrors = true;
+    }
+
+    /* If the engine has not been named, give it a default name. */
+    if (!isEngineNamed)
+    {
+        engine->Name(DEFAULT_ENGINE_NAME);
     }
 
     return !anyErrors;
