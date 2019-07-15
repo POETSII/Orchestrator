@@ -14,7 +14,7 @@ bool HardwareFileReader::d3_populate_validate_address_format(P_engine* engine)
     bool anyErrors = false;  /* Innocent until proven guilty. */
     sectionName = "packet_address_format";
 
-    /* Valid fields for the header section (all are mandatory). */
+    /* Valid fields for the header section. */
     std::vector<std::string> validFields;
     std::vector<std::string>::iterator fieldIterator;
     validFields.push_back("box");
@@ -22,6 +22,21 @@ bool HardwareFileReader::d3_populate_validate_address_format(P_engine* engine)
     validFields.push_back("mailbox");
     validFields.push_back("core");
     validFields.push_back("thread");
+
+    /* Mandatory fields for the header section. Could be indeces that refer to
+     * validFields, but this is (probably) easier to read/maintain. */
+    std::vector<std::string> mandatoryFields;
+    mandatoryFields.push_back("board");
+    mandatoryFields.push_back("mailbox");
+    mandatoryFields.push_back("core");
+    mandatoryFields.push_back("thread");
+
+    /* We live in a world where the box component of the address may or may not
+     * be mandatory. */
+    if (!IGNORE_BOX_COMPONENT)
+    {
+        mandatoryFields.push_back("box");
+    }
 
     /* Holds fields we've already grabbed (for validation purposes). */
     std::map<std::string, bool> fieldsFound;
@@ -161,7 +176,8 @@ bool HardwareFileReader::d3_populate_validate_address_format(P_engine* engine)
     }
 
     /* Ensure mandatory fields have been defined. */
-    if (!complain_if_mandatory_field_not_defined(&validFields, &fieldsFound))
+    if (!complain_if_mandatory_field_not_defined(&mandatoryFields,
+                                                 &fieldsFound))
     {
         anyErrors = true;
     }
