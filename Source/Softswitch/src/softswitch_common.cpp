@@ -161,49 +161,76 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
     return cur_device->currTgt;
 }
 
-void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
+void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
 {
-    // first need to do some basic decode of the packet:
-    P_Msg_Hdr_t* recv_pkt = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(recv_buf));
-    devInst_t* recv_device_begin = thr_ctxt->devInsts;
-    devInst_t* recv_device_end = thr_ctxt->devInsts+thr_ctxt->numDevInsts;
-    // device in range? A Supervisor packet may target the entire group by sending a broadcast address.    
-    if (recv_pkt->destDeviceAddr != DEST_BROADCAST)
-    {
-        if (((recv_pkt->destDeviceAddr & P_DEVICE_MASK) >> P_DEVICE_OS) < thr_ctxt->numDevInsts)
-           recv_device_end = (recv_device_begin =  &thr_ctxt->devInsts[(recv_pkt->destDeviceAddr & P_DEVICE_MASK) >> P_DEVICE_OS]) + 1;
-        else return; // exit and dump packet if the device is out of range.
+    // Decode the message target
+    P_Msg_Hdr_t* recvPkt = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(recv_buf));
+    devInst_t* recvDevBegin;
+    devInst_t* recvDevEnd;
+    
+    if (recvPkt->destDeviceAddr == DEST_BROADCAST)
+    {   // Message is a broadcast to all devices.
+        recvDevBegin = ThreadContext->devInsts;
+        recvDevEnd = ThreadContext->devInsts + ThreadContext->numDevInsts;
     }
-    uint32_t RTS_updated __attribute__((unused));
-    // stop message ends the simulation and exits the update loop at the earliest possible opportunity
-    if ((recv_pkt->messageTag == P_MSG_TAG_STOP) && (recv_pkt->destPin == P_SUP_PIN_SYS_SHORT))
+    else if (((recvPkt->destDeviceAddr & P_DEVICE_MASK) >> P_DEVICE_OS) 
+                < ThreadContext->numDevInsts)   // TODO: fix when addresses are fixed
+    {   // Message is for a single device in range.
+        recvDevBegin =  &ThreadContext->devInsts[
+                                    (recvPkt->destDeviceAddr & P_DEVICE_MASK)
+                                    >> P_DEVICE_OS];
+        recvDevEnd = recvDevBegin + 1;
+    }
+    else return;    // Message target is out of range.
+    
+    
+    // Stop message ends the simulation & exits main loop at the earliest opportunity
+    if ((recvPkt->messageTag == P_MSG_TAG_STOP) 
+            && (recvPkt->destPin == P_SUP_PIN_SYS_SHORT))
     {
-        thr_ctxt->ctlEnd = 1;
+        ThreadContext->ctlEnd = 1;
         return;
     }
     
-    // go through the devices (usually only 1)
-    for (devInst_t* recv_device = recv_device_begin; recv_device != recv_device_end; recv_device++)
+    // Loop through each target device (1 unless a broadcast message)
+    for (devInst_t* device = recvDevBegin; device != recvDevEnd; device++)
     {
-        // which pin will receive the message?
-        inPin_t* recv_pin = &recv_device->inputPins[recv_pkt->destPin];
-        // source was a supervisor? Run OnCtl. We assume here full context (thread, device) should be passed.
-        if (recv_pkt->destDeviceAddr & P_SUP_MASK)
-        {
-            // **BODGE BODGE BODGE** *Very* temporary handler for dealing with __init__. This works ONLY because
-            // the __init__ pin on all devices that have it in existing XML happens to be pin 0 (which means that
-            // a Supervisor can guess what the pin number is supposed to be). In any case, this should route it
-            // through the __init__ handler. Luckily message types are globally unique, or likewise this wouldn't
-            // work if the device had no __init__ pin. This test should be removed as soon as __init__ pins lose
-            // any special meaning in existing XML!
-            if ((recv_pkt->messageTag == P_MSG_TAG_INIT) && (recv_pin->pinType->msgType == recv_pkt->messageTag))
-                RTS_updated = recv_pin->pinType->Recv_handler(thr_ctxt->properties, recv_device, 0, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+p_hdr_size());
-            else RTS_updated = recv_device->devType->OnCtl_Handler(thr_ctxt, recv_device, static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+p_hdr_size());
+        inPin_t* pin = &device->inputPins[recvPkt->destPin];    // Get the pin
+        
+        // TODO: fix this when we use proper headers
+        if (recvPkt->destDeviceAddr & P_SUP_MASK)                                 
+        {   // This is a control packet
+            if ((recvPkt->messageTag == P_MSG_TAG_INIT) 
+                    && (pin->pinType->msgType == recvPkt->messageTag))
+            {
+                // **BODGE BODGE BODGE** not so temporary handler for dealing with __init__. This works ONLY because
+                // the __init__ pin on all devices that have it in existing XML happens to be pin 0 (which means that
+                // a Supervisor can guess what the pin number is supposed to be). In any case, this should route it
+                // through the __init__ handler. Luckily message types are globally unique, or likewise this wouldn't
+                // work if the device had no __init__ pin. This test should be removed as soon as __init__ pins lose
+                // any special meaning in existing XML!
+                pin->pinType->Recv_handler(ThreadContext->properties, device, 0,
+                                            static_cast<const uint8_t*>(
+                                            const_cast<const void*>(recv_buf)
+                                            )+p_hdr_size());
+            }
+            else 
+            {   // Otherwise it triggers OnCtl
+                device->devType->OnCtl_Handler(ThreadContext, device, 
+                                                static_cast<const uint8_t*>(
+                                                const_cast<const void*>(recv_buf)
+                                                )+p_hdr_size());
+            }
         }
-            // otherwise handle as a normal device through the appropriate receive handler.
-            else RTS_updated = recv_pin->pinType->Recv_handler(thr_ctxt->properties, recv_device, &recv_pin->sources[recv_pkt->destEdgeIndex], static_cast<const uint8_t*>(const_cast<const void*>(recv_buf))+p_hdr_size());
-        // finally, run the RTS handler for the device.
-        softswitch_onRTS(thr_ctxt, recv_device);
+        else
+        {   // Handle as a normal packet
+            pin->pinType->Recv_handler(ThreadContext->properties, device, 
+                                        &pin->sources[recvPkt->destEdgeIndex], 
+                                        static_cast<const uint8_t*>(
+                                        const_cast<const void*>(recv_buf)
+                                        )+p_hdr_size());
+        }    
+        softswitch_onRTS(ThreadContext, device);    // Run OnRTS for the device
     }
 }
 
