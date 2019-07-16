@@ -207,48 +207,49 @@ void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
     }
 }
 
-bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt)
+bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
 {
-    uint32_t cur_device = thr_ctxt->nextOnIdle & ~P_ONIDLE_CHANGE;
-    if (cur_device >= thr_ctxt->numDevInsts) return false;
-    uint32_t last_device = cur_device+IDLE_SWEEP_CHUNK_SIZE;
-    if (last_device >= (thr_ctxt->numDevInsts)) last_device = IDLE_SWEEP_CHUNK_SIZE - thr_ctxt->numDevInsts + last_device;
-    while (cur_device != last_device)
-    {
-        devInst_t* device = &thr_ctxt->devInsts[cur_device];
-        // each device's OnIdle handler and if something interesting happens update the flag and run the RTS handler.
-        if (device->devType->OnIdle_Handler(thr_ctxt->properties, device))
+    uint32_t maxIdx = ThreadContext->numDevInsts - 1;   // # devices we are looping through
+    //devInst_t* devices = ThreadContext->devInsts;       // Shortcut to the devices array
+    
+    uint32_t idleStart = ThreadContext->idleStart;      // pickup where we left off
+    uint32_t idleIdx = idleStart;
+    bool notIdle = false;                           // Return val
+    
+    do {        // Do-while for exit-controlled loop.
+        bool rtsFlagged = false;
+        devInst_t* device = &ThreadContext->devInsts[idleIdx];
+        
+        if (tinselCanRecv())     // Something to RX, bail!
         {
-            if (++cur_device >= thr_ctxt->numDevInsts) thr_ctxt->nextOnIdle = P_ONIDLE_CHANGE;
-            else thr_ctxt->nextOnIdle = P_ONIDLE_CHANGE | cur_device;
-            softswitch_onRTS(thr_ctxt, device);
-            return true;
+            notIdle = true;       // return 1 as "something" has happened              
+            break;
         }
-        if (++cur_device >= thr_ctxt->numDevInsts)
+        
+        if (device->devType->OnIdle_Handler(ThreadContext->properties, device))
         {
-            if (thr_ctxt->nextOnIdle & P_ONIDLE_CHANGE)
-            {
-               // something 'interesting' happened in OnIdle. So wrap around to the top of the device list and continue looping
-               thr_ctxt->nextOnIdle &= ~P_ONIDLE_CHANGE;
-               cur_device = 0;
-            }
-            else
-            {
-               thr_ctxt->nextOnIdle = thr_ctxt->numDevInsts;
-               return false; // got through the entire device list without incident. Exit and wait for I/O.
-            }
+            notIdle = true;                                         // Something interesting happened 
+            rtsFlagged = softswitch_onRTS(ThreadContext, device);   // Call RTS for device
         }
-    }
-    thr_ctxt->nextOnIdle = last_device | (thr_ctxt->nextOnIdle & P_ONIDLE_CHANGE);
-    return true; // got through this chunk of the device list. Allow I/O the chance to register. 
+
+        if(idleIdx < maxIdx) ++idleIdx;     // Increment the index,
+        else idleIdx = 0;                   // or reset it to wrap.
+        
+        if (rtsFlagged) break;              // RTS has been flagged - bail!
+    } while (idleIdx != idleStart);     // Exit if we have serviced all devices.
+    
+    ThreadContext->idleStart = idleIdx;    // save our position
+    return notIdle;     
 }
 
-void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device)
+uint32_t softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device)
 {
     uint32_t rts[(P_MAX_OPINS_PER_DEVICE+31)>>5]; // flags for new ready-to-send pins
     void* rts_buf[P_MAX_OPINS_PER_DEVICE] = {}; // send buffers for the RTS handler, using default zero-initialisation
     uint32_t num_grps = (31+device->numOutputs) >> 5;
     uint32_t pin_grp, pin, pins_this_grp;
+    uint32_t rtsUpdated = 0;
+    
     // first need to deal with the active sending device. If it's finished sending
     // a message, we remove it from the queue before handling new insertions.
     outPin_t* cur_pin = device->RTSPinHead;
@@ -290,6 +291,9 @@ void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device)
                 {
                     // yes. Push the various queues. 
                     outPin_t* output_pin = &device->outputPins[32*pin_grp + pin];
+                    
+                    rtsUpdated = 1;
+                    
                     if (rts_buf[32*pin_grp + pin]) // pin has an available message buffer?
                     {
                         // append to the pin's message queue.
@@ -309,6 +313,7 @@ void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device)
     if (cur_pin && (cur_pin != device->RTSPinHead) && cur_pin->msg_q_head) softswitch_pushRTSPin(device, cur_pin);
     // device not already active. Insert into the queue, or rotate the device round to the back of the thread's RTS list if it's still RTS.
     if (!(device->RTSPrev || device->RTSNext || (device == thr_ctxt->RTSHead)) && device->RTSPinHead) softswitch_pushRTS(thr_ctxt, device); 
+    return rtsUpdated;
 }
 
 void softswitch_pushRTS(ThreadCtxt_t* thr_ctxt, devInst_t* new_device)

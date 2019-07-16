@@ -1116,8 +1116,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
 
   vars_cpp << "PNULL,";                                             // RTSHead              // TODO: Remove
   vars_cpp << "PNULL,";                                             // RTSTail              // TODO: Remove
-  vars_cpp << "0,";                                                 // nextOnIdle           // TODO: Remove
-  vars_cpp << "1,";                                                 // receiveHasPriority   // TODO: Remove
+  vars_cpp << "0,";                                                 // idleStart
   vars_cpp << "0";                                                  // ctlEnd               // TODO: Remove
   vars_cpp << "};\n";
   

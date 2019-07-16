@@ -158,8 +158,7 @@ typedef struct PThreadContext
     const void*        properties;
     devInst_t*         RTSHead;
     devInst_t*         RTSTail;
-    uint32_t           nextOnIdle;
-    uint32_t           receiveHasPriority;
+    uint32_t           idleStart;       // index of where to start OnIdle from
     uint32_t           ctlEnd;
 } ThreadCtxt_t;
 
@@ -193,7 +192,7 @@ void inPinSrc_init(uint32_t src, inPin_t* pin, ThreadCtxt_t* thr_ctxt);
 int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf);
 void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf);
 bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt);
-void softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device);
+uint32_t softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device);
 
 // utility functions to manage ready-to-send queue 
 inline bool softswitch_IsRTSReady(ThreadCtxt_t* thr_ctxt) {return thr_ctxt->RTSHead != 0;};
