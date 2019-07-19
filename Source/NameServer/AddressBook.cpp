@@ -175,12 +175,9 @@ unsigned AddressBook::ClearTask(const std::string &TaskName)
     TaskData_t cTask;
     unsigned err = SUCCESS;
     if ((err = GetTask(TaskName, cTask)) != SUCCESS) return err;
-    cTask.DeviceCount = 0;
     cTask.DeviceCountLd = 0;
-    cTask.ExternalCount = 0;
     cTask.ExternalCountLd = 0;
     cTask.SupervisorCount = 0;
-    cTask.DeviceTypes.clear();
     if ((err = DelTask(TaskName)) != SUCCESS) return err;
     return AddTask(TaskName, cTask);
 }  

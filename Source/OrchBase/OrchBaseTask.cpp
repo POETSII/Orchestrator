@@ -465,7 +465,7 @@ WALKMAP(string, P_task*, P_taskm, task)
       nsTask.PutX(1,&attrs);
       vector<unsigned long> counts;
       unsigned long deviceCount = 0;
-      // tediously, we have to walk the graph because supervisors and externals]
+      // tediously, we have to walk the graph because supervisors and externals
       // must be disambiguated.
       for (map<unsigned,pdigraph<unsigned,P_device *,unsigned,P_message *,unsigned,P_pin *>::node>::iterator dn = task->second->pD->G.index_n.begin(); dn != task->second->pD->G.index_n.end(); dn++)
            if (dn->second.data != task->second->pSup) ++deviceCount;
@@ -474,16 +474,6 @@ WALKMAP(string, P_task*, P_taskm, task)
       // counts.push_back(task->second->pD->G.SizeNodes());
       counts.push_back(0); // number of externals. In future this will need to be distinguished.
       deviceCount = 0;
-      set<P_box*> taskBoxes;
-      WALKVECTOR(P_board*, task->second->pSup->P_boardv, board)
-      {
-	if (taskBoxes.find((*board)->parent) == taskBoxes.end())
-	{
-	   taskBoxes.insert((*board)->parent);
-	   ++deviceCount;
-	}
-      }
-      counts.push_back(deviceCount);
       nsTask.Put(2,&counts);
       nsTask.Send(nsRank);
       nsTask.Clear();

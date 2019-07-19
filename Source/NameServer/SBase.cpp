@@ -306,12 +306,59 @@ unsigned SBase::CmdIntegrity(PMsg_p *msg)
 
 unsigned SBase::ConfigBuild(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   string taskName = msg->Zname(0);
+   vector<string> tasks;
+   unsigned err = SUCCESS;
+   if (taskName.empty())
+   {
+      if (err = ListTask(tasks))
+      {
+	 Post(721,"rebuild","list",int2str(Urank));
+	 return err;
+      }
+   }
+   else tasks.push_back(taskName);
+   vector<string>::iterator task;
+   for (task = tasks.begin(); task != tasks.end(); task++)
+   {
+       if (!(err = RebuildTask(*task)))
+       {
+          if (!(err = BuildMaps(*task)))
+             err = BuildLink(*task);
+       }
+       if (err)
+       {
+	  Post(721,"rebuild",*task,int2str(Urank));
+          return err;
+       }
+   }
+   return err;	  
 }
   
 unsigned SBase::ConfigDelete(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   string taskName = msg->Zname(0);
+   vector<string> tasks;
+   unsigned err = SUCCESS;
+   if (taskName.empty())
+   {
+      if (err = ListTask(tasks))
+      {
+	 Post(721,"gett","list",int2str(Urank));
+	 return err;
+      }
+   }
+   else tasks.push_back(taskName);
+   vector<string>::iterator task;
+   for (task = tasks.begin(); task != tasks.end(); task++)
+   {
+       if (err = DelTask(*task))
+       {
+	  Post(721,"delet",*task,int2str(Urank));
+          return err;
+       }
+   }
+   return err;	
 }
 
 unsigned SBase::ConfigDistribute(PMsg_p *msg, unsigned comm)
@@ -321,12 +368,46 @@ unsigned SBase::ConfigDistribute(PMsg_p *msg, unsigned comm)
 
 unsigned SBase::ConfigDir(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   string taskName = msg->Zname(0);
+   string taskPath = msg->Zname(1);
+   if (taskPath.empty()) Post(723,int2str(Urank));
+   if (TaskExecPath(taskName,taskPath))
+   {
+      Post(724,taskName,int2str(Urank)); 
+      return ERR_TASK_NOT_FOUND; 
+   }
+   return SUCCESS;			      
 }
 
 unsigned SBase::ConfigRecall(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   string taskName = msg->Zname(0);
+   vector<string> tasks;
+   unsigned err = SUCCESS;
+   if (taskName.empty())
+   {
+      if (err = ListTask(tasks))
+      {
+	 Post(721,"gett","list",int2str(Urank));
+	 return err;
+      }
+   }
+   else tasks.push_back(taskName);
+   vector<string>::iterator task;
+   for (task = tasks.begin(); task != tasks.end(); task++)
+   {
+       if (err = ClearTask(*task))
+       {
+	  Post(721,"clear",*task,int2str(Urank));
+          return err;
+       }
+       if (err = TaskState(*task,Unknown))
+       {
+	  Post(725,*task,int2str(Urank));
+	  return err;
+       }
+   }
+   return err;
 }
 
 unsigned SBase::ConfigState(PMsg_p *msg, unsigned comm)
@@ -349,12 +430,11 @@ unsigned SBase::DataTask(PMsg_p *msg)
    msg->GetX(1, task.AttributeTypes);
    vector<unsigned long> counts;
    msg->Get(2, counts);
-   if (counts.size() != 3) Post(720,uint2str(counts.size()),"3",task.Name,int2str(Urank));
+   if (counts.size() != 2) Post(720,uint2str(counts.size()),"2",task.Name,int2str(Urank));
    else
    {
       task.DeviceCount = counts[0];
       task.ExternalCount = counts[1];
-      task.SupervisorCount = counts[2];
    }
    return AddTask(task.Name, task);
 }
@@ -402,7 +482,7 @@ unsigned SBase::DataDevice(PMsg_p *msg)
       Post(718,taskName,int2str(Urank),devTypName);
       return AddressBook::ERR_INVALID_DEVTYPE;
    }
-   FILE* dbgSBase = fopen("Root2NS_SBase_devices.txt","a"); // DEBUG ONLY
+   // FILE* dbgSBase = fopen("Root2NS_SBase_devices.txt","a"); // DEBUG ONLY
    vector<string> devNames;
    // vector<RecordData_t> devData;
    vector<SymAddr_t> devAddrs;
@@ -434,10 +514,13 @@ unsigned SBase::DataDevice(PMsg_p *msg)
    //    Post(716,int2str(Urank),uint2str(devNames.size()),uint2str(devData.size()));
    //   return ERR_DEVICE_DATA_MISMATCH;	   
    // }
+   /*
    fprintf(dbgSBase, "Nameserver received device info for %u devices\n", devNames.size());
    fprintf(dbgSBase, "\n");
    fprintf(dbgSBase, "________________________________________________________________________________\n");
    fprintf(dbgSBase, "\n");
+   */
+   unsigned err = AddressBook::SUCCESS;
    for (unsigned d = 0; d < devNames.size(); d++)
    {
        Record_t device(devNames[d],
@@ -452,6 +535,7 @@ unsigned SBase::DataDevice(PMsg_p *msg)
        //                 devData[d].DeviceType,
        //                 devData[d].RecordType,
        //                 devData[d].Attribute);
+       /*
        fprintf(dbgSBase, "Device %s:\n", device.Name.c_str());
        fprintf(dbgSBase, "Address: 0x%.16llx\n", device.Address);
        if (device.RecordType == Supervisor)
@@ -461,21 +545,27 @@ unsigned SBase::DataDevice(PMsg_p *msg)
        fprintf(dbgSBase, "Attributes: %d\n", device.Attribute);
        fprintf(dbgSBase, "Record type: %d\n", static_cast<unsigned>(device.RecordType));
        fprintf(dbgSBase, "\n");
-       unsigned err = AddressBook::SUCCESS;
+       */
        if ((err = AddDevice(taskName, device)) != AddressBook::SUCCESS)
        {
-	  /*
 	  if (ClearTask(taskName) != AddressBook::SUCCESS)
 	  {
 	     Post(708, device.Name, taskName, int2str(Urank));
 	     return err;
 	  }
-          */
 	  Post(707, device.Name, taskName, int2str(Urank));
-	  // return err;
+	  return err;
        }
    }
-   fclose(dbgSBase);
+   if (TaskState(taskName) < Linked)
+   {
+      if (err = TaskState(taskName,Linked))
+      {
+	 Post(724,taskName,int2str(Urank));
+	 return err;
+      }
+   }
+   // fclose(dbgSBase);
    return AddressBook::SUCCESS;
 }
 
@@ -518,7 +608,7 @@ unsigned SBase::DataSupervisor(PMsg_p *msg)
       Post(718,taskName,int2str(Urank),devTypName);
       return AddressBook::ERR_INVALID_DEVTYPE;
    }
-   FILE* dbgSBase = fopen("Root2NS_SBase_devices.txt","a"); // DEBUG ONLY
+   // FILE* dbgSBase = fopen("Root2NS_SBase_devices.txt","a"); // DEBUG ONLY
    vector<string> devNames;
    // vector<RecordData_t> devData;
    vector<SymAddr_t> devAddrs;
@@ -549,10 +639,12 @@ unsigned SBase::DataSupervisor(PMsg_p *msg)
    //    Post(716,int2str(Urank),uint2str(devNames.size()),uint2str(devData.size()));
    //   return ERR_DEVICE_DATA_MISMATCH;	   
    // }
+   /*
    fprintf(dbgSBase, "Nameserver received supervisor info for %u supervisors\n", devNames.size());
    fprintf(dbgSBase, "\n");
    fprintf(dbgSBase, "________________________________________________________________________________\n");
    fprintf(dbgSBase, "\n");
+   */
    for (unsigned d = 0; d < devNames.size(); d++)
    {
        Record_t device(devNames[d],
@@ -567,6 +659,7 @@ unsigned SBase::DataSupervisor(PMsg_p *msg)
        //                 devData[d].DeviceType,
        //                 devData[d].RecordType,
        //                 devData[d].Attribute);
+       /*
        fprintf(dbgSBase, "Device %s:\n", device.Name.c_str());
        fprintf(dbgSBase, "Address: 0x%.16llx\n", device.Address);
        if (device.RecordType == Supervisor)
@@ -576,6 +669,7 @@ unsigned SBase::DataSupervisor(PMsg_p *msg)
        fprintf(dbgSBase, "Attributes: %d\n", device.Attribute);
        fprintf(dbgSBase, "Record type: %d\n", static_cast<unsigned>(device.RecordType));
        fprintf(dbgSBase, "\n");
+       */
        unsigned err = AddressBook::SUCCESS;
        if ((err = AddDevice(taskName, device)) != AddressBook::SUCCESS)
        {
@@ -590,7 +684,7 @@ unsigned SBase::DataSupervisor(PMsg_p *msg)
 	  // return err;
        }
    }
-   fclose(dbgSBase);
+   // fclose(dbgSBase);
    return AddressBook::SUCCESS;
 }
 
