@@ -16,6 +16,11 @@
 #include "MultiSimpleDeployer.h"
 #include "Ns_el.h"
 #include "P_super.h"
+#include "poets_msg.h"  // brings in constants to set hardware addresses. This should be rationalised. 
+#include "ABDefs.hpp"   // TODO: integrate 11 July 2019 ADR
+#include "ABRecord.hpp"
+#include <cstdio> // debug
+using namespace AddressBookNS;
 
 //==============================================================================
 // This class is chopped up into multiple .cpp files, because it's so

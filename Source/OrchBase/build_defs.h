@@ -2,7 +2,8 @@
 #define __BUILD_DEFS_H__
 
 #include <string>
-#include "tinsel-config.h"
+#include "config.h"
+//#include "tinsel-config.h"
 
 extern const std::string SYS_COPY;
 extern const std::string RECURSIVE_CPY;

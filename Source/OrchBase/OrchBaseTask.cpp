@@ -247,12 +247,124 @@ if (!ufs.empty()) {
   if (tfp!=0) fp = tfp;
   else Post(109,ufs);
 }
+// added additional dump parameters: summary (-s), NameServer (-n),
+// task name (<task> || "*") 13 July 2019 ADR
+string ufo = Cl.GetO(1);               // Look for summary operator "-"
+string ufn = Cl.GetP(1);
+if (!(ufo.empty() || ufo == "-"))      // reject other operators
+{
+   Post(25, ufo+ufs, "task /dump");
+   return;  
+}
+bool summary = false;
+bool dumpNs = false;
+if (!ufn.empty())                      // look for dump qualifiers
+{
+   if (ufo == "-")                     // expect a summary with a "-" sign
+   {
+      if (ufn != "s")
+      {
+ 	 Post(25, ufo+ufn, "task /dump"); // other switches are invalid
+         return; 
+      }
+      summary = true;
+      ufn = "*"; // summary always outputs all tasks
+   }
+   ufo = Cl.GetO(2);
+   if (!(ufo.empty() || ufo == "-"))      // reject other operators
+   {
+      Post(25, ufo+Cl.GetP(2), "task /dump");
+      return;  
+   }
+   if (ufo == "-")               // expect a NameServer dump with a "-" sign
+   {
+      if (Cl.GetP(2) != "n")     // look for the "-n"
+      {
+	 Post(25, ufo+Cl.GetP(2), "task /dump"); // other switches are invalid
+         return; 
+      }
+      dumpNs = true;
+   }
+   
+}
+else ufn = "*";            // default to dumping all tasks.
+map<string,P_task*>::iterator task = P_taskm.begin(); // may need to find a specific task
+ 
                                        // Just the task structures
 if (P_taskm.empty()) fprintf(fp,"Task map empty\n");
-else WALKMAP(string,P_task *,P_taskm,i) (*i).second->Dump(fp);
-if (P_typdclm.empty()) fprintf(fp,"Type declaration map empty\n");
-else WALKMAP(string,P_typdcl *,P_typdclm,i) (*i).second->Dump(fp);
-if (fp!=stdout) fclose(fp);
+else
+{
+   if (ufn == "*")          // all tasks
+      WALKMAP(string,P_task *,P_taskm,i) i->second->Dump(fp);
+   else                    // a named task given by parameter 1
+   {
+      task = P_taskm.find(ufn);
+      if (task == P_taskm.end())
+      {
+	 Post(105,ufn);
+	 fprintf(fp,"No such task: %s\n", ufn.c_str());
+      }
+      else task->second->Dump(fp);
+   }
+}
+if (!summary) // print out type declares if not simply doing a summary
+{
+   if (P_typdclm.empty()) fprintf(fp,"Type declaration map empty\n");
+   else
+   {
+      if (ufn == "*") // all type declarations 
+         WALKMAP(string,P_typdcl *,P_typdclm,i) (*i).second->Dump(fp);
+      else if (task != P_taskm.end()) // just the type declaration for a named task
+      {
+	 if (!task->second->pP_typdcl) // if it exists!
+	 {
+	    Post(113,ufn);
+	    fprintf(fp,"Task %s has no type declarations\n", ufn.c_str());
+	 }
+	 else task->second->pP_typdcl->Dump(fp);
+      }
+   }
+}
+// close the file BEFORE sending to NameServer, so that if it happens to be on the
+// same machine, the dumpfile won't have multiple open handles.
+if (fp!=stdout) fclose(fp); 
+if (dumpNs) // also dump NameServer info?
+{
+   int nsRank = Q::NAP; // search for NameServer
+   MPI_Comm nsComm = MPI_COMM_NULL;
+   for (unsigned comm = 0; comm < Comms.size(); comm++)
+   {
+       // find NameServer's comm
+       if ((nsRank = pPmap[comm]->U.NameServer) != Q::NAP)
+       {
+          nsComm = Comms[comm];
+          break;
+       }
+   }
+   if (nsRank == Q::NAP)
+   {
+      Post(711); // No nameserver. This should be fatal 
+      return;    // (need to return with a value from TaskDump)
+   }
+   if (nsComm == MPI_COMM_NULL)
+   {
+      Post(712); // Unknown comm for nameserver. VERY fatal
+      return;    // (should abort)
+   }
+   PMsg_p nsDump(nsComm); // set up a dump message
+   nsDump.Src(Urank);
+   nsDump.Tgt(nsRank);
+   // of the appropriate type (summary, all, or a named task)
+   if (summary) nsDump.Key(Q::NAME,Q::DUMP,Q::LIST);
+   if (ufn == "*") nsDump.Key(Q::NAME,Q::DUMP,Q::TASK,Q::ALL);
+   else
+   {
+      nsDump.Key(Q::NAME,Q::DUMP,Q::TASK,Q::NM);
+      nsDump.Zname(0,ufn);
+   }
+   nsDump.Zname(1,ufs); // NameServer should open the appropriate dumpfile
+   nsDump.Send();       
+}
 }
 
 //------------------------------------------------------------------------------
@@ -289,7 +401,7 @@ if (Cl.Pa_v.size()!=1) {               // Command make sense?
   Post(47,Cl.Cl,"task","1");
   return;
 }
-string file = Cl.Pa_v[0].Val;          // Unpack file name
+string file = Cl.GetP(0);              // Unpack file name
 file = taskpath + file;                // Add default full file path
 FileName Fn(file);                     // Make sure it's a semantic filename
 if (Fn.Err()) Post(104,file);          // If not, warn the monkey
@@ -312,6 +424,103 @@ if (Fn.Err()) Post(104,file);          // If not, warn the monkey
 // pB->Build(pT);                         // Build the thing
 pB->Load(file);                           // Parse the xml description of the task
 //pB->Build();                            // Build the thing
+
+// additions for NameServer/SBase 11 July 2019 ADR
+int nsRank = Q::NAP;
+MPI_Comm nsComm = MPI_COMM_NULL;
+for (unsigned comm = 0; comm < Comms.size(); comm++)
+{
+    if ((nsRank = pPmap[comm]->U.NameServer) != Q::NAP)
+    {
+       nsComm = Comms[comm];
+       break;
+    }
+}
+if (nsRank == Q::NAP)
+{
+   Post(711); // No nameserver. This should be fatal 
+   return;    // (need to return with a value from TaskLoad)
+}
+if (nsComm == MPI_COMM_NULL)
+{
+   Post(712); // Unknown comm for nameserver. VERY fatal
+   return;    // (should abort)
+}
+PMsg_p nsTask(nsComm);
+nsTask.Src(Urank);
+WALKMAP(string, P_task*, P_taskm, task)
+{
+   if (task->second->state == Unknown)
+   {
+      nsTask.Key(Q::NAME,Q::DATA,Q::TASK);
+      nsTask.Zname(0,task->first);
+      nsTask.Zname(1,taskpath);
+      nsTask.Zname(2,file);
+      vector<string> msgs;
+      WALKVECTOR(P_message*,task->second->pP_typdcl->P_messagev,msg) msgs.push_back((*msg)->Name());
+      nsTask.PutX(0, &msgs);
+      // in future should place attributes here.
+      vector<string> attrs;
+      attrs.push_back("_NO_ATTRIBUTE_");
+      nsTask.PutX(1,&attrs);
+      vector<unsigned long> counts;
+      unsigned long deviceCount = 0;
+      // tediously, we have to walk the graph because supervisors and externals]
+      // must be disambiguated.
+      for (map<unsigned,pdigraph<unsigned,P_device *,unsigned,P_message *,unsigned,P_pin *>::node>::iterator dn = task->second->pD->G.index_n.begin(); dn != task->second->pD->G.index_n.end(); dn++)
+           if (dn->second.data != task->second->pSup) ++deviceCount;
+      counts.push_back(deviceCount);
+      // it would be so much easier if we could do something like the following!
+      // counts.push_back(task->second->pD->G.SizeNodes());
+      counts.push_back(0); // number of externals. In future this will need to be distinguished.
+      deviceCount = 0;
+      set<P_box*> taskBoxes;
+      WALKVECTOR(P_board*, task->second->pSup->P_boardv, board)
+      {
+	if (taskBoxes.find((*board)->parent) == taskBoxes.end())
+	{
+	   taskBoxes.insert((*board)->parent);
+	   ++deviceCount;
+	}
+      }
+      counts.push_back(deviceCount);
+      nsTask.Put(2,&counts);
+      nsTask.Send(nsRank);
+      nsTask.Clear();
+      nsTask.Src(Urank);
+      nsTask.Key(Q::NAME,Q::DATA,Q::DEVT);
+      nsTask.Zname(0,task->first);
+      WALKVECTOR(P_devtyp*,task->second->pP_typdcl->P_devtypv,devType)
+      {
+	 nsTask.Zname(2,(*devType)->Name());
+	 vector<unsigned>inMsgs;
+	 vector<unsigned>outMsgs;
+	 for (unsigned m = 0; m < task->second->pP_typdcl->P_messagev.size(); m++)
+	 {
+	   WALKVECTOR(P_pintyp*,(*devType)->P_pintypIv,iPin)
+	   {
+	      if ((*iPin)->pMsg == task->second->pP_typdcl->P_messagev[m])
+	      {
+                 inMsgs.push_back(m);
+		 break;
+	      }
+	   }
+	   WALKVECTOR(P_pintyp*,(*devType)->P_pintypOv,oPin)
+	   {
+	      if ((*oPin)->pMsg == task->second->pP_typdcl->P_messagev[m])
+	      {
+                 outMsgs.push_back(m);
+		 break;
+	      }
+	   }
+	 }
+	 nsTask.Put(0,&inMsgs);
+	 nsTask.Put(1,&outMsgs);
+	 nsTask.Send(nsRank);
+      }
+      task->second->state = Loaded;
+   }
+}
 }
 
 //------------------------------------------------------------------------------

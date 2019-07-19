@@ -144,7 +144,176 @@ if (pT->linked) {                      // Task already linked?
 
 */
 // Place and set the link flag if the placement was successful.
-if (!pPlace->Place(pT)) pT->LinkFlag();
+// if (!pPlace->Place(pT)) pT->LinkFlag();
+if (!pPlace->Place(pT))
+{
+   // send data to NameServer. Once the P_builder is threaded, this
+   // should be moved to the build command.
+   int nsRank = Q::NAP;
+   MPI_Comm nsComm = MPI_COMM_NULL;
+   vector<pair<unsigned, int> >superRanks;
+   for (unsigned comm = 0; comm < Comms.size(); comm++)
+   {
+       WALKVECTOR(int, pPmap[comm]->U.Mothership, m)
+          superRanks.push_back(pair<unsigned,int>(comm, *m));
+       if ((nsRank = pPmap[comm]->U.NameServer) != Q::NAP)
+       {
+          nsComm = Comms[comm];
+          break;
+       }
+   }
+   if (nsRank == Q::NAP)
+   {
+      Post(711); // No nameserver. This should be fatal 
+      return;    // (need to return with a value from TaskLoad)
+   }
+   if (nsComm == MPI_COMM_NULL)
+   {
+      Post(712); // Unknown comm for nameserver. VERY fatal
+      return;    // (should abort)
+   }
+   PMsg_p deviceData(nsComm);
+   vector<string> supervisorNames;
+   vector<SymAddr_t> supervisorAddrs;
+   vector<unsigned long> supervisorRanks;
+   string supervisorType = pT->pSup->pP_devtyp->Name();
+   vector<AttrIdx> supervisorAttrs;
+   // vector<RecordData_t> supervisorDevices;
+   vector<pair<unsigned, int> >::iterator currSuperRank = superRanks.begin();
+   deviceData.Src(Urank);
+   deviceData.Tgt(nsRank);
+   deviceData.Zname(0,pT->Name());
+   WALKMAP(AddressComponent,P_box*,pE->P_boxm,box)
+   {
+      // find and set up supervisor devices 
+      vector<P_super*>::iterator superIter = box->second->P_superv.begin();
+      while (((*superIter) != pT->pSup) && (++superIter != box->second->P_superv.end()));
+      if (superIter == box->second->P_superv.end())
+      {
+	 Post(164,pT->Name());
+	 return;
+      }
+      if (!((*superIter)->pP_devtyp))
+      {
+	 Post(165,(*superIter)->Name());
+	 return;
+      }
+      // RecordData_t supervisorRecord;
+      P_addr sAddr = (*superIter)->addr;
+      supervisorNames.push_back((*superIter)->Name());
+      // temporarily addresses must use old format. Later this should
+      // be changed to the definitive reference standard format.
+      //supervisorRecord.Address = (sAddr.A_box << P_BOX_OS) |
+      //		           (sAddr.A_board << P_BOARD_OS) |
+      //		           (sAddr.A_core << P_CORE_OS) |
+      //                           (sAddr.A_thread << P_THREAD_OS) |
+      //		           (sAddr.A_device << P_DEVICE_OS);
+      supervisorAddrs.push_back((sAddr.A_box << P_BOX_OS) |
+		                (sAddr.A_board << P_BOARD_OS) |
+		                (sAddr.A_core << P_CORE_OS) |
+                                (sAddr.A_thread << P_THREAD_OS) |
+		                (sAddr.A_device << P_DEVICE_OS));
+      //supervisorRecord.DeviceType = sDevType;
+      //supervisorRecord.RecordType = Supervisor;
+      supervisorAttrs.push_back(0);
+      // Temporarily, for testing without Motherships, we will give the Supervisor
+      // a 'bad' rank. When running with a system that includes Motherships the
+      // commented code below should be selected.
+      if (currSuperRank == superRanks.end())
+	 supervisorRanks.push_back(0xFFFFFFFF);
+	 // supervisorRecord.Rank = 0xFFFFFFFF; // when record bundled as a RecordData_t
+      /* {
+            Post(709,(*superIter)->Name(),box->first);  
+         }
+         else
+         {
+            supervisorRecord.Rank = currSuperRank->second;
+            ++currSuperRank;
+            supervisorDevices.push_back(supervisorRecord);
+         }
+      */
+      else
+      {
+	 // naïvely, we will assume that the MPI ranks are in box-address order.
+	 // later, this should be fixed.
+	 // TODO: extend the rank in a Record_t to include the comm.
+	 supervisorRanks.push_back(currSuperRank->second);
+         // supervisorRecord.Rank = currSuperRank->second;
+	 ++currSuperRank;
+      }
+      // supervisorDevices.push_back(supervisorRecord);
+      // and then find all the 'normal' devices
+      WALKVECTOR(P_board*,box->second->P_boardv,board)
+      {
+	 
+	for (map<AddressComponent,pdigraph<AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,P_port*>::node>::iterator mailbox = (*board)->G.index_n.begin();mailbox != (*board)->G.index_n.end();mailbox++)
+	 {
+            WALKMAP(unsigned,P_core*,mailbox->second.data->P_corem,core)
+	    {
+               WALKMAP(unsigned,P_thread*,core->second->P_threadm,thread)
+	       {
+                  if (thread->second->P_devicel.size() && (thread->second->P_devicel.front()->par->par == pT))
+		  {
+		     vector<string> devNames;
+		     vector<SymAddr_t> devAddrs;
+		     SymAddr_t devSuper;
+		     // any given message will only contain one device type, corresponding
+		     // to the one used in a particular thread.
+		     string devTyp = thread->second->P_devicel.front()->pP_devtyp->Name();
+		     vector<AttrIdx> devAttrs;
+		     // vector<RecordData_t> devices;
+                     // RecordData_t deviceRecord;
+	             DTypeIdx devType = 0;
+		     // deviceRecord.Supervisor = supervisorRecord.Address;
+		     // deviceRecord.RecordType = Device;
+		     // deviceRecord.DeviceType = devType;
+		     WALKLIST(P_device*,thread->second->P_devicel,device)
+		     {
+		        P_addr dAddr = (*device)->addr;
+			// temporarily addresses must use old format. Later this should
+		        // be changed to the definitive reference standard format.
+			// deviceRecord.Address = (dAddr.A_box << P_BOX_OS) |
+		        //                (dAddr.A_board << P_BOARD_OS) |
+		        //                (dAddr.A_core << P_CORE_OS) |
+                        //                (dAddr.A_thread << P_THREAD_OS) |
+		        //                (dAddr.A_device << P_DEVICE_OS);
+			devAddrs.push_back((dAddr.A_box << P_BOX_OS) |
+		                           (dAddr.A_board << P_BOARD_OS) |
+		                           (dAddr.A_core << P_CORE_OS) |
+                                           (dAddr.A_thread << P_THREAD_OS) |
+		                           (dAddr.A_device << P_DEVICE_OS));
+			devNames.push_back((*device)->Name());
+			// devices.push_back(deviceRecord);
+			devAttrs.push_back(0);
+		     }
+		     deviceData.Key(Q::NAME,Q::DATA,Q::DEVI);
+		     deviceData.Zname(2,devTyp);
+		     deviceData.PutX(0,&devNames);
+		     // deviceData.Put(1,&devices);
+		     deviceData.Put(1,&devAddrs);
+		     deviceData.Put(2,&devAttrs);
+		     deviceData.Put(3,&supervisorAddrs.back());
+		     // ___________________________________________________________________
+		     // Post(713,int2str(deviceData.Tgt()),int2str(deviceData.Src()),thread->second->Name());
+		     deviceData.Send();
+		  }
+	       }
+	    }
+	 }
+      }
+   }
+   deviceData.Key(Q::NAME,Q::DATA,Q::SUPV);
+   deviceData.Zname(2,supervisorType); 
+   deviceData.PutX(0,&supervisorNames);
+   // deviceData.Put(1,&supervisorDevices);
+   deviceData.Put(1,&supervisorAddrs);
+   deviceData.Put(2,&supervisorAttrs);
+   deviceData.Put(3,&supervisorRanks);
+   // Post(714,int2str(deviceData.Tgt()),int2str(deviceData.Src()),pT->Name());
+   deviceData.Send();
+   pT->LinkFlag();
+   pT->state = Linked;
+}
 
 
 /*

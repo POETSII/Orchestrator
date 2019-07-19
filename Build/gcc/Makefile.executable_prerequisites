@@ -75,6 +75,9 @@ HARDWARE_FILE_PARSER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileManager/Hardwa
                                $(GENERICS_DIR)/uif.cpp \
                                $(HARDWARE_DEPLOYER_SOURCES)
 
+# The LogServer message file is a static text file
+LOGSERVER_MESSAGE_FILE_ORIGIN = $(SOURCE_DIR)/OrchestratorMessages.txt
+
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
 
@@ -102,7 +105,11 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(GENERICS_DIR)/filename.cpp \
                $(GENERICS_DIR)/lex.cpp \
                $(GENERICS_DIR)/rand.cpp \
-               $(SOURCE_DIR)/NameServer/Ns_el.cpp
+               $(SOURCE_DIR)/NameServer/Ns_el.cpp \
+	       $(SOURCE_DIR)/NameServer/ABDefs.cpp \
+               $(SOURCE_DIR)/NameServer/ABRecord.cpp \
+               $(SOURCE_DIR)/NameServer/ABTask.cpp \
+               $(SOURCE_DIR)/NameServer/AddressBook.cpp \
 
 ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
 ROOT_SOURCES += $(HARDWARE_FILE_PARSER_SOURCES)
@@ -151,9 +158,27 @@ LOGSERVER_SOURCES = $(SOURCE_DIR)/LogServer/LogServerMain.cpp \
 
 LOGSERVER_SOURCES += $(TRULY_COMMON_SOURCES)
 
-# The logserver also needs OrchestratorMessages.txt to exist in the directory
-# from which the Orchestrator is started.
-LOGSERVER_MESSAGE_FILE_ORIGIN = $(SOURCE_DIR)/OrchestratorMessages.txt
+# The nameserver component consists of:
+#
+# - The "main" file (/Source/NameServer/NameServerMain.cpp) and its dependencies
+#   in /Source/NameServer.
+# - TODO: Migrate SBase and AddressBook into a common directory and source group
+#
+# - The truly common sources.
+#
+# - The hardware and software address sources.
+#
+NAMESERVER_SOURCES = $(SOURCE_DIR)/NameServer/NameServerMain.cpp \
+                     $(SOURCE_DIR)/NameServer/NameServer.cpp \
+                     $(SOURCE_DIR)/NameServer/ABDefs.cpp \
+                     $(SOURCE_DIR)/NameServer/ABRecord.cpp \
+                     $(SOURCE_DIR)/NameServer/ABTask.cpp \
+                     $(SOURCE_DIR)/NameServer/AddressBook.cpp \
+		     $(SOURCE_DIR)/NameServer/SBase.cpp 
+
+NAMESERVER_SOURCES += $(TRULY_COMMON_SOURCES)
+#NAMESERVER_SOURCES += $(SOFTWARE_ADDRESS_SOURCES)
+#NAMESERVER_SOURCES += $(HARDWARE_ADDRESS_SOURCES)
 
 # The rtcl (real-time clock) component consists of:
 #
@@ -256,7 +281,7 @@ $(1)_OBJECTS := $(call orch_sources_to_objects, $($(1)_SOURCES))
 endef
 
 $(foreach object_set,\
-          ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP,\
+          ROOT INJECTOR DUMMY LOGSERVER NAMESERVER RTCL MOTHERSHIP,\
           $(eval $(call OBJECT_TEMPLATE,$(object_set))))
 
 # Define executable prerequisites. RULE_TEMPLATE defines the substitutions made
@@ -269,5 +294,5 @@ $($(1)_EXECUTABLE): $($(1)_OBJECTS)
 endef
 
 $(foreach executable_name,\
-          ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP,\
+          ROOT DUMMY LOGSERVER NAMESERVER RTCL INJECTOR MOTHERSHIP,\
           $(eval $(call RULE_TEMPLATE,$(executable_name))))
