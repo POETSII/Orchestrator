@@ -273,77 +273,79 @@ unsigned P_builder::GenFiles(P_task* task)
   
   fstream cores_sh((task_dir+GENERATED_PATH+"/cores.sh").c_str(),
                     fstream::in | fstream::out | fstream::trunc);      // Open the cores shell script       
-                    
-  // Walk through all of the boards in the graph
-  WALKPDIGRAPHNODES(AddressComponent,P_board*,unsigned,P_link*,
-                      unsigned,P_port*,par->pE->G,boardNode)
+  
+  // Walk through all of the boxes in the system
+  WALKMAP(AddressComponent, P_box*, par->pE->P_boxm, boxNode)
   {
-    
-    // Walk through all of the mailboxes on the board.
-    WALKPDIGRAPHNODES(AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,
-                        P_port*,par->pE->G.NodeData(boardNode)->G,mailboxNode)
-    {
-      
-      // Walk through all of the cores on the mailbox
-      WALKMAP(AddressComponent,P_core*,
-              par->pE->G.NodeData(boardNode)->G.NodeData(mailboxNode)->P_corem,
-              coreNode)
-      {  
-        thisCore = coreNode->second;                        // Reference to the current core
-        firstThread = thisCore->P_threadm.begin()->second;  // Reference to the first thread on the core
+    // Walk through all of the boards in a box
+    WALKVECTOR(P_board*,boxNode->second->P_boardv,boardNode)
+    {  
+      // Walk through all of the mailboxes on the board.
+      WALKPDIGRAPHNODES(AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,
+                          P_port*,(*boardNode)->G,mailboxNode)
+      {
         
-        if (firstThread->P_devicel.size()                           // only for cores with something placed 
-            && (firstThread->P_devicel.front()->par->par == task))  // and that belong to the task
-        {
-          cores_sh << "cores[" << coreNum << "]=";
-          cores_sh << thisCore->get_hardware_address()->get_core() << "\n";
-          // these consist of the declarations and definitions of variables and the handler functions.
+        // Walk through all of the cores on the mailbox
+        WALKMAP(AddressComponent,P_core*,
+                (*boardNode)->G.NodeData(mailboxNode)->P_corem,
+                coreNode)
+        {  
+          thisCore = coreNode->second;                        // Reference to the current core
+          firstThread = thisCore->P_threadm.begin()->second;  // Reference to the first thread on the core
           
-          //====================================================================
-          // Create empty files for the per-core variables declarations
-          //====================================================================
-          std::stringstream vars_hFName;
-          vars_hFName << task_dir << GENERATED_H_PATH;
-          vars_hFName << "/vars_" << coreNum << ".h";
-          std::ofstream vars_h(vars_hFName.str());              // variables header
-          
-          
-          //====================================================================
-          
-          
-          //====================================================================
-          // Write core vars.
-          //====================================================================
-          if (WriteCoreVars(task_dir, coreNum, thisCore, firstThread, vars_h))
-          {                     // Writing core vars failed - bail
-            vars_h.close();
-            cores_sh.close();
-            return 1;
-          }
-          //====================================================================
-          
-          
-          //====================================================================
-          // Generate thread variables
-          //====================================================================
-          WALKMAP(AddressComponent,P_thread*,thisCore->P_threadm,threadIterator)
+          if (firstThread->P_devicel.size()                           // only for cores with something placed 
+              && (firstThread->P_devicel.front()->par->par == task))  // and that belong to the task
           {
-            if (threadIterator->second->P_devicel.size())
+            cores_sh << "cores[" << coreNum << "]=";
+            cores_sh << thisCore->get_hardware_address()->get_core() << "\n";
+            // these consist of the declarations and definitions of variables and the handler functions.
+            
+            //====================================================================
+            // Create empty files for the per-core variables declarations
+            //====================================================================
+            std::stringstream vars_hFName;
+            vars_hFName << task_dir << GENERATED_H_PATH;
+            vars_hFName << "/vars_" << coreNum << ".h";
+            std::ofstream vars_h(vars_hFName.str());              // variables header
+            
+            
+            //====================================================================
+            
+            
+            //====================================================================
+            // Write core vars.
+            //====================================================================
+            if (WriteCoreVars(task_dir, coreNum, thisCore, firstThread, vars_h))
+            {                     // Writing core vars failed - bail
+              vars_h.close();
+              cores_sh.close();
+              return 1;
+            }
+            //====================================================================
+            
+            
+            //====================================================================
+            // Generate thread variables
+            //====================================================================
+            WALKMAP(AddressComponent,P_thread*,thisCore->P_threadm,threadIterator)
             {
-              if(WriteThreadVars(task_dir, coreNum, threadIterator->first,
-                                threadIterator->second, vars_h))
-              {                     // Writing thread vars failed - bail
-                vars_h.close();
-                cores_sh.close();
-                return 1;
+              if (threadIterator->second->P_devicel.size())
+              {
+                if(WriteThreadVars(task_dir, coreNum, threadIterator->first,
+                                  threadIterator->second, vars_h))
+                {                     // Writing thread vars failed - bail
+                  vars_h.close();
+                  cores_sh.close();
+                  return 1;
+                }
               }
             }
+            //====================================================================
+            
+            
+            vars_h.close();       // close the core's declarations
+            ++coreNum;            // move on to the next core.
           }
-          //====================================================================
-          
-          
-          vars_h.close();       // close the core's declarations
-          ++coreNum;            // move on to the next core.
         }
       }
     }
