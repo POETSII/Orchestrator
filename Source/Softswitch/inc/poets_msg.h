@@ -21,6 +21,10 @@
 #define P_BOX_OS (LOG_BOARDS_PER_BOX+P_BOARD_OS)
 #define P_SUP_OS 31
 #define P_SUP_MASK (0x1 << P_SUP_OS)
+
+//------------------------------------------------------------------------------
+// TODO: rationalise these defines as they are superfluous?
+//------------------------------------------------------------------------------
 #define P_BOX_MASK ((0x1 << P_SUP_OS) - (0x1 << P_BOX_OS))
 #define P_BOARD_MASK ((0x1 << P_BOX_OS) - (0x1 << P_BOARD_OS)) 
 #define P_CORE_MASK ((0x1 << P_BOARD_OS) - (0x1 << P_CORE_OS))
@@ -28,12 +32,15 @@
 #define P_DEVICE_MASK ((0x1 << P_THREAD_OS) - (0x1 << P_DEVICE_OS))
 #define P_THREAD_HWOS 0
 #define P_CORE_HWOS (LOG_THREADS_PER_CORE+P_THREAD_HWOS)
+#define P_MAILBOX_HWOS (TinselLogCoresPerMailbox+P_CORE_HWOS)
 #define P_BOARD_HWOS (LOG_CORES_PER_BOARD+P_CORE_HWOS)
 #define P_BOX_HWOS (LOG_BOARDS_PER_BOX+P_BOARD_HWOS)
 #define P_BOX_HWMASK ((0x1 << P_SUP_OS) - (0x1 << P_BOX_HWOS))
 #define P_BOARD_HWMASK ((0x1 << P_BOX_HWOS) - (0x1 << P_BOARD_HWOS)) 
 #define P_CORE_HWMASK ((0x1 << P_BOARD_HWOS) - (0x1 << P_CORE_HWOS))
 #define P_THREAD_HWMASK ((0x1 << P_CORE_HWOS) - (0x1 << P_THREAD_HWOS))
+//------------------------------------------------------------------------------
+
 #define P_PKT_MSGTYP_OS 10
 #define P_PKT_MSGTYP_BARRIER 0x1000
 #define P_PKT_MSGTYP_SUPER 0x2000
