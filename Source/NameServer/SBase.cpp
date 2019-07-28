@@ -6,69 +6,71 @@ SBase::SBase(int argc,char ** argv,string d,string s): CommonBase(argc,argv,d,s)
 {
    FnMapx.push_back(new FnMap_t); // create a default function table (for the *nameserver base* class!)
    // Load event handler map
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NM  )] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ID  )] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ALL )] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NGRP)] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::IGRP)] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NSUP)] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ISUP)] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::SUPV        )] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::EXTN        )] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::NM  )] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::IN  )] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::OUT )] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::SEND,Q::ATTR        )] = &SBase::OnSend;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NM   )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ID   )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ALL  )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NGRP )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::IGRP )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NSUP )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ISUP )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::SUPV         )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::EXTN         )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::NM   )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::IN   )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::OUT  )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::QRY,Q::ATTR         )] = &SBase::OnQuery;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::CFG,Q::DIST         )] = &SBase::OnCfg;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::CFG,Q::TDIR         )] = &SBase::OnCfg;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::CFG,Q::BLD          )] = &SBase::OnCfg;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::CFG,Q::RECL         )] = &SBase::OnCfg;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::CFG,Q::DEL          )] = &SBase::OnCfg;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::CFG,Q::STATE        )] = &SBase::OnCfg;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI        )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI,Q::NF  )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::SUPV        )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::SUPV,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::EXTN        )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::EXTN,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::DEVT        )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::DEVT,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::ATTR        )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::ATTR,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::LIST        )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::TASK        )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::TASK,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::DATA,Q::TASK        )] = &SBase::OnData;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::DATA,Q::DEVT        )] = &SBase::OnData;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::DATA,Q::DEVI        )] = &SBase::OnData;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::DATA,Q::DEVE        )] = &SBase::OnData;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::DATA,Q::EXTN        )] = &SBase::OnData;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::DATA,Q::SUPV        )] = &SBase::OnData;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::CMDC,Q::MONI,Q::ON  )] = &SBase::OnCmd;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::CMDC,Q::MONI,Q::OFF )] = &SBase::OnCmd;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::CMDC,Q::LOGN,Q::ON  )] = &SBase::OnCmd;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::CMDC,Q::LOGN,Q::OFF )] = &SBase::OnCmd;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::DUMP,Q::TASK,Q::ALL )] = &SBase::OnDump;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::DUMP,Q::TASK,Q::NM  )] = &SBase::OnDump;
-   (*FnMapx[0])[Msg_p::KEY(Q::NAME,Q::DUMP,Q::LIST        )] = &SBase::OnDump;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NM  )] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ID  )] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ALL )] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NGRP)] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::IGRP)] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NSUP)] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ISUP)] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::SUPV        )] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::EXTN        )] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::NM  )] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::IN  )] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::OUT )] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::ATTR        )] = &SBase::OnSend;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NM   )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ID   )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ALL  )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NGRP )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::IGRP )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NSUP )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ISUP )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::SUPV         )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::EXTN         )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::NM   )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::IN   )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::OUT  )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::ATTR         )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::DIST         )] = &SBase::OnCfg;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::TDIR         )] = &SBase::OnCfg;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::BLD          )] = &SBase::OnCfg;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::RECL         )] = &SBase::OnCfg;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::DEL          )] = &SBase::OnCfg;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::STATE        )] = &SBase::OnCfg;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI        )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI,Q::NF  )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::SUPV        )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::SUPV,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::EXTN        )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::EXTN,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::DEVT        )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::DEVT,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::ATTR        )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::ATTR,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::LIST        )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::TASK        )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::TASK,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::TASK        )] = &SBase::OnData;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::DEVT        )] = &SBase::OnData;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::DEVI        )] = &SBase::OnData;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::DEVE        )] = &SBase::OnData;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::EXTN        )] = &SBase::OnData;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::SUPV        )] = &SBase::OnData;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::CMDC,Q::MONI,Q::ON  )] = &SBase::OnCmd;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::CMDC,Q::MONI,Q::OFF )] = &SBase::OnCmd;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::CMDC,Q::LOGN,Q::ON  )] = &SBase::OnCmd;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::CMDC,Q::LOGN,Q::OFF )] = &SBase::OnCmd;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::DUMP,Q::TASK,Q::ALL )] = &SBase::OnDump;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::DUMP,Q::TASK,Q::NM  )] = &SBase::OnDump;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::DUMP,Q::LIST        )] = &SBase::OnDump;
 }
 									   
 SBase::~SBase()
 {
+   WALKVECTOR(FnMap_t*,FnMapx,F)          // WALKVECTOR and WALKMAP are in macros.h (long include chain)
+     delete *F;                           // get rid of derived class function tables
 }
 
 unsigned SBase::OnCfg(PMsg_p *msg, unsigned comm)
@@ -133,7 +135,7 @@ unsigned SBase::OnData(PMsg_p *msg, unsigned comm)
 
 unsigned SBase::OnDump(PMsg_p *msg, unsigned comm)
 {
-   if (msg->L(2) == Q::LIST) return DumpSummary(msg);
+  if (msg->L(2) == Q::LIST) return DumpSummary(msg, comm);
    if (msg->L(2) != Q::TASK)
    {
       Post(700,uint2str(msg->Key()),int2str(Urank));
@@ -142,9 +144,9 @@ unsigned SBase::OnDump(PMsg_p *msg, unsigned comm)
    switch(msg->L(3))
    {
    case Q::ALL:
-   return DumpAll(msg);
+     return DumpAll(msg, comm);
    case Q::NM:
-   return DumpTask(msg);
+     return DumpTask(msg, comm);
    default:
    Post(700,uint2str(msg->Key()),int2str(Urank));
    return 0;
@@ -235,67 +237,68 @@ unsigned SBase::Connect(string svc)
 {
    unsigned connErr = MPI_SUCCESS;
    if ((connErr = CommonBase::Connect(svc)) != MPI_SUCCESS) return connErr;
+   FnMapx.push_back(new FnMap_t); // add another function table in the nameserver base class
    int fIdx=FnMapx.size()-1;
    // Load event handler map for the new comm
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NM  )] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ID  )] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ALL )] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NGRP)] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::IGRP)] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NSUP)] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ISUP)] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::SUPV        )] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::EXTN        )] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::NM  )] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::IN  )] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::OUT )] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::SEND,Q::ATTR        )] = &SBase::OnSend;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NM   )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ID   )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ALL  )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NGRP )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::IGRP )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NSUP )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ISUP )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::SUPV         )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::EXTN         )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::NM   )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::IN   )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::OUT  )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::QRY,Q::ATTR         )] = &SBase::OnQuery;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::CFG,Q::DIST         )] = &SBase::OnCfg;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::CFG,Q::TDIR         )] = &SBase::OnCfg;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::CFG,Q::BLD          )] = &SBase::OnCfg;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::CFG,Q::RECL         )] = &SBase::OnCfg;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::CFG,Q::DEL          )] = &SBase::OnCfg;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::CFG,Q::STATE        )] = &SBase::OnCfg;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI        )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI,Q::NF  )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::SUPV        )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::SUPV,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::EXTN        )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::EXTN,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::DEVT        )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::DEVT,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::ATTR        )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::ATTR,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::LIST        )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::TASK        )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::RPLY,Q::TASK,Q::TNF )] = &SBase::OnReply;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::DATA,Q::TASK        )] = &SBase::OnData;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::DATA,Q::DEVT        )] = &SBase::OnData;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::DATA,Q::DEVI        )] = &SBase::OnData;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::DATA,Q::DEVE        )] = &SBase::OnData;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::DATA,Q::EXTN        )] = &SBase::OnData;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::DATA,Q::SUPV        )] = &SBase::OnData;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::CMDC,Q::MONI,Q::ON  )] = &SBase::OnCmd;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::CMDC,Q::MONI,Q::OFF )] = &SBase::OnCmd;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::CMDC,Q::LOGN,Q::ON  )] = &SBase::OnCmd;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::CMDC,Q::LOGN,Q::OFF )] = &SBase::OnCmd;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::DUMP,Q::TASK,Q::ALL )] = &SBase::OnDump;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::DUMP,Q::TASK,Q::NM  )] = &SBase::OnDump;
-   (*FnMapx[fIdx])[Msg_p::KEY(Q::NAME,Q::DUMP,Q::LIST        )] = &SBase::OnDump;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NM  )] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ID  )] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ALL )] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NGRP)] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::IGRP)] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::NSUP)] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVI,Q::ISUP)] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::SUPV        )] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::EXTN        )] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::NM  )] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::IN  )] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::DEVT,Q::OUT )] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::SEND,Q::ATTR        )] = &SBase::OnSend;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NM   )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ID   )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ALL  )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NGRP )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::IGRP )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NSUP )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ISUP )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::SUPV         )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::EXTN         )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::NM   )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::IN   )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::OUT  )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::ATTR         )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::DIST         )] = &SBase::OnCfg;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::TDIR         )] = &SBase::OnCfg;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::BLD          )] = &SBase::OnCfg;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::RECL         )] = &SBase::OnCfg;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::DEL          )] = &SBase::OnCfg;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::CFG,Q::STATE        )] = &SBase::OnCfg;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI        )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI,Q::NF  )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::DEVI,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::SUPV        )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::SUPV,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::EXTN        )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::EXTN,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::DEVT        )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::DEVT,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::ATTR        )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::ATTR,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::LIST        )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::TASK        )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::RPLY,Q::TASK,Q::TNF )] = &SBase::OnReply;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::TASK        )] = &SBase::OnData;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::DEVT        )] = &SBase::OnData;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::DEVI        )] = &SBase::OnData;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::DEVE        )] = &SBase::OnData;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::EXTN        )] = &SBase::OnData;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::DATA,Q::SUPV        )] = &SBase::OnData;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::CMDC,Q::MONI,Q::ON  )] = &SBase::OnCmd;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::CMDC,Q::MONI,Q::OFF )] = &SBase::OnCmd;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::CMDC,Q::LOGN,Q::ON  )] = &SBase::OnCmd;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::CMDC,Q::LOGN,Q::OFF )] = &SBase::OnCmd;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::DUMP,Q::TASK,Q::ALL )] = &SBase::OnDump;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::DUMP,Q::TASK,Q::NM  )] = &SBase::OnDump;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::DUMP,Q::LIST        )] = &SBase::OnDump;
    return MPI_SUCCESS;
 }
 
@@ -363,7 +366,13 @@ unsigned SBase::ConfigDelete(PMsg_p *msg, unsigned comm)
 
 unsigned SBase::ConfigDistribute(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   string taskName = msg->Zname(0);
+   if (TaskState(taskName,TaskState_t(Deployed)))
+   {
+      Post(724,taskName,int2str(Urank));
+      return ERR_TASK_NOT_FOUND;
+   }
+   return SUCCESS;
 }
 
 unsigned SBase::ConfigDir(PMsg_p *msg, unsigned comm)
@@ -500,7 +509,7 @@ unsigned SBase::DataDevice(PMsg_p *msg)
    msg->Get(1, devAddrs);
    if (devNames.size() != devAddrs.size())
    {
-      Post(716,int2str(Urank),uint2str(devNames.size()),uint2str(devAddrs.size()),"address");
+      Post(716,int2str(Urank),uint2str(devNames.size()),uint2str(devAddrs.size()),"addresse");
       return ERR_DEVICE_DATA_MISMATCH;	   
    }
    msg->Get(2, devAttrs);
@@ -690,7 +699,7 @@ unsigned SBase::DataSupervisor(PMsg_p *msg)
 
 // -----------------------------------------------------------------------------
 
-unsigned SBase::DumpAll(PMsg_p *msg)
+unsigned SBase::DumpAll(PMsg_p *msg, unsigned comm)
 {
    // filename must be treated as an absolute literal, because tasks could in
    // general have different paths, therefore there is no way to infer what
@@ -711,7 +720,7 @@ unsigned SBase::DumpAll(PMsg_p *msg)
    return err;
 }
 
-unsigned SBase::DumpSummary(PMsg_p *msg)
+unsigned SBase::DumpSummary(PMsg_p *msg, unsigned comm)
 {
    string filename = msg->Zname(1);
    FILE* dumpFile;
@@ -722,7 +731,7 @@ unsigned SBase::DumpSummary(PMsg_p *msg)
    return AddressBook::SUCCESS;
 }
 
-unsigned SBase::DumpTask(PMsg_p *msg)
+unsigned SBase::DumpTask(PMsg_p *msg, unsigned comm)
 {
    string taskName = msg->Zname(0);
    if (taskName.empty())

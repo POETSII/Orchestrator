@@ -123,6 +123,7 @@ public:
     static const long     ERR_BAD_COUNT = -1;
   
     static const unsigned SUCCESS = 0;
+    static const unsigned ERR_NONFATAL = 0;
     static const unsigned ERR_INVALID_TASK = 1;
     static const unsigned ERR_INVALID_DEVTYPE = 2;
     static const unsigned ERR_INVALID_DEVICE = 3;

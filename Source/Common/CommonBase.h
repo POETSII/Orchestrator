@@ -70,7 +70,7 @@ string                 Ssource;
 string                 Sbinary;
 string                 STIME;
 string                 SDATE;
-vector<ProcMap *>      pPmap;
+vector<ProcMap *>      pPmap;   // if Comms is a map, this must be too
 int                    MPI_provided;
 
 pthread_t              MPI_accept;

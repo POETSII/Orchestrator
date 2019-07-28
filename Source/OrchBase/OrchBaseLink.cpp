@@ -263,7 +263,7 @@ if (!pPlace->Place(pT))
 		     vector<AttrIdx> devAttrs;
 		     // vector<RecordData_t> devices;
                      // RecordData_t deviceRecord;
-	             DTypeIdx devType = 0;
+	             // DTypeIdx devType = 0;
 		     // deviceRecord.Supervisor = supervisorRecord.Address;
 		     // deviceRecord.RecordType = Device;
 		     // deviceRecord.DeviceType = devType;

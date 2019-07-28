@@ -14,6 +14,7 @@ namespace AddressBookNS
 
 // static constant definitions
 const unsigned AddressBook::SUCCESS;
+const unsigned AddressBook::ERR_NONFATAL;
 const unsigned AddressBook::ERR_INVALID_TASK;
 const unsigned AddressBook::ERR_INVALID_DEVTYPE;
 const unsigned AddressBook::ERR_INVALID_DEVICE;

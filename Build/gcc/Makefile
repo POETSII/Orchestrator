@@ -109,9 +109,10 @@ NAMESERVER_EXECUTABLE = $(EXECUTABLE_DIR)/nameserver
 RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
+MOTHERSHIP_DUMMY_EXECUTABLE = $(EXECUTABLE_DIR)/mothershipdummy
 
 all: orchestrate root dummy logserver nameserver rtcl injector mothership \
-     application_staging_environment
+     mothershipdummy application_staging_environment
 orchestrate: $(ORCHESTRATE_SCRIPT)
 root: $(ROOT_EXECUTABLE)
 dummy: $(DUMMY_EXECUTABLE)
@@ -120,6 +121,7 @@ nameserver: $(NAMESERVER_EXECUTABLE)
 rtcl: $(RTCL_EXECUTABLE)
 injector: $(INJECTOR_EXECUTABLE)
 mothership: $(MOTHERSHIP_EXECUTABLE)
+mothershipdummy: $(MOTHERSHIP_DUMMY_EXECUTABLE)
 
 # Prerequisites (objects) for building executables are defined here:
 include Makefile.executable_prerequisites
@@ -135,7 +137,8 @@ tests: $(ALL_TESTS) $(TEST_SCRIPT)
 # Makefile.executable_prerequisites for the prerequisites of these executables
 # (obviously...)
 $(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) $(LOGSERVER_EXECUTABLE) \
-$(NAMESERVER_EXECUTABLE) $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
+$(NAMESERVER_EXECUTABLE) $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE) \
+$(MOTHERSHIP_DUMMY_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
         -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
@@ -285,7 +288,7 @@ clean: application_staging_environment_teardown
 
 # Non-builtin targets that do not explicitly represent files that are created.
 .PHONY: all clean debug tests orchestrate root dummy logserver nameserver rtcl injector \
-    mothership application_staging_environment \
+    mothership mothershipdummy application_staging_environment \
     application_staging_environment_teardown
 
 # The "all" target should be the default.

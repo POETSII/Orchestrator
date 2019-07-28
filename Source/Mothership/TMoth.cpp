@@ -67,6 +67,9 @@ WALKMAP(uint32_t,PinBuf_t*,TwigMap,D)
 }
 WALKMAP(string,TaskInfo_t*,TaskMap,T)
   delete T->second;
+ 
+WALKVECTOR(FnMap_t*,FnMapx,F)          
+  delete *F;                           // get rid of derived class function tables
 }
 
 //------------------------------------------------------------------------------

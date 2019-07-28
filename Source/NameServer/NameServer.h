@@ -13,6 +13,7 @@ public:
                     NameServer(int,char **,string);
 virtual ~           NameServer();
 
+        unsigned    Connect          (string="");
         unsigned    OnCfg            (PMsg_p *, unsigned);
 	unsigned    OnDump           (PMsg_p *, unsigned);
 
@@ -24,9 +25,6 @@ private:
         unsigned    ConfigDistribute (PMsg_p *, unsigned);
         unsigned    ConfigRecall     (PMsg_p *, unsigned);
 	unsigned    ConfigState      (PMsg_p *, unsigned);
-	unsigned    DumpAll          (PMsg_p *);
-        unsigned    DumpSummary      (PMsg_p *);
-        unsigned    DumpTask         (PMsg_p *);
 
 typedef unsigned    (NameServer::*pMeth)(PMsg_p *, unsigned);
 typedef map<unsigned,pMeth> FnMap_t;

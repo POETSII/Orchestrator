@@ -6,6 +6,21 @@ CMsg_p::CMsg_p(CMsg_p & r):PMsg_p(r){}
 CMsg_p::CMsg_p(PMsg_p & r):PMsg_p(r){}
 CMsg_p::~CMsg_p(void){}
 
+void CMsg_p::Dump(FILE * fp)
+{
+     fprintf(fp,"--------------------------------------------------------------------------------\n");
+     fprintf(fp,"                     Distribution Message Dump\n\n");
+     fprintf(fp,"Task: %s\n",Zname(0).c_str());
+     fprintf(fp,"Binary path: %s\n\n",Zname(1).c_str());
+     fprintf(fp,"---------------- Core Map -----------------\n");
+     fprintf(fp,"Virtual core number     Physical core\n\n");
+     vector<pair<unsigned,P_addr_t> > coreMap;
+     Get(coreMap);
+     for (vector<pair<unsigned,P_addr_t> >::iterator core = coreMap.begin(); core != coreMap.end(); core++)
+         fprintf(fp, "%19d,Box:%d, Board:%d, Mailbox:%d, Core:%d\n",core->first,core->second.A_box,core->second.A_board,core->second.A_mailbox,core->second.A_core);
+     fprintf(fp,"________________________________________________________________________________\n");
+     fflush(fp);
+}
 
 template <> void CMsg_p::Dump<pair<unsigned,P_addr_t> >(FILE * fp)
 {
@@ -18,10 +33,10 @@ pair<unsigned,P_addr_t> * CMsg_p::Get(int & cnt)
     unsigned* pCIdx = PMsg_p::Get<unsigned>(1,numCores[0]);
     unsigned* pBox = PMsg_p::Get<unsigned>(2,numCores[1]);
     unsigned* pBoard = PMsg_p::Get<unsigned>(3,numCores[2]);
-    unsigned* pMailbox = PMsg_p::Get<unsigned>(3,numCores[3]);
-    unsigned* pCore = PMsg_p::Get<unsigned>(4,numCores[4]);
-    unsigned* pThread = PMsg_p::Get<unsigned>(5,numCores[5]);
-    unsigned* pDevice = PMsg_p::Get<unsigned>(6,numCores[6]);
+    unsigned* pMailbox = PMsg_p::Get<unsigned>(4,numCores[3]);
+    unsigned* pCore = PMsg_p::Get<unsigned>(5,numCores[4]);
+    unsigned* pThread = PMsg_p::Get<unsigned>(6,numCores[5]);
+    unsigned* pDevice = PMsg_p::Get<unsigned>(7,numCores[6]);
     if ((numCores[6] | numCores[5] | numCores[4] | numCores[3] | numCores[2] | numCores[1]) != numCores[0]) return 0;
     if (!pCIdx || !pBox || !pBoard || !pMailbox || !pCore || !pThread || !pDevice) return 0;
     cnt = numCores[0];

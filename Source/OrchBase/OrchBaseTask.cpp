@@ -578,17 +578,14 @@ vector<pair<unsigned,P_addr_t> > coreVec;  // core map container to send
 vector<ProcMap::ProcMap_t>::iterator currBox = pPmap[cIdx]->vPmap.begin(); // process map for the Mothership being deployed to
 
 
-CMsg_p PktC;
-PMsg_p PktD;
-//PMsg_p PktC, PktD;                      // messages to send to each participating box
-PktC.Key(Q::NAME,Q::DIST);                // distributing the core mappings
-PktD.Key(Q::NAME,Q::TDIR);                // and the data directory
+CMsg_p PktC;                              // message to send to each participating box                    
+PktC.Key(Q::NAME,Q::CFG,Q::DIST);         // distributing the core mappings  and the data directory
 PktC.Src(Urank);
 string taskname = task->first;
-PktC.Put(0, &taskname);                    // first field in the packet is the task name
-PktD.Put(0, &taskname);
-taskname+="/";                             // for the moment the binary directory will be fixed
-taskname+=BIN_PATH;                        // later we could make this user-settable.
+PktC.Zname(0, taskname);                  // first string field in the packet is the task name
+//PktC.Put(0, &taskname);                 // first field in the packet is the task name
+taskname+="/";                            // for the moment the binary directory will be fixed
+taskname+=BIN_PATH;                       // later we could make this user-settable.
 // duplicate P_builder's iteration through the task
 P_core* thisCore;  // Core available during iteration.
 P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
@@ -601,7 +598,7 @@ while (cIdx < Comms.size()) // grab the next available mothership
       ++cIdx;
 }
 taskname.insert(0,string("/home/")+currBox->P_user+"/");
-PktD.Put(1,&taskname);
+PktC.Zname(1,taskname); // second string field is the task binary directory
 coreVec.clear();   // reset the packet content
 WALKVECTOR(P_board*,boxNode->second->P_boardv,board)
 {
@@ -674,16 +671,26 @@ else
    system((string("ssh ")+currBox->P_user+"@"+currBox->P_proc+ "\"mkdir "+task->first+"\"").c_str());
    system((string("scp -r ")+taskpath+task->first+"/"+BIN_PATH+" "+currBox->P_user+"@"+currBox->P_proc+":"+taskname).c_str());
 }
-PktD.comm = PktC.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
-printf("Sending a distribution message to mothership with %lu cores\n", coreVec.size());
-PktC.Put(&coreVec); // place the core map in the packet to this Mothership
-/*
-printf("Sending a single-core distribution message to mothership cores\n");
-PktC.Put<unsigned>(1,&(coreVec[0].first),1);
-PktC.Put<P_addr_t>(2,&(coreVec[0].second),1);
-*/
-PktC.Send(currBox->P_rank);                    // Send to the target Mothership
-PktD.Send(currBox->P_rank);
+PktC.comm = Comms[cIdx];  // Packet will go on the communicator it was found on
+Post(726,int2str(currBox->P_rank),uint2str(coreVec.size()));
+PktC.Put(0,&currBox->P_rank); // first field is the Mothership's address (rank or symbolic address)
+PktC.Put(&coreVec);           // place the core map in the packet to this Mothership
+// PktC.Send(currBox->P_rank);   // Send to the target Mothership
+unsigned nsComm = 0;
+for (; nsComm < pPmap.size(); nsComm++) // find the NameServer
+{
+    if (pPmap[nsComm]->U.NameServer != Q::NAP)
+    {
+       PktC.comm = Comms[nsComm];              // send the distribution message
+       PktC.Send(pPmap[nsComm]->U.NameServer); // to the NameServer
+       break;
+    }
+}
+if (nsComm >= pPmap.size())                    // No NameServer. A severe error.
+{
+   Post(711);
+   return;
+}
 }                                              // Next Mothership
 }
 

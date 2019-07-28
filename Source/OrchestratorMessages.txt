@@ -123,6 +123,11 @@
 723(W) : "Task binary directory path to SBase at rank %s is empty. Current working directory will be used"
 724(E) : "No task %s on SBase at rank %s"
 725(E) : "Error attempting to set state for task %s on SBase at rank %s"
+726(I) : "Deploying data to Mothership at rank %s: %s cores distributed"
+727(W) : "SBase map on rank %s is invalid. Rebuild before performing tasks on this SBase"
+728(E) : "Error: SBase at rank %s has a record for Supervisor rank %s, but no such Supervisor exists"
+729(E) : "Supervisor %s registered as a device for Supervisor %s, but only one Supervisor can exist"
+730(W) : "Invalid command %s to SBase rank %s: missing value %s"
 
 801(D) : "P_builder::Add(name=%s,file=%s)"
 802(D) : "Removing task %s from the Orchestrator"
