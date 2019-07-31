@@ -5,7 +5,7 @@
 
 PSupervisorDeviceType::PSupervisorDeviceType(const QString& name, PIGraphObject *parent) :
     PIGraphBranch(name, "SupervisorDeviceType", QVector<int>({INPIN, OUTPIN, CODE}), parent),
-    dev_info_persistent(false), dev_props_valid(false), edge_endpts_exist(false)
+    dev_info_persistent(false), dev_props_valid(false), edge_endpts_exist(false), device_type(0)
 {
 
 }
