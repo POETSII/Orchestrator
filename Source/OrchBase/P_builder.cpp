@@ -322,6 +322,9 @@ void P_builder::GenFiles(P_task* task)
   // build a core map visible to the make script (as a shell script)
   P_core* thisCore;  // Core available during iteration.
   P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
+
+  AddressComponent mailboxCoreId;  // Concatenated mailbox-core address (staging area)
+
   fstream cores_sh((task_dir+GENERATED_PATH+"/cores.sh").c_str(), fstream::in | fstream::out | fstream::trunc);
   WALKPDIGRAPHNODES(AddressComponent,P_board*,unsigned,P_link*,unsigned,P_port*,par->pE->G,boardNode)
   {
@@ -333,7 +336,11 @@ void P_builder::GenFiles(P_task* task)
   firstThread = thisCore->P_threadm.begin()->second;
   if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
   {
-      cores_sh << "cores[" << coreNum << "]=" << thisCore->get_hardware_address()->get_core() << "\n";
+      mailboxCoreId = thisCore->get_hardware_address()->get_mailbox() \
+	              << par->pE->addressFormat.coreWordLength;
+      mailboxCoreId += thisCore->get_hardware_address()->get_core();
+
+      cores_sh << "cores[" << coreNum << "]=" << mailboxCoreId << "\n";
       // these consist of the declarations and definitions of variables and the handler functions.
       fstream vars_h(static_cast<stringstream*>(&(stringstream(task_dir+GENERATED_H_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".h"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
       fstream vars_cpp(static_cast<stringstream*>(&(stringstream(task_dir+GENERATED_CPP_PATH, ios_base::out | ios_base::ate)<<"/vars_"<<coreNum<<".cpp"))->str().c_str(), fstream::in | fstream::out | fstream::trunc);
