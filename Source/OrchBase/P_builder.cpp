@@ -266,10 +266,12 @@ unsigned P_builder::GenFiles(P_task* task)
   // handlers_<CORENUM>.h
   // handlers_<CORENUM>.cpp
   //
-  // build a core map visible to the make script (as a shell script)
+  // Build a core map visible to the make script (as a shell script). Each of
+  // the cores is uniquely identified within a board.
   //============================================================================
   P_core* thisCore;  // Core available during iteration.
   P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
+  AddressComponent mailboxCoreId;  // Concatenated mailbox-core address (staging area)
   
   fstream cores_sh((task_dir+GENERATED_PATH+"/cores.sh").c_str(),
                     fstream::in | fstream::out | fstream::trunc);      // Open the cores shell script       
@@ -296,8 +298,12 @@ unsigned P_builder::GenFiles(P_task* task)
           if (firstThread->P_devicel.size()                           // only for cores with something placed 
               && (firstThread->P_devicel.front()->par->par == task))  // and that belong to the task
           {
+            mailboxCoreId = thisCore->get_hardware_address()->get_mailbox() \
+	      << par->pE->addressFormat.coreWordLength;
+            mailboxCoreId += thisCore->get_hardware_address()->get_core();
+
             cores_sh << "cores[" << coreNum << "]=";
-            cores_sh << thisCore->get_hardware_address()->get_core() << "\n";
+            cores_sh << mailboxCoreId << "\n";
             // these consist of the declarations and definitions of variables and the handler functions.
             
             //====================================================================
