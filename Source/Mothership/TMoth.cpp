@@ -114,10 +114,13 @@ unsigned TMoth::Boot(string task)
    {
      (*C)->get_hardware_address()->populate_a_software_address(&coreAddress);
      fromAddr(TMoth::GetHWAddr(coreAddress),&mX,&mY,&core,&thread);
-     DebugPrint("Booting %d threads on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
+     DebugPrint("Booting %d threads on core 0x%X (at x:%d y:%d c:%d)\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
+     DebugPrint("* startOne(meshX=%u, meshY=%u, coreId=%u, numThreads=%lu)\n",
+                mX, mY, core, (*C)->P_threadm.size());
      startOne(mX,mY,core,(*C)->P_threadm.size());
-     DebugPrint("%d threads started on threadID 0x%X at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
+     DebugPrint("%d threads started on core 0x%X (at x:%d y:%d c:%d)\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
      DebugPrint("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
+     DebugPrint("* goOne(meshX=%u, meshY=%u, coreId=%u)\n", mX, mY, core);
      goOne(mX,mY,core);
    }
    // per Matt Naylor comment safer to start all cores then issue the go command to all cores separately.
@@ -478,16 +481,22 @@ long TMoth::LoadBoard(P_board* board)
                 C->second->get_hardware_address()->
                     populate_a_software_address(&coreAddress);
                 DebugPrint("Loading core with virtual address Bx:%d, Bd:%d, "
-                           "Cr:%d\n",
+                           "Mb: %d, Cr:%d\n",
                            coreAddress.A_box, coreAddress.A_board,
-                           coreAddress.A_core);
+                           coreAddress.A_mailbox, coreAddress.A_core);
                 fromAddr(TMoth::GetHWAddr(coreAddress), &mX, &mY, &core,
                          &thread);
                 DebugPrint("Loading hardware thread 0x%X at x:%d y:%d c:%d\n",
                            TMoth::GetHWAddr(coreAddress), mX, mY, core);
 
                 // Load instruction memory, then data memory.
+                DebugPrint("* loadInstrsOntoCore(codeFilename=%s, meshX=%u, "
+                           "meshY=%u, coreId=%u)\n",
+                           code_f.c_str(), mX, mY, core);
                 loadInstrsOntoCore(code_f.c_str(), mX, mY, core);
+                DebugPrint("* loadDataViaCore(dataFilename=%s, meshX=%u, "
+                           "meshY=%u, coreId=%u)\n",
+                           data_f.c_str(), mX, mY, core);
                 loadDataViaCore(data_f.c_str(), mX, mY, core);
                 ++coresLoaded;
             }
