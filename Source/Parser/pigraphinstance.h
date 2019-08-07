@@ -31,7 +31,7 @@ private:
     QString graph_type_id;
     QString supervisor_type_id;
 
-    const QHash<QString, vld_elem_types> valid_elements = {{"DeviceInstances", DEVINSTS}, {"EdgeInstances", EDGEINSTS}};
+    QHash<QString, vld_elem_types> valid_elements;
 
 };
 

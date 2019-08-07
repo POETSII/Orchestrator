@@ -7,7 +7,7 @@
 
 PEdgeInstance::PEdgeInstance(const QString& name, PIGraphObject *parent) : PConcreteInstance(name, "EdgeI", QVector<int>({STATE}), parent), containing_graph(NULL)
 {
-
+    valid_elements["S"] = STATE;
 }
 
 void PEdgeInstance::defineObject(QXmlStreamReader* xml_def)
@@ -61,7 +61,7 @@ void PEdgeInstance::elaborateEdge(D_graph* graph_rep)
      {
         PIGraphInstance* parent_instance = dynamic_cast<PIGraphInstance*>(parent());
         if (parent_instance && (parent_instance->graph_type != NULL)) // no parent instance would be a serious elaboration error
-        {           
+        {
            // generate or retrieve all the objects required to insert the node into the graph
            if (path.dst.device == NULL) parsePath(); // build the path if it couldn't be done earlier
            P_pin* src_pin = new P_pin(graph_rep, path.src.pin->name().toStdString());
