@@ -1312,7 +1312,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     if (inTypCnt)
     {
       std::string thrDevNameIn = "Thread_";
-      thrDevNameIn += std::to_string(thread_num) + std::string("_Device_");
+      thrDevNameIn += TO_STRING(thread_num) + std::string("_Device_");
       thrDevNameIn += (*device)->Name() + std::string("_InputPins");
       
       vars_h << "//----------------------- Input Pin (Associative) Tables ";
