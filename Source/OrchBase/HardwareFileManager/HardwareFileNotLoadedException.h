@@ -9,9 +9,9 @@
 class HardwareFileNotLoadedException: public HardwareFileParserException
 {
 public:
-    HardwareFileNotLoadedException():HardwareFileParserException{""}
-    {message = "[ERROR] Engine-population attempted without first "
-               "loading a file.\n";}
+    HardwareFileNotLoadedException():
+        HardwareFileParserException("[ERROR] Engine-population attempted "
+                                    "without first loading a file.\n"){};
 };
 
 #endif
