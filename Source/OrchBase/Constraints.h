@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "NameBase.h"
+#include "OSFixes.hpp"
 
 //==============================================================================
 
