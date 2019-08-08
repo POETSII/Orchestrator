@@ -51,8 +51,6 @@ void                   SendPMap(MPI_Comm,PMsg_p*);
 int                    RootCIdx();
 void                   MPISpinner();
 
-const int              MPICli = 0;
-
 public:
 vector<FnMap_t*>       FnMapx;
 vector<MPI_Comm>       Comms;    // this could be a map indexed by service name
@@ -83,8 +81,7 @@ MPI_Comm               Tcomm;       // New comm set up by an MPI_Comm_accept
 private:
 char *                 MPI_Buf;
 int                    Msgbufsz;
-const int              LOG_MSGBUF_BLK_SZ = 14;
-const int              MSGBUF_BLK_MASK = (1<<LOG_MSGBUF_BLK_SZ)-1;
+static const int       LOG_MSGBUF_BLK_SZ = 14;
 
 };
 

@@ -305,9 +305,9 @@ unsigned P_builder::GenFiles(P_task* task)
           std::stringstream vars_hFName;
           vars_hFName << task_dir << GENERATED_H_PATH;
           vars_hFName << "/vars_" << coreNum << ".h";
-          std::ofstream vars_h(vars_hFName.str());              // variables header
-          
-          
+          std::ofstream vars_h(vars_hFName.str().c_str());  // variables header
+
+
           //====================================================================
           
           
@@ -403,8 +403,9 @@ unsigned P_builder::GenSupervisor(P_task* task)
     //==========================================================================
     std::stringstream supervisor_hFName;
     supervisor_hFName << task_dir << "/" << GENERATED_PATH <<"/Supervisor.h";
-    std::ofstream supervisor_h(supervisor_hFName.str(), fstream::app);    // Supervisor header, open in append
-    
+    std::ofstream supervisor_h(supervisor_hFName.str().c_str(),
+                               fstream::app);    // Supervisor header, open in append
+
     if(supervisor_h.fail()) // Check that the file opened
     {                       // if it didn't, tell logserver and exit
       par->Post(816, supervisor_hFName.str(), POETS::getSysErrorString(errno));
@@ -413,7 +414,8 @@ unsigned P_builder::GenSupervisor(P_task* task)
     
     std::stringstream supervisor_cFName;
     supervisor_cFName << task_dir << "/" << GENERATED_PATH <<"/Supervisor.cpp";
-    std::ofstream supervisor_cpp(supervisor_cFName.str(), fstream::app);  // Supervisor code, open in append
+    std::ofstream supervisor_cpp(supervisor_cFName.str().c_str(),
+                                 fstream::app);  // Supervisor code, open in append
     if(supervisor_cpp.fail()) // Check that the file opened
     {                         // if it didn't, tell logserver, close .h and exit
       par->Post(816, supervisor_cFName.str(), POETS::getSysErrorString(errno));
@@ -680,7 +682,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::stringstream vars_cppFName;
   vars_cppFName << task_dir << GENERATED_CPP_PATH;
   vars_cppFName << "/vars_" << coreNum << ".cpp";
-  std::ofstream vars_cpp(vars_cppFName.str());            // variables source
+  std::ofstream vars_cpp(vars_cppFName.str().c_str());  // variables source
   if(vars_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
     par->Post(816, vars_cppFName.str(), POETS::getSysErrorString(errno));
@@ -690,7 +692,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::stringstream handlers_hFName;
   handlers_hFName << task_dir << GENERATED_H_PATH;
   handlers_hFName << "/handlers_" << coreNum << ".h";
-  std::ofstream handlers_h(handlers_hFName.str());      // handlers header
+  std::ofstream handlers_h(handlers_hFName.str().c_str());  // handlers header
   if(handlers_h.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
     par->Post(816, handlers_hFName.str(), POETS::getSysErrorString(errno));
@@ -701,7 +703,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::stringstream handlers_cppFName;
   handlers_cppFName << task_dir << GENERATED_CPP_PATH;
   handlers_cppFName << "/handlers_" << coreNum << ".cpp";
-  std::ofstream handlers_cpp(handlers_cppFName.str());  // handlers source
+  std::ofstream handlers_cpp(handlers_cppFName.str().c_str());  // handlers source
   if(handlers_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
     par->Post(816, handlers_cppFName.str(), POETS::getSysErrorString(errno));
@@ -1059,7 +1061,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   std::stringstream vars_cppFName;
   vars_cppFName << task_dir << GENERATED_CPP_PATH;
   vars_cppFName << "/vars_" << coreNum << "_" <<thread_num << ".cpp";
-  std::ofstream vars_cpp(vars_cppFName.str());            // variables source
+  std::ofstream vars_cpp(vars_cppFName.str().c_str());  // variables source
   if(vars_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
     par->Post(816, vars_cppFName.str(), POETS::getSysErrorString(errno));
@@ -1310,7 +1312,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     if (inTypCnt)
     {
       std::string thrDevNameIn = "Thread_";
-      thrDevNameIn += std::to_string(thread_num) + std::string("_Device_");
+      thrDevNameIn += TO_STRING(thread_num) + std::string("_Device_");
       thrDevNameIn += (*device)->Name() + std::string("_InputPins");
       
       vars_h << "//----------------------- Input Pin (Associative) Tables ";

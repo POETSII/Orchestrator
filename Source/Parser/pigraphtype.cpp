@@ -7,7 +7,9 @@
 PIGraphType::PIGraphType(const QString& name, PIGraphObject *parent) :
     PConcreteDef(name, "GraphType", QVector<int>({DEVTYPES, SUPERDEVTYPES, MSGTYPES, SHAREDCODE}), parent), graph_type(NULL)
 {
-
+    valid_elements["DeviceTypes"] = DEVTYPES;
+    valid_elements["MessageTypes"] = MSGTYPES;
+    valid_elements["SharedCode"] = SHAREDCODE;
 }
 
 const PIGraphObject* PIGraphType::appendSubObject(QXmlStreamReader* xml_def)

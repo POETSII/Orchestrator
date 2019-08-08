@@ -19,7 +19,7 @@ public:
 
 private:
     P_devtyp* device_type;
-    const QHash<QString, vld_elem_types> valid_elements = {{"InputPin", INPIN}, {"OutputPin", OUTPIN}, {"State", STATE}, {"SharedCode", CODE}, {"DeviceSharedCode", CODE}, {"ReadyToSend", CODE}, {"OnCompute", CODE}};
+    QHash<QString, vld_elem_types> valid_elements;
 };
 
 #endif // PDEVICETYPE_H

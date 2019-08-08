@@ -2,7 +2,7 @@
 
 PIOutputPin::PIOutputPin(const QString& name, PIGraphObject *parent) : PAnnotatedDef(name, "OutputPin", QVector<int>({ONSEND}), parent), PIPin(parent)
 {
-
+    valid_elements["OnSend"] = ONSEND;
 }
 
 void PIOutputPin::defineObject(QXmlStreamReader* xml_def)

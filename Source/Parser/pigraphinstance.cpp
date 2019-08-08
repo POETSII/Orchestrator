@@ -5,7 +5,8 @@
 PIGraphInstance::PIGraphInstance(const QString& name, PIGraphObject *parent) :
     PConcreteInstance(name, "GraphInstance", QVector<int>({DEVINSTS, EDGEINSTS, SUPERINSTS}), parent), graph_type(NULL), supervisor(NULL), graph_instance(NULL), graph_type_id(""), supervisor_type_id("")
 {
-
+    valid_elements["DeviceInstances"] = DEVINSTS;
+    valid_elements["EdgeInstances"] = EDGEINSTS;
 }
 
 void PIGraphInstance::defineObject(QXmlStreamReader* xml_def)
@@ -161,4 +162,3 @@ P_task* PIGraphInstance::elaborateGraphInstance(OrchBase* orch_root)
       }
       return graph_instance;
 }
-
