@@ -5,6 +5,8 @@
 PDeviceInstance::PDeviceInstance(bool is_supervisor, const QString &name, PIGraphObject *parent) :
     PConcreteInstance(name, is_supervisor ? QString("SDevI") : QString("DevI"), is_supervisor ? QVector<int>() : QVector<int>({STATE}), parent), device(NULL), supervisor(NULL), device_type_id(""), device_type(NULL), supervisor_type(NULL)
 {
+    valid_elements["S"] = STATE;
+
     if (is_supervisor && parent)
     {
         device_type_id = name;

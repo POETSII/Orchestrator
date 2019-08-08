@@ -5,9 +5,11 @@
 
 PSupervisorDeviceType::PSupervisorDeviceType(const QString& name, PIGraphObject *parent) :
     PIGraphBranch(name, "SupervisorDeviceType", QVector<int>({INPIN, OUTPIN, CODE}), parent),
-    dev_info_persistent(false), dev_props_valid(false), edge_endpts_exist(false)
+    dev_info_persistent(false), dev_props_valid(false), edge_endpts_exist(false), device_type(0)
 {
-
+    valid_elements["InputPin"] = INPIN;
+    valid_elements["OutputPin"] = OUTPIN;
+    valid_elements["Code"] = CODE;
 }
 
 void PSupervisorDeviceType::defineObject(QXmlStreamReader* xml_def)

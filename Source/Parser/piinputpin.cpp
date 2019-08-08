@@ -3,7 +3,8 @@
 
 PIInputPin::PIInputPin(const QString& name, PIGraphObject *parent) : PConcreteDef(name, "InputPin", QVector<int>({ONRECEIVE, STATE}), parent), PIPin(parent)
 {
-
+    valid_elements["OnReceive"] = ONRECEIVE;
+    valid_elements["State"] = STATE;
 }
 
 void PIInputPin::defineObject(QXmlStreamReader* xml_def)
