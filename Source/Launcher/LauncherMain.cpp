@@ -54,7 +54,7 @@ void BuildCommand(bool useMotherships, std::string internalPath,
         *command += dformat(" -genv LD_LIBRARY_PATH \"%s\"",
                             internalPath.c_str());
     }
-    *command += " : -n 1 ./root"
+    *command += " -n 1 ./root"
         " : -n 1 ./logserver"
         " : -n 1 ./rtcl";  /* DRY with help string. */
 
@@ -204,7 +204,7 @@ argKeys["internalPath"].c_str());
         currentArg = (*argIt).Cl;
         if (currentArg == argKeys["help"])  /* Help: Print and leave. */
         {
-            printf(helpDoc.c_str());
+            printf("%s", helpDoc.c_str());
             return 0;
         }
 
