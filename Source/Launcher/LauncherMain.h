@@ -12,15 +12,16 @@
 
 #include <stdlib.h>
 
-#define INTERNAL_LIB_PATH "INTERNAL_LIB_PATH_PLACEHOLDER"
-
 namespace Launcher
 {
     const char* debugHeader = "[LAUNCHER] ";
     const char* debugIndent = "    ";
     const char* errorHeader = "[LAUNCHER] [ERROR] ";
+    const char* fileOnlyOnPoetsBox = "/local/ecad/setup-quartus17v0.bash";
 
-    void BuildCommand(std::string overrideHost, std::set<std::string>* hosts,
+    bool AreWeRunningOnAPoetsBox();
+    void BuildCommand(bool useMotherships, std::string internalPath,
+                      std::string overrideHost, std::set<std::string>* hosts,
                       std::string* command);
     int GetHosts(std::string hdfPath, std::set<std::string>* hosts);
     int Launch(int argc, char** argv);

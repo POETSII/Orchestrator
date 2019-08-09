@@ -1,11 +1,13 @@
 /* This file contains the `main` free function for the Orchestrator-MPI
- * launcher. */
+ * launcher.
+ *
+ * If you're interested in input arguments, call with "h", or read helpDoc. */
 
 #include "LauncherMain.h"
 
 #include <string>
 
-/* Calls 'launch' in a try/catch block. */
+/* Calls 'Launch' in a try/catch block. */
 int main(int argc, char** argv)
 {
     /* Run the launcher in a try/catch block. */
@@ -34,37 +36,52 @@ int main(int argc, char** argv)
 namespace Launcher
 {
 
+bool AreWeRunningOnAPoetsBox()
+{
+    return file_exists(fileOnlyOnPoetsBox);
+}
+
 /* Constructs the MPI command to run and writes it to 'command', given a set
  * of 'hosts'. */
-void BuildCommand(std::string overrideHost, std::set<std::string>* hosts,
+void BuildCommand(bool useMotherships, std::string internalPath,
+                  std::string overrideHost, std::set<std::string>* hosts,
                   std::string* command)
 {
-    /* Boilerplate, DRY with help string. */
-    *command = "mpiexec.hydra"
-        " -genv LD_LIBRARY_PATH " INTERNAL_LIB_PATH
-        " : -n 1 ./root"
+    /* Boilerplate */
+    *command = "mpiexec.hydra";
+    if (!internalPath.empty())
+    {
+        *command += dformat(" -genv LD_LIBRARY_PATH \"%s\"",
+                            internalPath.c_str());
+    }
+    *command += " : -n 1 ./root"
         " : -n 1 ./logserver"
-        " : -n 1 ./rtcl";
+        " : -n 1 ./rtcl";  /* DRY with help string. */
 
-    /* If we've set the override, just spawn a mothership on that host. */
-    if (!overrideHost.empty())
+    /* Adding motherships... */
+    if (useMotherships)
     {
-        *command += " : -n 1 --host " + overrideHost + " ./mothership";
-    }
-
-    /* Otherwise, if there are no hosts, just optimistically spawn a
-     * mothership on this box. */
-    else if (hosts->empty())
-    {
-        *command += " : -n 1 ./mothership";
-    }
-
-    /* Otherwise, spawn one mothership for each host. */
-    else
-    {
-        WALKSET(string, (*hosts), host)
+        /* If we've set the override, just spawn a mothership on that host. */
+        if (!overrideHost.empty())
         {
-            *command += " : -n 1 --host " + *host + " ./mothership";
+            *command += " : -n 1 --host " + overrideHost + " ./mothership";
+        }
+
+        /* Otherwise, if there are no hosts, spawn a mothership on this box if
+         * it's a POETS box. Otherwise, warn the user that no mothership is
+         * being spawned. */
+        else if (hosts->empty())
+        {
+            *command += " : -n 1 ./mothership";
+        }
+
+        /* Otherwise, spawn one mothership for each host. */
+        else
+        {
+            WALKSET(string, (*hosts), host)
+            {
+                *command += " : -n 1 --host " + *host + " ./mothership";
+            }
         }
     }
 }
@@ -130,11 +147,13 @@ int Launch(int argc, char** argv)
     std::map<std::string, std::string> argKeys;
     argKeys["help"] = "h";
     argKeys["file"] = "f";
+    argKeys["noMotherships"] = "n";
     argKeys["override"] = "o";
+    argKeys["internalPath"] = "p";
 
     /* Defines help string, printed when user calls with `-h`. */
     std::string helpDoc = dformat(
-"Usage: %s [-h] [-f] FILE [-o] HOST\n"
+"Usage: %s [/h] [/f = FILE] [/o = HOST] [/p = PATH]\n"
 "\n"
 "This is the Orchestrator launcher. It starts the following Orchestrator "
 "processes:\n"
@@ -147,13 +166,17 @@ int Launch(int argc, char** argv)
 "If you are bamboozled, try compiling with debugging enabled (i.e. `make "
 "debug`). This launcher accepts the following optional arguments:\n"
 "\n"
-" -%s: Prints this help text.\n"
-" -%s FILE: Path to a hardware file to read hostnames from, in order to start "
-"motherships.\n"
-" -%s HOST: Override all Mothership hosts, specified from a hardware "
-"description file, with HOST.\n",
+" /%s: Prints this help text.\n"
+" /%s = FILE: Path to a hardware file to read hostnames from, in order to "
+"start motherships.\n"
+" /%s: Does not spawn any mothership processes.\n"
+" /%s = HOST: Override all Mothership hosts, specified from a hardware "
+"description file, with HOST.\n"
+" /%s = PATH: Define an LD_LIBRARY_PATH environment variable for called "
+"processes.\n",
 argv[0], argKeys["help"].c_str(), argKeys["file"].c_str(),
-argKeys["override"].c_str());
+argKeys["noMotherships"].c_str(), argKeys["override"].c_str(),
+argKeys["internalPath"].c_str());
 
     /* Parse the input arguments. */
     std::string concatenatedArgs;
@@ -170,7 +193,9 @@ argKeys["override"].c_str());
 
     /* Staging for input arguments. */
     std::string hdfPath;
+    bool useMotherships = true;
     std::string overrideHost;
+    std::string internalPath;
 
     /* Read each argument in turn. */
     std::string currentArg;
@@ -196,6 +221,19 @@ argKeys["override"].c_str());
             }
         }
 
+        if (currentArg == argKeys["noMotherships"])
+        {
+            if (useMotherships)
+            {
+                useMotherships = false;
+            }
+            else
+            {
+                printf("[WARN] Launcher: Ignoring duplicate noMotherships "
+                       "argument.\n");
+            }
+        }
+
         if (currentArg == argKeys["override"])  /* Override: Store it. */
         {
             if (overrideHost.empty())
@@ -210,6 +248,24 @@ argKeys["override"].c_str());
             else
             {
                 printf("[WARN] Launcher: Ignoring duplicate override"
+                       "argument.\n");
+            }
+        }
+
+        if (currentArg == argKeys["internalPath"])
+        {
+            if (internalPath.empty())
+            {
+                internalPath = (*argIt).GetP(0);
+                if (internalPath.empty())
+                {
+                    printf("[WARN] Launcher: Internal path argument empty. "
+                           "Ignoring.\n");
+                }
+            }
+            else
+            {
+                printf("[WARN] Launcher: Ignoring duplicate internal path "
                        "argument.\n");
             }
         }
@@ -238,53 +294,77 @@ argKeys["override"].c_str());
         DebugPrint("%s%sOverride host: %s\n", debugHeader, debugIndent,
                    overrideHost.c_str());
     }
+    if (useMotherships)
+    {
+        DebugPrint("%s%sMotherships: enabled\n", debugHeader, debugIndent);
+    }
+    else
+    {
+        DebugPrint("%s%sMotherships: disabled\n", debugHeader, debugIndent);
+    }
+
     DebugPrint("%s\n", debugHeader);
     #endif
 
     /* Read the input file, if supplied, and get a set of hosts we must launch
-     * Mothership processes on. Don't bother if we're overriding though.
-     *
-     * If there is no input file, hosts will remain empty. */
-    std::set<std::string> hosts;
-    if (!hdfPath.empty() and overrideHost.empty())
+     * Mothership processes on. Don't bother if we're overriding, or if
+     * motherships are disabled. */
+    std::set<std::string> hosts;  /* May well remain empty. */
+    if (useMotherships)
     {
-        int rc = GetHosts(hdfPath, &hosts);
-        if (rc != 0) return rc;
-
-        /* Print the hosts we found, if anyone is listening. */
-        #if ORCHESTRATOR_DEBUG
-        if(!hosts.empty())
+        if (!hdfPath.empty() and overrideHost.empty())
         {
-            DebugPrint("%sAfter reading the input file, I found the following "
-                       "hosts:\n", debugHeader);
-            WALKSET(std::string, hosts, hostIterator)
+            int rc = GetHosts(hdfPath, &hosts);
+            if (rc != 0) return rc;
+
+            /* Print the hosts we found, if anyone is listening. */
+            #if ORCHESTRATOR_DEBUG
+            if(!hosts.empty())
             {
-                DebugPrint("%s%s- %s\n", debugHeader, debugIndent,
-                           (*hostIterator).c_str());
+                DebugPrint("%sAfter reading the input file, I found the "
+                           "following hosts:\n", debugHeader);
+                WALKSET(std::string, hosts, hostIterator)
+                {
+                    DebugPrint("%s%s- %s\n", debugHeader, debugIndent,
+                               (*hostIterator).c_str());
+                }
+                DebugPrint("%s\n", debugHeader);
             }
-            DebugPrint("%s\n", debugHeader);
+
+            else
+            {
+                DebugPrint("%sAfter parsing the input file, I found no "
+                           "hosts.\n", debugHeader);
+            }
+            #endif
         }
 
-        else
+        /* Print that we're overriding, if we are. */
+        #if ORCHESTRATOR_DEBUG
+        else if (!overrideHost.empty())
         {
-            DebugPrint("%sAfter parsing the input file, I found no hosts.\n",
-                       debugHeader);
+            DebugPrint("%sIgnoring input file, and instead using the override "
+                       "passed in as an argument.\n", debugHeader);
         }
         #endif
     }
 
-    /* Print that we're overriding, if we are. */
-    #if ORCHESTRATOR_DEBUG
-    else if (!overrideHost.empty())
+    /* Warn the user that we can't spawn any motherships if no hosts were
+     * found, and we're not running on a POETS box (if motherships are
+     * enabled). */
+    DebugPrint("%sPerforming POETS box check...\n", debugHeader);
+    if (useMotherships && hosts.empty() && !AreWeRunningOnAPoetsBox())
     {
-        DebugPrint("%sIgnoring input file, and instead using the override "
-                   "passed in as an argument.\n", debugHeader);
+        printf("[WARN] Launcher: Not running on a POETS box, and found no "
+               "motherships running on alternative machines, so we're not "
+               "spawning any mothership processes.\n");
+        useMotherships = false;
     }
-    #endif
 
-    /* Build the MPI command. */
+    /* Build the MPI command, and run it. */
     std::string command;
-    BuildCommand(overrideHost, &hosts, &command);
+    DebugPrint("%sBuilding command...\n", debugHeader);
+    BuildCommand(useMotherships, internalPath, overrideHost, &hosts, &command);
     DebugPrint("%sRunning this command: %s\n.", debugHeader, command.c_str());
     system(command.c_str());
     return 0;

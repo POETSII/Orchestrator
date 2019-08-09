@@ -12,67 +12,7 @@
 # substitute in variable names to create the executable. There should be no
 # double-curly braces in the output version of this file.
 #
-# Call with the --help argument for usage, or just read this string:
-
-HELP=\
-"Usage: $(basename "$0") [-h] [-m] N
-
-Starts the Orchestrator.
-
-Will only start mothership process(es) if called on a POETS box.
-
-Optional arguments:
-    -h, --help: Prints this help text.
-    -m, --motherships N: Defines the number of mothership processes to spawn. \
-Only works if called on a POETS box. N must be a natural number with no \
-leading zeroes."
-
-# Parse input arguments to determine mothership behaviour. This clears the
-# argument list.
-NUMBER_OF_MOTHERSHIPS=1  # By default, start one mothership if running on a
-                         # POETS box.
-MOTHERSHIP_ARG_SET=0
-while [ $# -gt 0 ]; do
-    case "$1" in
-        --help|-h)
-            # Write help and exit.
-            echo "$HELP"
-            exit 0;;
-        --motherships|-m)
-            # Test input argument.
-            NATURAL_REGEXP='^[0-9][[:digit:]]*$'
-            if [ -z "$2" ]; then
-                >&2 echo "No input argument provided for --motherships. Pass \
-a natural number with no leading zeroes."
-                exit 1
-            elif ! [[ "$2" =~ $NATURAL_REGEXP ]]; then
-                >&2 echo "Invalid input argument for --motherships: \"$2\". \
-It should be a natural number with no leading zeroes."
-                exit 1
-            fi
-
-            NUMBER_OF_MOTHERSHIPS="$2"
-            MOTHERSHIP_ARG_SET=1
-            shift; shift;;
-    esac
-done
-
-# Determine whether or not we are running on a POETS box.
-QUARTUS_SETUP_SCRIPT="/local/ecad/setup-quartus17v0.bash"
-if [ -f "$QUARTUS_SETUP_SCRIPT" ]; then
-    ON_POETS_BOX=1  # True
-else
-    ON_POETS_BOX=0
-fi
-
-# Warn if the user set the number of motherships, and if we're not running
-# on a POETS box.
-if [ $MOTHERSHIP_ARG_SET -eq 1 ] && \
-   [ $ON_POETS_BOX -eq 0 ] && \
-   [ $NUMBER_OF_MOTHERSHIPS -ne 0 ]; then
-    >&2 echo "WARNING: Mothership argument was provided, but this script was \
-not run on a POETS box. Continuing without spawning any motherships."
-fi
+# Call with the -h argument for usage.
 
 # Setup for building applications
 export RISCV_PATH="{{ RISCV_DIR }}"
@@ -80,7 +20,9 @@ export MPICH_PATH="{{ MPICH_DIR }}"
 export PATH="{{ MPICH_DIR }}/bin:{{ RISCV_BIN_DIR }}:$PATH"
 export TRIVIAL_LOG_HANDLER=1
 
-if [ $ON_POETS_BOX -eq 1 ]; then
+# Quartus
+QUARTUS_SETUP_SCRIPT="/local/ecad/setup-quartus17v0.bash"
+if [ -f "$QUARTUS_SETUP_SCRIPT" ]; then
     export LM_LICENSE_FILE=:27012@localhost:27001@localhost
     source "$QUARTUS_SETUP_SCRIPT"
 fi
@@ -90,23 +32,47 @@ MPI_LIB_DIR="{{ MPICH_LIB_DIR }}"
 QT_LIB_DIR="{{ QT_LIB_DIR }}"
 GCC_LIB_DIR="{{ GCC_LIB_DIR }}"
 CR_LIB_DIR="{{ CR_LIB_DIR }}"
-INTERNAL_LIB_PATH=./:"$QT_LIB_DIR":"$MPI_LIB_DIR":"$GCC_LIB_DIR":
+INTERNAL_LIB_PATH="$QT_LIB_DIR":"$MPI_LIB_DIR":"$GCC_LIB_DIR":
 
 # Paths for dynamically-linked libraries required by MPI.
 export LD_LIBRARY_PATH="$CR_LIB_DIR":"$LD_LIBRARY_PATH":./
 
-# Define general MPI execution command.
-COMMAND="mpiexec.hydra -genv LD_LIBRARY_PATH \"$INTERNAL_LIB_PATH\" \
-    -n 1 ./root : \
-    -n 1 ./logserver : \
-    -n 1 ./rtcl"
+# Grab the file (/f) command line argument, put it in suppressed quotes for the
+# Cli class in the launcher, and make it relative to this directory if it is
+# itself a relative path (because the executable is run from the executable
+# directory).
+#
+# Also help if the user is naive.
+while [ $# -gt 0 ]; do
+    case "$1" in
+        /f|-f)
+            # Absolute/relative control flow split.
+            case "$3" in
+                /*) #Absolute
+                    ARGS="$ARGS /f = \"$3\""
+                    ;;
+                *) # Relative
+                    ARGS="$ARGS /f = \"$PWD/$3\""
+                    ;;
+            esac
+            shift; shift; shift;;
 
-# Running the Orchestrator from the build directory. Only start a mothership if
-# we are running on a POETS box.
+        --help)
+            ARGS="$ARGS /h"
+            shift;;
+
+        -*)
+            # Convert to Windows-style, to a degree (mercy)
+            ARGS="$ARGS /${1:1}"
+            shift;;
+
+        *)  # Benign argument
+            ARGS="$ARGS $1"
+            shift;;
+    esac
+done
+
+# Run the launcher from the build directory.
 pushd "{{ EXECUTABLE_DIR }}" > /dev/null
-if [ $ON_POETS_BOX -eq 1 ]; then
-    $COMMAND : -n $NUMBER_OF_MOTHERSHIPS ./mothership
-else
-    $COMMAND
-fi
+./orchestrate /p = "\"$INTERNAL_LIB_PATH\"" $ARGS
 popd > /dev/null
