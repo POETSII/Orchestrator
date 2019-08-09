@@ -33,7 +33,7 @@ TEST_CASE("Fully-defined addresses can be created from a format and all values",
      * for you here: */
     /* address.Dump(); */
 
-    if (IGNORE_BOX_COMPONENT)
+    if (IGNORE_BOX_ADDRESS_COMPONENT)
     {
         REQUIRE(address.get_hardware_address() == 268435455);
     }
@@ -55,7 +55,7 @@ TEST_CASE("Invalid address components cannot be set", "[Addressing]")
 
     /* Also test that the box component does/not throw when we are/not
      * considering the box component. 17 > 2 ** 4 */
-    if (IGNORE_BOX_COMPONENT)
+    if (IGNORE_BOX_ADDRESS_COMPONENT)
     {
         HardwareAddress(&myFormat, 17, 31, 63, 255, 511);
     }

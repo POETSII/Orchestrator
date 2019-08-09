@@ -33,7 +33,7 @@ bool HardwareFileReader::d3_populate_validate_address_format(P_engine* engine)
 
     /* We live in a world where the box component of the address may or may not
      * be mandatory. */
-    if (!IGNORE_BOX_COMPONENT)
+    if (!IGNORE_BOX_ADDRESS_COMPONENT)
     {
         mandatoryFields.push_back("box");
     }

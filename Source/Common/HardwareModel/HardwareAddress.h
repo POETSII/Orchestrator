@@ -34,7 +34,7 @@
  *
  * If the following directive maps true, we still populate the box component,
  * but we don't validate it, use it, or check it in any way. */
-#define IGNORE_BOX_COMPONENT true
+#define IGNORE_BOX_ADDRESS_COMPONENT true
 
 /* Define masks for setting the 'definitions' variable. */
 #define HARDWARE_ADDRESS_FULLY_DEFINED_MASK 31  /* 0b11111 */
@@ -87,7 +87,7 @@ public:
     /* Defines whether or not the hardware address is fully defined, ignoring
      * the box component if appropriate. */
     bool is_fully_defined()
-        {return definitions >= (IGNORE_BOX_COMPONENT ?
+        {return definitions >= (IGNORE_BOX_ADDRESS_COMPONENT ?
                 HARDWARE_ADDRESS_FULLY_DEFINED_MASK - BOX_DEFINED_MASK :
                 HARDWARE_ADDRESS_FULLY_DEFINED_MASK);}
     inline bool is_box_defined()
