@@ -52,8 +52,11 @@ HardwareAddressInt HardwareAddress::get_hardware_address()
     returnValue += mailboxComponent << offset;
     offset += format->mailboxWordLength;
     returnValue += boardComponent << offset;
-    offset += format->boardWordLength;
-    returnValue += boxComponent << offset;
+    if (!IGNORE_BOX_ADDRESS_COMPONENT)
+    {
+        offset += format->boardWordLength;
+        returnValue += boxComponent << offset;
+    }
     return returnValue;
 }
 
@@ -98,11 +101,15 @@ void HardwareAddress::populate_from_software_address(P_addr* source)
 void HardwareAddress::set_box(AddressComponent value)
 {
     /* Validate */
-    if (value >= std::pow(2, format->boxWordLength))
+    if (!IGNORE_BOX_ADDRESS_COMPONENT)
     {
-        throw InvalidAddressException(
-            dformat("[ERROR] Box component value \"%d\" does not fit format "
-                    "with box length \"%d\".", value, format->boxWordLength));
+        if (value >= std::pow(2, format->boxWordLength))
+        {
+            throw InvalidAddressException(
+                dformat("[ERROR] Box component value \"%d\" does not fit "
+                        "format with box length \"%d\".",
+                        value, format->boxWordLength));
+        }
     }
 
     /* Set */
@@ -195,7 +202,8 @@ void HardwareAddress::Dump(FILE* file)
     /* Just contains the components, and whether or not they have been
      * defined. */
     fprintf(file, "boxComponent:     %u ", boxComponent);
-    fprintf(file, "%s\n", is_box_defined() ? "" : "(not defined)");
+    fprintf(file, "%s", is_box_defined() ? "" : "(not defined)");
+    fprintf(file, "%s", IGNORE_BOX_ADDRESS_COMPONENT ? " (ignored)\n" : "\n");
 
     fprintf(file, "boardComponent:   %u ", boardComponent);
     fprintf(file, "%s\n", is_board_defined() ? "" : "(not defined)");

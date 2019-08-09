@@ -28,6 +28,14 @@
 #include "P_addr.h"
 #include <cmath>  /* For validating address components. */
 
+/* The current Tinsel design does not use a box component for addresses. This
+ * class is designed to operate in both the cases where the box component
+ * matters, and where it does not, at compile time.
+ *
+ * If the following directive maps true, we still populate the box component,
+ * but we don't validate it, use it, or check it in any way. */
+#define IGNORE_BOX_ADDRESS_COMPONENT true
+
 /* Define masks for setting the 'definitions' variable. */
 #define HARDWARE_ADDRESS_FULLY_DEFINED_MASK 31  /* 0b11111 */
 #define BOX_DEFINED_MASK 1                      /* 0b00001 */
@@ -76,9 +84,12 @@ public:
     void populate_from_software_address(P_addr* source);
     void Dump(FILE* = stdout);
 
-    /* Defines whether or not the hardware address is fully defined. */
-    inline bool is_fully_defined()
-        {return definitions == HARDWARE_ADDRESS_FULLY_DEFINED_MASK;}
+    /* Defines whether or not the hardware address is fully defined, ignoring
+     * the box component if appropriate. */
+    bool is_fully_defined()
+        {return definitions >= (IGNORE_BOX_ADDRESS_COMPONENT ?
+                HARDWARE_ADDRESS_FULLY_DEFINED_MASK - BOX_DEFINED_MASK :
+                HARDWARE_ADDRESS_FULLY_DEFINED_MASK);}
     inline bool is_box_defined()
         {return (definitions & BOX_DEFINED_MASK) > 0;}
     inline bool is_board_defined()

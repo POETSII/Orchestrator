@@ -67,7 +67,14 @@ HARDWARE_ITERATOR_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.
                             $(HARDWARE_MODEL_SOURCES)
 
 # Sources used by executables that read hardware files.
-HARDWARE_FILE_PARSER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileManager/HardwareFileParser.cpp \
+HARDWARE_FILE_READER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderCore.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect1.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Engine.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Getters.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Items.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Sections.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/Validator.cpp \
                                $(GENERICS_DIR)/dfprintf.cpp \
                                $(GENERICS_DIR)/flat.cpp \
                                $(GENERICS_DIR)/jnj.cpp \
@@ -105,7 +112,7 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(SOURCE_DIR)/NameServer/Ns_el.cpp
 
 ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
-ROOT_SOURCES += $(HARDWARE_FILE_PARSER_SOURCES)
+ROOT_SOURCES += $(HARDWARE_FILE_READER_SOURCES)
 ROOT_SOURCES += $(HARDWARE_ITERATOR_SOURCES)
 
 # Add (almost) all of the sources from OrchBase and Parser.

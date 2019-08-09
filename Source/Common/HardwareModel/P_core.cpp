@@ -33,8 +33,8 @@ void P_core::clear()
 /* Clears the dynamically-allocated binaries. */
 void P_core::clear_binaries()
 {
-    if (dataBinary != 0) delete dataBinary;
-    if (instructionBinary != 0) delete instructionBinary;
+    if (dataBinary != PNULL) delete dataBinary;
+    if (instructionBinary != PNULL) delete instructionBinary;
 }
 
 /* Donates an uncontained thread to this core. Arguments:
@@ -94,7 +94,7 @@ void P_core::Dump(FILE* file)
     NameBase::Dump(file);
 
     /* Dump information about binaries. */
-    if (dataBinary != 0)
+    if (dataBinary != PNULL)
     {
         fprintf(file, "No data binary assigned to this core.\n");
     }
@@ -104,7 +104,7 @@ void P_core::Dump(FILE* file)
         dataBinary->Dump(file);
     }
 
-    if (instructionBinary != 0)
+    if (instructionBinary != PNULL)
     {
         fprintf(file, "No instruction binary assigned to this core.\n");
     }
