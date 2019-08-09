@@ -85,6 +85,22 @@ HARDWARE_FILE_READER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileReader/Hardwar
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
 
+# The launcher consists of:
+#
+#  - The "main" file (/Source/Launcher/LauncherMain.cpp).
+#
+#  - Debug logic, in (/Source/Common/Debug.cpp).
+#
+#  - Some Generics for command-line processing and file reading.
+LAUNCHER_SOURCES = $(SOURCE_DIR)/Launcher/LauncherMain.cpp \
+                   $(SOURCE_DIR)/Common/Debug.cpp \
+                   $(GENERICS_DIR)/Cli.cpp \
+                   $(GENERICS_DIR)/dfprintf.cpp \
+                   $(GENERICS_DIR)/flat.cpp \
+                   $(GENERICS_DIR)/jnj.cpp \
+                   $(GENERICS_DIR)/lex.cpp \
+                   $(GENERICS_DIR)/uif.cpp
+
 # The root component consists of:
 #
 #  - The "main" file (/Source/Root/RootMain.cpp) and its dependencies in
@@ -263,7 +279,7 @@ $(1)_OBJECTS := $(call orch_sources_to_objects, $($(1)_SOURCES))
 endef
 
 $(foreach object_set,\
-          ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP,\
+          LAUNCHER ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP,\
           $(eval $(call OBJECT_TEMPLATE,$(object_set))))
 
 # Define executable prerequisites. RULE_TEMPLATE defines the substitutions made
@@ -276,5 +292,5 @@ $($(1)_EXECUTABLE): $($(1)_OBJECTS)
 endef
 
 $(foreach executable_name,\
-          ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP,\
+          LAUNCHER ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP,\
           $(eval $(call RULE_TEMPLATE,$(executable_name))))

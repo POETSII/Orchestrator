@@ -76,6 +76,7 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/OrchBase \
                 -I$(SOURCE_DIR)/OrchBase/HardwareFileReader \
                 -I$(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment \
+                -I$(SOURCE_DIR)/Launcher \
                 -I$(SOURCE_DIR)/Injector \
                 -I$(SOURCE_DIR)/Parser \
                 -I$(SOURCE_DIR)/NameServer \
@@ -101,6 +102,7 @@ debug: all
 ORCHESTRATE_BASENAME = orchestrate.sh
 ORCHESTRATE_SCRIPT = $(ROOT_DIR)/$(ORCHESTRATE_BASENAME)
 
+LAUNCHER_EXECUTABLE = $(EXECUTABLE_DIR)/orchestrate
 ROOT_EXECUTABLE = $(EXECUTABLE_DIR)/root
 DUMMY_EXECUTABLE = $(EXECUTABLE_DIR)/dummy
 LOGSERVER_EXECUTABLE = $(EXECUTABLE_DIR)/logserver
@@ -109,8 +111,9 @@ RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
 
-all: orchestrate root dummy logserver rtcl injector mothership \
+all: orchestrate launcher root dummy logserver rtcl injector mothership \
      application_staging_environment
+launcher: $(LAUNCHER_EXECUTABLE)
 orchestrate: $(ORCHESTRATE_SCRIPT)
 root: $(ROOT_EXECUTABLE)
 dummy: $(DUMMY_EXECUTABLE)
@@ -132,8 +135,8 @@ tests: $(ALL_TESTS) $(TEST_SCRIPT)
 # Linking targets (to generate executables). See
 # Makefile.executable_prerequisites for the prerequisites of these executables
 # (obviously...)
-$(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) $(LOGSERVER_EXECUTABLE) \
-$(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
+$(LAUNCHER_EXECUTABLE) $(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) \
+$(LOGSERVER_EXECUTABLE) $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
         -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
