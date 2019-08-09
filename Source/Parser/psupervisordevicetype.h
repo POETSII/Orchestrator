@@ -22,7 +22,7 @@ public:
 
 private:
     P_devtyp* device_type;
-    const QHash<QString, vld_elem_types> valid_elements = {{"InputPin", INPIN}, {"OutputPin", OUTPIN}, {"Code", CODE}};
+    QHash<QString, vld_elem_types> valid_elements;
 };
 
 #endif // PSUPERVISORDEVICETYPE_H

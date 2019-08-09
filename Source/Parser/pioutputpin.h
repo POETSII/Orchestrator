@@ -18,7 +18,7 @@ public:
 
 private:
     enum vld_elem_types {OTHER, ONSEND};
-    const QHash<QString, vld_elem_types> valid_elements = {{"OnSend", ONSEND}};
+    QHash<QString, vld_elem_types> valid_elements;
 };
 
 #endif // PIOUTPUTPIN_H

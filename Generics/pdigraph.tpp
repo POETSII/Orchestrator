@@ -181,7 +181,7 @@ return true;
 
 PDIGRAPH_ void _PDIGRAPH::Dump()
 {
-string s(35,'=');
+std::string s(35,'=');
 fprintf(dfp,"Pdigraph topological dump %35s++++++++++++++++++++\n",s.c_str());
 fprintf(dfp,"Node index (%u entries):\n",static_cast<unsigned>(index_n.size()));
 int c1 = 1;
