@@ -6,7 +6,12 @@
 
 PIGraphRoot::PIGraphRoot(const QString& name, QObject *parent) : PIGraphBranch(name, "Graphs", QVector<int>({HEADER, GTYPE, GINST, METAP}), parent), orchestrator(NULL), obj_id_counter(0), xml_hdr("")
 {
-
+     valid_elements["Pheader"] = HEADER;
+     valid_elements["GraphType"] = GTYPE;
+     valid_elements["GraphTypeReference"] = GTREF;
+     valid_elements["GraphInstance"] = GINST;
+     valid_elements["GraphInstanceReference"] = GIREF;
+     valid_elements["GraphInstanceMetadataPatch"] = METAP;
 }
 
 void PIGraphRoot::defineObject(QXmlStreamReader* xml_def)

@@ -16,7 +16,7 @@ public:
 private:
     P_message* message_type;
     enum vld_elem_types {OTHER, MSG};
-    const QHash<QString, vld_elem_types> valid_elements = {{"Message", MSG}};
+    QHash<QString, vld_elem_types> valid_elements;
 };
 
 #endif // PMESSAGETYPE_H

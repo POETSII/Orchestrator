@@ -17,7 +17,7 @@ public:
 
     enum vld_elem_types {OTHER, ONRECEIVE, STATE};
 private:
-    const QHash<QString, vld_elem_types> valid_elements = {{"OnReceive", ONRECEIVE}, {"State", STATE}};
+    QHash<QString, vld_elem_types> valid_elements;
 };
 
 #endif // PIINPUTPIN_H

@@ -388,11 +388,10 @@ PktC.Src(Urank);
 string taskname = task->first;
 PktC.Put(0, &taskname);                    // first field in the packet is the task name
 PktD.Put(0, &taskname);
-taskname+="/";                             // for the moment the binary directory will be fixed
-taskname+=BIN_PATH;                        // later we could make this user-settable.
 // duplicate P_builder's iteration through the task
 P_core* thisCore;  // Core available during iteration.
 P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
+bool isTaskMappedToThisBox;
 WALKMAP(AddressComponent, P_box*, pE->P_boxm, boxNode)
 {
 while (cIdx < Comms.size()) // grab the next available mothership
@@ -401,7 +400,8 @@ while (cIdx < Comms.size()) // grab the next available mothership
       if (currBox != pPmap[cIdx]->vPmap.end()) break;
       ++cIdx;
 }
-taskname.insert(0,string("/home/")+currBox->P_user+"/");
+taskname = "/home/"+currBox->P_user+"/"+task->first+"/"+BIN_PATH;
+isTaskMappedToThisBox = false;
 PktD.Put(1,&taskname);
 coreVec.clear();   // reset the packet content
 WALKVECTOR(P_board*,boxNode->second->P_boardv,board)
@@ -417,6 +417,7 @@ thisCore = core->second;
 firstThread = thisCore->P_threadm.begin()->second;
 if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
 {
+    isTaskMappedToThisBox = true;
     // determine the last thread that has a device mapped onto it (recall that all devices within a core service the same task.
     std::map<AddressComponent, P_thread*>::reverse_iterator thread;
     for (thread=thisCore->P_threadm.rbegin();
@@ -454,6 +455,8 @@ if ((cIdx >= Comms.size()) && coreVec.size()) // not enough Motherships have rep
    return;
 }
 
+if (isTaskMappedToThisBox)
+{
 // same machine running Root and Mothership? (Tediously this requires searching the
 // process maps linearly because there is no method within a ProcMap to get the
 // index of the entry which is Root)
@@ -485,7 +488,8 @@ PktC.Put<P_addr_t>(2,&(coreVec[0].second),1);
 */
 PktC.Send(currBox->P_rank);                    // Send to the target Mothership
 PktD.Send(currBox->P_rank);
-}                                              // Next Mothership
+}
+}                                              // Next Mothership (box)
 }
 
 //------------------------------------------------------------------------------
