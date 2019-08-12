@@ -3,7 +3,7 @@
 
 PMessageType::PMessageType(const QString& name, PIGraphObject *parent) : PAnnotatedDef(name, "MessageType", QVector<int>({MSG}), parent), message_type(NULL)
 {
-
+    valid_elements["Message"] = MSG;
 }
 
 const PIGraphObject* PMessageType::appendSubObject(QXmlStreamReader* xml_def)

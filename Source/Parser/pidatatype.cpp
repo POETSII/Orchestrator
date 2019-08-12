@@ -3,6 +3,14 @@
 PIDataType::PIDataType(const QString& name, PIGraphObject *parent) :
     PIGraphBranch(name, "DataType", QVector<int>({DTYPE}), parent), data_type(NULL), base_type(""), expanded_type(""), value(""), default_value(""), _documentation(""), num_replications(0)
 {
+    valid_elements["Scalar"] = SCALAR;
+    valid_elements["Array"] = ARRAY;
+    valid_elements["Tuple"] = STRUCT;
+    valid_elements["Union"] = UNION;
+    valid_elements["State"] = DTYPE;
+    valid_elements["Properties"] = DTYPE;
+    valid_elements["Message"] = DTYPE;
+
     // we will do something more sensible with this in future when a PoetsDataType is better defined.
     data_type = new PoetsDataType(dynamic_cast<PIGraphObject*>(this));
 }
@@ -231,4 +239,3 @@ const QString& PIDataType::defaultValue() const
     return default_value;
     }
 }
-

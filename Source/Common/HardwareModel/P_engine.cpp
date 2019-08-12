@@ -256,7 +256,8 @@ void P_engine::Dump(FILE* file)
     }
     if (!version.empty())
     {
-        fprintf(file, "Written for parser version: %s\n", version.c_str());
+        fprintf(file, "Written for file reader version: %s\n",
+                version.c_str());
     }
     if (!fileOrigin.empty())
     {

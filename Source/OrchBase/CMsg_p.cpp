@@ -18,10 +18,10 @@ pair<unsigned,P_addr_t> * CMsg_p::Get(int & cnt)
     unsigned* pCIdx = PMsg_p::Get<unsigned>(1,numCores[0]);
     unsigned* pBox = PMsg_p::Get<unsigned>(2,numCores[1]);
     unsigned* pBoard = PMsg_p::Get<unsigned>(3,numCores[2]);
-    unsigned* pMailbox = PMsg_p::Get<unsigned>(3,numCores[3]);
-    unsigned* pCore = PMsg_p::Get<unsigned>(4,numCores[4]);
-    unsigned* pThread = PMsg_p::Get<unsigned>(5,numCores[5]);
-    unsigned* pDevice = PMsg_p::Get<unsigned>(6,numCores[6]);
+    unsigned* pMailbox = PMsg_p::Get<unsigned>(4,numCores[3]);
+    unsigned* pCore = PMsg_p::Get<unsigned>(5,numCores[4]);
+    unsigned* pThread = PMsg_p::Get<unsigned>(6,numCores[5]);
+    unsigned* pDevice = PMsg_p::Get<unsigned>(7,numCores[6]);
     if ((numCores[6] | numCores[5] | numCores[4] | numCores[3] | numCores[2] | numCores[1]) != numCores[0]) return 0;
     if (!pCIdx || !pBox || !pBoard || !pMailbox || !pCore || !pThread || !pDevice) return 0;
     cnt = numCores[0];

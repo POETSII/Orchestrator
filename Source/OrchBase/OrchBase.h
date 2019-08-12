@@ -12,7 +12,7 @@ class Dialect1Deployer;
 #include <stdio.h>
 #include "D_graph.h"
 #include "HardwareModel.h"
-#include "HardwareFileParser.h"
+#include "HardwareFileReader.h"
 #include "Placement.h"
 #include "Cli.h"
 #include "Environment.h"

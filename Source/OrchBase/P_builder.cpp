@@ -266,84 +266,92 @@ unsigned P_builder::GenFiles(P_task* task)
   // handlers_<CORENUM>.h
   // handlers_<CORENUM>.cpp
   //
-  // build a core map visible to the make script (as a shell script)
+  // Build a core map visible to the make script (as a shell script). Each of
+  // the cores is uniquely identified within a board.
   //============================================================================
   P_core* thisCore;  // Core available during iteration.
   P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
+  AddressComponent mailboxCoreId;  // Concatenated mailbox-core address (staging area)
   
   fstream cores_sh((task_dir+GENERATED_PATH+"/cores.sh").c_str(),
                     fstream::in | fstream::out | fstream::trunc);      // Open the cores shell script       
-                    
-  // Walk through all of the boards in the graph
-  WALKPDIGRAPHNODES(AddressComponent,P_board*,unsigned,P_link*,
-                      unsigned,P_port*,par->pE->G,boardNode)
+  
+  // Walk through all of the boxes in the system
+  WALKMAP(AddressComponent, P_box*, par->pE->P_boxm, boxNode)
   {
-    
-    // Walk through all of the mailboxes on the board.
-    WALKPDIGRAPHNODES(AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,
-                        P_port*,par->pE->G.NodeData(boardNode)->G,mailboxNode)
-    {
-      
-      // Walk through all of the cores on the mailbox
-      WALKMAP(AddressComponent,P_core*,
-              par->pE->G.NodeData(boardNode)->G.NodeData(mailboxNode)->P_corem,
-              coreNode)
-      {  
-        thisCore = coreNode->second;                        // Reference to the current core
-        firstThread = thisCore->P_threadm.begin()->second;  // Reference to the first thread on the core
+    // Walk through all of the boards in a box
+    WALKVECTOR(P_board*,boxNode->second->P_boardv,boardNode)
+    {  
+      // Walk through all of the mailboxes on the board.
+      WALKPDIGRAPHNODES(AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,
+                          P_port*,(*boardNode)->G,mailboxNode)
+      {
         
-        if (firstThread->P_devicel.size()                           // only for cores with something placed 
-            && (firstThread->P_devicel.front()->par->par == task))  // and that belong to the task
-        {
-          cores_sh << "cores[" << coreNum << "]=";
-          cores_sh << thisCore->get_hardware_address()->get_core() << "\n";
-          // these consist of the declarations and definitions of variables and the handler functions.
+        // Walk through all of the cores on the mailbox
+        WALKMAP(AddressComponent,P_core*,
+                (*boardNode)->G.NodeData(mailboxNode)->P_corem,
+                coreNode)
+        {  
+          thisCore = coreNode->second;                        // Reference to the current core
+          firstThread = thisCore->P_threadm.begin()->second;  // Reference to the first thread on the core
           
-          //====================================================================
-          // Create empty files for the per-core variables declarations
-          //====================================================================
-          std::stringstream vars_hFName;
-          vars_hFName << task_dir << GENERATED_H_PATH;
-          vars_hFName << "/vars_" << coreNum << ".h";
-          std::ofstream vars_h(vars_hFName.str());              // variables header
-          
-          
-          //====================================================================
-          
-          
-          //====================================================================
-          // Write core vars.
-          //====================================================================
-          if (WriteCoreVars(task_dir, coreNum, thisCore, firstThread, vars_h))
-          {                     // Writing core vars failed - bail
-            vars_h.close();
-            cores_sh.close();
-            return 1;
-          }
-          //====================================================================
-          
-          
-          //====================================================================
-          // Generate thread variables
-          //====================================================================
-          WALKMAP(AddressComponent,P_thread*,thisCore->P_threadm,threadIterator)
+          if (firstThread->P_devicel.size()                           // only for cores with something placed 
+              && (firstThread->P_devicel.front()->par->par == task))  // and that belong to the task
           {
-            if (threadIterator->second->P_devicel.size())
+            mailboxCoreId = thisCore->get_hardware_address()->get_mailbox() \
+	      << par->pE->addressFormat.coreWordLength;
+            mailboxCoreId += thisCore->get_hardware_address()->get_core();
+
+            cores_sh << "cores[" << coreNum << "]=";
+            cores_sh << mailboxCoreId << "\n";
+            // these consist of the declarations and definitions of variables and the handler functions.
+            
+            //====================================================================
+            // Create empty files for the per-core variables declarations
+            //====================================================================
+            std::stringstream vars_hFName;
+            vars_hFName << task_dir << GENERATED_H_PATH;
+            vars_hFName << "/vars_" << coreNum << ".h";
+            std::ofstream vars_h(vars_hFName.str().c_str());  // variables header
+            
+            
+            //====================================================================
+            
+            
+            //====================================================================
+            // Write core vars.
+            //====================================================================
+            if (WriteCoreVars(task_dir, coreNum, thisCore, firstThread, vars_h))
+            {                     // Writing core vars failed - bail
+              vars_h.close();
+              cores_sh.close();
+              return 1;
+            }
+            //====================================================================
+            
+            
+            //====================================================================
+            // Generate thread variables
+            //====================================================================
+            WALKMAP(AddressComponent,P_thread*,thisCore->P_threadm,threadIterator)
             {
-              if(WriteThreadVars(task_dir, coreNum, threadIterator->first,
-                                threadIterator->second, vars_h))
-              {                     // Writing thread vars failed - bail
-                vars_h.close();
-                cores_sh.close();
-                return 1;
+              if (threadIterator->second->P_devicel.size())
+              {
+                if(WriteThreadVars(task_dir, coreNum, threadIterator->first,
+                                  threadIterator->second, vars_h))
+                {                     // Writing thread vars failed - bail
+                  vars_h.close();
+                  cores_sh.close();
+                  return 1;
+                }
               }
             }
+            //====================================================================
+            
+            
+            vars_h.close();       // close the core's declarations
+            ++coreNum;            // move on to the next core.
           }
-          //====================================================================
-          
-          
-          vars_h.close();       // close the core's declarations
-          ++coreNum;            // move on to the next core.
         }
       }
     }
@@ -403,8 +411,9 @@ unsigned P_builder::GenSupervisor(P_task* task)
     //==========================================================================
     std::stringstream supervisor_hFName;
     supervisor_hFName << task_dir << "/" << GENERATED_PATH <<"/Supervisor.h";
-    std::ofstream supervisor_h(supervisor_hFName.str(), fstream::app);    // Supervisor header, open in append
-    
+    std::ofstream supervisor_h(supervisor_hFName.str().c_str(),
+                               fstream::app);    // Supervisor header, open in append
+
     if(supervisor_h.fail()) // Check that the file opened
     {                       // if it didn't, tell logserver and exit
       par->Post(816, supervisor_hFName.str(), POETS::getSysErrorString(errno));
@@ -413,7 +422,8 @@ unsigned P_builder::GenSupervisor(P_task* task)
     
     std::stringstream supervisor_cFName;
     supervisor_cFName << task_dir << "/" << GENERATED_PATH <<"/Supervisor.cpp";
-    std::ofstream supervisor_cpp(supervisor_cFName.str(), fstream::app);  // Supervisor code, open in append
+    std::ofstream supervisor_cpp(supervisor_cFName.str().c_str(),
+                                 fstream::app);  // Supervisor code, open in append
     if(supervisor_cpp.fail()) // Check that the file opened
     {                         // if it didn't, tell logserver, close .h and exit
       par->Post(816, supervisor_cFName.str(), POETS::getSysErrorString(errno));
@@ -680,7 +690,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::stringstream vars_cppFName;
   vars_cppFName << task_dir << GENERATED_CPP_PATH;
   vars_cppFName << "/vars_" << coreNum << ".cpp";
-  std::ofstream vars_cpp(vars_cppFName.str());            // variables source
+  std::ofstream vars_cpp(vars_cppFName.str().c_str());  // variables source
   if(vars_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
     par->Post(816, vars_cppFName.str(), POETS::getSysErrorString(errno));
@@ -690,7 +700,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::stringstream handlers_hFName;
   handlers_hFName << task_dir << GENERATED_H_PATH;
   handlers_hFName << "/handlers_" << coreNum << ".h";
-  std::ofstream handlers_h(handlers_hFName.str());      // handlers header
+  std::ofstream handlers_h(handlers_hFName.str().c_str());  // handlers header
   if(handlers_h.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
     par->Post(816, handlers_hFName.str(), POETS::getSysErrorString(errno));
@@ -701,7 +711,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::stringstream handlers_cppFName;
   handlers_cppFName << task_dir << GENERATED_CPP_PATH;
   handlers_cppFName << "/handlers_" << coreNum << ".cpp";
-  std::ofstream handlers_cpp(handlers_cppFName.str());  // handlers source
+  std::ofstream handlers_cpp(handlers_cppFName.str().c_str());  // handlers source
   if(handlers_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
     par->Post(816, handlers_cppFName.str(), POETS::getSysErrorString(errno));
@@ -1060,7 +1070,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   std::stringstream vars_cppFName;
   vars_cppFName << task_dir << GENERATED_CPP_PATH;
   vars_cppFName << "/vars_" << coreNum << "_" <<thread_num << ".cpp";
-  std::ofstream vars_cpp(vars_cppFName.str());            // variables source
+  std::ofstream vars_cpp(vars_cppFName.str().c_str());  // variables source
   if(vars_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
     par->Post(816, vars_cppFName.str(), POETS::getSysErrorString(errno));
@@ -1301,7 +1311,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     if (inTypCnt)
     {
       std::string thrDevNameIn = "Thread_";
-      thrDevNameIn += std::to_string(thread_num) + std::string("_Device_");
+      thrDevNameIn += TO_STRING(thread_num) + std::string("_Device_");
       thrDevNameIn += (*device)->Name() + std::string("_InputPins");
       
       vars_h << "//----------------------- Input Pin (Associative) Tables ";

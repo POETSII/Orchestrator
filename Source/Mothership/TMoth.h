@@ -23,7 +23,13 @@ virtual ~             TMoth();
  
 // somewhat bodgey function to return the hardware address from the composite; needed because of
 // the actual hardware mappings; this is the Orchestrator-side equivalent of toAddr.
-static inline unsigned GetHWAddr(P_addr& VAddr) {return (VAddr.A_box << P_BOX_HWOS) | (VAddr.A_board << P_BOARD_HWOS) | (VAddr.A_core << P_CORE_HWOS) | (VAddr.A_thread << P_THREAD_HWOS);};
+static inline unsigned GetHWAddr(P_addr& VAddr) {
+	return 	(VAddr.A_box << P_BOX_HWOS)
+			| (VAddr.A_board << P_BOARD_HWOS)
+			| (VAddr.A_mailbox << P_MAILBOX_HWOS)
+			| (VAddr.A_core << P_CORE_HWOS)
+			| (VAddr.A_thread << P_THREAD_HWOS);
+												};
 // static void*          LoadBoard(void*); // threaded version of bootloader
 static void*          Twig(void*); // thread to handle Tinsel messages
 

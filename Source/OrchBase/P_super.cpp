@@ -55,8 +55,8 @@ void P_super::Attach(P_board* targetBoard)
     // Get the index of this supervisor in the box that contains this board.
     P_box* parentBox = targetBoard->parent;
     std::vector<P_super*>::iterator supervisorIterator;
-    supervisorIterator = std::find(std::begin(parentBox->P_superv),
-                                   std::end(parentBox->P_superv), this);
+    supervisorIterator = std::find(parentBox->P_superv.begin(),
+                                   parentBox->P_superv.end(), this);
     unsigned supervisorIndex;
     // We found it! Grab the index.
     if (supervisorIterator != parentBox->P_superv.end())
@@ -84,8 +84,8 @@ void P_super::Detach(P_board* targetBoard)
     // Get the index of this supervisor in the box that contains this board.
     P_box* parentBox = targetBoard->parent;
     std::vector<P_super*>::iterator supervisorIterator;
-    supervisorIterator = std::find(std::begin(parentBox->P_superv),
-                                   std::end(parentBox->P_superv), this);
+    supervisorIterator = std::find(parentBox->P_superv.begin(),
+                                   parentBox->P_superv.end(), this);
 
     // If we didn't find it, it's already been cleared. Let's not worry then.
     if (supervisorIterator == parentBox->P_superv.end()){return;}

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include "OrchBase.h"
+#include "OSFixes.hpp"
 #include <fstream>
 #include <string>
 #include <cstdlib>

@@ -16,6 +16,7 @@
 #include "Bin.h"
 #include "DumpUtils.h"
 #include "NameBase.h"
+#include "OSFixes.hpp"
 #include "OwnershipException.h"
 #include "P_mailbox.h"
 #include "P_thread.h"
