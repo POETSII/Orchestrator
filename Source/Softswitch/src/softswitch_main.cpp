@@ -6,6 +6,11 @@ void softswitch_main()
     // The thread context will reside at the base of the DRAM memory area.
     PThreadContext* ThreadContext = static_cast<PThreadContext*>(tinselHeapBase());
     
+    // Configure rtsBuf - this sits after ThreadContext in the heap.
+    // Cast as a char* to mute a warning about using void* in pointer arithmetic
+    outPin_t* rtsBuf[ThreadContext->rtsBufSize+1];
+    ThreadContext->rtsBuf = rtsBuf;
+    
     // can these slot assignments be done in softswitch_init?
     volatile void *recvBuffer=0;
     volatile void *sendBuffer=tinselSlot(0);   // hardware send buffer is dedicated to the first tinsel slot
@@ -28,7 +33,7 @@ void softswitch_main()
         }
         
         // Something to send
-        else if (softswitch_IsRTSReady(ThreadContext))
+        else if (ThreadContext->rtsStart != ThreadContext->rtsEnd) //softswitch_IsRTSReady(ThreadContext))
         {
             if (!tinselCanSend())   
             {

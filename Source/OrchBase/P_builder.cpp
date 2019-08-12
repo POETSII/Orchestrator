@@ -862,13 +862,11 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   // ReadyToSend 
   handlers_h << "uint32_t devtyp_" << devtyp_name;
   handlers_h << "_RTS_handler (const void* graphProps, ";
-  handlers_h << "void* device, uint32_t* readyToSend, ";
-  handlers_h << "void** msg_buf);\n";
+  handlers_h << "void* device, uint32_t* readyToSend);\n";
   
   handlers_cpp << "uint32_t devtyp_" << devtyp_name;
   handlers_cpp << "_RTS_handler (const void* graphProps, ";
-  handlers_cpp << "void* device, uint32_t* readyToSend, ";
-  handlers_cpp << "void** msg_buf)\n";
+  handlers_cpp << "void* device, uint32_t* readyToSend)\n";
   handlers_cpp << handlerPreamble.str();
   handlers_cpp << c_devtyp->pOnRTS->c_src << "\n";
   handlers_cpp << "   return *readyToSend;\n"; // we assume here the return value is intended to be an RTS bitmap.
@@ -998,12 +996,12 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     handlers_h << "uint32_t devtyp_" << devtyp_name;
     handlers_h << "_OutPin_" << Opin_name;
     handlers_h << "_Send_handler (const void* graphProps, ";
-    handlers_h << "void* device, void* msg, uint32_t buffered);\n";
+    handlers_h << "void* device, void* msg);\n";
     
     handlers_cpp << "uint32_t devtyp_" << devtyp_name;
     handlers_cpp << "_OutPin_" << Opin_name;
     handlers_cpp << "_Send_handler (const void* graphProps, ";
-    handlers_cpp << "void* device, void* msg, uint32_t buffered)\n";
+    handlers_cpp << "void* device, void* msg)\n";
     
     handlers_cpp << handlerPreamble.str();
     
@@ -1047,6 +1045,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   // The *general* method would extract the number of device types from the
   // thread's device list.
   P_devtyp* devTyp = (*thread->P_devicel.begin())->pP_devtyp;
+  
+  unsigned int inTypCnt = devTyp->P_pintypIv.size();       // Grab the number of input pins for the device type
+  unsigned int outTypCnt = devTyp->P_pintypOv.size();      // Grab the number of output pins for the device type
   
   // we could choose to create separate .h files for each thread giving the externs but it seems simpler
   // and arguably more flexible to put all the external declarations in a single .h
@@ -1113,22 +1114,14 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << thread->P_devicel.size() <<  ",";                     // numDevInsts
   vars_cpp << "Thread_" << thread_num << "_Devices,";               // devInsts
   vars_cpp << ((devTyp->par->pPropsD)?"&GraphProperties,":"PNULL,");// properties
-
-  vars_cpp << "PNULL,";                                             // RTSHead              // TODO: Remove
-  vars_cpp << "PNULL,";                                             // RTSTail              // TODO: Remove
-  vars_cpp << "0,";                                                 // idleStart
-  vars_cpp << "0";                                                  // ctlEnd               // TODO: Remove
-  vars_cpp << "};\n";
   
-  /* Replacement for the above for the "new" softswitch
-  vars_cpp << ",";                              // rtsBuffSize              //TODO:
+  vars_cpp << (outTypCnt * thread->P_devicel.size()) << ",";        // rtsBuffSize
   vars_cpp << "PNULL,";                                             // rtsBuf
   vars_cpp << "0,";                                                 // rtsStart
   vars_cpp << "0,";                                                 // rtsEnd
   vars_cpp << "0,";                                                 // idleStart
   vars_cpp << "0";                                                  // ctlEnd
   vars_cpp << "};\n";
-  */
   //============================================================================
   
   
@@ -1137,8 +1130,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   std::stringstream outpinlist("");
   std::stringstream initialiser("");
   
-  unsigned int inTypCnt = devTyp->P_pintypIv.size();       // Grab the number of input pin types to save derefs
-  unsigned int outTypCnt = devTyp->P_pintypOv.size();      // Grab the number of output pin types to save derefs
+  
   
   
   //============================================================================
@@ -1631,10 +1623,6 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
         
         pinInitialiser << "&Thread_" << thread_num;
         pinInitialiser << "_DevTyp_0_OutputPins[" << (*pin)->idx << "],";   // pinType
-        
-        pinInitialiser << "{},";                                            // msg_q_buf[P_MSG_Q_MAXCOUNT]  // TODO: Remove
-        pinInitialiser << "PNULL,";                                         // msg_q_head                   // TODO: Remove
-        pinInitialiser << "PNULL,";                                         // msg_q_tail.                  // TODO: Remove
         //======================================================================
         
         
@@ -1648,8 +1636,8 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           //====================================================================
           pinInitialiser << "0,";                                           // numTgts
           pinInitialiser << "PNULL,";                                       // targets
-          pinInitialiser << "PNULL,";                                       // RTSPinPrev                   // TODO: Remove
-          pinInitialiser << "PNULL";                                        // RTSPinNext                   // TODO: Remove
+          pinInitialiser << "0,";                                           // idxTgts
+          pinInitialiser << "0";                                            // sendPending
           pinInitialiser << "},";  
           //====================================================================
         }
@@ -1663,9 +1651,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           pinInitialiser << "Thread_" << thread_num;
           pinInitialiser << "_Device_" << (*device)->Name();
           pinInitialiser << "_OutPin_" << (*pin)->Name() << "_Tgts,";       // targets
-          
-          pinInitialiser << "PNULL,";                                       // RTSPinPrev                   // TODO: Remove
-          pinInitialiser << "PNULL";                                        // RTSPinNext                   // TODO: Remove
+
+          pinInitialiser << "0,";                                           // idxTgts
+          pinInitialiser << "0";                                            // sendPending
           pinInitialiser << "},";
           //====================================================================
           
@@ -1827,11 +1815,6 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     //==========================================================================
     // Form the last bit of this PDeviceInstance/devInst_t initialiser with defaults
     //==========================================================================
-    devInstInitialiser << "PNULL,";                                         // RTSPrev                   // TODO: Remove
-    devInstInitialiser << "PNULL,";                                         // RTSNext                   // TODO: Remove
-    devInstInitialiser << "PNULL,";                                         // RTSPinHead                // TODO: Remove
-    devInstInitialiser << "PNULL,";                                         // RTSPinTail                // TODO: Remove
-    devInstInitialiser << "0";                                              // currTgt                   // TODO: Remove
     devInstInitialiser << "},";
     //==========================================================================
     
