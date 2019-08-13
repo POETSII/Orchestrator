@@ -78,12 +78,65 @@ void BuildCommand(bool useMotherships, std::string internalPath,
         /* Otherwise, spawn one mothership for each host. */
         else
         {
-            WALKSET(string, (*hosts), host)
+            WALKSET(std::string, (*hosts), host)
             {
                 *command += " : -n 1 --host " + *host + " ./mothership";
             }
         }
     }
+}
+
+/* Deploys all of the compiled binaries (runtime stuff) to a set of 'hosts'.
+ *
+ * So MPI, in most of its implementations, has the somewhat inconvenient
+ * characteristic that you need to deploy the binary you want to execute to the
+ * host - the hydra proxy does not do that for you. So we do it here (using
+ * SSH).
+ *
+ * Returns 0 on success, and another number on failure. */
+int DeployBinaries(std::set<std::string>* hosts)
+{
+    /* Figure out a safe directory to deploy to, and make it (must be the same
+     * for all hosts). */
+    DebugPrint("%sChoosing a directory to deploy binaries to on each "
+               "box...\n", debugHeader);
+    std::string targetDir;
+    //SSH::mktemp(hosts, "orchestrator_bin", &targetDir);
+    DebugPrint("%sSelected directory '%s'.\n", debugHeader, targetDir.c_str());
+
+    /* Figure out where the executables all are on this box. We assume that
+     * they are in the same directory as the launcher. */
+    DebugPrint("%sIdentifying where the binaries are on this box, from where "
+               "the launcher is...\n", debugHeader);
+    std::string sourceDir;
+    sourceDir = POETS::dirname(POETS::get_executable_path());
+
+    if (sourceDir.empty())
+    {
+        printf("%sCould not identify where the binaries are on this "
+               "box. Closing.\n", errorHeader);
+        return 1;
+    }
+    else
+    {
+        DebugPrint("%sFound the binaries to copy at '%s'.\n", debugHeader,
+                   sourceDir.c_str());
+    }
+
+    /* Deploy! */
+    WALKSET(string, (*hosts), host)
+    {
+        DebugPrint("%sDeploying to host '%s'...\n",
+                   debugHeader, host->c_str());
+        // if (SSH::deploy((*host), source, binaryDir) >= 0)
+        // {
+        //     printf("%sFailed to deploy to host '%s'. Closing.\n", errorHeader,
+        //            (*host));
+        //     return 1;
+        // }
+    }
+
+    return 0;
 }
 
 /* Reads the hardware description file at hdfPath, and populates the vector at
@@ -308,7 +361,11 @@ argKeys["internalPath"].c_str());
 
     /* Read the input file, if supplied, and get a set of hosts we must launch
      * Mothership processes on. Don't bother if we're overriding, or if
-     * motherships are disabled. */
+     * motherships are disabled.
+     *
+     * On future work, we may want to make hosts a std::map<std::string, ENUM>,
+     * so that you can launch specific processes with it from another input
+     * file. Just a passing thought. */
     std::set<std::string> hosts;  /* May well remain empty. */
     if (useMotherships)
     {
@@ -361,10 +418,15 @@ argKeys["internalPath"].c_str());
         useMotherships = false;
     }
 
+    /* Deploy the binaries to the hosts that are running processes. */
+    std::string binaryDir;
+    if (DeployBinaries(&hosts) != 0) return 1;
+
     /* Build the MPI command, and run it. */
     std::string command;
     DebugPrint("%sBuilding command...\n", debugHeader);
     BuildCommand(useMotherships, internalPath, overrideHost, &hosts, &command);
+
     DebugPrint("%sRunning this command: %s\n.", debugHeader, command.c_str());
     system(command.c_str());
     return 0;

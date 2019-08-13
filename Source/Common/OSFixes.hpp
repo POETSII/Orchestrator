@@ -149,6 +149,75 @@ namespace POETS
 #define OS_PRAGMA_UNUSED(x)		
 #endif
 
+/* =============================================================================
+ * Filesystem manipulation
+ * ===========================================================================*/
+
+#ifdef _WIN32
+#include <stdlib.h>
+#include <windows.h>
+#define MAXIMUM_PATH_LENGTH MAX_PATH /* Actually, MAX_PATH isn't. See
+https://stackoverflow.com/questions/833291/is-there-an-equivalent-to-winapis
+-max-path-under-linux-unix */
+#else /* Unix-like way */
+#include <libgen.h>
+#include <linux/limits.h>
+#include <unistd.h>
+#define MAXIMUM_PATH_LENGTH PATH_MAX /* Actually, PATH_MAX isn't. See
+http://insanecoding.blogspot.com/2007/11/pathmax-simply-isnt.html */
+#endif
+
+
+namespace POETS
+{
+    /* Returns the directory component of 'fullPath'. Don't pass in a path to a
+     * directory unless you know what you're doing. */
+    inline std::string dirname(std::string fullPath)
+    {
+        #ifdef _WIN32
+        printf("[POETS::dirname] MLV should edit this to use "
+               "Generics/filename!\n"); // <!>
+        return "";
+        #else
+        /* FYI: The function '::dirname' refers to dirname in the global
+         * namespace. Another pitfall: The const_cast is implicitly trusting
+         * ::dirname not to modify the path passed in. */
+        return ::dirname(const_cast<char*>(fullPath.c_str()));
+        #endif
+    }
+
+    /* Gets the path to the executable calling this function. Note that this
+     * will not get the object. Returns a string containing the path if
+     * successful, and returns an empty string otherwise. */
+    inline std::string get_executable_path()
+    {
+        char path[MAXIMUM_PATH_LENGTH] = {};  /* Empty initialiser to placate
+                                               * Valgrind. */
+
+        /* Determining the predicate by OS. Value resolution is independant. */
+        #ifdef _WIN32
+        HMODULE hModule = GetModuleHandle(PNULL);
+        if (hModule != PNULL)
+        {
+            GetModuleFileName(hModule, path, sizeof(path));
+
+        #else /* Unix-like way. If you want to harden this further, look at the
+               * man page for readlink, at:
+               * http://man7.org/linux/man-pages/man2/readlink.2.html#EXAMPLE */
+        if (readlink("/proc/self/exe", path, MAXIMUM_PATH_LENGTH))
+        {
+
+        #endif
+            return path;
+        }
+
+        else
+        {
+            return "";
+        }
+    }
+}
+
 
 /* ===========================================================================*/
 #endif /* __OSFIXES__H */

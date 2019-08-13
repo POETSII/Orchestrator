@@ -5,6 +5,8 @@
 #include "Debug.h"
 #include "jnj.h"
 #include "macros.h"
+#include "OSFixes.hpp"
+#include "SSH.h"
 
 #include <set>
 #include <string>
@@ -23,6 +25,7 @@ namespace Launcher
     void BuildCommand(bool useMotherships, std::string internalPath,
                       std::string overrideHost, std::set<std::string>* hosts,
                       std::string* command);
+    int DeployBinaries(std::set<std::string>* hosts);
     int GetHosts(std::string hdfPath, std::set<std::string>* hosts);
     int Launch(int argc, char** argv);
 }

@@ -87,7 +87,8 @@ ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
 
 # The launcher consists of:
 #
-#  - The "main" file (/Source/Launcher/LauncherMain.cpp).
+#  - The "main" file (/Source/Launcher/LauncherMain.cpp) and its dependencies
+#    in /Source/Launcher.
 #
 #  - Debug logic, in (/Source/Common/Debug.cpp).
 #
