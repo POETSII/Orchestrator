@@ -37,8 +37,8 @@ FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
 (*FnMapx[0])[PMsg_p::KEY(Q::TINS                )] = &TMoth::OnTinsel;
 
 // mothership's address in POETS space is the host thread ID: X coordinate 0,
-// Y coordinate max.
-PAddress = TinselMeshYLen << (TinselMeshXBits+TinselLogCoresPerBoard+TinselLogThreadsPerCore);
+// Y coordinate max (within box?? TODO: check this!). TODO: Update this for multi-box!
+PAddress = TinselMeshYLenWithinBox << (TinselMeshXBits+TinselLogCoresPerBoard+TinselLogThreadsPerCore);
 
 twig_running = false;
 ForwardMsgs = false; // don't forward tinsel traffic yet
