@@ -534,10 +534,37 @@ unsigned P_builder::GenSupervisor(P_task* task)
       sup_pin_handlers << "   return 0;\n";
       sup_pin_handlers << "}\n\n";
       
+      
+      //========================================================================
+      // Add the pin's teardown code
+      //========================================================================
+      sup_pin_handlers << "unsigned super_InPin_" << sIpin_name;
+      sup_pin_handlers << "_PinTeardown (const void* pinProps, ";
+      sup_pin_handlers << "void* pinState)\n";
+      sup_pin_handlers << "{\n";
+      
+      if ((*sI_pin)->pPropsD)
+      {
+        sup_pin_handlers << "    delete static_cast<const super_InPin_";
+        sup_pin_handlers << sIpin_name << "_props_t*>(pinProps);\n";        
+      }
+      
+      if ((*sI_pin)->pStateD)
+      {
+        sup_pin_handlers << "    delete static_cast<super_InPin_";
+        sup_pin_handlers << sIpin_name << "_state_t*>(pinState);\n";
+      }
+      
+      sup_pin_handlers << "    return 0;\n";
+      sup_pin_handlers << "}\n\n";
+      //========================================================================
+      
+      
       // this will create a new pin object - how should this be deleted on exit since it's held in a static class member?
       sup_pin_vectors << "Supervisor::inputs.push_back";
       sup_pin_vectors << "(new supInputPin(";
       sup_pin_vectors << "&super_InPin_" << sIpin_name << "_Recv_handler,";
+      sup_pin_vectors << "&super_InPin_" << sIpin_name << "_PinTeardown,";
       sup_pin_vectors << sup_inPin_props.str() << ",";
       sup_pin_vectors << sup_inPin_state.str();
       sup_pin_vectors << "));\n";
