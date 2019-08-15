@@ -536,7 +536,8 @@ unsigned P_builder::GenSupervisor(P_task* task)
       
       
       //========================================================================
-      // Add the pin's teardown code
+      // Add the pin's teardown code - this deletes the properties and state if 
+      // they exist. Called by the destructor for supInputPin in Supervisor.cpp
       //========================================================================
       sup_pin_handlers << "unsigned super_InPin_" << sIpin_name;
       sup_pin_handlers << "_PinTeardown (const void* pinProps, ";
