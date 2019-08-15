@@ -13,10 +13,10 @@
  * - error: string populated with the contents of the standard error, or other
      connection errors. */
 int SSH::call(std::string host, std::string command, std::string* stdout,
-              std::string* stderr);
+              std::string* stderr)
 {
-    stderr.clear();
-    stdout.clear();
+    stderr->clear();
+    stdout->clear();
     return 0;
 }
 

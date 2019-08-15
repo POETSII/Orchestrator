@@ -23,11 +23,8 @@
  * - The functionality provided by this library is going to be replaced by a
  *   NFS eventually anyway. */
 
-#include "libssh.h"
-
 #include <set>
 #include <string>
-#include <vector>
 
 namespace SSH
 {
