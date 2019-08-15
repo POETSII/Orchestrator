@@ -8,6 +8,8 @@
 #include "Pglobals.h"
 #include "Cli.h"
 
+#include "OSFixes.hpp"
+
 //------------------------------------------------------------------------------
 
 void * rtcl_func(void * args)
@@ -94,7 +96,19 @@ WALKVECTOR(FnMap_t*,FnMapx,F)
 fprintf(fp,"Function table for comm %d:\n", cIdx++);
 fprintf(fp,"Key        Method\n");
 WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x %#016x\n",(*i).first,(*i).second);
+{
+  //fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x ",(*i).first);
+  
+  // Now for a horrible double type cast to get us a sensible function pointer.
+  // void*s are only meant to point to objects, not functions. So we get to a 
+  // void** as a pointer to a function pointer is an object pointer. We can then
+  // follow this pointer to get to the void*, which we then reinterpret to get 
+  // the function's address as a uint64_t.
+  fprintf(fp,"%" PTR_FMT "\n",reinterpret_cast<uint64_t>(
+                                *(reinterpret_cast<void**>(&((*i).second))))
+          );
+}
 }
 fprintf(fp,"Communication pool:\n");
 fprintf(fp,"pthis   : %p\n",comms.pthis);
