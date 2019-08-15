@@ -96,14 +96,6 @@ void BuildCommand(bool useMotherships, std::string internalPath,
  * Returns 0 on success, and another number on failure. */
 int DeployBinaries(std::set<std::string>* hosts)
 {
-    /* Figure out a safe directory to deploy to, and make it (must be the same
-     * for all hosts). */
-    DebugPrint("%sChoosing a directory to deploy binaries to on each "
-               "box...\n", debugHeader);
-    std::string targetDir;
-    //SSH::mktemp(hosts, "orchestrator_bin", &targetDir);
-    DebugPrint("%sSelected directory '%s'.\n", debugHeader, targetDir.c_str());
-
     /* Figure out where the executables all are on this box. We assume that
      * they are in the same directory as the launcher. */
     DebugPrint("%sIdentifying where the binaries are on this box, from where "

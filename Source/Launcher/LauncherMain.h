@@ -18,6 +18,7 @@ namespace Launcher
 {
     const char* debugHeader = "[LAUNCHER] ";
     const char* debugIndent = "    ";
+    const char* deployDir = ".orchestrator/launcher"
     const char* errorHeader = "[LAUNCHER] [ERROR] ";
     const char* fileOnlyOnPoetsBox = "/local/ecad/setup-quartus17v0.bash";
 
