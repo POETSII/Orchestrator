@@ -4,6 +4,8 @@
 #include "CommonBase.h"
 #include "Pglobals.h"
 
+#include "OSFixes.hpp"
+
 //==============================================================================
 
 ProcMap::ProcMap(CommonBase * p)
@@ -26,7 +28,9 @@ void ProcMap::Dump(FILE * fp)
 fprintf(fp,"Process Map start\n"
            "++++++++++++++++++++++++++++++++++++++"
            "++++++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"Me,Parent      0x%#018x,0x%#016x\n",(void *)this,(void *)par);
+//fprintf(fp,"Me,Parent      0x%#018x,0x%#016x\n",(void *)this,(void *)par);
+fprintf(fp,"Me,Parent      %" PTR_FMT ",",reinterpret_cast<uint64_t>(this));
+fprintf(fp,"%" PTR_FMT "\n",reinterpret_cast<uint64_t>(par));
 fprintf(fp,"Process map (%u entries):\n",static_cast<unsigned>(vPmap.size()));
 WALKVECTOR(ProcMap_t,vPmap,i) {
   fprintf(fp,"\n- - - - - - - - - - - - - - - - - - - "
