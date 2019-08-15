@@ -120,12 +120,12 @@ int DeployBinaries(std::set<std::string>* hosts)
     {
         DebugPrint("%sDeploying to host '%s'...\n",
                    debugHeader, host->c_str());
-        // if (SSH::deploy((*host), source, binaryDir) >= 0)
-        // {
-        //     printf("%sFailed to deploy to host '%s'. Closing.\n", errorHeader,
-        //            (*host));
-        //     return 1;
-        // }
+        if (SSH::deploy((*host), source, deployDir) >= 0)
+        {
+            printf("%sFailed to deploy to host '%s'. Closing.\n", errorHeader,
+                   (*host));
+            return 1;
+        }
     }
 
     return 0;

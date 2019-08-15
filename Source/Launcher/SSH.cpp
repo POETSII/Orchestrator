@@ -17,4 +17,11 @@ int SSH::call(std::string host, std::string command, std::string* stdout,
 {
     stderr.clear();
     stdout.clear();
+    return 0;
+}
+
+/* <!> */
+int SSH::deploy(std::string host, std::string source, std::string target)
+{
+    return 0;
 }
