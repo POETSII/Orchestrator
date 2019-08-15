@@ -23,8 +23,19 @@
  * - The functionality provided by this library is going to be replaced by a
  *   NFS eventually anyway. */
 
+#include "OSFixes.hpp"
+
+#include <fcntl.h>
+#include <stdio.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include <cerrno>
 #include <set>
 #include <string>
+
+#define STDOUTERR_BUFFER_SIZE 4096
+#define SSH_COMMAND "/usr/bin/ssh"
 
 namespace SSH
 {

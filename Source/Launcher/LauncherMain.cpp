@@ -120,7 +120,24 @@ int DeployBinaries(std::set<std::string>* hosts)
     {
         DebugPrint("%sDeploying to host '%s'...\n",
                    debugHeader, host->c_str());
-        if (SSH::deploy((*host), sourceDir, deployDir) >= 0)
+
+        /* Create the target directory, emptying it if it exists. */
+        std::string stdout;
+        std::string stderr;
+        if (SSH::call((*host),
+                      dformat("mkdir --parents \"%s\"; "
+                              "rm --force --recursive \"%s/*\"\n",
+                              deployDir, deployDir),
+                      &stdout, &stderr) > 0)
+        {
+            printf("%sFailed to create staging directory on host '%s': %s. "
+                   "Closing.\n", errorHeader, (*host).c_str(),
+                   stderr.c_str());
+            return 1;
+
+        }
+
+        if (SSH::deploy((*host), sourceDir, deployDir) > 0)
         {
             printf("%sFailed to deploy to host '%s'. Closing.\n", errorHeader,
                    (*host).c_str());
