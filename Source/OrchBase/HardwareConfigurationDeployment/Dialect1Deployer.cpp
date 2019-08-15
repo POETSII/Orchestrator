@@ -94,7 +94,7 @@ void Dialect1Deployer::name_engine(P_engine* engine)
 {
     if ((engine->Name().size() == 0 ||
          engine->Name() == "**undefined**") &&
-        fileOrigin.size() >= 0)
+        fileOrigin.size() > 0)
     {
         engine->Name(fileOrigin);
     }
