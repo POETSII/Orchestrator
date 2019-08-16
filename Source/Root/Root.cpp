@@ -9,6 +9,8 @@
 #include "Cli.h"
 #include "flat.h"
 
+#include "OSFixes.hpp"
+
 const char * Root::prompt = "POETS>";
 
 //------------------------------------------------------------------------------
@@ -214,9 +216,11 @@ if ((tpL = pPmap[cIdx]->U.LogServer) != Q::NAP) // is this the LogServer's local
    lIdx = cIdx; // and comm index
    for(p=0;p<Usize[cIdx];p++)
    {
-      if ((((cIdx != RootCIdx()) || (p!=(int)Urank))) && (p!=tpL)) {  // NOT the LogServer
-         Post(50,pPmap[cIdx]->M[p],int2str(p));
-         Pkt.Send(p);
+      if ((((static_cast<int>(cIdx) != RootCIdx()) 
+            || (p!=static_cast<int>(Urank)))) && (p!=tpL))
+      { // NOT the LogServer
+        Post(50,pPmap[cIdx]->M[p],int2str(p));
+        Pkt.Send(p);
       }
    }
 }
@@ -224,7 +228,9 @@ else
 {
    for(p=0;p<Usize[cIdx];p++) // No. LogServer not on this comm. Shut everyone down.
    {
-      if (((cIdx != RootCIdx()) || (p!=(int)Urank))) {  // Don't need to send to self
+      if (((static_cast<int>(cIdx) != RootCIdx()) 
+            || (p!=static_cast<int>(Urank)))) 
+      {  // Don't need to send to self
          Post(50,pPmap[cIdx]->M[p],int2str(p));
          Pkt.Send(p);
       }
@@ -391,7 +397,19 @@ fprintf(fp,"Key        Method\n");
 // means it would try to dereference the iterator obtained from
 // F. Not what is expected...
 WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
+{
+  //fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x ",(*i).first);
+  
+  // Now for a horrible double type cast to get us a sensible function pointer.
+  // void*s are only meant to point to objects, not functions. So we get to a 
+  // void** as a pointer to a function pointer is an object pointer. We can then
+  // follow this pointer to get to the void*, which we then reinterpret to get 
+  // the function's address as a uint64_t.
+  fprintf(fp,"%" PTR_FMT "\n",reinterpret_cast<uint64_t>(
+                                *(reinterpret_cast<void**>(&((*i).second))))
+          );
+}
 }
 fprintf(fp,"prompt    = %s\n",prompt);
 
@@ -548,7 +566,7 @@ if (Cl.Pa_v.size()==0) {
   Post(47,"conn","system","1"); // need to be given a service to connect to
   return;
 }
-if (pPmap[0]->vPmap.size() != Usize[0])
+if (static_cast<int>(pPmap[0]->vPmap.size()) != Usize[0])
 {
   Post(62); // can't connect to another universe before we know the size of our own.
 }

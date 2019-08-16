@@ -278,7 +278,7 @@ void Msg_p::L(int index,byte val)
 // Set a subkey field
 {
 int i = int(index);
-if ((i<0)||(i>=Z_FIELDS)) return;
+if ((i<0)||(i>=static_cast<const int>(Z_FIELDS))) return;
 vm.clear();                            // Stream vector is now dirty
 subkey[i] = val;
 }
@@ -289,7 +289,7 @@ byte Msg_p::L(int index)
 // Retrieve a subkey field
 {
 int i = int(index);
-if ((i<0)||(i>=Z_FIELDS)) return 0xff;
+if ((i<0)||(i>=static_cast<const int>(Z_FIELDS))) return 0xff;
 return subkey[i];
 }
 

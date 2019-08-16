@@ -37,8 +37,8 @@ FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
 (*FnMapx[0])[PMsg_p::KEY(Q::TINS                )] = &TMoth::OnTinsel;
 
 // mothership's address in POETS space is the host thread ID: X coordinate 0,
-// Y coordinate max.
-PAddress = TinselMeshYLen << (TinselMeshXBits+TinselLogCoresPerBoard+TinselLogThreadsPerCore);
+// Y coordinate max (within box?? TODO: check this!). TODO: Update this for multi-box!
+PAddress = TinselMeshYLenWithinBox << (TinselMeshXBits+TinselLogCoresPerBoard+TinselLogThreadsPerCore);
 
 twig_running = false;
 ForwardMsgs = false; // don't forward tinsel traffic yet
@@ -626,7 +626,8 @@ void* TMoth::Twig(void* par)
 {
      TMoth* parent = static_cast<TMoth*>(par);
      const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
-     char recv_buf[p_msg_size()]; // buffer for one packet at a time
+     //char recv_buf[p_msg_size()]; // buffer for one packet at a time
+	 char *recv_buf = new char[p_msg_size()]; // buffer for one packet at a time
      void* p_recv_buf = static_cast<void*>(recv_buf);
      FILE* OutFile;
      char Line[4*P_MSG_MAX_SIZE];
@@ -718,7 +719,8 @@ void* TMoth::Twig(void* par)
 	   }
      }
      printf("Exiting Twig thread\n");
-     pthread_exit(par);
+     delete[] recv_buf;
+	 pthread_exit(par);
      return par;
 }
 

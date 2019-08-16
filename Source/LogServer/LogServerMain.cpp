@@ -13,11 +13,11 @@ LogServer * pLogServer = 0;
 try {
   pLogServer = new LogServer(argc,argv,string(csLOGSERVERproc));
 }
-catch(bad_alloc) {
+catch(bad_alloc&) {
   printf("\n\n%s Main out of memory...    \n\n",csLOGSERVERproc);
   fflush(stdout);
 }
-catch(Unrec_t u) {
+catch(Unrec_t& u) {
   u.Post();
 }
 catch(...) {

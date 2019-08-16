@@ -384,8 +384,10 @@ bool HardwareFileReader::d3_define_board_fields_from_section(
 
         /* Types are processed in d3_get_validate_default_types, so we
          * ignore the definition here. */
-        else if (variable == "type");
-
+        else if (variable == "type")
+		{
+			
+		}
     }
 
     /* Ensure mandatory fields have been defined. */
@@ -1162,7 +1164,10 @@ bool HardwareFileReader::d3_populate_validate_engine_board_and_below(
 
         /* Types are processed in d3_get_validate_default_types, so we
          * ignore the definition here. */
-        else if (variable == "type");
+        else if (variable == "type")
+		{
+			
+		}
     }
 
     /* Iterate through all record nodes in this section, in order to define
@@ -1618,7 +1623,10 @@ bool HardwareFileReader::d3_populate_validate_engine_box(P_engine* engine)
 
             /* Types are processed in d3_get_validate_default_types, so we
              * ignore the definition here. */
-            else if (variable == "type");
+            else if (variable == "type")
+			{
+				
+			}
 
             /* This continue is here to reduce the amount of indentation for
              * dealing with box records. */
