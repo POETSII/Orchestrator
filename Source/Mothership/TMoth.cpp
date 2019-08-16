@@ -620,7 +620,8 @@ void* TMoth::Twig(void* par)
 {
      TMoth* parent = static_cast<TMoth*>(par);
      const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
-     char recv_buf[p_msg_size()]; // buffer for one packet at a time
+     //char recv_buf[p_msg_size()]; // buffer for one packet at a time
+	 char *recv_buf = new char[p_msg_size()]; // buffer for one packet at a time
      void* p_recv_buf = static_cast<void*>(recv_buf);
      FILE* OutFile;
      char Line[4*P_MSG_MAX_SIZE];
@@ -712,7 +713,8 @@ void* TMoth::Twig(void* par)
 	   }
      }
      printf("Exiting Twig thread\n");
-     pthread_exit(par);
+     delete[] recv_buf;
+	 pthread_exit(par);
      return par;
 }
 
