@@ -111,7 +111,7 @@ WALKMAP(unsigned,pMeth,(**F),i)
 }
 }
 fprintf(fp,"Communication pool:\n");
-fprintf(fp,"pthis   : %p\n",comms.pthis);
+fprintf(fp,"pthis   : %p\n",static_cast<void*>(comms.pthis));
 fprintf(fp,"tick    : %e\n",comms.tick);
 fprintf(fp,"l_stop  : %c\n",comms.l_stop ? 'T' : 'F');
 fprintf(fp,"t_stop  : %e\n",comms.t_stop);
