@@ -18,7 +18,7 @@ namespace Launcher
 {
     const char* debugHeader = "[LAUNCHER] ";
     const char* debugIndent = "    ";
-    const char* deployDir = ".orchestrator/launcher";
+    const char* deployDir = ".orchestrator/launcher";  /* No trailing slash */
     const char* errorHeader = "[LAUNCHER] [ERROR] ";
     const char* fileOnlyOnPoetsBox = "/local/ecad/setup-quartus17v0.bash";
 
@@ -26,7 +26,7 @@ namespace Launcher
     void BuildCommand(bool useMotherships, std::string internalPath,
                       std::string overrideHost, std::set<std::string>* hosts,
                       std::string* command);
-    int DeployBinaries(std::set<std::string>* hosts);
+    int DeployBinaries(std::set<std::string>* hosts, std::string overrideHost);
     int GetHosts(std::string hdfPath, std::set<std::string>* hosts);
     int Launch(int argc, char** argv);
 }

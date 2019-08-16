@@ -91,6 +91,7 @@ ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
 #
 #  - Some Generics for command-line processing and file reading.
 LAUNCHER_SOURCES = $(SOURCE_DIR)/Launcher/LauncherMain.cpp \
+                   $(SOURCE_DIR)/Launcher/Call.cpp \
                    $(SOURCE_DIR)/Launcher/SSH.cpp \
                    $(SOURCE_DIR)/Common/Debug.cpp \
                    $(GENERICS_DIR)/Cli.cpp \

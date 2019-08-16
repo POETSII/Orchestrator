@@ -64,7 +64,8 @@ void BuildCommand(bool useMotherships, std::string internalPath,
         /* If we've set the override, just spawn a mothership on that host. */
         if (!overrideHost.empty())
         {
-            *command += " : -n 1 --host " + overrideHost + " ./mothership";
+            *command += " : -n 1 --host " + overrideHost + " " + \
+                deployDir + "/mothership";
         }
 
         /* Otherwise, if there are no hosts, spawn a mothership on this box if
@@ -80,7 +81,8 @@ void BuildCommand(bool useMotherships, std::string internalPath,
         {
             WALKSET(std::string, (*hosts), host)
             {
-                *command += " : -n 1 --host " + *host + " ./mothership";
+                *command += " : -n 1 --host " + *host + " " + \
+                    deployDir + "/mothership";
             }
         }
     }
@@ -96,6 +98,9 @@ void BuildCommand(bool useMotherships, std::string internalPath,
  * Returns 0 on success, and another number on failure. */
 int DeployBinaries(std::set<std::string>* hosts)
 {
+    /* Save us from ourselves. */
+    if (hosts->empty()) return 0;
+
     /* Figure out where the executables all are on this box. We assume that
      * they are in the same directory as the launcher. */
     DebugPrint("%sIdentifying where the binaries are on this box, from where "
@@ -116,31 +121,43 @@ int DeployBinaries(std::set<std::string>* hosts)
     }
 
     /* Deploy! */
+    std::string stdout;
+    std::string stderr;
     WALKSET(string, (*hosts), host)
     {
         DebugPrint("%sDeploying to host '%s'...\n",
                    debugHeader, host->c_str());
 
-        /* Create the target directory, emptying it if it exists. */
-        std::string stdout;
-        std::string stderr;
+        /* Ensure .orchestrator exists. */
         if (SSH::call((*host),
-                      dformat("mkdir --parents \"%s\"; "
-                              "rm --force --recursive \"%s/*\"\n",
-                              deployDir, deployDir),
+                      dformat("mkdir --parents \"%s\"\n",
+                              POETS::dirname(deployDir).c_str()),
                       &stdout, &stderr) > 0)
         {
-            printf("%sFailed to create staging directory on host '%s': %s. "
-                   "Closing.\n", errorHeader, (*host).c_str(),
-                   stderr.c_str());
+            printf("%sSSH command to host '%s' failed (can you connect to the "
+                   "host by SSH?): %s",
+                   errorHeader, (*host).c_str(), stderr.c_str());
             return 1;
-
         }
 
-        if (SSH::deploy((*host), sourceDir, deployDir) > 0)
+        /* Remove the target directory, dangerously. */
+        if (SSH::call((*host),
+                      dformat("rm --force --recursive \"%s\"\n", deployDir),
+                      &stdout, &stderr) > 0)
         {
-            printf("%sFailed to deploy to host '%s'. Closing.\n", errorHeader,
-                   (*host).c_str());
+            /* NB: rm -rf can't fail outside mad edge cases... */
+            printf("%sSSH command to host '%s' failed (can you connect to the "
+                   "host by SSH?): %s",
+                   errorHeader, (*host).c_str(), stderr.c_str());
+            return 1;
+        }
+
+        /* Deploy binaries. */
+        if (SSH::deploy_directory((*host), sourceDir, deployDir,
+                                  &stdout, &stderr) > 0)
+        {
+            printf("%sFailed to deploy to host '%s': %s",
+                   errorHeader, (*host).c_str(), stderr.c_str());
             return 1;
         }
     }
@@ -405,19 +422,20 @@ argKeys["internalPath"].c_str());
             #endif
         }
 
-        /* Print that we're overriding, if we are. */
-        #if ORCHESTRATOR_DEBUG
+        /* If we're overriding, that makes the host list quite simple... */
         else if (!overrideHost.empty())
         {
+            hosts.insert(overrideHost);
             DebugPrint("%sIgnoring input file, and instead using the override "
                        "passed in as an argument.\n", debugHeader);
         }
-        #endif
     }
 
-    /* Warn the user that we can't spawn any motherships if no hosts were
-     * found, and we're not running on a POETS box (if motherships are
-     * enabled). */
+    /* Warn the user that we can't spawn any motherships iff:
+     *  - the user hasn't disabled motherships,
+     *  - no hosts were found from any input file passed in,
+     *  - no override host was proposed, and
+     *  - we're not running on a POETS box. */
     DebugPrint("%sPerforming POETS box check...\n", debugHeader);
     if (useMotherships && hosts.empty() && !AreWeRunningOnAPoetsBox())
     {
@@ -427,15 +445,21 @@ argKeys["internalPath"].c_str());
         useMotherships = false;
     }
 
-    /* Deploy the binaries to the hosts that are running processes. */
+    /* Deploy the binaries to the hosts that are running motherships, if we're
+     * using motherships. */
     std::string binaryDir;
-    if (DeployBinaries(&hosts) != 0) return 1;
+    if (!useMotherships)
+    {
+        if (DeployBinaries(&hosts) != 0) return 1;
+    }
 
-    /* Build the MPI command, and run it. */
+    /* Build the MPI command. */
     std::string command;
     DebugPrint("%sBuilding command...\n", debugHeader);
     BuildCommand(useMotherships, internalPath, overrideHost, &hosts, &command);
 
+    /* Run the MPI command. Note we don't use call here, because we don't care
+     * about the stdout, stderr, or returncode. */
     DebugPrint("%sRunning this command: %s\n.", debugHeader, command.c_str());
     system(command.c_str());
     return 0;

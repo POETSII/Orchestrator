@@ -23,25 +23,22 @@
  * - The functionality provided by this library is going to be replaced by a
  *   NFS eventually anyway. */
 
-#include "OSFixes.hpp"
+#include "Call.h"
 
-#include <fcntl.h>
-#include <stdio.h>
-#include <sys/wait.h>
-#include <unistd.h>
-
-#include <cerrno>
-#include <set>
 #include <string>
+#include <vector>
 
-#define STDOUTERR_BUFFER_SIZE 4096
+#define RECURSIVE "-r"
+#define SCP_COMMAND "/usr/bin/scp"
 #define SSH_COMMAND "/usr/bin/ssh"
 
 namespace SSH
 {
     int call(std::string host, std::string command, std::string* stdout,
              std::string* stderr);
-    int deploy(std::string host, std::string source, std::string target);
+    int deploy_directory(std::string host, std::string source,
+                         std::string target, std::string* stdout,
+                         std::string* stderr);
 }
 
 #endif
