@@ -654,42 +654,52 @@ Pkt.Src(Urank);
 string taskname = task->first;
 Pkt.Put(0, &taskname);                    // first field in the packet is the task name
 
-unsigned cIdx = 0;                        // comm number to look for Motherships. Start from local MPI_COMM_WORLD.
-vector<ProcMap::ProcMap_t>::iterator currBox = pPmap[cIdx]->vPmap.begin(); // process map for the Mothership being deployed to
-P_thread* firstThread;  // The "first" thread in the core in the current iteration. "first" is arbitrary, because cores are stored in a map.
+// search for boxes to deploy to
+std::set<P_box*> boxesToDeployTo;
+pE->get_boxes_for_task(task->second, &boxesToDeployTo);
 
-// search for boxes assigned to the task. For the future, it would be more efficient to build a map
-// rather than redo the search.
-WALKMAP(AddressComponent, P_box*, pE->P_boxm, boxNode)
+// search for mothership processes. For now, we naively ignore whether the
+// mothership matches the box in the hardware graph. This is bad, because:
+//
+//  - motherships could be sitting on different hardware configurations
+//
+//  - tasks already deployed to motherships are not accounted for
+//
+// the first element of this pair is the communicator, and the second element
+// is the rank.
+std::vector<std::pair<unsigned, int>> mothershipsToDeployTo;
+std::vector<ProcMap::ProcMap_t>::iterator currBox;
+// iterate over communicators
+for (unsigned comm=0; comm<Comms.size(); comm++)
 {
-while (cIdx < Comms.size()) // grab the next available mothership
-{
-      while ((currBox != pPmap[cIdx]->vPmap.end()) && (currBox->P_class != csMOTHERSHIPproc)) ++currBox;
-      if (currBox != pPmap[cIdx]->vPmap.end()) break;
-      ++cIdx;
+    // iterate over processes in this communicator
+    for (currBox=pPmap[comm]->vPmap.begin();
+         currBox!=pPmap[comm]->vPmap.end(); currBox++)
+    {
+        // store it if it's a mothership
+        if (currBox->P_class == csMOTHERSHIPproc)
+        {
+            mothershipsToDeployTo.push_back(
+                std::make_pair(comm, currBox->P_rank));
+        }
+    }
 }
-bool UsedByTask = false;
-WALKVECTOR(P_board*,boxNode->second->P_boardv,board)
+
+// if there aren't enough motherships for the number of boxes we want to deploy
+// to, someone's made a mistake (either the hardware model is wrong, or a
+// mothership has died). Either way, we out, yo.
+if (mothershipsToDeployTo.size() < boxesToDeployTo.size())
 {
-WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
-                  unsigned, P_link*,
-                  unsigned, P_port*, (*board)->G, mailbox)
+    Post(164, TO_STRING(boxesToDeployTo.size()).c_str(),
+         TO_STRING(mothershipsToDeployTo.size()).c_str());
+    return;
+}
+
+// for each box, deploy to a mothership
+for (unsigned boxIndex=0; boxIndex<boxesToDeployTo.size(); boxIndex++)
 {
-WALKMAP(AddressComponent, P_core*,
-        (*board)->G.NodeData(mailbox)->P_corem, core)
-{
-firstThread = core->second->P_threadm.begin()->second;
-if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
-{
-   Pkt.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
-   Pkt.Send(currBox->P_rank);        // to the target Mothership. This will work for now, but it would be far better to broadcast the send (so everyone gets it synchronously)
-   UsedByTask = true;
-   break;
-}
-}
-}
-}
-if (UsedByTask) break;               // only need to send once to each box
+    Pkt.comm = Comms[mothershipsToDeployTo[boxIndex].first];
+    Pkt.Send(mothershipsToDeployTo[boxIndex].second);
 }
 }
 

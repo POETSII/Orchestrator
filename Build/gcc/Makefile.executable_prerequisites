@@ -42,6 +42,7 @@ HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cp
 
 # Sources used by executables that require the hardware model.
 HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_engine.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_box.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_board.cpp \
@@ -60,10 +61,6 @@ HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp 
 HARDWARE_DEPLOYER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/Dialect1Deployer.cpp \
                             $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/SimpleDeployer.cpp \
                             $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/MultiSimpleDeployer.cpp \
-                            $(HARDWARE_MODEL_SOURCES)
-
-# Sources used by executables that iterate over the POETS Engine.
-HARDWARE_ITERATOR_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.cpp \
                             $(HARDWARE_MODEL_SOURCES)
 
 # Sources used by executables that read hardware files.
@@ -131,7 +128,7 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
 
 ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
 ROOT_SOURCES += $(HARDWARE_FILE_READER_SOURCES)
-ROOT_SOURCES += $(HARDWARE_ITERATOR_SOURCES)
+ROOT_SOURCES += $(HARDWARE_MODEL_SOURCES)
 
 # Add (almost) all of the sources from OrchBase and Parser.
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)
