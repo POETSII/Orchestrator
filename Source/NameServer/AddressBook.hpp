@@ -98,6 +98,8 @@ public:
     unsigned FindByInMsg(std::string &TaskName, std::string Msg, const RecordVect_t* &Records);            //TODO
     unsigned FindByOuMsg(std::string &TaskName, std::string Msg, const RecordVect_t* &Records);            //TODO
 
+    // device getters. Note that a vector<Record_t> is different from a RecordVect_t,
+    // which is a vector<const Record_t*>
     unsigned GetDevices(std::string &TaskName, const std::vector<Record_t>* &Records);
     unsigned GetExternals(std::string &TaskName, const std::vector<Record_t>* &Records);
     unsigned GetSupervisors(std::string &TaskName, const std::vector<Record_t>* &Records);
@@ -137,6 +139,7 @@ public:
     static const unsigned ERR_DEVICE_NOT_FOUND = 11;
     static const unsigned ERR_INVALID_MAP = 12;
     static const unsigned ERR_INVALID_SUPERVISOR = 13;
+    static const unsigned ERR_INVALID_STATE = 14;
 
 private:
     TaskMap_t TaskMap;

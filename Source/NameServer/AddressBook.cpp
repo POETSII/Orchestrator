@@ -28,6 +28,7 @@ const unsigned AddressBook::ERR_TASK_NOT_FOUND;
 const unsigned AddressBook::ERR_DEVICE_NOT_FOUND;
 const unsigned AddressBook::ERR_INVALID_MAP;
 const unsigned AddressBook::ERR_INVALID_SUPERVISOR;
+const unsigned AddressBook::ERR_INVALID_STATE;
 
 //Constructors
 AddressBook::AddressBook(std::string d)

@@ -1,3 +1,4 @@
+
 #include "SBase.h"
 #include "Pglobals.h"
 #include <cstdio> // debug
@@ -26,6 +27,8 @@ SBase::SBase(int argc,char ** argv,string d,string s): CommonBase(argc,argv,d,s)
    (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::IGRP )] = &SBase::OnQuery;
    (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NSUP )] = &SBase::OnQuery;
    (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ISUP )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::LIST         )] = &SBase::OnQuery;
+   (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::TASK         )] = &SBase::OnQuery;   
    (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::SUPV         )] = &SBase::OnQuery;
    (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::EXTN         )] = &SBase::OnQuery;
    (*FnMapx[0])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::NM   )] = &SBase::OnQuery;
@@ -260,6 +263,8 @@ unsigned SBase::Connect(string svc)
    (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::IGRP )] = &SBase::OnQuery;
    (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::NSUP )] = &SBase::OnQuery;
    (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVI,Q::ISUP )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::LIST         )] = &SBase::OnQuery;
+   (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::TASK         )] = &SBase::OnQuery;  
    (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::SUPV         )] = &SBase::OnQuery;
    (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::EXTN         )] = &SBase::OnQuery;
    (*FnMapx[fIdx])[PMsg_p::KEY(Q::NAME,Q::QRY,Q::DEVT,Q::NM   )] = &SBase::OnQuery;
@@ -314,7 +319,7 @@ unsigned SBase::ConfigBuild(PMsg_p *msg, unsigned comm)
    unsigned err = SUCCESS;
    if (taskName.empty())
    {
-      if (err = ListTask(tasks))
+      if ((err = ListTask(tasks)))
       {
 	 Post(721,"rebuild","list",int2str(Urank));
 	 return err;
@@ -345,7 +350,7 @@ unsigned SBase::ConfigDelete(PMsg_p *msg, unsigned comm)
    unsigned err = SUCCESS;
    if (taskName.empty())
    {
-      if (err = ListTask(tasks))
+      if ((err = ListTask(tasks)))
       {
 	 Post(721,"gett","list",int2str(Urank));
 	 return err;
@@ -355,7 +360,7 @@ unsigned SBase::ConfigDelete(PMsg_p *msg, unsigned comm)
    vector<string>::iterator task;
    for (task = tasks.begin(); task != tasks.end(); task++)
    {
-       if (err = DelTask(*task))
+     if ((err = DelTask(*task)))
        {
 	  Post(721,"delet",*task,int2str(Urank));
           return err;
@@ -395,7 +400,7 @@ unsigned SBase::ConfigRecall(PMsg_p *msg, unsigned comm)
    unsigned err = SUCCESS;
    if (taskName.empty())
    {
-      if (err = ListTask(tasks))
+      if ((err = ListTask(tasks)))
       {
 	 Post(721,"gett","list",int2str(Urank));
 	 return err;
@@ -405,12 +410,12 @@ unsigned SBase::ConfigRecall(PMsg_p *msg, unsigned comm)
    vector<string>::iterator task;
    for (task = tasks.begin(); task != tasks.end(); task++)
    {
-       if (err = ClearTask(*task))
+       if ((err = ClearTask(*task)))
        {
 	  Post(721,"clear",*task,int2str(Urank));
           return err;
        }
-       if (err = TaskState(*task,Unknown))
+       if ((err = TaskState(*task,Unknown)))
        {
 	  Post(725,*task,int2str(Urank));
 	  return err;
@@ -421,7 +426,27 @@ unsigned SBase::ConfigRecall(PMsg_p *msg, unsigned comm)
 
 unsigned SBase::ConfigState(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   string taskName = msg->Zname(0);
+   // State is an enum, which makes it more reliable to send it as a string.
+   // Otherwise there is no easy way to be certain the value isn't out of range
+   // (e.g. what if the enum is given non-contiguous values?)
+   string newStateStr = msg->Zname(1);
+   TaskState_t newState(Unknown);
+   // Thus after creating a default unknown state we test each viable possibility
+   if (newStateStr == "Loaded") newState = Loaded;
+   else if (newStateStr == "Linked") newState = Linked;
+   else if (newStateStr == "Built") newState = Built;
+   else if (newStateStr == "Deployed") newState = Deployed;
+   else if (newStateStr == "Init") newState = Init;
+   else if (newStateStr == "Running") newState = Running;
+   else if (newStateStr == "Finished") newState = Finished;
+   if (TaskState(taskName,newState))
+   {
+      Post(724,taskName,int2str(Urank));
+      return ERR_NONFATAL; // 
+      // return ERR_TASK_NOT_FOUND;
+   }
+   return SUCCESS;
 }
 
 unsigned SBase::DataTask(PMsg_p *msg)
@@ -491,9 +516,7 @@ unsigned SBase::DataDevice(PMsg_p *msg)
       Post(718,taskName,int2str(Urank),devTypName);
       return AddressBook::ERR_INVALID_DEVTYPE;
    }
-   // FILE* dbgSBase = fopen("Root2NS_SBase_devices.txt","a"); // DEBUG ONLY
    vector<string> devNames;
-   // vector<RecordData_t> devData;
    vector<SymAddr_t> devAddrs;
    int numSupers = 1; // get method expects a *reference* to the count
    SymAddr_t* devSuper = msg->Get<SymAddr_t>(3,numSupers);
@@ -505,7 +528,6 @@ unsigned SBase::DataDevice(PMsg_p *msg)
    }
    vector<AttrIdx> devAttrs;
    msg->GetX(0, devNames);
-   // msg->Get(1, devData);
    msg->Get(1, devAddrs);
    if (devNames.size() != devAddrs.size())
    {
@@ -518,17 +540,6 @@ unsigned SBase::DataDevice(PMsg_p *msg)
       Post(716,int2str(Urank),uint2str(devNames.size()),uint2str(devAttrs.size()),"attribute");
       return ERR_DEVICE_DATA_MISMATCH;	   
    }
-   // if (devNames.size() != devData.size())
-   // {
-   //    Post(716,int2str(Urank),uint2str(devNames.size()),uint2str(devData.size()));
-   //   return ERR_DEVICE_DATA_MISMATCH;	   
-   // }
-   /*
-   fprintf(dbgSBase, "Nameserver received device info for %u devices\n", devNames.size());
-   fprintf(dbgSBase, "\n");
-   fprintf(dbgSBase, "________________________________________________________________________________\n");
-   fprintf(dbgSBase, "\n");
-   */
    unsigned err = AddressBook::SUCCESS;
    for (unsigned d = 0; d < devNames.size(); d++)
    {
@@ -538,23 +549,6 @@ unsigned SBase::DataDevice(PMsg_p *msg)
 		       devIdx,
 		       RecordType_t(Device),
 		       devAttrs[d]);   
-       // Record_t device(devNames[d],
-       //                 devData[d].Address,
-       //                 devData[d].RecordType == Supervisor ? static_cast<uint64_t>(devData[d].Rank) : devData[d].Supervisor,
-       //                 devData[d].DeviceType,
-       //                 devData[d].RecordType,
-       //                 devData[d].Attribute);
-       /*
-       fprintf(dbgSBase, "Device %s:\n", device.Name.c_str());
-       fprintf(dbgSBase, "Address: 0x%.16llx\n", device.Address);
-       if (device.RecordType == Supervisor)
-	  fprintf(dbgSBase, "Supervisor Rank: %d\n", device.Rank);
-       else fprintf(dbgSBase, "Supervisor Address: 0x%.16llx\n", device.Supervisor);
-       fprintf(dbgSBase, "Device type index: %d\n", device.DeviceType);
-       fprintf(dbgSBase, "Attributes: %d\n", device.Attribute);
-       fprintf(dbgSBase, "Record type: %d\n", static_cast<unsigned>(device.RecordType));
-       fprintf(dbgSBase, "\n");
-       */
        if ((err = AddDevice(taskName, device)) != AddressBook::SUCCESS)
        {
 	  if (ClearTask(taskName) != AddressBook::SUCCESS)
@@ -568,13 +562,12 @@ unsigned SBase::DataDevice(PMsg_p *msg)
    }
    if (TaskState(taskName) < Linked)
    {
-      if (err = TaskState(taskName,Linked))
+      if ((err = TaskState(taskName,Linked)))
       {
 	 Post(724,taskName,int2str(Urank));
 	 return err;
       }
    }
-   // fclose(dbgSBase);
    return AddressBook::SUCCESS;
 }
 
@@ -617,9 +610,7 @@ unsigned SBase::DataSupervisor(PMsg_p *msg)
       Post(718,taskName,int2str(Urank),devTypName);
       return AddressBook::ERR_INVALID_DEVTYPE;
    }
-   // FILE* dbgSBase = fopen("Root2NS_SBase_devices.txt","a"); // DEBUG ONLY
-   vector<string> devNames;
-   // vector<RecordData_t> devData;
+   vector<string> devNames;;
    vector<SymAddr_t> devAddrs;
    vector<unsigned long> devRanks;
    vector<AttrIdx> devAttrs;
@@ -643,17 +634,6 @@ unsigned SBase::DataSupervisor(PMsg_p *msg)
       Post(716,int2str(Urank),uint2str(devNames.size()),uint2str(devRanks.size()),"rank");
       return ERR_DEVICE_DATA_MISMATCH;	   
    } 
-   // if (devNames.size() != devData.size())
-   // {
-   //    Post(716,int2str(Urank),uint2str(devNames.size()),uint2str(devData.size()));
-   //   return ERR_DEVICE_DATA_MISMATCH;	   
-   // }
-   /*
-   fprintf(dbgSBase, "Nameserver received supervisor info for %u supervisors\n", devNames.size());
-   fprintf(dbgSBase, "\n");
-   fprintf(dbgSBase, "________________________________________________________________________________\n");
-   fprintf(dbgSBase, "\n");
-   */
    for (unsigned d = 0; d < devNames.size(); d++)
    {
        Record_t device(devNames[d],
@@ -662,23 +642,6 @@ unsigned SBase::DataSupervisor(PMsg_p *msg)
 		       devIdx,
 		       RecordType_t(Supervisor),
 		       devAttrs[d]);   
-       // Record_t device(devNames[d],
-       //                 devData[d].Address,
-       //                 devData[d].RecordType == Supervisor ? static_cast<uint64_t>(devData[d].Rank) : devData[d].Supervisor,
-       //                 devData[d].DeviceType,
-       //                 devData[d].RecordType,
-       //                 devData[d].Attribute);
-       /*
-       fprintf(dbgSBase, "Device %s:\n", device.Name.c_str());
-       fprintf(dbgSBase, "Address: 0x%.16llx\n", device.Address);
-       if (device.RecordType == Supervisor)
-	  fprintf(dbgSBase, "Supervisor Rank: %d\n", device.Rank);
-       else fprintf(dbgSBase, "Supervisor Address: 0x%.16llx\n", device.Supervisor);
-       fprintf(dbgSBase, "Device type index: %d\n", device.DeviceType);
-       fprintf(dbgSBase, "Attributes: %d\n", device.Attribute);
-       fprintf(dbgSBase, "Record type: %d\n", static_cast<unsigned>(device.RecordType));
-       fprintf(dbgSBase, "\n");
-       */
        unsigned err = AddressBook::SUCCESS;
        if ((err = AddDevice(taskName, device)) != AddressBook::SUCCESS)
        {
@@ -710,7 +673,7 @@ unsigned SBase::DumpAll(PMsg_p *msg, unsigned comm)
    else dumpFile = fopen(filename.c_str(), "a");
    vector<string> tasks;
    unsigned err = AddressBook::SUCCESS;
-   if (err = ListTask(tasks))
+   if ((err = ListTask(tasks)))
    {
       Post(709, int2str(Urank));
       if (dumpFile != stdout) fclose(dumpFile);
@@ -736,7 +699,7 @@ unsigned SBase::DumpTask(PMsg_p *msg, unsigned comm)
    string taskName = msg->Zname(0);
    if (taskName.empty())
    {
-      Post(710, int2str(Urank));
+     Post(710, "Dump", int2str(Urank));
       return AddressBook::ERR_INVALID_TASK; 
    }
    string filename = msg->Zname(1);
@@ -750,47 +713,458 @@ unsigned SBase::DumpTask(PMsg_p *msg, unsigned comm)
 
 unsigned SBase::QueryAttr(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   string taskName = msg->Zname(0);
+   if (taskName.empty())
+   {
+      Post(710, "QueryByAttribute", int2str(Urank));
+      return AddressBook::ERR_INVALID_TASK; 
+   }
+   unsigned err = SUCCESS;
+   vector<string> attrs;
+   msg->GetX(2,attrs);
+   int srcProc = msg->Src();
+   msg->comm = Comms[comm];
+   msg->Src(msg->Tgt());
+   msg->L(1,Q::RPLY);
+   vector<SymAddr_t> devAddrs;
+   vector<string> devNames;
+   vector<string> devAttrs;
+   WALKVECTOR(string, attrs, a)
+   {
+      const RecordVect_t* devRecords;
+      if ((err = FindByAttribute(taskName, *a, devRecords)))
+      {
+	  if (err == ERR_TASK_NOT_FOUND || err == ERR_INVALID_MAP)
+	  {
+             msg->L(3, err == ERR_TASK_NOT_FOUND ? Q::TNF : Q::NF);
+             msg->Send(srcProc);
+             return SUCCESS;
+	  }
+	  continue;
+      }
+      devAttrs.push_back(*a);
+      for (vector<const Record_t*>::const_iterator device = devRecords->begin(); device != devRecords->end(); device++)
+      {
+	  devAddrs.push_back((*device)->Address);
+	  devNames.push_back((*device)->Name);
+      }
+   }	
+   if (!devAddrs.size()) msg->L(3, Q::NF);
+   else
+   {
+      msg->Put<SymAddr_t>(0,&devAddrs);
+      msg->PutX(1,&devNames);
+      msg->PutX(2,&devAttrs);
+   }
+   msg->Send(srcProc);
+   return SUCCESS;
 }
 
+// Gets all devices for a task. We return every device in a single PMsg_p. This could get
+// VERY big, but since there are no certainties the receiving device knows how many devices
+// it's expecting, chunking the reply into bite-sized messages makes it impossible for the
+// receiver to know when it can stop receiving. An alternative would be to insert the
+// device count in the message, along with possibly a sequence number, but for a first
+// revision this is just adding complication for possibly little benefit. To be tested.
 unsigned SBase::QueryDevIAll(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   string taskName = msg->Zname(0);
+   if (taskName.empty())
+   {
+      Post(710, "QueryAllDevices", int2str(Urank));
+      return AddressBook::ERR_INVALID_TASK; 
+   }
+   unsigned err = SUCCESS;
+   int srcProc = msg->Src();
+   msg->comm = Comms[comm];
+   msg->Src(msg->Tgt());
+   msg->L(1,Q::RPLY);
+   vector<SymAddr_t> devAddrs;
+   vector<string> devNames;
+   const vector<Record_t>* devRecords;
+   if ((err = GetDevices(taskName, devRecords)))
+   {
+      msg->L(3, err == ERR_TASK_NOT_FOUND ? Q::TNF : Q::NF);
+      msg->Send(srcProc);
+      return SUCCESS;
+   }
+   for (vector<Record_t>::const_iterator device = devRecords->begin(); device != devRecords->end(); device++)
+   {
+       devAddrs.push_back(device->Address);
+       devNames.push_back(device->Name);
+   }	
+   if (!devAddrs.size()) msg->L(3, Q::NF);
+   else
+   {
+      msg->Put<SymAddr_t>(0,&devAddrs);
+      msg->PutX(1,&devNames);
+   }
+   msg->Send(srcProc);
+   return SUCCESS;
 }
 
+// Query device by name. A question remains here - how do we deal with the queries
+// asking for a group? 
 unsigned SBase::QueryDevIByName(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   if (!((msg->L(3) == Q::NGRP) || (msg->L(3) == Q::NM) || (msg->L(3) == Q::NSUP)))
+   {
+      Post(702,uint2str(msg->Key()),int2str(Urank));
+      return ERR_NONFATAL;
+   }
+   string taskName = msg->Zname(0);
+   if (taskName.empty())
+   {
+      Post(710, "QueryDeviceByName", int2str(Urank));
+      return AddressBook::ERR_INVALID_TASK; 
+   }
+   string deviceName = msg->Zname(1);
+   if (deviceName.empty())
+   {
+      Post(731, int2str(Urank));
+      return ERR_INVALID_DEVICE;
+   }
+   unsigned err = SUCCESS;
+   int srcProc = msg->Src();
+   msg->comm = Comms[comm];
+   msg->Src(msg->Tgt());
+   msg->L(1,Q::RPLY);
+   const Record_t* device;
+   if ((err = FindDevice(taskName, deviceName, device)))
+   {
+      msg->L(3, err == ERR_TASK_NOT_FOUND ? Q::TNF : Q::NF);
+      msg->Send(srcProc);
+      return SUCCESS;
+   }
+   if (msg->L(3) == Q::NGRP)
+   {
+      vector<SymAddr_t> devAddrs;
+      vector<string> devNames;
+      const RecordVect_t* devRecords;
+      if ((err = FindBySuper(taskName, device->Supervisor, devRecords)))
+      {
+	 // given that at least the lookup device must belong to its Supervisor, finding
+	 // no devices attached to the Supervisor in question would be a serious error!
+	 Post(732,int2str(Urank),uint2str(device->Supervisor),device->Name,err == ERR_TASK_NOT_FOUND ? "task" : "devices");
+	 msg->L(3, err == ERR_TASK_NOT_FOUND ? Q::TNF : Q::NF);
+         msg->Send(srcProc);
+	 return ERR_DEVICE_DATA_MISMATCH;
+      }
+      for (vector<const Record_t*>::const_iterator deviceIt = devRecords->begin(); deviceIt != devRecords->end(); deviceIt++)
+      {
+          devAddrs.push_back((*deviceIt)->Address);
+          devNames.push_back((*deviceIt)->Name);
+      }
+      if (!devAddrs.size()) msg->L(3, Q::NF);
+      else
+      {
+         msg->Put<SymAddr_t>(0,&devAddrs);
+         msg->PutX(1,&devNames);
+      }
+   }
+   else
+   {
+      // these have to be copied into a temporary (and then recopied into the message)
+      // because Put expects a type match, while the iterator returns constant records,
+      // and Put itself must overwrite the actual value in its own data structure (not
+      // the original) - but if its internal type is <const T>, it can't overwrite.
+      SymAddr_t nonConstDevAddr = device->Address;
+      SymAddr_t nonConstSuperAddr = device->Supervisor;
+      msg->Put<SymAddr_t>(0,&nonConstDevAddr);
+      if (msg->L(3) == Q::NSUP) msg->Put<SymAddr_t>(1,&nonConstSuperAddr);
+   }
+   msg->Send(srcProc);
+   return SUCCESS;
 }
 
 unsigned SBase::QueryDevIByID(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   if (!((msg->L(3) == Q::IGRP) || (msg->L(3) == Q::ID) || (msg->L(3) == Q::ISUP)))
+   {
+      Post(702,uint2str(msg->Key()),int2str(Urank));
+      return ERR_NONFATAL;
+   }
+   string taskName = msg->Zname(0);
+   if (taskName.empty())
+   {
+      Post(710, "QueryDeviceByID", int2str(Urank));
+      return AddressBook::ERR_INVALID_TASK; 
+   }
+   int devCount = 0;
+   SymAddr_t* deviceAddr = msg->Get<SymAddr_t>(0,devCount);
+   if (!devCount)
+   {
+      Post(731, int2str(Urank));
+      return ERR_INVALID_DEVICE;
+   }
+   unsigned err = SUCCESS;
+   int srcProc = msg->Src();
+   msg->comm = Comms[comm];
+   msg->Src(msg->Tgt());
+   msg->L(1,Q::RPLY);
+   const Record_t* device;
+   if ((err = FindDevice(taskName, *deviceAddr, device)))
+   {
+      msg->L(3, err == ERR_TASK_NOT_FOUND ? Q::TNF : Q::NF);
+      msg->Send(srcProc);
+      return SUCCESS;
+   }
+   if (msg->L(3) == Q::IGRP)
+   {
+      vector<SymAddr_t> devAddrs;
+      vector<string> devNames;
+      const RecordVect_t* devRecords;
+      if ((err = FindBySuper(taskName, device->Supervisor, devRecords)))
+      {
+	 // given that at least the lookup device must belong to its Supervisor, finding
+	 // no devices attached to the Supervisor in question would be a serious error!
+	 Post(732,int2str(Urank),uint2str(device->Supervisor),device->Name,err == ERR_TASK_NOT_FOUND ? "task" : "devices");
+	 msg->L(3, err == ERR_TASK_NOT_FOUND ? Q::TNF : Q::NF);
+         msg->Send(srcProc);
+	 return ERR_DEVICE_DATA_MISMATCH;
+      }
+      for (vector<const Record_t*>::const_iterator deviceIt = devRecords->begin(); deviceIt != devRecords->end(); deviceIt++)
+      {
+          devAddrs.push_back((*deviceIt)->Address);
+          devNames.push_back((*deviceIt)->Name);
+      }
+      if (!devAddrs.size()) msg->L(3, Q::NF);
+      else
+      {
+         msg->Put<SymAddr_t>(0,&devAddrs);
+         msg->PutX(1,&devNames);
+      }
+   }
+   else
+   {
+      msg->Zname(1,device->Name);
+      if (msg->L(3) == Q::ISUP)
+      {
+	 SymAddr_t nonConstSuperAddr = device->Supervisor;
+	 msg->Put<SymAddr_t>(1,&nonConstSuperAddr);
+      }
+   }
+   msg->Send(srcProc);
+   return SUCCESS;
 }
 
 unsigned SBase::QueryDevT(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   if (!((msg->L(3) == Q::IN) || (msg->L(3) == Q::NM) || (msg->L(3) == Q::OUT)))
+   {
+      Post(702,uint2str(msg->Key()),int2str(Urank));
+      return ERR_NONFATAL;
+   }
+   string taskName = msg->Zname(0);
+   if (taskName.empty())
+   {
+      Post(710, "QueryDeviceByName", int2str(Urank));
+      return AddressBook::ERR_INVALID_TASK; 
+   }
+   string lookupType = msg->Zname(2);
+   if (lookupType.empty())
+   {
+      if (msg->L(3) == Q::NM)
+      {
+         Post(706, "find",taskName,int2str(Urank));
+         return ERR_INVALID_DEVTYPE;
+      }
+      else
+      {
+	 Post(733,int2str(Urank));
+	 return ERR_INVALID_MESSAGE_TYPE;
+      }
+       
+   }
+   unsigned err = SUCCESS;
+   int srcProc = msg->Src();
+   msg->comm = Comms[comm];
+   msg->Src(msg->Tgt());
+   msg->L(1,Q::RPLY);
+   vector<SymAddr_t> devAddrs;
+   vector<string> devNames;
+   const RecordVect_t* devRecords;
+   if (msg->L(3) == Q::NM) err = FindByType(taskName,lookupType,devRecords);
+   else if (msg->L(3) == Q::IN) err = FindByInMsg(taskName,lookupType,devRecords);
+   else err = FindByOuMsg(taskName,lookupType,devRecords);
+   if (err)
+   {
+      msg->L(3, err == ERR_TASK_NOT_FOUND ? Q::TNF : Q::NF);
+      msg->Send(srcProc);
+      return SUCCESS;
+   }
+   for (vector<const Record_t*>::const_iterator device = devRecords->begin(); device != devRecords->end(); device++)
+   {
+       devAddrs.push_back((*device)->Address);
+       devNames.push_back((*device)->Name);
+   }	
+   if (!devAddrs.size()) msg->L(3, Q::NF);
+   else
+   {
+      msg->Put<SymAddr_t>(0,&devAddrs);
+      msg->PutX(1,&devNames);
+   }
+   msg->Send(srcProc);
+   return SUCCESS;
+   
 }
 
 unsigned SBase::QueryExtn(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   string taskName = msg->Zname(0);
+   if (taskName.empty())
+   {
+      Post(710, "QueryAllExternals", int2str(Urank));
+      return AddressBook::ERR_INVALID_TASK; 
+   }
+   unsigned err = SUCCESS;
+   int srcProc = msg->Src();
+   msg->comm = Comms[comm];
+   msg->Src(msg->Tgt());
+   msg->L(1,Q::RPLY);
+   vector<SymAddr_t> devAddrs;
+   vector<string> devNames;
+   const vector<Record_t>* devRecords;
+   if ((err = GetExternals(taskName, devRecords)))
+   {
+      msg->L(3, err == ERR_TASK_NOT_FOUND ? Q::TNF : Q::NF);
+      msg->Send(srcProc);
+      return SUCCESS;
+   }
+   for (vector<Record_t>::const_iterator device = devRecords->begin(); device != devRecords->end(); device++)
+   {
+       devAddrs.push_back(device->Address);
+       devNames.push_back(device->Name);
+   }	
+   if (!devAddrs.size()) msg->L(3, Q::NF);
+   else
+   {
+      msg->Put<SymAddr_t>(0,&devAddrs);
+      msg->PutX(1,&devNames);
+   }
+   msg->Send(srcProc);
+   return SUCCESS;
 }
 
+// ask for a list of tasks on this SBase. Can't fail: either we have tasks or not
+// so we just return a list if we have them, a not found message if not.
 unsigned SBase::QueryList(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   unsigned err = SUCCESS;
+   int srcProc = msg->Src();
+   msg->comm = Comms[comm];
+   msg->Src(msg->Tgt());
+   msg->L(1,Q::RPLY);
+   vector<string> taskNames;
+   if ((err = ListTask(taskNames)) || (taskNames.size() == 0)) msg->L(3,Q::TNF);
+   else msg->PutX(1,&taskNames);
+   msg->Send(srcProc);
+   return SUCCESS;
 }
 
+// Get all supervisors for a task. We have one more list in addition to the
+// address and the name: the list of ranks, because the requesting process
+// may wish to identify a Supervisor by MPI rank rather than POETS address.
 unsigned SBase::QuerySupv(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   string taskName = msg->Zname(0);
+   if (taskName.empty())
+   {
+      Post(710, "QueryAllSupervisors", int2str(Urank));
+      return AddressBook::ERR_INVALID_TASK; 
+   }
+   unsigned err = SUCCESS;
+   int srcProc = msg->Src();
+   msg->comm = Comms[comm];
+   msg->Src(msg->Tgt());
+   msg->L(1,Q::RPLY);
+   vector<SymAddr_t> devAddrs;
+   vector<string> devNames;
+   vector<unsigned long> devRanks; 
+   const vector<Record_t>* devRecords;
+   if ((err = GetSupervisors(taskName, devRecords)))
+   {
+      msg->L(3, err == ERR_TASK_NOT_FOUND ? Q::TNF : Q::NF);
+      msg->Send(srcProc);
+      return SUCCESS;
+   }
+   for (vector<Record_t>::const_iterator device = devRecords->begin(); device != devRecords->end(); device++)
+   {
+       devAddrs.push_back(device->Address);
+       devNames.push_back(device->Name);
+       devRanks.push_back(device->Rank);
+   }	
+   if (!devAddrs.size()) msg->L(3, Q::NF);
+   else
+   {
+      msg->Put<SymAddr_t>(0,&devAddrs);
+      msg->PutX(1,&devNames);
+      msg->Put<unsigned long>(2,&devRanks);
+   }
+   msg->Send(srcProc);
+   return SUCCESS; 
 }
 
+// A task query might end up being some set of requests with further internal details
+// in future, but for the moment we simply return summary task info.
 unsigned SBase::QueryTask(PMsg_p *msg, unsigned comm)
 {
-   return 0;
+   string taskName = msg->Zname(0);
+   if (taskName.empty())
+   {
+      Post(710, "QueryTask", int2str(Urank));
+      return AddressBook::ERR_INVALID_TASK; 
+   }
+   unsigned err = SUCCESS;
+   int srcProc = msg->Src();
+   msg->comm = Comms[comm];
+   msg->Src(msg->Tgt());
+   msg->L(1,Q::RPLY);
+   TaskData_t task;
+   if ((err = GetTask(taskName, task)))
+   {
+      msg->L(3,Q::TNF);
+      msg->Send(srcProc);
+      return SUCCESS;
+   }
+   switch (task.State)
+   {
+   case Loaded:
+   msg->Zname(1,"Loaded");
+   break;
+   case Linked:
+   msg->Zname(1,"Linked");
+   break;
+   case Built:
+   msg->Zname(1,"Built");
+   break;
+   case Deployed:
+   msg->Zname(1,"Deployed");
+   break;
+   case Init:
+   msg->Zname(1,"Init");
+   break;
+   case Running:
+   msg->Zname(1,"Running");
+   break;
+   case Finished:
+   msg->Zname(1,"Finished");
+   break;
+   default:
+   Post(734,taskName,int2str(Urank));
+   msg->Zname(1,"Unknown");  
+   }
+   msg->Zname(2,task.Path);
+   msg->Zname(3,task.XML);
+   msg->PutX(0,&task.MessageTypes);
+   msg->PutX(1,&task.AttributeTypes);
+   vector<unsigned long> counts;
+   counts.push_back(task.DeviceCount);
+   counts.push_back(task.ExternalCount);
+   counts.push_back(task.SupervisorCount);
+   msg->Put<unsigned long>(2,&counts);
+   msg->Send(srcProc);
+   return SUCCESS;
 }
 
 unsigned SBase::SendAttr(PMsg_p *msg, unsigned comm)
@@ -826,4 +1200,39 @@ unsigned SBase::SendExtn(PMsg_p *msg, unsigned comm)
 unsigned SBase::SendSupv(PMsg_p *msg, unsigned comm)
 {
    return 0;
+}
+
+string SBase::State2Str(TaskState_t state)
+{
+   switch (state)
+   {
+   case  Loaded:
+   return "Loaded";
+   case Linked:
+   return "Linked";
+   case Built:
+   return "Built";
+   case Deployed:
+   return "Deployed";
+   case Init:
+   return "Init";
+   case Running:
+   return "Running";
+   case Finished:
+   return "Finished";
+   }
+   return "Unknown";
+}
+
+TaskState_t SBase::Str2State(const string& state)
+{
+
+   if (state == "Loaded") return Loaded;
+   if (state == "Linked") return Linked;
+   if (state == "Built") return Built;
+   if (state == "Deployed") return Deployed;
+   if (state == "Init") return Init;
+   if (state == "Running") return Running;
+   if (state == "Finished") return Finished;
+   return Unknown;
 }

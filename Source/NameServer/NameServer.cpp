@@ -389,9 +389,15 @@ unsigned NameServer::ConfigRecall(PMsg_p * msg, unsigned comm)
    return 0;
 }
 
+/* NameServer only needs set up its own state. Motherships don't
+   need a state until deployed, because it's only at this point that
+   name services data is uploaded to them, and after they do have it,
+   further state changes involve direct explicit commands to the Motherships
+   anyway.
+*/
 unsigned NameServer::ConfigState(PMsg_p * msg, unsigned comm)
 {
-   return 0;
+   return SBase::ConfigState(msg, comm);
 }
 
 //==============================================================================

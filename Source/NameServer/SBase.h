@@ -24,6 +24,9 @@ unsigned            OnQuery (PMsg_p *, unsigned);
 unsigned            OnReply (PMsg_p *, unsigned);
 unsigned            OnSend  (PMsg_p *, unsigned);
 
+static string       State2Str (TaskState_t);
+static TaskState_t  Str2State (const string&);
+
 protected:
 
 virtual unsigned    Connect          (string="");
