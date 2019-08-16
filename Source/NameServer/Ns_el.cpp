@@ -57,7 +57,7 @@ int cnt;                               // Stored key vector size
 unsigned * ploc = Get<unsigned>(0,cnt);// Get hold of the key vector
 try {
   if (ploc==0) throw((*pX)("KEY VECTOR"));    // If it's not there....
-  for (int i=0;i<cnt;i++,*ploc++) {    // Unpack, one key at a time
+  for (int i=0;i<cnt;i++,ploc++) {    // Unpack, one key at a time
     int c2;                            // Item count (not used)
     unsigned char * pEtype = Get<unsigned char>(*ploc,c2);
     if (pEtype==0) throw((*pX)("ENTITY TYPE"));
@@ -115,7 +115,7 @@ void Ns_el::Dump(FILE * fp)
 // buffer.
 {
 fprintf(fp,"Ns_el+++++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"Current key vector (%u elements):\n",keyv.size());
+fprintf(fp,"Current key vector (%zu elements):\n",keyv.size());
 WALKVECTOR(unsigned,keyv,i)fprintf(fp,"%3u\n",*i);
 fprintf(fp,"+ + + + + + + + + + + + + + + + + + + + + + + + + +\n");
 fprintf(fp,"Walking the entities; dumping with unstreamed keys:\n");
@@ -167,7 +167,7 @@ switch (Etype) {
                fprintf(fp,"inP(size) = %u\n",Dindex.inP/2);
                fprintf(fp,"ouP(size) = %u\n",Dindex.ouP/2);
                GetX(k,vs);
-               fprintf(fp,"Name vector (%u elements)\n",vs.size());
+               fprintf(fp,"Name vector (%zu elements)\n",vs.size());
                WALKVECTOR(string,vs,i) fprintf(fp,"%s\n",(*i).c_str());
              } break;
   case 'S' : { fprintf(fp,"\nSupervisor key %3u:\n",k);
@@ -184,7 +184,7 @@ switch (Etype) {
                fprintf(fp,"attr      = %u\n",Sindex.attr);
                fprintf(fp,"bin       = %u\n",Sindex.bin);
                GetX(k,vs);
-               fprintf(fp,"Name vector (%u elements)\n",vs.size());
+               fprintf(fp,"Name vector (%zu elements)\n",vs.size());
                WALKVECTOR(string,vs,i) fprintf(fp,"%s\n",(*i).c_str());
              } break;
   case 'T' : { fprintf(fp,"\nTask key %3u:\n",k);
@@ -198,7 +198,7 @@ switch (Etype) {
                fprintf(fp,"key       = %u\n",Tindex.key);
                if (Tindex.key!=k) fprintf(fp,"*** KEY MISMATCH ***\n");
                GetX(k,vs);
-               fprintf(fp,"Name vector (%u elements)\n",vs.size());
+               fprintf(fp,"Name vector (%zu elements)\n",vs.size());
                WALKVECTOR(string,vs,i) fprintf(fp,"%s\n",(*i).c_str());
              } break;
 
@@ -213,7 +213,7 @@ switch (Etype) {
                fprintf(fp,"key       = %u\n",Oindex.key);
                if (Oindex.key!=k) fprintf(fp,"*** KEY MISMATCH ***\n");
                GetX(k,vs);
-               fprintf(fp,"Name vector (%u elements)\n",vs.size());
+               fprintf(fp,"Name vector (%zu elements)\n",vs.size());
                WALKVECTOR(string,vs,i) fprintf(fp,"%s\n",(*i).c_str());
              } break;
   default  :   fprintf(fp,"*** UNRECOGNISED ENTITY TYPE ***\n");;
@@ -388,13 +388,13 @@ fprintf(fp,"Task name   = %s\n",Tname.c_str());
 fprintf(fp,"Owner name  = %s\n",Oname.c_str());
 fprintf(fp,"attr        = %u\n",attr);
 fprintf(fp,"bin         = %u\n",bin);
-fprintf(fp,"\nInput pin name vector (%u elements)\n",inpin.size());
+fprintf(fp,"\nInput pin name vector (%zu elements)\n",inpin.size());
 WALKVECTOR(string,inpin,i) fprintf(fp,"%s\n",(*i).c_str());
-fprintf(fp,"\nInput pin type name vector (%u elements)\n",inpintype.size());
+fprintf(fp,"\nInput pin type name vector (%zu elements)\n",inpintype.size());
 WALKVECTOR(string,inpintype,i) fprintf(fp,"%s\n",(*i).c_str());
-fprintf(fp,"\nOutput pin name vector (%u elements)\n",oupin.size());
+fprintf(fp,"\nOutput pin name vector (%zu elements)\n",oupin.size());
 WALKVECTOR(string,oupin,i) fprintf(fp,"%s\n",(*i).c_str());
-fprintf(fp,"\nOutput pin type name vector (%u elements)\n",oupintype.size());
+fprintf(fp,"\nOutput pin type name vector (%zu elements)\n",oupintype.size());
 WALKVECTOR(string,oupintype,i) fprintf(fp,"%s\n",(*i).c_str());
 Ns_0::Dump(fp);
 fprintf(fp,"Ns_dev------------------------------------\n");

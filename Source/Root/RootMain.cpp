@@ -18,11 +18,11 @@ Root * pRoot = 0;
 try {
   pRoot = new Root(argc,argv,string(csROOTproc));
 }
-catch(bad_alloc) {
+catch(bad_alloc&) {
   printf("\n\n%s Main out of memory...    \n\n",csROOTproc);
   fflush(stdout);
 }
-catch(Unrec_t u) {
+catch(Unrec_t& u) {
   u.Post();
 }
 catch(...) {

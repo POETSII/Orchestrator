@@ -7,6 +7,8 @@
 #include "Pglobals.h"
 #include <stdio.h>
 
+#include "OSFixes.hpp"
+
 //==============================================================================
 
 Dummy::Dummy(int argc,char * argv[],string d):
@@ -52,7 +54,20 @@ fprintf(fp,"Dummy dump+++++++++++++++++++++++++++++++++++\n");
 printf("Key        Method\n");
 WALKVECTOR(FnMap_t*,FnMapx,F)
 {
-WALKMAP(unsigned,pMeth,(**F),i)printf("%#010x %#016x\n",(*i).first,(*i).second);
+WALKMAP(unsigned,pMeth,(**F),i)
+{
+  //fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x ",(*i).first);
+  
+  // Now for a horrible double type cast to get us a sensible function pointer.
+  // void*s are only meant to point to objects, not functions. So we get to a 
+  // void** as a pointer to a function pointer is an object pointer. We can then
+  // follow this pointer to get to the void*, which we then reinterpret to get 
+  // the function's address as a uint64_t.
+  fprintf(fp,"%" PTR_FMT "\n",reinterpret_cast<uint64_t>(
+                                *(reinterpret_cast<void**>(&((*i).second))))
+          );
+}
 }
 fprintf(fp,"Dummy dump-----------------------------------\n");
 CommonBase::Dump(fp);

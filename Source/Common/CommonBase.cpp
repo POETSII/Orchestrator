@@ -9,6 +9,8 @@
 #include "Unrec_t.h"
 #include <algorithm>
 
+#include "OSFixes.hpp"
+
 #include <string>
 using namespace std;
 typedef unsigned char byte;
@@ -168,13 +170,28 @@ WALKVECTOR(FnMap_t*,FnMapx,F)
 fprintf(fp,"Function table for comm %d:\n", cIdx++);
 fprintf(fp,"Key        Method\n");
 WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
+{
+  //fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x ",(*i).first);
+  
+  // Now for a horrible double type cast to get us a sensible function pointer.
+  // void*s are only meant to point to objects, not functions. So we get to a 
+  // void** as a pointer to a function pointer is an object pointer. We can then
+  // follow this pointer to get to the void*, which we then reinterpret to get 
+  // the function's address as a uint64_t.
+  fprintf(fp,"%" PTR_FMT "\n",reinterpret_cast<uint64_t>(
+                                *(reinterpret_cast<void**>(&((*i).second))))
+          );
+}
 }
 fprintf(fp,"S00 (const static)              : %s\n",S00.c_str());
 fprintf(fp,"Urank                           : %d\n",Urank);
 cIdx = 0;
 WALKVECTOR(int,Usize,s)
-  fprintf(fp,"Usize (comm %lu)                 : %d\n",cIdx++,s);
+{
+  fprintf(fp,"Usize (comm %u)",cIdx++);
+  fprintf(fp,"                 : %ld\n",std::distance(Usize.begin(),s));
+}
 fprintf(fp,"Ulen                            : %d\n",Ulen);
 fprintf(fp,"Sproc                           : %s\n",Sproc.c_str());
 fprintf(fp,"Suser                           : %s\n",Suser.c_str());
@@ -354,7 +371,8 @@ void CommonBase::OnIdle()
 unsigned CommonBase::OnPmap(PMsg_p * Z,unsigned cIdx)
 {
 pPmap[cIdx]->Register(Z);                    // Load one element into the process map
-if ((cIdx == 0) && (pPmap[0]->vPmap.size() == Usize[0])) // once we have everybody local
+if ((cIdx == 0) 
+    && (static_cast<int>(pPmap[0]->vPmap.size()) == Usize[0])) // once we have everybody local
 {
    // we can decide who the leader will be for any intercomms.
    if (pPmap[0]->U.Mothership.size()) Lrank = *min_element(pPmap[0]->U.Mothership.begin(),pPmap[0]->U.Mothership.end());
@@ -551,7 +569,7 @@ if (cIdx < 0)
 {
    // No LogServer. Best we can do is hope we are the Root process and can output a message.
    // Later this might become more sophisticated and attempt to send a message to Root.
-   if (Urank == pPmap[0]->U.Root) printf("Error: attempted to Post a message %d without a LogServer\n");
+   if (Urank == pPmap[0]->U.Root) printf("Error: attempted to Post a message without a LogServer\n");
    return false;
 }
 PMsg_p Pkt;

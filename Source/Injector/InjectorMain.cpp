@@ -13,11 +13,11 @@ Injector * pInjector = 0;
 try {
   pInjector = new Injector(argc,argv,string(csINJECTORproc));
 }
-catch(bad_alloc) {
+catch(bad_alloc&) {
   printf("\n\n%s Main out of memory...    \n\n",csINJECTORproc);
   fflush(stdout);
 }
-catch(Unrec_t u) {
+catch(Unrec_t& u) {
   u.Post();
 }
 catch(...) {

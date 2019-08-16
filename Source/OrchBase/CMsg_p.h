@@ -15,17 +15,17 @@ public:
       virtual ~CMsg_p();
 
       template <class T> void                 Dump(FILE * = stdout);
-      template <class T> inline T *           Get(int k,int & cnt) {return (T*)0;};
+      template <class T> inline T *           Get(int k,int & cnt) {return (T*)0;}
       pair<unsigned,P_addr_t> *               Get(int &);
       inline void                             Get(int k,string & s) {if (!k) PMsg_p::Get(k,s);};
-      template <class T> inline void          Get(int k,vector<T> & vT) {return;};
+      template <class T> inline void          Get(int k,vector<T> & vT) {return;}
       void                                    Get(vector<pair<unsigned,P_addr_t> > &);
       inline void                             GetX(int k,vector<string> & vs) {return;};
-      template <class T> inline int           Put() {return -1;};
-      template <class T> void                 Put(int k,T * data,int cnt=1) {return;};
+      template <class T> inline int           Put() {return -1;}
+      template <class T> void                 Put(int k,T * data,int cnt=1) {return;}
       void                                    Put(pair<unsigned,P_addr_t> *,int=1);
       inline void                             Put(int k,string * data) {if (!k) PMsg_p::Put(k,data);};
-      template <class T> inline void          Put(int k,vector<T> * data) {return;};
+      template <class T> inline void          Put(int k,vector<T> * data) {return;}
       void                                    Put(vector<pair<unsigned,P_addr_t> > *);
       inline void                             PutX(int k,vector<string> * data) {return;};
 
