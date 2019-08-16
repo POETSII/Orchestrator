@@ -3,6 +3,8 @@
 #include "NameBase.h"
 #include "macros.h"
 
+#include "OSFixes.hpp"
+
 unsigned NameBase::uid = 0;
 map<unsigned,NameBase *> NameBase::NBmap;
 
@@ -40,10 +42,10 @@ return n;
 void NameBase::Dump(FILE * fp)
 {
 fprintf(fp,"NameBase dump+++++++++++++++++++++++++++++++\n");
-fprintf(fp,"this           %#08p\n",this);
+fprintf(fp,"this           %" PTR_FMT "\n",reinterpret_cast<uint64_t>(this));
 fprintf(fp,"Name           %s\n",name.c_str());
 fprintf(fp,"Id             %10u(%#010x)\n",id,id);
-fprintf(fp,"Parent         %#08p\n",npar);
+fprintf(fp,"Parent         %" PTR_FMT "\n",reinterpret_cast<uint64_t>(npar));
 fprintf(fp,"Recursion trap %s\n",rtrap ? "Set" : "Unset");
 fprintf(fp,"Unique id      %u\n",uid);
 fprintf(fp,"NameBase id    Name\n");

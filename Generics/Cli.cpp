@@ -57,6 +57,7 @@ for(int state=0;;) {                   // And walk the syntax graph...
     case Lex::Sy_EOF  : 
     case Lex::Sy_EOR  : toktyp = t4;  break;
     case Lex::Sy_cmnt : toktyp = t7;  break;
+    default: break;
   }
   next = table[state][toktyp];         // Make the transition
   switch (next.ac) {                   // Post-transition (exit) actions
