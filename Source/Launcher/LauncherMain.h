@@ -9,6 +9,7 @@
 #include "SSH.h"
 
 #include <set>
+#include <sstream>
 #include <string>
 #include <map>
 
@@ -22,6 +23,11 @@ namespace Launcher
                                                         * relative to home. */
     const char* errorHeader = "[LAUNCHER] [ERROR] ";
     const char* fileOnlyOnPoetsBox = "/local/ecad/setup-quartus17v0.bash";
+
+    const char* execClock = "rtcl";
+    const char* execLogserver = "logserver";
+    const char* execMothership = "mothership";
+    const char* execRoot = "root";
 
     bool AreWeRunningOnAPoetsBox();
     void BuildCommand(bool useMotherships, std::string internalPath,

@@ -48,16 +48,19 @@ void BuildCommand(bool useMotherships, std::string internalPath,
                   std::string* command,
                   std::map<std::string, std::string>* paths)
 {
+    std::stringstream commandStream;
+
     /* Boilerplate */
-    *command = "mpiexec.hydra";
+    commandStream << "mpiexec.hydra";
     if (!internalPath.empty())
     {
-        *command += dformat(" -genv LD_LIBRARY_PATH \"%s\"",
-                            internalPath.c_str());
+        commandStream << " -genv LD_LIBRARY_PATH \""
+                      << internalPath
+                      << "\"";
     }
-    *command += " -n 1 ./root"
-        " : -n 1 ./logserver"
-        " : -n 1 ./rtcl";  /* DRY with help string. */
+    commandStream << " -n 1 ./" << execRoot
+                  << " : -n 1 ./" << execLogserver
+                  << " : -n 1 ./" << execClock;   /* DRY with help string. */
 
     /* Adding motherships... */
     if (useMotherships)
@@ -65,8 +68,8 @@ void BuildCommand(bool useMotherships, std::string internalPath,
         /* If we've set the override, just spawn a mothership on that host. */
         if (!overrideHost.empty())
         {
-            *command += " : -n 1 --host " + overrideHost + " " + \
-                deployDir + "/mothership";
+            commandStream << " : -n 1 --host " << overrideHost << " "
+                          << deployDir << "/" << execMothership;
         }
 
         /* Otherwise, if there are no hosts, spawn a mothership on this box if
@@ -74,7 +77,7 @@ void BuildCommand(bool useMotherships, std::string internalPath,
          * being spawned. */
         else if (hosts->empty())
         {
-            *command += " : -n 1 ./mothership";
+            commandStream << " : -n 1 ./" << execMothership;
         }
 
         /* Otherwise, spawn one mothership for each host. */
@@ -82,11 +85,13 @@ void BuildCommand(bool useMotherships, std::string internalPath,
         {
             WALKSET(std::string, (*hosts), host)
             {
-                *command += " : -n 1 --host " + *host + " " + \
-                    (*paths)[(*host)] + "/mothership";
+                commandStream << " : -n 1 --host " << (*host) << " "
+                              << (*paths)[(*host)] << "/" << execMothership;
             }
         }
     }
+
+    *command = commandStream.str();
 }
 
 /* Deploys all of the compiled binaries (runtime stuff) to a set of 'hosts'.
