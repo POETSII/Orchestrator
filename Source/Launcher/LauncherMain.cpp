@@ -42,10 +42,11 @@ bool AreWeRunningOnAPoetsBox()
 }
 
 /* Constructs the MPI command to run and writes it to 'command', given a set
- * of 'hosts'. */
+ * of 'hosts' and other stuff. */
 void BuildCommand(bool useMotherships, std::string internalPath,
                   std::string overrideHost, std::set<std::string>* hosts,
-                  std::string* command)
+                  std::string* command,
+                  std::map<std::string, std::string>* paths)
 {
     /* Boilerplate */
     *command = "mpiexec.hydra";
@@ -82,7 +83,7 @@ void BuildCommand(bool useMotherships, std::string internalPath,
             WALKSET(std::string, (*hosts), host)
             {
                 *command += " : -n 1 --host " + *host + " " + \
-                    deployDir + "/mothership";
+                    (*paths)[(*host)] + "/mothership";
             }
         }
     }
@@ -93,11 +94,19 @@ void BuildCommand(bool useMotherships, std::string internalPath,
  * So MPI, in most of its implementations, has the somewhat inconvenient
  * characteristic that you need to deploy the binary you want to execute to the
  * host - the hydra proxy does not do that for you. So we do it here (using
- * SSH).
+ * SSH). Arguments:
+ *
+ * - hosts: Hosts to deploy to (not modified, honest).
+ *
+ * - paths: Output of paths to where the binaries are deployed to, for a given
+ *   host. Cleared if there are no hosts, or if deployment fails.
  *
  * Returns 0 on success, and another number on failure. */
-int DeployBinaries(std::set<std::string>* hosts)
+int DeployBinaries(std::set<std::string>* hosts,
+                   std::map<std::string, std::string>* paths)
 {
+    paths->clear();
+
     /* Save us from ourselves. */
     if (hosts->empty()) return 0;
 
@@ -160,6 +169,22 @@ int DeployBinaries(std::set<std::string>* hosts)
                    errorHeader, (*host).c_str(), stderr.c_str());
             return 1;
         }
+
+        /* Grab the full path of the directory created (we can't compute that
+         * here, because user names may vary, etc.) */
+        if (SSH::call((*host),
+                      dformat("realpath \"%s\" | tr --delete '\n'\n",
+                              deployDir),
+                      &stdout, &stderr) > 0)
+        {
+            printf("%sSSH command to host '%s' failed (can you connect to the "
+                   "host by SSH?): %s",
+                   errorHeader, (*host).c_str(), stderr.c_str());
+            return 1;
+        }
+
+        (*paths)[*host] = stdout;
+
     }
 
     return 0;
@@ -448,15 +473,17 @@ argKeys["internalPath"].c_str());
     /* Deploy the binaries to the hosts that are running motherships, if we're
      * using motherships. */
     std::string binaryDir;
-    if (!useMotherships)
+    std::map<std::string, std::string> deployedPaths;
+    if (useMotherships)
     {
-        if (DeployBinaries(&hosts) != 0) return 1;
+        if (DeployBinaries(&hosts, &deployedPaths) != 0) return 1;
     }
 
     /* Build the MPI command. */
     std::string command;
     DebugPrint("%sBuilding command...\n", debugHeader);
-    BuildCommand(useMotherships, internalPath, overrideHost, &hosts, &command);
+    BuildCommand(useMotherships, internalPath, overrideHost,
+                 &hosts, &command, &deployedPaths);
 
     /* Run the MPI command. Note we don't use call here, because we don't care
      * about the stdout, stderr, or returncode. */
