@@ -7,12 +7,12 @@
  * =============================================================================
  * OS/compiler-specific oddities to make code as portable as possible.
  *
- * 
+ *
  * =============================================================================
  * ===========================================================================*/
 
 /* =============================================================================
- * Avoid format warnings on MINGW from it trying to use old MSVc printf 
+ * Avoid format warnings on MINGW from it trying to use old MSVc printf
  * ===========================================================================*/
 #if defined(__MINGW64__) || defined(__MINGW32__)
  #define __USE_MINGW_ANSI_STDIO  1
@@ -20,10 +20,10 @@
 
 
 /* =============================================================================
- * Headers for fixed-width ints (i.e. uint64_t) depend on c++ version. 
+ * Headers for fixed-width ints (i.e. uint64_t) depend on c++ version.
  * These are needed for addresses.
  * ===========================================================================*/
-#if __cplusplus >= 201103   
+#if __cplusplus >= 201103
  #include <cstdint>
  #include <cinttypes>
 #else
@@ -33,15 +33,15 @@
 #endif
 
 /* =============================================================================
- * Pointer/Address formatting depends on C++ & Compiler version. 
+ * Pointer/Address formatting depends on C++ & Compiler version.
  *
  * C++98 doesn't necessarily know about long-long and long is not 64-bits on all
  * compiler/platform combinations. To complicate matters, uint64_t (inittpypes.h
- * /cinittypes) is not consistently typed across platforms. e.g. it is long on 
- * Ubuntu 16.04 GCC but long long on MinGW 64-bit. 
+ * /cinittypes) is not consistently typed across platforms. e.g. it is long on
+ * Ubuntu 16.04 GCC but long long on MinGW 64-bit.
  * Relies on inttypes.h/cinittypes.
  *
- * Example Usage: 
+ * Example Usage:
  *      fprintf(fp, "Pointer: %" PTR_FMT "\n", static_cast<uint64_t>(&Var);
  * ===========================================================================*/
 #define PTR_FMT     "#018" PRIx64
@@ -91,7 +91,7 @@
  * When called with "errno", this will return an std::string containing the
  * relevant error text for the last failed system call.
  *
- * The "default" option (using sterror) is NOT thread safe, but is portable. 
+ * The "default" option (using sterror) is NOT thread safe, but is portable.
  * Other options (using sterror_s and friends) need adding for Windows/Borland.
  *
  * Example Usage:
@@ -107,7 +107,7 @@ namespace POETS
       #elif _POSIX_C_SOURCE >= 200112L
         char errMsg[1000];
         if(strerror_r(errNum, errMsg, 1000)) return std::string("");
-        else return std::string(errMsg); 
+        else return std::string(errMsg);
       #else
         return std::string(strerror(errNum));
       #endif
@@ -121,33 +121,58 @@ namespace POETS
  * code is inserted into pre-defined methods.
  *
  * OS_ATTRIBUTE_UNUSED   Placed immedidiately after potentially unused var.
- * OS_PRAGMA_UNUSED(x)   Placed on a line after a potentially unused var. 
+ * OS_PRAGMA_UNUSED(x)   Placed on a line after a potentially unused var.
  *
  * Example Usage:
  *      unsigned foo OS_ATTRIBUTE_UNUSED = 0;
- *      OS_PRAGMA_UNUSED(foo)				// N.B. note the lack of ";"   
+ *      OS_PRAGMA_UNUSED(foo)				// N.B. note the lack of ";"
  * ===========================================================================*/
 #ifdef __GNUC__				/* GCC Specific definitions. */
-#define OS_ATTRIBUTE_UNUSED		__attribute__((unused)) 
-#define OS_PRAGMA_UNUSED(x)		
+#define OS_ATTRIBUTE_UNUSED		__attribute__((unused))
+#define OS_PRAGMA_UNUSED(x)
 
 #elif __BORLANDC__			/* Borland specific definitions. */
-#define OS_ATTRIBUTE_UNUSED		
+#define OS_ATTRIBUTE_UNUSED
 #define OS_PRAGMA_UNUSED(x)		(void) x ;
 
 #elif __clang__				/* Clang Specific definitions. */
-#define OS_ATTRIBUTE_UNUSED		
+#define OS_ATTRIBUTE_UNUSED
 #define OS_PRAGMA_UNUSED(x)		#pragma unused(x);
 
 #elif _MSC_VER				/* MS Specific definitions. */
-#define OS_ATTRIBUTE_UNUSED		
+#define OS_ATTRIBUTE_UNUSED
 #define OS_PRAGMA_UNUSED(x)		x;
 
 #else						/* Other compilers. */
 #warning "Building without Compiler-specific unused variable handling."
-#define OS_ATTRIBUTE_UNUSED		
-#define OS_PRAGMA_UNUSED(x)		
+#define OS_ATTRIBUTE_UNUSED
+#define OS_PRAGMA_UNUSED(x)
 #endif
+
+/* =============================================================================
+ * Hostname retrieval, as a string.
+ * ===========================================================================*/
+#ifdef _WIN32
+#else /* Unix-like way */
+#include <unistd.h>
+#define HOSTNAME_LENGTH 128
+#endif
+
+namespace POETS
+{
+    inline std::string get_hostname()
+    {
+        #ifdef _WIN32
+        printf("[POETS::get_hostname] MLV should edit this to use "
+               "GetComputerNameExA!\n"); // <!>
+        return "";
+        #else
+        char buffer[HOSTNAME_LENGTH];
+        gethostname(buffer, HOSTNAME_LENGTH);
+        return buffer;
+        #endif
+    }
+}
 
 /* =============================================================================
  * Filesystem manipulation

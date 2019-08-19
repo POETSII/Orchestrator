@@ -44,11 +44,23 @@ bool AreWeRunningOnAPoetsBox()
 /* Constructs the MPI command to run and writes it to 'command', given a set
  * of 'hosts' and other stuff. */
 void BuildCommand(bool useMotherships, std::string internalPath,
-                  std::string overrideHost, std::set<std::string>* hosts,
-                  std::string* command,
-                  std::map<std::string, std::string>* paths)
+                  std::string overrideHost,
+                  std::set<std::string>* mothershipHosts,
+                  std::map<std::string, std::string>* executablePaths,
+                  std::string* command)
 {
     std::stringstream commandStream;
+
+    /* Will be populated with processes to spawn. Members are on the heap
+     * (bloody stringstreams). */
+    std::vector<std::stringstream*> hydraProcesses;
+
+    /* Will be populated with hosts, to define which processes run on which
+     * hosts in the command. Members are *not* on the heap. */
+    std::vector<std::string> orderedHosts;
+
+    /* We'll need our hostname. */
+    std::string ourHostname = POETS::get_hostname();
 
     /* Boilerplate */
     commandStream << "mpiexec.hydra";
@@ -62,9 +74,20 @@ void BuildCommand(bool useMotherships, std::string internalPath,
     /* Prepend rank to stdout in debug mode. */
     if (ORCHESTRATOR_DEBUG) commandStream << " -l";
 
-    commandStream << " -n 1 ./" << execRoot
-                  << " : -n 1 ./" << execLogserver
-                  << " : -n 1 ./" << execClock;   /* DRY with help string. */
+    /* Standard-issue processes (sorry). */
+    std::string localBinDir = POETS::dirname(POETS::get_executable_path());
+
+    hydraProcesses.push_back(new std::stringstream);
+    orderedHosts.push_back(ourHostname);
+    *(hydraProcesses.back()) << "-n 1 " << localBinDir << "/" << execRoot;
+
+    hydraProcesses.push_back(new std::stringstream);
+    orderedHosts.push_back(ourHostname);
+    *(hydraProcesses.back()) << "-n 1 " << localBinDir << "/" << execLogserver;
+
+    hydraProcesses.push_back(new std::stringstream);
+    orderedHosts.push_back(ourHostname);
+    *(hydraProcesses.back()) << "-n 1 " << localBinDir << "/" << execClock;
 
     /* Adding motherships... */
     if (useMotherships)
@@ -72,30 +95,93 @@ void BuildCommand(bool useMotherships, std::string internalPath,
         /* If we've set the override, just spawn a mothership on that host. */
         if (!overrideHost.empty())
         {
-            commandStream << " : -n 1 --host " << overrideHost << " "
-                          << deployDir << "/" << execMothership;
+            hydraProcesses.push_back(new std::stringstream);
+            orderedHosts.push_back(overrideHost);
+            *(hydraProcesses.back())
+                << "-n 1  " << deployDir << "/" << execMothership;
         }
 
-        /* Otherwise, if there are no hosts, spawn a mothership on this box if
-         * it's a POETS box. Otherwise, warn the user that no mothership is
-         * being spawned. */
-        else if (hosts->empty())
+        /* Otherwise, if there are no hosts, spawn a mothership on this box
+         * (we've already checked that it's a POETS box). */
+        else if (mothershipHosts->empty())
         {
-            commandStream << " : -n 1 ./" << execMothership;
+            hydraProcesses.push_back(new std::stringstream);
+            orderedHosts.push_back(ourHostname);
+
+            *(hydraProcesses.back()) << "-n 1 " << localBinDir << "/"
+                                     << execMothership;
         }
 
         /* Otherwise, spawn one mothership for each host. */
         else
         {
-            WALKSET(std::string, (*hosts), host)
+            WALKSET(std::string, (*mothershipHosts), host)
             {
-                commandStream << " : -n 1 --host " << (*host) << " "
-                              << (*paths)[(*host)] << "/" << execMothership;
+                hydraProcesses.push_back(new std::stringstream);
+                orderedHosts.push_back(*host);
+                *(hydraProcesses.back()) <<
+                    "-n 1 " << (*executablePaths)[(*host)] <<
+                    "/" << execMothership;
             }
         }
     }
 
+    /* Construct the host list, and append it to the command. Example:
+     *
+     * If orderedHosts is [hostA, hostA, hostB, hostC], then this adds
+     * " -hostlist hostA:2,hostB:1,hostC:1".
+     *
+     * If orderedHosts is [hostD, hostE, hostE, hostD], then this adds
+     * " -hostlist hostD:1,hostE:2,hostD:1" (so we can't simply count the
+     * occurences...) */
+    std::stringstream hostlistStream;
+    std::string currentHost;
+    unsigned hostStreak = 0;
+    unsigned index;
+    hostlistStream << " -hostlist ";  /* There's always going to be at least
+                                       * one. */
+    for (index=0; index<orderedHosts.size(); index++)
+    {
+        /* Does the streak continue? If so, increment the streak counter. Also,
+         * if this is our first iteration, define the current streaking
+         * host. */
+        if (index == 0 || currentHost == orderedHosts[index])
+        {
+            hostStreak += 1;
+            if (index == 0)
+            {
+                currentHost = orderedHosts[index];
+            }
+        }
+
+        /* Otherwise, we've broken the streak, and we need to writeout and
+         * reset the streak. */
+        else
+        {
+            hostlistStream << currentHost << ":" << hostStreak << ",";
+            hostStreak = 1;
+            currentHost = orderedHosts[index];
+        }
+
+        /* Regardless of whether or not we've broken the streak, writeout if
+         * this is the final element. */
+        if (index == orderedHosts.size() - 1)
+        {
+            hostlistStream << currentHost << ":" << hostStreak;
+            break;  /* We're about to leave anyway... */
+        }
+    }
+
+    /* Put the command together, and write the command. Assumes hydraProcesses
+     * is not empty (why would it be?!). */
+    commandStream << hostlistStream.str();
+    commandStream << " " << hydraProcesses[0]->str();
+    for (index=1; index<hydraProcesses.size();
+         commandStream << " : " << hydraProcesses[index++]->str());
     *command = commandStream.str();
+
+    /* Cleanup. */
+    for (index=0; index<hydraProcesses.size(); delete hydraProcesses[index++]);
 }
 
 /* Deploys all of the compiled binaries (runtime stuff) to a set of 'hosts'.
@@ -193,7 +279,6 @@ int DeployBinaries(std::set<std::string>* hosts,
         }
 
         (*paths)[*host] = stdout;
-
     }
 
     return 0;
@@ -492,11 +577,11 @@ argKeys["internalPath"].c_str());
     std::string command;
     DebugPrint("%sBuilding command...\n", debugHeader);
     BuildCommand(useMotherships, internalPath, overrideHost,
-                 &hosts, &command, &deployedPaths);
+                 &hosts, &deployedPaths, &command);
 
     /* Run the MPI command. Note we don't use call here, because we don't care
      * about the stdout, stderr, or returncode. */
-    DebugPrint("%sRunning this command: %s\n.", debugHeader, command.c_str());
+    DebugPrint("%sRunning this command: %s\n", debugHeader, command.c_str());
     system(command.c_str());
     return 0;
 }

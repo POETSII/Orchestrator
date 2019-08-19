@@ -31,9 +31,10 @@ namespace Launcher
 
     bool AreWeRunningOnAPoetsBox();
     void BuildCommand(bool useMotherships, std::string internalPath,
-                      std::string overrideHost, std::set<std::string>* hosts,
-                      std::string* command,
-                      std::map<std::string, std::string>* paths);
+                      std::string overrideHost,
+                      std::set<std::string>* mothershipHosts,
+                      std::map<std::string, std::string>* executablePaths,
+                      std::string* command);
     int DeployBinaries(std::set<std::string>* hosts,
                        std::map<std::string, std::string>* paths);
     int GetHosts(std::string hdfPath, std::set<std::string>* hosts);
