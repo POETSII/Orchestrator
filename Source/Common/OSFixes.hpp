@@ -28,7 +28,9 @@
  #include <cinttypes>
 #else
  #include <stdint.h>
- #include <inttypes.h>
+  #ifndef __BORLANDC__        // Borland doesn't know about inttypes.h, 
+   #include <inttypes.h>      // despite knowing about stdint.h...
+  #endif
  #include <sstream>
 #endif
 
