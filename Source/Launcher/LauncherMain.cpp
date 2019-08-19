@@ -58,6 +58,10 @@ void BuildCommand(bool useMotherships, std::string internalPath,
                       << internalPath
                       << "\"";
     }
+
+    /* Prepend rank to stdout in debug mode. */
+    if (ORCHESTRATOR_DEBUG) commandStream << " -l";
+
     commandStream << " -n 1 ./" << execRoot
                   << " : -n 1 ./" << execLogserver
                   << " : -n 1 ./" << execClock;   /* DRY with help string. */
