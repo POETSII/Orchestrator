@@ -44,7 +44,7 @@ bool AreWeRunningOnAPoetsBox()
 /* Constructs the MPI command to run and writes it to 'command', given a set
  * of 'hosts' and other stuff. */
 void BuildCommand(bool useMotherships, std::string internalPath,
-                  std::string overrideHost,
+                  std::string overrideHost, std::string hdfPath,
                   std::set<std::string>* mothershipHosts,
                   std::map<std::string, std::string>* executablePaths,
                   std::string* command)
@@ -80,6 +80,10 @@ void BuildCommand(bool useMotherships, std::string internalPath,
     hydraProcesses.push_back(new std::stringstream);
     orderedHosts.push_back(ourHostname);
     *(hydraProcesses.back()) << "-n 1 " << localBinDir << "/" << execRoot;
+    if (!hdfPath.empty())  /* Pass HDF, quoted, to root. */
+    {
+        *(hydraProcesses.back()) << " \"" << hdfPath << "\"";
+    }
 
     hydraProcesses.push_back(new std::stringstream);
     orderedHosts.push_back(ourHostname);
@@ -576,7 +580,7 @@ argKeys["internalPath"].c_str());
     /* Build the MPI command. */
     std::string command;
     DebugPrint("%sBuilding command...\n", debugHeader);
-    BuildCommand(useMotherships, internalPath, overrideHost,
+    BuildCommand(useMotherships, internalPath, overrideHost, hdfPath,
                  &hosts, &deployedPaths, &command);
 
     /* Run the MPI command. Note we don't use call here, because we don't care

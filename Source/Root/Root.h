@@ -15,7 +15,7 @@ class Root : public OrchBase
 {
 
 public:
-                    Root(int,char **,string);
+                    Root(int,char **,string, string);
 virtual ~           Root();
 
 typedef unsigned      (Root::*pMeth)(PMsg_p *, unsigned);

@@ -57,8 +57,8 @@ return NULL;
 
 //==============================================================================
 
-Root::Root(int argc,char * argv[],string d) :
-  OrchBase(argc,argv,d,string(__FILE__))
+Root::Root(int argc,char * argv[],string d,string hdfPath)
+    :OrchBase(argc,argv,d,string(__FILE__))
 {
 echo         = false;                  // Batch subsystem opaque
 injData.flag = 0;                      // Clear injector controls
@@ -75,6 +75,23 @@ pthread_t kb_thread;
 if(pthread_create(&kb_thread,NULL,kb_func,args))
   fprintf(stdout,"Error creating kb_thread\n");
 fflush(stdout);
+
+/* Pass hardware description file to topology generation, if one was given to
+ * us. We do this by staging a Cli entry using the batch system (see
+ * Root::OnIdle).
+ *
+ * The reason we do this (as opposed to simply calling TopoLoad) is because we
+ * haven't built the process map yet - as a consequence, we do not know the
+ * rank of the LogServer processes, and so can't Post in the event of an error.
+ * By staging the Cli entry onto the front of the batch queue, we can be sure
+ * that MPISpinner will drain the input buffer before running our
+ * command. Since that input buffer will contain messages that will register
+ * all processes into our pPmap, we know we will have the logserver rank,
+ * making Post work correctly. */
+if (!hdfPath.empty())
+{
+    Equeue.push_front(Cli(dformat("topo /load = \"%s\"", hdfPath.c_str())));
+}
 
 MPISpinner();                          // Spin on *all* messages; exit on DIE
 printf("********* Root rank %d on the way out\n",Urank); fflush(stdout);
