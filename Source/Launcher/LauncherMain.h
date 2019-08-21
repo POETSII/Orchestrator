@@ -25,6 +25,8 @@ namespace Launcher
     const char* errorHeader = "[LAUNCHER] [ERROR] ";
     const char* fileOnlyOnPoetsBox = "/local/ecad/setup-quartus17v0.bash";
 
+    const char* defaultHdfPath = "/local/orchestrator-common/hdf.uif";
+
     const char* execClock = "rtcl";
     const char* execLogserver = "logserver";
     const char* execMothership = "mothership";

@@ -536,6 +536,20 @@ argKeys["internalPath"].c_str());
     DebugPrint("%s\n", debugHeader);
     #endif
 
+    /* If the default hardware description file path has a file there, and we
+     * weren't passed a file explicitly, let's roll with the one we've
+     * found.
+     *
+     * If the operator doesn't like this default, they can always load a new
+     * one in the usual way, which will clobber the target. */
+    if (hdfPath.empty() && file_exists(defaultHdfPath))
+    {
+        hdfPath = defaultHdfPath;
+        DebugPrint("%sFound a hardware description file in the default "
+                   "search location (%s). Using that one.",
+                   debugHeader, hdfPath.c_str());
+    }
+
     /* Read the input file, if supplied, and get a set of hosts we must launch
      * Mothership processes on. Don't bother if we're overriding, or if
      * motherships are disabled.
