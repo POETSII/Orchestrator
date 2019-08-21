@@ -219,7 +219,7 @@ namespace POETS
         char path[MAXIMUM_PATH_LENGTH] = {};  /* Empty initialiser to placate
                                                * Valgrind. */
 
-        /* Determining the predicate by OS. Value resolution is independant. */
+        /* Determining the predicate by OS. Value resolution is independent. */
         #ifdef _WIN32
         HMODULE hModule = GetModuleHandle(PNULL);
         if (hModule != PNULL)
