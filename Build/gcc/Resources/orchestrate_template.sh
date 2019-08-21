@@ -45,7 +45,7 @@ export LD_LIBRARY_PATH="$CR_LIB_DIR":"$LD_LIBRARY_PATH":./
 # Also help if the user is naive.
 while [ $# -gt 0 ]; do
     case "$1" in
-        /f|-f)
+        /f|-f|/hdf-file|--hdf-file)
             # Absolute/relative control flow split.
             case "$3" in
                 /*) #Absolute
@@ -53,6 +53,18 @@ while [ $# -gt 0 ]; do
                     ;;
                 *) # Relative
                     ARGS="$ARGS /f = \"$PWD/$3\""
+                    ;;
+            esac
+            shift; shift; shift;;
+
+        # And again for batch files
+        /b|-b|/batch-file|--batch-file)
+            case "$3" in
+                /*) #Absolute
+                    ARGS="$ARGS /b = \"$3\""
+                    ;;
+                *) # Relative
+                    ARGS="$ARGS /b = \"$PWD/$3\""
                     ;;
             esac
             shift; shift; shift;;

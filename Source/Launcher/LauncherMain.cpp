@@ -44,7 +44,8 @@ bool AreWeRunningOnAPoetsBox()
 /* Constructs the MPI command to run and writes it to 'command', given a set
  * of 'hosts' and other stuff. */
 void BuildCommand(bool useMotherships, std::string internalPath,
-                  std::string overrideHost, std::string hdfPath,
+                  std::string overrideHost, std::string batchPath,
+                  std::string hdfPath,
                   std::set<std::string>* mothershipHosts,
                   std::map<std::string, std::string>* executablePaths,
                   std::string* command)
@@ -79,10 +80,18 @@ void BuildCommand(bool useMotherships, std::string internalPath,
 
     hydraProcesses.push_back(new std::stringstream);
     orderedHosts.push_back(ourHostname);
-    *(hydraProcesses.back()) << "-n 1 " << localBinDir << "/" << execRoot;
+    *(hydraProcesses.back()) << "-n 1 "
+                             << localBinDir << "/" << execRoot;
     if (!hdfPath.empty())  /* Pass HDF, quoted, to root. */
     {
-        *(hydraProcesses.back()) << " \"" << hdfPath << "\"";
+        *(hydraProcesses.back()) << " /" << ROOT_ARG_HDF
+                                 << "=\\\"" << hdfPath << "\\\"";
+    }
+
+    if (!batchPath.empty())  /* Pass batch script, quoted, to root. */
+    {
+        *(hydraProcesses.back()) << " /" << ROOT_ARG_BATCH
+                                 << "=\\\"" << batchPath << "\\\"";
     }
 
     hydraProcesses.push_back(new std::stringstream);
@@ -347,6 +356,7 @@ int Launch(int argc, char** argv)
 
     /* Argument map. */
     std::map<std::string, std::string> argKeys;
+    argKeys["batchPath"] = "b";
     argKeys["help"] = "h";
     argKeys["file"] = "f";
     argKeys["noMotherships"] = "n";
@@ -368,6 +378,7 @@ int Launch(int argc, char** argv)
 "If you are bamboozled, try compiling with debugging enabled (i.e. `make "
 "debug`). This launcher accepts the following optional arguments:\n"
 "\n"
+" /%s: Path to a batch script to run on root on startup.\n"
 " /%s: Prints this help text.\n"
 " /%s = FILE: Path to a hardware file to read hostnames from, in order to "
 "start motherships.\n"
@@ -376,8 +387,12 @@ int Launch(int argc, char** argv)
 "description file, with HOST.\n"
 " /%s = PATH: Define an LD_LIBRARY_PATH environment variable for called "
 "processes.\n",
-argv[0], argKeys["help"].c_str(), argKeys["file"].c_str(),
-argKeys["noMotherships"].c_str(), argKeys["override"].c_str(),
+argv[0],
+argKeys["batchPath"].c_str(),
+argKeys["help"].c_str(),
+argKeys["file"].c_str(),
+argKeys["noMotherships"].c_str(),
+argKeys["override"].c_str(),
 argKeys["internalPath"].c_str());
 
     /* Parse the input arguments. */
@@ -394,6 +409,7 @@ argKeys["internalPath"].c_str());
     }
 
     /* Staging for input arguments. */
+    std::string batchPath;
     std::string hdfPath;
     bool useMotherships = true;
     std::string overrideHost;
@@ -404,6 +420,18 @@ argKeys["internalPath"].c_str());
     WALKVECTOR(Cli::Cl_t, cli.Cl_v, argIt)
     {
         currentArg = (*argIt).Cl;
+        if (currentArg == argKeys["batchPath"])
+        {
+            if (batchPath.empty())
+            {
+                batchPath = (*argIt).GetP(0);
+            }
+            else
+            {
+                printf("[WARN] Launcher: Ignoring duplicate input batchPath "
+                       "argument.\n");
+            }
+        }
         if (currentArg == argKeys["help"])  /* Help: Print and leave. */
         {
             printf("%s", helpDoc.c_str());
@@ -580,8 +608,8 @@ argKeys["internalPath"].c_str());
     /* Build the MPI command. */
     std::string command;
     DebugPrint("%sBuilding command...\n", debugHeader);
-    BuildCommand(useMotherships, internalPath, overrideHost, hdfPath,
-                 &hosts, &deployedPaths, &command);
+    BuildCommand(useMotherships, internalPath, overrideHost, batchPath,
+                 hdfPath, &hosts, &deployedPaths, &command);
 
     /* Run the MPI command. Note we don't use call here, because we don't care
      * about the stdout, stderr, or returncode. */

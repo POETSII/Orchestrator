@@ -6,6 +6,7 @@
 #include "jnj.h"
 #include "macros.h"
 #include "OSFixes.hpp"
+#include "RootArgs.h"
 #include "SSH.h"
 
 #include <set>
@@ -31,7 +32,8 @@ namespace Launcher
 
     bool AreWeRunningOnAPoetsBox();
     void BuildCommand(bool useMotherships, std::string internalPath,
-                      std::string overrideHost, std::string hdfPath,
+                      std::string overrideHost, std::string batchPath,
+                      std::string hdfPath,
                       std::set<std::string>* mothershipHosts,
                       std::map<std::string, std::string>* executablePaths,
                       std::string* command);

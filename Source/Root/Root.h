@@ -4,6 +4,7 @@
 #include "CommonBase.h"
 #include "OrchBase.h"
 #include "PMsg_p.hpp"
+#include "RootArgs.h"
 #include "Cli.h"
 #include "Injector.h"
 #include <string>
@@ -15,7 +16,7 @@ class Root : public OrchBase
 {
 
 public:
-                    Root(int,char **,string, string);
+                    Root(int,char **,string);
 virtual ~           Root();
 
 typedef unsigned      (Root::*pMeth)(PMsg_p *, unsigned);

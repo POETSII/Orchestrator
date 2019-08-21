@@ -16,10 +16,7 @@ getchar();
 
 Root * pRoot = 0;
 try {
-  /* Capture hardware description file passed in as an argument. */
-  std::string hdfPath;
-  if (argc > 1) hdfPath = argv[1];
-  pRoot = new Root(argc,argv,string(csROOTproc),hdfPath);
+  pRoot = new Root(argc,argv,string(csROOTproc));
 }
 catch(bad_alloc&) {
   printf("\n\n%s Main out of memory...    \n\n",csROOTproc);

@@ -57,7 +57,7 @@ return NULL;
 
 //==============================================================================
 
-Root::Root(int argc,char * argv[],string d,string hdfPath)
+Root::Root(int argc,char * argv[],string d)
     :OrchBase(argc,argv,d,string(__FILE__))
 {
 echo         = false;                  // Batch subsystem opaque
@@ -76,6 +76,39 @@ if(pthread_create(&kb_thread,NULL,kb_func,args))
   fprintf(stdout,"Error creating kb_thread\n");
 fflush(stdout);
 
+/* Handle input arguments - grab the hdfPath and/or batchPath. */
+std::string rawArgs;
+std::string hdfPath;
+std::string batchPath;
+for (int i=1; i<argc; i++)
+{
+  rawArgs += argv[i];
+  rawArgs += " ";
+}
+
+Cli cli(rawArgs);
+if (cli.problem.prob)
+{
+  printf("Command-line error near character %d. Ignoring commandline "
+         "arguments.\n", cli.problem.col);
+}
+else
+{
+  WALKVECTOR(Cli::Cl_t, cli.Cl_v, i)
+  {
+    std::string key = i->Cl;
+    if (key=="batch") batchPath = i->GetP(0);
+    if (key=="hdf") hdfPath = i->GetP(0);
+  }
+}
+
+/* Queue batch message, if one was given to us. We do this by staging a Cli
+ * entry using the batch system (see Root::OnIdle). */
+if (!batchPath.empty())
+{
+  Equeue.push_front(Cli(dformat("call /file = \"%s\"", batchPath.c_str())));
+}
+
 /* Pass hardware description file to topology generation, if one was given to
  * us. We do this by staging a Cli entry using the batch system (see
  * Root::OnIdle).
@@ -90,7 +123,7 @@ fflush(stdout);
  * making Post work correctly. */
 if (!hdfPath.empty())
 {
-    Equeue.push_front(Cli(dformat("topo /load = \"%s\"", hdfPath.c_str())));
+  Equeue.push_front(Cli(dformat("topo /load = \"%s\"", hdfPath.c_str())));
 }
 
 MPISpinner();                          // Spin on *all* messages; exit on DIE
