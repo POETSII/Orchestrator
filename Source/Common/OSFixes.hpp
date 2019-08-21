@@ -175,9 +175,10 @@ namespace POETS
 }
 
 /* =============================================================================
- * Filesystem manipulation
+ * Filesystem manipulation - not under RISCV though.
  * ===========================================================================*/
 
+#ifndef __riscv
 #ifdef _WIN32
 #include <stdlib.h>
 #include <windows.h>
@@ -242,7 +243,7 @@ namespace POETS
         }
     }
 }
-
+#endif /* _riscv */
 
 /* ===========================================================================*/
 #endif /* __OSFIXES__H */
