@@ -266,7 +266,7 @@ if ((tpL = pPmap[cIdx]->U.LogServer) != Q::NAP) // is this the LogServer's local
    lIdx = cIdx; // and comm index
    for(p=0;p<Usize[cIdx];p++)
    {
-      if ((((static_cast<int>(cIdx) != RootCIdx()) 
+      if ((((static_cast<int>(cIdx) != RootCIdx())
             || (p!=static_cast<int>(Urank)))) && (p!=tpL))
       { // NOT the LogServer
         Post(50,pPmap[cIdx]->M[p],int2str(p));
@@ -278,8 +278,8 @@ else
 {
    for(p=0;p<Usize[cIdx];p++) // No. LogServer not on this comm. Shut everyone down.
    {
-      if (((static_cast<int>(cIdx) != RootCIdx()) 
-            || (p!=static_cast<int>(Urank)))) 
+      if (((static_cast<int>(cIdx) != RootCIdx())
+            || (p!=static_cast<int>(Urank))))
       {  // Don't need to send to self
          Post(50,pPmap[cIdx]->M[p],int2str(p));
          Pkt.Send(p);
@@ -450,11 +450,11 @@ WALKMAP(unsigned,pMeth,(**F),i)
 {
   //fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
   fprintf(fp,"%#010x ",(*i).first);
-  
+
   // Now for a horrible double type cast to get us a sensible function pointer.
-  // void*s are only meant to point to objects, not functions. So we get to a 
+  // void*s are only meant to point to objects, not functions. So we get to a
   // void** as a pointer to a function pointer is an object pointer. We can then
-  // follow this pointer to get to the void*, which we then reinterpret to get 
+  // follow this pointer to get to the void*, which we then reinterpret to get
   // the function's address as a uint64_t.
   fprintf(fp,"%" PTR_FMT "\n",reinterpret_cast<uint64_t>(
                                 *(reinterpret_cast<void**>(&((*i).second))))
