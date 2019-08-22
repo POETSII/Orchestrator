@@ -546,7 +546,7 @@ argKeys["internalPath"].c_str());
     {
         hdfPath = defaultHdfPath;
         DebugPrint("%sFound a hardware description file in the default "
-                   "search location (%s). Using that one.",
+                   "search location (%s). Using that one.\n",
                    debugHeader, hdfPath.c_str());
     }
 
