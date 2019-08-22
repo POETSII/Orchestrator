@@ -400,11 +400,8 @@ while (cIdx < Comms.size()) // grab the next available mothership
       if (currBox != pPmap[cIdx]->vPmap.end()) break;
       ++cIdx;
 }
-// where the binaries will be placed in the mothership's filesystem
-std::string target = string("/home/") + currBox->P_user + "/" +
-    TASK_DEPLOY_DIR + "/" + task->first;
+
 isTaskMappedToThisBox = false;
-PktD.Put(1,&target);
 coreVec.clear();   // reset the packet content
 WALKVECTOR(P_board*,boxNode->second->P_boardv,board)
 {
@@ -470,7 +467,10 @@ while (RootProcMapI->P_rank != pPmap[RootIndex]->U.Root) RootProcMapI++;
 std::vector<std::string> commands;
 // where the binaries are (target is where the binaries will go). The asterisk
 // is a Bash glob (thanks system!)
+std::string target = string("/home/") + currBox->P_user + "/" +
+    TASK_DEPLOY_DIR + "/" + task->first;
 std::string sourceBins = taskpath + task->first + "/" + BIN_PATH + "/*";
+PktD.Put(1,&target);
 if (RootProcMapI->P_proc == currBox->P_proc)
 {
    // then copy locally (inefficient, wasteful, using the files in place would be better but this would require
