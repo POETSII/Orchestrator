@@ -111,7 +111,7 @@ void BuildCommand(bool useMotherships, std::string internalPath,
             hydraProcesses.push_back(new std::stringstream);
             orderedHosts.push_back(overrideHost);
             *(hydraProcesses.back())
-                << "-n 1  " << deployDir << "/" << execMothership;
+                << "-n 1 -wdir ~/" << deployDir << " ./" << execMothership;
         }
 
         /* Otherwise, if there are no hosts, spawn a mothership on this box
@@ -132,9 +132,9 @@ void BuildCommand(bool useMotherships, std::string internalPath,
             {
                 hydraProcesses.push_back(new std::stringstream);
                 orderedHosts.push_back(*host);
-                *(hydraProcesses.back()) <<
-                    "-n 1 " << (*executablePaths)[(*host)] <<
-                    "/" << execMothership;
+                *(hydraProcesses.back())
+                    << "-n 1 -wdir ~/" << (*executablePaths)[(*host)]
+                    << " ./" << execMothership;
             }
         }
     }
