@@ -79,6 +79,7 @@
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"
 510(W) : "Unrecognised %s command to mothership %s"
 511(W) : "Task %s could not be %s: state is %s"
+512(U) : "Task %s could not be %s: state was stuck at %s. Aborting."
 513(U) : "Task %s in state %s, never reached barrier. A boot thread may have crashed"
 515(W) : "Task %s not mapped to this mothership (%s)"
 516(E) : "Boot thread could not be created for board %s for task %s"
