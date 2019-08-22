@@ -453,7 +453,7 @@ if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par =
 }
 if ((cIdx >= Comms.size()) && coreVec.size()) // not enough Motherships have reported to deploy this task
 {
-   Post(164,task->first, int2str(cIdx), int2str(coreVec.size()));
+   Post(166, task->first);
    return;
 }
 
@@ -712,7 +712,7 @@ for (unsigned comm=0; comm<Comms.size(); comm++)
 // mothership has died). Either way, we out, yo.
 if (mothershipsToDeployTo.size() < boxesToDeployTo.size())
 {
-    Post(164, TO_STRING(boxesToDeployTo.size()).c_str(),
+    Post(164, task->first.c_str(), TO_STRING(boxesToDeployTo.size()).c_str(),
          TO_STRING(mothershipsToDeployTo.size()).c_str());
     return;
 }
