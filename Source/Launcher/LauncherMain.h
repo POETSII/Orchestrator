@@ -36,13 +36,17 @@ namespace Launcher
     void BuildCommand(bool useMotherships, std::string internalPath,
                       std::string overrideHost, std::string batchPath,
                       std::string hdfPath,
-                      std::set<std::string>* mothershipHosts,
-                      std::map<std::string, std::string>* executablePaths,
+                      std::set<std::string> mothershipHosts,
+                      std::map<std::string, std::string> executablePaths,
                       std::string* command);
     int DeployBinaries(std::set<std::string>* hosts,
                        std::map<std::string, std::string>* paths);
     int GetHosts(std::string hdfPath, std::set<std::string>* hosts);
     int Launch(int argc, char** argv);
+    int ParseArgs(int argc, char** argv, std::string* batchPath,
+                  std::string* hdfPath, bool* useMotherships, bool* dryRun,
+                  std::string* overrideHost, std::string* internalPath);
+
 }
 
 #endif

@@ -1,11 +1,10 @@
 /* This file contains the `main` free function for the Orchestrator-MPI
  * launcher.
  *
- * If you're interested in input arguments, call with "h", or read helpDoc. */
+ * If you're interested in input arguments, call with "/f", or read the
+ * helpDoc variable in Launcher::ParseArgs. */
 
 #include "LauncherMain.h"
-
-#include <string>
 
 /* Calls 'Launch' in a try/catch block. */
 int main(int argc, char** argv)
@@ -33,21 +32,37 @@ int main(int argc, char** argv)
     }
 }
 
-namespace Launcher
-{
+namespace Launcher  /* Who indents function definitions in namespaces, */
+{                   /* honestly? */
 
+/* I mean, you could break this if you really wanted to, but that would make
+ * you an arse. */
 bool AreWeRunningOnAPoetsBox()
 {
     return file_exists(fileOnlyOnPoetsBox);
 }
 
-/* Constructs the MPI command to run and writes it to 'command', given a set
- * of 'hosts' and other stuff. */
+/* Constructs the MPI command to run and writes it to 'command', given:
+ *
+ * - useMotherships: Whether or not to create any motherships at all.
+ * - internalPath: Path to define LD_LIBRARY_PATH on child processes.
+ * - overrideHost: Host to override, if applicable.
+ * - batchPath: Path to a batch script to run on root when everything kicks
+ *   off.
+ * - hdfPath: Path to a topology file to load on root when everything kicks
+ *   off.
+ * - mothershipHosts: If not overriding, spawn motherships on these hosts. If
+ *   this is empty and useMotherships is true, we start a mothership on this
+ *   machine.
+ * - executablePaths: For remote hosts, this should contain the directory
+ *   containing the executable to run (-wdir).
+ * - command: Output, where the command is written to. It's up to the caller to
+     examine and run it as they desire. */
 void BuildCommand(bool useMotherships, std::string internalPath,
                   std::string overrideHost, std::string batchPath,
                   std::string hdfPath,
-                  std::set<std::string>* mothershipHosts,
-                  std::map<std::string, std::string>* executablePaths,
+                  std::set<std::string> mothershipHosts,
+                  std::map<std::string, std::string> executablePaths,
                   std::string* command)
 {
     std::stringstream commandStream;
@@ -116,7 +131,7 @@ void BuildCommand(bool useMotherships, std::string internalPath,
 
         /* Otherwise, if there are no hosts, spawn a mothership on this box
          * (we've already checked that it's a POETS box). */
-        else if (mothershipHosts->empty())
+        else if (mothershipHosts.empty())
         {
             hydraProcesses.push_back(new std::stringstream);
             orderedHosts.push_back(ourHostname);
@@ -128,12 +143,12 @@ void BuildCommand(bool useMotherships, std::string internalPath,
         /* Otherwise, spawn one mothership for each host. */
         else
         {
-            WALKSET(std::string, (*mothershipHosts), host)
+            WALKSET(std::string, mothershipHosts, host)
             {
                 hydraProcesses.push_back(new std::stringstream);
                 orderedHosts.push_back(*host);
                 *(hydraProcesses.back())
-                    << "-n 1 -wdir ~/" << (*executablePaths)[(*host)]
+                    << "-n 1 -wdir ~/" << executablePaths[(*host)]
                     << " ./" << execMothership;
             }
         }
@@ -345,206 +360,23 @@ return 0;
 /* Launches the Orchestrator, unsurprisingly. */
 int Launch(int argc, char** argv)
 {
-    /* Print input arguments, if we're in debug mode. */
-    DebugPrint("%sWelcome to the POETS Launcher. Raw arguments:\n",
-               debugHeader);
-    #if ORCHESTRATOR_DEBUG
-    for (int argIndex=0; argIndex<argc; argIndex++)
-    {
-        DebugPrint("%s%sArgument %d: %s\n", debugHeader, debugIndent, argIndex,
-                   argv[argIndex]);
-    }
-    DebugPrint("%s\n", debugHeader);
-    #endif
-
-    /* Argument map. */
-    std::map<std::string, std::string> argKeys;
-    argKeys["batchPath"] = "b";
-    argKeys["help"] = "h";
-    argKeys["file"] = "f";
-    argKeys["noMotherships"] = "n";
-    argKeys["override"] = "o";
-    argKeys["internalPath"] = "p";
-
-    /* Defines help string, printed when user calls with `-h`. */
-    std::string helpDoc = dformat(
-"Usage: %s [/h] [/f = FILE] [/o = HOST] [/p = PATH]\n"
-"\n"
-"This is the Orchestrator launcher. It starts the following Orchestrator "
-"processes:\n"
-"\n"
-" - root\n"
-" - logserver\n"
-" - rtcl\n"
-" - mothership (some number of them)\n"
-"\n"
-"If you are bamboozled, try compiling with debugging enabled (i.e. `make "
-"debug`). This launcher accepts the following optional arguments:\n"
-"\n"
-" /%s: Path to a batch script to run on root on startup.\n"
-" /%s: Prints this help text.\n"
-" /%s = FILE: Path to a hardware file to read hostnames from, in order to "
-"start motherships.\n"
-" /%s: Does not spawn any mothership processes.\n"
-" /%s = HOST: Override all Mothership hosts, specified from a hardware "
-"description file, with HOST.\n"
-" /%s = PATH: Define an LD_LIBRARY_PATH environment variable for called "
-"processes.\n",
-argv[0],
-argKeys["batchPath"].c_str(),
-argKeys["help"].c_str(),
-argKeys["file"].c_str(),
-argKeys["noMotherships"].c_str(),
-argKeys["override"].c_str(),
-argKeys["internalPath"].c_str());
-
-    /* Parse the input arguments. */
-    std::string concatenatedArgs;
-    for(int i=1; i<argc; concatenatedArgs += argv[i++]);
-
-    /* Decode, and check for errors. */
-    Cli cli(concatenatedArgs);
-    if (cli.problem.prob)
-    {
-        printf("%sCommand line error at about input character %d\n",
-               errorHeader, cli.problem.col);
-        return 1;
-    }
-
-    /* Staging for input arguments. */
+    /* Parse input arguments. */
     std::string batchPath;
     std::string hdfPath;
-    bool useMotherships = true;
+    bool useMotherships;
+    bool dryRun;
     std::string overrideHost;
     std::string internalPath;
-
-    /* Read each argument in turn. */
-    std::string currentArg;
-    WALKVECTOR(Cli::Cl_t, cli.Cl_v, argIt)
-    {
-        currentArg = (*argIt).Cl;
-        if (currentArg == argKeys["batchPath"])
-        {
-            if (batchPath.empty())
-            {
-                batchPath = (*argIt).GetP(0);
-            }
-            else
-            {
-                printf("[WARN] Launcher: Ignoring duplicate input batchPath "
-                       "argument.\n");
-            }
-        }
-        if (currentArg == argKeys["help"])  /* Help: Print and leave. */
-        {
-            printf("%s", helpDoc.c_str());
-            return 0;
-        }
-
-        if (currentArg == argKeys["file"])  /* Hardware file: Store it. */
-        {
-            if (hdfPath.empty())
-            {
-                hdfPath = (*argIt).GetP(0);
-            }
-            else
-            {
-                printf("[WARN] Launcher: Ignoring duplicate input file "
-                       "argument.\n");
-            }
-        }
-
-        if (currentArg == argKeys["noMotherships"])
-        {
-            if (useMotherships)
-            {
-                useMotherships = false;
-            }
-            else
-            {
-                printf("[WARN] Launcher: Ignoring duplicate noMotherships "
-                       "argument.\n");
-            }
-        }
-
-        if (currentArg == argKeys["override"])  /* Override: Store it. */
-        {
-            if (overrideHost.empty())
-            {
-                overrideHost = (*argIt).GetP(0);
-                if (overrideHost.empty())
-                {
-                    printf("[WARN] Launcher: Override host argument empty. "
-                           "Ignoring.\n");
-                }
-            }
-            else
-            {
-                printf("[WARN] Launcher: Ignoring duplicate override"
-                       "argument.\n");
-            }
-        }
-
-        if (currentArg == argKeys["internalPath"])
-        {
-            if (internalPath.empty())
-            {
-                internalPath = (*argIt).GetP(0);
-                if (internalPath.empty())
-                {
-                    printf("[WARN] Launcher: Internal path argument empty. "
-                           "Ignoring.\n");
-                }
-            }
-            else
-            {
-                printf("[WARN] Launcher: Ignoring duplicate internal path "
-                       "argument.\n");
-            }
-        }
-    }
-
-    /* Print what happened, if anyone is listening. */
-    #if ORCHESTRATOR_DEBUG
-    DebugPrint("%sParsed arguments:\n", debugHeader);
-    if (hdfPath.empty())
-    {
-        DebugPrint("%s%sHardware description file path: Not specified.\n",
-                   debugHeader, debugIndent);
-    }
-    else
-    {
-        DebugPrint("%s%sHardware description file path: %s\n",
-                   debugHeader, debugIndent, hdfPath.c_str());
-    }
-    if (overrideHost.empty())
-    {
-        DebugPrint("%s%sOverride host: Not specified.\n",
-                   debugHeader, debugIndent);
-    }
-    else
-    {
-        DebugPrint("%s%sOverride host: %s\n", debugHeader, debugIndent,
-                   overrideHost.c_str());
-    }
-    if (useMotherships)
-    {
-        DebugPrint("%s%sMotherships: enabled\n", debugHeader, debugIndent);
-    }
-    else
-    {
-        DebugPrint("%s%sMotherships: disabled\n", debugHeader, debugIndent);
-    }
-
-    DebugPrint("%s\n", debugHeader);
-    #endif
+    if (ParseArgs(argc, argv, &batchPath, &hdfPath, &useMotherships, &dryRun,
+                  &overrideHost, &internalPath) > 0) return 1;
 
     /* If the default hardware description file path has a file there, and we
      * weren't passed a file explicitly, let's roll with the one we've
      * found.
      *
      * If the operator doesn't like this default, they can always load a new
-     * one in the usual way, which will clobber the target. */
+     * one in the usual way, which will clobber the target. file_exists is from
+     * flat.h. */
     if (hdfPath.empty() && file_exists(defaultHdfPath))
     {
         hdfPath = defaultHdfPath;
@@ -557,12 +389,14 @@ argKeys["internalPath"].c_str());
      * Mothership processes on. Don't bother if we're overriding, or if
      * motherships are disabled.
      *
-     * On future work, we may want to make hosts a std::map<std::string, ENUM>,
-     * so that you can launch specific processes with it from another input
-     * file. Just a passing thought. */
-    std::set<std::string> hosts;  /* May well remain empty. */
-    if (useMotherships)
+     * Future work, we may want to make hosts a std::map<std::string, ENUM>, so
+     * that you can launch specific processes with it from a more advanced
+     * input file. Just a passing thought. */
+    std::set<std::string> hosts;  /* May remain empty. */
+    if (useMotherships)  /* User may have disabled them, in which case there's
+                          * no point in us looking. */
     {
+        /* Have we been given a file to read, and it hasn't been overridden? */
         if (!hdfPath.empty() and overrideHost.empty())
         {
             int rc = GetHosts(hdfPath, &hosts);
@@ -614,24 +448,281 @@ argKeys["internalPath"].c_str());
     }
 
     /* Deploy the binaries to the hosts that are running motherships, if we're
-     * using motherships. */
-    std::string binaryDir;
+     * using motherships. If we do deploy anything, store the paths that we've
+     * deployed stuff to, so that we can build the command later. Fail fast. */
     std::map<std::string, std::string> deployedPaths;
-    if (useMotherships)
-    {
-        if (DeployBinaries(&hosts, &deployedPaths) != 0) return 1;
-    }
+    if (DeployBinaries(&hosts, &deployedPaths) != 0) return 1;
 
     /* Build the MPI command. */
     std::string command;
     DebugPrint("%sBuilding command...\n", debugHeader);
     BuildCommand(useMotherships, internalPath, overrideHost, batchPath,
-                 hdfPath, &hosts, &deployedPaths, &command);
+                 hdfPath, hosts, deployedPaths, &command);
 
-    /* Run the MPI command. Note we don't use call here, because we don't care
-     * about the stdout, stderr, or returncode. */
+    /* Run the MPI command, or not. */
     DebugPrint("%sRunning this command: %s\n", debugHeader, command.c_str());
-    system(command.c_str());
+    if (dryRun)
+    {
+        #if ORCHESTRATOR_DEBUG
+        #else
+        printf("%s\n", command.c_str());
+        #endif
+        return 0;
+    }
+
+    /* Note we don't use call here, because we don't care about capturing the
+     * stdout, stderr, or returncode (though we might as well propagate the
+     * latter). */
+    return system(command.c_str());
+}
+
+/* Parses arguments given to the launcher on the command line, and populates
+ * various reference-passed variables as it goes. May also do some
+ * printing. Arguments:
+ *
+ * - argc: Input argument count
+ * - argv: Input argument vector (har har)
+ * - batchPath: Output, populated with the path to a batch script from
+ *   arguments (or empty if not defined).
+ * - hdfPath: Output, populated with the path to a hardware description file
+ *   to read from arguments (or empty if not defined).
+ * - useMotherships: Output, whether or not motherships have been explicitly
+ *   disabled.
+ * - dryRun: Output, true if the caller wants to just see what would be
+ *   run. Still deploys binaries.
+ * - overrideHost: Output, populated with the name of the host to run a
+ *   mothership on, regardless of whether or not an input file has been passed
+ *   in (or empty if not defined).
+ * - internalPath: Output, holds the internal path argument if defined, see the
+ *   help string.
+ *
+ * Returns non-zero if a fast exit is needed. */
+int ParseArgs(int argc, char** argv, std::string* batchPath,
+              std::string* hdfPath, bool* useMotherships, bool* dryRun,
+              std::string* overrideHost, std::string* internalPath)
+{
+    /* Print input arguments, if we're in debug mode. */
+    DebugPrint("%sWelcome to the POETS Launcher. Raw arguments:\n",
+               debugHeader);
+    #if ORCHESTRATOR_DEBUG
+    for (int argIndex=0; argIndex<argc; argIndex++)
+    {
+        DebugPrint("%s%sArgument %d: %s\n", debugHeader, debugIndent, argIndex,
+                   argv[argIndex]);
+    }
+    DebugPrint("%s\n", debugHeader);
+    #endif
+
+    /* Argument map. */
+    std::map<std::string, std::string> argKeys;
+    argKeys["batchPath"] = "b";
+    argKeys["dontStartTheOrchestrator"] = "d";
+    argKeys["help"] = "h";
+    argKeys["file"] = "f";
+    argKeys["noMotherships"] = "n";
+    argKeys["override"] = "o";
+    argKeys["internalPath"] = "p";
+
+    /* Defines help string, printed when user calls with `-h`. */
+    std::string helpDoc = dformat(
+"Usage: %s [/b = FILE] [/d] [/h] [/f = FILE] [/n] [/o = HOST] [/p = PATH]\n"
+"\n"
+"This is the Orchestrator launcher. It starts the following Orchestrator "
+"processes:\n"
+"\n"
+" - root\n"
+" - logserver\n"
+" - rtcl\n"
+" - mothership (some number of them)\n"
+"\n"
+"If you are bamboozled, try compiling with debugging enabled (i.e. `make "
+"debug`). This launcher accepts the following optional arguments:\n"
+"\n"
+" /%s = FILE: Path to a batch script to run on root on startup.\n"
+" /%s: Don't start the Orchestrator! Still deploys binaries, but does not "
+"execute the command.\n"
+" /%s: Prints this help text.\n"
+" /%s = FILE: Path to a hardware file to read hostnames from, in order to "
+"start motherships. If none is provided, '%s' is searched. If you dont want "
+"to use this default, you can reset the topology in the root shell using "
+" a 'topology' command.\n"
+" /%s: Does not spawn any mothership processes.\n"
+" /%s = HOST: Override all Mothership hosts, specified from a hardware "
+"description file, with HOST.\n"
+" /%s = PATH: Define an LD_LIBRARY_PATH environment variable for called "
+"processes.\n"
+"\n"
+"If you are still bamboozled, or you're a developer, check out the "
+"Orchestrator documentation.\n",
+argv[0],
+argKeys["batchPath"].c_str(),
+argKeys["dontStartTheOrchestrator"].c_str(),
+argKeys["help"].c_str(),
+argKeys["hdfPath"].c_str(), defaultHdfPath,
+argKeys["noMotherships"].c_str(),
+argKeys["override"].c_str(),
+argKeys["internalPath"].c_str());
+
+    /* Parse the input arguments. */
+    std::string concatenatedArgs;
+    for(int i=1; i<argc; concatenatedArgs += argv[i++]);
+
+    /* Decode, and check for errors. */
+    Cli cli(concatenatedArgs);
+    if (cli.problem.prob)
+    {
+        printf("%sCommand line error at about input character %d\n",
+               errorHeader, cli.problem.col);
+        return 1;
+    }
+
+    /* And here we go! */
+    *dryRun = false;  /* Pessimism. */
+    *useMotherships = true;  /* Optimism. */
+
+    std::string currentArg;
+    WALKVECTOR(Cli::Cl_t, cli.Cl_v, argIt)
+    {
+        currentArg = (*argIt).Cl;
+        if (currentArg == argKeys["batchPath"])
+        {
+            if (batchPath->empty())
+            {
+                *batchPath = (*argIt).GetP(0);
+            }
+            else
+            {
+                printf("[WARN] Launcher: Ignoring duplicate input batchPath "
+                       "argument.\n");
+            }
+        }
+        if (currentArg == argKeys["dontStartTheOrchestrator"])
+        {
+            if (!*dryRun)
+            {
+                *dryRun = true;
+            }
+            else
+            {
+                printf("[WARN] Launcher: Ignoring duplicate 'don't start the "
+                       "Orchestrator!' argument.\n");
+            }
+
+        }
+        if (currentArg == argKeys["help"])  /* Help: Print and leave. */
+        {
+            printf("%s", helpDoc.c_str());
+            return 1;
+        }
+
+        if (currentArg == argKeys["hdfPath"])  /* Hardware file: Store it. */
+        {
+            if (hdfPath->empty())
+            {
+                *hdfPath = (*argIt).GetP(0);
+            }
+            else
+            {
+                printf("[WARN] Launcher: Ignoring duplicate input file "
+                       "argument.\n");
+            }
+        }
+
+        if (currentArg == argKeys["noMotherships"])
+        {
+            if (*useMotherships)
+            {
+                *useMotherships = false;
+            }
+            else
+            {
+                printf("[WARN] Launcher: Ignoring duplicate noMotherships "
+                       "argument.\n");
+            }
+        }
+
+        if (currentArg == argKeys["override"])  /* Override: Store it. */
+        {
+            if (overrideHost->empty())
+            {
+                *overrideHost = (*argIt).GetP(0);
+                if (overrideHost->empty())
+                {
+                    printf("[WARN] Launcher: Override host argument empty. "
+                           "Ignoring.\n");
+                }
+            }
+            else
+            {
+                printf("[WARN] Launcher: Ignoring duplicate override"
+                       "argument.\n");
+            }
+        }
+
+        if (currentArg == argKeys["internalPath"])
+        {
+            if (internalPath->empty())
+            {
+                *internalPath = (*argIt).GetP(0);
+                if (internalPath->empty())
+                {
+                    printf("[WARN] Launcher: Internal path argument empty. "
+                           "Ignoring.\n");
+                }
+            }
+            else
+            {
+                printf("[WARN] Launcher: Ignoring duplicate internal path "
+                       "argument.\n");
+            }
+        }
+    }
+
+    /* Print what happened, if anyone is listening. */
+    #if ORCHESTRATOR_DEBUG
+    DebugPrint("%sParsed arguments:\n", debugHeader);
+    if (hdfPath->empty())
+    {
+        DebugPrint("%s%sHardware description file path: Not specified.\n",
+                   debugHeader, debugIndent);
+    }
+    else
+    {
+        DebugPrint("%s%sHardware description file path: %s\n",
+                   debugHeader, debugIndent, hdfPath->c_str());
+    }
+    if (overrideHost->empty())
+    {
+        DebugPrint("%s%sOverride host: Not specified.\n",
+                   debugHeader, debugIndent);
+    }
+    else
+    {
+        DebugPrint("%s%sOverride host: %s\n", debugHeader, debugIndent,
+                   overrideHost->c_str());
+    }
+    if (*useMotherships)
+    {
+        DebugPrint("%s%sMotherships: enabled\n", debugHeader, debugIndent);
+    }
+    else
+    {
+        DebugPrint("%s%sMotherships: disabled\n", debugHeader, debugIndent);
+    }
+    if (*dryRun)
+    {
+        DebugPrint("%s%sWe're not actually going to run the command.\n",
+                   debugHeader, debugIndent);
+    }
+    else
+    {
+        DebugPrint("%s%sWe are going to run the generated command.\n",
+                   debugHeader, debugIndent);
+    }
+
+    DebugPrint("%s\n", debugHeader);
+    #endif
+
     return 0;
 }
 }  /* End namespace */
