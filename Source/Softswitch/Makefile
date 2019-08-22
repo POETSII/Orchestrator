@@ -159,9 +159,6 @@ entry.o : entry.S
 link_%.ld : genld.sh
 	$< $(notdir $*) > link_$(notdir $*).ld
 
-$(TINSELINC)/config.h : $(CONFIG)
-	make -C $(TINSELINC)
-
 $(HL)/%.o :
 	make -C $(TINSELHL)
 
