@@ -489,8 +489,16 @@ else
                       host + ":" + target);
 }
 
-// run each staged command naively
-WALKVECTOR(std::string, commands, command) system(command->c_str());
+// run each staged command, failing fast if one of them breaks.
+WALKVECTOR(std::string, commands, command)
+{
+    if (system(command->c_str()) > 0)
+    {
+        // Command failed, cancelling deployment.
+        Post(165, command->c_str());
+        return;
+    }
+}
 
 PktD.comm = PktC.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
 printf("Sending a distribution message to mothership with %lu cores\n", coreVec.size());
