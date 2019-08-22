@@ -32,6 +32,9 @@ namespace Launcher
     const char* execMothership = "mothership";
     const char* execRoot = "root";
 
+    const char* execGdb = "gdb --args";
+    const char* execValgrind = "valgrind";
+
     bool AreWeRunningOnAPoetsBox();
     void BuildCommand(bool useMotherships, std::string internalPath,
                       std::string overrideHost, std::string batchPath,
@@ -45,7 +48,9 @@ namespace Launcher
     int Launch(int argc, char** argv);
     int ParseArgs(int argc, char** argv, std::string* batchPath,
                   std::string* hdfPath, bool* useMotherships, bool* dryRun,
-                  std::string* overrideHost, std::string* internalPath);
+                  std::string* overrideHost, std::string* internalPath,
+                  std::map<std::string, bool>* gdbProcs,
+                  std::map<std::string, bool>* valgrindProcs);
 
 }
 

@@ -56,6 +56,8 @@ bool AreWeRunningOnAPoetsBox()
  *   machine.
  * - executablePaths: For remote hosts, this should contain the directory
  *   containing the executable to run (-wdir).
+ * - gdbProcs: Process names to run GDB on.
+ * - valgrindProcs: Process names to run Valgrind on.
  * - command: Output, where the command is written to. It's up to the caller to
      examine and run it as they desire. */
 void BuildCommand(bool useMotherships, std::string internalPath,
@@ -63,6 +65,8 @@ void BuildCommand(bool useMotherships, std::string internalPath,
                   std::string hdfPath,
                   std::set<std::string> mothershipHosts,
                   std::map<std::string, std::string> executablePaths,
+                  std::map<std::string, bool> gdbProcs,
+                  std::map<std::string, bool> valgrindProcs,
                   std::string* command)
 {
     std::stringstream commandStream;
@@ -92,11 +96,17 @@ void BuildCommand(bool useMotherships, std::string internalPath,
 
     /* Standard-issue processes (sorry). */
     std::string localBinDir = POETS::dirname(POETS::get_executable_path());
-
     hydraProcesses.push_back(new std::stringstream);
+
+    /* Root */
     orderedHosts.push_back(ourHostname);
-    *(hydraProcesses.back()) << "-n 1 "
-                             << localBinDir << "/" << execRoot;
+    *(hydraProcesses.back()) << "-n 1 ";
+    if (gdbProcs[execRoot]) *(hydraProcesses.back()) << execGdb << " ";
+    if (valgrindProcs[execRoot]) *(hydraProcesses.back()) << execValgrind
+                                                          << " ";
+    *(hydraProcesses.back()) << localBinDir << "/" << execRoot;
+
+    /* Root args */
     if (!hdfPath.empty())  /* Pass HDF, quoted, to root. */
     {
         *(hydraProcesses.back()) << " /" << ROOT_ARG_HDF
@@ -109,13 +119,23 @@ void BuildCommand(bool useMotherships, std::string internalPath,
                                  << "=\\\"" << batchPath << "\\\"";
     }
 
+    /* Logserver */
     hydraProcesses.push_back(new std::stringstream);
     orderedHosts.push_back(ourHostname);
-    *(hydraProcesses.back()) << "-n 1 " << localBinDir << "/" << execLogserver;
+    *(hydraProcesses.back()) << "-n 1 ";
+    if (gdbProcs[execLogserver]) *(hydraProcesses.back()) << execGdb << " ";
+    if (valgrindProcs[execLogserver]) *(hydraProcesses.back()) << execValgrind
+                                                               << " ";
+    *(hydraProcesses.back()) << localBinDir << "/" << execLogserver;
 
+    /* Clock */
     hydraProcesses.push_back(new std::stringstream);
     orderedHosts.push_back(ourHostname);
-    *(hydraProcesses.back()) << "-n 1 " << localBinDir << "/" << execClock;
+    if (gdbProcs[execClock]) *(hydraProcesses.back()) << execGdb << " ";
+    if (valgrindProcs[execClock]) *(hydraProcesses.back()) << execValgrind
+                                                           << " ";
+    *(hydraProcesses.back()) << "-n 1 ";
+    *(hydraProcesses.back()) << localBinDir << "/" << execClock;
 
     /* Adding motherships... */
     if (useMotherships)
@@ -367,8 +387,20 @@ int Launch(int argc, char** argv)
     bool dryRun;
     std::string overrideHost;
     std::string internalPath;
+    std::map<std::string, bool> gdbProcs;
+    std::map<std::string, bool> valgrindProcs;
+    gdbProcs["root"] = false;
+    gdbProcs["rtcl"] = false;
+    gdbProcs["logserver"] = false;
+    gdbProcs["mothership"] = false;
+    valgrindProcs["root"] = false;
+    valgrindProcs["rtcl"] = false;
+    valgrindProcs["logserver"] = false;
+    valgrindProcs["mothership"] = false;
+
     if (ParseArgs(argc, argv, &batchPath, &hdfPath, &useMotherships, &dryRun,
-                  &overrideHost, &internalPath) > 0) return 1;
+                  &overrideHost, &internalPath, &gdbProcs,
+                  &valgrindProcs) > 0) return 1;
 
     /* If the default hardware description file path has a file there, and we
      * weren't passed a file explicitly, let's roll with the one we've
@@ -457,7 +489,8 @@ int Launch(int argc, char** argv)
     std::string command;
     DebugPrint("%sBuilding command...\n", debugHeader);
     BuildCommand(useMotherships, internalPath, overrideHost, batchPath,
-                 hdfPath, hosts, deployedPaths, &command);
+                 hdfPath, hosts, deployedPaths, gdbProcs, valgrindProcs,
+                 &command);
 
     /* Run the MPI command, or not. */
     DebugPrint("%sRunning this command: %s\n", debugHeader, command.c_str());
@@ -495,11 +528,15 @@ int Launch(int argc, char** argv)
  *   in (or empty if not defined).
  * - internalPath: Output, holds the internal path argument if defined, see the
  *   help string.
+ * - gdbProcs: Processes to point GDB at.
+ * - valgrindProcs: Processes to point Valgrind at.
  *
  * Returns non-zero if a fast exit is needed. */
 int ParseArgs(int argc, char** argv, std::string* batchPath,
               std::string* hdfPath, bool* useMotherships, bool* dryRun,
-              std::string* overrideHost, std::string* internalPath)
+              std::string* overrideHost, std::string* internalPath,
+              std::map<std::string, bool>* gdbProcs,
+              std::map<std::string, bool>* valgrindProcs)
 {
     /* Print input arguments, if we're in debug mode. */
     DebugPrint("%sWelcome to the POETS Launcher. Raw arguments:\n",
@@ -517,15 +554,18 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
     std::map<std::string, std::string> argKeys;
     argKeys["batchPath"] = "b";
     argKeys["dontStartTheOrchestrator"] = "d";
+    argKeys["hdfPath"] = "f";
+    argKeys["gdb"] = "g";
     argKeys["help"] = "h";
-    argKeys["file"] = "f";
     argKeys["noMotherships"] = "n";
     argKeys["override"] = "o";
     argKeys["internalPath"] = "p";
+    argKeys["valgrind"] = "v";
 
     /* Defines help string, printed when user calls with `-h`. */
     std::string helpDoc = dformat(
-"Usage: %s [/b = FILE] [/d] [/h] [/f = FILE] [/n] [/o = HOST] [/p = PATH]\n"
+"Usage: %s [/b = FILE] [/d] [/f = FILE] [/h] [/g = PROCESS] [/n] [/o = HOST] "
+"[/p = PATH] [/v = PROCESS]\n"
 "\n"
 "This is the Orchestrator launcher. It starts the following Orchestrator "
 "processes:\n"
@@ -541,27 +581,33 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
 " /%s = FILE: Path to a batch script to run on root on startup.\n"
 " /%s: Don't start the Orchestrator! Still deploys binaries, but does not "
 "execute the command.\n"
-" /%s: Prints this help text.\n"
 " /%s = FILE: Path to a hardware file to read hostnames from, in order to "
 "start motherships. If none is provided, '%s' is searched. If you dont want "
 "to use this default, you can reset the topology in the root shell using "
 " a 'topology' command.\n"
+" /%s: Prints this help text.\n"
+" /%s: Points gdb at one of the processes listed above. Will not work as you "
+"indend on remote processes (unless you're smarter than I am).\n"
 " /%s: Does not spawn any mothership processes.\n"
 " /%s = HOST: Override all Mothership hosts, specified from a hardware "
 "description file, with HOST.\n"
 " /%s = PATH: Define an LD_LIBRARY_PATH environment variable for called "
 "processes.\n"
+" /%s: Points valgrind at one of the processes listed above. Combine with /g "
+"at your own risk.\n"
 "\n"
 "If you are still bamboozled, or you're a developer, check out the "
 "Orchestrator documentation.\n",
 argv[0],
 argKeys["batchPath"].c_str(),
 argKeys["dontStartTheOrchestrator"].c_str(),
-argKeys["help"].c_str(),
 argKeys["hdfPath"].c_str(), defaultHdfPath,
+argKeys["gdb"].c_str(),
+argKeys["help"].c_str(),
 argKeys["noMotherships"].c_str(),
 argKeys["override"].c_str(),
-argKeys["internalPath"].c_str());
+argKeys["internalPath"].c_str(),
+argKeys["valgrind"].c_str());
 
     /* Parse the input arguments. */
     std::string concatenatedArgs;
@@ -581,6 +627,7 @@ argKeys["internalPath"].c_str());
     *useMotherships = true;  /* Optimism. */
 
     std::string currentArg;
+    std::string currentProcess;
     WALKVECTOR(Cli::Cl_t, cli.Cl_v, argIt)
     {
         currentArg = (*argIt).Cl;
@@ -596,6 +643,7 @@ argKeys["internalPath"].c_str());
                        "argument.\n");
             }
         }
+
         if (currentArg == argKeys["dontStartTheOrchestrator"])
         {
             if (!*dryRun)
@@ -609,11 +657,6 @@ argKeys["internalPath"].c_str());
             }
 
         }
-        if (currentArg == argKeys["help"])  /* Help: Print and leave. */
-        {
-            printf("%s", helpDoc.c_str());
-            return 1;
-        }
 
         if (currentArg == argKeys["hdfPath"])  /* Hardware file: Store it. */
         {
@@ -626,6 +669,33 @@ argKeys["internalPath"].c_str());
                 printf("[WARN] Launcher: Ignoring duplicate input file "
                        "argument.\n");
             }
+        }
+
+        if (currentArg == argKeys["gdb"])
+        {
+            currentProcess = (*argIt).GetP(0);
+            if (currentProcess.empty())
+            {
+                printf("[WARN] Launcher: GDB process argument empty. "
+                       "Ignoring.\n");
+            }
+
+            /* If it's not a valid process, we panic. */
+            if (gdbProcs->find(currentProcess) == gdbProcs->end())
+            {
+                printf("[WARN] Launcher: Gdb process argument '%s' does not "
+                       "correspond to an Orchestrator executable.\n",
+                       currentProcess.c_str());
+            }
+
+            /* If it is, it's true! */
+            else (*gdbProcs)[currentProcess] = true;
+        }
+
+        if (currentArg == argKeys["help"])  /* Help: Print and leave. */
+        {
+            printf("%s", helpDoc.c_str());
+            return 1;
         }
 
         if (currentArg == argKeys["noMotherships"])
@@ -675,6 +745,27 @@ argKeys["internalPath"].c_str());
                 printf("[WARN] Launcher: Ignoring duplicate internal path "
                        "argument.\n");
             }
+        }
+
+        if (currentArg == argKeys["valgrind"])
+        {
+            currentProcess = (*argIt).GetP(0);
+            if (currentProcess.empty())
+            {
+                printf("[WARN] Launcher: Valgrind process argument empty. "
+                       "Ignoring.\n");
+            }
+
+            /* If it's not a valid process, we panic. */
+            if (valgrindProcs->find(currentProcess) == valgrindProcs->end())
+            {
+                printf("[WARN] Launcher: Valgrind process argument '%s' does "
+                       "not correspond to an Orchestrator executable.\n",
+                       currentProcess.c_str());
+            }
+
+            /* If it is, it's true! */
+            else (*valgrindProcs)[currentProcess] = true;
         }
     }
 
