@@ -291,6 +291,9 @@ int DeployBinaries(std::set<std::string>* hosts,
             return 1;
         }
 
+        DebugPrint("%sDeployment to host '%s' complete.\n",
+                   debugHeader, host->c_str());
+
         (*paths)[*host] = stdout;
     }
 
