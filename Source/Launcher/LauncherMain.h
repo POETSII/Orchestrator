@@ -32,8 +32,8 @@ namespace Launcher
     const char* execMothership = "mothership";
     const char* execRoot = "root";
 
-    const char* execGdb = "gdb --args";
-    const char* execValgrind = "valgrind";
+    const char* execGdb = "/usr/bin/gdb --args";
+    const char* execValgrind = "/usr/bin/valgrind";
 
     bool AreWeRunningOnAPoetsBox();
     void BuildCommand(bool useMotherships, std::string internalPath,

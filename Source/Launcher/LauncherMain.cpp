@@ -586,15 +586,16 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
 "to use this default, you can reset the topology in the root shell using "
 " a 'topology' command.\n"
 " /%s: Prints this help text.\n"
-" /%s: Points gdb at one of the processes listed above. Will not work as you "
-"indend on remote processes (unless you're smarter than I am).\n"
+" /%s: Points gdb (%s) at one of the processes listed above, except "
+"mothership. Will not work as you indend on remote processes (unless you're "
+"smarter than I am).\n"
 " /%s: Does not spawn any mothership processes.\n"
 " /%s = HOST: Override all Mothership hosts, specified from a hardware "
 "description file, with HOST.\n"
 " /%s = PATH: Define an LD_LIBRARY_PATH environment variable for called "
 "processes.\n"
-" /%s: Points valgrind at one of the processes listed above. Combine with /g "
-"at your own risk.\n"
+" /%s: Points valgrind (%s) at one of the processes listed above, except "
+"mothership. Combine with /g at your own risk.\n"
 "\n"
 "If you are still bamboozled, or you're a developer, check out the "
 "Orchestrator documentation.\n",
@@ -602,12 +603,12 @@ argv[0],
 argKeys["batchPath"].c_str(),
 argKeys["dontStartTheOrchestrator"].c_str(),
 argKeys["hdfPath"].c_str(), defaultHdfPath,
-argKeys["gdb"].c_str(),
+argKeys["gdb"].c_str(), execGdb,
 argKeys["help"].c_str(),
 argKeys["noMotherships"].c_str(),
 argKeys["override"].c_str(),
 argKeys["internalPath"].c_str(),
-argKeys["valgrind"].c_str());
+argKeys["valgrind"].c_str(), execValgrind);
 
     /* Parse the input arguments. */
     std::string concatenatedArgs;
