@@ -20,6 +20,8 @@ class Dialect1Deployer;
 #include "P_owner.h"
 using namespace std;
 
+#define TASK_DEPLOY_DIR ".orchestrator/task_binaries"  // Relative to home.
+
 //==============================================================================
 
 class OrchBase : public CommonBase, public NameBase
