@@ -37,54 +37,83 @@ INTERNAL_LIB_PATH="$QT_LIB_DIR":"$MPI_LIB_DIR":"$GCC_LIB_DIR":
 # Paths for dynamically-linked libraries required by MPI.
 export LD_LIBRARY_PATH="$CR_LIB_DIR":"$LD_LIBRARY_PATH":./
 
-# Grab the file (/f) command line argument, put it in suppressed quotes for the
-# Cli class in the launcher, and make it relative to this directory if it is
-# itself a relative path (because the executable is run from the executable
-# directory).
+# Transform input arguments:
 #
-# Also help if the user is naive.
+# Grab the file and batch (/f, /b) command line arguments, put them in
+# suppressed quotes for the Cli class in the launcher, and make them relative
+# to this directory if it is itself a relative path (because the executable is
+# run from the executable directory).
+#
+# Also perform the "=" style split for Windows/GNU. Windows options are of the
+# form:
+#   /d
+#   /f = FILE
+# Whereas GNU options are of the form:
+#   -d
+#   -f FILE
+GNU_HELP=0
+THIS_ARG_MODE=""
 while [ $# -gt 0 ]; do
+    VALUE=""
+
+    # Get switch and value, if appropriate.
     case "$1" in
-        /f|-f|/hdf-file|--hdf-file)
-            # Absolute/relative control flow split.
-            case "$3" in
-                /*) #Absolute
-                    ARGS="$ARGS /f = \"$3\""
+        /*) # Windows
+            THIS_ARG_MODE="Windows"  # i.e. not GNU.
+            SWITCH="$1"
+            if [ "$2" == "=" ]; then  # e.g. "/f = FILE"
+                VALUE="$3"
+                shift; shift; shift
+            else  # e.g. "/d"
+                shift;
+            fi
+            ;;
+
+        -*) # GNU
+            THIS_ARG_MODE="GNU"
+            SWITCH="/${1:1}"
+            case "$2" in
+                -*) # e.g. "-d"
+                    shift
                     ;;
-                *) # Relative
-                    ARGS="$ARGS /f = \"$PWD/$3\""
+                *) # e.g. "-f FILE", or "-d" with no further arguments (VALUE
+                   # will remain empty).
+                    VALUE="$2"
+                    shift; shift;
                     ;;
             esac
-            shift; shift; shift;;
-
-        # And again for batch files
-        /b|-b|/batch-file|--batch-file)
-            case "$3" in
-                /*) #Absolute
-                    ARGS="$ARGS /b = \"$3\""
-                    ;;
-                *) # Relative
-                    ARGS="$ARGS /b = \"$PWD/$3\""
-                    ;;
-            esac
-            shift; shift; shift;;
-
-        --help)
-            ARGS="$ARGS /h"
-            shift;;
-
-        -*)
-            # Convert to Windows-style, to a degree (mercy)
-            ARGS="$ARGS /${1:1}"
-            shift;;
-
-        *)  # Benign argument
-            ARGS="$ARGS $1"
-            shift;;
     esac
+
+    # Absolute/relative control flow split for arguments that accept a path.
+    if [ "$SWITCH" == "/f" ] || [ "$SWITCH" == "/b" ]; then
+        case "$VALUE" in
+            /*) # Absolute
+                ARGS="$ARGS $SWITCH = \"$VALUE\""
+                ;;
+            *)  # Relative, or user has not specified one
+                ARGS="$ARGS $SWITCH = \"$PWD/$VALUE\""
+                ;;
+        esac
+
+    # Offer more extensive help for GNU people and the naive.
+    elif [ "$SWITCH" == "/h" ] || [ "$SWITCH" == "/-help" ]; then
+        ARGS="$ARGS /h"
+        [ "$THIS_ARG_MODE" == "GNU" ] && GNU_HELP=1
+
+    # Otherwise, concatenate the command normally.
+    else
+        if [ -z "$VALUE" ]; then
+            ARGS="$ARGS $SWITCH"
+        else
+            ARGS="$ARGS $SWITCH = $VALUE"
+        fi
+    fi
 done
 
 # Run the launcher from the build directory.
 pushd "{{ EXECUTABLE_DIR }}" > /dev/null
 ./orchestrate /p = "\"$INTERNAL_LIB_PATH\"" $ARGS
+if [ $GNU_HELP -eq 1 ]; then
+    printf "\nNote that there is limited support for short-form GNU-style switches (e.g. '-h -f FILE').\n"
+fi
 popd > /dev/null
