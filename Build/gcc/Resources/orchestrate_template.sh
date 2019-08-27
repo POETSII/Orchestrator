@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script sets up the (runtime) environment for the Orchestrator to operate
-# in, then starts the Orchestrator.
+# in, tweaks input arguments, then starts the Orchestrator launcher.
 #
 # Note that this script will not work correctly if you move any of the
 # dependencies, or the build artefacts. In that case, you're on your own (or
