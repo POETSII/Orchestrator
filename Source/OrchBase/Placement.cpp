@@ -45,13 +45,23 @@ void Placement::Init()
 bool Placement::Place(P_task * pT)
 // Place a task.
 {
-P_thread* pTh = iterator->get_thread();
+P_thread* pTh;
 
 WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
 {
     if ((*dT)->pOnRTS) // don't need to place if it's a supervisor - easily
                        // identified by lack of RTS handler
     {
+        pTh = iterator->get_thread();
+
+        // abandon placement if the iterator has wrapped (won't happen outside
+        // of trivial cases on the first iteration).
+        if (iterator->has_wrapped())
+        {
+            par->Post(163, pT->Name());
+            return true;
+        }
+
         // get all the devices of this type
         vector<P_device*> dVs = pT->pD->DevicesOfType(*dT);
         unsigned int devMem = (*dT)->MemPerDevice();
@@ -98,42 +108,19 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
             Xlink(dVs[devIdx],pTh);
         }
 
-        // jump to the next core: each core will only have one device type. We
-        // do not need to jump if the devices exactly fit on an integral number
-        // of cores because in that situation the previous GetNext() function
-        // will have incremented the core for us.
-        if (dVs.size()%(pCon->Constraintm["DevicesPerThread"]*pCon->Constraintm["ThreadsPerCore"]))
-        {
-            if (((dT+1) != pT->pP_typdcl->P_devtypv.end()))
-            {
-                // get the first thread on the next core, and abandon if we've
-                // filled up the hardware.
-                iterator->next_core();
-                pTh = iterator->get_thread();
-                if (iterator->has_wrapped())
-                {
-                    // out of room. Abandon placement.
-                    par->Post(163, pT->Name());
-                    return true;
-                }
-            }
-        }
-        // current tinsel architecture shares I-memory between pairs of cores,
-        // so for a new device type, if the postincremented core number is odd,
-        // we need to increment again to get an even boundary.
+        // we're done with this device type. A device of a different type must
+        // be placed on a different core. When we reach here, we know our
+        // current thread is not empty (because we've done a `next_thread`,
+        // then inserted another device - you could check with if
+        // (!pTh->P_devicel.empty()) I suppose...)
+        iterator->next_core();
+        // The current tinsel architecture shares I-memory between pairs of
+        // cores, so for a new device type, if the postincremented core number
+        // is odd, we need to increment again to get an even boundary.
         if (SHARED_INSTR_MEM &&
             iterator->get_core()->get_hardware_address()->get_core() & 0x1)
         {
-            // get the first thread on the next core, and abandon if we've
-            // filled up the hardware.
             iterator->next_core();
-            pTh = iterator->get_thread();
-            if (iterator->has_wrapped())
-            {
-                // out of room. Abandon placement.
-                par->Post(163, pT->Name());
-                return true;
-            }
         }
     }
 }
