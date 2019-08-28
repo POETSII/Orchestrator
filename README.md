@@ -7,6 +7,11 @@ Be sure to take a look at the user documentation at
 https://github.com/POETSII/orchestrator-documentation for building and running
 instructions.
 
+Note: This repository contains Tinsel as a submodule. This is not needed for
+operation on Tinsel-POETS boxes (because they already have a Tinsel
+installation), but if you wish to build or run the Orchestrator elsewhere, you
+will need this submodule.
+
 ## PREREQUISITES
 
 The following essential utilities and libraries are prequisite:
