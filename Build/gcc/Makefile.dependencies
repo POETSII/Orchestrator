@@ -8,8 +8,8 @@
 ORCHESTRATOR_DEPENDENCIES_DIR ?= /local/orchestrator-common/orchestrator_dependencies_6
 
 # You'll also need to ensure you've checked out this repository with the Tinsel
-# submodule, and that you've build the hostlink. If you won't do that, you'll
-# need to configure the following to match your setup...
+# submodule, and that you've built the hostlink. Otherwise, you will need to
+# configure the following to match your setup...
 
 # Path to the root directory of the Orchestrator (not to be confused with the
 # root process of the Orchestrator).
@@ -41,7 +41,7 @@ QT_INC_DIR = $(QT_DIR)/include
 
 # GCC, not used for building the Orchestrator, but necessary for the
 # Mothership. Immediate-set, because it's used by the shell.
-GCC_LIB_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/gcc-7.3.0/lib64
+GCC_LIB_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/gcc-7.3.0/lib64:/usr/lib64
 
 # libcr
 CR_LIB_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/libcr
