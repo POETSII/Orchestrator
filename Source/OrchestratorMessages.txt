@@ -72,7 +72,10 @@
 161(W) : "Owner %s does not exist"
 162(E) : "No NameServer is running - cannot upload task"
 163(E) : "Task %s too large for system - cannot place"
-164(E) : "Task %s is placed on %s boxes, but there are only %s mothership processes. Either the hardware model is wrong, or a Mothership has died."
+164(E) : "Task %s is placed on %s boxes, but there are only %s mothership processes. Either the hardware model is wrong, or a mothership has died."
+165(E) : "System command '%s' ran unsuccessfully. Aborting deployment."
+166(E) : "Not enough mothership processes exist to deploy task %s. Is a mothership running?"
+167(E) : "System command '%s' ran unsuccessfully with message '%s'. Aborting deployment."
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"

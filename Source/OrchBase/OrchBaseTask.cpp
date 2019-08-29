@@ -400,9 +400,8 @@ while (cIdx < Comms.size()) // grab the next available mothership
       if (currBox != pPmap[cIdx]->vPmap.end()) break;
       ++cIdx;
 }
-taskname = "/home/"+currBox->P_user+"/"+task->first+"/"+BIN_PATH;
+
 isTaskMappedToThisBox = false;
-PktD.Put(1,&taskname);
 coreVec.clear();   // reset the packet content
 WALKVECTOR(P_board*,boxNode->second->P_boardv,board)
 {
@@ -451,7 +450,7 @@ if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par =
 }
 if ((cIdx >= Comms.size()) && coreVec.size()) // not enough Motherships have reported to deploy this task
 {
-   Post(164,task->first, int2str(cIdx), int2str(coreVec.size()));
+   Post(166, task->first);
    return;
 }
 
@@ -463,21 +462,52 @@ if (isTaskMappedToThisBox)
 int RootIndex = RootCIdx();
 vector<ProcMap::ProcMap_t>::iterator RootProcMapI = pPmap[RootIndex]->vPmap.begin();
 while (RootProcMapI->P_rank != pPmap[RootIndex]->U.Root) RootProcMapI++;
+
+// stages commands for execution
+std::vector<std::string> commands;
+// where the binaries are (target is where the binaries will go). The asterisk
+// is a Bash glob (thanks system!)
+std::string target = string("/home/") + currBox->P_user + "/" +
+    TASK_DEPLOY_DIR + "/" + task->first;
+std::string sourceBins = taskpath + task->first + "/" + BIN_PATH + "/*";
+PktD.Put(1,&target);
 if (RootProcMapI->P_proc == currBox->P_proc)
 {
    // then copy locally (inefficient, wasteful, using the files in place would be better but this would require
    // different messages to be sent to different Motherships. For a later revision.
-   system((string("rm -r -f /home/")+currBox->P_user+"/"+task->first).c_str());
-   system((string("mkdir /home/")+currBox->P_user+"/"+task->first).c_str());
-   system((string("cp -r ")+taskpath+task->first+"/"+BIN_PATH+" "+taskname).c_str());
+   commands.push_back(string("rm -r -f ") + target);
+   commands.push_back(string("mkdir -p ") + target);
+   commands.push_back(string("cp -r ") + sourceBins + " " + target);
 }
 else
 {
    // otherwise copy binaries to the Mothership using SCP. This assumes ssh-agent has been run for the user.
-   system((string("ssh ")+currBox->P_user+"@"+currBox->P_proc+ "\"rm -r -f "+task->first+"\"").c_str());
-   system((string("ssh ")+currBox->P_user+"@"+currBox->P_proc+ "\"mkdir "+task->first+"\"").c_str());
-   system((string("scp -r ")+taskpath+task->first+"/"+BIN_PATH+" "+currBox->P_user+"@"+currBox->P_proc+":"+taskname).c_str());
+   std::string host = currBox->P_user + "@" + currBox->P_proc;
+   commands.push_back(string("ssh ") + host + " \"rm -r -f " + target + "\"");
+   commands.push_back(string("ssh ") + host + " \"mkdir -p " + target + "\"");
+   commands.push_back(string("scp -r ") + sourceBins + " " +
+                      host + ":" + target);
 }
+
+// run each staged command, failing fast if one of them breaks.
+WALKVECTOR(std::string, commands, command)
+{
+    if (system(command->c_str()) > 0)
+    {
+        // Command failed, cancelling deployment.
+        if (errno == 0)
+        {
+            Post(165, command->c_str());
+        }
+        else
+        {
+            Post(167, command->c_str(),
+                 POETS::getSysErrorString(errno).c_str());
+        }
+        return;
+    }
+}
+
 PktD.comm = PktC.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
 printf("Sending a distribution message to mothership with %lu cores\n", coreVec.size());
 PktC.Put(&coreVec); // place the core map in the packet to this Mothership
@@ -690,7 +720,7 @@ for (unsigned comm=0; comm<Comms.size(); comm++)
 // mothership has died). Either way, we out, yo.
 if (mothershipsToDeployTo.size() < boxesToDeployTo.size())
 {
-    Post(164, TO_STRING(boxesToDeployTo.size()).c_str(),
+    Post(164, task->first.c_str(), TO_STRING(boxesToDeployTo.size()).c_str(),
          TO_STRING(mothershipsToDeployTo.size()).c_str());
     return;
 }
