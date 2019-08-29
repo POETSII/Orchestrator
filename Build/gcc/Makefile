@@ -22,10 +22,6 @@ MKDIR = mkdir --parents
 # incorporate your additional sources:
 include Makefile.dependencies
 
-# Path to the root directory of the Orchestrator (not to be confused with the
-# root process of the Orchestrator).
-ROOT_DIR = ../..
-
 # Where sources live.
 GENERICS_DIR := $(ROOT_DIR)/Generics
 SOURCE_DIR := $(ROOT_DIR)/Source
@@ -90,7 +86,7 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
 # to the hostlink and some other minor changes, though nobody has studied this
 # comprehensively.
 CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
-           -std=c++11 -Wall -fPIC -pthread -pedantic 
+           -std=c++11 -Wall -fPIC -pthread -pedantic
 
 # Debug target logic.
 debug: CXXFLAGS += -g3 -DORCHESTRATOR_DEBUG=1
