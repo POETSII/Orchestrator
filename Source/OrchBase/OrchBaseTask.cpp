@@ -495,7 +495,7 @@ WALKVECTOR(std::string, commands, command)
     if (system(command->c_str()) > 0)
     {
         // Command failed, cancelling deployment.
-        Post(165, command->c_str());
+        Post(165, command->c_str(), POETS::getSysErrorString(errno)->c_str());
         return;
     }
 }
