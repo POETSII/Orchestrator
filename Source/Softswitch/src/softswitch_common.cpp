@@ -119,6 +119,7 @@ void inPinSrc_init(uint32_t src, inPin_t* pin, ThreadCtxt_t* thr_ctxt)
 
 int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
 {
+    ThreadContext->onSendCount++;
     devInst_t* cur_device = thr_ctxt->RTSHead;
     outPin_t* cur_pin = cur_device->RTSPinHead;
     uint32_t buffered = 0; // additional argument for OnSend - could also use the msgType field
@@ -165,6 +166,7 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
 
 void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
 {
+    ThreadContext->onRXCount++;
     // first need to do some basic decode of the packet:
     P_Msg_Hdr_t* recv_pkt = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(recv_buf));
     devInst_t* recv_device_begin = thr_ctxt->devInsts;
@@ -187,6 +189,7 @@ void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
     // go through the devices (usually only 1)
     for (devInst_t* recv_device = recv_device_begin; recv_device != recv_device_end; recv_device++)
     {
+        ThreadContext->rxCount++;
         // which pin will receive the message?
         inPin_t* recv_pin = &recv_device->inputPins[recv_pkt->destPin];
         // source was a supervisor? Run OnCtl. We assume here full context (thread, device) should be passed.
@@ -211,6 +214,7 @@ void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
 
 bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt)
 {
+    ThreadContext->onIdleCount++;
     uint32_t cur_device = thr_ctxt->nextOnIdle & ~P_ONIDLE_CHANGE;
     if (cur_device >= thr_ctxt->numDevInsts) return false;
     uint32_t last_device = cur_device+IDLE_SWEEP_CHUNK_SIZE;
@@ -219,6 +223,7 @@ bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt)
     {
         devInst_t* device = &thr_ctxt->devInsts[cur_device];
         // each device's OnIdle handler and if something interesting happens update the flag and run the RTS handler.
+        ThreadContext->idleCount++;
         if (device->devType->OnIdle_Handler(thr_ctxt->properties, device))
         {
             if (++cur_device >= thr_ctxt->numDevInsts) thr_ctxt->nextOnIdle = P_ONIDLE_CHANGE;

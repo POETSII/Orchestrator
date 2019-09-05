@@ -166,6 +166,10 @@ typedef struct PThreadContext
     uint32_t           sentCount;
     uint32_t           superCount;
     uint32_t           rxCount;
+    uint32_t           onRXCount;
+    uint32_t           idleCount;
+    uint32_t           onIdleCount;
+    uint32_t           onSendCount;
     uint32_t           cycleIdx;
 } ThreadCtxt_t;
 
