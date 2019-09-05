@@ -41,6 +41,7 @@ void softswitch_main()
             recvBuffer=tinselRecv();
             softswitch_onReceive(ThreadContext, recvBuffer); // decode the receive and handle
             tinselAlloc(recvBuffer); // return control of the receive buffer to the hardware
+            ThreadContext->rxCount++;
         }
         // softswitch_IsRTSReady would be more cleanly done as a method of
         // a class PThreadContext.

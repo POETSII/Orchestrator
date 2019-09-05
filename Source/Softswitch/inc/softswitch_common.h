@@ -163,8 +163,9 @@ typedef struct PThreadContext
     uint32_t           ctlEnd;
     uint32_t           lastCycles;
     uint8_t            pendCycles;
-    uint16_t           sentCount;
-    uint16_t           superCount;
+    uint32_t           sentCount;
+    uint32_t           superCount;
+    uint32_t           rxCount;
     uint32_t           cycleIdx;
 } ThreadCtxt_t;
 

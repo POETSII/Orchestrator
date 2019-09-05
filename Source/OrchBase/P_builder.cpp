@@ -1161,6 +1161,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << "0,";                                                 // pendCycles //TEMPORARY
   vars_cpp << "0,";                                                 // sentCount  //TEMPORARY
   vars_cpp << "0,";                                                 // superCount //TEMPORARY
+  vars_cpp << "0,";                                                 // rxCount    //TEMPORARY
   vars_cpp << "0";                                                  // cycleIdx   //TEMPORARY
   vars_cpp << "};\n";
   
