@@ -1156,7 +1156,12 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << "PNULL,";                                             // RTSTail              // TODO: Remove
   vars_cpp << "0,";                                                 // nextOnIdle           // TODO: Remove
   vars_cpp << "1,";                                                 // receiveHasPriority   // TODO: Remove
-  vars_cpp << "0";                                                  // ctlEnd               // TODO: Remove
+  vars_cpp << "0,";                                                 // ctlEnd               // TODO: Remove
+  vars_cpp << "0,";                                                 // lastCycles //TEMPORARY
+  vars_cpp << "0,";                                                 // pendCycles //TEMPORARY
+  vars_cpp << "0,";                                                 // sentCount  //TEMPORARY
+  vars_cpp << "0,";                                                 // superCount //TEMPORARY
+  vars_cpp << "0";                                                  // cycleIdx   //TEMPORARY
   vars_cpp << "};\n";
   
   /* Replacement for the above for the "new" softswitch

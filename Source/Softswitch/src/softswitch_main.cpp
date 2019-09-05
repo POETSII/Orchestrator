@@ -26,6 +26,13 @@ void softswitch_main()
      */
     while (!ThreadContext->ctlEnd)
     {
+        uint32_t cycles = tinselCycleCount();		// cycle counter is per-core
+        if(!(ThreadContext->pendCycles) && ((cycles - ThreadContext->lastCycles) > 250000000)) //~1s at 250 MHz
+        {
+          // Trigger a message to supervisor.
+          ThreadContext->pendCycles = 2;
+        }
+        
         // softswitch_alive(superBuffer[0]); // *debug: send periodic message to host*
         // handle the receive case first as the highest priority.
         if ((ThreadContext->receiveHasPriority || !softswitch_IsRTSReady(ThreadContext)) && tinselCanRecv())

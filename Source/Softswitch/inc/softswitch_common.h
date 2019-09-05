@@ -161,6 +161,11 @@ typedef struct PThreadContext
     uint32_t           nextOnIdle;
     uint32_t           receiveHasPriority;
     uint32_t           ctlEnd;
+    uint32_t           lastCycles;
+    uint8_t            pendCycles;
+    uint16_t           sentCount;
+    uint16_t           superCount;
+    uint32_t           cycleIdx;
 } ThreadCtxt_t;
 
 // these functions would be more cleanly done as methods of a class PThread.

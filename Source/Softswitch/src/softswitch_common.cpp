@@ -149,11 +149,13 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
         {
             set_super_hdr(tinselId() << P_THREAD_OS | ((cur_device->deviceID & P_DEVICE_MASK) << P_DEVICE_OS), cur_pin->pinType->msgType, target->tgtPin, cur_pin->pinType->sz_msg+hdrSize, 0, static_cast<P_Sup_Hdr_t*>(const_cast<void*>(send_buf)));
             tinselSend(tinselHostId(), send_buf);
+            thr_ctxt->superCount++;
         }
         else
         {
             set_msg_hdr(target->tgt, target->tgtEdge, target->tgtPin, cur_pin->pinType->sz_msg, cur_pin->pinType->msgType, static_cast<P_Msg_Hdr_t*>(const_cast<void*>(send_buf)));
             tinselSend((target->tgt >> P_THREAD_OS), send_buf);
+            thr_ctxt->sentCount++;
         }
     }
     // then update the RTS list as necessary
