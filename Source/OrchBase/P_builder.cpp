@@ -1157,16 +1157,17 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << "0,";                                                 // nextOnIdle           // TODO: Remove
   vars_cpp << "1,";                                                 // receiveHasPriority   // TODO: Remove
   vars_cpp << "0,";                                                 // ctlEnd               // TODO: Remove
-  vars_cpp << "0,";                                                 // lastCycles //TEMPORARY
-  vars_cpp << "0,";                                                 // pendCycles //TEMPORARY
-  vars_cpp << "0,";                                                 // sentCount  //TEMPORARY
-  vars_cpp << "0,";                                                 // superCount //TEMPORARY
-  vars_cpp << "0,";                                                 // rxCount    //TEMPORARY
-  vars_cpp << "0,";                                                 // onRXCount  //TEMPORARY
-  vars_cpp << "0,";                                                 // idleCount  //TEMPORARY
-  vars_cpp << "0,";                                                 // onIdleCount//TEMPORARY
-  vars_cpp << "0,";                                                 // onSendCount//TEMPORARY
-  vars_cpp << "0";                                                  // cycleIdx   //TEMPORARY
+  
+  vars_cpp << "0,";                                                 // lastCycles       //Instrumentation
+  vars_cpp << "0,";                                                 // pendCycles       //Instrumentation
+  vars_cpp << "0,";                                                 // txCount          //Instrumentation
+  vars_cpp << "0,";                                                 // superCount       //Instrumentation
+  vars_cpp << "0,";                                                 // rxCount          //Instrumentation
+  vars_cpp << "0,";                                                 // txHandlerCount   //Instrumentation
+  vars_cpp << "0,";                                                 // rxHandlerCount   //Instrumentation
+  vars_cpp << "0,";                                                 // idleCount        //Instrumentation
+  vars_cpp << "0,";                                                 // idleHandlerCount //Instrumentation
+  vars_cpp << "0";                                                  // cycleIdx         //Instrumentation
   vars_cpp << "};\n";
   
   /* Replacement for the above for the "new" softswitch

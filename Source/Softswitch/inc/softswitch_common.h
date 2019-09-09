@@ -161,15 +161,16 @@ typedef struct PThreadContext
     uint32_t           nextOnIdle;
     uint32_t           receiveHasPriority;
     uint32_t           ctlEnd;
+    
     uint32_t           lastCycles;
     uint8_t            pendCycles;
-    uint32_t           sentCount;
+    uint32_t           txCount;
     uint32_t           superCount;
     uint32_t           rxCount;
-    uint32_t           onRXCount;
+    uint32_t           txHandlerCount;
+    uint32_t           rxHandlerCount;
     uint32_t           idleCount;
-    uint32_t           onIdleCount;
-    uint32_t           onSendCount;
+    uint32_t           idleHandlerCount;
     uint32_t           cycleIdx;
 } ThreadCtxt_t;
 

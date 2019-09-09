@@ -119,7 +119,6 @@ void inPinSrc_init(uint32_t src, inPin_t* pin, ThreadCtxt_t* thr_ctxt)
 
 int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
 {
-    thr_ctxt->onSendCount++;
     devInst_t* cur_device = thr_ctxt->RTSHead;
     outPin_t* cur_pin = cur_device->RTSPinHead;
     uint32_t buffered = 0; // additional argument for OnSend - could also use the msgType field
@@ -141,6 +140,7 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
         // then run the application's OnSend (which, if we are buffering, may alter the buffer again)
         uint32_t RTS_updated OS_ATTRIBUTE_UNUSED= cur_pin->pinType->Send_Handler(thr_ctxt->properties, cur_device, static_cast<char*>(const_cast<void*>(send_buf))+hdrSize, buffered);
         OS_PRAGMA_UNUSED(RTS_updated)
+        thr_ctxt->txHandlerCount++;
     }
     // send the message (to as many destinations as possible before the network blocks).
     while (tinselCanSend() && cur_device->currTgt < cur_pin->numTgts)
@@ -156,7 +156,7 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
         {
             set_msg_hdr(target->tgt, target->tgtEdge, target->tgtPin, cur_pin->pinType->sz_msg, cur_pin->pinType->msgType, static_cast<P_Msg_Hdr_t*>(const_cast<void*>(send_buf)));
             tinselSend((target->tgt >> P_THREAD_OS), send_buf);
-            thr_ctxt->sentCount++;
+            thr_ctxt->txCount++;
         }
     }
     // then update the RTS list as necessary
@@ -166,7 +166,7 @@ int softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
 
 void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
 {
-    thr_ctxt->onRXCount++;
+    thr_ctxt->rxCount++;
     // first need to do some basic decode of the packet:
     P_Msg_Hdr_t* recv_pkt = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(recv_buf));
     devInst_t* recv_device_begin = thr_ctxt->devInsts;
@@ -189,7 +189,7 @@ void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
     // go through the devices (usually only 1)
     for (devInst_t* recv_device = recv_device_begin; recv_device != recv_device_end; recv_device++)
     {
-        thr_ctxt->rxCount++;
+        thr_ctxt->rxHandlerCount++;
         // which pin will receive the message?
         inPin_t* recv_pin = &recv_device->inputPins[recv_pkt->destPin];
         // source was a supervisor? Run OnCtl. We assume here full context (thread, device) should be passed.
@@ -214,7 +214,7 @@ void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf)
 
 bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt)
 {
-    thr_ctxt->onIdleCount++;
+    thr_ctxt->idleCount++;
     uint32_t cur_device = thr_ctxt->nextOnIdle & ~P_ONIDLE_CHANGE;
     if (cur_device >= thr_ctxt->numDevInsts) return false;
     uint32_t last_device = cur_device+IDLE_SWEEP_CHUNK_SIZE;
@@ -223,7 +223,7 @@ bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt)
     {
         devInst_t* device = &thr_ctxt->devInsts[cur_device];
         // each device's OnIdle handler and if something interesting happens update the flag and run the RTS handler.
-        thr_ctxt->idleCount++;
+        thr_ctxt->idleHandlerCount++;
         if (device->devType->OnIdle_Handler(thr_ctxt->properties, device))
         {
             if (++cur_device >= thr_ctxt->numDevInsts) thr_ctxt->nextOnIdle = P_ONIDLE_CHANGE;
