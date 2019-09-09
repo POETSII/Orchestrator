@@ -181,7 +181,7 @@ return true;
 
 PDIGRAPH_ void _PDIGRAPH::Dump()
 {
-std::string s(35,'=');
+string s(35,'=');
 fprintf(dfp,"Pdigraph topological dump %35s++++++++++++++++++++\n",s.c_str());
 fprintf(dfp,"Node index (%u entries):\n",static_cast<unsigned>(index_n.size()));
 int c1 = 1;
@@ -331,7 +331,7 @@ vector<NKT> vA,vB;
 DrivenNodes(key_n,vN);                 // Collect all nodes
 DrivingNodes(key_n,vA);
                                        // Get rid of any duplicate
-WALKVECTOR(NKT,vA,i) if (*i!=key_n) vB.push_back(*i);
+TWALKVECTOR(NKT,vA,i) if (*i!=key_n) vB.push_back(*i);
                                        // Merge the two vectors
 vN.insert(vN.begin(),vB.begin(),vB.end());
 return true;
@@ -411,8 +411,8 @@ PDIGRAPH_ bool _PDIGRAPH::FindPins(const NKT & n_k,
 if (FindNode(n_k)==0) return false;    // Is it there?
 vIP.clear();
 vOP.clear();
-WALKMULTIMAP(PKT,pin,index_n[n_k].fani,i) vIP.push_back(PinKey(i));
-WALKMULTIMAP(PKT,pin,index_n[n_k].fano,i) vOP.push_back(PinKey(i));
+TWALKMULTIMAP(PKT,pin,index_n[n_k].fani,i) vIP.push_back(PinKey(i));
+TWALKMULTIMAP(PKT,pin,index_n[n_k].fano,i) vOP.push_back(PinKey(i));
 return true;
 }
 
@@ -545,7 +545,7 @@ PDIGRAPH_ void _PDIGRAPH::RConfig()
 if (!N_dirty) return;                  // If node map has changed, rebuild
 RandN.clear();                         // Lose the past
                                        // Walk node map, and store the iterators
-WALKMAP(NKT,node,index_n,i) RandN.push_back(i);
+TWALKMAP(NKT,node,index_n,i) RandN.push_back(i);
 RNG.box(SizeNodes());                  // Ensure RNG distrib matches node list
 N_dirty = false;                       // All up to date
 }
@@ -583,9 +583,9 @@ TPn_it n = index_n.find(key_n);        // Find it
 if (n==index_n.end()) return false;    // Nope
                                        // (1a) Walk node fanin/out arc multimaps
 vector<AKT> vak;
-WALKMULTIMAP(PKT,pin,(*n)._2.fani,i) vak.push_back((*((*i)._2.iArc))._1);
-WALKMULTIMAP(PKT,pin,(*n)._2.fano,i) vak.push_back((*((*i)._2.iArc))._1);
-WALKVECTOR(AKT,vak,i) RemoveArc(*i);   // (1b) Kill them
+TWALKMULTIMAP(PKT,pin,(*n)._2.fani,i) vak.push_back((*((*i)._2.iArc))._1);
+TWALKMULTIMAP(PKT,pin,(*n)._2.fano,i) vak.push_back((*((*i)._2.iArc))._1);
+TWALKVECTOR(AKT,vak,i) RemoveArc(*i);   // (1b) Kill them
                                        // Now the node is isolated
 index_n.erase(n);                      // (2) Remove the node itself
 N_dirty = true;                 // Node map has changed
