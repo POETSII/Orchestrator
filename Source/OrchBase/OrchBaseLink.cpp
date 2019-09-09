@@ -35,7 +35,7 @@ void OrchBase::LinkDump(Cli::Cl_t Cl)
 // Provide a link-specific dump. The monkey gets
 // 1. A list of all non-empty threads, with a device map
 // 2. The inverse: a list of all linked tasks, with a thread map
-{
+{        /*
 FILE * fp = stdout;                    // For now
 string s = "Console";                  // For now
 fprintf(fp,"link /dump %35s++++++++++++++++++++++++++++++++++++++\n",s.c_str());
@@ -100,7 +100,7 @@ else {
   }
 }
 fprintf(fp,"link /dump %35s--------------------------------------\n",s.c_str());
-fflush(fp);
+fflush(fp);  */
 }
 
 //------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ fflush(fp);
 void OrchBase::LinkLink(Cli::Cl_t Cl)
 // Routine to cross-link a task. The task must be loaded, and a topology
 // defined.
-{
+{           /*
 if (Cl.Pa_v.empty()) return;           // Nothing to do
 string st = Cl.Pa_v[0].Val;            // Task to load
 if (pE==0) {                           // No topology?
@@ -144,7 +144,7 @@ if (pT->linked) {                      // Task already linked?
 
 */
 // Place and set the link flag if the placement was successful.
-if (!pPlace->Place(pT)) pT->LinkFlag();
+//if (!pPlace->Place(pT)) pT->LinkFlag();
 
 
 /*
@@ -163,7 +163,7 @@ for(unsigned i=0;i<lim*4;i++) {
 
 void OrchBase::LinkNser(Cli::Cl_t Cl)
 // Command from monkey to upload a linked task to the nameserver
-{
+{      /*
 Cl.Dump();
 if (Cl.Pa_v.empty()) return;           // Nothing to do
 string st = Cl.Pa_v[0].Val;            // Task to upload
@@ -231,7 +231,7 @@ else
    ns.comm = Comms[C];
    ns.Tgt(pPmap[C]->U.NameServer);
    ns.Send();
-}
+}        */
 }
 
 //------------------------------------------------------------------------------
@@ -254,7 +254,7 @@ void OrchBase::LinkPlac(Cli::Cl_t Cl)
 
 void OrchBase::LinkUnli(Cli::Cl_t Cl)
 // Routine to unlink either something or everything
-{
+{           /*
 if (Cl.Pa_v.empty()) return;           // Nothing to do
 string st = Cl.Pa_v[0].Val;            // Task to unload
 if (st=="*") {                         // We unlink everything?
@@ -271,6 +271,7 @@ if (!pT->linked) {                     // Task not linked anyway?
   return;
 }
 Unlink(st);                            // OK, it's there and linked. Unlink it
+*/
 }
 
 //------------------------------------------------------------------------------
@@ -280,7 +281,7 @@ void OrchBase::UnlinkAll()
 // 'cos it's all got to go. No side effects or stuff left out here - on exit,
 // the device <-> thread links are all deleted. Note the placement module needs
 // not know - the topology is left untouched.
-{
+{         /*
 
 if (pE == 0) return;
 else if (pE->is_empty()) return;
@@ -319,7 +320,7 @@ WALKMAP(string,P_task *,P_taskm,i) {   // Walk them that's there
                     unsigned,P_pin *,pDg->G,j)
     pDg->G.NodeData(j)->pP_thread=0;   // Kill link into threads
 }
-
+            */
 }
 
 //------------------------------------------------------------------------------
@@ -327,7 +328,7 @@ WALKMAP(string,P_task *,P_taskm,i) {   // Walk them that's there
 void OrchBase::Unlink(string tname)
 // Unlink a single named task. We know it's there (modulo paranoia) so we don't
 // report anything
-{
+{       /*
 if (P_taskm.empty()) return;           // Just in case
 if (P_taskm.find(tname)==P_taskm.end()) return;
 P_task * pTa = P_taskm[tname];         // Finally get the actual task
@@ -347,7 +348,7 @@ WALKPDIGRAPHNODES(unsigned,P_device *,unsigned,P_message *,
 }
 if (pE==0) Post(908);
 WALKSET(P_thread *,touched,i) (*i)->P_devicel.remove(0);
-
+          */
 }
 
 //==============================================================================

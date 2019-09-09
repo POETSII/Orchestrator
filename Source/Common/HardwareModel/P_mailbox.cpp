@@ -8,6 +8,7 @@
  * - name: Name of this mailbox object (see namebase) */
 P_mailbox::P_mailbox(std::string name)
 {
+    parent = NULL;
     Name(name);
 }
 

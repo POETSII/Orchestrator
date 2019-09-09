@@ -57,6 +57,7 @@ for(int state=0;;) {                   // And walk the syntax graph...
     case Lex::Sy_EOF  : 
     case Lex::Sy_EOR  : toktyp = t4;  break;
     case Lex::Sy_cmnt : toktyp = t7;  break;
+    default           :               break;
   }
   next = table[state][toktyp];         // Make the transition
   switch (next.ac) {                   // Post-transition (exit) actions
@@ -187,6 +188,13 @@ WALKVECTOR(Cl_t,Cl_v,i)
       (*j).Val=(*j).Op;
       (*j).Op.clear();
     }
+}
+
+//------------------------------------------------------------------------------
+
+string Cli::GetC(unsigned i,string s)
+{
+return Get<string>(Co_v,i,s).second;
 }
 
 //------------------------------------------------------------------------------

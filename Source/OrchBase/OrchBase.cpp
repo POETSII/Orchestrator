@@ -1,64 +1,35 @@
 //------------------------------------------------------------------------------
 
-#include "Pglobals.h"
 #include "OrchBase.h"
-#include "P_builder.h"
-#include "filename.h"
-#include "Constraints.h"
-#include "P_core.h"
-#include "P_task.h"
-#include "P_typdcl.h"
-#include "P_devtyp.h"
-#include "CMsg_p.h"
 #include "T_gen.h"
-#include "SimpleDeployer.h"
-#include "Dialect1Deployer.h"
-#include "MultiSimpleDeployer.h"
-#include "Ns_el.h"
-#include "P_super.h"
-
-//==============================================================================
-// This class is chopped up into multiple .cpp files, because it's so
-// bloody boring. The translation unit is *this* file + all its includes.
-// The below are NOT translation units in their own right.
-
-#include "OrchBaseTask.cpp"            // Handlers for "task" commands
-#include "OrchBaseTopo.cpp"            // Handlers for "topo" commands
-#include "OrchBaseLink.cpp"            // Handlers for "link" commands
-#include "OrchBaseOwner.cpp"           // Handlers for "owner" commands
+#include "Apps_t.h"
 
 //==============================================================================
 
 OrchBase::OrchBase(int argc,char * argv[],string d,string sfile) :
   CommonBase(argc,argv,d,sfile)
 {
-pE        = 0;
-pB        = new P_builder(argc, argv, this);       // Object to build the datastructure
+pE        = 0;                         // Hardware engine? MLV????
 pTG       = new T_gen(this);           // PoL task generator
 pPlace    = new Placement(this);       // Xlink controller
 Name("O_");                            // NameBase root name
-taskpath  = string(" ");
+CmPath    = new CmPath_t(this);        // Create path command handler
+CmGrph    = new CmGrph_t(this);        // Create graph command handler
+fd        = stdout;                    // Just in case
 }
 
 //------------------------------------------------------------------------------
 
 OrchBase::~OrchBase()
 {
-if (pE!=0)        delete pE;           // Kill the P-node graph
-if (pB!=0)        delete pB;           // Object to build the datastructure
-if (pPlace!=0)    delete pPlace;       // Cross link controller
-if (pTG!=0)       delete pTG;          // PoL generator
-
-// ADR supervisors do not need to be deleted here as they will be removed
-// in the task graphs.
-                                       // Supervisors
-//WALKMAP(string,P_super *,P_superm,i) delete (*i).second;
-                                       // Task map contents
-WALKMAP(string,P_task *,P_taskm,i) delete (*i).second;
-                                       // Type declare map contents
-WALKMAP(string,P_typdcl *,P_typdclm,i) delete (*i).second;
-                                       // Owners
-WALKMAP(string,P_owner *,P_ownerm,i) delete (*i).second;
+if (pE!=0) delete pE;                  // Kill the P-node graph
+                                       // None of the below cannot not be here
+delete pPlace;                         // Cross link controller
+delete pTG;                            // PoL generator
+delete CmPath;                         // Path command handler
+delete CmGrph;                         // Graph command handler
+                                       // Kill entire user application database
+WALKMAP(string,Apps_t *,Apps_t::Apps_m,i) delete (*i).second;
 }
 
 //------------------------------------------------------------------------------
@@ -67,25 +38,12 @@ void OrchBase::Dump(FILE * fp)
 {
 fprintf(fp,"OrchBase dump+++++++++++++++++++++++++++++++\n");  fflush(fp);
 fprintf(fp,"NameBase %s\n",FullName().c_str());
-fprintf(fp,"Task path %s\n",taskpath.c_str());
-fprintf(fp,"HARDWARE++++++++++++++++++++++++++++++++++++\n");
-if (pE==0) fprintf(fp,"No hardware topology loaded\n");
-else pE->Dump(fp);
-if (pPlace==0) fprintf(fp,"No placement object to be found?\n");
-else pPlace->Dump(fp);
-fprintf(fp,"HARDWARE------------------------------------\n");
-fprintf(fp,"SOFTWARE++++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"SUPERVISORS+++++++++++++++++++++++++++++++++\n");
-WALKMAP(string,P_super *,P_superm,i) (*i).second->Dump(fp);
-fprintf(fp,"SUPERVISORS---------------------------------\n");
-fprintf(fp,"TASK MAP++++++++++++++++++++++++++++++++++++\n");
-WALKMAP(string,P_task *,P_taskm,i) (*i).second->Dump(fp);
-fprintf(fp,"TASK MAP------------------------------------\n");
-fprintf(fp,"TYPE DECLARES+++++++++++++++++++++++++++++++\n");
-WALKMAP(string,P_typdcl *,P_typdclm,i) (*i).second->Dump(fp);
-fprintf(fp,"TYPE DECLARES-------------------------------\n");
-fprintf(fp,"SOFTWARE------------------------------------\n");
 NameBase::Dump(fp);
+pPlace->Dump(fp);
+pTG->Dump();
+CmPath->Dump(fp);
+CmGrph->Dump(fp);
+WALKMAP(string,Apps_t *,Apps_t::Apps_m,i) (*i).second->Dump(fp);
 fprintf(fp,"OrchBase dump-------------------------------\n");  fflush(fp);
 }
 

@@ -1,12 +1,16 @@
 #ifndef __CFragH__H
 #define __CFragH__H
 
+//#include "NameBase.h"
+//#include "DefRef.h"
+
 #include <stdio.h>
 #include <string>
+using namespace std;
 
 //==============================================================================
 
-class CFrag
+class CFrag //: public NameBase, public DefRef
 {
 public:
                     CFrag();
@@ -16,7 +20,7 @@ virtual ~           CFrag();
 
 void                Dump(FILE * = stdout);
 
-std::string              c_src;
+string              c_src;
 
 };
 

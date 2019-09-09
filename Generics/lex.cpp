@@ -12,10 +12,10 @@ const char * Lex::Sytype_str[] = {
 "=","@",
 "\\","[Binary string]",
 "^","//",
-":",",",
+":",",","..",
 "/","$",
 ".","""",
-"[End of file]","[End of record]",
+"[End of file]","\\n",
 "==","**","[Floating pt string ]",
 ">=",">",
 "#","[Hexadecimal string ]",
@@ -34,7 +34,11 @@ const char * Lex::Sytype_str[] = {
 "'","[Std logic vector   ]",
 "[String]","-",
 "?:","~",
-"::"};
+"::",
+"<?","?>",
+"/>","<![CDATA[",
+"]]>","</",
+"<!--","-->"};
 
 const char * Lex::Sytype_dbg[] = {
 "S_0    [No symbol          ]" ,"S_00   [Blank              ]",
@@ -45,6 +49,7 @@ const char * Lex::Sytype_dbg[] = {
 "Sy_back[\\                  ]","Sy_BSTR[Binary string      ]",
 "Sy_cat [^                  ]" ,"Sy_cmnt[//                 ]",
 "Sy_col [:                  ]" ,"Sy_cmma[,                  ]",
+"Sy_ddot[..                 ]" ,
 "Sy_div [/                  ]" ,"Sy_dol [$                  ]",
 "Sy_dot [.                  ]" ,"Sy_dqut[""                 ]",
 "Sy_EOF [End of file        ]" ,"Sy_EOR [End of record      ]",
@@ -67,8 +72,21 @@ const char * Lex::Sytype_dbg[] = {
 "Sy_squt['                  ]" ,"Sy_SSTR[Std logic vector   ]",
 "Sy_STR [String             ]" ,"Sy_sub [-                  ]",
 "Sy_T3  [?:                 ]" ,"Sy_tlda[~                  ]",
-"Sy_dcol[::                 ]"};
+"Sy_dcol[::                 ]" ,
+"Xy_sdcl[<?                 ]" ,"Xy_edcl[?>                 ]",
+"Xy_eel0[/>                 ]" ,"Xy_scdt[<![CDATA[          ]",
+"Xy_ecdt[]]>                ]" ,"Xy_eel1[</                 ]",
+"Xy_scmt[<!--               ]" ,"Xy_ecmt[-->                ]"};
 
+//------------------------------------------------------------------------------
+// Input channel assignment operates on a leave-it-as-you-found-it basis.
+// The lexer can read from a...
+// ...file : you give it the filename, lex opens, reads and closes the file
+// ...file stream : you open the file and give it the stream, lex leaves the
+// stream open
+// ...string : you give it the string
+// Initially the input channel is unassigned, and the lexer will return SNF to
+// any interrogation.
 //------------------------------------------------------------------------------
 
 Lex::Lex()
@@ -82,40 +100,55 @@ Init();                                // Initialise everything
 
 Lex::Lex(FILE * ffp)
 // Create the thing and attach the file which is assumed to be open for reading.
-// If it isn't, GetTok will return an endless stream of SNF (stream not found)
-// errors.
 {
 Init();                                // Initialise everything
 fp = ffp;                              // Assign the input stream
+intype = '*';                          // Input channel is a file stream
 }
 
 //------------------------------------------------------------------------------
 
 Lex::Lex(string name)
-// Create the thing, open the file for read and attach. If there's a problem,
-// GetTok returns error symbols.
+// Create the thing, and attach it to a string
 {
 Init();                                // Initialise everything
 fname = name;
-fp = fopen(fname.c_str(),"r");         // Assign the input stream
+intype = 'S';
 }
 
 //------------------------------------------------------------------------------
 
 Lex::Lex(char * name)
-// Create the thing, open the file for read and attach. If there's a problem,
-// GetTok returns error symbols.
+// Create the thing, open the file for read and attach.
 {
 Init();                                // Initialise everything
-fname = name;
+fname = name;                          // Store file name
 fp = fopen(name,"r");                  // Assign the input stream
+if (fp==0) intype = '0';               // Didn't work?
+intype = 'F';                          // Input channel is a file name
 }
 
 //------------------------------------------------------------------------------
 
 Lex::~Lex()
 {
-if (fp != 0) fclose(fp);
+switch (intype) {
+  case 'F' : fclose(fp); fp=0; return; // It was a file; our stream pointer
+  case '*' : return;                   // It was a stream pointer; leave alone
+  case 'S' : return;                   // It was a string; no stream pointer
+  case '0' : return;                   // We never did anything anyway
+  default  : return;                   // And again
+}
+//if (fp != 0) fclose(fp);
+}
+
+//------------------------------------------------------------------------------
+
+void Lex::Dump(FILE * fp)
+{
+fprintf(fp,"Character buffer:\n||");
+WALKLIST(char,next,i)fprintf(fp,"%c",*i);
+fprintf(fp,"||\n");
 }
 
 //------------------------------------------------------------------------------
@@ -127,7 +160,7 @@ char Lex::Gc()
 // Pull the next character from the input stream (actually, return the lookahead
 // character and pull the next lookahead character off the input stream).
 {
-char c;                                // 'Current' character
+char c;     /*                           // 'Current' character
 if (stringflag) {                      // We're reading from a string
   if (fname.size()==0) return EOF;     // Special case - empty string
   if (T.c>=int(fname.size())) return EOF;  // End of string
@@ -149,6 +182,54 @@ else                                   // We're reading from a file
     T.l++;
   }
 }
+*/
+
+switch (intype) {
+  case '0' : return EOF;
+  case 'F' :
+  case '*' : for(;next.size()<CHARBUF;) next.push_back((char)fgetc(fp));
+             c = next.front();
+             next.pop_front();
+             if (c==EOF) return c;
+             T.c++;
+             if (last=='\n') {
+               T.c = 1;
+               T.l++;
+             }
+             break;
+  case 'S' : if (fname.size()==0) return EOF;
+             if (T.c>=int(fname.size())) return EOF;
+             for(int io=1;
+                 ((next.size()<CHARBUF)&&(T.c+next.size()<fname.size()));
+                 io++)
+               next.push_back(fname[T.c+next.size()]);
+             T.c++;
+             c = next.front();
+             next.pop_front();
+             break;
+  default  : return EOF;
+}
+
+/*
+if (stringflag) {
+  if (fname.size()==0) return EOF;
+  if (T.c>=int(fname.size())) return EOF;
+  for(int io=1;((next.size()<CHARBUF)&&(T.c+next.size()<fname.size()));io++)
+    next.push_back(fname[T.c+next.size()]);
+  T.c++;
+  c = next.front();
+  next.pop_front();
+} else {
+  for(;next.size()<CHARBUF;) next.push_back((char)fgetc(fp));
+  c = next.front();
+  next.pop_front();
+  T.c++;
+  if (last=='\n') {
+    T.c = 1;
+    T.l++;
+  }
+} */
+
 last = c;
 return c;                            // And finally return a character
 }
@@ -171,6 +252,16 @@ c = T.c;
 
 //------------------------------------------------------------------------------
 
+string Lex::GetLCs()
+// Hand out the current line/col as a string
+{
+char buf[20];                          // Why 20? Stack free, me paranoid
+sprintf(buf,"(%4u,%3u)",unsigned(T.l),unsigned(T.c));
+return string(buf);
+}
+
+//------------------------------------------------------------------------------
+
 void Lex::GetTok(tokdat & Td)
 // The routine that does all the work. It hands out a sequence of tokens:
 // The token itself is in "token" - well, it would be, really - even if it's
@@ -181,7 +272,7 @@ void Lex::GetTok(tokdat & Td)
 // token.
 {
                                        // Deal with the errors first:
-if ((fp==0) && !stringflag) err = SE_SNF;
+if (intype=='0') err = SE_SNF;
 if (err!=S_0) {
   Td.s = Sytype_str[err];
   Td.t = err;
@@ -217,8 +308,8 @@ switch (c) {
               } break;
   case '"'  : T.t = Sy_dqut;            // Start of a quoted string
               if(Peek()=='\n') break;
-              while (((c=Gc())!='"')&&(Peek()!='\n')&&(c!=EOF))T.s.push_back(c);
-              if((c!='"')&&(Peek()=='\n')&&(c!=EOF)) T.s.push_back(c);
+              while (((c=Gc())!='"')&&(Peek()!='\n')) T.s.push_back(c);
+              if((c!='"')&&(Peek()=='\n')) T.s.push_back(c);
               break;
   case '£'  : T.s=Sytype_str[T.t=Sy_pnd ]; break;
   case '$'  : while (IsHDigit(Peek())) T.s.push_back(Gc());
@@ -248,7 +339,17 @@ switch (c) {
               } break;
   case '('  : T.s=Sytype_str[T.t=Sy_lrnb]; break;
   case ')'  : T.s=Sytype_str[T.t=Sy_rrnb]; break;
-  case '-'  : T.s=Sytype_str[T.t=Sy_sub ]; break;
+  case '-'  : switch (Peek()) {
+                case '-' : switch (Peek(2)) {
+                             case '>' : T.s=Sytype_str[T.t=Xy_ecmt ]; // -->
+                                        Gc(); Gc();
+                                        goto Sy_subout;
+                             default  : ;
+                           } break;
+                default  : ;
+              }
+              T.s=Sytype_str[T.t=Sy_sub ];                            // -
+  Sy_subout:  break;
   case '+'  : T.s=Sytype_str[T.t=Sy_plus]; break;
   case '='  : switch (Peek()) {
                 case '=' : T.s=Sytype_str[T.t=Sy_EQ  ]; Gc(); break;  // ==
@@ -257,7 +358,17 @@ switch (c) {
   case '{'  : T.s=Sytype_str[T.t=Sy_lbrc]; break;
   case '}'  : T.s=Sytype_str[T.t=Sy_rbrc]; break;
   case '['  : T.s=Sytype_str[T.t=Sy_lsqb]; break;
-  case ']'  : T.s=Sytype_str[T.t=Sy_rsqb]; break;
+  case ']'  : switch (Peek()) {
+                case ']' : switch (Peek(2)) {
+                             case '>' : T.s=Sytype_str[T.t=Xy_ecdt];
+                                        Gc(); Gc();
+                                        goto Sy_rsqbout;
+                             default  : ;
+                           } break;
+                default  : ;
+              }
+              T.s=Sytype_str[T.t=Sy_rsqb];                            // ]
+  Sy_rsqbout: break;
   case ':'  : switch (Peek()) {
                 case ':' : T.s=Sytype_str[T.t=Sy_dcol]; Gc(); break;  // ::
                 default  : T.s=Sytype_str[T.t=Sy_col ];       break;  // :
@@ -272,26 +383,70 @@ switch (c) {
   case '\'' : T.s=Sytype_str[T.t=Sy_squt]; break;
   case '#'  : T.s=Sytype_str[T.t=Sy_hash]; break;
   case '<'  : switch (Peek()) {
-                case '=' : T.s=Sytype_str[T.t=Sy_LE  ]; Gc(); break;  // <=
-                case '<' : T.s=Sytype_str[T.t=Sy_lshf]; Gc(); break;  // <<
-                default  : T.s=Sytype_str[T.t=Sy_LT  ];       break;  // <
-              } break;
+                case '=' : T.s=Sytype_str[T.t=Sy_LE  ]; Gc(); goto Sy_LTout;// <=
+                case '<' : T.s=Sytype_str[T.t=Sy_lshf]; Gc(); goto Sy_LTout;// <<
+                case '?' : T.s=Sytype_str[T.t=Xy_sdcl]; Gc(); goto Sy_LTout;// <?
+                case '/' : T.s=Sytype_str[T.t=Xy_eel1]; Gc(); goto Sy_LTout;// </
+                case '!' : switch (Peek(2)) {
+                             case '-' : switch (Peek(3)) {
+                                          case '-' : T.s=Sytype_str[T.t=Xy_scmt];
+                                                     Gc(); Gc(); Gc();
+                                                     goto Sy_LTout;
+                                          default  : ;
+                                        } break;
+                             case '[' : switch (Peek(3)) {
+                                          case 'C' : switch (Peek(4)) {
+                                                       case 'D' : switch (Peek(5)) {
+                                                                    case 'A' : switch (Peek(6)) {
+                                                                                 case 'T' : switch (Peek(7)) {
+                                                                                              case 'A' : switch (Peek(8)) {
+                                                                                                           case '[' : T.s=Sytype_str[T.t=Xy_scdt];
+                                                                                                                      Gc(); Gc(); Gc();Gc(); Gc(); Gc();Gc(); Gc();
+                                                                                                                      goto Sy_LTout;
+                                                                                                           default  : ;
+                                                                                                         } break;
+                                                                                              default  : ;
+                                                                                            } break;
+                                                                                 default  : ;
+                                                                               } break;
+                                                                    default  : ;
+                                                                  } break;
+                                                       default  : ;
+                                                     } break;
+                                          default  : ;
+                                        } break;
+                             default  : ;
+                           } break;
+                default  : ;
+              }
+              T.s=Sytype_str[T.t=Sy_LT  ];
+  Sy_LTout:   break;
   case '>'  : switch (Peek()) {
                 case '=' : T.s=Sytype_str[T.t=Sy_GE  ]; Gc(); break;  // >=
                 case '>' : T.s=Sytype_str[T.t=Sy_rshf]; Gc(); break;  // ==
                 default  : T.s=Sytype_str[T.t=Sy_GT  ];       break;  // =
               } break;
-  case '?'  : T.s=Sytype_str[T.t=Sy_qst ]; break;
+  case '?'  : switch (Peek()) {
+                case '>' : T.s=Sytype_str[T.t=Xy_edcl]; Gc(); break;  // ?>
+                default  : T.s=Sytype_str[T.t=Sy_qst ];       break;  // ?
+              } break;
   case ','  : T.s=Sytype_str[T.t=Sy_cmma]; break;
-  case '.'  : T.s=Sytype_str[T.t=Sy_dot ]; break;
-  case '/'  : if (Peek()=='/') {                                        // //
-                Gc();
-                // '\n' is for files, '\0' is for strings
-                while ((Peek()!='\n')&&(Peek()!='\0')) T.s.push_back(Gc());
-                T.t=Sy_cmnt;
-                break;
-              }
-              T.s=Sytype_str[T.t=Sy_div]; break;                      // /
+  case '.'  : switch (Peek()) {
+                case '.' : T.s=Sytype_str[T.t=Sy_ddot]; Gc(); break;  // ..
+                default  : T.s=Sytype_str[T.t=Sy_dot ];       break;  // .
+              } break;
+  case '/'  : switch (Peek()) {
+       // C-style inline comment (//) may be handled as a single lexical token
+                case '/'  : Gc();                                     // //
+                            if (flags.cflag)
+                              while ((Peek()!='\n')&&(Peek()!=EOF))
+                                T.s.push_back(Gc());
+                            else T.s = "//";
+                            T.t=Sy_cmnt;
+                            break;
+                case '>'  : T.s=Sytype_str[T.t=Xy_eel0]; Gc(); break; // />
+                default   : T.s=Sytype_str[T.t=Sy_div];        break; // /
+              } break;
   case '|'  : switch (Peek()) {
                 case '|'  : T.s=Sytype_str[T.t=Sy_OR  ]; Gc(); break; // ||
                 case '/'  : T.s=Sytype_str[T.t=Sy_min ]; Gc(); break; // |/
@@ -372,15 +527,21 @@ fp = 0;                                // Internal stream pointer
 fname.clear();                         // Filename
 T.l = 1;                               // Line and column coordinates
 T.c = 0;
-next = (char)0;                        // Lookahead character
+//############
+//next = (char)0;                        // Lookahead character
+next.clear();
+CHARBUF = 10;
+//for(unsigned i=0;i<CHARBUF;i++)next.push_back((char)0);
 last = (char)0;                        // Lookback character
 err = S_0;                             // No errors (yet)
 flags.dflag = true;                    // '.' is an alphanumeric
 flags.mflag = false;                   // No '-' in unquoted strings
 flags.nflag = true;                    // Interpret strings of digits as numbers
 flags.cont = '\\';                     // Continuation character
+flags.cflag = true;                    // Treat // as a C comment
 count = 0L;                            // Tokens handed out so far
-stringflag = false;                    // Are we reading from file or string?
+//stringflag = false;                    // Are we reading from file or string?
+intype = '0';                          // No input channel assigned
 }
 
 //------------------------------------------------------------------------------
@@ -560,7 +721,7 @@ switch (t) {
 }
 
 //------------------------------------------------------------------------------
-      
+
 bool Lex::IsStrInt(Lex::Sytype t)
 // Is the string of integer type?
 {
@@ -585,12 +746,28 @@ return s0+s1;                          // It is a minus sign
 
 //------------------------------------------------------------------------------
 
+char Lex::Peek(unsigned p)
+{
+//Dump();
+//WALKLIST(char,next,i) printf("|%c|",*i);
+//printf("\np = %u\n",p);
+if (p==0) return last;
+if (p>=CHARBUF) return char(0);
+if (next.empty())return EOF;
+list<char>::iterator it = next.begin();
+for(unsigned i=0;i<p-1;i++) it++;
+//printf("\n*it = %c\n",*it);
+return *it;
+}
+
+//------------------------------------------------------------------------------
+/*
 char Lex::Peek()
 // Access lookahead character
 {
 return next;
 }
-
+  */
 //------------------------------------------------------------------------------
 
 void Lex::push_back(int x)
@@ -624,6 +801,18 @@ flags.cont = c;
 
 //------------------------------------------------------------------------------
 
+void Lex::SetCFlag(bool c)
+// Toggles the behaviour when confronted by '//'.
+// TRUE  : Treat as a C comment (token type T.t = Sy_cmnt), and pull in the rest
+// of the line up to EOR/EOF and plonk it in T.s
+// FALSE : Treat it as a C comment token (T.t = Sy_cmnt still), but put '//'
+// into T.s and leave the rest of the line for the next level up
+{
+flags.cflag = c;
+}
+
+//------------------------------------------------------------------------------
+
 void Lex::SetCtr(long l)
 {
 count = l;
@@ -645,8 +834,9 @@ void Lex::SetFile()
 // Disconnect the input stream. I can't just call one of the other SetFile()
 // routines with a null argument, 'cos the compiler can't disambiguate them...
 {
-if (fp!=0) fclose(fp);
-Init();
+//if (fp!=0) fclose(fp);
+if (intype=='F') fclose(fp);
+Init();                                // This will reset intype
 }
 
 //------------------------------------------------------------------------------
@@ -657,6 +847,7 @@ void Lex::SetFile(FILE * ffp)
 {
 SetFile();
 fp = ffp;
+intype = '*';
 }
 
 //------------------------------------------------------------------------------
@@ -675,6 +866,7 @@ else {
   if (file_exists(str)&&file_readable(str)) fp = fopen(fname.c_str(),"r");
   else fp = 0;
   err = fp ? S_0 : SE_FNA;
+  intype = 'F';
 }
 
 }
@@ -687,7 +879,8 @@ void Lex::SetFile(string str)
 {
 SetFile();
 fname = str;
-stringflag = true;
+//stringflag = true;
+intype = 'S';
 }
 
 //------------------------------------------------------------------------------
@@ -728,14 +921,42 @@ string Lex::SkipTo(Lex::Sytype sy)
 // Routine to pull in tokens up to and including the first instance of 'sy'.
 // It's a proper version of SkipTo(char).
 // The history buffer still works as it should.
+// The idea is that the token stream is drained until the termination token is
+// found, whereupon control is handed back to whatever parser called this.
+// As a by-product, the skipped tokens are reassembled into the skipped string
+// and returned in case the string itself needs to be passed to yet another
+// sub-parser. This is fiddlier than it sounds, because we can't just copy the
+// characters themselves into the buffer, because we can't see them (nor should
+// we be able to, because yer average token may consist of an arbitrary number
+// of characters). So we re-assemble the skipped string by assembling the string
+// equivalent of the token stream. Fine, but now we don't know what the token
+// separator character was, and at this point I kind of lost the will to live
+// and poked ' ' in as and when it seemed reasonable.
+// Could do better in another life.
 {
 string buf;
 string s0 = string(" ");
-for (;;) {
+for (;;) {                             // Loop until termination token
   tokdat Td;
-  GetTok(Td);
-  if (Td.t==Sy_STR)buf += s0+Td.s;
-  else buf +=  s0+string(Sytype_str[Td.t]);
+  GetTok(Td);                          // Next token
+//  if (Td.s != "\\n") {
+//    if (Td.t==Sy_dqut) buf += '"' + Td.s + '"';
+//    else buf += ((IsStr(Td.t)?s0:string())+Td.s);
+//  }
+//  else buf += '\n';
+
+  switch (Td.t) {
+                   // EOR must be inserted explicitly
+    case Sy_EOR  : buf += '\n';                                       break;
+                   // Double quoted strings need the quotes re-introduced
+    case Sy_dqut : buf += '"' + Td.s + '"';                           break;
+                   // Comments need to be reconstructed
+    case Sy_cmnt : //buf += Sytype_str[Sy_cmnt] + Td.s;                 break;
+                   buf += Td.s;                                       break;
+                   // If it's a string type, the delimiter *might* have been a
+                   // ' ', so poke one in
+    default      : buf += ((IsStr(Td.t)?s0:string())+Td.s);           break;
+}
   if (Td.t==sy) return buf;            // Legitimate exit
   if (IsError(Td)) return buf;         // Error exit
 }
@@ -840,6 +1061,7 @@ const int Lex::History::HS = 256;
 
 void Lex::History::Dump(vector<string> & vstr,int depth)
 // Dump the history list to a string vector
+// This version gets the pretty-print, so it can be given to the monkey
 {
 depth = abs(depth);
 depth = min(depth,HS);
@@ -860,6 +1082,7 @@ for(int i=1;i!=depth+1;i++) {
 
 void Lex::History::Dump(FILE * fp,int depth)
 // Dump the history list
+// This version gets the full deal, including the internals
 {
 depth = abs(depth);
 depth = min(depth,HS);
@@ -871,6 +1094,8 @@ for(int i=1;i!=depth+1;i++) {
   if(i==1)fprintf(fp,"      <- Token (%s) out of sequence",Sytype_dbg[td[j].t]);
   fprintf(fp,"\n");
 }
+fprintf(fp,"Next free token (nfc)   = %d\n",nfc);
+fprintf(fp,"Pushback offset (pflag) = %d\n",pflag);
 }
 
 //------------------------------------------------------------------------------

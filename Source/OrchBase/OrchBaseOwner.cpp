@@ -19,7 +19,7 @@ return 0;
 
 void OrchBase::OwneAtta(Cli::Cl_t Cl)
 // Introduce/delete an owner, and/or attach/disconnect to a task
-{
+{             /*
 //Cl.Dump();
 //WALKMAP(string,P_owner *,P_ownerm,i) (*i).second->Dump();
 
@@ -68,7 +68,7 @@ for (unsigned i=1;!Cl.GetP(i).empty();i++) {     // Walk the parameters (tasks)
 }
 
 //WALKMAP(string,P_owner *,P_ownerm,i) (*i).second->Dump();
-
+                */
 }
 
 //------------------------------------------------------------------------------

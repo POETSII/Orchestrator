@@ -12,13 +12,18 @@ public:
                     Monitor(int,char **,string);
 virtual ~           Monitor();
 
+typedef unsigned    (Monitor::*pMeth)(PMsg_p *,unsigned);
+typedef map<unsigned,pMeth> FnMap_t;
+
 private:
 #include            "Decode.cpp"
 void                Dump(FILE * = stdout);
-unsigned            Onxxxx(PMsg_p *);
+unsigned            Onxxxx(PMsg_p *,unsigned);
 
-typedef unsigned    (Monitor::*pMeth)(PMsg_p *);
-map<unsigned,pMeth> FnMapx;
+//typedef unsigned    (Monitor::*pMeth)(PMsg_p *);
+//map<unsigned,pMeth> FnMapx;
+
+vector<FnMap_t *>   FnMapx;
 
 };
 

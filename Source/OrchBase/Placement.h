@@ -10,15 +10,15 @@
 #include "pdigraph.hpp"
 #include "P_core.h"
 #include "P_super.h"
-#include "P_devtyp.h"
+#include "DevT_t.h"
 #include "build_defs.h"
 
 class Constraints;
-class D_graph;
+class GraphI_t;
 class HardwareIterator;
 class OrchBase;
-class P_device;
-class P_task;
+class DevI_t;
+class Apps_t;
 
 //==============================================================================
 
@@ -31,13 +31,13 @@ virtual ~          Placement();
 void               DoLink();
 void               Dump(FILE * = stdout);
 void               Init();
-bool               Place(P_task *);
-void               Xlink(P_device *,P_thread *);
+bool               Place(Apps_t *);
+void               Xlink(DevI_t *,P_thread *);
 
 HardwareIterator*  iterator;
 OrchBase *         par;
 Constraints *      pCon;
-D_graph *          pD_graph;
+GraphI_t *         pD_graph;
 
 };
 

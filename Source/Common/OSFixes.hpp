@@ -28,7 +28,9 @@
  #include <cinttypes>
 #else
  #include <stdint.h>
- #include <inttypes.h>
+  #ifndef __BORLANDC__
+   #include <inttypes.h>
+  #endif
  #include <sstream>
 #endif
 

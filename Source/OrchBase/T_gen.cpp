@@ -8,7 +8,7 @@
 #include "dfprintf.h"
 #include "header.h"
 #include "P_super.h"
-#include "P_devtyp.h"
+#include "DevT_t.h"
 
 //==============================================================================
 
@@ -23,8 +23,8 @@ T_gen::~T_gen()
 }
 
 //------------------------------------------------------------------------------
-
-void T_gen::Build(P_task * pT)
+  /*
+void T_gen::Build(Apps_t * pT)
 // The "way in" from the main datastructure. We look at the PoL structure in the
 // task, and if it wants a task (circuit) built, we do it.
 {
@@ -33,23 +33,25 @@ if (pT==0) {                           // Dud call?
   return;
 }
 if (!pT->IsPoL()) return;              // Legitimate noop
-P_task::PoL_t * pP = &(pT->PoL);
+//P_task::PoL_t * pP = &(pT->PoL);
 // need a new declaration block for the PoL task.
 //string PoL_t_name = static_cast<stringstream*>(&(stringstream("PoL_typ",
 //      ios_base::out | ios_base::ate)<<par->P_typdclm.size()))->str();
-string PoL_t_name = UniS("PoL_typ");
-pT->pP_typdcl = new P_typdcl(par,PoL_t_name);
-par->P_typdclm[PoL_t_name] = pT->pP_typdcl;
-pT->pP_typdcl->P_taskl.push_back(pT);
-if (pP->type == "clique") { BuildClique(pT); return; }
-if (pP->type == "random") { BuildRandom(pT); return; }
-if (pP->type == "ring")   { BuildRing(pT);   return; }
-if (pP->type == "tree")   { BuildTree(pT);   return; }
-par->Post(111,pP->type);               // Dud PoL type
+
+//string PoL_t_name = UniS("PoL_typ");
+//pT->pP_typdcl = new P_typdcl(par,PoL_t_name);
+//par->P_typdclm[PoL_t_name] = pT->pP_typdcl;
+//pT->pP_typdcl->P_taskl.push_back(pT);
+//if (pP->type == "clique") { BuildClique(pT); return; }
+//if (pP->type == "random") { BuildRandom(pT); return; }
+//if (pP->type == "ring")   { BuildRing(pT);   return; }
+//if (pP->type == "tree")   { BuildTree(pT);   return; }
+//par->Post(111,pP->type);               // Dud PoL type
+
 }
-
+    */
 //------------------------------------------------------------------------------
-
+/*
 void T_gen::BuildClique(P_task * pT)
 // It's a clique (everything connected to everything else)
 // task /pol =   name,  type,size,edge_copies,sources,monitors,synapses
@@ -64,14 +66,14 @@ if (vs>0) size = str2uint(pP->params[0]);
 if (size==0) return;
 unsigned copy = 2;                     // Edge duplicates
 if (vs>1) copy = str2uint(pP->params[1]);
-/*                                                     For now.....
-bool bsrc = false;                     // Sources ?
-if (vs>2) bsrc = str2bool(pP->params[2]);
-bool bmon = false;                     // Monitors ?
-if (vs>3) bmon = str2bool(pP->params[3]);
-bool bsyn = false;                     // Synapses ?
-if (vs>4) bsyn = str2bool(pP->params[4]);
-*/
+//                                                     For now.....
+//bool bsrc = false;                     // Sources ?
+//if (vs>2) bsrc = str2bool(pP->params[2]);
+//bool bmon = false;                     // Monitors ?
+//if (vs>3) bmon = str2bool(pP->params[3]);
+//bool bsyn = false;                     // Synapses ?
+//if (vs>4) bsyn = str2bool(pP->params[4]);
+
 
 FILE * fp = stdout;
 fprintf(fp,"\n\n");
@@ -139,15 +141,15 @@ unsigned vs = pP->params.size();
 unsigned size = 5;                     // Device count
 if (vs>0) size = str2uint(pP->params[0]);
 if (size==0) return;
-/*unsigned copy = 2;                     // Edge duplicates
-if (vs>1) copy = str2uint(pP->params[1]);
-bool bsrc = false;                     // Sources ?
-if (vs>2) bsrc = str2bool(pP->params[2]);
-bool bmon = false;                     // Monitors ?
-if (vs>3) bmon = str2bool(pP->params[3]);
-bool bsyn = false;                     // Synapses ?
-if (vs>4) bsyn = str2bool(pP->params[4]);
-*/
+//unsigned copy = 2;                     // Edge duplicates
+//if (vs>1) copy = str2uint(pP->params[1]);
+//bool bsrc = false;                     // Sources ?
+//if (vs>2) bsrc = str2bool(pP->params[2]);
+//bool bmon = false;                     // Monitors ?
+//if (vs>3) bmon = str2bool(pP->params[3]);
+//bool bsyn = false;                     // Synapses ?
+//if (vs>4) bsyn = str2bool(pP->params[4]);
+
 
 FILE * fp = stdout;
 fprintf(fp,"\n\n");
@@ -191,7 +193,7 @@ void T_gen::BuildTree(P_task * pT){}
 
 
 
-/*
+
 
 
 

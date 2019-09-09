@@ -4,14 +4,14 @@
 #include <algorithm>
 #include <stdio.h>
 #include "P_board.h"
-#include "P_device.h"
+#include "DevI_t.h"
 #include <vector>
 class P_board;
 using namespace std;
 
 //==============================================================================
 
-class P_super : public P_device
+class P_super : public DevI_t
 {
 public:
                     P_super();

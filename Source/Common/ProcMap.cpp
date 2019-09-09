@@ -39,7 +39,7 @@ WALKVECTOR(ProcMap_t,vPmap,i) {
              (*i).P_source.c_str(),(*i).P_binary.c_str());
   fprintf(fp,"at   %s on %s\n",
              (*i).P_TIME.c_str(),(*i).P_DATE.c_str());
-  fprintf(fp,"executing on %s\n",(*i).P_proc.c_str());
+  fprintf(fp,"executing on %s ",(*i).P_proc.c_str());
   fprintf(fp,"as user %s\n", (*i).P_user.c_str());
   fprintf(fp,"\nMPI hybrid programming model: ");
   switch ((*i).P_ttype) {
@@ -125,7 +125,7 @@ Z->Get(6,rec.P_compiler);              // ... compiler
 Z->Get(7,rec.P_OS);                    // ... operating system
 Z->Get(8,rec.P_source);                // ... source file
 Z->Get(9,rec.P_binary);                // ... binary file
-Z->Get(10,rec.P_TIME);                  // ... compilation time
+Z->Get(10,rec.P_TIME);                 // ... compilation time
 Z->Get(11,rec.P_DATE);                 // ... compilation date
 pi = Z->Get<int>(12,cnt);              // ... *provided* MPI thread class
 if (pi!=0) rec.P_ttype = *pi;

@@ -72,7 +72,11 @@ WALKVECTOR(FnMap_t*,FnMapx,F)          // WALKVECTOR and WALKMAP are in macros.h
   delete *F;                           // get rid of function tables
 // the seemingly daft argument to MPI_Comm_disconnect: &(*C) is correct here because
 // MPI_Comm_disconnect can't work with an iterator.
-for (vector<MPI_Comm>::iterator C = ++Comms.begin(); C != Comms.end(); C++) MPI_Comm_disconnect(&(*C)); // and comms other than MPI_COMM_WORLD
+vector<MPI_Comm>::iterator C = Comms.begin();
+//for (vector<MPI_Comm>::iterator C = ++Comms.begin();
+for (++C;
+     C != Comms.end();
+     C++) MPI_Comm_disconnect(&(*C));  // and comms other than MPI_COMM_WORLD
 MPI_Comm_free(&(Comms[0]));            // free the shadow MPI_COMM_WORLD connector
 MPI_Buffer_detach(&SNDBUF,&idummy);    // (Blocks until exhausted)
 free(SNDBUF);                          // Now we can kill it
@@ -132,7 +136,7 @@ if ((RemoteSize>1) || (RemoteRank == MPI_UNDEFINED)) // as long as we aren't shu
    Creq.Send(parent->Urank);
    // printf("Accept waiting to complete connection\n");
    // fflush(stdout);
-   while (parent->Tcomm != MPI_COMM_NULL); // block until connect has succeeded
+//   while (parent->Tcomm != MPI_COMM_NULL); // block until connect has succeeded
    // printf("Accept completed connection\n");
    // fflush(stdout);
 }
@@ -173,8 +177,8 @@ WALKMAP(unsigned,pMeth,(**F),i)
 fprintf(fp,"S00 (const static)              : %s\n",S00.c_str());
 fprintf(fp,"Urank                           : %d\n",Urank);
 cIdx = 0;
-WALKVECTOR(int,Usize,s)
-  fprintf(fp,"Usize (comm %lu)                 : %d\n",cIdx++,s);
+WALKVECTOR(unsigned,Usize,s)
+  fprintf(fp,"Usize (comm %u)                 : %u\n",cIdx++,*s);
 fprintf(fp,"Ulen                            : %d\n",Ulen);
 fprintf(fp,"Sproc                           : %s\n",Sproc.c_str());
 fprintf(fp,"Suser                           : %s\n",Suser.c_str());
@@ -211,11 +215,13 @@ else // clients need to look up the service name
    // Get the published port for the service name asked for.
    // Exit if we don't get a port, probably because the remote universe isn't
    // initialised yet (we can always retry).
-   if ((error = MPI_Lookup_name(svc.c_str(),MPI_INFO_NULL,port))) return error;
+   error = MPI_Lookup_name(svc.c_str(),MPI_INFO_NULL,port);
+   if (error) return error;
    // now try to establish the connection itself. Again, we can always retry.
    // if (error = MPI_Comm_connect(port,MPI_INFO_NULL,0,MPI_COMM_WORLD,&newcomm)) return error;
-   if ((error = MPI_Comm_connect(port,MPI_INFO_NULL,0,Comms[0],&newcomm))) return error;
-   Comms.push_back(newcomm); // as long as we succeeded, add to the list of comms
+   error = MPI_Comm_connect(port,MPI_INFO_NULL,0,Comms[0],&newcomm);
+   if (error) return error;
+  Comms.push_back(newcomm); // as long as we succeeded, add to the list of comms
 }
 int rUsize;
 MPI_Comm_remote_size(Comms.back(), &rUsize);
@@ -339,7 +345,7 @@ if (Urank == Lrank)
    MPI_Unpublish_name(MPISvc,MPI_INFO_NULL,MPIPort);
    MPI_Close_port(MPIPort);
 }
-return 1;
+return 1;                              // Return != 0 means close spinner
 }
 
 //------------------------------------------------------------------------------
@@ -551,7 +557,7 @@ if (cIdx < 0)
 {
    // No LogServer. Best we can do is hope we are the Root process and can output a message.
    // Later this might become more sophisticated and attempt to send a message to Root.
-   if (Urank == pPmap[0]->U.Root) printf("Error: attempted to Post a message %d without a LogServer\n");
+   if (Urank == pPmap[0]->U.Root) printf("Error: attempted to Post a message %d without a LogServer\n",i);
    return false;
 }
 PMsg_p Pkt;
@@ -577,17 +583,8 @@ MPI_Comm_rank(Comms[0],&Urank);  // My place within it
 char Uname[MPI_MAX_PROCESSOR_NAME];
 MPI_Get_processor_name(Uname,&Ulen);   // Machine name
 Sproc = string(Uname);                 // Translated from the original FORTRAN
-Suser = getenv("USER");                // User name as seen by the process
+Suser = GetUser();                     // User name as seen by the process
 strcpy(MPIPort,"PORT_NULL");           // Default MPI port
-
-// ---------- THIS DOES NOT APPEAR TO SET ANYTHING PERSISTENT ------------------
-
-int * io_chan;
-int   io_flag;                         // Establish who has IO
-MPI_Comm_get_attr(Comms[0],MPI_IO,&io_chan,&io_flag); // replaces deprecated MPI_Attr_get
-
-//------------------------------------------------------------------------------
-
 Tcomm = MPI_COMM_NULL;                 // initialise the Accept intercommunicator
 
 UBPW = BPW();                          // ... bits per word
@@ -620,25 +617,25 @@ return -1;
 void CommonBase::SendPMap(MPI_Comm comm, PMsg_p* Pkt)
 {
 // Shove the data all into a packet:
-Pkt->Put<int>(1,&Urank);                // Load my local rank...
-Pkt->Put(2,&Sproc);                     // ... processor name
-Pkt->Put(3,&Suser);                     // ... user name
-Pkt->Put(4,&Sderived);                  // ... C++ class
-Pkt->Put<unsigned>(5,&UBPW);            // ... bits per word
-Pkt->Put(6,&Scompiler);                 // ... compiler
-Pkt->Put(7,&SOS);                       // ... operating system
-Pkt->Put(8,&Ssource);                   // ... source file
-Pkt->Put(9,&Sbinary);                   // ... binary file
-Pkt->Put(10,&STIME);                     // ... compilation time
-Pkt->Put(11,&SDATE);                    // ... compilation date
-Pkt->Put<int>(12,&MPI_provided);        // ... MPI thread class
-Pkt->Key(Q::PMAP);                      // Message key
+Pkt->Put<int>(1,&Urank);               // Load my local rank...
+Pkt->Put(2,&Sproc);                    // ... processor name
+Pkt->Put(3,&Suser);                    // ... user name
+Pkt->Put(4,&Sderived);                 // ... C++ class
+Pkt->Put<unsigned>(5,&UBPW);           // ... bits per word
+Pkt->Put(6,&Scompiler);                // ... compiler
+Pkt->Put(7,&SOS);                      // ... operating system
+Pkt->Put(8,&Ssource);                  // ... source file
+Pkt->Put(9,&Sbinary);                  // ... binary file
+Pkt->Put(10,&STIME);                   // ... compilation time
+Pkt->Put(11,&SDATE);                   // ... compilation date
+Pkt->Put<int>(12,&MPI_provided);       // ... MPI thread class
+Pkt->Key(Q::PMAP);                     // Message key
 Pkt->Src(Urank);
-Pkt->comm = comm;                       // communicator over which this is being sent
+Pkt->comm = comm;                      // communicator over which this is being sent
                                        // Build process map
 //printf("%s:CommonBase about to send ProcMap records\n",Sderived.c_str());
-//fflush(stdout);                      // Tell everyone else
-Pkt->Bcast();                           // via a broadcast
+//fflush(stdout);
+Pkt->Bcast();                          // Tell everyone else via a broadcast
 }
 
 //==============================================================================

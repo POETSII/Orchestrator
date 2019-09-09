@@ -17,7 +17,7 @@
 #include "macros.h"
 #include "NameBase.h"
 #include "P_core.h"
-#include "P_device.h"
+#include "DevI_t.h"
 
 /* Facilitate out-of-order includes. */
 class P_core;
@@ -29,14 +29,14 @@ public:
 
     /* Threads live in cores; this is the core that this thread lives in, if
      * any. */
-    P_core* parent = NULL;
+    P_core* parent;// = NULL;
     void on_being_contained_hook(P_core* container);
 
     /* Not part of the hardware, this list acts as an interface between the
      * hardware model and the placement implementation; POETS devices (which
      * are part of the task graph) get mapped onto threads. Multiple devices
      * are services by a single thread. */
-    std::list<P_device*> P_devicel;
+    std::list<DevI_t *> P_devicel;
 
     unsigned int dataMemoryAddress;
     unsigned int instructionMemoryAddress;

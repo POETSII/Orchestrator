@@ -8,6 +8,7 @@
  * - name: Name of this core object (see namebase) */
 P_core::P_core(std::string name)
 {
+    parent = NULL;
     Name(name);
     dataBinary = new Bin();
     instructionBinary = new Bin();

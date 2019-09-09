@@ -42,9 +42,9 @@ void Placement::Init()
 
 //------------------------------------------------------------------------------
 
-bool Placement::Place(P_task * pT)
+bool Placement::Place(Apps_t * pT)
 // Place a task.
-{
+{       /*
 P_thread* pTh = iterator->get_thread();
 
 WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
@@ -136,13 +136,13 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
             }
         }
     }
-}
+}         */
 return false;
 }
 
 //------------------------------------------------------------------------------
 
-void Placement::Xlink(P_device * pDe,P_thread * pTh)
+void Placement::Xlink(DevI_t * pDe,P_thread * pTh)
 // Actually link a real device to a real thread
 {
 printf("XLinking device %s with id %d to thread %s\n",
@@ -157,7 +157,7 @@ pTh->get_hardware_address()->populate_a_software_address(&(pDe->addr), false);
 
 // The supervisor is already attached to the task; now it needs to be linked to
 // the topology. I can't but think there's a cooler way......
-pDe->par->par->pSup->Attach(pTh->parent->parent->parent);
+//pDe->par->par->pSup->Attach(pTh->parent->parent->parent);
 }
 
 //==============================================================================

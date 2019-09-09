@@ -29,6 +29,7 @@ public:
                    Cli(string);
 virtual ~          Cli(void);
 void               Dump(FILE * = stdout);
+bool               Empty() { return Co.empty(); }
 bool               Err(int &,int &);   // Direct copy of problem struct
 vector<Cli>        Expand();           // Expand the clauses -> own command
 string             GetC(unsigned=0,string=string());

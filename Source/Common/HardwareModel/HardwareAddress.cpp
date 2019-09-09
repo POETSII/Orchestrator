@@ -2,6 +2,7 @@
  * information). */
 
 #include "HardwareAddress.h"
+#include "stdint.h"
 
 /* Constructs a hardware address. Arguments:
  *
@@ -98,7 +99,7 @@ void HardwareAddress::populate_from_software_address(P_addr* source)
 void HardwareAddress::set_box(AddressComponent value)
 {
     /* Validate */
-    if (value >= std::pow(2, format->boxWordLength))
+    if (value >= std::pow(double(2),int(format->boxWordLength)))
     {
         throw InvalidAddressException(
             dformat("[ERROR] Box component value \"%d\" does not fit format "
@@ -113,7 +114,7 @@ void HardwareAddress::set_box(AddressComponent value)
 void HardwareAddress::set_board(AddressComponent value)
 {
     /* Validate */
-    if (value >= std::pow(2, format->boardWordLength))
+    if (value >= std::pow(double(2),int(format->boardWordLength)))
     {
         throw InvalidAddressException(
             dformat("[ERROR] Board component value \"%d\" does not fit format "
@@ -129,7 +130,7 @@ void HardwareAddress::set_board(AddressComponent value)
 void HardwareAddress::set_mailbox(AddressComponent value)
 {
     /* Validate */
-    if (value >= std::pow(2, format->mailboxWordLength))
+    if (value >= std::pow(double(2),int(format->mailboxWordLength)))
     {
         throw InvalidAddressException(
             dformat("[ERROR] Mailbox component value \"%d\" does not fit "
@@ -145,7 +146,7 @@ void HardwareAddress::set_mailbox(AddressComponent value)
 void HardwareAddress::set_core(AddressComponent value)
 {
     /* Validate */
-    if (value >= std::pow(2, format->coreWordLength))
+    if (value >= std::pow(double(2),int(format->coreWordLength)))
     {
         throw InvalidAddressException(
             dformat("[ERROR] Core component value \"%d\" does not fit format "
@@ -161,7 +162,7 @@ void HardwareAddress::set_core(AddressComponent value)
 void HardwareAddress::set_thread(AddressComponent value)
 {
     /* Validate */
-    if (value >= std::pow(2, format->threadWordLength))
+    if (value >= std::pow(double(2),int(format->threadWordLength)))
     {
         throw InvalidAddressException(
             dformat("[ERROR] Thread component value \"%d\" does not fit "

@@ -19,7 +19,7 @@ P_engine::P_engine(std::string name)
     struct GraphCallbacks {
         GRAPH_CALLBACK all_keys(unsigned int const& key)
         {
-            fprintf(dfp, "%u", key);
+            fprintf(P_engine::dfp, "%u", key);
         }
         GRAPH_CALLBACK node(P_board* const& board)
         {
@@ -31,7 +31,7 @@ P_engine::P_engine(std::string name)
         }
         GRAPH_CALLBACK port(P_port* const& port)
         {
-            fprintf(dfp, "%#018lx", (uint64_t) port);
+            fprintf(P_engine::dfp, "%#018lx", (uint64_t) port);
         }
     };
 

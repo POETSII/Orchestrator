@@ -8,6 +8,7 @@
  * - name: Name of this thread object (see namebase) */
 P_thread::P_thread(std::string name)
 {
+    parent = NULL;
     Name(name);
 }
 
@@ -29,7 +30,7 @@ void P_thread::Dump(FILE* file)
         fprintf(file, "The device map is empty.\n");
     else
     {
-        WALKLIST(P_device*,P_devicel,iterator)
+        WALKLIST(DevI_t *,P_devicel,iterator)
             fprintf(file, "%s\n", (*iterator)->FullName().c_str());
     }
     DumpUtils::close_breaker(file, "Devices in this thread");

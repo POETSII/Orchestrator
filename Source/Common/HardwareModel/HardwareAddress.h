@@ -27,6 +27,8 @@
 #include "InvalidAddressException.h"
 #include "P_addr.h"
 #include <cmath>  /* For validating address components. */
+//#include "flat.h"
+#include <stdint.h>
 
 /* Define masks for setting the 'definitions' variable. */
 #define HARDWARE_ADDRESS_FULLY_DEFINED_MASK 31  /* 0b11111 */

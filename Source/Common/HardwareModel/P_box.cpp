@@ -8,6 +8,7 @@
  * - name: Name of this box object (see namebase) */
 P_box::P_box(std::string name)
 {
+    parent = NULL;
     Name(name);
 }
 

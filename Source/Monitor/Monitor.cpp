@@ -14,8 +14,9 @@ Monitor::Monitor(int argc,char * argv[],string d):
   CommonBase(argc,argv,d,string(__FILE__))
 {
 
+FnMapx.push_back(new FnMap_t);  
                                        // Load the message map
-FnMapx[PMsg_p::KEY(Q::LOG,Q::POST,Q::N000,Q::N000)] = &Monitor::Onxxxx;
+(*FnMapx[0])[PMsg_p::KEY(Q::LOG,Q::POST,Q::N000,Q::N000)] = &Monitor::Onxxxx;
 
 MPISpinner();                          // Spin on MPI messages; exit only on DIE
 
@@ -26,6 +27,7 @@ MPISpinner();                          // Spin on MPI messages; exit only on DIE
 
 Monitor::~Monitor()
 {
+WALKVECTOR(FnMap_t*,FnMapx,F) delete *F;
 //printf("********* Monitor rank %d destructor\n",Urank); fflush(stdout);
 }
 
@@ -41,7 +43,7 @@ CommonBase::Dump(fp);
 
 //------------------------------------------------------------------------------
 
-unsigned Monitor::Onxxxx(PMsg_p *)
+unsigned Monitor::Onxxxx(PMsg_p *,unsigned)
 {
 
 

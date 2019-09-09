@@ -33,7 +33,7 @@ public:
     void clear();
 
     /* Boxes are contained by a POETS Engine. */
-    P_engine* parent = NULL;
+    P_engine* parent;// = NULL;
     void on_being_contained_hook(P_engine* container);
 
     /* Boxes contain boards. Note that engines also contain a graph of

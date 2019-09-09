@@ -24,7 +24,7 @@
 #include "pdigraph.hpp"
 
 /* Facilitate out-of-order includes. */
-struct OrchBase;
+class OrchBase;
 class P_box;
 class P_board;
 

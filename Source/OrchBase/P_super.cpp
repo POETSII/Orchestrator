@@ -6,14 +6,14 @@
 
 //==============================================================================
 
-P_super::P_super():P_device()
+P_super::P_super():DevI_t()
 {
 
 }
 
 //------------------------------------------------------------------------------
 
-P_super::P_super(string s):P_device(0,s)
+P_super::P_super(string s):DevI_t(0,s)
 {
 
 }
@@ -80,7 +80,7 @@ void P_super::Attach(P_board* targetBoard)
 
 void P_super::Detach(P_board* targetBoard)
 // Remove this supervisor from a given board, if it is attached to that board.
-{
+{            /*
     // Get the index of this supervisor in the box that contains this board.
     P_box* parentBox = targetBoard->parent;
     std::vector<P_super*>::iterator supervisorIterator;
@@ -104,7 +104,7 @@ void P_super::Detach(P_board* targetBoard)
             // is fine, because a board is only stored once in a P_super.
             return;
         }
-    }
+    }          */
 }
 
 //------------------------------------------------------------------------------
@@ -134,7 +134,7 @@ void P_super::Dump(FILE * fp)
 fprintf(fp,"P_super+++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"Supervisor attached to :\n");
 WALKVECTOR(P_board*, P_boardv, i) fprintf(fp,"%s\n",(*i)->FullName().c_str());
-P_device::Dump(fp);
+DevI_t::Dump(fp);
 fprintf(fp,"P_super---------------------------------\n");
 fflush(fp);
 }

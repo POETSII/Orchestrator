@@ -24,7 +24,7 @@ FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
 
 MPISpinner();                          // Spin on MPI messages; exit only on DIE
 
-printf("********* Injector rank %d on the way out\n",Urank); fflush(stdout);
+//printf("********* Injector rank %d on the way out\n",Urank); fflush(stdout);
 }
 
 //------------------------------------------------------------------------------

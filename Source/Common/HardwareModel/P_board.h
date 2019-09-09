@@ -40,7 +40,7 @@ public:
      * not captured in the board construct.
      *
      * Boards use boxes as their NameBase parent. */
-    P_box* parent = NULL;
+    P_box* parent;// = NULL;
     void on_being_contained_hook(P_box* container);
 
     /* Boards contain mailboxes as a graph, mapped by their hardware address

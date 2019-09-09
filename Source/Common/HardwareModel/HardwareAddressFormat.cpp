@@ -2,6 +2,7 @@
  * further information). */
 
 #include "HardwareAddressFormat.h"
+#include "stdint.h"
 
 /* Constructs a hardware address format. Each argument corresponds to the
  * length of the address section. */

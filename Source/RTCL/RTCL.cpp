@@ -70,7 +70,7 @@ comms.l_kill = true;                   // Kill the clock thread
                                        // to be. Setting the cancel type to asynchronous
                                        // could avoid this, with possibly nasty
                                        // side effects.
-printf("********* RTC rank %d on the way out\n",Urank); fflush(stdout);
+//printf("********* RTC rank %d on the way out\n",Urank); fflush(stdout);
 }
 
 //------------------------------------------------------------------------------

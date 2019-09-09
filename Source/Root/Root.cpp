@@ -21,9 +21,8 @@ void * kb_func(void * pPar)
 //printf("\nRoot::kb_func: thread starting\n\n"); fflush(stdout);
 Root* parent = static_cast<Root*>(pPar);
 int len = 0;                           // Characters in buffer
-for(;;) {
+for(;;) {                              // Superloop
   if (len==0) Root::Prompt();          // Console prompt
-  fflush(stdout);
   static const unsigned SIZE = 512;
   char buf[SIZE];
   buf[0] = '\0';                       // Borland bug: notes 21/7/17
@@ -36,20 +35,14 @@ for(;;) {
   Pkt.comm = parent->Comms[0];         // comm is always our local one (index 0)
   Pkt.Put<char>(1,buf,len+2);          // Put it in a packet
   Pkt.Key(Q::KEYB);
-
-//int cnt;                               // cnt now includes trailing '\0'
-//char * obuf = Pkt.Get<char>(1,cnt);
-//printf("len=%d, cnt=%d, obuf=%s\n",len,cnt,obuf);  fflush(stdout);
-
-  Pkt.Src(0);
+  Pkt.Src(0);                          // From root process....
   Pkt.Send(0);                         // Send to root process main thread
-
-  // User wants out - kill this thread
-  if (strcmp(buf,"exit")==0 or buf[0]==0) break;
+                                       // User wants out - kill this thread
+  if (strcmp(buf,"exit")==0) break;    // "exit" typed
+  if (buf[0]==char(0)) break;          // ctrl-d in linux-land
+  if (buf[0]==char(4)) break;          // ctrl-d in u$oft-land
 }
-
-//printf("kb_func: thread closing\n"); fflush(stdout);
-pthread_exit(NULL);
+pthread_exit(NULL);                    // Kill the keyboard thread
 return NULL;
 }
 
@@ -58,7 +51,11 @@ return NULL;
 Root::Root(int argc,char * argv[],string d) :
   OrchBase(argc,argv,d,string(__FILE__))
 {
-echo         = false;                  // Batch subsystem opaque
+CmCall = new CmCall_t(this);
+CmRTCL = new CmRTCL_t(this);
+CmSyst = new CmSyst_t(this);
+CmTest = new CmTest_t(this);
+
 injData.flag = 0;                      // Clear injector controls
 
 FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
@@ -75,105 +72,18 @@ if(pthread_create(&kb_thread,NULL,kb_func,args))
 fflush(stdout);
 
 MPISpinner();                          // Spin on *all* messages; exit on DIE
-printf("********* Root rank %d on the way out\n",Urank); fflush(stdout);
+//printf("********* Root rank %d on the way out\n",Urank); fflush(stdout);
 }
 
 //------------------------------------------------------------------------------
 
 Root::~Root()
 {
-//printf("********* Root rank %d destructor\n",Urank); fflush(stdout);
-WALKVECTOR(FnMap_t*, FnMapx, F)
-    delete *F;
-}
-
-//------------------------------------------------------------------------------
-
-void Root::CallEcho(Cli::Cl_t Cl)
-// Monkey wants to see what's going on in the batch subsystem
-{
-string secho = Cl.GetP();
-if (strcmp(secho.c_str(),"on" )==0) echo = true;
-if (strcmp(secho.c_str(),"off")==0) echo = false;
-Post(34,echo?"on":"off");
-}
-
-//------------------------------------------------------------------------------
-
-void Root::CallFile(Cli::Cl_t Cl)
-// Switch input from monkey to file
-{
-string sfile = Cl.GetP();              // Get the batch filename
-if (find(stack.begin(),stack.end(),sfile)!=stack.end()) {
-  Equeue.pop_front();                  // EOF marker in command Q now NFG
-  Post(33,sfile);                      // Trap attempted batch recursion
-  return;
-}
-if (sfile.empty()) {                   // Blank batch filename
-  Post(31);
-  return;
-}
-if (!file_readable(sfile.c_str())) {
-  Post(32,sfile);
-  return;
-}
-
-Cli Cx;
-Cx.Co = "*";
-Cx.Dump();
-Equeue.push_front(Cx);
-list<Cli> temp = Cli::File(sfile,true);// Bolt incoming file to front of queue
-Equeue.splice(Equeue.begin(),temp);
-stack.push_back(sfile);                // Store current batch file name
-
-/*
-FILE * fp = fopen(sfile.c_str(),"r");  // Try and open it?
-if (fp==0) Post(32,sfile);             // Nope, for whatever reason
-else {                                 // OK, at last, we're good to go
-  stack.push_back(sfile);              // Store current batch file name
-  static const unsigned SIZE = 512;
-  for(;;) {                            // One line at a time....
-    char buf[SIZE];
-    char * ps = fgets(buf,SIZE-1,fp);  // Pull in the data; ends with "/n/0"
-    if (ps!=0) {                       // Process it ?
-      if (echo) Post(28,string(ps));   // Copy to monkey
-      ProcCmnd(&Cli(string(ps)));      // Action it
-    }
-    else break;                        // EOF?
-  }
-  stack.pop_back();                    // Junk current stack frame
-  fclose(fp);                          // Close current file
-}
-*/
-}
-
-//------------------------------------------------------------------------------
-
-void Root::CallShow(Cli::Cl_t Cl)
-// Monkey wants to see the call stack
-{
-FILE * fp = stdout;
-fprintf(fp,"Batch call stack has %lu entries\n",stack.size());
-WALKVECTOR(string,stack,i) fprintf(fp,"%s\n",(*i).c_str());
-fprintf(fp,"Batch command queue has %lu entries\n",Equeue.size());
-WALKLIST(Cli,Equeue,i) fprintf(fp,"%s\n",(*i).Orig.c_str());
-fflush(fp);
-}
-
-//------------------------------------------------------------------------------
-
-unsigned Root::CmCall(Cli * pC)
-// Pass command input to a file
-{
-if (pC==0) return 0;                   // Paranoia - nothing to call
-WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
-  string scl = (*i).Cl;                // Pull out clause name
-  if (strcmp(scl.c_str(),"echo")==0) { CallEcho(*i); continue; }
-  if (strcmp(scl.c_str(),"file")==0) { CallFile(*i); continue; }
-  if (strcmp(scl.c_str(),"show")==0) { CallShow(*i); continue; }
-  Post(25,scl,"call");                 // Unrecognised clause
-}
-return 0;
+delete CmCall;
+delete CmRTCL;
+delete CmSyst;
+delete CmTest;
+WALKVECTOR(FnMap_t*, FnMapx, F) delete *F;
 }
 
 //------------------------------------------------------------------------------
@@ -196,11 +106,12 @@ unsigned Root::CmExit(Cli * pC)
 {
 if (pC==0) return 0;                   // Paranoia
                                        // Coming from batch?
-if (!stack.empty()) {
+if (!(CmCall->stack).empty()) {
   Post(35);
   return 0;
 }
-int p, pL, tpL, lIdx;
+int pL, tpL, lIdx;
+unsigned p;
 pL = -1;                               // maybe we have no LogServer?
 PMsg_p Pkt;                            // Burst closedown command to all ranks
 Pkt.Src(Urank);
@@ -214,7 +125,7 @@ if ((tpL = pPmap[cIdx]->U.LogServer) != Q::NAP) // is this the LogServer's local
    lIdx = cIdx; // and comm index
    for(p=0;p<Usize[cIdx];p++)
    {
-      if ((((cIdx != RootCIdx()) || (p!=(int)Urank))) && (p!=tpL)) {  // NOT the LogServer
+      if (((((int)cIdx != RootCIdx()) || ((int)p!=Urank))) && ((int)p!=tpL)) {  // NOT the LogServer
          Post(50,pPmap[cIdx]->M[p],int2str(p));
          Pkt.Send(p);
       }
@@ -224,7 +135,7 @@ else
 {
    for(p=0;p<Usize[cIdx];p++) // No. LogServer not on this comm. Shut everyone down.
    {
-      if (((cIdx != RootCIdx()) || (p!=(int)Urank))) {  // Don't need to send to self
+      if ((((int)cIdx != RootCIdx()) || ((int)p!=Urank))) {  // Don't need to send to self
          Post(50,pPmap[cIdx]->M[p],int2str(p));
          Pkt.Send(p);
       }
@@ -279,87 +190,6 @@ return 0;                              // Legitimate command exit
 
 //------------------------------------------------------------------------------
 
-unsigned Root::CmRTCL(Cli * pC)
-// Handle "RTCL" from the monkey. We've already parsed the command line, so we
-// know it's OK. Rather than pack/unpack the data structure, just send the
-// original command line string and the RTC can re-parse it - it's never very
-// long. It's not like we're paying for the electricity.
-{
-if (pC==0) return 0;                   // Paranoia
-//pC->Dump();
-PMsg_p Msg;
-unsigned cIdx = 0;
-for (; cIdx < Comms.size(); cIdx++)
-{
-    if (pPmap[cIdx]->U.RTCL != Q::NAP)
-    {
-       Msg.comm = Comms[cIdx];
-       break;
-    }
-}
-if (cIdx >= Comms.size())
-{
-   Post(161);
-   return 0;                           // no RTCL, but should probably return normally
-}
-Msg.Put(1,&(pC->Orig));                // Command line
-Msg.Src(Urank);                        // Me
-Msg.Key(Q::RTCL);                      // Key
-Msg.Send(pPmap[cIdx]->U.RTCL);               // Away we go
-return 0;                              // Legitimate command exit
-}
-
-//------------------------------------------------------------------------------
-
-unsigned Root::CmSyst(Cli * pC)
-// Handle "system" from the monkey.
-{
-if (pC==0) return 0;                   // Paranoia
-WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
-  string scl = (*i).Cl;                // Pull out clause name
-  if (strcmp(scl.c_str(),"conn")==0) { SystConn(*i); continue; }
-  if (strcmp(scl.c_str(),"path")==0) { SystPath(*i); continue; }
-  if (strcmp(scl.c_str(),"ping")==0) { SystPing(*i); continue; }
-  if (strcmp(scl.c_str(), "run")==0) { SystRun(*i);  continue; }
-  if (strcmp(scl.c_str(),"show")==0) { SystShow(*i); continue; }
-  if (strcmp(scl.c_str(),"time")==0) { SystTime(*i); continue; }
-  Post(25,scl,"system");               // Unrecognised clause
-}
-return 0;                              // Legitimate command exit
-}
-
-//------------------------------------------------------------------------------
-
-unsigned Root::CmTest(Cli * pC)
-// Test command handler. (It's already been trimmed)
-{
-if (pC->Cl_v.empty()) return 0;        // Nothing to do
-WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
-  const char * cs = (*i).Cl.c_str();
-  if (strcmp(cs,"time")==0) {          // Tell the monkey the time
-    unsigned count = str2int((*i).GetP(0,"16"));
-    for (unsigned i=0;i<=count;i++) Post(46,int2str(i,2),GetTime());
-  }
-  if (strcmp(cs,"floo")==0) {          // Initiate a flood event
-    unsigned width = str2uint((*i).GetP(0,"2"));
-    unsigned level = str2uint((*i).GetP(1,"4"));
-    PMsg_p Z;
-    Z.Key(Q::TEST,Q::FLOO);
-    Z.Put<unsigned>(1,&width);
-    Z.Put<unsigned>(2,&level);
-    WALKVECTOR(MPI_Comm,Comms,C)      // flood to all active comms.
-    {
-       Z.comm = *C;
-       Z.Bcast();
-    }
-    Post(51,uint2str(width),uint2str(level));
-  }
-}
-return 0;
-}
-
-//------------------------------------------------------------------------------
-
 unsigned Root::Connect(string svc)
 {
 if (unsigned err = CommonBase::Connect(svc)) return err;
@@ -382,22 +212,23 @@ void Root::Dump(FILE * fp)
 fprintf(fp,"Root dump+++++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"Event handler table:\n");
 unsigned cIdx = 0;
-WALKVECTOR(FnMap_t*,FnMapx,F)
-{
-fprintf(fp,"Function table for comm %d:\n", cIdx++);
-fprintf(fp,"Key        Method\n");
-// tricky: dereference of F needs enclosing in parentheses
-// because the expansion of the macro plus operator precedence
-// means it would try to dereference the iterator obtained from
-// F. Not what is expected...
-WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
+WALKVECTOR(FnMap_t*,FnMapx,F) {
+  fprintf(fp,"Function table for comm %d:\n", cIdx++);
+  fprintf(fp,"Key        Method\n");
+  // tricky: dereference of F needs enclosing in parentheses
+  // because the expansion of the macro plus operator precedence
+  // means it would try to dereference the iterator obtained from
+  // F. Not what is expected...
+  WALKMAP(unsigned,pMeth,(**F),i)
+    fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
 }
 fprintf(fp,"prompt    = %s\n",prompt);
-
-fprintf(fp,"Batch file echo %s\n",echo ? "ON" : "OFF");
 fprintf(fp,"Injector controls:\n");
 fprintf(fp,"flag = %0x\n",injData.flag);
+CmCall->Dump(fp);
+CmRTCL->Dump(fp);
+CmSyst->Dump(fp);
+CmTest->Dump(fp);
 fprintf(fp,"Root dump-----------------------------------\n");
 fflush(fp);
 CommonBase::Dump(fp);
@@ -407,19 +238,11 @@ CommonBase::Dump(fp);
 
 void Root::OnIdle()
 {
-if (Equeue.empty()) return;            // Batch queue empty?
-Cli Cm = Equeue.front();               // Pull off the next one
-Equeue.pop_front();                    // Erase from qeueue
-if (Cm.Co[0]=='*') stack.pop_back();   // EOF marker? - remove from call stack
+Cli Cm = CmCall->Front();              // Anything in the batch queue?
+if (Cm.Empty()) return;                // No - bail
+                                       // EOF marker? - remove from call stack
+if (Cm.Co[0]=='*') CmCall->stack.pop_back();
 else ProcCmnd(&Cm);                    // Handle ordinary batch command
-//  return;                              // Go round again
-//}
-//if (IsCallFile(Cm)) {                  // Special case: Is this call /file=????
-//Cm.Dump();
-//  CallFile(Cm.Cl_v[0]);
-//  return;
-//}
-//ProcCmnd(&Cm);                         // Handle ordinary batch command
 }
 
 //------------------------------------------------------------------------------
@@ -507,27 +330,31 @@ if (pC==0) return 1;                   // Paranoia
 pC->Trim();
 string scmnd = pC->Co;                 // Pull out the command string
 if (scmnd[0]=='*') {                   // Special case - EOF marker
-  stack.pop_back();                    // Remove from call stack
+  CmCall->stack.pop_back();            // Remove from call stack
   return 0;
 }
 // Note you can't use .size() here, because some strings have been resized to 4,
 // so for them the size includes the '\0', whereas the others, it doesn't.....
-if (strcmp(scmnd.c_str(),"call")==0) return CmCall(pC);
-if (strcmp(scmnd.c_str(),"exit")==0) return CmExit(pC);
-if (strcmp(scmnd.c_str(),"inje")==0) return CmInje(pC);
-if (strcmp(scmnd.c_str(),"link")==0) return CmLink(pC);
-if (strcmp(scmnd.c_str(),"owne")==0) return CmOwne(pC);
-if (strcmp(scmnd.c_str(),"rtcl")==0) return CmRTCL(pC);
-if (strcmp(scmnd.c_str(),"syst")==0) return CmSyst(pC);
-if (strcmp(scmnd.c_str(),"task")==0) return CmTask(pC);
-if (strcmp(scmnd.c_str(),"test")==0) return CmTest(pC);
-if (strcmp(scmnd.c_str(),"topo")==0) return CmTopo(pC);
-
-// Handle Ctrl-D behaviour in common shells. Ctrl-D repeatedly sends the EOF
-// character. Check only the first character of the input.
-if (scmnd.at(0)==0) return CmExit(pC);
-
-return CmDrop(pC);
+// Commands are handled in two ways:
+// The more complicated ones have their own class, with a splitter functor
+// (operator()()) to decode the clauses, whereas the simple ones have a
+// simple method.
+fd = CmPath->Fopen();                  // Sort out the detail file stream
+const unsigned INVALIDCODE=999;        // Yukky yukky yuk yuk
+unsigned code = INVALIDCODE;
+if (strcmp(scmnd.c_str(),"call")==0) code = (*CmCall)(pC);
+if (strcmp(scmnd.c_str(),"exit")==0) code = CmExit(pC);
+if (strcmp(scmnd.c_str(),"grap")==0) code = (*CmGrph)(pC);
+if (strcmp(scmnd.c_str(),"inje")==0) code = CmInje(pC);
+if (strcmp(scmnd.c_str(),"path")==0) code = (*CmPath)(pC);
+if (strcmp(scmnd.c_str(),"rtcl")==0) code = (*CmRTCL)(pC);
+if (strcmp(scmnd.c_str(),"syst")==0) code = (*CmSyst)(pC);
+if (strcmp(scmnd.c_str(),"test")==0) code = (*CmTest)(pC);
+if (scmnd.at(0)==char(0)) code = CmExit(pC); // Ctrl-D behaviour in linux-land
+if (scmnd.at(0)==char(4)) code = CmExit(pC); // Ctrl-D behaviour in Windoze
+fd = CmPath->Fclose();                 // Reset detail file stream
+if (code==INVALIDCODE) return CmDrop(pC);
+return code;
 }
 
 //------------------------------------------------------------------------------
@@ -537,142 +364,6 @@ void Root::Prompt(FILE * fp)
 if (fp!=stdout) return;
 fprintf(fp,"%s",Root::prompt);     // Console prompt
 fflush(fp);
-}
-
-//------------------------------------------------------------------------------
-
-void Root::SystConn(Cli::Cl_t Cl)
-// Connect to a group of processes identified by a service name in the parameter
-{
-if (Cl.Pa_v.size()==0) {
-  Post(47,"conn","system","1"); // need to be given a service to connect to
-  return;
-}
-if (pPmap[0]->vPmap.size() != Usize[0])
-{
-  Post(62); // can't connect to another universe before we know the size of our own.
-}
-string svc = Cl.Pa_v[0].Val; // get the service name
-// connection is collective, so we have to organise everyone
-WALKVECTOR(ProcMap::ProcMap_t,pPmap[0]->vPmap,j) {   // Walk the local process list
-  if (Cli::StrEq((*j).P_class,Sderived)) continue;   // No need to notify self
-  PMsg_p Pkt;
-  Pkt.comm = Comms[0];           // local comm
-  Pkt.Put(0,&svc);               // Target service name
-  Pkt.Src(Urank);                // Sending rank
-  Pkt.Key(Q::SYST,Q::CONN);      // It's a connection request
-  Pkt.Send((*j).P_rank);
-}
-if (Connect(svc))
-   Post(60,svc.c_str());
-}
-//------------------------------------------------------------------------------
-void Root::SystPath(Cli::Cl_t Cl)
-// Add a pathname to the list of to-be-appended paths
-{
-
-}
-
-//------------------------------------------------------------------------------
-
-void Root::SystPing(Cli::Cl_t Cl)
-//
-{
-if (Cl.Pa_v.size()==0) {
-  Post(48,"ping","system","1");
-  return;
-}
-for(unsigned k=0;k<4;k++) {
-//Post(27,uint2str(k));
-  WALKVECTOR(Cli::Pa_t,Cl.Pa_v,i) {  // Walk the parameter (ping) list
-//    printf("%s\n",(*i).Val.c_str()); fflush(stdout);
-    string tgt = (*i).Val;             // Class name to be pinged
-    if (Cli::StrEq(tgt,Sderived)) continue;           // Can't ping yourself
-    unsigned cIdx = 0;
-    for (; cIdx < Comms.size(); cIdx++)               // check all communicators
-    {
-       WALKVECTOR(ProcMap::ProcMap_t,pPmap[cIdx]->vPmap,j) {   // Walk the process list
-         if (Cli::StrEq((*j).P_class,Sderived)) continue;// Still can't ping self
-         if ((Cli::StrEq(tgt,(*j).P_class))||(tgt=="*")) {
-           PMsg_p Pkt;
-           Pkt.comm = Comms[cIdx];
-           Pkt.Put(1,&((*j).P_class));    // Target process name
-           string tD(GetDate());
-           string tT(GetTime());
-           Pkt.Put(2,&tD); // Never actually used these
-           Pkt.Put(3,&tT);
-           Pkt.Put<unsigned>(4,&k);       // Ping attempt
-           Pkt.Src(Urank);                // Sending rank
-           Pkt.Key(Q::SYST,Q::PING,Q::REQ);
-           Pkt.Send((*j).P_rank);
-         }
-       }
-    }
-  }
-}
-}
-
-//------------------------------------------------------------------------------
-
-void Root::SystRun(Cli::Cl_t Cl)
-// Spawn a group of processes and connect to them. The run command should look like
-// either: 1) a list of triplets: number of procs, hostname, executable; or 2) a
-// file specification containing lines of this form. For this first version we
-// are not allowing command-line arguments, although this capacity could be
-// retrofitted if deemed essential.
-{
-// no arguments: bad command
-if (Cl.Pa_v.size()==0) {
-  Post(48,"run","system","1");
-  return;
-}
-// 1 argument: a file
-if (Cl.Pa_v.size()==1) {
-
-  return;
-}
-if (Cl.Pa_v.size()==2) {
-  Post(48,"run","system","1");
-  return;
-}
-if (Cl.Pa_v.size()%3!=0) {
-  Post(48,"ping","system","1");
-  return;
-}
-}
-
-//------------------------------------------------------------------------------
-
-void Root::SystShow(Cli::Cl_t)
-// Monkey wants the list of processes
-{
-//vector<string> vprocs;
-//if (pPmap!=0) pPmap->GetProcs(vprocs);
-vector<ProcMap::ProcMap_t> vprocs;
-for (unsigned cIdx = 0; cIdx < Comms.size(); cIdx++)
-{
-if (pPmap[cIdx]!=0) pPmap[cIdx]->GetProcs(vprocs);
-Post(29,uint2str(vprocs.size()),uint2str(cIdx));
-Post(30,Sproc);
-printf("\n");
-printf("Processes for comm %d\n", cIdx);
-//WALKVECTOR(string,vprocs,i) printf("%s\n",(*i).c_str());
-WALKVECTOR(ProcMap::ProcMap_t,vprocs,i)
-  printf("Rank %02d, %35s, created %s %s\n",
-      (*i).P_rank,(*i).P_class.c_str(),(*i).P_TIME.c_str(),(*i).P_DATE.c_str());
-printf("\n");
-}
-fflush(stdout);
-}
-
-//------------------------------------------------------------------------------
-
-void Root::SystTime(Cli::Cl_t)
-// Monkey wants the time
-{
-string sT = GetTime();
-string sD = GetDate();
-Post(26,sD,sT);
 }
 
 //==============================================================================

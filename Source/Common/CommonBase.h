@@ -57,7 +57,7 @@ vector<MPI_Comm>       Comms;    // this could be a map indexed by service name
 string                 Sderived;
 static const string    S00;
 int                    Urank;
-vector<int>            Usize;
+vector<unsigned>       Usize;
 int                    Ulen;
 string                 Sproc;
 string                 Suser;
