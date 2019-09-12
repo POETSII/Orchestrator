@@ -42,6 +42,7 @@ HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cp
 
 # Sources used by executables that require the hardware model.
 HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_engine.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_box.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_board.cpp \
@@ -62,10 +63,6 @@ HARDWARE_DEPLOYER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployme
                             $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/MultiSimpleDeployer.cpp \
                             $(HARDWARE_MODEL_SOURCES)
 
-# Sources used by executables that iterate over the POETS Engine.
-HARDWARE_ITERATOR_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.cpp \
-                            $(HARDWARE_MODEL_SOURCES)
-
 # Sources used by executables that read hardware files.
 HARDWARE_FILE_READER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderCore.cpp \
                                $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect1.cpp \
@@ -84,6 +81,25 @@ HARDWARE_FILE_READER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileReader/Hardwar
 
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
+
+# The launcher consists of:
+#
+#  - The "main" file (/Source/Launcher/LauncherMain.cpp) and its dependencies
+#    in /Source/Launcher.
+#
+#  - Debug logic, in (/Source/Common/Debug.cpp).
+#
+#  - Some Generics for command-line processing and file reading.
+LAUNCHER_SOURCES = $(SOURCE_DIR)/Launcher/LauncherMain.cpp \
+                   $(SOURCE_DIR)/Launcher/Call.cpp \
+                   $(SOURCE_DIR)/Launcher/SSH.cpp \
+                   $(SOURCE_DIR)/Common/Debug.cpp \
+                   $(GENERICS_DIR)/Cli.cpp \
+                   $(GENERICS_DIR)/dfprintf.cpp \
+                   $(GENERICS_DIR)/flat.cpp \
+                   $(GENERICS_DIR)/jnj.cpp \
+                   $(GENERICS_DIR)/lex.cpp \
+                   $(GENERICS_DIR)/uif.cpp
 
 # The root component consists of:
 #
@@ -113,7 +129,7 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
 
 ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
 ROOT_SOURCES += $(HARDWARE_FILE_READER_SOURCES)
-ROOT_SOURCES += $(HARDWARE_ITERATOR_SOURCES)
+ROOT_SOURCES += $(HARDWARE_MODEL_SOURCES)
 
 # Add (almost) all of the sources from OrchBase and Parser.
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)
@@ -263,7 +279,7 @@ $(1)_OBJECTS := $(call orch_sources_to_objects, $($(1)_SOURCES))
 endef
 
 $(foreach object_set,\
-          ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP,\
+          LAUNCHER ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP,\
           $(eval $(call OBJECT_TEMPLATE,$(object_set))))
 
 # Define executable prerequisites. RULE_TEMPLATE defines the substitutions made
@@ -276,5 +292,5 @@ $($(1)_EXECUTABLE): $($(1)_OBJECTS)
 endef
 
 $(foreach executable_name,\
-          ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP,\
+          LAUNCHER ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP,\
           $(eval $(call RULE_TEMPLATE,$(executable_name))))

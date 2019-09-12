@@ -1448,7 +1448,8 @@ p->P()=0;                              // Disconnect parent pointer
 void UIF::Node::Dump(FILE * df,string s0)
 {
 fprintf(df,"\n---\n%sDumping node %p (par %p) type |%s|\n",
-           s0.c_str(),this,par,Notype_str[typ]);
+           s0.c_str(), static_cast<void*>(this),
+		   static_cast<void*>(par), Notype_str[typ]);
 fprintf(df,"%sOpcode |%s|\n",s0.c_str(),Lex::Sytype_str[qop]);
 fprintf(df,"%sString |%s|\n",s0.c_str(),str.c_str());
 fprintf(df,"%sPos %d\n",s0.c_str(),pos);
@@ -1465,7 +1466,8 @@ void UIF::Node::Dumpt(FILE * fp)
 // Tiny inline Node dump
 {
 fprintf(fp,"%6p(%2d) %s:%s[%s]\n",
-        this,pos,Notype_str[typ],str.c_str(),Lex::Sytype_str[qop]);
+        static_cast<void*>(this),pos,Notype_str[typ],
+		str.c_str(),Lex::Sytype_str[qop]);
 }
 
 //------------------------------------------------------------------------------

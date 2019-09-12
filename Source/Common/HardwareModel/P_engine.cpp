@@ -232,6 +232,51 @@ void P_engine::connect(AddressComponent start, AddressComponent end,
     }
 }
 
+/* Grabs all boxes associated with a given task in this engine. Arguments:
+ *
+ * - task: Task to search for.
+ * - boxes: Set to populate with box addresses found. */
+void P_engine::get_boxes_for_task(P_task* task, std::set<P_box*>* boxes)
+{
+    boxes->clear();
+
+    HardwareIterator iterator = HardwareIterator(this);
+    P_box* currentBox;
+    P_thread* currentThread;
+
+    /* Go throughout the entire hardware stack. */
+    while (!iterator.has_wrapped())
+    {
+        currentBox = iterator.get_board()->parent;
+        currentThread = iterator.get_core()->P_threadm.begin()->second;
+
+        /* If the current board is contained by a box in 'boxes', we skip
+         * it. */
+        if (std::find(boxes->begin(), boxes->end(), currentBox) !=
+            boxes->end())
+        {
+            iterator.next_board();
+        }
+
+        /* Otherwise, look at the first thread of this core, and deduce
+           containment from that. */
+        else if (currentThread->P_devicel.size() &&
+            currentThread->P_devicel.front()->par->par == task)
+        {
+            /* We got a live one, boss! */
+            boxes->insert(currentBox);
+            iterator.next_board();
+        }
+
+        else
+        {
+            /* No thread mapping to this task here... lets move on to the next
+             * core. */
+            iterator.next_core();
+        }
+    }
+}
+
 /* Write debug and diagnostic information about the POETS engine, recursively,
  * using dumpchan. Arguments:
  *

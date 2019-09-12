@@ -37,8 +37,8 @@ FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
 (*FnMapx[0])[PMsg_p::KEY(Q::TINS                )] = &TMoth::OnTinsel;
 
 // mothership's address in POETS space is the host thread ID: X coordinate 0,
-// Y coordinate max.
-PAddress = TinselMeshYLen << (TinselMeshXBits+TinselLogCoresPerBoard+TinselLogThreadsPerCore);
+// Y coordinate max (within box?? TODO: check this!). TODO: Update this for multi-box!
+PAddress = TinselMeshYLenWithinBox << (TinselMeshXBits+TinselLogCoresPerBoard+TinselLogThreadsPerCore);
 
 twig_running = false;
 ForwardMsgs = false; // don't forward tinsel traffic yet
@@ -296,9 +296,14 @@ unsigned TMoth::CmRun(string task)
    TaskMap[task]->status = TaskInfo_t::TASK_ERR;
    return 1;
    }
-   case TaskInfo_t::TASK_STOP:
+   case TaskInfo_t::TASK_IDLE:
    case TaskInfo_t::TASK_END:
-   break;
+   Post(511, task,"run",TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
+   return 0;
+   case TaskInfo_t::TASK_STOP:
+   Post(512, task,"run","TASK_STOP");
+   TaskMap[task]->status = TaskInfo_t::TASK_ERR;
+   return 2;
    case TaskInfo_t::TASK_RUN:
    Post(511, task,"run","TASK_RUN");
    return 0;
@@ -354,11 +359,13 @@ unsigned TMoth::CmStop(string task)
    switch(TaskMap[task]->status)
    {
    case TaskInfo_t::TASK_IDLE:
+   case TaskInfo_t::TASK_END:
+   Post(511, task,"stopped",TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
+   return 0;   
    case TaskInfo_t::TASK_BOOT:
-   break;
    case TaskInfo_t::TASK_RDY:
    {
-   Post(813, task, "TASK_RDY");
+   Post(813, task, TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
    return 1;
    }
    case TaskInfo_t::TASK_BARR:
@@ -403,7 +410,6 @@ unsigned TMoth::CmStop(string task)
    return 0;
    }
    case TaskInfo_t::TASK_STOP:
-   case TaskInfo_t::TASK_END:
    break;
    default:
    TaskMap[task]->status = TaskInfo_t::TASK_ERR;
@@ -620,7 +626,8 @@ void* TMoth::Twig(void* par)
 {
      TMoth* parent = static_cast<TMoth*>(par);
      const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
-     char recv_buf[p_msg_size()]; // buffer for one packet at a time
+     //char recv_buf[p_msg_size()]; // buffer for one packet at a time
+	 char *recv_buf = new char[p_msg_size()]; // buffer for one packet at a time
      void* p_recv_buf = static_cast<void*>(recv_buf);
      FILE* OutFile;
      char Line[4*P_MSG_MAX_SIZE];
@@ -712,7 +719,8 @@ void* TMoth::Twig(void* par)
 	   }
      }
      printf("Exiting Twig thread\n");
-     pthread_exit(par);
+     delete[] recv_buf;
+	 pthread_exit(par);
      return par;
 }
 
