@@ -134,6 +134,7 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
         //TODO: Fix This
         char* msg = buf+hdrSize;                                                        // Pointer to the message location, after headers, etc.
         pin->pinType->Send_Handler(ThreadContext->properties, device, msg);            // Run the device's OnSend handler
+        ThreadContext->txHandlerCount++;         // Increment SendHandler count
     }
     
     const outEdge_t* target = &pin->targets[pin->idxTgts];
@@ -146,6 +147,7 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
                         pin->pinType->sz_msg+hdrSize, 0, 
                         reinterpret_cast<P_Sup_Hdr_t*>(buf));
         tinselSend(tinselHostId(), send_buf);
+        ThreadContext->superCount++;             // Increment Supervisor Msg count
     }
     else
     {
@@ -153,6 +155,7 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
                     pin->pinType->sz_msg, pin->pinType->msgType,
                     reinterpret_cast<P_Msg_Hdr_t*>(buf));
         tinselSend((target->tgt >> P_THREAD_OS), send_buf);
+        ThreadContext->txCount++;                // Increment normal Msg count
     }
     //==========================================================================
     
@@ -182,6 +185,8 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
     devInst_t* recvDevBegin;
     devInst_t* recvDevEnd;
     
+    ThreadContext->rxCount++;                  // Increment received message count
+    
     if (recvPkt->destDeviceAddr == DEST_BROADCAST)
     {   // Message is a broadcast to all devices.
         recvDevBegin = ThreadContext->devInsts;
@@ -210,6 +215,8 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
     for (devInst_t* device = recvDevBegin; device != recvDevEnd; device++)
     {
         inPin_t* pin = &device->inputPins[recvPkt->destPin];    // Get the pin
+        
+        ThreadContext->rxHandlerCount++;     // Increment received handler count
         
         // TODO: fix this when we use proper headers
         if (recvPkt->destDeviceAddr & P_SUP_MASK)                                 
@@ -257,6 +264,8 @@ bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
     uint32_t idleIdx = idleStart;
     bool notIdle = false;                           // Return val
     
+    ThreadContext->idleCount++;                  // Increment Softswitch Idle count
+    
     do {        // Do-while for exit-controlled loop.
         bool rtsFlagged = false;
         devInst_t* device = &ThreadContext->devInsts[idleIdx];
@@ -270,13 +279,14 @@ bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
         if (device->devType->OnIdle_Handler(ThreadContext->properties, device))
         {
             notIdle = true;                                         // Something interesting happened 
-            rtsFlagged = softswitch_onRTS(ThreadContext, device);   // Call RTS for device
+            rtsFlagged |= softswitch_onRTS(ThreadContext, device);  // Call RTS for device
         }
+        ThreadContext->idleHandlerCount++;       // Increment Idle Handler count
 
         if(idleIdx < maxIdx) ++idleIdx;     // Increment the index,
         else idleIdx = 0;                   // or reset it to wrap.
         
-        if (rtsFlagged) break;              // RTS has been flagged - bail!
+        //if (rtsFlagged) break;              // RTS has been flagged - bail!
     } while (idleIdx != idleStart);     // Exit if we have serviced all devices.
     
     ThreadContext->idleStart = idleIdx;    // save our position

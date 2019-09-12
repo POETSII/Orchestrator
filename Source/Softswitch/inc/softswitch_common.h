@@ -152,6 +152,18 @@ typedef struct PThreadContext
     uint32_t           rtsEnd;          // index of the last pending RTS.
     uint32_t           idleStart;       // index of where to start OnIdle from
     uint32_t           ctlEnd;
+    
+    // Instrumentation
+    uint32_t           lastCycles;          // cached last cycle count
+    uint8_t            pendCycles;          // Is there an instrumentation update pending? 2=yes, 1=claimed, 0=no
+    uint32_t           txCount;             // Number of actual messages sent
+    uint32_t           superCount;          // Number of supervisor messages sent
+    uint32_t           rxCount;             // Number of actual messages sent
+    uint32_t           txHandlerCount;      // Number of On Send handler called
+    uint32_t           rxHandlerCount;      // Number of On Receive handler called
+    uint32_t           idleCount;           // number of times softswitch enters Idle branch
+    uint32_t           idleHandlerCount;    // Number of OnIdle/OnCompute handlers called.
+    uint32_t           cycleIdx;            // Update index
 } ThreadCtxt_t;
 
 // these functions would be more cleanly done as methods of a class PThread.

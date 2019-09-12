@@ -1158,7 +1158,19 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << "0,";                                                 // rtsStart
   vars_cpp << "0,";                                                 // rtsEnd
   vars_cpp << "0,";                                                 // idleStart
-  vars_cpp << "0";                                                  // ctlEnd
+  vars_cpp << "0,";                                                 // ctlEnd
+  
+  // Instrumentation
+  vars_cpp << "0,";                                 // lastCycles
+  vars_cpp << "0,";                                 // pendCycles
+  vars_cpp << "0,";                                 // txCount
+  vars_cpp << "0,";                                 // superCount
+  vars_cpp << "0,";                                 // rxCount
+  vars_cpp << "0,";                                 // txHandlerCount
+  vars_cpp << "0,";                                 // rxHandlerCount
+  vars_cpp << "0,";                                 // idleCount
+  vars_cpp << "0,";                                 // idleHandlerCount
+  vars_cpp << "0";                                  // cycleIdx
   vars_cpp << "};\n";
   //============================================================================
   

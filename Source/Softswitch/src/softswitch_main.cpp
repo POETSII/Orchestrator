@@ -24,6 +24,14 @@ void softswitch_main()
     // Endless main loop, that is until thread context says to stop.
     while (!ThreadContext->ctlEnd)
     {
+        uint32_t cycles = tinselCycleCount();		// cycle counter is per-core
+        if(!(ThreadContext->pendCycles) 
+            && ((cycles - ThreadContext->lastCycles) > 250000000)) //~1s at 250 MHz
+        {
+          // Trigger a message to supervisor.
+          ThreadContext->pendCycles = 2;
+        }
+        
         // Something to receive
         if (tinselCanRecv())
         {
