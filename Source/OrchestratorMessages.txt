@@ -104,7 +104,7 @@
 703(E) : "Unexpected reply to query: %s received at SBase process rank %s. Circular routing loop?"
 704(E) : "Tried to load task into SBase at rank %s with no name"
 705(E) : "Error while loading SBase data at rank %s: no task name"
-706(E) : "Error loading device type data for task %s in SBase at rank %s: no device type name"
+706(E) : "Error %sing device type data for task %s in SBase at rank %s: no device type name"
 707(E) : "Error loading device %s for task %s into SBase at rank %s"
 708(E) : "Error loading device %s for task %s into SBase at rank %s: no such task"
 709(W) : "Unable to register supervisor %s on box %s into SBase: not found in the rank list. May need to connect"

@@ -500,7 +500,13 @@ void MothershipDummy::MapValue2Key(unsigned value, vector<byte>* key)
 {
    uint32_t val = static_cast<uint32_t>(value);
    void* valPtr = static_cast<void*>(&val);
-   for (unsigned b=0; b < sizeof(uint32_t); b++)
+   // another reason to hate endianness: although the Key method in Msg_p
+   // computes the key by successive left-shifting, the value as an
+   // unsigned is stored little-endian. Which means that left shift
+   // really means byte-wise right shift, from the POV of the underlying
+   // representation in memory. So it's necessary to count back through
+   // the unsigned value. 
+   for (int b=sizeof(uint32_t)-1; b >= 0; b--)
        key->push_back(static_cast<byte*>(valPtr)[b]);
 }
 
@@ -508,7 +514,7 @@ string MothershipDummy::QueryType(unsigned keyVal)
 {
    vector<byte> key;
    MapValue2Key(keyVal, &key);
-   if ((key[0] != Q::NAME) || (key[1] != Q::QRY)) return "Not a Query";
+   if ((key[0] != Q::NAME) || ((key[1] != Q::QRY) && (key[1] != Q::RPLY))) return "Not a Query";
    switch (key[2])
    {
    case Q::DEVI:

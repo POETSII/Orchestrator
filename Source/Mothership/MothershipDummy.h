@@ -51,7 +51,7 @@ class MothershipDummy : public SBase
    unsigned              ReplyTask(PMsg_p*, unsigned);
 
    static void           MapValue2Key(unsigned value, vector<byte>* key);     
-   string                QueryType(unsigned);
+   static string         QueryType(unsigned);
 
    typedef unsigned    (MothershipDummy::*pMeth)(PMsg_p *, unsigned);
    typedef map<unsigned,pMeth> FnMap_t;
