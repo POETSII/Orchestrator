@@ -4,6 +4,22 @@
 #include <cstdio> // debug
 
 
+const map<string, TaskState_t> SBase::StateVals({{"Loaded",Loaded},
+                                                 {"Linked",Linked},
+						 {"Built",Built},
+						 {"Deployed",Deployed},
+						 {"Init",Init},
+						 {"Running",Running},
+						 {"Finished",Finished},
+						 {"Unknown",Unknown}});
+const map<TaskState_t, string> SBase::StateStrs({{Loaded,"Loaded"},
+                                                 {Linked,"Linked"},
+	                                         {Built,"Built"},
+	                                         {Deployed,"Deployed"},
+	                                         {Init,"Init"},
+	                                         {Running,"Running"},
+		                                 {Finished,"Finished"},
+		                                 {Unknown,"Unknown"}});
 // constructor. Arguments will almost always come from higher-level
 // constructors since we expect to derive from SBase.
 SBase::SBase(int argc,char ** argv,string d,string s): CommonBase(argc,argv,d,s), AddressBook(d)
@@ -1400,7 +1416,7 @@ unsigned SBase::QueryTask(PMsg_p *msg, unsigned comm)
    if (taskName.empty())            // and no task name is an error.
    {
       Post(710, "QueryTask", int2str(Urank));
-      return AddressBook::ERR_INVALID_TASK; 
+      return AddressBook::ERR_NONFATAL; 
    }
    unsigned err = SUCCESS;
    int srcProc = msg->Src();            // set up the reply
@@ -1516,24 +1532,9 @@ unsigned SBase::SendSupv(PMsg_p *msg, unsigned comm)
 //============================================================================== 
 string SBase::State2Str(TaskState_t state)
 {
-   switch (state)
-   {
-   case  Loaded:
-   return "Loaded";
-   case Linked:
-   return "Linked";
-   case Built:
-   return "Built";
-   case Deployed:
-   return "Deployed";
-   case Init:
-   return "Init";
-   case Running:
-   return "Running";
-   case Finished:
-   return "Finished";
-   }
-   return "Unknown";
+   map<TaskState_t, string>::const_iterator s = StateStrs.find(state);
+   if (s == StateStrs.end()) return "Unknown";
+   else return s->second;
 }
 
 //==============================================================================
@@ -1543,13 +1544,7 @@ string SBase::State2Str(TaskState_t state)
 //============================================================================== 
 TaskState_t SBase::Str2State(const string& state)
 {
-
-   if (state == "Loaded") return Loaded;
-   if (state == "Linked") return Linked;
-   if (state == "Built") return Built;
-   if (state == "Deployed") return Deployed;
-   if (state == "Init") return Init;
-   if (state == "Running") return Running;
-   if (state == "Finished") return Finished;
-   return Unknown;
+   map<string, TaskState_t>::const_iterator s = StateVals.find(state);
+   if (s == StateVals.end()) return Unknown;
+   else return s->second;
 }

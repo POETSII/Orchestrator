@@ -99,6 +99,9 @@ unsigned            QueryExtn          (PMsg_p *, unsigned);
 unsigned            QueryList          (PMsg_p *, unsigned);
 unsigned            QueryTask          (PMsg_p *, unsigned);
 
+static const map<string, TaskState_t> StateVals;
+static const map<TaskState_t, string> StateStrs;
+
 };
 
 //==============================================================================

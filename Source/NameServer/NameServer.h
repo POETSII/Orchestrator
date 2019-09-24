@@ -2,6 +2,7 @@
 #define __NameServerH__H
 
 #include "SBase.h"
+#include "Debug.h"
 // #include "Ns_el.h"
 
 //==============================================================================

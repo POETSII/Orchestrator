@@ -285,7 +285,11 @@ void HardwareIterator::Dump(FILE* file)
     /* Print whether or not each iterator has changed since the last time it
      * was polled. */
     std::vector<std::string> itemTypes;
-    itemTypes.insert(itemTypes.end(), {"board", "mailbox", "core", "thread"});
+    itemTypes.push_back("board");
+    itemTypes.push_back("mailbox");
+    itemTypes.push_back("core");
+    itemTypes.push_back("thread");
+
     for (long unsigned typeIndex = 0; typeIndex < itemTypes.size();
          typeIndex++)
     {

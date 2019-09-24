@@ -12,13 +12,15 @@ class Dialect1Deployer;
 #include <stdio.h>
 #include "D_graph.h"
 #include "HardwareModel.h"
-#include "HardwareFileParser.h"
+#include "HardwareFileReader.h"
 #include "Placement.h"
 #include "Cli.h"
 #include "Environment.h"
 #include "CommonBase.h"
 #include "P_owner.h"
 using namespace std;
+
+#define TASK_DEPLOY_DIR ".orchestrator/task_binaries"  // Relative to home.
 
 //==============================================================================
 

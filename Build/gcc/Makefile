@@ -74,10 +74,12 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/Common \
                 -I$(SOURCE_DIR)/Common/HardwareModel \
                 -I$(SOURCE_DIR)/OrchBase \
-                -I$(SOURCE_DIR)/OrchBase/HardwareFileManager \
+                -I$(SOURCE_DIR)/OrchBase/HardwareFileReader \
                 -I$(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment \
+                -I$(SOURCE_DIR)/Launcher \
                 -I$(SOURCE_DIR)/Injector \
                 -I$(SOURCE_DIR)/Parser \
+                -I$(SOURCE_DIR)/Root \
                 -I$(SOURCE_DIR)/NameServer \
                 -I$(SOURCE_DIR)/Softswitch/inc \
                 -I$(MPICH_INC_DIR) \
@@ -90,10 +92,14 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
 # to the hostlink and some other minor changes, though nobody has studied this
 # comprehensively.
 CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
-           -std=c++11 -Wall -fPIC -pthread
+           -std=c++11 -Wall -fPIC -pthread -pedantic
 
 # Debug target logic.
+ifdef ORCHESTRATOR_DEBUG
+CXXFLAGS += -g3 -DORCHESTRATOR_DEBUG=1
+else 
 debug: CXXFLAGS += -g3 -DORCHESTRATOR_DEBUG=1
+endif
 debug: all
 
 # Handy aliases for building executables, scripts, and libraries. Order doesn't
@@ -101,6 +107,7 @@ debug: all
 ORCHESTRATE_BASENAME = orchestrate.sh
 ORCHESTRATE_SCRIPT = $(ROOT_DIR)/$(ORCHESTRATE_BASENAME)
 
+LAUNCHER_EXECUTABLE = $(EXECUTABLE_DIR)/orchestrate
 ROOT_EXECUTABLE = $(EXECUTABLE_DIR)/root
 DUMMY_EXECUTABLE = $(EXECUTABLE_DIR)/dummy
 LOGSERVER_EXECUTABLE = $(EXECUTABLE_DIR)/logserver
@@ -136,9 +143,9 @@ tests: $(ALL_TESTS) $(TEST_SCRIPT)
 # Linking targets (to generate executables). See
 # Makefile.executable_prerequisites for the prerequisites of these executables
 # (obviously...)
-$(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) $(LOGSERVER_EXECUTABLE) \
-$(NAMESERVER_EXECUTABLE) $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE) \
-$(MOTHERSHIP_DUMMY_EXECUTABLE):
+$(LAUNCHER_EXECUTABLE) $(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) \
+$(LOGSERVER_EXECUTABLE) $(NAMESERVER_EXECUTABLE) $(RTCL_EXECUTABLE) \
+$(INJECTOR_EXECUTABLE) $(MOTHERSHIP_DUMMY_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
         -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \

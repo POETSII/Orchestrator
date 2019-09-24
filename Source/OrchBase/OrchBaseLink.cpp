@@ -210,6 +210,7 @@ if (!pPlace->Place(pT))
       //		           (sAddr.A_device << P_DEVICE_OS);
       supervisorAddrs.push_back((sAddr.A_box << P_BOX_OS) |
 		                (sAddr.A_board << P_BOARD_OS) |
+				(sAddr.A_mailbox << P_MAILBOX_OS) |
 		                (sAddr.A_core << P_CORE_OS) |
                                 (sAddr.A_thread << P_THREAD_OS) |
 		                (sAddr.A_device << P_DEVICE_OS));
@@ -279,6 +280,7 @@ if (!pPlace->Place(pT))
 		        //                (dAddr.A_device << P_DEVICE_OS);
 			devAddrs.push_back((dAddr.A_box << P_BOX_OS) |
 		                           (dAddr.A_board << P_BOARD_OS) |
+					   (dAddr.A_mailbox << P_MAILBOX_OS) |
 		                           (dAddr.A_core << P_CORE_OS) |
                                            (dAddr.A_thread << P_THREAD_OS) |
 		                           (dAddr.A_device << P_DEVICE_OS));

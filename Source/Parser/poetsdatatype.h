@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QVariant>
+#include "OSFixes.hpp"
 
 class PoetsDataType : public QObject, public QVariant
 {

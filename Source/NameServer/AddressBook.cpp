@@ -1,5 +1,6 @@
 //==============================================================================
 #include "AddressBook.hpp"
+//#include "Debug.h"
 
 #include <iostream>
 
@@ -513,6 +514,7 @@ unsigned AddressBook::AddDevice(std::string &TaskName, Record_t &DevRec, bool Va
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
+        // DebugPrint("No such task: %s\n", TaskName.c_str());
         ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
     }
 
@@ -521,12 +523,14 @@ unsigned AddressBook::AddDevice(std::string &TaskName, Record_t &DevRec, bool Va
     if (Validate) // Check that the device does not already exist
     {             // and that the indices are valid.
         unsigned Ret = ValidateDevice(TRec, DevRec);
+	// DebugPrint("Device validation %s\n", (Ret ? "failed" : "succeeded"));
         if(Ret) return Ret;
     }
 
     if ((DevRec.RecordType == Device) || (DevRec.RecordType == DeviceExt))
     {
         // Add a Device
+        // DebugPrint("Ordinary device being added\n");
         CheckVector(TRec, TRec->Devices);    // Sanity check for reallocation.
 
         TRec->Devices.push_back(DevRec);     // Add Dev to task.
@@ -538,6 +542,7 @@ unsigned AddressBook::AddDevice(std::string &TaskName, Record_t &DevRec, bool Va
 
     } else if (DevRec.RecordType == External) {
         // Add an External
+        // DebugPrint("External device being added\n");
         CheckVector(TRec, TRec->Externals); // Sanity check for reallocation
 
         TRec->Externals.push_back(DevRec);
@@ -549,6 +554,7 @@ unsigned AddressBook::AddDevice(std::string &TaskName, Record_t &DevRec, bool Va
 
     } else if (DevRec.RecordType == Supervisor) {
         // Add a Supervisor
+        // DebugPrint("Supervisor device being added\n");
         CheckVector(TRec, TRec->Supervisors);  // Sanity check for reallocation.
 
         TRec->Supervisors.push_back(DevRec);
@@ -570,8 +576,8 @@ unsigned AddressBook::AddDevice(std::string &TaskName, Record_t &DevRec, bool Va
     // added 18 July 2019 ADR - if Map and Link were previously invalidated
     // rebuild everything
     unsigned err;
-    if (!TRec->MapValid && ((err = BuildMaps(TRec->Name)) != SUCCESS)) return err;   
-    if (!TRec->LinkValid && ((err = BuildLink(TRec->Name)) != SUCCESS)) return err;  
+    if (!TRec->MapValid && ((err = BuildMaps(TRec->Name)) != SUCCESS)) return err;
+    if (!TRec->LinkValid && ((err = BuildLink(TRec->Name)) != SUCCESS)) return err;
     return SUCCESS;
 }
 
@@ -1023,20 +1029,24 @@ unsigned AddressBook::ValidateDevice(TaskRecord_t *TRec, Record_t &DevRec)
     // Check that the device does not already exist in the maps
     AddrMap_t::const_iterator DASearch = TRec->AddrMap.find(DevRec.Address);
     if (DASearch != TRec->AddrMap.end()) {
+        // DebugPrint("Device address %llu already exists\n", DevRec.Address);
         ERETURN("DUPADDR: Device Address already added", ERR_DEVICE_ADDR_USED);
     }
 
     NameMap_t::const_iterator DNSearch = TRec->NameMap.find(DevRec.Name);
     if (DNSearch != TRec->NameMap.end()) {
+        // DebugPrint("Device name %s already exists\n", DevRec.Name.c_str());
         ERETURN("DUPNAME: Device Name already added", ERR_DEVICENAME_USED);
     }
 
     // Check that the indices are valid BEFORE adding the Device.
     if (DevRec.DeviceType >= TRec->DevTypes.size()) {
+        // DebugPrint("Device type %u does not exist\n", DevRec.DeviceType);
         ERETURN("Invalid DeviceType Index", ERR_INVALID_DEVTYPE);
     }
 
     if (DevRec.Attribute >= static_cast<int>(TRec->AttrTypes.size())) {
+        // DebugPrint("Device attribute type %u does not exist\n", DevRec.Attribute);
         ERETURN("Invalid AttributeType Index", ERR_INVALID_ATTRIBUTE);
     }
 

@@ -9,6 +9,8 @@
 #include "Cli.h"
 #include "flat.h"
 
+#include "OSFixes.hpp"
+
 const char * Root::prompt = "POETS>";
 
 //------------------------------------------------------------------------------
@@ -55,8 +57,8 @@ return NULL;
 
 //==============================================================================
 
-Root::Root(int argc,char * argv[],string d) :
-  OrchBase(argc,argv,d,string(__FILE__))
+Root::Root(int argc,char * argv[],string d)
+    :OrchBase(argc,argv,d,string(__FILE__))
 {
 echo         = false;                  // Batch subsystem opaque
 injData.flag = 0;                      // Clear injector controls
@@ -73,6 +75,56 @@ pthread_t kb_thread;
 if(pthread_create(&kb_thread,NULL,kb_func,args))
   fprintf(stdout,"Error creating kb_thread\n");
 fflush(stdout);
+
+/* Handle input arguments - grab the hdfPath and/or batchPath. */
+std::string rawArgs;
+std::string hdfPath;
+std::string batchPath;
+for (int i=1; i<argc; i++)
+{
+  rawArgs += argv[i];
+  rawArgs += " ";
+}
+
+Cli cli(rawArgs);
+if (cli.problem.prob)
+{
+  printf("Command-line error near character %d. Ignoring commandline "
+         "arguments.\n", cli.problem.col);
+}
+else
+{
+  WALKVECTOR(Cli::Cl_t, cli.Cl_v, i)
+  {
+    std::string key = i->Cl;
+    if (key=="batch") batchPath = i->GetP(0);
+    if (key=="hdf") hdfPath = i->GetP(0);
+  }
+}
+
+/* Queue batch message, if one was given to us. We do this by staging a Cli
+ * entry using the batch system (see Root::OnIdle). */
+if (!batchPath.empty())
+{
+  Equeue.push_front(Cli(dformat("call /file = \"%s\"", batchPath.c_str())));
+}
+
+/* Pass hardware description file to topology generation, if one was given to
+ * us. We do this by staging a Cli entry using the batch system (see
+ * Root::OnIdle).
+ *
+ * The reason we do this (as opposed to simply calling TopoLoad) is because we
+ * haven't built the process map yet - as a consequence, we do not know the
+ * rank of the LogServer processes, and so can't Post in the event of an error.
+ * By staging the Cli entry onto the front of the batch queue, we can be sure
+ * that MPISpinner will drain the input buffer before running our
+ * command. Since that input buffer will contain messages that will register
+ * all processes into our pPmap, we know we will have the logserver rank,
+ * making Post work correctly. */
+if (!hdfPath.empty())
+{
+  Equeue.push_front(Cli(dformat("topo /load = \"%s\"", hdfPath.c_str())));
+}
 
 MPISpinner();                          // Spin on *all* messages; exit on DIE
 printf("********* Root rank %d on the way out\n",Urank); fflush(stdout);
@@ -214,9 +266,11 @@ if ((tpL = pPmap[cIdx]->U.LogServer) != Q::NAP) // is this the LogServer's local
    lIdx = cIdx; // and comm index
    for(p=0;p<Usize[cIdx];p++)
    {
-      if ((((cIdx != RootCIdx()) || (p!=(int)Urank))) && (p!=tpL)) {  // NOT the LogServer
-         Post(50,pPmap[cIdx]->M[p],int2str(p));
-         Pkt.Send(p);
+      if ((((static_cast<int>(cIdx) != RootCIdx())
+            || (p!=static_cast<int>(Urank)))) && (p!=tpL))
+      { // NOT the LogServer
+        Post(50,pPmap[cIdx]->M[p],int2str(p));
+        Pkt.Send(p);
       }
    }
 }
@@ -224,7 +278,9 @@ else
 {
    for(p=0;p<Usize[cIdx];p++) // No. LogServer not on this comm. Shut everyone down.
    {
-      if (((cIdx != RootCIdx()) || (p!=(int)Urank))) {  // Don't need to send to self
+      if (((static_cast<int>(cIdx) != RootCIdx())
+            || (p!=static_cast<int>(Urank))))
+      {  // Don't need to send to self
          Post(50,pPmap[cIdx]->M[p],int2str(p));
          Pkt.Send(p);
       }
@@ -391,7 +447,19 @@ fprintf(fp,"Key        Method\n");
 // means it would try to dereference the iterator obtained from
 // F. Not what is expected...
 WALKMAP(unsigned,pMeth,(**F),i)
-  fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
+{
+  //fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
+  fprintf(fp,"%#010x ",(*i).first);
+
+  // Now for a horrible double type cast to get us a sensible function pointer.
+  // void*s are only meant to point to objects, not functions. So we get to a
+  // void** as a pointer to a function pointer is an object pointer. We can then
+  // follow this pointer to get to the void*, which we then reinterpret to get
+  // the function's address as a uint64_t.
+  fprintf(fp,"%" PTR_FMT "\n",reinterpret_cast<uint64_t>(
+                                *(reinterpret_cast<void**>(&((*i).second))))
+          );
+}
 }
 fprintf(fp,"prompt    = %s\n",prompt);
 
@@ -548,7 +616,7 @@ if (Cl.Pa_v.size()==0) {
   Post(47,"conn","system","1"); // need to be given a service to connect to
   return;
 }
-if (pPmap[0]->vPmap.size() != Usize[0])
+if (static_cast<int>(pPmap[0]->vPmap.size()) != Usize[0])
 {
   Post(62); // can't connect to another universe before we know the size of our own.
 }

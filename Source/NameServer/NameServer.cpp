@@ -203,6 +203,7 @@ unsigned NameServer::ConfigDistribute(PMsg_p * msg, unsigned comm)
 	     // if ((s->Address == *superAddr) && (*m == static_cast<int>(s->Rank))) // SymAddr_t form
 	     if ((static_cast<int>(s->Rank) == *superAddr) && (*m == static_cast<int>(s->Rank)))
 	     {
+	        DebugPrint("Deploying name data to Mothership at rank %d\n",*m); 
 	        // send over the task NameServer data 
 	        PMsg_p taskInfo(Comms[sComm]);
 		taskInfo.Src(Urank);

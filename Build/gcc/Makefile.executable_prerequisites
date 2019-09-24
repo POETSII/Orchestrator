@@ -42,6 +42,7 @@ HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cp
 
 # Sources used by executables that require the hardware model.
 HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp \
+                         $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_engine.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_box.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_board.cpp \
@@ -62,12 +63,15 @@ HARDWARE_DEPLOYER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployme
                             $(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment/MultiSimpleDeployer.cpp \
                             $(HARDWARE_MODEL_SOURCES)
 
-# Sources used by executables that iterate over the POETS Engine.
-HARDWARE_ITERATOR_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.cpp \
-                            $(HARDWARE_MODEL_SOURCES)
-
 # Sources used by executables that read hardware files.
-HARDWARE_FILE_PARSER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileManager/HardwareFileParser.cpp \
+HARDWARE_FILE_READER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderCore.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect1.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Engine.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Getters.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Items.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/HardwareFileReaderDialect3Sections.cpp \
+                               $(SOURCE_DIR)/OrchBase/HardwareFileReader/Validator.cpp \
                                $(GENERICS_DIR)/dfprintf.cpp \
                                $(GENERICS_DIR)/flat.cpp \
                                $(GENERICS_DIR)/jnj.cpp \
@@ -89,6 +93,25 @@ LOGSERVER_MESSAGE_FILE_ORIGIN = $(SOURCE_DIR)/OrchestratorMessages.txt
 
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
+
+# The launcher consists of:
+#
+#  - The "main" file (/Source/Launcher/LauncherMain.cpp) and its dependencies
+#    in /Source/Launcher.
+#
+#  - Debug logic, in (/Source/Common/Debug.cpp).
+#
+#  - Some Generics for command-line processing and file reading.
+LAUNCHER_SOURCES = $(SOURCE_DIR)/Launcher/LauncherMain.cpp \
+                   $(SOURCE_DIR)/Launcher/Call.cpp \
+                   $(SOURCE_DIR)/Launcher/SSH.cpp \
+                   $(SOURCE_DIR)/Common/Debug.cpp \
+                   $(GENERICS_DIR)/Cli.cpp \
+                   $(GENERICS_DIR)/dfprintf.cpp \
+                   $(GENERICS_DIR)/flat.cpp \
+                   $(GENERICS_DIR)/jnj.cpp \
+                   $(GENERICS_DIR)/lex.cpp \
+                   $(GENERICS_DIR)/uif.cpp
 
 # The root component consists of:
 #
@@ -114,15 +137,16 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(GENERICS_DIR)/filename.cpp \
                $(GENERICS_DIR)/lex.cpp \
                $(GENERICS_DIR)/rand.cpp \
+	       $(SOURCE_DIR)/Common/Debug.cpp \
                $(SOURCE_DIR)/NameServer/Ns_el.cpp \
 	       $(SOURCE_DIR)/NameServer/ABDefs.cpp \
                $(SOURCE_DIR)/NameServer/ABRecord.cpp \
                $(SOURCE_DIR)/NameServer/ABTask.cpp \
-               $(SOURCE_DIR)/NameServer/AddressBook.cpp \
+               $(SOURCE_DIR)/NameServer/AddressBook.cpp 
 
 ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
-ROOT_SOURCES += $(HARDWARE_FILE_PARSER_SOURCES)
-ROOT_SOURCES += $(HARDWARE_ITERATOR_SOURCES)
+ROOT_SOURCES += $(HARDWARE_FILE_READER_SOURCES)
+ROOT_SOURCES += $(HARDWARE_MODEL_SOURCES)
 
 # Add (almost) all of the sources from OrchBase and Parser.
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)
@@ -167,6 +191,10 @@ LOGSERVER_SOURCES = $(SOURCE_DIR)/LogServer/LogServerMain.cpp \
 
 LOGSERVER_SOURCES += $(TRULY_COMMON_SOURCES)
 
+# The logserver also needs OrchestratorMessages.txt to exist in the directory
+# from which the Orchestrator is started.
+LOGSERVER_MESSAGE_FILE_ORIGIN = $(SOURCE_DIR)/OrchestratorMessages.txt
+
 # The nameserver component consists of:
 #
 # - The "main" file (/Source/NameServer/NameServerMain.cpp) and its derived
@@ -179,8 +207,9 @@ LOGSERVER_SOURCES += $(TRULY_COMMON_SOURCES)
 # - The hardware and software address sources.
 #
 NAMESERVER_SOURCES = $(SOURCE_DIR)/NameServer/NameServerMain.cpp \
-                     $(SOURCE_DIR)/NameServer/NameServer.cpp 
-
+                     $(SOURCE_DIR)/NameServer/NameServer.cpp \
+		     $(SOURCE_DIR)/Common/Debug.cpp 
+		                         
 NAMESERVER_SOURCES += $(NAME_SERVICES_SOURCES)
 NAMESERVER_SOURCES += $(TRULY_COMMON_SOURCES)
 #NAMESERVER_SOURCES += $(SOFTWARE_ADDRESS_SOURCES)
@@ -228,6 +257,8 @@ INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 #
 # - An interface source file from the softswitch, in /Source/Softswitch/src.
 #
+# - The name services sources.
+#
 # - The truly common sources.
 #
 # - Some "generics" (/Generics) sources.
@@ -237,23 +268,22 @@ INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 # Hostlink sources are to be compiled separately.
 MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/TaskInfo.cpp \
-                     $(SOURCE_DIR)/Mothership/TMoth.cpp \
+                     $(SOURCE_DIR)/Mothership/Mothership.cpp \
                      $(SOURCE_DIR)/Softswitch/src/poets_msg.cpp \
                      $(GENERICS_DIR)/dumpchan.cpp \
                      $(GENERICS_DIR)/rand.cpp \
+		     $(SOURCE_DIR)/Common/Debug.cpp \
                      $(SOURCE_DIR)/OrchBase/Bin.cpp \
                      $(SOURCE_DIR)/OrchBase/build_defs.cpp \
                      $(SOURCE_DIR)/OrchBase/CFrag.cpp \
-                     $(SOURCE_DIR)/OrchBase/CMsg_p.cpp \
                      $(SOURCE_DIR)/OrchBase/D_graph.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_addr.cpp \
                      $(SOURCE_DIR)/OrchBase/P_device.cpp \
                      $(SOURCE_DIR)/OrchBase/P_message.cpp \
                      $(SOURCE_DIR)/OrchBase/P_pin.cpp \
                      $(SOURCE_DIR)/OrchBase/P_task.cpp \
-                     $(SOURCE_DIR)/Common/Debug.cpp \
                      $(HARDWARE_DEPLOYER_SOURCES)
 
+MOTHERSHIP_SOURCES += $(NAME_SERVICES_SOURCES)
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 
 # A dummy mothership is an executable to provide mothership-like functionality
@@ -303,7 +333,7 @@ $(1)_OBJECTS := $(call orch_sources_to_objects, $($(1)_SOURCES))
 endef
 
 $(foreach object_set,\
-          ROOT INJECTOR DUMMY LOGSERVER NAMESERVER RTCL MOTHERSHIP MOTHERSHIP_DUMMY,\
+          LAUNCHER ROOT INJECTOR DUMMY LOGSERVER NAMESERVER RTCL MOTHERSHIP MOTHERSHIP_DUMMY,\
           $(eval $(call OBJECT_TEMPLATE,$(object_set))))
 
 # Define executable prerequisites. RULE_TEMPLATE defines the substitutions made
@@ -316,5 +346,5 @@ $($(1)_EXECUTABLE): $($(1)_OBJECTS)
 endef
 
 $(foreach executable_name,\
-          ROOT DUMMY LOGSERVER NAMESERVER RTCL INJECTOR MOTHERSHIP MOTHERSHIP_DUMMY,\
+          LAUNCHER ROOT DUMMY LOGSERVER NAMESERVER RTCL INJECTOR MOTHERSHIP MOTHERSHIP_DUMMY,\
           $(eval $(call RULE_TEMPLATE,$(executable_name))))

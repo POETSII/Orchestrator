@@ -15,6 +15,7 @@ SOFTSWSRC = $(realpath $(SOFTSW_ROOT)/src)
 
 PCOMMONINC = $(realpath $(ORCH_ROOT)/Source/Common)
 GENERICSINC = $(realpath $(ORCH_ROOT)/Generics)
+NAMESRVINC = $(realpath $(ORCH_ROOT)/Source/NameServer)
 
 ifndef RISCV_PATH
 export RISCV_PATH := /usr/local/riscv
@@ -81,14 +82,15 @@ vpath mpi%.h $(MPICHINC)
 vpath opa_%.h $(MPICHINC)
 vpath PMsg_p.hpp $(PCOMMONINC)
 vpath OSFixes.hpp $(PCOMMONINC)
+vpath ABDefs.hpp $(NAMESRVINC)
 vpath Supervisor.% $(realpath ../$(DEFAULT_GEN_DIR))
-VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC)
+VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC):$(NAMESRVINC)
 
 # Local compiler flags
 CFLAGS = $(RV_CFLAGS) $(LH_CFLAGS) -O2 -I $(TINSELINC) -I $(SOFTSWINC) -I $(GENINC) -I $(PCOMMONINC)
 LDFLAGS = -melf32lriscv -G 0 -L$(RV_LIBS) -L$(RV_GCC_LIBS) -lgcc -lc
 
-MPICFLAGS = -I$(SOFTSWINC) -I$(TINSELINC) -I$(MPICHINC) -I$(PCOMMONINC) -I$(GENERICSINC) -std=c++11 -fPIC -pipe -Wall
+MPICFLAGS = -I$(SOFTSWINC) -I$(TINSELINC) -I$(MPICHINC) -I$(PCOMMONINC) -I$(GENERICSINC) -I$(NAMESRVINC) -std=c++11 -fPIC -pipe -Wall
 MPILDFLAGS = -shared -L$(MPICHLIB)
 
 SECEXPCPPS := $(GENSRC)/%.cpp
