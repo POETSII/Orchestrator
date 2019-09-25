@@ -28,7 +28,7 @@ NameServer::NameServer(int argc,char * argv[],string d):
 
   MPISpinner();                        // Spin on MPI messages; exit only on DIE
 
-//printf("********* NameServer rank %d on the way out\n",Urank); fflush(stdout);
+  printf("********* NameServer rank %d on the way out\n",Urank); fflush(stdout);
 }
 
 //------------------------------------------------------------------------------
@@ -37,7 +37,7 @@ NameServer::~NameServer()
 {
    WALKVECTOR(FnMap_t*,FnMapx,F)          // WALKVECTOR and WALKMAP are in macros.h (long include chain)
      delete *F;                           // get rid of derived class function tables
-//printf("********* NameServer rank %d destructor\n",Urank); fflush(stdout);
+   printf("********* NameServer rank %d destructor\n",Urank); fflush(stdout);
 }
 
 //------------------------------------------------------------------------------

@@ -18,7 +18,7 @@ public:
 private:
 
     P_typdcl* graph_type; // need to store the graph type here for GraphInstances to recover.
-    const QHash<QString, vld_elem_types> valid_elements = {{"DeviceTypes", DEVTYPES}, {"MessageTypes", MSGTYPES}, {"SharedCode", SHAREDCODE}};
+    QHash<QString, vld_elem_types> valid_elements;
 };
 
 #endif // PIGRAPHDEF_H

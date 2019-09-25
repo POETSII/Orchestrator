@@ -31,7 +31,7 @@ private:
 
     // 'officially' state is not supported but this seems unlikely.
     enum vld_elem_types {OTHER, STATE};
-    const QHash<QString, vld_elem_types> valid_elements = {{"S", STATE}};
+    QHash<QString, vld_elem_types> valid_elements;
 };
 
 #endif // PDEVICEINSTANCE_H

@@ -22,6 +22,10 @@
 #define P_BOX_OS (LOG_BOARDS_PER_BOX+P_BOARD_OS)
 #define P_SUP_OS 31
 #define P_SUP_MASK (0x1 << P_SUP_OS)
+
+//------------------------------------------------------------------------------
+// TODO: rationalise these defines as they are superfluous?
+//------------------------------------------------------------------------------
 #define P_BOX_MASK ((0x1 << P_SUP_OS) - (0x1 << P_BOX_OS))
 #define P_BOARD_MASK ((0x1 << P_BOX_OS) - (0x1 << P_BOARD_OS)) 
 #define P_CORE_MASK ((0x1 << P_BOARD_OS) - (0x1 << P_CORE_OS))
@@ -36,6 +40,8 @@
 #define P_BOARD_HWMASK ((0x1 << P_BOX_HWOS) - (0x1 << P_BOARD_HWOS)) 
 #define P_CORE_HWMASK ((0x1 << P_BOARD_HWOS) - (0x1 << P_CORE_HWOS))
 #define P_THREAD_HWMASK ((0x1 << P_CORE_HWOS) - (0x1 << P_THREAD_HWOS))
+//------------------------------------------------------------------------------
+
 #define P_PKT_MSGTYP_OS 10
 #define P_PKT_MSGTYP_BARRIER 0x1000
 #define P_PKT_MSGTYP_SUPER 0x2000
@@ -90,10 +96,10 @@ typedef struct p_super_message
 const unsigned int p_msg_pyld_size = sizeof(P_Msg_t)-sizeof(P_Msg_Hdr_t);
 const unsigned int p_super_data_size = sizeof(P_Sup_Msg_t)-sizeof(P_Sup_Hdr_t);
 
-inline size_t p_msg_size() {return sizeof(P_Msg_t);};
-inline size_t p_hdr_size() {return sizeof(P_Msg_Hdr_t);};
-inline size_t p_sup_msg_size() {return sizeof(P_Sup_Msg_t);};
-inline size_t p_sup_hdr_size() {return sizeof(P_Sup_Hdr_t);};
+inline size_t p_msg_size() {return sizeof(P_Msg_t);}
+inline size_t p_hdr_size() {return sizeof(P_Msg_Hdr_t);}
+inline size_t p_sup_msg_size() {return sizeof(P_Sup_Msg_t);}
+inline size_t p_sup_hdr_size() {return sizeof(P_Sup_Hdr_t);}
 // message buffers (last argument) in the message setters must be volatile because we might wish
 // to write directly to a hardware resource containing the buffer, which in general may be volatile.
 void set_msg_hdr(uint32_t, uint32_t, uint8_t, uint8_t, uint16_t = 0, P_Msg_Hdr_t* = 0);

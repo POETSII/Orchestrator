@@ -39,7 +39,7 @@ endif
 
 ifdef TRIVIAL_LOG_HANDLER
 SOFTSWITCH_DEPS = handler_log_t.h
-LH_CFLAGS = -D TRIVIAL_LOG_HANDLER 
+LH_CFLAGS = -D TRIVIAL_LOG_HANDLER
 endif
 
 # MPI tools
@@ -100,7 +100,7 @@ SECEXPOS := %.o
 TARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_%.elf,$(wildcard $(GENINC)/vars_*.h))
 VCTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_code_%.v,$(wildcard $(GENINC)/vars_*.h))
 VDTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_data_%.v,$(wildcard $(GENINC)/vars_*.h))
-# targets for thread-local variables 
+# targets for thread-local variables
 THREADVARS := $(patsubst $(GENSRC)/%.cpp,%.o,$(wildcard $(GENSRC)/vars_*_*.cpp))
 
 .PHONY: all clean printvars supervisor
@@ -130,7 +130,7 @@ softswitch.o : softswitch.cpp softswitch.h poets_msg.h poets_hardware.h tinsel.h
 poets_msg.o : poets_msg.cpp poets_msg.h poets_hardware.h $(TINSELINC)/config.h
 	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
 
-io.o : io.c io.h tinsel.h $(TINSELINC)/config.h 
+io.o : io.c io.h tinsel.h $(TINSELINC)/config.h
 	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
 
 ## the pattern substitution should find all vars_x_y.o created from vars_x_y.cpp

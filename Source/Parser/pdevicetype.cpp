@@ -6,7 +6,13 @@
 PDeviceType::PDeviceType(const QString& name, PIGraphObject *parent) :
     PConcreteDef(name, "DeviceType", QVector<int>({INPIN, OUTPIN, STATE, CODE}), parent), device_type(NULL)
 {
-
+    valid_elements["InputPin"] = INPIN;
+    valid_elements["OutputPin"] = OUTPIN;
+    valid_elements["State"] = STATE;
+    valid_elements["SharedCode"] = CODE;
+    valid_elements["DeviceSharedCode"] = CODE;
+    valid_elements["ReadyToSend"] = CODE;
+    valid_elements["OnCompute"] = CODE;
 }
 
 const PIGraphObject* PDeviceType::appendSubObject(QXmlStreamReader* xml_def)

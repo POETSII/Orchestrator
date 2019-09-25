@@ -118,8 +118,9 @@ INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
 MOTHERSHIP_DUMMY_EXECUTABLE = $(EXECUTABLE_DIR)/mothershipdummy
 
-all: orchestrate root dummy logserver nameserver rtcl injector mothership \
-     mothershipdummy application_staging_environment
+all: orchestrate launcher root dummy logserver nameserver rtcl injector \
+     mothership mothershipdummy application_staging_environment
+launcher: $(LAUNCHER_EXECUTABLE)
 orchestrate: $(ORCHESTRATE_SCRIPT)
 root: $(ROOT_EXECUTABLE)
 dummy: $(DUMMY_EXECUTABLE)

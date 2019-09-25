@@ -20,7 +20,7 @@ private:
     OrchBase* orchestrator;
     int obj_id_counter;
     QString xml_hdr;
-    const QHash<QString, vld_elem_types> valid_elements = {{"Pheader", HEADER}, {"GraphType", GTYPE}, {"GraphTypeReference", GTREF}, {"GraphInstance", GINST}, {"GraphInstanceReference", GIREF}, {"GraphInstanceMetadataPatch", METAP}};
+    QHash<QString, vld_elem_types> valid_elements;
 };
 
 #endif // PIGRAPHROOT_H

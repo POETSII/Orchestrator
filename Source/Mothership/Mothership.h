@@ -13,7 +13,40 @@
 #include "P_addr.h"
 
 //==============================================================================
-
+/* A Mothership is a process resident on a Box - a PC directly connected to the
+   tinsel network using HostLink. Motherships combine several pieces of 
+   functionality, deriving from 2 classes. 
+   From SBase, Motherships handle local name services and receive a subset of
+   the name server data related to the devices mapped to hardware resources
+   directly managed by this Mothership. SBase itself inherits from CommonBase
+   to implement all the Orchestrator MPI infrastructure. SBase and local
+   overloads of SBase functions also handle the deploying of tasks to
+   Motherships. A Deploy command sets up a TaskMap entry - a TaskInfo_t object
+   which contains the pertinent information related to the state, hardware
+   resources, and mappings of this task.
+   From HostLink, Motherships support communications between Tinsels and 
+   the rest of the MPI universe, along with the low-level configuration and
+   command routines. The inheritance relation emphasises that a Mothership *is*
+   a HostLink: without this interface it is meaningless, whilst a Mothership
+   on a given Box is by definition the one and only HostLink on the Box. 
+   A separate thread: Twig, extends the HostLink functionality onto the MPI
+   network, providing communications *from* tinsels *to* MPI and also via a
+   private channel to Supervisors. A Supervisor is a bit of application-specific
+   functionality provided in the XML definition and loaded as a dynamic load
+   library, for operations like data exfiltration, device configuration and
+   control, etc. In the absence of an application-defined Supervisor, each
+   application uses the 'Default Supervisor'  which blindly routes packets from
+   Tinsels to the UserIO external interface process. Non-default Supervisors
+   inherit all the default Supervisor functionality, so external routing
+   remains unaffected and is handled through Twig.
+   A final group of commands and functions not inherited from elsewhere are the
+   Q::CMND family (through OnCmnd) which handle basic control operations for
+   tasks: load, start, stop; and the Q::SYST family (through OnSyst) which
+   handle less-common, operator-level commands and queries aimed at providing
+   a remote management interface for Motherships themselves (OnSyst may be
+   expanded in future).
+ */
+//------------------------------------------------------------------------------
 class Mothership : public SBase, public HostLink
 {
 

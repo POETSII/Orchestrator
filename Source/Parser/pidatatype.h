@@ -47,7 +47,7 @@ private:
     QString _documentation;
     int num_replications;
 
-    const QHash<QString, vld_elem_types> valid_elements = {{"Scalar", SCALAR}, {"Array", ARRAY}, {"Tuple", STRUCT}, {"Union", UNION}, {"State", DTYPE}, {"Properties", DTYPE}, {"Message", DTYPE}};
+    QHash<QString, vld_elem_types> valid_elements;
 };
 
 #endif // PIDATATYPE_H

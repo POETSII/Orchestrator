@@ -54,7 +54,7 @@ private:
 
     D_graph* containing_graph;
     enum vld_elem_types {OTHER, STATE};
-    const QHash<QString, vld_elem_types> valid_elements = {{"S", STATE}};
+    QHash<QString, vld_elem_types> valid_elements;
 };
 
 #endif // PEDGEINSTANCE_H
