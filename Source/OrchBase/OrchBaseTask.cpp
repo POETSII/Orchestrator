@@ -646,7 +646,7 @@ if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par =
 }
 if ((cIdx >= Comms.size()) && coreVec.size()) // not enough Motherships have reported to deploy this task
 {
-   Post(164,task->first, int2str(cIdx), int2str(coreVec.size()));
+   Post(166, task->first);
    return;
 }
 

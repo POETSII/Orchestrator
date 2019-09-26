@@ -6,15 +6,18 @@
 typedef unsigned (*Sup_OnReceive_t) (const void*, void*, const P_Sup_Msg_t*, PMsg_p*, void*);
 // OnSend takes the message buffer and an indication of whether it's a supervisor message
 typedef unsigned (*Sup_OnSend_t) (PMsg_p*, void*, unsigned);
+// Gracefully handle tearing down a pin.
+typedef unsigned (*Sup_PinTeardown_t) (const void*, void*);
 
 class supInputPin
 {
 public:
 
-      supInputPin(Sup_OnReceive_t, const void*, void*);
+      supInputPin(Sup_OnReceive_t, Sup_PinTeardown_t, const void*, void*);
       ~supInputPin();
   
       Sup_OnReceive_t OnReceive;
+      Sup_PinTeardown_t PinTeardown;
       const void* properties;
       void* state;
 };

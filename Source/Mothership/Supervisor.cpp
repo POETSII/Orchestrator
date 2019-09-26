@@ -57,17 +57,21 @@ int SupervisorInit()
 
 #endif
 
-supInputPin::supInputPin(Sup_OnReceive_t recvHandler, const void* props, void* st)
+supInputPin::supInputPin(Sup_OnReceive_t recvHandler, 
+                         Sup_PinTeardown_t pinTeardown, 
+                         const void* props, void* st)
 {
       OnReceive = recvHandler;
+      PinTeardown = pinTeardown;
       properties = props;
       state = st;
 }
 
 supInputPin::~supInputPin()
 {
-     if (properties) delete properties;
-     if (state) delete state;
+    if(PinTeardown) PinTeardown(properties, state);
+    //if (properties) delete properties;
+    //if (state) delete state;
 }
 
 supOutputPin::supOutputPin(Sup_OnSend_t sendHandler)

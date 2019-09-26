@@ -22,10 +22,6 @@ MKDIR = mkdir --parents
 # incorporate your additional sources:
 include Makefile.dependencies
 
-# Path to the root directory of the Orchestrator (not to be confused with the
-# root process of the Orchestrator).
-ROOT_DIR = ../..
-
 # Where sources live.
 GENERICS_DIR := $(ROOT_DIR)/Generics
 SOURCE_DIR := $(ROOT_DIR)/Source
