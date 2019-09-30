@@ -78,9 +78,11 @@ unsigned TMoth::Boot(string task)
         Post(513, task, TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
         TaskMap[task]->status = TaskInfo_t::TASK_ERR;
         return 2;
+        
       
-      DebugPrint("Task is ready to be booted\n");   // never called?
     case TaskInfo_t::TASK_RDY:
+      {
+        DebugPrint("Task is ready to be booted\n");   // never called?
         uint32_t mX, mY, core, thread;
         // create a response bitmap to receive the various startup barrier messages.
         // do this before running 'go' so that we can receive the responses in one block.
@@ -138,7 +140,7 @@ unsigned TMoth::Boot(string task)
                 && (((barrier_msg.header.swAddr & P_SW_OPCODE_MASK)
                         >> P_SW_OPCODE_SHIFT) == P_CNC_BARRIER) )
             {
-                uint32_t srcAddr = arrier_msg.header.pinAddr;
+                uint32_t srcAddr = barrier_msg.header.pinAddr;
                 
                 DebugPrint("Barrier message from thread ID 0x%X\n", srcAddr);
                 
@@ -198,7 +200,7 @@ unsigned TMoth::Boot(string task)
         else twig_running =true;
         TaskMap[task]->status = TaskInfo_t::TASK_BARR; // now at barrier on the tinsel side.
         return 0;
-
+      }
     case TaskInfo_t::TASK_RUN:
     case TaskInfo_t::TASK_STOP:
     case TaskInfo_t::TASK_END:
