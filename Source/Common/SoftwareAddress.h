@@ -64,6 +64,7 @@
 #define ISCNC_SHIFT 30
 #define TASK_SHIFT 24
 #define OPCODE_SHIFT 16
+#define DEVICE_SHIFT 0
 
 /* Define masks for each section. The parentheses are important. */
 #define ISMOTHERSHIP_BIT_MASK (1 << ISMOTHERSHIP_SHIFT)

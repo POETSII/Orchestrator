@@ -7,7 +7,7 @@ handler_log_msg::handler_log_msg()
 {
     msg_len = seq = 0;
     // get the supervisor message slots needed
-    for (unsigned int slot = 0; slot < MAX_LOG_MSG_BUFS; slot++) log_msg[slot] = static_cast<P_Sup_Msg_t*>(const_cast<void*>(tinselSlot(1+NUM_SUP_BUFS+slot)));
+    for (unsigned int slot = 0; slot < MAX_LOG_MSG_BUFS; slot++) log_msg[slot] = static_cast<P_Msg_t*>(const_cast<void*>(tinselSlot(1+NUM_SUP_BUFS+slot)));
 }
 
 uint32_t handler_log_msg::pack_fmtstr(const char* &msg)
@@ -25,19 +25,23 @@ uint32_t handler_log_msg::pack_fmtstr(const char* &msg)
     }
 #endif
 
+    
+    
     msg_len = r_len; 
     while ((seq < MAX_LOG_MSG_BUFS) && r_len) // copy the main format string first
     {
-        msg_len += p_sup_hdr_size(); // each sequence number in the message has a header
-        if (r_len > p_super_data_size)   // copy full-message length blocks
+        msg_len += p_log_msg_hdr_size; // each sequence number in the message has a header
+        if (r_len > p_log_msg_pyld_size)   // copy full-message length blocks
         {
-            memcpy(log_msg[seq++]->data, msg, p_super_data_size);
-            msg += p_super_data_size;
-            r_len -= p_super_data_size;
+            uint8_t* pyld = log_msg[seq++]->payload;
+            memcpy(++pyld, msg, p_log_msg_pyld_size);
+            msg += p_log_msg_pyld_size;
+            r_len -= p_log_msg_pyld_size;
         }
         else
         {
-            memcpy(log_msg[seq]->data, msg, r_len);   // last block may be partial
+            uint8_t* pyld = log_msg[seq]->payload;
+            memcpy(++pyld, msg, r_len);   // last block may be partial
             r_len = 0;
         }
     }
@@ -57,7 +61,19 @@ void handler_log_msg::send_msg()
      
     // message has been extracted into the message buffers. Start setting up for the send.
     for (uint32_t s = 0; s <= seq; s++)
-        set_super_hdr(tinselId(), P_SUP_MSG_LOG, P_SUP_PIN_SYS, msg_len, s, &log_msg[s]->header);
+    {
+        // Form the header
+        P_Msg_Hdr_t* hdr = &(log_msg[s]->header)
+        
+        hdr->swAddr = P_SW_MOTHERSHIP_MASK | P_SW_CNC_MASK;
+        hdr->swAddr |= ((P_CNC_LOG << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK);
+        hdr->pinAddr = tinselId();          // usurp Pin Addr for the source HW addr
+        
+        // Add decrementing sequence into 1st byte of payload
+        uint8_t* sequence = log_msg[seq++]->payload;
+        *sequence = static_cast<uint8_t>(seq-s);
+    }
+    
     if (tinselCanSend()) // use the fast send channel if we can
     {
 	    for (uint32_t m = 0; m+1 <= seq; m++)
@@ -65,7 +81,9 @@ void handler_log_msg::send_msg()
 	        // most messages are a full maximum message size 
 	        tinselSetLen(TinselMaxFlitsPerMsg-1);
 	        tinselSend(tinselHostId(), log_msg[m]);
-	        msg_len -= p_sup_msg_size();
+	        msg_len -= p_msg_size();
+            
+            while(!tinselCanSend());   // Block till its gone
 	    }
 	    // remaining message flit length is computed by shift-division
 	    tinselSetLen((msg_len-1) >> (2+TinselLogWordsPerFlit));
@@ -75,8 +93,8 @@ void handler_log_msg::send_msg()
     {
 	    for (uint32_t u = 0; u+1 <= seq; u++)
 	    {
-	        for (unsigned int v = 0; v < p_sup_msg_size(); v++) while (!tinselUartTryPut(*(static_cast<uint8_t*>(static_cast<void*>(log_msg[u]))+v)));
-	        msg_len -= p_sup_msg_size();
+	        for (unsigned int v = 0; v < p_msg_size(); v++) while (!tinselUartTryPut(*(static_cast<uint8_t*>(static_cast<void*>(log_msg[u]))+v)));
+	        msg_len -= p_msg_size();
 	    }
 	    for (unsigned int w = 0; w < msg_len; w++) while (!tinselUartTryPut(*(static_cast<uint8_t*>(static_cast<void*>(log_msg[seq]))+w)));
     }
@@ -87,9 +105,15 @@ void __assert_func(const char* file, int line, const char* func, const char* fai
 {
     // report the failure,
     handler_log(0,"assertion \"%s\" failed: file \"%s\", line %d%s%s\n", failedexpr, file, line, func ? ", function: " : "", func ? func : "");
-    P_Sup_Msg_t abort_pkt;
-    pack_super_msg(tinselId(), P_SUP_MSG_KILL, P_SUP_PIN_SYS, 0, 0, &abort_pkt);
-    tinselSetLen(0);
+    P_Msg_t abort_pkt;
+    
+    P_Msg_Hdr_t* hdr = &(abort_pkt.header);
+    
+    hdr->swAddr = P_SW_MOTHERSHIP_MASK | P_SW_CNC_MASK;
+    hdr->swAddr |= ((P_CNC_KILL << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK);
+    hdr->pinAddr = tinselId();          // usurp Pin Addr for the source HW addr
+    
+    tinselSetLen(p_hdr_size());
     // then try to send an abort signal either the fast way (over the HostLink),
     if (tinselCanSend()) tinselSend(tinselHostId(),&abort_pkt);
     else

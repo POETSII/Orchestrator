@@ -39,12 +39,19 @@ void softswitch_finalize(ThreadCtxt_t* ThreadContext, volatile void** send_buf, 
 void softswitch_barrier(ThreadCtxt_t* ThreadContext, volatile void* send_buf, volatile void* recv_buf)
 {
     // first phase of barrier: set up a standard message to send to the supervisor
-    set_super_hdr(tinselId() << P_THREAD_OS, P_PKT_MSGTYP_BARRIER, P_SUP_PIN_SYS, p_sup_hdr_size(), 0, static_cast<P_Sup_Hdr_t*>(const_cast<void*>(send_buf)));
+    P_Msg_Hdr_t* hdr = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(send_buf)); // Header
+    
+    hdr->swAddr = P_SW_MOTHERSHIP_MASK | P_SW_CNC_MASK;;
+    hdr->swAddr |= ((P_CNC_BARRIER << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK);
+    hdr->pinAddr = tinselId();          // usurp Pin Addr for the source HW addr
+    
     // block until we can send it,
     while (!tinselCanSend());
-    tinselSetLen(p_sup_hdr_size());
+    tinselSetLen(p_hdr_size());
+    
     // and then issue the message indicating this thread's startup is complete.
     tinselSend(tinselHostId(), send_buf);
+    
     // second phase of barrier: now wait for the supervisor's response
     ThreadContext->ctlEnd = 1;
     while (ThreadContext->ctlEnd)
@@ -52,9 +59,10 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext, volatile void* send_buf, vo
         // by blocking awaiting a receive. 
         while (!tinselCanRecv());
         recv_buf = tinselRecv();
+        
         P_Msg_t* rcv_pkt = static_cast<P_Msg_t*>(const_cast<void*>(recv_buf));
         // look for barrier message
-        if (rcv_pkt->header.messageTag == P_MSG_TAG_INIT)
+        if ((rcv_pkt->header.swAddr & P_SW_OPCODE_MASK) == P_CNC_INIT)
         {
             // *Debug: send packet out to show we have passed the barrier* 
             // softswitch_alive(send_buf);
@@ -118,48 +126,49 @@ void inPinSrc_init(uint32_t src, inPin_t* pin, ThreadCtxt_t* ThreadContext)
 
 uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
 {
-    outPin_t* pin = ThreadContext->rtsBuf[ThreadContext->rtsStart];    // Get the next pin to send
-    devInst_t* device = pin->device;                                    // Get the Device
+    outPin_t* pin = ThreadContext->rtsBuf[ThreadContext->rtsStart]; // Get the next pin
+    devInst_t* device = pin->device;                                // Get the Device
+    const outEdge_t* target = &pin->targets[pin->idxTgts];          // Get the target
     
-    //TODO: change this to the standard-size header. 
-    // Left as is, this WILL break if a pin has both supervisor and non-supervisor targets.
-    uint8_t isSuperMsg = (pin->targets[pin->idxTgts].tgt == DEST_BROADCAST); // Supervisor messages
-    size_t hdrSize = isSuperMsg ? p_sup_hdr_size() : p_hdr_size(); // use different headers.
+    size_t hdrSize = p_hdr_size(); //Size of the header.
     
-    char* buf = static_cast<char*>(const_cast<void*>(send_buf));
+    char* buf = static_cast<char*>(const_cast<void*>(send_buf));    // Send Buffer
+    P_Msg_Hdr_t* hdr = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(send_buf)); // Header
     
-    if(pin->idxTgts == 0)        // First target, need to run pin's OnSend.
+    //--------------------------------------------------------------------------
+    // First target, need to run pin's OnSend.
+    //--------------------------------------------------------------------------
+    if(pin->idxTgts == 0)        
     {
-        tinselSetLen((hdrSize + pin->pinType->sz_msg - 1) >> (2+TinselLogWordsPerFlit));    // ??
-        //TODO: Fix This
-        char* msg = buf+hdrSize;                                                        // Pointer to the message location, after headers, etc.
+        char* msg = buf+hdrSize; // Pointer to the message, after headers, etc.
         pin->pinType->Send_Handler(ThreadContext->properties, device, msg);            // Run the device's OnSend handler
         ThreadContext->txHandlerCount++;         // Increment SendHandler count
     }
+    //--------------------------------------------------------------------------
     
-    const outEdge_t* target = &pin->targets[pin->idxTgts];
-    //==========================================================================
-    //TODO: Fix this when headers are fixed as the different treatment here is superfluous.
-    if (isSuperMsg)
-    {
-        set_super_hdr(tinselId() << P_THREAD_OS | ((device->deviceID & P_DEVICE_MASK) << P_DEVICE_OS), 
-                        pin->pinType->msgType, target->tgtPin, 
-                        pin->pinType->sz_msg+hdrSize, 0, 
-                        reinterpret_cast<P_Sup_Hdr_t*>(buf));
+    //--------------------------------------------------------------------------
+    // Set the addresses and send the message
+    //--------------------------------------------------------------------------
+    hdr->swAddr = target->swAddr;
+    hdr->pinAddr = target->pinAddr;
+    
+    tinselSetLen((hdrSize + pin->pinType->sz_msg - 1) 
+                        >> (2+TinselLogWordsPerFlit));    // ??
+    
+    if(hdr->swAddr & P_SW_CNC_MASK)
+    {   // Message to the Supervisor or External (this goes via the Supervisor)
         tinselSend(tinselHostId(), send_buf);
-        ThreadContext->superCount++;             // Increment Supervisor Msg count
+        ThreadContext->superCount++;         // Increment Supervisor Msg count
     }
     else
-    {
-        set_msg_hdr(target->tgt, target->tgtEdge, target->tgtPin,
-                    pin->pinType->sz_msg, pin->pinType->msgType,
-                    reinterpret_cast<P_Msg_Hdr_t*>(buf));
-        tinselSend((target->tgt >> P_THREAD_OS), send_buf);
-        ThreadContext->txCount++;                // Increment normal Msg count
+    {   // Message to another device.
+        tinselSend(target->hwAddr, send_buf);
+        ThreadContext->txCount++;            // Increment normal Msg count
     }
-    //==========================================================================
+    //--------------------------------------------------------------------------
     
     pin->idxTgts++;
+    
     if(pin->idxTgts >= pin->numTgts)  // Reached the end of the send list.
     {
         pin->idxTgts = 0;       // Reset index,
@@ -180,73 +189,91 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
 
 void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
 {
-    // Decode the message target
-    P_Msg_Hdr_t* recvPkt = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(recv_buf));
     devInst_t* recvDevBegin;
     devInst_t* recvDevEnd;
     
     ThreadContext->rxCount++;                  // Increment received message count
     
-    if (recvPkt->destDeviceAddr == DEST_BROADCAST)
-    {   // Message is a broadcast to all devices.
-        recvDevBegin = ThreadContext->devInsts;
-        recvDevEnd = ThreadContext->devInsts + ThreadContext->numDevInsts;
-    }
-    else if (((recvPkt->destDeviceAddr & P_DEVICE_MASK) >> P_DEVICE_OS) 
-                < ThreadContext->numDevInsts)   // TODO: fix when addresses are fixed
-    {   // Message is for a single device in range.
-        recvDevBegin =  &ThreadContext->devInsts[
-                                    (recvPkt->destDeviceAddr & P_DEVICE_MASK)
-                                    >> P_DEVICE_OS];
-        recvDevEnd = recvDevBegin + 1;
-    }
-    else return;    // Message target is out of range.
+    // Grab the message header 
+    P_Msg_Hdr_t* recvHdr = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(recv_buf));
     
+    // Decode the header
+    uint32_t devAdr = (recvHdr->swAddr & P_SW_DEVICE_MASK) >> P_SW_DEVICE_SHIFT;
+    uint8_t opcode = (recvHdr->swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT;
+    uint8_t pinIdx = (recvHdr->pinAddr & P_HD_TGTPIN_MASK) >> P_HD_TGTPIN_SHIFT;
+    uint32_t edgeIdx = (recvHdr->pinAddr & P_HD_DESTEDGEINDEX_MASK) 
+                        >> P_HD_DESTEDGEINDEX_SHIFT;
     
+
     // Stop message ends the simulation & exits main loop at the earliest opportunity
-    if ((recvPkt->messageTag == P_MSG_TAG_STOP) 
-            && (recvPkt->destPin == P_SUP_PIN_SYS_SHORT))
+    if((recvHdr->swAddr&P_SW_CNC_MASK) && opcode == P_CNC_STOP)
     {
         ThreadContext->ctlEnd = 1;
         return;
     }
     
+
+    // Decode the destination address
+    if(devAdr == P_ADDR_BROADCAST)
+    {   // Message is a broadcast to all devices.
+        recvDevBegin = ThreadContext->devInsts;
+        recvDevEnd = ThreadContext->devInsts + ThreadContext->numDevInsts;
+    }
+    else if (devAdr < ThreadContext->numDevInsts)
+    {   // Message is for a single device in range.
+        recvDevBegin = &ThreadContext->devInsts[devAdr];
+        recvDevEnd = recvDevBegin + 1;
+    }
+    else return;    // Message target is out of range. //TODO: - log/flag
+    
+
     // Loop through each target device (1 unless a broadcast message)
     for (devInst_t* device = recvDevBegin; device != recvDevEnd; device++)
     {
-        inPin_t* pin = &device->inputPins[recvPkt->destPin];    // Get the pin
+        if(pinIdx >= device->numInputs)
+        {   // Sanity check the pin index
+            continue;               //TODO: - log/flag
+        }
+        inPin_t* pin = &device->inputPins[pinIdx];    // Get the pin
         
         ThreadContext->rxHandlerCount++;     // Increment received handler count
         
-        // TODO: fix this when we use proper headers
-        if (recvPkt->destDeviceAddr & P_SUP_MASK)                                 
-        {   // This is a control packet
-            if ((recvPkt->messageTag == P_MSG_TAG_INIT) 
-                    && (pin->pinType->msgType == recvPkt->messageTag))
+        
+        // Supervisor/CNC/Control Message
+        if(recvHdr->swAddr & P_SW_CNC_MASK)
+        {
+            if(opcode == P_CNC_INIT))
             {
-                // **BODGE BODGE BODGE** not so temporary handler for dealing with __init__. This works ONLY because
-                // the __init__ pin on all devices that have it in existing XML happens to be pin 0 (which means that
-                // a Supervisor can guess what the pin number is supposed to be). In any case, this should route it
-                // through the __init__ handler. Luckily message types are globally unique, or likewise this wouldn't
-                // work if the device had no __init__ pin. This test should be removed as soon as __init__ pins lose
-                // any special meaning in existing XML!
+                // **BODGE BODGE BODGE** not so temporary handler for dealing 
+                // with __init__. This works ONLY because the __init__ pin on 
+                // all devices that have it in existing XML happens to be pin 0 
+                // (which means that a Supervisor can guess what the pin number
+                // is supposed to be). In any case, this should route it through
+                // the __init__ handler. Luckily message types are globally 
+                // unique, or likewise this wouldn't work if the device had no
+                // __init__ pin. This test should be removed as soon as __init__
+                // pins lose any special meaning in existing XML!
                 pin->pinType->Recv_handler(ThreadContext->properties, device, 0,
                                             static_cast<const uint8_t*>(
                                             const_cast<const void*>(recv_buf)
                                             )+p_hdr_size());
             }
-            else 
+            else
             {   // Otherwise it triggers OnCtl
-                device->devType->OnCtl_Handler(ThreadContext, device, 
-                                                static_cast<const uint8_t*>(
-                                                const_cast<const void*>(recv_buf)
-                                                )+p_hdr_size());
+                device->devType->OnCtl_Handler(ThreadContext, device, opcode,
+                                               static_cast<const uint8_t*>(
+                                               const_cast<const void*>(recv_buf)
+                                               )+p_hdr_size());
             }
         }
         else
         {   // Handle as a normal packet
+            if(edgeIdx >= pin->numSrcs)
+            {   // Sanity check the Edge Index
+                continue;               //TODO: - log/flag
+            }
             pin->pinType->Recv_handler(ThreadContext->properties, device, 
-                                        &pin->sources[recvPkt->destEdgeIndex], 
+                                        &pin->sources[edgeIdx], 
                                         static_cast<const uint8_t*>(
                                         const_cast<const void*>(recv_buf)
                                         )+p_hdr_size());

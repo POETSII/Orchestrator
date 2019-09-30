@@ -469,7 +469,7 @@ unsigned P_builder::GenSupervisor(P_task* task)
       string sIpin_name = (*sI_pin)->Name();
       sup_pin_handlers << "unsigned super_InPin_" << sIpin_name;
       sup_pin_handlers << "_Recv_handler (const void* pinProps, ";
-      sup_pin_handlers << "void* pinState, const P_Sup_Msg_t* inMsg, ";
+      sup_pin_handlers << "void* pinState, const P_Msg_t* inMsg, ";
       sup_pin_handlers << "PMsg_p* outMsg, void* msgBuf)\n";
       //========================================================================
       
@@ -586,9 +586,9 @@ unsigned P_builder::GenSupervisor(P_task* task)
         sup_pin_handlers << "(PMsg_p* outMsg, void* msgBuf, unsigned superMsg)";
         sup_pin_handlers << "\n{\n";
         sup_pin_handlers << "   int s_c;\n";
-        sup_pin_handlers << "   P_Sup_Msg_t* s_msg;\n";
-        sup_pin_handlers << "   P_Sup_Hdr_t s_msg_hdr;\n";
-        sup_pin_handlers << "   if (!(s_msg = outMsg->Get<P_Sup_Msg_t>(0, s_c))) return -1;\n";
+        sup_pin_handlers << "   P_Msg_t* s_msg;\n";
+        sup_pin_handlers << "   P_Msg_Hdr_t s_msg_hdr;\n";
+        sup_pin_handlers << "   if (!(s_msg = outMsg->Get<P_Msg_t>(0, s_c))) return -1;\n";
         sup_pin_handlers << "   s_msg_hdr = s_msg->header;\n";
         if ((*sO_pin)->pMsg->pPropsD) // message has some sort of payload
         {
@@ -612,7 +612,7 @@ unsigned P_builder::GenSupervisor(P_task* task)
            sup_pin_handlers << "   else\n";
            sup_pin_handlers << "   {\n";
            sup_pin_handlers << "      P_Msg_t* msg = new P_Msg_t();\n";
-           sup_pin_handlers << "      outMsg->Put<P_Sup_Msg_t>(0, msg, 1);\n";
+           sup_pin_handlers << "      outMsg->Put<P_Msg_t>(0, msg, 1);\n";
            sup_pin_handlers << "      delete msg;\n";
            sup_pin_handlers << "      if (!(msg = outMsg->Get<P_Msg_t>(0, s_c))) return -1;\n";
            
@@ -1732,11 +1732,53 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
             // as for the case of inputs, the target device should be replaced by GetHardwareAddress(...)
             unsigned int tgt_idx = ((*device)->par->G.index_a.find(*tgt)->second.to_p)->first;
             P_addr tgt_addr = ((*device)->par->G.index_a.find(*tgt)->second.to_n)->second.data->addr;
-            unsigned tgt_hwaddr = tgt_addr.A_box << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore + TinselLogCoresPerMailbox + TinselLogMailboxesPerBoard + TinselMeshXBits + TinselMeshYBits);
-            tgt_hwaddr |= tgt_addr.A_board << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore + TinselLogCoresPerMailbox + TinselLogMailboxesPerBoard);
-            tgt_hwaddr |= tgt_addr.A_mailbox << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore + TinselLogCoresPerMailbox);
-            tgt_hwaddr |= tgt_addr.A_core << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore);
-            tgt_hwaddr |= tgt_addr.A_thread << (LOG_DEVICES_PER_THREAD);
+            
+            
+            //------------------------------------------------------------------
+            // Assemble the Hardware address. TODO: use the HW Model
+            //------------------------------------------------------------------
+            uint32_t tgt_hwaddr = tgt_addr.A_box << (TinselLogCoresPerMailbox
+                                                    + TinselLogMailboxesPerBoard
+                                                    + TinselMeshXBits
+                                                    + TinselMeshYBits);
+            tgt_hwaddr |= tgt_addr.A_board << (TinselLogThreadsPerCore
+                                              + TinselLogCoresPerMailbox
+                                              + TinselLogMailboxesPerBoard);
+            tgt_hwaddr |= tgt_addr.A_mailbox << (TinselLogThreadsPerCore 
+                                                + TinselLogCoresPerMailbox);
+            tgt_hwaddr |= tgt_addr.A_core << (TinselLogThreadsPerCore);
+            tgt_hwaddr |= tgt_addr.A_thread;
+            //------------------------------------------------------------------
+            
+            
+            //------------------------------------------------------------------
+            // Assemble the Software address. TODO: use the SW Address class
+            //------------------------------------------------------------------
+            uint32_t tgt_swaddr;
+            
+            if(((tgt_hwaddr << LOG_DEVICES_PER_THREAD) | tgt_addr.A_device) 
+                  == DEST_BROADCAST) // Quick and dirty hack to detect Super msg
+            {
+                tgt_swaddr |= P_SW_MOTHERSHIP_MASK;
+                tgt_swaddr |= P_SW_CNC_MASK;
+            }
+            
+            tgt_swaddr |= ((tgt_addr.A_device << P_SW_DEVICE_SHIFT) 
+                            & P_SW_DEVICE_MASK);
+            //------------------------------------------------------------------
+            
+            
+            //------------------------------------------------------------------
+            // Assemble the Pin Address. TODO: rationalise this.
+            //------------------------------------------------------------------
+            uint32_t tgt_pinaddr;
+            
+            tgt_pinaddr = (tgt_idx >> PIN_POS) & P_HD_TGTPIN_MASK; // Get the Pin Index
+            tgt_pinaddr |= (((tgt_idx & (0xFFFFFFFF >> (32-PIN_POS)))
+                                << P_HD_DESTEDGEINDEX_SHIFT)
+                                & P_HD_DESTEDGEINDEX_MASK);
+            
+            //------------------------------------------------------------------
             
             //==================================================================
             // Form an initialiser for the POutputEdge/outEdge_t array member.
@@ -1745,9 +1787,10 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
             
             // first field is intentionally null as it is populated at runtime.
             edgeInitialiser << "PNULL,";                                  // pin
-            edgeInitialiser << (tgt_addr.A_device | tgt_hwaddr) << ",";   // tgt
-            edgeInitialiser << (tgt_idx >> PIN_POS) << ",";               // tgtPin
-            edgeInitialiser << (tgt_idx & (0xFFFFFFFF >> (32-PIN_POS)));  // tgtEdge
+            
+            edgeInitialiser << tgt_hwaddr << ",";   // hwAddr
+            edgeInitialiser << tgt_swaddr << ",";   // swAddr
+            edgeInitialiser << tgt_pinaddr;         // pinAddr
             edgeInitialiser << "},";
             //==================================================================
           }

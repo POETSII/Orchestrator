@@ -3,7 +3,7 @@
 #include <iostream>
 
 // OnReceive takes the pin properties and state, the received message and a buffer for any message to send
-typedef unsigned (*Sup_OnReceive_t) (const void*, void*, const P_Sup_Msg_t*, PMsg_p*, void*);
+typedef unsigned (*Sup_OnReceive_t) (const void*, void*, const P_Msg_t*, PMsg_p*, void*);
 // OnSend takes the message buffer and an indication of whether it's a supervisor message
 typedef unsigned (*Sup_OnSend_t) (PMsg_p*, void*, unsigned);
 // Gracefully handle tearing down a pin.

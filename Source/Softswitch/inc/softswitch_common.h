@@ -36,6 +36,7 @@ typedef uint32_t (*OnIdle_handler_t)
 typedef uint32_t (*OnCtl_handler_t)
 (   const void* graphProps,
     void*       device,
+    uint8_t     opcode,
     const void* msg
 );
 
@@ -89,9 +90,9 @@ typedef struct PDeviceType
 typedef struct POutputEdge
 {
     POutputPin*       pin;        // back pointer to pin
-    uint32_t          tgt;        // destination device
-    uint32_t          tgtPin;     // destination pin
-    uint32_t          tgtEdge;    // destination edge index
+    uint32_t          hwAddr;   //tgt;        // destination device
+    uint32_t          swAddr;   //tgtPin;     // destination pin
+    uint32_t          pinAddr;  //tgtEdge;    // destination edge index
 } outEdge_t;
 
 typedef struct POutputPin

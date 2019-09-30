@@ -23,7 +23,7 @@ class handler_log_msg
     template<typename V> void pack_log_arg(uint32_t, V*);
 #endif
      
-    P_Sup_Msg_t*  log_msg[MAX_LOG_MSG_BUFS];   // buffer for sequenced parts of the log message
+    P_Msg_t*  log_msg[MAX_LOG_MSG_BUFS];   // buffer for sequenced parts of the log message
     uint32_t      msg_len;                     // running message length
     uint32_t      seq;                         // and running sequence count
 };

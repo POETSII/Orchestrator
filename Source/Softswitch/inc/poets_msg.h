@@ -9,6 +9,7 @@
 // P_MSG_MAX_SIZE, LOG_BOARDS_PER_BOX, LOG_CORES_PER_BOARD,
 // and LOG_THREADS_PER_CORE
 #include "poets_hardware.h"
+#include "SoftwareAddress.h"
 
 #define DEST_BROADCAST 0xFFFFFFFF
 
@@ -54,18 +55,65 @@
 #define P_SUP_MSG_KILL 0x8001
 #define P_SUP_MSG_LOG  0x8002
 
+
+//------------------------------------------------------------------------------
+// Header bitmasks and bitshifts
+//------------------------------------------------------------------------------
+#define P_HW_HWADDR_MASK            0xFFFFFFFF
+#define P_HW_HWADDR_SHIFT           0
+    
+#define P_SW_MOTHERSHIP_MASK        ISMOTHERSHIP_BIT_MASK       
+#define P_SW_MOTHERSHIP_SHIFT       ISMOTHERSHIP_SHIFT
+#define P_SW_CNC_MASK               ISCNC_BIT_MASK
+#define P_SW_CNC_SHIFT              ISCNC_SHIFT
+#define P_SW_TASK_MASK              TASK_BIT_MASK
+#define P_SW_TASK_SHIFT             TASK_SHIFT
+#define P_SW_OPCODE_MASK            OPCODE_BIT_MASK
+#define P_SW_OPCODE_SHIFT           OPCODE_SHIFT
+#define P_SW_DEVICE_MASK            DEVICE_BIT_MASK
+#define P_SW_DEVICE_SHIFT           DEVICE_SHIFT
+
+
+#define P_HD_TGTPIN_MASK            0xFF
+#define P_HD_TGTPIN_SHIFT           0
+#define P_HD_DESTEDGEINDEX_MASK     0xFFFFFF00
+#define P_HD_DESTEDGEINDEX_SHIFT    8
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+// Magic Addresses
+//------------------------------------------------------------------------------
+#define P_ADDR_BROADCAST            0xFFFF
+
+
+#define P_CNC_LOG                   0xFB
+#define P_CNC_BARRIER               0xFC
+#define P_CNC_INIT                  0xFD
+#define P_CNC_STOP                  0xFE
+#define P_CNC_KILL                  0xFF
+
+//------------------------------------------------------------------------------
+
 #pragma pack(push,1)
 typedef struct poets_message_header
 {
     // Begin flit 0
     // Header
+    //uint32_t hwAddr;
+    uint32_t swAddr;
+    uint32_t pinAddr;
+    // End Header.
+    // 64-bits ~~~32-bits~~~ left in the first flit.
+    
+    /*
     uint32_t destDeviceAddr;   // Opaque destination device address
     uint32_t destEdgeIndex;    // Input edge index at the destination
     uint8_t  destPin;          // Input pin index at the destination
     uint8_t  messageLenBytes;  // Total message length including header
     uint16_t messageTag;       // Type of message
+    */
 } P_Msg_Hdr_t;
-  
+
 typedef struct poets_message
 {
     P_Msg_Hdr_t header; // a message always has a header      
@@ -74,39 +122,32 @@ typedef struct poets_message
     // Further flits contain data.
 } P_Msg_t;
 
-typedef struct p_super_msg_header
-{
-    // flit 0
-    uint32_t sourceDeviceAddr; // issuing device in the Application
-    uint16_t command;          // commands might be split into (fixed) system commands and user-defined commands
-    uint16_t destPin;          // destination pin on the Supervisor
-    uint32_t cmdLenBytes;      // length of the entire command (including all headers)
-    uint32_t seq;              // sequence number of this sub-message
 
-    // further flits contain data - which could be arguments, packets, data dumps, or just about anything else. 
-} P_Sup_Hdr_t;
-
-typedef struct p_super_message
+typedef struct poets_supervisor_message
 {
-    P_Sup_Hdr_t header; // a Supervisor message always has an appropriate header
-    uint8_t data[P_MSG_MAX_SIZE-sizeof(P_Sup_Hdr_t)]; // and it might have some sort of data
-} P_Sup_Msg_t;
+    uint32_t hwAddr;    // The destination HW address
+    P_Msg_t msg;        // The POETs fabric message
+    uint32_t len;       // Number of bytes for the P_Msg_t
+} P_Super_Msg_t;
+
 
 const unsigned int p_msg_pyld_size = sizeof(P_Msg_t)-sizeof(P_Msg_Hdr_t);
-const unsigned int p_super_data_size = sizeof(P_Sup_Msg_t)-sizeof(P_Sup_Hdr_t);
+const unsigned int p_log_msg_pyld_size = p_msg_pyld_size-sizeof(uint8_t);
+const unsigned int p_log_msg_hdr_size = sizeof(P_Msg_Hdr_t)+sizeof(uint8_t);
 
+
+inline size_t p_super_msg_size() {return sizeof(P_Super_Msg_t);}
 inline size_t p_msg_size() {return sizeof(P_Msg_t);}
 inline size_t p_hdr_size() {return sizeof(P_Msg_Hdr_t);}
-inline size_t p_sup_msg_size() {return sizeof(P_Sup_Msg_t);}
-inline size_t p_sup_hdr_size() {return sizeof(P_Sup_Hdr_t);}
+
 // message buffers (last argument) in the message setters must be volatile because we might wish
 // to write directly to a hardware resource containing the buffer, which in general may be volatile.
-void set_msg_hdr(uint32_t, uint32_t, uint8_t, uint8_t, uint16_t = 0, P_Msg_Hdr_t* = 0);
-void pack_msg(uint32_t, uint32_t, uint32_t, uint32_t, uint8_t, uint16_t = 0, void* = 0, P_Msg_t* = 0);
-void set_super_hdr(uint32_t, uint16_t, uint16_t, uint32_t, uint32_t = 0, P_Sup_Hdr_t* = 0);
-uint32_t pack_super_msg(uint32_t, uint16_t, uint16_t, uint32_t, void*, P_Sup_Msg_t*);
-void super_buf_clr(P_Sup_Msg_t*);
-bool super_buf_recvd(const P_Sup_Msg_t*);
+unsigned set_msg_hdr(uint8_t, uint8_t, uint8_t, uint8_t, uint32_t, uint8_t, 
+                     uint32_t, uint8_t, P_Msg_Hdr_t*);
+
+unsigned pack_msg(uint8_t, uint8_t, uint8_t, uint8_t, uint32_t, uint8_t, 
+                   uint32_t, uint8_t, void*, P_Msg_Hdr_t*);
+
 
 #pragma pack(pop)
 #endif
