@@ -720,7 +720,7 @@ void* TMoth::Twig(void* par)
                 
                 
                 
-                if (parent->OnTinselOut(recvdMsg))
+                if (parent->OnTinselOut(msg))
                 {
                     parent->Post(530, int2str(parent->Urank));
                 }
@@ -933,7 +933,7 @@ unsigned TMoth::OnTinselOut(P_Msg_t* msg)
 {
     DebugPrint("Processing a command message from Tinsel\n");
     
-    P_Msg_Hdr_t* hdr = msg->header;
+    P_Msg_Hdr_t* hdr = &(msg->header);
     uint32_t opcode = ((hdr->swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT);
     
     
@@ -971,7 +971,7 @@ unsigned TMoth::OnTinselOut(P_Msg_t* msg)
     W.Key(Q::SUPR);         // it'll be a Supervisor msg
     W.Src(Urank);           // coming from the us
     W.Tgt(Urank);           // and directed at us
-    W.Put<P_Super_Msg_t>(0,msgs);  // stuff the Tinsel message into the msg
+    W.Put<P_Super_Msg_t>(0,&msgs);  // stuff the Tinsel message into the msg
     
     return OnSuper(&W, 0);
     // W.Send();                        // away it goes.
