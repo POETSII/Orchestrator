@@ -63,7 +63,7 @@ void handler_log_msg::send_msg()
     for (uint32_t s = 0; s <= seq; s++)
     {
         // Form the header
-        P_Msg_Hdr_t* hdr = &(log_msg[s]->header)
+        P_Msg_Hdr_t* hdr = &(log_msg[s]->header);
         
         hdr->swAddr = P_SW_MOTHERSHIP_MASK | P_SW_CNC_MASK;
         hdr->swAddr |= ((P_CNC_LOG << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK);
