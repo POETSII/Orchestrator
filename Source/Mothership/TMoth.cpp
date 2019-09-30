@@ -931,20 +931,20 @@ unsigned TMoth::OnTinselOut(P_Msg_t* msg)
 // possibly generating another message; B) immediately export it over MPI to
 // the user Executive or other external process.
 {
-    DebugPrint("Processing a command message 0x%x from Tinsel device %d\n", msg->header.command, msg->header.sourceDeviceAddr);
+    DebugPrint("Processing a command message from Tinsel\n");
     
-    P_Msg_t* hdr = msg->header;
-    uint32_t opcode = ((hdr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT);
+    P_Msg_Hdr_t* hdr = msg->header;
+    uint32_t opcode = ((hdr->swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT);
     
     
     // handle the kill req from a tinsel core, generally means an assert failed.
-    if (((hdr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT) == P_CNC_KILL)
+    if (((hdr->swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT) == P_CNC_KILL)
     {
         return SystKill();
     }
     
     // Handler Log message
-    if (((hdr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT) == P_CNC_LOG)
+    if (((hdr->swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT) == P_CNC_LOG)
     {
         DebugPrint("Received a handler_log message from device\n");
         
