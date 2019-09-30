@@ -9,7 +9,7 @@
 // P_MSG_MAX_SIZE, LOG_BOARDS_PER_BOX, LOG_CORES_PER_BOARD,
 // and LOG_THREADS_PER_CORE
 #include "poets_hardware.h"
-#include "SoftwareAddress.h"
+#include "SoftwareAddressDefs.h"
 
 #define DEST_BROADCAST 0xFFFFFFFF
 
