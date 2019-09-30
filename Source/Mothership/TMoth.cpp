@@ -665,7 +665,7 @@ void* TMoth::Twig(void* par)
 // 'for later'.
 {
     TMoth* parent = static_cast<TMoth*>(par);
-    const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
+    //const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
     //char recv_buf[p_msg_size()]; // buffer for one packet at a time
     char *recv_buf = new char[p_msg_size()]; // buffer for one packet at a time
     void* p_recv_buf = static_cast<void*>(recv_buf);
@@ -938,13 +938,13 @@ unsigned TMoth::OnTinselOut(P_Msg_t* msg)
     
     
     // handle the kill req from a tinsel core, generally means an assert failed.
-    if (((hdr->swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT) == P_CNC_KILL)
+    if (opcode == P_CNC_KILL)
     {
         return SystKill();
     }
     
     // Handler Log message
-    if (((hdr->swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT) == P_CNC_LOG)
+    if (opcode == P_CNC_LOG)
     {
         DebugPrint("Received a handler_log message from device\n");
         
