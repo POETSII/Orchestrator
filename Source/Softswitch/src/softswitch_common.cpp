@@ -242,7 +242,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
         // Supervisor/CNC/Control Message
         if(recvHdr->swAddr & P_SW_CNC_MASK)
         {
-            if(opcode == P_CNC_INIT))
+            if(opcode == P_CNC_INIT)
             {
                 // **BODGE BODGE BODGE** not so temporary handler for dealing 
                 // with __init__. This works ONLY because the __init__ pin on 
