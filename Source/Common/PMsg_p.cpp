@@ -12,7 +12,7 @@ and when I come across a need.
 
 PMsg_p::PMsg_p(MPI_Comm c):Msg_p(){comm=c;}
 PMsg_p::PMsg_p(byte * pb,int l,MPI_Comm c):Msg_p(pb,l){comm=c;}
-PMsg_p::PMsg_p(Msg_p & m, MPI_Comm c):Msg_p(m){comm=c;};
+PMsg_p::PMsg_p(Msg_p & m, MPI_Comm c):Msg_p(m){comm=c;}
 PMsg_p::PMsg_p(PMsg_p & r):Msg_p(r){comm=r.comm;}
 PMsg_p::~PMsg_p(void){}
 

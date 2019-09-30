@@ -84,12 +84,9 @@ NAME_SERVICES_SOURCES = $(SOURCE_DIR)/NameServer/ABDefs.cpp \
                         $(SOURCE_DIR)/NameServer/ABRecord.cpp \
                         $(SOURCE_DIR)/NameServer/ABTask.cpp \
                         $(SOURCE_DIR)/NameServer/AddressBook.cpp \
-		        $(SOURCE_DIR)/NameServer/SBase.cpp \
-		        $(SOURCE_DIR)/OrchBase/CMsg_p.cpp \
-		        $(SOURCE_DIR)/OrchBase/P_addr.cpp 
-
-# The LogServer message file is a static text file
-LOGSERVER_MESSAGE_FILE_ORIGIN = $(SOURCE_DIR)/OrchestratorMessages.txt
+                        $(SOURCE_DIR)/NameServer/SBase.cpp \
+                        $(SOURCE_DIR)/OrchBase/CMsg_p.cpp \
+                        $(SOURCE_DIR)/OrchBase/P_addr.cpp 
 
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
@@ -137,9 +134,9 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(GENERICS_DIR)/filename.cpp \
                $(GENERICS_DIR)/lex.cpp \
                $(GENERICS_DIR)/rand.cpp \
-	       $(SOURCE_DIR)/Common/Debug.cpp \
+               $(SOURCE_DIR)/Common/Debug.cpp \
                $(SOURCE_DIR)/NameServer/Ns_el.cpp \
-	       $(SOURCE_DIR)/NameServer/ABDefs.cpp \
+               $(SOURCE_DIR)/NameServer/ABDefs.cpp \
                $(SOURCE_DIR)/NameServer/ABRecord.cpp \
                $(SOURCE_DIR)/NameServer/ABTask.cpp \
                $(SOURCE_DIR)/NameServer/AddressBook.cpp 
@@ -208,8 +205,8 @@ LOGSERVER_MESSAGE_FILE_ORIGIN = $(SOURCE_DIR)/OrchestratorMessages.txt
 #
 NAMESERVER_SOURCES = $(SOURCE_DIR)/NameServer/NameServerMain.cpp \
                      $(SOURCE_DIR)/NameServer/NameServer.cpp \
-		     $(SOURCE_DIR)/Common/Debug.cpp 
-		                         
+                     $(SOURCE_DIR)/Common/Debug.cpp 
+                           
 NAMESERVER_SOURCES += $(NAME_SERVICES_SOURCES)
 NAMESERVER_SOURCES += $(TRULY_COMMON_SOURCES)
 #NAMESERVER_SOURCES += $(SOFTWARE_ADDRESS_SOURCES)
@@ -272,7 +269,7 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Softswitch/src/poets_msg.cpp \
                      $(GENERICS_DIR)/dumpchan.cpp \
                      $(GENERICS_DIR)/rand.cpp \
-		     $(SOURCE_DIR)/Common/Debug.cpp \
+                     $(SOURCE_DIR)/Common/Debug.cpp \
                      $(SOURCE_DIR)/OrchBase/Bin.cpp \
                      $(SOURCE_DIR)/OrchBase/build_defs.cpp \
                      $(SOURCE_DIR)/OrchBase/CFrag.cpp \

@@ -158,9 +158,9 @@ unsigned NameServer::ConfigDir(PMsg_p * msg, unsigned comm)
 		break;
 	     }
 	  }
-	  if (msg->Tgt() == s->Rank) break; // supervisor found
+	  if (msg->Tgt() == static_cast<int>(s->Rank)) break; // supervisor found
       }
-      if (msg->Tgt() != s->Rank)            // supervisor not found
+      if (msg->Tgt() != static_cast<int>(s->Rank))            // supervisor not found
       {
 	 Post(728,int2str(Urank),uint2str(s->Rank));
 	 return ERR_INVALID_SUPERVISOR;
@@ -209,7 +209,7 @@ unsigned NameServer::ConfigDistribute(PMsg_p * msg, unsigned comm)
 		taskInfo.Src(Urank);
 		taskInfo.Key(Q::NAME,Q::DATA,Q::TASK);
 		TaskData_t taskData;
-		if (err = GetTask(taskName,taskData))
+		if ((err = GetTask(taskName,taskData)))
 		{
                    Post(724,taskName,int2str(Urank));
                    return err;   
@@ -253,7 +253,7 @@ unsigned NameServer::ConfigDistribute(PMsg_p * msg, unsigned comm)
 		devAttrs.clear();
 		superRanks.clear();
 		const RecordVect_t* devicesThisSuper;
-		if (err = FindBySuper(taskName,s->Address,devicesThisSuper))
+		if ((err = FindBySuper(taskName,s->Address,devicesThisSuper)))
 		{
 		   switch (err)
 		   {
@@ -362,9 +362,9 @@ unsigned NameServer::ConfigDistribute(PMsg_p * msg, unsigned comm)
 		break;
 	     }
 	  }
-	  if (msg->Tgt() == s->Rank) break; // supervisor found
+	  if (msg->Tgt() == static_cast<int>(s->Rank)) break; // supervisor found
       }
-      if (msg->Tgt() != s->Rank)            // supervisor not found
+      if (msg->Tgt() != static_cast<int>(s->Rank))            // supervisor not found
       {
 	 Post(728,int2str(Urank),uint2str(s->Rank));
 	 return ERR_INVALID_SUPERVISOR;
@@ -377,7 +377,7 @@ unsigned NameServer::ConfigDistribute(PMsg_p * msg, unsigned comm)
    distMsg.Dump(nsOutput);
    fclose(nsOutput);
    //-------------------------------------------------
-   if (err = SBase::ConfigDir(msg,comm)) // distribution messages contain the binary directory
+   if ((err = SBase::ConfigDir(msg,comm))) // distribution messages contain the binary directory
    {
       Post(724,taskName,int2str(Urank)); // no task of this name. 
       return err;                        // this should have been caught earlier.

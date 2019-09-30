@@ -1286,7 +1286,7 @@ void* Mothership::Twig(void* par)
 {
      Mothership* parent = static_cast<Mothership*>(par);
      const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
-     char recv_buf[p_msg_size()]; // buffer for one packet at a time
+     char* recv_buf = new char[p_msg_size()]; // buffer for one packet at a time
      void* p_recv_buf = static_cast<void*>(recv_buf);
      FILE* OutFile;
      char Line[4*P_MSG_MAX_SIZE];
@@ -1413,6 +1413,7 @@ void* Mothership::Twig(void* par)
 	   }
      }
      DebugPrint("Exiting Twig thread\n");
+     delete[] recv_buf;
      pthread_exit(par);
      return par;
 }

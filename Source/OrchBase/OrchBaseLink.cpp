@@ -257,7 +257,7 @@ if (!pPlace->Place(pT))
 		  {
 		     vector<string> devNames;
 		     vector<SymAddr_t> devAddrs;
-		     SymAddr_t devSuper;
+		     // SymAddr_t devSuper;
 		     // any given message will only contain one device type, corresponding
 		     // to the one used in a particular thread.
 		     string devTyp = thread->second->P_devicel.front()->pP_devtyp->Name();
