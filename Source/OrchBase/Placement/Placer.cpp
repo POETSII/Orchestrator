@@ -33,6 +33,6 @@ float Placer::compute_fitness(P_task* task)
 
 /* Stubs (I'm lazy) <!> */
 void Placer::Dump(FILE*){return;}
-float Placer::place(P_engine*, P_task*, std::string){return 0;}
-unsigned Placer::unplace(P_engine*, P_task*){return 0;}
-bool Placer::check_all_devices_mapped(P_engine*, P_task*){return false;}
+float Placer::place(P_task*, std::string){return 0;}
+unsigned Placer::unplace(P_task*){return 0;}
+bool Placer::check_all_devices_mapped(P_task*){return false;}

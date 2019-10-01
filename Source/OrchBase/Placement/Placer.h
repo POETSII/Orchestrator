@@ -44,11 +44,11 @@ public:
     void Dump(FILE* = stdout);
 
     /* Doing the dirty */
-    float place(P_engine*, P_task*, std::string);
-    unsigned unplace(P_engine*, P_task*);
+    float place(P_task*, std::string);
+    unsigned unplace(P_task*);
 
     /* Integrity */
-    bool check_all_devices_mapped(P_engine*, P_task*);
+    bool check_all_devices_mapped(P_task*);
 };
 
 #endif
