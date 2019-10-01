@@ -12,8 +12,9 @@ class Placer;
 class BucketFilling: public Algorithm
 {
 public:
-    float do_it(P_task*, Placer*);
+    float do_it(P_task* task, Placer* placer);
     void Dump(FILE* = stdout);
+    void poke_iterators(std::vector<HardwareIterator>* iterators);
 };
 
 #endif

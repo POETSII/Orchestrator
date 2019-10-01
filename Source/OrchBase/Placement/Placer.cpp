@@ -110,6 +110,13 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
     return maximumSoFar;
 }
 
+/* Low-level method to create a thread-device binding. Does no checking. */
+void Placer::link(P_thread* thread, P_device device)
+{
+    threadToDevices[thread].push_back(device);
+    deviceToThread[device] = thread;
+}
+
 /* Maps a task to the engine associated with this placer, using a certain
  * algorithm.  Arguments:
  *

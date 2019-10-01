@@ -58,6 +58,9 @@ public:
     float place(P_task* task, std::string algorithmDescription);
     void unplace(P_task* task);
 
+    /* Low-level placement operation, to be used only be algorithms */
+    void link(P_thread* thread, P_device* device);
+
     /* Constraint query */
     unsigned constrained_max_devices_per_thread(P_task* task);
 
