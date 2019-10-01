@@ -25,6 +25,7 @@ public:
         penalty(penalty),
         task(task)
     {}
+    virtual ~Constraint() = default;
 
     const constraintCategory category;
     bool mandatory;

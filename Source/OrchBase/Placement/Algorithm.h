@@ -15,6 +15,7 @@ class Placer;
 class Algorithm
 {
 public:
+    virtual ~Algorithm() = default;
     Result result;
     virtual float do_it(P_engine*, P_task*, Placer*) = 0;
     virtual void Dump(FILE* = stdout) = 0;

@@ -2,6 +2,21 @@
 
 #include "Placer.h"
 
+Placer::Placer(P_engine* engine):engine(engine){}
+
+Placer::~Placer()
+{
+    /* Free memory for each constraint and algorithm. */
+    std::list<Constraint*>::iterator constraintIterator;
+    std::map<P_task*, Algorithm*>::iterator algorithmIterator;
+    for (constraintIterator = constraints.begin();
+         constraintIterator != constraints.end();
+         delete (*constraintIterator)++);
+    for (algorithmIterator = placedTasks.begin();
+         algorithmIterator != placedTasks.end();
+         delete algorithmIterator++->second);
+}
+
 /* Computes the fitness for a task.
  *
  * Fitness is simply the sum of all costs on all edges, along with the sum of

@@ -23,15 +23,19 @@
 class Placer: public DumpChan
 {
 public:
+    Placer(P_engine* engine);
+    ~Placer();
+    P_engine* engine;
+
     /* Placement information for the entire system is held in these maps. */
     std::map<P_device*, P_thread*> deviceToThread;
     std::map<P_thread*, std::list<P_device*>> threadToDevices;
 
     /* Constraint management. */
-    std::list<Constraint> constraints;
+    std::list<Constraint*> constraints;
 
     /* Information on tasks that have been placed. */
-    std::map<P_task*, Algorithm> placedTasks;
+    std::map<P_task*, Algorithm*> placedTasks;
 
     /* Fitness evaluation. */
     float compute_fitness(P_task* task);
