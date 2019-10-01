@@ -35,6 +35,34 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
     return output;
 }
 
+/* Returns true if all of the devices in a task are mapped to a thread, and
+ * false otherwise. Arguments:
+ *
+ * - task: Task to scan for devices.
+ *
+ * - unmapped: Vector populated with unmapped devices (for further
+ *   diagnosis). Cleared before being populated. */
+bool Placer::check_all_devices_mapped(P_task* task,
+                                      std::vector<P_device*>* unmapped)
+{
+    /* Sanity. */
+    unmapped->clear();
+
+    /* Iterate through each device in the task. */
+    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
+                      P_pin*, task->pD->G, deviceIterator)
+    {
+        P_device* device = task->pD->G.NodeData(deviceIterator);
+
+        /* If it's mapped, we move on. If not, we add it to unmapped. */
+        std::map<P_device*, P_thread*>::iterator deviceFinder;
+        deviceFinder = deviceToThread.find(device);
+        if (deviceFinder != deviceToThread.end()) unmapped->push_back(device);
+    }
+
+    return unmapped->empty();
+}
+
 /* Computes the fitness for a task.
  *
  * Fitness is simply the sum of all costs on all edges, along with the sum of
@@ -73,7 +101,10 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     float score = algorithm->do_it(task, this);
 
     /* Check integrity. */
-    check_all_devices_mapped(task);
+    std::vector<P_device*> unmappedDevices;
+    if (check_all_devices_mapped(task, &unmappedDevices))
+        /* <!> Panic */
+    {}
 
     return score;
 }
@@ -129,4 +160,3 @@ void Placer::unplace(P_task* task)
 
 /* Stubs (I'm lazy) <!> */
 void Placer::Dump(FILE*){return;}
-bool Placer::check_all_devices_mapped(P_task*){return false;}

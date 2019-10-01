@@ -59,7 +59,8 @@ public:
     void unplace(P_task* task);
 
     /* Integrity */
-    bool check_all_devices_mapped(P_task*);
+    bool check_all_devices_mapped(P_task* task,
+                                  std::vector<P_device*>* unmapped);
 
 private:
     Algorithm* algorithm_from_string(std::string);
