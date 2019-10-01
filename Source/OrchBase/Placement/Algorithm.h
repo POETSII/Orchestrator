@@ -16,8 +16,8 @@ class Algorithm
 {
 public:
     Result result;
-    virtual float do_it(P_engine*, P_task*, Placer*);
-    virtual void Dump(FILE* = stdout);
+    virtual float do_it(P_engine*, P_task*, Placer*) = 0;
+    virtual void Dump(FILE* = stdout) = 0;
 };
 
 #endif

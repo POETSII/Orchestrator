@@ -9,6 +9,7 @@ class BucketFilling: public Algorithm
 {
 public:
     float do_it(P_engine*, P_task*, Placer*);
+    void Dump(FILE* = stdout);
 };
 
 #endif

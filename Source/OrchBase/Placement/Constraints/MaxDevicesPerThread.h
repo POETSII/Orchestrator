@@ -9,13 +9,15 @@
 class MaxDevicesPerThread: public Constraint
 {
 public:
-    MaxDevicesPerThread(float penalty, P_task* task, bool mandatory,
+    MaxDevicesPerThread(bool mandatory, float penalty, P_task* task,
                         unsigned maximum);
     static const constraintCategory category = maxDevicesPerThread;
     unsigned maximum;
 
     bool is_satisfied(Placer*);
     bool is_satisfied_delta(Placer* placer, std::vector<P_device*> devices);
+
+    void Dump(FILE* = stdout);
 };
 
 #endif

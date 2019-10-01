@@ -1,7 +1,8 @@
 #include "MaxDevicesPerThread.h"
 
 MaxDevicesPerThread::MaxDevicesPerThread(
-    float penalty, P_task* task, bool mandatory, unsigned maximum):
+    bool mandatory, float penalty, P_task* task, unsigned maximum):
+    Constraint(category, mandatory, penalty, task),
     maximum(maximum)
 {}
 

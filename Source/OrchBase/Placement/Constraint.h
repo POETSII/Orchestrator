@@ -7,31 +7,37 @@
  * See the placement documentation for further information. */
 
 #include "ConstraintCategory.h"
+#include "DumpUtils.h"
+
+#include <vector>
 
 class P_device;
+class P_task;
 class Placer;
 
 class Constraint
 {
 public:
-    Constraint(float penalty, P_task* task, bool mandatory):
+    Constraint(constraintCategory category, bool mandatory, float penalty,
+               P_task* task):
+        category(category),
+        mandatory(mandatory),
         penalty(penalty),
         task(task)
-        mandatory(mandatory)
     {}
 
-    virtual const constraintCategory category;
+    const constraintCategory category;
     bool mandatory;
     float penalty;
     P_task* task;
 
-    virtual void Dump(FILE* = stdout);
+    virtual void Dump(FILE* = stdout) = 0;
 
     /* Satisfaction checking, and satisfaction state. */
     bool satisfied;  /* For delta computation. */
-    virtual bool is_satisfied(Placer* placer);
+    virtual bool is_satisfied(Placer* placer) = 0;
     virtual bool is_satisfied_delta(Placer* placer,
-                                    std::vector<P_device*> devices);
+                                    std::vector<P_device*> devices) = 0;
 };
 
 #endif
