@@ -14,8 +14,8 @@
 
 //==============================================================================
 /* A Mothership is a process resident on a Box - a PC directly connected to the
-   tinsel network using HostLink. Motherships combine several pieces of 
-   functionality, deriving from 2 classes. 
+   tinsel network using HostLink. Motherships combine several pieces of
+   functionality, deriving from 2 classes.
    From SBase, Motherships handle local name services and receive a subset of
    the name server data related to the devices mapped to hardware resources
    directly managed by this Mothership. SBase itself inherits from CommonBase
@@ -24,11 +24,11 @@
    Motherships. A Deploy command sets up a TaskMap entry - a TaskInfo_t object
    which contains the pertinent information related to the state, hardware
    resources, and mappings of this task.
-   From HostLink, Motherships support communications between Tinsels and 
+   From HostLink, Motherships support communications between Tinsels and
    the rest of the MPI universe, along with the low-level configuration and
    command routines. The inheritance relation emphasises that a Mothership *is*
    a HostLink: without this interface it is meaningless, whilst a Mothership
-   on a given Box is by definition the one and only HostLink on the Box. 
+   on a given Box is by definition the one and only HostLink on the Box.
    A separate thread: Twig, extends the HostLink functionality onto the MPI
    network, providing communications *from* tinsels *to* MPI and also via a
    private channel to Supervisors. A Supervisor is a bit of application-specific
@@ -55,7 +55,7 @@ public:
 virtual ~             Mothership();
 
 unsigned              Connect(string="");
- 
+
 // somewhat bodgey function to return the hardware address from the composite; needed because of
 // the actual hardware mappings; this is the Orchestrator-side equivalent of toAddr.
 static inline unsigned GetHWAddr(P_addr& VAddr) {return (VAddr.A_box << P_BOX_HWOS) |
@@ -93,7 +93,7 @@ unsigned              OnSyst          (PMsg_p *,unsigned);
 unsigned              OnTinsel        (PMsg_p*, unsigned);
 unsigned              OnTinselOut     (P_Sup_Msg_t *);
 void                  StopTwig();
-// forwarded messages containing POETS packets. The Mothership 
+// forwarded messages containing POETS packets. The Mothership
 // should unpack the packets contained and inject them using
 // the HostLink. (This could be placed in a Branch thread).
 unsigned              SendAttr        (PMsg_p *, unsigned);
@@ -110,11 +110,11 @@ unsigned              SystTopo();
 
 void*                 SuperHandle; // dynamically loadable supervisor
 int                   (*SupervisorCall)(PMsg_p*, PMsg_p*); // entry point for the Supervisor
- 
+
 public:
 unsigned              PAddress; // address of this mothership in POETS-space
 bool                  ForwardMsgs;
- 
+
 typedef unsigned (Mothership::*pMeth)(PMsg_p *,unsigned);
 typedef map<unsigned,pMeth> FnMap_t;
 typedef map<uint16_t,char*> PinBuf_t; // type to hold buffers for messages received from devices
@@ -128,13 +128,9 @@ pthread_t           Twig_thread;              // thread for processing tinsel co
 bool                twig_running;             // flag to show twig thread is active
 
 static const int    NumBoards = NUM_BOARDS_PER_BOX;
- 
+
 };
 
 //==============================================================================
 
 #endif
-
-
-
-

@@ -178,7 +178,6 @@ if (!pPlace->Place(pT))
    vector<unsigned long> supervisorRanks;
    string supervisorType = pT->pSup->pP_devtyp->Name();
    vector<AttrIdx> supervisorAttrs;
-   // vector<RecordData_t> supervisorDevices;
    vector<pair<unsigned, int> >::iterator currSuperRank = superRanks.begin();
    deviceData.Src(Urank);
    deviceData.Tgt(nsRank);
@@ -190,47 +189,36 @@ if (!pPlace->Place(pT))
       while (((*superIter) != pT->pSup) && (++superIter != box->second->P_superv.end()));
       if (superIter == box->second->P_superv.end())
       {
-	 Post(164,pT->Name());
-	 return;
+	 Post(168,pT->Name());
+	 pT->LinkFlag();      // have to set the task as linked in order
+	 Unlink(pT->Name());  // to unlink it, which needs to be done to clear
+	 return;              // the thread device list.
       }
       if (!((*superIter)->pP_devtyp))
       {
-	 Post(165,(*superIter)->Name());
+	 Post(169,(*superIter)->Name());
+ 	 pT->LinkFlag();
+	 Unlink(pT->Name());
 	 return;
       }
-      // RecordData_t supervisorRecord;
       P_addr sAddr = (*superIter)->addr;
       supervisorNames.push_back((*superIter)->Name());
       // temporarily addresses must use old format. Later this should
       // be changed to the definitive reference standard format.
-      //supervisorRecord.Address = (sAddr.A_box << P_BOX_OS) |
-      //		           (sAddr.A_board << P_BOARD_OS) |
-      //		           (sAddr.A_core << P_CORE_OS) |
-      //                           (sAddr.A_thread << P_THREAD_OS) |
-      //		           (sAddr.A_device << P_DEVICE_OS);
       supervisorAddrs.push_back((sAddr.A_box << P_BOX_OS) |
 		                (sAddr.A_board << P_BOARD_OS) |
 				(sAddr.A_mailbox << P_MAILBOX_OS) |
 		                (sAddr.A_core << P_CORE_OS) |
                                 (sAddr.A_thread << P_THREAD_OS) |
 		                (sAddr.A_device << P_DEVICE_OS));
-      //supervisorRecord.DeviceType = sDevType;
-      //supervisorRecord.RecordType = Supervisor;
       supervisorAttrs.push_back(0);
-      // Temporarily, for testing without Motherships, we will give the Supervisor
+      // For testing without Motherships, we will give the Supervisor
       // a 'bad' rank. When running with a system that includes Motherships the
-      // commented code below should be selected.
+      // commented code below can be selected.
       if (currSuperRank == superRanks.end())
 	 supervisorRanks.push_back(0xFFFFFFFF);
-	 // supervisorRecord.Rank = 0xFFFFFFFF; // when record bundled as a RecordData_t
       /* {
             Post(709,(*superIter)->Name(),box->first);  
-         }
-         else
-         {
-            supervisorRecord.Rank = currSuperRank->second;
-            ++currSuperRank;
-            supervisorDevices.push_back(supervisorRecord);
          }
       */
       else
@@ -239,10 +227,8 @@ if (!pPlace->Place(pT))
 	 // later, this should be fixed.
 	 // TODO: extend the rank in a Record_t to include the comm.
 	 supervisorRanks.push_back(currSuperRank->second);
-         // supervisorRecord.Rank = currSuperRank->second;
 	 ++currSuperRank;
       }
-      // supervisorDevices.push_back(supervisorRecord);
       // and then find all the 'normal' devices
       WALKVECTOR(P_board*,box->second->P_boardv,board)
       {

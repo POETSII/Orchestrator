@@ -76,6 +76,8 @@
 165(E) : "System command '%s' ran unsuccessfully. Aborting deployment."
 166(E) : "Not enough mothership processes exist to deploy task %s. Is a mothership running?"
 167(E) : "System command '%s' ran unsuccessfully with message '%s'. Aborting deployment."
+168(E) : "Task %s's supervisor does not exist in the box supervisor list"
+169(E) : "Supervisor %s does not have a device type - cannot configure NameServer"
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"

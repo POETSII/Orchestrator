@@ -157,6 +157,8 @@ unsigned Mothership::Boot(string task)
      DebugPrint("Booting %d threads on threadID 0x%X at x:%d y:%d c:%d\n",
 		(*C)->P_threadm.size(),Mothership::GetHWAddr(coreAddress),
 		mX,mY,core);
+     DebugPrint("* startOne(meshX=%u, meshY=%u, coreId=%u, numThreads=%lu)\n",
+                mX, mY, core, (*C)->P_threadm.size());
      startOne(mX,mY,core,(*C)->P_threadm.size());
      DebugPrint("%d threads started on threadID 0x%X at x:%d y:%d c:%d\n",
 		(*C)->P_threadm.size(),Mothership::GetHWAddr(coreAddress),
@@ -164,6 +166,7 @@ unsigned Mothership::Boot(string task)
      DebugPrint("Triggering %d threads on core %d at x:%d y:%d c:%d\n",
 		(*C)->P_threadm.size(),Mothership::GetHWAddr(coreAddress),
 		mX,mY,core);
+     DebugPrint("* goOne(meshX=%u, meshY=%u, coreId=%u)\n", mX, mY, core);
      goOne(mX,mY,core);
    }
    // per Matt Naylor comment safer to start all cores then issue the go command to all cores separately.
@@ -174,7 +177,7 @@ unsigned Mothership::Boot(string task)
    //  goOne(mX,mY,core);
    // }
    // DebugPrint("%d cores booted\n", taskCores.size());
-   
+
    // deal with the barrier. Keep receiving messages until the bitmap is clear.
    P_Sup_Msg_t barrier_msg;
    while (!t_start_bitmap.empty())
@@ -191,7 +194,7 @@ unsigned Mothership::Boot(string task)
 	unsigned hw_core = toAddr(mX,mY,core,0);
 	DebugPrint("Received a barrier acknowledge from core %#X\n", hw_core);
 	// valid core?
-	if (t_start_bitmap.find(hw_core) != t_start_bitmap.end()) 
+	if (t_start_bitmap.find(hw_core) != t_start_bitmap.end())
 	{
 	   DebugPrint("Thread %d on core %d responding\n", thread, core);
 	   DebugPrint("Core bitmap for thread %d before acknowledge: %#X\n",
@@ -289,7 +292,7 @@ unsigned Mothership::CmLoad(string task)
    DebugPrint("%d tasks deployed to Mothership\n", TaskMap.size());
    if (TaskMap.find(task) == TaskMap.end())  // task deployed?
    {
-      Post(515, task, int2str(Urank));       // No. Abandon. 
+      Post(515, task, int2str(Urank));       // No. Abandon.
       return 0;
    }
    DebugPrint("Task %s found\n", task.c_str());
@@ -436,7 +439,7 @@ unsigned Mothership::CmRun(string task)
    WALKVECTOR(unsigned,threadsToRelease,R)
    {
      // send to every device on the thread with a supervisor message
-     barrier_msg.destDeviceAddr = DEST_BROADCAST; 
+     barrier_msg.destDeviceAddr = DEST_BROADCAST;
      DebugPrint("Attempting to send barrier release message to the thread "
                 "with hardware address %u.\n", *R);
      // this is the 'magic invocation' to release the Tinsel barrier
@@ -473,7 +476,7 @@ unsigned Mothership::CmStop(string task)
    case TaskInfo_t::TASK_END:
    Post(511, task,"stopped",
 	TaskInfo_t::Task_Status.find(TaskMap[task]->status)->second);
-   return 0;  
+   return 0;
    case TaskInfo_t::TASK_BOOT:
    case TaskInfo_t::TASK_RDY:
    case TaskInfo_t::TASK_STOP:
@@ -574,14 +577,14 @@ unsigned Mothership::ConfigDistribute(PMsg_p* msg, unsigned comm)
       DebugPrint("About to set binary directory %s for task %s\n",
                  msg->Zname(1).c_str(),msg->Zname(0).c_str());
       // set the directory for core binaries
-      return ConfigDir(msg, comm); 
+      return ConfigDir(msg, comm);
 }
 
 //------------------------------------------------------------------------------
 
 unsigned Mothership::ConfigRecall(PMsg_p* msg, unsigned comm)
 // remove (recall) a core info block from the Mothership. This frees up all
-// resources owned by a given task to be reallocatable to another task. 
+// resources owned by a given task to be reallocatable to another task.
 {
       string TaskName = msg->Zname(0);
       map<string, TaskInfo_t*>::iterator T;
@@ -626,7 +629,7 @@ unsigned Mothership::ConfigRecall(PMsg_p* msg, unsigned comm)
             TaskMap[*tName]->status = TaskInfo_t::TASK_ERR;
 	    Post(812, *tName);
 	    return AddressBook::ERR_INVALID_TASK;
-         } 
+         }
          } // ends switch (TaskMap[*tName]->status)
          system((string("rm -r -f ")+TaskMap[*tName]->BinPath).c_str());
          delete TaskMap[*tName]; // get rid of its TaskInfo object
@@ -642,7 +645,7 @@ unsigned Mothership::ConfigDir(PMsg_p *msg, unsigned comm)
 // issued as a separate command: task /xpath, although usually task /deploy
 // sets this up.
 {
-      string task = msg->Zname(0); // task name is in the first static field 
+      string task = msg->Zname(0); // task name is in the first static field
       string dir = msg->Zname(1);  // and the binary path is in the second
       DebugPrint("Name config dir command received: task %s, directory %s\n",
 		 task.c_str(), dir.c_str());
@@ -665,15 +668,15 @@ unsigned Mothership::ConfigState(PMsg_p *msg, unsigned comm)
         A Mothership should never receive a state-configuration name message. It
         should only send them, or update the state internally and call the SBase
         method from the internal update.
-     */ 
+     */
      // get the name to distinguish the type of error
-     string taskName = msg->Zname(0); 
+     string taskName = msg->Zname(0);
      if (taskName.empty())
        Post(710, "ConfigState", int2str(Urank));       // no task name
-     else if (TaskMap.find(taskName) == TaskMap.end()) 
+     else if (TaskMap.find(taskName) == TaskMap.end())
        Post(715, taskName, int2str(Urank)); // task not loaded to this Mothership
      // find the task and warn the user that they are attempting something illegal
-     else 
+     else
      {
        map<unsigned char,string>::const_iterator st =
 	  TaskInfo_t::Task_Status.find(TaskMap[taskName]->status);
@@ -684,7 +687,7 @@ unsigned Mothership::ConfigState(PMsg_p *msg, unsigned comm)
        }
        else Post(550, int2str(Urank), msg->Zname(1), st->second);
      }
-     return AddressBook::ERR_NONFATAL; // whatever the case we ignore the message    
+     return AddressBook::ERR_NONFATAL; // whatever the case we ignore the message
 }
 
 //------------------------------------------------------------------------------
@@ -701,7 +704,7 @@ unsigned Mothership::Connect(string svc)
    */
    unsigned connErr = MPI_SUCCESS;
    // set up the connection in the base class
-   if ((connErr = SBase::Connect(svc)) != MPI_SUCCESS) return connErr; 
+   if ((connErr = SBase::Connect(svc)) != MPI_SUCCESS) return connErr;
    FnMapx.push_back(new FnMap_t); // add another function table in the derived class
    int fIdx=FnMapx.size()-1;
    (*FnMapx[fIdx])[PMsg_p::KEY(Q::EXIT                        )] = &Mothership::OnExit; // overloads CommonBase
@@ -778,7 +781,7 @@ else if (task == "*")
    unsigned err = AddressBook::SUCCESS;
    if ((err = ListTask(tasks)))            // get all the tasks
    {
-      Post(710, "Dump", int2str(Urank));   // error: no tasks were found 
+      Post(710, "Dump", int2str(Urank));   // error: no tasks were found
       if (fp != stdout) fclose(fp);
       return;                              // so we don't need to do anything
    }
@@ -792,7 +795,7 @@ else
    SBase::Dump(fp,task);
    fprintf(fp,"SBase dump-----------------------------------\n");
 }
-   
+
 fprintf(fp,"Mothership dump-----------------------------------\n");
 fflush(fp);
 CommonBase::Dump(fp);
@@ -842,7 +845,7 @@ long Mothership::LoadBoard(P_board* board)
        2 separate binaries, a data binary and an executable image, loaded into
        different regions as specified in the linker maps generated by the
        softswitch builder. Each thread has its own private data space in SDRAM;
-       each core has a private instruction SRAM, although depending upon 
+       each core has a private instruction SRAM, although depending upon
        configuration 2 cores - an even and odd-numbered pair, may share
        instruction memory (and have to have the same image)
      */
@@ -901,8 +904,16 @@ long Mothership::LoadBoard(P_board* board)
                          &thread);
                 DebugPrint("Loading hardware thread 0x%X at x:%d y:%d c:%d\n",
                            Mothership::GetHWAddr(coreAddress), mX, mY, core);
+
                 // Load instruction memory, then data memory.
+                DebugPrint("* loadInstrsOntoCore(codeFilename=%s, meshX=%u, "
+                           "meshY=%u, coreId=%u)\n",
+                           code_f.c_str(), mX, mY, core);
                 loadInstrsOntoCore(code_f.c_str(), mX, mY, core);
+                DebugPrint("* loadDataViaCore(dataFilename=%s, meshX=%u, "
+                           "meshY=%u, coreId=%u)\n",
+                           data_f.c_str(), mX, mY, core);
+
                 loadDataViaCore(data_f.c_str(), mX, mY, core);
                 ++coresLoaded;
             }
@@ -921,10 +932,10 @@ unsigned Mothership::OnCfg(PMsg_p *msg, unsigned comm)
    // top-level instruction dispatch for Q::NAME, Q::CFG command subset
    switch(msg->L(2))
    {
-   case Q::DIST:                // DIST and TDIR both set the binary directory; 
+   case Q::DIST:                // DIST and TDIR both set the binary directory;
    return ConfigDistribute(msg, comm); // DIST also loads the core map
-   case Q::TDIR:                       
-   return ConfigDir(msg, comm);      
+   case Q::TDIR:
+   return ConfigDir(msg, comm);
    case Q::BLD:
    return SBase::ConfigBuild(msg, comm); // BLD rebuilts SBase maps
    case Q::RECL:
@@ -980,7 +991,7 @@ unsigned Mothership::OnDump(PMsg_p *msg, unsigned comm)
    default:
    Post(700,uint2str(msg->Key()),int2str(Urank));
    return 0;
-   }  
+   }
 }
 
 //------------------------------------------------------------------------------
@@ -1332,27 +1343,27 @@ void* Mothership::Twig(void* par)
 
 		    // debug message/watchdog: announces that this thread is
 		    // still operational.
-		    if (s_hdr->command == P_PKT_MSGTYP_ALIVE) 
+		    if (s_hdr->command == P_PKT_MSGTYP_ALIVE)
 		    {
 		       DebugPrint("Thread %d is still alive\n", s_hdr->sourceDeviceAddr >> P_THREAD_OS);
 		    }
 		    else
 		    {
 //------------------------------------------------------------------------------
-		       // other messages are routed to the supervisor 
+		       // other messages are routed to the supervisor
 		       DebugPrint("Message is a Supervisor request from device %d\n",
                                   s_hdr->sourceDeviceAddr);
 		       // new device talking?
-	               if (parent->TwigMap[s_hdr->sourceDeviceAddr] == 0) 
+	               if (parent->TwigMap[s_hdr->sourceDeviceAddr] == 0)
 		       {
-			  // supervisors have their own internal device buffers 
+			  // supervisors have their own internal device buffers
 			  // (pins) for each device
 		          DebugPrint("New device %d reporting to Supervisor\n",
                                      s_hdr->sourceDeviceAddr);
 		          parent->TwigMap[s_hdr->sourceDeviceAddr] = new PinBuf_t;
 		       }
 		       // inactive pin for the device?
-	               if ((*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin] == 0) 
+	               if ((*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin] == 0)
 		       {
 		          DebugPrint("New pin %d for device %d reporting to Supervisor\n",
 				     s_hdr->destPin, s_hdr->sourceDeviceAddr);
@@ -1360,11 +1371,11 @@ void* Mothership::Twig(void* par)
 			     new char[MAX_P_SUP_MSG_BYTES]();
 		       }
 		       // convert the buffer into a supervisor message
-                       P_Sup_Msg_t* recvdMsg = 
+                       P_Sup_Msg_t* recvdMsg =
 			 static_cast<P_Sup_Msg_t*>(static_cast<void*>
 			  ((*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin]));
 		       // stuff header into the persistent buffer
-	               memcpy(recvdMsg+s_hdr->seq,s_hdr,p_sup_hdr_size()); 
+	               memcpy(recvdMsg+s_hdr->seq,s_hdr,p_sup_hdr_size());
 		       DebugPrint("Expecting message of total length %d\n",
                                   s_hdr->cmdLenBytes);
 		       // more message to receive?
@@ -1400,7 +1411,7 @@ void* Mothership::Twig(void* par)
 	      fgetpos(OutFile, &writePos);
 	   }
 	   // or possibly only dumped to the local console
-	   else while (parent->pollStdOut()); 
+	   else while (parent->pollStdOut());
 	   // output the debug output buffer, which has to be done immediately
 	   // because we are in a separate thread
            if (OutFile && updated)
