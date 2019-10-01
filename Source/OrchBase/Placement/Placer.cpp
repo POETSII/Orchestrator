@@ -77,6 +77,39 @@ float Placer::compute_fitness(P_task* task)
     return 0; // <!>
 }
 
+/* Returns the maximum number of devices permitted to be placed on a thread
+ * such that no maxDevicesPerThread constraints are violated that apply either
+ * globally, or to a given task. */
+unsigned Placer::constrained_max_devices_per_thread(P_task* task)
+{
+    unsigned maximumSoFar = MAX_DEVICES_PER_THREAD_DEFAULT;
+
+    /* Iterate through each constraint. */
+    std::list<Constraint*>::iterator constraintIterator;
+    for (constraintIterator = constraints.begin();
+         constraintIterator != constraints.end();
+         constraintIterator++)
+    {
+        Constraint* constraint = *constraintIterator;
+
+        /* Only care about "maxDevicesPerThread" constraints. */
+        if (constraint->category == maxDevicesPerThread)
+        {
+            /* Only care about constraints that are global, or that match our
+             * task. */
+            if (constraint->task == task or constraint->task == PNULL)
+            {
+                /* Accept the strictest. */
+                unsigned thisMaximum = \
+                    dynamic_cast<MaxDevicesPerThread*>(constraint)->maximum;
+                if (thisMaximum < maximumSoFar) maximumSoFar = thisMaximum;
+            }
+        }
+    }
+
+    return maximumSoFar;
+}
+
 /* Maps a task to the engine associated with this placer, using a certain
  * algorithm.  Arguments:
  *

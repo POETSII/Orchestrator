@@ -58,12 +58,15 @@ public:
     float place(P_task* task, std::string algorithmDescription);
     void unplace(P_task* task);
 
-    /* Integrity */
-    bool check_all_devices_mapped(P_task* task,
-                                  std::vector<P_device*>* unmapped);
+    /* Constraint query */
+    unsigned constrained_max_devices_per_thread(P_task* task);
 
 private:
     Algorithm* algorithm_from_string(std::string);
+
+    /* Integrity */
+    bool check_all_devices_mapped(P_task* task,
+                                  std::vector<P_device*>* unmapped);
 };
 
 #endif
