@@ -78,7 +78,55 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     return score;
 }
 
+/* Removes all device-thread relations for all devices in a task, and removes
+ * constraints imposed by this task.
+ *
+ * It's slow and, due the the data structures involved, inefficient. We're fine
+ * with this, because unplacing is quite rare.
+ *
+ * This implementation assumes that each thread contains only devices belonging
+ * to a given task (to save many extra list.erases). */
+void Placer::unplace(P_task* task)
+{
+    /* Remove task-imposed constraints. */
+    std::list<Constraint*>::iterator constraintIterator;
+    while (constraintIterator != constraints.end())
+    {
+        /* Say goodbye! */
+        if ((*constraintIterator)->task == task)
+        {
+            delete *constraintIterator;
+            constraintIterator = constraints.erase(constraintIterator);
+        }
+
+        /* Safe for now. */
+        else constraintIterator++;
+    }
+
+    /* Clear the maps - iterate through each device in the task. */
+    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
+                      P_pin*, task->pD->G, deviceIterator)
+    {
+        P_device* device = task->pD->G.NodeData(deviceIterator);
+
+        /* Is the device placed? If so grab the thread. If not, skip. We don't
+         * complain, because we should be cool with unplacing a
+         * partially-placed task. */
+        std::map<P_device*, P_thread*>::iterator deviceFinder;
+        deviceFinder = deviceToThread.find(device);
+        if (deviceFinder == deviceToThread.end()) continue;
+        P_thread* thread = deviceFinder->second;
+
+        /* Remove the entry from deviceToThread (erasure by position). */
+        deviceToThread.erase(deviceFinder);
+
+        /* Remove the entry from threadToDevices (erasure by key). Note that
+         * this is safe because each thread is associated with one task (device
+         * type) at a time. */
+        threadToDevices.erase(thread);
+    }
+}
+
 /* Stubs (I'm lazy) <!> */
 void Placer::Dump(FILE*){return;}
-unsigned Placer::unplace(P_task*){return 0;}
 bool Placer::check_all_devices_mapped(P_task*){return false;}

@@ -55,8 +55,8 @@ public:
     void Dump(FILE* = stdout);
 
     /* Doing the dirty */
-    float place(P_task*, std::string);
-    unsigned unplace(P_task*);
+    float place(P_task* task, std::string algorithmDescription);
+    void unplace(P_task* task);
 
     /* Integrity */
     bool check_all_devices_mapped(P_task*);
