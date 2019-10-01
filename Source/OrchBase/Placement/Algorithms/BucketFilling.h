@@ -3,7 +3,11 @@
 
 /* Describes the bucket filling placement algorithm. */
 
+class Algorithm;
+class Placer;
+
 #include "Algorithm.h"
+#include "Placer.h"
 
 class BucketFilling: public Algorithm
 {

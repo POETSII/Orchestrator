@@ -13,10 +13,21 @@
 #include <list>
 #include <map>
 
-#include "Algorithm.h"
-#include "Constraint.h"
+/* Algorithms! */
+#include "BucketFilling.h"
+
+/* Constraints! */
+#include "MaxDevicesPerThread.h"
+
+/* Exceptions! */
+#include "AlreadyPlacedException.h"
+#include "InvalidAlgorithmDescriptorException.h"
+#include "NoSpaceToPlaceException.h"
+
+/* And everything else. */
 #include "DumpUtils.h"
 #include "HardwareModel.h"
+#include "OSFixes.hpp"
 #include "P_device.h"
 #include "P_task.h"
 
@@ -49,6 +60,9 @@ public:
 
     /* Integrity */
     bool check_all_devices_mapped(P_task*);
+
+private:
+    Algorithm* algorithm_from_string(std::string);
 };
 
 #endif
