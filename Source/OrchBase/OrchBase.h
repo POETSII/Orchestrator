@@ -18,6 +18,7 @@ class Dialect1Deployer;
 #include "Environment.h"
 #include "CommonBase.h"
 #include "P_owner.h"
+// include "Ns_el.h"
 using namespace std;
 
 #define TASK_DEPLOY_DIR ".orchestrator/task_binaries"  // Relative to home.
@@ -72,7 +73,7 @@ unsigned               CmLink(Cli *);
 void                   LinkCons(Cli::Cl_t);
 void                   LinkDump(Cli::Cl_t);
 void                   LinkLink(Cli::Cl_t);
-void                   LinkNser(Cli::Cl_t);
+// void                   LinkNser(Cli::Cl_t);
 void                   LinkPath(Cli::Cl_t);
 void                   LinkPlac(Cli::Cl_t);
 void                   LinkUnli(Cli::Cl_t);

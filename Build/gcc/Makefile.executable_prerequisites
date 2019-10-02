@@ -135,7 +135,6 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(GENERICS_DIR)/lex.cpp \
                $(GENERICS_DIR)/rand.cpp \
                $(SOURCE_DIR)/Common/Debug.cpp \
-               $(SOURCE_DIR)/NameServer/Ns_el.cpp \
                $(SOURCE_DIR)/NameServer/ABDefs.cpp \
                $(SOURCE_DIR)/NameServer/ABRecord.cpp \
                $(SOURCE_DIR)/NameServer/ABTask.cpp \

@@ -628,7 +628,7 @@ unsigned SBase::DataDevType(PMsg_p *msg)
 /*
   DataDevice - Load this task with Device info. This is the main function to 
   populate the database. Device records may be sent in several such messages,
-  although it is standard to send them all in one messaeg.
+  although it is standard to send them all in one message.
 */
 //==============================================================================
 unsigned SBase::DataDevice(PMsg_p *msg)

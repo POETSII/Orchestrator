@@ -4,7 +4,6 @@
 #include "PMsg_p.hpp"
 #include "mpi.h"
 #include "Pglobals.h"
-// #include "Ns_el.h"
 // #include "jnj.h"
 #include "CMsg_p.h"
 #include <stdio.h>

@@ -12,7 +12,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
   if (strcmp(cs,"cons")==0) { LinkCons(*i); continue; }
   if (strcmp(cs,"dump")==0) { LinkDump(*i); continue; }
   if (strcmp(cs,"link")==0) { LinkLink(*i); continue; }
-  if (strcmp(cs,"nser")==0) { LinkNser(*i); continue; }
+  // if (strcmp(cs,"nser")==0) { LinkNser(*i); continue; }
   if (strcmp(cs,"path")==0) { LinkPath(*i); continue; }
   if (strcmp(cs,"plac")==0) { LinkPlac(*i); continue; }
   if (strcmp(cs,"unli")==0) { LinkUnli(*i); continue; }
@@ -317,7 +317,7 @@ for(unsigned i=0;i<lim*4;i++) {
 }
 
 //------------------------------------------------------------------------------
-
+/*
 void OrchBase::LinkNser(Cli::Cl_t Cl)
 // Command from monkey to upload a linked task to the nameserver
 {
@@ -390,7 +390,7 @@ else
    ns.Send();
 }
 }
-
+*/
 //------------------------------------------------------------------------------
 
 void OrchBase::LinkPath(Cli::Cl_t Cl)

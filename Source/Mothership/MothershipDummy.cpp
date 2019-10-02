@@ -589,7 +589,7 @@ unsigned MothershipDummy::ReplyAttrs(PMsg_p *msg, unsigned comm)
    }
    fprintf(dumpFile, "--------------------- Devices By Attribute -------------------------------------\n");
    for (unsigned dev = 0; dev < numDevs; dev++)
-       fprintf(dumpFile, "Device %s: address 0x%llx\n", devNames[dev].c_str(), devAddrs[dev]);
+       fprintf(dumpFile, "Device %s: address 0x%lx\n", devNames[dev].c_str(), devAddrs[dev]);
    fprintf(dumpFile, "\n");
    fprintf(dumpFile, "Matched attributes:\n");
    for (unsigned attr = 0; attr < devAttrs.size(); attr++)
@@ -619,7 +619,7 @@ unsigned MothershipDummy::ReplyDevice(PMsg_p *msg, unsigned comm)
    }
    string qryType = QueryType(msg->Key());
    fprintf(dumpFile, "--------------------- %s ----------------------------\n", qryType.c_str());
-   fprintf(dumpFile, "Device %s: address 0x%llx\n", msg->Zname(1).c_str(), *devAddr);
+   fprintf(dumpFile, "Device %s: address 0x%lx\n", msg->Zname(1).c_str(), *devAddr);
    fprintf(dumpFile, "________________________________________________________________________________\n");
    fclose(dumpFile);
    qryMap.erase(qryTag); // Reply handled; remove the query request
@@ -654,7 +654,7 @@ unsigned MothershipDummy::ReplyDevices(PMsg_p *msg, unsigned comm)
    fprintf(dumpFile, "-----------  %s ----------------------------\n", qryType.c_str());
    fprintf(dumpFile, "Matching device %s\n", devName.c_str());
    for (unsigned dev = 0; dev < numDevs; dev++)
-       fprintf(dumpFile, "Device %s: address 0x%llx\n", devNames[dev].c_str(), devAddrs[dev]);
+       fprintf(dumpFile, "Device %s: address 0x%lx\n", devNames[dev].c_str(), devAddrs[dev]);
    fprintf(dumpFile, "________________________________________________________________________________\n");
    fclose(dumpFile);
    qryMap.erase(qryTag); // Reply handled; remove the query request
@@ -686,7 +686,7 @@ unsigned MothershipDummy::ReplyDevSuper(PMsg_p *msg, unsigned comm)
    }
    string qryType = QueryType(msg->Key());
    fprintf(dumpFile, "--------------------- %s ----------------------------\n", qryType.c_str());
-   fprintf(dumpFile, "Device %s: address 0x%llx, supervisor 0x%llx\n", msg->Zname(1).c_str(),*devAddr,*superAddr);
+   fprintf(dumpFile, "Device %s: address 0x%lx, supervisor 0x%lx\n", msg->Zname(1).c_str(),*devAddr,*superAddr);
    fprintf(dumpFile, "________________________________________________________________________________\n");
    fclose(dumpFile);
    qryMap.erase(qryTag); // Reply handled; remove the query request
@@ -722,7 +722,7 @@ unsigned MothershipDummy::ReplyDevTypes(PMsg_p *msg, unsigned comm)
    fprintf(dumpFile, "-----------  %s ----------------------------\n", qryType.c_str());
    fprintf(dumpFile, "Matching %s type %s\n", matchType.c_str(), matchName.c_str());
    for (unsigned dev = 0; dev < numDevs; dev++)
-       fprintf(dumpFile, "Device %s: address 0x%llx\n", devNames[dev].c_str(), devAddrs[dev]);
+       fprintf(dumpFile, "Device %s: address 0x%lx\n", devNames[dev].c_str(), devAddrs[dev]);
    fprintf(dumpFile, "________________________________________________________________________________\n");
    fclose(dumpFile);
    qryMap.erase(qryTag); // Reply handled; remove the query request
@@ -794,7 +794,7 @@ unsigned MothershipDummy::ReplySupers(PMsg_p *msg, unsigned comm)
    }
    fprintf(dumpFile, "--------------------- Supervisors -------------------------------------\n");
    for (unsigned dev = 0; dev < numDevs; dev++)
-       fprintf(dumpFile, "Supervisor %s: address 0x%llx, rank %d\n",supNames[dev].c_str(),supAddrs[dev],supRanks[dev]);
+       fprintf(dumpFile, "Supervisor %s: address 0x%lx, rank %lu\n",supNames[dev].c_str(),supAddrs[dev],supRanks[dev]);
    fprintf(dumpFile, "________________________________________________________________________________\n");
    fclose(dumpFile);
    qryMap.erase(qryTag); // Reply handled; remove the query request
@@ -823,7 +823,7 @@ unsigned MothershipDummy::ReplyTask(PMsg_p *msg, unsigned comm)
    msg->Get<unsigned long>(2, counts);
    if (counts.size() != 3)
    {
-      fprintf(dumpFile, "ERROR: count mismatch for task info: expected 3 counts, received %u\n", counts.size());
+      fprintf(dumpFile, "ERROR: count mismatch for task info: expected 3 counts, received %lu\n", counts.size());
       return ERR_NONFATAL;
    }
    fprintf(dumpFile, "-------------------------------- Task Info -------------------------------------\n");

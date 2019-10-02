@@ -88,7 +88,6 @@ SOURCES += \
     ./Generics/uif.cpp \
     Source/Common/Pglobals.cpp \
     Source/OrchBase/P_super.cpp \
-    Source/NameServer/Ns_el.cpp \
     Source/OrchBase/P_owner.cpp \
     Source/OrchBase/build_defs.cpp \
     Source/OrchBase/CMsg_p.cpp
@@ -181,7 +180,6 @@ HEADERS += \
     ./Source/OrchBase/build_defs.h \
     Source/OrchBase/P_super.h \
     Source/Injector/Injector.h \
-    Source/NameServer/Ns_el.h \
     Source/OrchBase/P_owner.h \
     Generics/dumpchan.h \
     Source/OrchBase/CMsg_p.h \
