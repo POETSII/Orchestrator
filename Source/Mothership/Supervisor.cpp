@@ -21,7 +21,7 @@ int SupervisorCall(PMsg_p* In, PMsg_p* Out)
     {
         uint8_t pin = (((msg->msg.header.pinAddr) & P_HD_TGTPIN_MASK)
                         >> P_HD_TGTPIN_SHIFT);
-        supInputPin* dest = Supervisor::inputs[pin]
+        supInputPin* dest = Supervisor::inputs[pin];
         sentErr += dest->OnReceive(dest->properties, dest->state, &(msg->msg), Out, outMsgBuf);
     }
     return sentErr;

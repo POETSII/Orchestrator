@@ -931,11 +931,12 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   // OnCtl - stub until this can be resolved with DBT
   handlers_h << "uint32_t devtyp_" << devtyp_name;
   handlers_h << "_OnCtl_handler (const void* graphProps, ";
-  handlers_h << "void* device, const void* msg);\n\n";
+  handlers_h << "void* device, const uint8_t opcode, const void* msg);\n\n";
   
   handlers_cpp << "uint32_t devtyp_" << devtyp_name;
   handlers_cpp << "_OnCtl_handler (const void* graphProps, ";
-  handlers_cpp << "void* device, const void* msg) {return 0;}\n\n";
+  handlers_cpp << "void* device, const uint8_t opcode, const void* msg)";
+  handlers_cpp << " {return 0;}\n\n";
   //============================================================================
   
   

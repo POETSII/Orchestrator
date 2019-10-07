@@ -41,7 +41,7 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext, volatile void* send_buf, vo
     // first phase of barrier: set up a standard message to send to the supervisor
     P_Msg_Hdr_t* hdr = static_cast<P_Msg_Hdr_t*>(const_cast<void*>(send_buf)); // Header
     
-    hdr->swAddr = P_SW_MOTHERSHIP_MASK | P_SW_CNC_MASK;;
+    hdr->swAddr = P_SW_MOTHERSHIP_MASK | P_SW_CNC_MASK;
     hdr->swAddr |= ((P_CNC_BARRIER << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK);
     hdr->pinAddr = tinselId();          // usurp Pin Addr for the source HW addr
     
