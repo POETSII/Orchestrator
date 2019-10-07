@@ -525,7 +525,7 @@ unsigned P_builder::GenSupervisor(P_task* task)
         sup_pin_handlers << "_pyld_t* message = ";
         sup_pin_handlers << "static_cast<const s_msg_";
         sup_pin_handlers << (*sI_pin)->pMsg->Name() << "_pyld_t*>";
-        sup_pin_handlers << "(static_cast<const void*>(inMsg->data));\n";
+        sup_pin_handlers << "(static_cast<const void*>(inMsg->payload));\n";
       }
       
       
@@ -586,7 +586,8 @@ unsigned P_builder::GenSupervisor(P_task* task)
         sup_pin_handlers << "_Send_handler";
         sup_pin_handlers << "(PMsg_p* outMsg, void* msgBuf, unsigned superMsg)";
         sup_pin_handlers << "\n{\n";
-        sup_pin_handlers << "   int s_c;\n";
+        sup_pin_handlers << "   int s_c = 0;\n";
+        sup_pin_handlers << "   /*\n";  //TEMPORARY FUDGE: until we resolve supervisor outputs.
         sup_pin_handlers << "   P_Msg_t* s_msg;\n";
         sup_pin_handlers << "   P_Msg_Hdr_t s_msg_hdr;\n";
         sup_pin_handlers << "   if (!(s_msg = outMsg->Get<P_Msg_t>(0, s_c))) return -1;\n";
@@ -622,8 +623,12 @@ unsigned P_builder::GenSupervisor(P_task* task)
            sup_pin_handlers << "_pyld_t*>(static_cast<void*>(msg->data));\n";
            sup_pin_handlers << "   }\n";
         }
+        sup_pin_handlers << "   */\n";  //TEMPORARY FUDGE: until we resolve supervisor outputs.
         
         sup_pin_handlers << (*sO_pin)->pHandl->c_src.c_str() << "\n";
+        
+        sup_pin_handlers << "   /*\n";  //TEMPORARY FUDGE: until we resolve supervisor outputs.
+        
         // last part sets up to send the messages (which is automatically handled upon exit from the SupervisorCall).
         sup_pin_handlers << "   if (!superMsg)\n";
         sup_pin_handlers << "   {\n";
@@ -644,6 +649,9 @@ unsigned P_builder::GenSupervisor(P_task* task)
         
         sup_pin_handlers << "   }\n";
         // return number of messages to send if no error.
+        
+        sup_pin_handlers << "   */\n";  //TEMPORARY FUDGE: until we resolve supervisor outputs.
+        
         sup_pin_handlers << "   return s_c;\n";
         sup_pin_handlers << "}\n\n";
         

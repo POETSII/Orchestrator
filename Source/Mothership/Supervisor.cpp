@@ -11,7 +11,6 @@ if this doesn't work.
 */
 int SupervisorCall(PMsg_p* In, PMsg_p* Out)
 {
-    int numMsgs = 0;
     int sentErr = 0;
     char outMsgBuf[P_MSG_MAX_SIZE];
 
