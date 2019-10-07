@@ -1766,15 +1766,15 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
             //------------------------------------------------------------------
             uint32_t tgt_swaddr;
             
+            tgt_swaddr = ((tgt_addr.A_device << P_SW_DEVICE_SHIFT) 
+                            & P_SW_DEVICE_MASK);
+            
             if(((tgt_hwaddr << LOG_DEVICES_PER_THREAD) | tgt_addr.A_device) 
                   == DEST_BROADCAST) // Quick and dirty hack to detect Super msg
             {
                 tgt_swaddr |= P_SW_MOTHERSHIP_MASK;
                 tgt_swaddr |= P_SW_CNC_MASK;
             }
-            
-            tgt_swaddr |= ((tgt_addr.A_device << P_SW_DEVICE_SHIFT) 
-                            & P_SW_DEVICE_MASK);
             //------------------------------------------------------------------
             
             
