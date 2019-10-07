@@ -62,7 +62,8 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext, volatile void* send_buf, vo
         
         P_Msg_t* rcv_pkt = static_cast<P_Msg_t*>(const_cast<void*>(recv_buf));
         // look for barrier message
-        if ((rcv_pkt->header.swAddr & P_SW_OPCODE_MASK) == P_CNC_INIT)
+        if (((rcv_pkt->header.swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT)
+                == P_CNC_INIT)
         {
             // *Debug: send packet out to show we have passed the barrier* 
             // softswitch_alive(send_buf);
