@@ -156,8 +156,9 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
     hdr->swAddr &= ~P_SW_TASK_MASK;
     hdr->swAddr |= ((device->deviceID << P_SW_TASK_SHIFT) & P_SW_TASK_MASK);
 
-    tinselSetLen((hdrSize + pin->pinType->sz_msg - 1) 
-                        >> (2+TinselLogWordsPerFlit));    // ??
+    
+    uint32_t flt = ((hdrSize + pin->pinType->sz_msg)-1) >> TinselLogBytesPerFlit;
+    tinselSetLen((flt < TinselMaxFlitsPerMsg)? flt : (TinselMaxFlitsPerMsg-1));    // Set the message length
     
     if(hdr->swAddr & P_SW_MOTHERSHIP_MASK)
     {   // Message to the Supervisor or External (this goes via the Supervisor)

@@ -114,6 +114,7 @@ typedef struct poets_message_header
     */
 } P_Msg_Hdr_t;
 
+
 typedef struct poets_message
 {
     P_Msg_Hdr_t header; // a message always has a header      
@@ -126,8 +127,8 @@ typedef struct poets_message
 typedef struct poets_supervisor_message
 {
     uint32_t hwAddr;    // The destination HW address
-    P_Msg_t msg;        // The POETs fabric message
     uint32_t len;       // Number of bytes for the P_Msg_t
+    P_Msg_t msg;        // The POETs fabric message
 } P_Super_Msg_t;
 
 
