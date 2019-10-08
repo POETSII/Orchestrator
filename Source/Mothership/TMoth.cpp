@@ -974,7 +974,7 @@ unsigned TMoth::OnTinselOut(P_Msg_t* msg)
     
     // Bung the message in a vector "because"
     std::vector<P_Super_Msg_t> msgs; 
-    P_Super_Msg_t sMsg = {0, *msg, (1<<TinselLogBytesPerFlit*TinselMaxFlitsPerMsg)};
+    P_Super_Msg_t sMsg = {0, (1<<TinselLogBytesPerFlit*TinselMaxFlitsPerMsg), *msg};
     msgs.push_back(sMsg);
     
     // Populate a PMessage
