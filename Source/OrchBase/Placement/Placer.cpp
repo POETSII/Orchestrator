@@ -22,7 +22,7 @@ Placer::~Placer()
 Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
 {
     Algorithm* output = PNULL;
-    if (colloquialDescription == "bucket") output = new BucketFilling;
+    if (colloquialDescription == "bucket") output = new BucketFilling(this);
 
     if (output == PNULL)
     {
@@ -111,7 +111,7 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
 }
 
 /* Low-level method to create a thread-device binding. Does no checking. */
-void Placer::link(P_thread* thread, P_device device)
+void Placer::link(P_thread* thread, P_device* device)
 {
     threadToDevices[thread].push_back(device);
     deviceToThread[device] = thread;
@@ -138,7 +138,7 @@ float Placer::place(P_task* task, std::string algorithmDescription)
             task->filename.c_str()));
 
     /* Run it. */
-    float score = algorithm->do_it(task, this);
+    float score = algorithm->do_it(task);
 
     /* Check integrity. */
     std::vector<P_device*> unmappedDevices;

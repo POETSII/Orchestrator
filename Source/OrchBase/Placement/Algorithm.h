@@ -15,9 +15,11 @@ class Placer;
 class Algorithm
 {
 public:
+    Algorithm(Placer* placer):placer(placer){}
     virtual ~Algorithm() = default;
+    Placer* placer;
     Result result;
-    virtual float do_it(P_task*, Placer*) = 0;
+    virtual float do_it(P_task*) = 0;
     virtual void Dump(FILE* = stdout) = 0;
 };
 

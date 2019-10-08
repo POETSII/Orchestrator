@@ -7,12 +7,14 @@ class Algorithm;
 class Placer;
 
 #include "Algorithm.h"
+#include "HardwareIterator.h"
 #include "Placer.h"
 
 class BucketFilling: public Algorithm
 {
 public:
-    float do_it(P_task* task, Placer* placer);
+    BucketFilling(Placer* placer):Algorithm(placer){}
+    float do_it(P_task* task);
     void Dump(FILE* = stdout);
     void poke_iterators(std::vector<HardwareIterator>* iterators);
 };

@@ -12,6 +12,7 @@
 
 #include <list>
 #include <map>
+#include <vector>
 
 /* Algorithms! */
 #include "BucketFilling.h"

@@ -10,7 +10,7 @@
  * This algorithm iterates through each device type in the task
  *
  * Returns zero (for now - later will return fitness). */
-float BucketFilling::do_it(P_task* task, Placer* placer)
+float BucketFilling::do_it(P_task* task)
 {
     /* Start from the first core pair in the engine that has no devices
      * associated with it. */
@@ -39,7 +39,7 @@ float BucketFilling::do_it(P_task* task, Placer* placer)
         if ((*deviceTypeIterator)->pOnRTS) continue;
 
         /* Move iterators to the next empty core pair. */
-        poke_iterators(&hardwareIterators)
+        poke_iterators(&hardwareIterators);
 
         /* Complain about running out of space if the ahead-iterator has
          * wrapped. */
@@ -56,18 +56,18 @@ float BucketFilling::do_it(P_task* task, Placer* placer)
         {
             /* If the current thread is full, try the next thread (until we run
              * out of threads on this core). */
-            P_thread* thisThread = hardwareIterator[0]->get_thread();
+            P_thread* thisThread = hardwareIterators[0].get_thread();
             if (placer->threadToDevices[thisThread].size()
                 >= maxDevicesPerThread)
             {
-                hardwareIterator[0]->has_core_changed();  /* Reset flag */
-                thisThread = hardwareIterator->next_thread();
+                hardwareIterators[0].has_core_changed();  /* Reset flag */
+                thisThread = hardwareIterators[0].next_thread();
 
                 /* Did we move to the next core? */
-                if (hardwareIterator[0]->has_core_changed())
+                if (hardwareIterators[0].has_core_changed())
                 {
                     /* Keep the other iterator moving in lockstep. */
-                    hardwareIterator[1].next_core();
+                    hardwareIterators[1].next_core();
 
                     /* If we have changed cores, and this is the first time,
                      * we've done that for this core pair, we'll just keep
@@ -78,7 +78,7 @@ float BucketFilling::do_it(P_task* task, Placer* placer)
                     if (coreIncremented)
                     {
                         poke_iterators(&hardwareIterators);
-                        thisThread = hardwareIterator[0]->get_thread();
+                        thisThread = hardwareIterators[0].get_thread();
                     }
 
                     else coreIncremented = true;
@@ -113,8 +113,8 @@ void BucketFilling::poke_iterators(std::vector<HardwareIterator>* iterators)
         std::vector<HardwareIterator>::iterator hardwareIt;
         std::map<AddressComponent, P_thread*>::iterator threadIt;
         std::map<AddressComponent, P_thread*>* threadMap;
-        for (hardwareIt = iterators.begin();
-             hardwareIt != iterators.end(); hardwareIt++)
+        for (hardwareIt = iterators->begin();
+             hardwareIt != iterators->end(); hardwareIt++)
         {
             /* Saves typing (and might help the readership). threadMap is a
              * pointer to the threadMap for this core (recall that the above
@@ -141,12 +141,12 @@ void BucketFilling::poke_iterators(std::vector<HardwareIterator>* iterators)
 
         /* If we've gone through the entire structure and no spare core pair
          * has been found, then the engine is already full. */
-        if (iterators[1].has_wrapped())
+        if ((*iterators)[1].has_wrapped())
             throw NoSpaceToPlaceException("[ERROR] Engine is full.");
 
         /* Increment the iterators. */
-        for (hardwareIt = iterators.begin(); hardwareIt != iterators.end();
-             hardwareIt++) hardwareIt.next_core();
+        for (hardwareIt = iterators->begin(); hardwareIt != iterators->end();
+             hardwareIt++) hardwareIt->next_core();
     }
 }
 
