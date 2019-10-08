@@ -10,6 +10,9 @@
 #include "string.h"
 #include "limits.h"
 
+#include <iostream>
+#include <iomanip>
+
 const int   TMoth::NumBoards;
 
 //==============================================================================
@@ -689,9 +692,17 @@ void* TMoth::Twig(void* par)
             parent->recv(recv_buf);
             
             P_Msg_t* msg = static_cast<P_Msg_t*>(p_recv_buf);
-            P_Msg_Hdr_t* hdr = static_cast<P_Msg_Hdr_t*>(p_recv_buf);
+            P_Msg_Hdr_t* hdr = &(msg->header);      //static_cast<P_Msg_Hdr_t*>(p_recv_buf);
             
-            
+            //Temporary message dumping for debug.
+            uint64_t* dump = static_cast<uint64_t*>(p_recv_buf);
+            std::cout << std::hex;
+            for(int iM = 0; iM < 8; iM++)
+            {
+                std::cout << std::setfill('0') << std::setw(16) << *dump << " ";
+                dump++;
+            }
+            std::cout << std::dec << std::endl;
             
             
             if((hdr->swAddr & P_SW_MOTHERSHIP_MASK) 
