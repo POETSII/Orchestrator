@@ -695,11 +695,11 @@ void* TMoth::Twig(void* par)
             P_Msg_Hdr_t* hdr = &(msg->header);      //static_cast<P_Msg_Hdr_t*>(p_recv_buf);
             
             //Temporary message dumping for debug.
-            uint64_t* dump = static_cast<uint64_t*>(p_recv_buf);
+            uint64_t* dump = static_cast<uint32_t*>(p_recv_buf);
             std::cout << std::hex;
-            for(int iM = 0; iM < 8; iM++)
+            for(int iM = 0; iM < 16; iM++)
             {
-                std::cout << std::setfill('0') << std::setw(16) << *dump << " ";
+                std::cout << std::setfill('0') << std::setw(8) << *dump << " ";
                 dump++;
             }
             std::cout << std::dec << std::endl;
