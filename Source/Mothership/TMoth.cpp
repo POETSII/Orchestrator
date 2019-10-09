@@ -690,7 +690,7 @@ void* TMoth::Twig(void* par)
         {
             DebugPrint("Message received from a Device\n");
             //parent->recv(recv_buf);
-            parent->recvMsg(recv_buf, 32);      //Temporary hack assuming that a message to supervisor is 2 flits
+            parent->recvMsg(recv_buf, 64);      //Temporary hack assuming that a message to supervisor is 2 flits
             
             P_Msg_t* msg = static_cast<P_Msg_t*>(p_recv_buf);
             P_Msg_Hdr_t* hdr = &(msg->header);      //static_cast<P_Msg_Hdr_t*>(p_recv_buf);

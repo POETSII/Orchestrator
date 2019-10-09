@@ -162,6 +162,8 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
     
     if(hdr->swAddr & P_SW_MOTHERSHIP_MASK)
     {   // Message to the Supervisor or External (this goes via the Supervisor)
+        tinselSetLen(TinselMaxFlitsPerMsg-1);    // TEMPORARY BODGE: Set the supervisor message length to 4 flits.
+        
         tinselSend(tinselHostId(), send_buf);
         ThreadContext->superCount++;         // Increment Supervisor Msg count
     }
@@ -169,6 +171,12 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
     {   // Message to another device.
         tinselSend(target->hwAddr, send_buf);
         ThreadContext->txCount++;            // Increment normal Msg count
+        
+        
+        //TEMPORARY DEBUGGING BODGE: echo message to supervisor
+        while(!tinselCanSend());
+        tinselSetLen(TinselMaxFlitsPerMsg-1);
+        tinselSend(tinselHostId(), send_buf);
     }
     //--------------------------------------------------------------------------
     
