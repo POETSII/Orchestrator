@@ -75,6 +75,7 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/OrchBase/Placement \
                 -I$(SOURCE_DIR)/OrchBase/Placement/Algorithms \
                 -I$(SOURCE_DIR)/OrchBase/Placement/Constraints \
+                -I$(SOURCE_DIR)/OrchBase/Placement/Exceptions \
                 -I$(SOURCE_DIR)/Launcher \
                 -I$(SOURCE_DIR)/Injector \
                 -I$(SOURCE_DIR)/Parser \
