@@ -22,6 +22,7 @@
 
 /* Exceptions! */
 #include "AlreadyPlacedException.h"
+#include "BadIntegrityException.h"
 #include "InvalidAlgorithmDescriptorException.h"
 #include "NoSpaceToPlaceException.h"
 

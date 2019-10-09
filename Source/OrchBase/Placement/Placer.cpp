@@ -134,7 +134,7 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     /* Don't do it if the task has already been placed (by address). */
     if (placedTasks.find(task) != placedTasks.end())
         throw AlreadyPlacedException(dformat(
-            "[ERROR] Task from file %s has already been placed.",
+            "[ERROR] Task from file '%s' has already been placed.",
             task->filename.c_str()));
 
     /* Run it. */
@@ -143,8 +143,25 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     /* Check integrity. */
     std::vector<P_device*> unmappedDevices;
     if (check_all_devices_mapped(task, &unmappedDevices))
-        /* <!> Panic */
-    {}
+    {
+        /* Prepare a nice printout of the devices that weren't mapped. */
+        std::string devicePrint;
+        std::vector<P_device*>::iterator deviceIt;
+        for (deviceIt = unmappedDevices.begin();
+             deviceIt != unmappedDevices.end(); deviceIt++)
+        {
+            devicePrint.append(dformat("\n - %s",
+                                       (*deviceIt)->Name().c_str()));
+        }
+
+        /* Toys out of the pram. */
+        throw BadIntegrityException(dformat(
+            "[ERROR] Use of algorithm '%s' on the task from file '%s' "
+            "resulted in some normal devices not being placed "
+            "correctly. These devices are:%s",
+            algorithmDescription.c_str(), task->filename.c_str(),
+            devicePrint.c_str()));
+    }
 
     return score;
 }
