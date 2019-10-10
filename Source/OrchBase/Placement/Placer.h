@@ -24,6 +24,7 @@
 #include "AlreadyPlacedException.h"
 #include "BadIntegrityException.h"
 #include "InvalidAlgorithmDescriptorException.h"
+#include "NoEngineException.h"
 #include "NoSpaceToPlaceException.h"
 
 /* And everything else. */
@@ -36,6 +37,7 @@
 class Placer: public DumpChan
 {
 public:
+    Placer();
     Placer(P_engine* engine);
     ~Placer();
     P_engine* engine;
@@ -78,6 +80,8 @@ private:
     /* Integrity */
     bool check_all_devices_mapped(P_task* task,
                                   std::vector<P_device*>* unmapped);
+    // <!> Could have a method that verifies that no core pairs have more than
+    // one device type placed upon them.
 };
 
 #endif

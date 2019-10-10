@@ -4,7 +4,7 @@
 /* Describes the bucket filling placement algorithm. */
 
 class Algorithm;
-class Placer;
+class HardwareIterator;
 
 #include "Algorithm.h"
 #include "HardwareIterator.h"

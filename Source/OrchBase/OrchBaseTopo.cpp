@@ -28,6 +28,7 @@ void OrchBase::ClearTopo()
     }
     delete pE;
     pE = 0;
+    placer = Placer();
 }
 
 //------------------------------------------------------------------------------
@@ -145,6 +146,7 @@ void OrchBase::TopoLoad(Cli::Cl_t Cl)
     {
         reader.load_file(inputFilePath.c_str());
         reader.populate_hardware_model(pE);
+        placer = Placer();
         Post(140, inputFilePath.c_str());
         pPlace->Init();
     }
@@ -190,6 +192,7 @@ void OrchBase::TopoSet1(Cli::Cl_t Cl)
     SimpleDeployer deployer;
     Post(138, pE->Name());
     deployer.deploy(pE);
+    placer = Placer(pE);
     pPlace->Init();
 }
 
@@ -204,6 +207,7 @@ void OrchBase::TopoSet2(Cli::Cl_t Cl)
     MultiSimpleDeployer deployer(2);
     Post(138, pE->Name());
     deployer.deploy(pE);
+    placer = Placer(pE);
     pPlace->Init();
 }
 

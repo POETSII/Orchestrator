@@ -2,6 +2,8 @@
 
 #include "Placer.h"
 
+Placer::Placer(){engine = PNULL;}
+
 Placer::Placer(P_engine* engine):engine(engine){}
 
 Placer::~Placer()
@@ -128,6 +130,12 @@ void Placer::link(P_thread* thread, P_device* device)
  * Returns the solution fitness, if appropriate (otherwise returns zero). */
 float Placer::place(P_task* task, std::string algorithmDescription)
 {
+    /* Danger Will Robinson! (seriously though, how did you get here? --MLV) */
+    if (engine == PNULL) throw NoEngineException(
+        "You've attempted to place a task without defining an engine pointer "
+        "in the placer. If you're running this from OrchBase, how did you get "
+        "here?");
+
     /* Grab an algorithm (exception will propagate). */
     Algorithm* algorithm = algorithm_from_string(algorithmDescription);
 
