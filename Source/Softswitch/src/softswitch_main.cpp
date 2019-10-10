@@ -43,12 +43,12 @@ void softswitch_main()
         // Something to send
         else if (ThreadContext->rtsStart != ThreadContext->rtsEnd) //softswitch_IsRTSReady(ThreadContext))
         {
-            if (!tinselCanSend())   
+            if (!tinselCanSend())
             {
-               // But channel is blocked. Wait until we have something to do.
-               tinselWaitUntil(TINSEL_CAN_SEND | TINSEL_CAN_RECV);
+                // But channel is blocked. Wait until we have something to do.
+                tinselWaitUntil(TINSEL_CAN_SEND | TINSEL_CAN_RECV);
             } 
-            else                    
+            else
             {
                 // Let's send something.
                 softswitch_onSend(ThreadContext, sendBuffer);

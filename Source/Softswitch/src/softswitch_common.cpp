@@ -128,6 +128,8 @@ void inPinSrc_init(uint32_t src, inPin_t* pin, ThreadCtxt_t* ThreadContext)
 uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
 {
     outPin_t* pin = ThreadContext->rtsBuf[ThreadContext->rtsStart]; // Get the next pin
+    if(pin->numTgts == 0) return 0;     // Sanity check: make sure the pin has targets
+    
     devInst_t* device = pin->device;                                // Get the Device
     const outEdge_t* target = &pin->targets[pin->idxTgts];          // Get the target
     
@@ -160,9 +162,14 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
     uint32_t flt = ((hdrSize + pin->pinType->sz_msg)-1) >> TinselLogBytesPerFlit;
     tinselSetLen((flt < TinselMaxFlitsPerMsg)? flt : (TinselMaxFlitsPerMsg-1));    // Set the message length
     
+    uint32_t* last = static_cast<uint32_t*>(const_cast<void*>(send_buf)); // TEMPORARY BODGE:
+     
     if(hdr->swAddr & P_SW_MOTHERSHIP_MASK)
     {   // Message to the Supervisor or External (this goes via the Supervisor)
         tinselSetLen(TinselMaxFlitsPerMsg-1);    // TEMPORARY BODGE: Set the supervisor message length to 4 flits.
+        last[13] = 0x00000000;  // TEMPORARY BODGE: 
+        last[14] = 0x00000000;  // TEMPORARY BODGE: 
+        last[15] = tinselId();  // TEMPORARY BODGE: 
         
         tinselSend(tinselHostId(), send_buf);
         ThreadContext->superCount++;         // Increment Supervisor Msg count
@@ -175,6 +182,10 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
         
         //TEMPORARY DEBUGGING BODGE: echo message to supervisor
         while(!tinselCanSend());
+        last[13] = 0x00ABBA00;
+        last[14] = target->hwAddr;
+        last[15] = tinselId();
+        
         tinselSetLen(TinselMaxFlitsPerMsg-1);
         tinselSend(tinselHostId(), send_buf);
     }
