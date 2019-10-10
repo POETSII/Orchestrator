@@ -50,6 +50,11 @@ public:
     /* Information on tasks that have been placed. */
     std::map<P_task*, Algorithm*> placedTasks;
 
+    /* Since each core pair must hold only devices of one type, and since a
+     * device type is bound to a certain task, it is often useful to identify
+     * the cores (and threads) that contain devices owned by a certain task. */
+    std::map<P_task*, std::set<P_core*>> taskToCores;
+
     /* Fitness evaluation. */
     float compute_fitness(P_task* task);
 
@@ -68,6 +73,7 @@ public:
 
 private:
     Algorithm* algorithm_from_string(std::string);
+    void update_task_to_cores_map(P_task* task);
 
     /* Integrity */
     bool check_all_devices_mapped(P_task* task,

@@ -144,6 +144,12 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     std::vector<P_device*> unmappedDevices;
     if (check_all_devices_mapped(task, &unmappedDevices))
     {
+        /* Update task-keyed maps. */
+        placedTasks[task] = algorithm;
+        update_task_to_cores_map(task);
+    }
+    else
+    {
         /* Prepare a nice printout of the devices that weren't mapped. */
         std::string devicePrint;
         std::vector<P_device*>::iterator deviceIt;
@@ -164,6 +170,26 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     }
 
     return score;
+}
+
+/* Updates taskToCores with the entries of a task, which has been placed
+ * correctly. Doesn't check much. */
+void Placer::update_task_to_cores_map(P_task* task)
+{
+    /* Grab the set we're inserting into. */
+    std::set<P_core*>* coreSet;
+    coreSet = &(taskToCores.find(task)->second);
+
+    /* Iterate through each device. */
+    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
+                      P_pin*, task->pD->G, deviceIterator)
+    {
+        /* Grab the device, for readability. */
+        P_device* device = task->pD->G.NodeData(deviceIterator);
+
+        /* Assume the device is placed - grab the core it's placed on. */
+        coreSet->insert(deviceToThread[device]->parent);
+    }
 }
 
 /* Removes all device-thread relations for all devices in a task, and removes
@@ -212,6 +238,23 @@ void Placer::unplace(P_task* task)
          * this is safe because each thread is associated with one task (device
          * type) at a time. */
         threadToDevices.erase(thread);
+    }
+
+    /* Clear the appropriate entry in placedTasks. */
+    std::map<P_task*, Algorithm*>::iterator placedTaskFinder;
+    placedTaskFinder = placedTasks.find(task);
+    if (placedTaskFinder != placedTasks.end())
+    {
+        delete placedTaskFinder->second;
+        placedTasks.erase(placedTaskFinder);
+    }
+
+    /* Clear the appropriate entry in taskToCores. */
+    std::map<P_task*, std::set<P_core*>>::iterator taskToCoresFinder;
+    taskToCoresFinder = taskToCores.find(task);
+    if (taskToCoresFinder != taskToCores.end())
+    {
+        taskToCores.erase(taskToCoresFinder);
     }
 }
 
