@@ -625,7 +625,6 @@ void* TMoth::Twig(void* par)
 // 'for later'.
 {
     TMoth* parent = static_cast<TMoth*>(par);
-    const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
     //char recv_buf[p_msg_size()]; // buffer for one packet at a time
     char *recv_buf = new char[p_msg_size()]; // buffer for one packet at a time
     void* p_recv_buf = static_cast<void*>(recv_buf);
@@ -647,15 +646,14 @@ void* TMoth::Twig(void* par)
         {
             DebugPrint("Message received from a Device\n");
             parent->recv(recv_buf);
+            
             uint32_t* device = static_cast<uint32_t*>(p_recv_buf); // get the first word, which will be a device address
             if (!(*device & P_SUP_MASK)) // bound for an external?
             {
                 P_Msg_Hdr_t* m_hdr = static_cast<P_Msg_Hdr_t*>(p_recv_buf);
                 DebugPrint("Message is bound for external device %d\n", m_hdr->destDeviceAddr);
                 if (parent->TwigExtMap[m_hdr->destDeviceAddr] == 0)
-                parent->TwigExtMap[m_hdr->destDeviceAddr] = new deque<P_Msg_t>;
-                if (m_hdr->messageLenBytes > szFlit)
-                parent->recvMsg(recv_buf+szFlit, m_hdr->messageLenBytes-szFlit);
+                    parent->TwigExtMap[m_hdr->destDeviceAddr] = new deque<P_Msg_t>;
                 parent->TwigExtMap[m_hdr->destDeviceAddr]->push_back(*(static_cast<P_Msg_t*>(p_recv_buf)));
             }
             else
@@ -681,11 +679,9 @@ void* TMoth::Twig(void* par)
                         (*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin] = new char[MAX_P_SUP_MSG_BYTES]();
                     }
                     P_Sup_Msg_t* recvdMsg = static_cast<P_Sup_Msg_t*>(static_cast<void*>((*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin]));
-                    memcpy(recvdMsg+s_hdr->seq,s_hdr,p_sup_hdr_size()); // stuff header into the persistent buffer
-                    DebugPrint("Expecting message of total length %d\n", s_hdr->cmdLenBytes);
-                    uint32_t len = s_hdr->seq == s_hdr->cmdLenBytes/p_sup_msg_size() ?  s_hdr->cmdLenBytes%p_sup_msg_size() : p_sup_msg_size(); // more message to receive?
-                    DebugPrint("Length for sequence number %d: %d\n", s_hdr->seq, len);
-                    if (len > szFlit) parent->recvMsg(((recvdMsg+s_hdr->seq)->data), len-szFlit); // get the whole message
+                    
+                    memcpy(recvdMsg+s_hdr->seq,recv_buf,p_sup_msg_size()); // stuff message into the persistent buffer
+                                        
                     if (super_buf_recvd(recvdMsg))
                     {
                         DebugPrint("Entire Supervisor message received of length %d\n", s_hdr->cmdLenBytes);
