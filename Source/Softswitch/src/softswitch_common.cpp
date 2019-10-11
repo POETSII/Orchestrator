@@ -166,7 +166,7 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
      
     if(hdr->swAddr & P_SW_MOTHERSHIP_MASK)
     {   // Message to the Supervisor or External (this goes via the Supervisor)
-        tinselSetLen(TinselMaxFlitsPerMsg-1);    // TEMPORARY BODGE: Set the supervisor message length to 4 flits.
+        //tinselSetLen(TinselMaxFlitsPerMsg-1);    // TEMPORARY BODGE: Set the supervisor message length to 4 flits.
         last[13] = 0x00000000;  // TEMPORARY BODGE: 
         last[14] = 0x00000000;  // TEMPORARY BODGE: 
         last[15] = tinselId();  // TEMPORARY BODGE: 
@@ -186,7 +186,7 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
         last[14] = target->hwAddr;
         last[15] = tinselId();
         
-        tinselSetLen(TinselMaxFlitsPerMsg-1);
+        //tinselSetLen(TinselMaxFlitsPerMsg-1);
         tinselSend(tinselHostId(), send_buf);
     }
     //--------------------------------------------------------------------------
