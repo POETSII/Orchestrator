@@ -35,7 +35,7 @@ CR_LIB_DIR="{{ CR_LIB_DIR }}"
 INTERNAL_LIB_PATH="$QT_LIB_DIR":"$MPI_LIB_DIR":"$GCC_LIB_DIR":
 
 # Paths for dynamically-linked libraries required by MPI.
-export LD_LIBRARY_PATH="$CR_LIB_DIR":"$LD_LIBRARY_PATH":./
+export LD_LIBRARY_PATH="$CR_LIB_DIR":"$MPI_LIB_DIR":"$LD_LIBRARY_PATH":./
 
 # Transform input arguments:
 #
