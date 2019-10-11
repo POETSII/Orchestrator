@@ -486,9 +486,10 @@ unsigned P_builder::GenSupervisor(P_task* task)
         sup_inPin_typedefs << " super_InPin_" << sIpin_name << "_props_t;\n\n";
         
         sup_pin_handlers << "   const super_InPin_" << sIpin_name;
-        sup_pin_handlers << "_props_t* sEdgeProperties = ";
+        sup_pin_handlers << "_props_t* sEdgeProperties OS_ATTRIBUTE_UNUSED= ";
         sup_pin_handlers << "static_cast<const super_InPin_";
         sup_pin_handlers << sIpin_name << "_props_t*>(pinProps);\n";
+        sup_pin_handlers << "OS_PRAGMA_UNUSED(sEdgeProperties)\n";
         
         sup_inPin_props <<  "new const super_InPin_" << sIpin_name;
         sup_inPin_props << "_props_t " << (*sI_pin)->pPropsI->c_src;
@@ -508,9 +509,10 @@ unsigned P_builder::GenSupervisor(P_task* task)
         sup_inPin_typedefs << " super_InPin_" << sIpin_name << "_state_t;\n\n";
         
         sup_pin_handlers << "   super_InPin_" << sIpin_name;
-        sup_pin_handlers << "_state_t* sEdgeState = ";
+        sup_pin_handlers << "_state_t* sEdgeState OS_ATTRIBUTE_UNUSED= ";
         sup_pin_handlers << "static_cast<super_InPin_";
         sup_pin_handlers << sIpin_name << "_state_t*>(pinState);\n";
+        sup_pin_handlers<< "OS_PRAGMA_UNUSED(sEdgeState)\n";
         
         sup_inPin_state << "new super_InPin_" << sIpin_name;
         sup_inPin_state << "_state_t " << (*sI_pin)->pStateI->c_src;
