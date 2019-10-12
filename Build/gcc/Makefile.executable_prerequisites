@@ -146,7 +146,7 @@ ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/Parser/*.cpp)
 # the file). Since we're collecting OrchBase sources using a wildcard, we must
 # explicitly exclude these four items from the source list.
 ROOT_SOURCE_EXCEPTIONS = $(addprefix $(SOURCE_DIR)/OrchBase/, \
-    OrchBaseTask.cpp OrchBaseLink.cpp OrchBaseTopo.cpp OrchBaseOwner.cpp)
+    OrchBaseTask.cpp OrchBaseLink.cpp OrchBaseTopo.cpp OrchBaseOwner.cpp OrchBasePlace.cpp)
 ROOT_SOURCES := $(filter-out $(ROOT_SOURCE_EXCEPTIONS), \
                              $(ROOT_SOURCES))
 

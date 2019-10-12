@@ -20,25 +20,27 @@ unsigned OrchBase::CmPlace(Cli* cli)
     /* For each clause in the command, do something interesting. If there are
      * no clauses (i.e. the command is literally `placement`), do nothing. */
     std::vector<Cli::Cl_t>::iterator clause;
+    std::string clauseRoot;
     for (clause = cli->Cl_v.begin(); clause != cli->Cl_v.end(); clause++)
     {
         /* Call the appropriate method (from the first four characters of the
          * clause). */
         bool isClauseValid = true;
-        switch (clause->cl.substr(0, 4))
-        {
-        case "dump": PlacementDump(*clause);
-        case "unpl": PlacementUnplace(*clause);
+        clauseRoot = clause->Cl.substr(0, 4);
+        if (clauseRoot == "dump") PlacementDump(*clause);
+        else if (clauseRoot == "unpl") PlacementUnplace(*clause);
 
         /* NB: We don't check the clause. If the operator types 'placement /reset =
          * APPLICATION', we clear everything anyway.
          *
+         * Also, the clause is irrelevant here. The "true" is because we want
+         * to let the user know that their command has been run.
+         *
          * Praise the deities of software design. */
-        case "rese": PlacementReset(post=true);  // Clause is irrelevant
+        else if (clauseRoot == "rese") PlacementReset(true);
 
         /* If nothing is appropriate, assume it's a placement algorithm. */
-        default: isClauseValid = PlacementDoit(*clause);
-        }
+        else isClauseValid = PlacementDoit(*clause);
 
         /* If it isn't a placement algorithm, we whinge. */
         if (!isClauseValid) Post(25, clause->Cl, "placement");
@@ -46,44 +48,47 @@ unsigned OrchBase::CmPlace(Cli* cli)
     return 0;
 }
 
-bool PlacementDoit(Cli::Cl_t clause)
+/* Returns true if the clause was valid (or some other error happened), and
+ * false otherwise. */
+bool OrchBase::PlacementDoit(Cli::Cl_t clause)
 {
     /* Skip if there are no parameters. */
-    if (clause.Pa_v.empty()) return;
+    if (clause.Pa_v.empty()) return true;
 
     /* Get (what we assume to be) the task handle, and the task. */
-    std::string taskHdl = clause.Pa_v[0].Val;
-    P_task* task = PlacementGetTaskByName(taskHdl);
+    std::string taskHandle = clause.Pa_v[0].Val;
+    P_task* task = PlacementGetTaskByName(taskHandle);
     if (task == PNULL) return true;
 
     /* Have a pop. */
     try
     {
         pPlacer->place(task, clause.Cl);
-        Post(202, taskHdl);
+        Post(202, taskHandle);
     }
-    catch (InvalidAlgorithmDescriptorException exc)
+    catch (InvalidAlgorithmDescriptorException&)
     {
         return false;  /* Let CmPlace handle it - it's an invalid clause, and
                         * we need to be consistent with other Orchestrator
                         * commands. */
     }
-    catch (AlreadyPlacedException exc) Post(203, taskHdl);
-    catch (BadIntegrityException exc) Post(204, taskHdl);
-    catch (NoEngineException exc) Post(205, taskHdl);
-    catch (NoSpaceToPlaceException exc) Post(206, taskHdl);
+    catch (AlreadyPlacedException&) {Post(203, taskHandle);}
+    catch (BadIntegrityException&) {Post(204, taskHandle);}
+    catch (NoEngineException&) {Post(205, taskHandle);}
+    catch (NoSpaceToPlaceException&) {Post(206, taskHandle);}
     return true;
 }
 
-void PlacementDump(Cli::Cl_t clause){}  /* <!> Yet another stub. */
+void OrchBase::PlacementDump(Cli::Cl_t clause){}  /* <!> Yet another stub. */
 
 /* Shortcut method to get a task object from its handle. */
-P_task* PlacementGetTaskByName(std::string taskHdl)
+P_task* OrchBase::PlacementGetTaskByName(std::string taskHandle)
 {
-    std::map<std::string, P_task*>::iterator taskFinder = P_taskm.find(taskHdl)
+    std::map<std::string, P_task*>::iterator taskFinder = \
+        P_taskm.find(taskHandle);
     if (taskFinder == P_taskm.end())
     {
-        Post(201, taskHdl);
+        Post(201, taskHandle);
         return PNULL;
     }
     else
@@ -92,26 +97,26 @@ P_task* PlacementGetTaskByName(std::string taskHdl)
     }
 }
 
-void PlacementReset(bool post)
+void OrchBase::PlacementReset(bool post)
 {
     if (pPlacer == 0) delete pPlacer;
-    if (pE != 0) pPlacer = new pPlacer(pE);
+    if (pE != 0) pPlacer = new Placer(pE);
     if (post) Post(208);
 }
 
-void PlacementUnplace(Cli::Cl_t clause)
+void OrchBase::PlacementUnplace(Cli::Cl_t clause)
 {
     /* Skip if there are no parameters. */
     if (clause.Pa_v.empty()) return;
 
     /* Get (what we assume to be) the task handle, and the task. */
-    std::string taskHdl = clause.Pa_v[0].Val;
-    P_task* task = PlacementGetTaskByName(taskHdl)
+    std::string taskHandle = clause.Pa_v[0].Val;
+    P_task* task = PlacementGetTaskByName(taskHandle);
     if (task == PNULL) return;
 
     /* Note that unplace doesn't whine if the task doesn't exist, and doesn't
      * whine if the task exists and has not been placed. It's an idempotent
      * method that ensures the task has no presence in the placer. */
     pPlacer->unplace(task);
-    Post(207, taskHdl);
+    Post(207, taskHandle);
 }

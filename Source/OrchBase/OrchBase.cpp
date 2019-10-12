@@ -26,6 +26,7 @@
 #include "OrchBaseTopo.cpp"            // Handlers for "topo" commands
 #include "OrchBaseLink.cpp"            // Handlers for "link" commands
 #include "OrchBaseOwner.cpp"           // Handlers for "owner" commands
+#include "OrchBasePlace.cpp"           // Guess
 
 //==============================================================================
 

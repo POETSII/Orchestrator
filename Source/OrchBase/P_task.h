@@ -5,6 +5,7 @@
 #include "NameBase.h"
 #include "OrchBase.h"
 class P_owner;
+class OrchBase;
 //#include "P_owner.h"
 
 //==============================================================================
