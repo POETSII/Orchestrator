@@ -28,8 +28,13 @@ unsigned OrchBase::CmPlace(Cli* cli)
         switch (clause->cl.substr(0, 4))
         {
         case "dump": PlacementDump(*clause);
-        case "rese": PlacementReset(*clause);
         case "unpl": PlacementUnplace(*clause);
+
+        /* NB: We don't check the clause. If the operator types 'placement /reset =
+         * APPLICATION', we clear everything anyway.
+         *
+         * Praise the deities of software design. */
+        case "rese": PlacementReset(post=true);  // Clause is irrelevant
 
         /* If nothing is appropriate, assume it's a placement algorithm. */
         default: isClauseValid = PlacementDoit(*clause);
@@ -54,7 +59,7 @@ bool PlacementDoit(Cli::Cl_t clause)
     /* Have a pop. */
     try
     {
-        placer.place(task, clause.Cl);
+        pPlacer->place(task, clause.Cl);
         Post(202, taskHdl);
     }
     catch (InvalidAlgorithmDescriptorException exc)
@@ -87,14 +92,11 @@ P_task* PlacementGetTaskByName(std::string taskHdl)
     }
 }
 
-void PlacementReset(Cli::Cl_t clause)
+void PlacementReset(bool post)
 {
-    /* NB: We don't check the clause. If the operator types 'placement /reset =
-     * APPLICATION', we clear everything anyway.
-     *
-     * Praise the deities of software design. */
-    placer = Placer(pE);
-    Post(208);
+    if (pPlacer == 0) delete pPlacer;
+    if (pE != 0) pPlacer = new pPlacer(pE);
+    if (post) Post(208);
 }
 
 void PlacementUnplace(Cli::Cl_t clause)
@@ -110,6 +112,6 @@ void PlacementUnplace(Cli::Cl_t clause)
     /* Note that unplace doesn't whine if the task doesn't exist, and doesn't
      * whine if the task exists and has not been placed. It's an idempotent
      * method that ensures the task has no presence in the placer. */
-    placer.unplace(task);
+    pPlacer->unplace(task);
     Post(207, taskHdl);
 }

@@ -33,6 +33,7 @@ OrchBase::OrchBase(int argc,char * argv[],string d,string sfile) :
   CommonBase(argc,argv,d,sfile)
 {
 pE        = 0;
+pPlacer   = 0;
 pB        = new P_builder(argc, argv, this);       // Object to build the datastructure
 pTG       = new T_gen(this);           // PoL task generator
 pPlace    = new Placement(this);       // Xlink controller
@@ -44,7 +45,8 @@ taskpath  = string(" ");
 
 OrchBase::~OrchBase()
 {
-if (pE!=0)        delete pE;           // Kill the P-node graph
+if (pE!=0)        delete pE;           // Destroy the engine
+if (pPlacer!=0)   delete pPlacer;      // Destroy the placer
 if (pB!=0)        delete pB;           // Object to build the datastructure
 if (pPlace!=0)    delete pPlace;       // Cross link controller
 if (pTG!=0)       delete pTG;          // PoL generator

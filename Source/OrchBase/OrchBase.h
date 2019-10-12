@@ -2,7 +2,6 @@
 #define __OrchBaseH__H
 
 class Placement;
-class Placer;
 class P_task;
 class P_builder;
 class T_gen;
@@ -93,12 +92,12 @@ unsigned               CmPlace(Cli *);
 bool                   PlacementDoit(Cli::Cl_t);  // Algorithm filter
 void                   PlacementDump(Cli::Cl_t);
 P_task*                PlacementGetTaskByName(std::string);  // Shortcut
-void                   PlacementReset(Cli::Cl_t);
+void                   PlacementReset(bool post=false);  // Shortcut
 void                   PlacementUnplace(Cli::Cl_t);
 
 P_engine *             pE;             // Poets engine (hardware model)
 Placement *            pPlace;         // Cross-linker
-Placer                 placer;         // Placement action and information
+Placer*                pPlacer;        // Placement action and information
 P_builder *            pB;             // Object to build the datastructure
 T_gen *                pTG;            // PoL task generator
 map<string,P_task *>   P_taskm;        // Holder for multiple task graphs
