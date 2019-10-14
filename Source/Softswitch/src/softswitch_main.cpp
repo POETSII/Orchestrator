@@ -11,15 +11,14 @@ void softswitch_main()
     outPin_t* rtsBuf[ThreadContext->rtsBufSize+1];
     ThreadContext->rtsBuf = rtsBuf;
     
-    // can these slot assignments be done in softswitch_init?
-    volatile void *recvBuffer=0;
-    volatile void *sendBuffer=tinselSlot(0);   // hardware send buffer is dedicated to the first tinsel slot
-    volatile void *superBuffer[NUM_SUP_BUFS];  // buffers allocated for supervisor messages.
-    for (uint32_t sb = 0; sb < NUM_SUP_BUFS; sb++) superBuffer[sb] = tinselSlot(sb+1);
+    // Create RX buffer pointer and Allocate Tinsel Slots
+    volatile void *recvBuffer = PNULL;
+    volatile void *sendBuffer = tinselSlot(P_MSG_SLOT);     // Send slot
+    
     softswitch_init(ThreadContext);
     // send a message to the local supervisor saying we are ready;
     // then wait for the __init__ message to return by interrogating tinselCanRecv(). 
-    softswitch_barrier(ThreadContext, superBuffer[0], recvBuffer);
+    softswitch_barrier(ThreadContext, sendBuffer, recvBuffer);
     
     // Endless main loop, that is until thread context says to stop.
     while (!ThreadContext->ctlEnd)
@@ -62,7 +61,7 @@ void softswitch_main()
             tinselWaitUntil(TINSEL_CAN_RECV);
         }
     }
-    softswitch_finalize(ThreadContext, &sendBuffer, &recvBuffer, superBuffer); // shut down once the end signal has been received.
+    softswitch_finalize(ThreadContext, &sendBuffer, &recvBuffer); // shut down once the end signal has been received.
 }
 
 int main(int argc, char** argv)

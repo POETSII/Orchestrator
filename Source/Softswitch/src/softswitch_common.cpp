@@ -5,12 +5,15 @@
 
 void softswitch_init(ThreadCtxt_t* ThreadContext)
 {
-    for (uint32_t i=1+NUM_SUP_BUFS+MAX_LOG_MSG_BUFS; i < (1<<TinselLogMsgsPerThread); i++) tinselAlloc(tinselSlot(i)); // allocate receive slots.
+    // Allocate Tinsel receive slots.
+    for (uint32_t i=P_RXSLOT_START; i < (1<<TinselLogMsgsPerThread); i++) tinselAlloc(tinselSlot(i)); // allocate receive slots.
+    
     for (uint32_t deviceType = 0; deviceType < ThreadContext->numDevTyps; deviceType++) deviceType_init(deviceType, ThreadContext);
+    
     for (uint32_t device = 0; device < ThreadContext->numDevInsts; device++) device_init(&ThreadContext->devInsts[device], ThreadContext);
 }
 
-void softswitch_finalize(ThreadCtxt_t* ThreadContext, volatile void** send_buf, volatile void** recv_buf, volatile void** super_buf)
+void softswitch_finalize(ThreadCtxt_t* ThreadContext, volatile void** send_buf, volatile void** recv_buf)
 {
     // Loop through everything in the RTS buffer and clear it
     uint32_t maxIdx = ThreadContext->rtsBufSize;   // # devices we are looping through
@@ -29,9 +32,9 @@ void softswitch_finalize(ThreadCtxt_t* ThreadContext, volatile void** send_buf, 
         }
     }
 
-    for (uint32_t b = 0; b < NUM_SUP_BUFS; b++) super_buf[b] = PNULL;
     *send_buf = PNULL;
     *recv_buf = PNULL;
+    
     // free mailbox slots
     for (uint32_t i = 0; i < (1<<TinselLogMsgsPerThread); i++) tinselAlloc(tinselSlot(i));
 }

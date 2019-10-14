@@ -57,6 +57,13 @@
 
 
 //------------------------------------------------------------------------------
+//
+//------------------------------------------------------------------------------
+#define P_MAX_LOGMSG_FRAG       4
+#define P_LOG_MAX_LOGMSG_FRAG   2
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
 // Header bitmasks and bitshifts
 //------------------------------------------------------------------------------
 #define P_HW_HWADDR_MASK            0xFFFFFFFF
@@ -123,6 +130,12 @@ typedef struct poets_message
     // Further flits contain data.
 } P_Msg_t;
 
+typedef struct poets_log_message_payload
+{
+    uint8_t seq;
+    uint8_t payload[P_MSG_MAX_SIZE-(sizeof(P_Msg_Hdr_t)+sizeof(uint8_t))];
+} P_Log_Msg_Pyld_t;
+
 
 typedef struct poets_supervisor_message
 {
@@ -133,8 +146,9 @@ typedef struct poets_supervisor_message
 
 
 const unsigned int p_msg_pyld_size = sizeof(P_Msg_t)-sizeof(P_Msg_Hdr_t);
-const unsigned int p_log_msg_pyld_size = p_msg_pyld_size-sizeof(uint8_t);
-const unsigned int p_log_msg_hdr_size = sizeof(P_Msg_Hdr_t)+sizeof(uint8_t);
+const unsigned int p_logmsg_pyld_size = sizeof(P_Msg_t)
+                                         -(sizeof(P_Msg_Hdr_t)+sizeof(uint8_t));
+const unsigned int p_logmsg_hdr_size = sizeof(P_Msg_Hdr_t)+sizeof(uint8_t);
 
 
 inline size_t p_super_msg_size() {return sizeof(P_Super_Msg_t);}

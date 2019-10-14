@@ -37,7 +37,6 @@ BIN_DIR := ../bin
 endif
 
 ifdef TRIVIAL_LOG_HANDLER
-SOFTSWITCH_DEPS = handler_log_t.h
 LH_CFLAGS = -D TRIVIAL_LOG_HANDLER
 endif
 
