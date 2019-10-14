@@ -210,8 +210,10 @@ void Placer::update_task_to_cores_map(P_task* task)
  * to a given task (to save many extra list.erases). */
 void Placer::unplace(P_task* task)
 {
-    /* Remove task-imposed constraints. */
-    std::list<Constraint*>::iterator constraintIterator;
+    /* Remove task-imposed constraints. NB: This is not a for loop, because
+     * elements are removed from the container within the loop. */
+    std::list<Constraint*>::iterator constraintIterator = \
+        constraints.begin();
     while (constraintIterator != constraints.end())
     {
         /* Say goodbye! */
