@@ -61,6 +61,10 @@ unsigned              SystTopo();
 
 void*                 SuperHandle; // dynamically loadable supervisor
 int                   (*SupervisorCall)(PMsg_p*, PMsg_p*); // entry point for the Supervisor
+
+P_Msg_t               logMsgBuf[P_MAX_LOGMSG_FRAG];
+unsigned              logMsgCnt;
+unsigned              logMsgMax;
  
 public:
 unsigned              PAddress; // address of this mothership in POETS-space

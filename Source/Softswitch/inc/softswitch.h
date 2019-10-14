@@ -1,7 +1,6 @@
 #ifndef _SOFTSWITCH_H_
 #define _SOFTSWITCH_H_ 
 
-#include <cstring>
 #include "poets_msg.h"
 
 #define MAX_LOG_MSG_BUFS 4
@@ -22,10 +21,10 @@
 #define P_RXSLOT_START  3
 //------------------------------------------------------------------------------
 
-const int p_logmsg_max_size = p_logmsg_pyld_size << P_LOG_MAX_LOGMSG_FRAG;
-const int p_logmsg_1msg_max_size = p_logmsg_pyld_size;
-const int p_logmsg_2msg_max_size = p_logmsg_pyld_size << 1;
-const int p_logmsg_3msg_max_size = p_logmsg_2msg_max_size + p_logmsg_pyld_size;
+const uint32_t p_logmsg_max_size = p_logmsg_pyld_size << P_LOG_MAX_LOGMSG_FRAG;
+const uint32_t p_logmsg_1msg_max_size = p_logmsg_pyld_size;
+const uint32_t p_logmsg_2msg_max_size = p_logmsg_pyld_size << 1;
+const uint32_t p_logmsg_3msg_max_size = p_logmsg_2msg_max_size + p_logmsg_pyld_size;
 
 void softswitch_trivial_log_handler(const char* &logStr);
 

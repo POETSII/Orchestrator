@@ -42,7 +42,10 @@ CommonBase(argc,argv,d,string(__FILE__)), HostLink()
     // mothership's address in POETS space is the host thread ID: X coordinate 0,
     // Y coordinate max (within box?? TODO: check this!). TODO: Update this for multi-box!
     PAddress = TinselMeshYLenWithinBox << (TinselMeshXBits+TinselLogCoresPerBoard+TinselLogThreadsPerCore);
-
+    
+    logMsgCnt = 0;
+    logMsgMax = 0;
+    
     twig_running = false;
     ForwardMsgs = false; // don't forward tinsel traffic yet
 
@@ -959,13 +962,50 @@ unsigned TMoth::OnTinselOut(P_Msg_t* msg)
     {
         DebugPrint("Received a handler_log message from device\n");
         
-        //TODO: Write This
-        /*
-        unsigned msg_len = ((msg->header.cmdLenBytes%p_sup_msg_size()) && (msg->header.seq == msg->header.cmdLenBytes/p_sup_msg_size())) ? msg->header.cmdLenBytes%p_sup_msg_size() : p_sup_msg_size()-p_sup_hdr_size();
-        msg_len -= p_sup_hdr_size();
-        Post(601, int2str(msg->header.sourceDeviceAddr), int2str(msg->header.seq), string(reinterpret_cast<const char*>(msg->data), msg_len));
-        */
+        /* TODO: This needs to be more robust. This does not handle all edge cases.
+         * Assumes that there are no duplicate messages and that different log
+         * messages are not interspersed and that things arrive (mostly) in order.
+         * 
+         * This can be made much more resilient by using a map for each in-progress
+         * log message.
+         */
         
+        P_Log_Msg_Pyld_t* pyld = reinterpret_cast<P_Log_Msg_Pyld_t*>(msg->payload);
+        
+        memcpy(&logMsgBuf[pyld->seq], msg, p_msg_size());
+        
+        logMsgCnt++;
+        if(logMsgMax < pyld->seq) logMsgMax = pyld->seq;
+        
+        
+        if(logMsgCnt == (logMsgMax +1))
+        {
+            // Received the last log message. Re-assemble & print it.
+            char logStr[(p_logmsg_pyld_size << P_LOG_MAX_LOGMSG_FRAG)+1];
+            char* logPtr = logStr;
+            
+            uint32_t srcAddr = logMsgBuf[logMsgMax].header.pinAddr;
+            
+            for(unsigned int i = 0; i < logMsgCnt; i++)
+            {
+                pyld = reinterpret_cast<P_Log_Msg_Pyld_t*>(logMsgBuf[logMsgMax].payload);
+             
+                memcpy(logPtr, pyld->payload, p_logmsg_pyld_size);
+                
+                logPtr += p_logmsg_pyld_size;                
+                logMsgMax--;
+            }
+            
+            std::string logString(logStr);
+            std::cout << "\n\nString:\t" << logString << "\n" << std::endl;
+            
+            Post(601, int2str(srcAddr), 
+                    int2str(srcAddr),
+                    string(logStr));
+            
+            logMsgCnt = 0;
+            logMsgMax = 0;
+        }
         return 0;
     }
     
