@@ -175,7 +175,7 @@ float Placer::place(P_task* task, std::string algorithmDescription)
         throw BadIntegrityException(dformat(
             "[ERROR] Use of algorithm '%s' on the task from file '%s' "
             "resulted in some normal devices not being placed "
-            "correctly. These devices are:%s",
+            "correctly. These devices are:%s\n",
             algorithmDescription.c_str(), task->filename.c_str(),
             devicePrint.c_str()));
     }
