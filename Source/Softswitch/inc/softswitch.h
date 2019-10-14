@@ -22,7 +22,7 @@
 #define P_RXSLOT_START  3
 //------------------------------------------------------------------------------
 
-const int p_logmsg_max_size = p_log_msg_pyld_size << P_LOG_MAX_LOGMSG_FRAG;
+const int p_logmsg_max_size = p_logmsg_pyld_size << P_LOG_MAX_LOGMSG_FRAG;
 const int p_logmsg_1msg_max_size = p_log_msg_pyld_size;
 const int p_logmsg_2msg_max_size = p_log_msg_pyld_size << 1;
 const int p_logmsg_3msg_max_size = p_logmsg_2msg_max_size + p_log_msg_pyld_size;
