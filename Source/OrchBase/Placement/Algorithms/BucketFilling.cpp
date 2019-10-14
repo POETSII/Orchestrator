@@ -36,7 +36,7 @@ float BucketFilling::do_it(P_task* task)
          deviceTypeIterator++)
     {
         /* Skip this device type if it is a supervisor device type. */
-        if ((*deviceTypeIterator)->pOnRTS) continue;
+        if (!(*deviceTypeIterator)->pOnRTS) continue;
 
         /* Move iterators to the next empty core pair. */
         poke_iterators(&hardwareIterators);

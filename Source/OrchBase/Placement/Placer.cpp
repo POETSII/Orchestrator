@@ -56,10 +56,13 @@ bool Placer::check_all_devices_mapped(P_task* task,
     {
         P_device* device = task->pD->G.NodeData(deviceIterator);
 
+        /* Ignore if it's a supervisor device (we don't map those). */
+        if (!(device->pP_devtyp->pOnRTS)) continue;
+
         /* If it's mapped, we move on. If not, we add it to unmapped. */
         std::map<P_device*, P_thread*>::iterator deviceFinder;
         deviceFinder = deviceToThread.find(device);
-        if (deviceFinder != deviceToThread.end()) unmapped->push_back(device);
+        if (deviceFinder == deviceToThread.end()) unmapped->push_back(device);
     }
 
     return unmapped->empty();
@@ -194,6 +197,9 @@ void Placer::update_task_to_cores_map(P_task* task)
     {
         /* Grab the device, for readability. */
         P_device* device = task->pD->G.NodeData(deviceIterator);
+
+        /* Ignore if it's a supervisor device (we don't map those). */
+        if (!(device->pP_devtyp->pOnRTS)) continue;
 
         /* Assume the device is placed - grab the core it's placed on. */
         coreSet->insert(deviceToThread[device]->parent);
