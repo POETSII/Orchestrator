@@ -77,14 +77,14 @@
 166(E) : "Not enough mothership processes exist to deploy task %s. Is a mothership running?"
 167(E) : "System command '%s' ran unsuccessfully with message '%s'. Aborting deployment."
 
-200(W) : "Unable to place a task - no hardware model has been loaded."
+200(W) : "Unable to invoke the placement system - no hardware model has been loaded."
 201(W) : "Unable to place task '%s' - no task has been loaded with that name."
 202(I) : "Task '%s' placed successfully."
 203(W) : "Unable to place task '%s' - a task with that name has already been placed. If you are trying to re-place it, instead unplace this task first."
 204(W) : "Unable to place task '%s' - we tried, but an integrity check failed. You should shout at MLV (or whoever wrote the algorithm you're trying to use). In the short term, consider trying a different algorithm."
 205(W) : "Unable to place task '%s' - no engine has been loaded. You should not have been able to reach this error message (200 should have been used instead). Please let MLV know you've broken his logic (and give yourself a pat on the back)."
 206(W) : "Unable to place task '%s' - not enough space in the hardware model."
-207(I) : "Task '%s' unplaced successfully."
+207(I) : "Task '%s' is not placed (idempotently)."
 208(I) : "All placement information cleared."
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
