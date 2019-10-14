@@ -124,13 +124,26 @@ void BucketFilling::poke_iterators(std::vector<HardwareIterator>* iterators)
             /* Iterating over threads in this core. */
             for (threadIt = threadMap->begin();
                  threadIt != threadMap->end(); threadIt++)
-
+            {
                 /* If it's not empty, we exit. */
-                if (not placer->threadToDevices[threadIt->second].empty())
+                bool isThisThreadEmpty = false;
+                std::map<P_thread*, std::list<P_device*>>::iterator \
+                    devicesFinder;
+                devicesFinder = placer->threadToDevices.find(threadIt->second);
+                if (devicesFinder == placer->threadToDevices.end())
+                {
+                    isThisThreadEmpty = true;
+                }
+                else if (devicesFinder->second.empty())
+                {
+                    isThisThreadEmpty = true;
+                }
+                if (not isThisThreadEmpty)
                 {
                     areCoresEmpty = false;
                     break;
                 }
+            }
 
             /* Shortcut. */
             if (not areCoresEmpty) break;
