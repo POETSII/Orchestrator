@@ -189,7 +189,7 @@ void Placer::update_task_to_cores_map(P_task* task)
 {
     /* Grab the set we're inserting into. */
     std::set<P_core*>* coreSet;
-    coreSet = &(taskToCores.find(task)->second);
+    coreSet = &(taskToCores[task]);
 
     /* Iterate through each device. */
     WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
