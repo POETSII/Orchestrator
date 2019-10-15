@@ -52,8 +52,12 @@ unsigned OrchBase::CmPlace(Cli* cli)
  * false otherwise. */
 bool OrchBase::PlacementDoit(Cli::Cl_t clause)
 {
-    /* Skip if there are no parameters. */
-    if (clause.Pa_v.empty()) return true;
+    /* Skip (and post) if there is not exactly one parameter (i.e. task). */
+    if (clause.Pa_v.size() != 1)
+    {
+        Post(47, clause.Cl, "placement", "1");
+        return true;
+    }
 
     /* Get (what we assume to be) the task handle, and the task. */
     std::string taskHandle = clause.Pa_v[0].Val;
@@ -107,8 +111,12 @@ void OrchBase::PlacementReset(bool post)
 
 void OrchBase::PlacementUnplace(Cli::Cl_t clause)
 {
-    /* Skip if there are no parameters. */
-    if (clause.Pa_v.empty()) return;
+    /* Skip (and post) if there is not exactly one parameter (i.e. task). */
+    if (clause.Pa_v.size() != 1)
+    {
+        Post(47, clause.Cl, "placement", "1");
+        return;
+    }
 
     /* Get (what we assume to be) the task handle, and the task. */
     std::string taskHandle = clause.Pa_v[0].Val;
