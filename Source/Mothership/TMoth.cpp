@@ -697,6 +697,7 @@ void* TMoth::Twig(void* par)
             P_Msg_t* msg = static_cast<P_Msg_t*>(p_recv_buf);
             P_Msg_Hdr_t* hdr = &(msg->header);      //static_cast<P_Msg_Hdr_t*>(p_recv_buf);
             
+            /*
             //Temporary message dumping for debug.
             uint32_t* dump = static_cast<uint32_t*>(p_recv_buf);
             std::cout << std::hex;
@@ -706,6 +707,7 @@ void* TMoth::Twig(void* par)
                 dump++;
             }
             std::cout << std::dec << std::endl;
+            */
             
             
             if((hdr->swAddr & P_SW_MOTHERSHIP_MASK) 

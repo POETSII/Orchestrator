@@ -158,22 +158,11 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
     hdr->swAddr = target->swAddr;
     hdr->pinAddr = target->pinAddr;
     
-    hdr->swAddr &= ~P_SW_TASK_MASK;
-    hdr->swAddr |= ((device->deviceID << P_SW_TASK_SHIFT) & P_SW_TASK_MASK);
-
-    
     uint32_t flt = ((hdrSize + pin->pinType->sz_msg)-1) >> TinselLogBytesPerFlit;
     tinselSetLen((flt < TinselMaxFlitsPerMsg)? flt : (TinselMaxFlitsPerMsg-1));    // Set the message length
     
-    uint32_t* last = static_cast<uint32_t*>(const_cast<void*>(send_buf)); // TEMPORARY BODGE:
-     
     if(hdr->swAddr & P_SW_MOTHERSHIP_MASK)
     {   // Message to the Supervisor or External (this goes via the Supervisor)
-        //tinselSetLen(TinselMaxFlitsPerMsg-1);    // TEMPORARY BODGE: Set the supervisor message length to 4 flits.
-        last[13] = 0x00000000;  // TEMPORARY BODGE: 
-        last[14] = 0x00000000;  // TEMPORARY BODGE: 
-        last[15] = tinselId();  // TEMPORARY BODGE: 
-        
         tinselSend(tinselHostId(), send_buf);
         ThreadContext->superCount++;         // Increment Supervisor Msg count
     }
@@ -182,12 +171,18 @@ uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
         tinselSend(target->hwAddr, send_buf);
         ThreadContext->txCount++;            // Increment normal Msg count
         
-        
+        /*
         //TEMPORARY DEBUGGING BODGE: echo message to supervisor
+        uint32_t* last = static_cast<uint32_t*>(const_cast<void*>(send_buf)); // TEMPORARY BODGE:
+        
         while(!tinselCanSend());
-        last[13] = 0x00ABBA00;
-        last[14] = target->hwAddr;
-        last[15] = tinselId();
+        tinselSetLen(TinselMaxFlitsPerMsg-1);    // Set the message length
+        last[11] = 0x00ABBA00;
+        last[12] = target->hwAddr;
+        last[13] = target->swAddr;
+        last[14] = tinselId();
+        last[15] = device->deviceID;
+        */
         
         //tinselSetLen(TinselMaxFlitsPerMsg-1);
         tinselSend(tinselHostId(), send_buf);
@@ -233,7 +228,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
     
 
     // Stop message ends the simulation & exits main loop at the earliest opportunity
-    if((recvHdr->swAddr&P_SW_CNC_MASK) && opcode == P_CNC_STOP)
+    if((recvHdr->swAddr & P_SW_CNC_MASK) && (opcode == P_CNC_STOP))
     {
         ThreadContext->ctlEnd = 1;
         return;
