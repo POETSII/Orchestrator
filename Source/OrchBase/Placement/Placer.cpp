@@ -259,6 +259,9 @@ float Placer::place(P_task* task, std::string algorithmDescription)
 
         /* Update result structure for this algorithm object. */
         populate_result_structures(&algorithm->result, task, score);
+
+        /* Tell the task it's been placed. */
+        task->LinkFlag();
     }
     else
     {
