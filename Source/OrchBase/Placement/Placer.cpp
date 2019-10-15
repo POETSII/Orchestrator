@@ -148,7 +148,25 @@ void Placer::dump(P_task* task)
 /* Dumps the cost of each edge for a task. */
 void Placer::dump_costs(P_task* task, const char* path)
 {
-    return; // <!>
+    /* File setup. */
+    ofstream out;
+    out.open(path);
+
+    /* Iterate through each edge in the task. */
+    WALKPDIGRAPHARCS(unsigned, P_device*, unsigned, P_message*, unsigned,
+                     P_pin*, task->pD->G, edgeIt)
+    {
+        /* Get the nodes connected by the arc (No pdigraph internal for
+         * this?). */
+        P_device* from = task->pD->G.NodeData(edgeIt->second.fr_n);
+        P_device* to = task->pD->G.NodeData(edgeIt->second.to_n);
+
+        /* Write a line. */
+        out << from->FullName() << "\t" << to->FullName() << "\t"
+            << task->pD->G.ArcData(edgeIt)->weight << std::endl;
+    }
+
+    out.close();
 }
 
 /* Dumps diagnostic placement information for a task. */
