@@ -154,7 +154,19 @@ void Placer::dump_costs(P_task* task, const char* path)
 /* Dumps diagnostic placement information for a task. */
 void Placer::dump_diagnostics(P_task* task, const char* path)
 {
-    return; // <!>
+    /* File setup. */
+    ofstream out;
+    out.open(path);
+
+    /* Get the result object address (Placer::dump checks that the task has
+     * already been placed). */
+    Result* result = &(placedTasks[task]->result);
+
+    out << "maxDevicesPerThread:" << result->maxDevicesPerThread << std::endl;
+    out << "maxEdgeCost:" << result->maxEdgeCost << std::endl;
+    out << "when:" << result->when << std::endl;
+    out << "score:" << result->score << std::endl;
+    out.close();
 }
 
 /* Dumps mapping information for a task. */
