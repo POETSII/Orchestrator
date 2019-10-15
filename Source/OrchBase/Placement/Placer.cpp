@@ -116,6 +116,13 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
     return maximumSoFar;
 }
 
+/* Dumps <!> */
+void Placer::dump(P_task* task)
+{
+    return;
+}
+
+
 /* Low-level method to create a thread-device binding. Does no checking. */
 void Placer::link(P_thread* thread, P_device* device)
 {
@@ -182,29 +189,6 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     }
 
     return score;
-}
-
-/* Updates taskToCores with the entries of a task, which has been placed
- * correctly. Doesn't check much. */
-void Placer::update_task_to_cores_map(P_task* task)
-{
-    /* Grab the set we're inserting into. */
-    std::set<P_core*>* coreSet;
-    coreSet = &(taskToCores[task]);
-
-    /* Iterate through each device. */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
-    {
-        /* Grab the device, for readability. */
-        P_device* device = task->pD->G.NodeData(deviceIterator);
-
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pP_devtyp->pOnRTS)) continue;
-
-        /* Assume the device is placed - grab the core it's placed on. */
-        coreSet->insert(deviceToThread[device]->parent);
-    }
 }
 
 /* Removes all device-thread relations for all devices in a task, and removes
@@ -275,5 +259,25 @@ void Placer::unplace(P_task* task)
     }
 }
 
-/* Stubs (I'm lazy) <!> */
-void Placer::Dump(FILE*){return;}
+/* Updates taskToCores with the entries of a task, which has been placed
+ * correctly. Doesn't check much. */
+void Placer::update_task_to_cores_map(P_task* task)
+{
+    /* Grab the set we're inserting into. */
+    std::set<P_core*>* coreSet;
+    coreSet = &(taskToCores[task]);
+
+    /* Iterate through each device. */
+    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
+                      P_pin*, task->pD->G, deviceIterator)
+    {
+        /* Grab the device, for readability. */
+        P_device* device = task->pD->G.NodeData(deviceIterator);
+
+        /* Ignore if it's a supervisor device (we don't map those). */
+        if (!(device->pP_devtyp->pOnRTS)) continue;
+
+        /* Assume the device is placed - grab the core it's placed on. */
+        coreSet->insert(deviceToThread[device]->parent);
+    }
+}

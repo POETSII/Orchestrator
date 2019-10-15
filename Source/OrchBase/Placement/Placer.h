@@ -34,7 +34,7 @@
 #include "P_device.h"
 #include "P_task.h"
 
-class Placer: public DumpChan
+class Placer
 {
 public:
     Placer();
@@ -60,15 +60,15 @@ public:
     /* Fitness evaluation. */
     float compute_fitness(P_task* task);
 
-    /* Diagnostics */
-    void Dump(FILE* = stdout);
+    /* Diagnostics (note the lowercase D) */
+    void dump(P_task* task);
+
+    /* Low-level placement operation, to be used only be algorithms */
+    void link(P_thread* thread, P_device* device);
 
     /* Doing the dirty */
     float place(P_task* task, std::string algorithmDescription);
     void unplace(P_task* task);
-
-    /* Low-level placement operation, to be used only be algorithms */
-    void link(P_thread* thread, P_device* device);
 
     /* Constraint query */
     unsigned constrained_max_devices_per_thread(P_task* task);
