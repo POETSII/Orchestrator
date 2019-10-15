@@ -10,6 +10,8 @@
  *
  * See the placement documentation for further information. */
 
+#include <ctime>
+#include <fstream>
 #include <list>
 #include <map>
 #include <vector>
@@ -26,6 +28,7 @@
 #include "InvalidAlgorithmDescriptorException.h"
 #include "NoEngineException.h"
 #include "NoSpaceToPlaceException.h"
+#include "NoTaskToDumpException.h"
 
 /* And everything else. */
 #include "DumpUtils.h"
@@ -60,7 +63,8 @@ public:
     /* Fitness evaluation. */
     float compute_fitness(P_task* task);
 
-    /* Diagnostics (note the lowercase D) */
+    /* Diagnostics (note the lowercase D). This is not a dumpchan method -
+     * we're doing something fundamentally different here. */
     void dump(P_task* task);
 
     /* Low-level placement operation, to be used only be algorithms */
@@ -82,6 +86,10 @@ private:
                                   std::vector<P_device*>* unmapped);
     // <!> Could have a method that verifies that no core pairs have more than
     // one device type placed upon them.
+
+    /* Fine-grained diagnostics. */
+    void dump_diagnostics(P_task* task, const char* path);
+    void dump_map(P_task* task, const char* path);
 };
 
 #endif

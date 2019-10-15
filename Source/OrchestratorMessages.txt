@@ -87,6 +87,8 @@
 207(I) : "Task '%s' is not placed (idempotently)."
 208(I) : "All placement information cleared."
 209(I) : "Attempting to place task '%s' using the '%s' method..."
+210(I) : "Dump of task '%s' complete."
+211(W) : "Unable to dump task '%s' - it's not been placed."
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"

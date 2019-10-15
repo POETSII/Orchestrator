@@ -116,12 +116,63 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
     return maximumSoFar;
 }
 
-/* Dumps <!> */
+/* Dumps placement information for a task. See the documentation. */
 void Placer::dump(P_task* task)
 {
-    return;
+    /* Don't do anything if the task has not been placed (by address). */
+    if (placedTasks.find(task) == placedTasks.end())
+        throw NoTaskToDump(dformat(
+            "[ERROR] Task from file '%s' has not been placed, so we can't "
+            "dump", task->filename.c_str()));
+
+    /* Get the time. */
+    time_t timeNtv;  /* "Native" */
+    time(&timeNtv);
+    char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
+    strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
+
+    /* Figure out paths. */
+    std::string diagPath = dformat("placement_diagnostics_%s_%s.txt",
+                                   task->Name().c_str(), timeBuf);
+    std::string mapPath = dformat("placement_task_to_hardware_%s_%s.txt",
+                                  task->Name().c_str(), timeBuf);
+
+    /* Call subordinate dumping methods. */
+    dump_diagnostics(task, diagPath.c_str());
+    dump_map(task, diagPath.c_str());
 }
 
+/* Dumps diagnostic placement information for a task. */
+void Placer::dump_diagnostics(P_task* task, const char* path)
+{
+    return; // <!>
+}
+
+/* Dumps mapping information for a task. */
+void Placer::dump_map(P_task* task, const char* path)
+{
+    /* File setup. */
+    ofstream out;
+    out.open(path);
+
+    /* Iterate through each device in the task. */
+    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
+                      P_pin*, task->pD->G, deviceIterator)
+    {
+        P_device* device = task->pD->G.NodeData(deviceIterator);
+
+        /* If it's mapped, add it. If not, ignore it (good for non-normal
+         * devices). */
+        std::map<P_device*, P_thread*>::iterator deviceFinder;
+        deviceFinder = deviceToThread.find(device);
+        if (deviceFinder == deviceToThread.end()) continue;
+        P_thread* thread = deviceFinder->second;
+
+        out << device->FullName() << "\t" << thread->FullName() << std::endl;
+    }
+
+    out.close();  /* We out, yo. */
+}
 
 /* Low-level method to create a thread-device binding. Does no checking. */
 void Placer::link(P_thread* thread, P_device* device)

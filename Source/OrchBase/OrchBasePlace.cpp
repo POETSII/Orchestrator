@@ -84,7 +84,28 @@ bool OrchBase::PlacementDoit(Cli::Cl_t clause)
     return true;
 }
 
-void OrchBase::PlacementDump(Cli::Cl_t clause){}  /* <!> Yet another stub. */
+void OrchBase::PlacementDump(Cli::Cl_t clause)
+{
+    /* Skip (and post) if there is not exactly one parameter (i.e. task). */
+    if (clause.Pa_v.size() != 1)
+    {
+        Post(47, clause.Cl, "placement", "1");
+        return;
+    }
+
+    /* Get (what we assume to be) the task handle, and the task. */
+    std::string taskHandle = clause.Pa_v[0].Val;
+    P_task* task = PlacementGetTaskByName(taskHandle);
+    if (task == PNULL) return;
+
+    /* Have a pop. */
+    try
+    {
+        pPlacer->dump(task);
+        Post(210, taskHandle);
+    }
+    catch (NoTaskToDump&)  {Post(211, taskHandle);}
+}
 
 /* Shortcut method to get a task object from its handle. */
 P_task* OrchBase::PlacementGetTaskByName(std::string taskHandle)
