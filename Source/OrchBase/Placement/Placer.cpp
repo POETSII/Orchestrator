@@ -132,14 +132,23 @@ void Placer::dump(P_task* task)
     strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
 
     /* Figure out paths. */
+    std::string costPath = dformat("placement_task_edges_%s_%s.txt",
+                                  task->Name().c_str(), timeBuf);
     std::string diagPath = dformat("placement_diagnostics_%s_%s.txt",
                                    task->Name().c_str(), timeBuf);
     std::string mapPath = dformat("placement_task_to_hardware_%s_%s.txt",
                                   task->Name().c_str(), timeBuf);
 
     /* Call subordinate dumping methods. */
+    dump_costs(task, costPath.c_str());
     dump_diagnostics(task, diagPath.c_str());
-    dump_map(task, diagPath.c_str());
+    dump_map(task, mapPath.c_str());
+}
+
+/* Dumps the cost of each edge for a task. */
+void Placer::dump_costs(P_task* task, const char* path)
+{
+    return; // <!>
 }
 
 /* Dumps diagnostic placement information for a task. */
@@ -217,6 +226,9 @@ float Placer::place(P_task* task, std::string algorithmDescription)
         /* Update task-keyed maps. */
         placedTasks[task] = algorithm;
         update_task_to_cores_map(task);
+
+        /* Update result structure for this algorithm object. */
+        populate_result_structures(&algorithm->result, task, score);
     }
     else
     {
@@ -240,6 +252,54 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     }
 
     return score;
+}
+
+/* Defines the contents of the result struct of an algorithm. */
+void Placer::populate_result_structures(Result* result, P_task* task,
+                                        float score)
+{
+    /* Time! */
+    time_t timeNtv;  /* "Native" */
+    time(&timeNtv);
+    char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
+    strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
+    result->when = timeBuf;
+
+    /* Easy one. */
+    result->score = score;
+
+    /* Maximum number of devices per thread - compute by going through the
+     * cores assigned to this task. */
+    result->maxDevicesPerThread = 0;  /* Optimistic; we'll change this later. */
+
+    std::set<P_core*>::iterator coreIt;
+    std::set<P_core*>* targetSet = &(taskToCores[task]);
+    for (coreIt = targetSet->begin(); coreIt != targetSet->end(); coreIt++)
+    {
+        /* Iterate through each thread on this core. */
+        std::map<AddressComponent, P_thread*>::iterator threadIt;
+        for (threadIt = (*coreIt)->P_threadm.begin();
+             threadIt != (*coreIt)->P_threadm.end(); threadIt++)
+        {
+            /* If the number of devices mapped to this thread is greater than
+             * the current stored maximum, update the maximum. */
+            result->maxDevicesPerThread = std::max(result->maxDevicesPerThread,
+                (unsigned) threadToDevices[threadIt->second].size());
+        }
+    }
+
+    /* Maximum edge cost - compute by going through the edges in the
+     * application graph. */
+    result->maxEdgeCost = 0;  /* Again, mindless optimism. */
+
+    WALKPDIGRAPHARCS(unsigned, P_device*, unsigned, P_message*, unsigned,
+                     P_pin*, task->pD->G, edgeIt)
+    {
+        /* If the weight on the edge is greater than the current stored
+         * maximum, update the maximum. */
+        P_message* edge = task->pD->G.ArcData(edgeIt);
+        result->maxEdgeCost = std::max(result->maxEdgeCost, edge->weight);
+    }
 }
 
 /* Removes all device-thread relations for all devices in a task, and removes

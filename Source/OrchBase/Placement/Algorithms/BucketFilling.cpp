@@ -1,5 +1,7 @@
 #include "BucketFilling.h"
 
+BucketFilling::BucketFilling(Placer* placer):Algorithm(placer){}
+
 /* Places a task onto the engine held by a placer using a naive bucket-filling
  * algorithm.
  *
@@ -162,6 +164,3 @@ void BucketFilling::poke_iterators(std::vector<HardwareIterator>* iterators)
              hardwareIt++) hardwareIt->next_core();
     }
 }
-
-/* Stub (I'm lazy) <!> */
-void BucketFilling::Dump(FILE*){return;}

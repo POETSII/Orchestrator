@@ -3,7 +3,6 @@
 
 /* Describes the bucket filling placement algorithm. */
 
-class Algorithm;
 class HardwareIterator;
 
 #include "Algorithm.h"
@@ -13,10 +12,10 @@ class HardwareIterator;
 class BucketFilling: public Algorithm
 {
 public:
-    BucketFilling(Placer* placer):Algorithm(placer){}
+    BucketFilling(Placer* placer);
     float do_it(P_task* task);
-    void Dump(FILE* = stdout);
     void poke_iterators(std::vector<HardwareIterator>* iterators);
+    /* <!> NB: Need to update graph edge weights. */
 };
 
 #endif

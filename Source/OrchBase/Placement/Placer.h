@@ -16,7 +16,11 @@
 #include <map>
 #include <vector>
 
+class Algorithm;
+struct Result;
+
 /* Algorithms! */
+#include "Algorithm.h"
 #include "BucketFilling.h"
 
 /* Constraints! */
@@ -87,7 +91,10 @@ private:
     // <!> Could have a method that verifies that no core pairs have more than
     // one device type placed upon them.
 
+    void populate_result_structures(Result* result, P_task* task, float score);
+
     /* Fine-grained diagnostics. */
+    void dump_costs(P_task* task, const char* path);
     void dump_diagnostics(P_task* task, const char* path);
     void dump_map(P_task* task, const char* path);
 };
