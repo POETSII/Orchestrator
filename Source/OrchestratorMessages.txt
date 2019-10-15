@@ -86,6 +86,7 @@
 206(W) : "Unable to place task '%s' - not enough space in the hardware model."
 207(I) : "Task '%s' is not placed (idempotently)."
 208(I) : "All placement information cleared."
+209(I) : "Attempting to place task '%s' using the '%s' method..."
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"

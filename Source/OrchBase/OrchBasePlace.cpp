@@ -63,6 +63,7 @@ bool OrchBase::PlacementDoit(Cli::Cl_t clause)
     /* Have a pop. */
     try
     {
+        Post(209, taskHandle, clause.Cl);
         pPlacer->place(task, clause.Cl);
         Post(202, taskHandle);
     }
