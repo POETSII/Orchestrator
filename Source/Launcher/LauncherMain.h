@@ -32,8 +32,10 @@ namespace Launcher
     const char* execMothership = "mothership";
     const char* execRoot = "root";
 
-    const char* execGdb = "/usr/bin/gdb --args";
-    const char* execValgrind = "/usr/bin/valgrind --leak-check=full";
+    const char* execGdb = "/usr/bin/gdb";
+    const char* flagsGdb = "--args";
+    const char* execValgrind = "/usr/bin/valgrind";
+    const char* flagsValgrind = "--leak-check=full";
 
     bool AreWeRunningOnAPoetsBox();
     void BuildCommand(bool useMotherships, std::string internalPath,

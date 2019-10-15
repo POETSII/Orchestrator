@@ -101,8 +101,11 @@ void BuildCommand(bool useMotherships, std::string internalPath,
     /* Root */
     orderedHosts.push_back(ourHostname);
     *(hydraProcesses.back()) << "-n 1 ";
-    if (gdbProcs[execRoot]) *(hydraProcesses.back()) << execGdb << " ";
+    if (gdbProcs[execRoot]) *(hydraProcesses.back()) << execGdb << " "
+                                                     << flagsGdb << " ";
     if (valgrindProcs[execRoot]) *(hydraProcesses.back()) << execValgrind
+                                                          << " "
+                                                          << flagsValgrind
                                                           << " ";
     *(hydraProcesses.back()) << localBinDir << "/" << execRoot;
 
