@@ -11,6 +11,10 @@ DON'T PUT ANY #include IN THIS FILE
 
 It's virtual here because this makes it an invalid translation unit, so if you
 try to compile it, the compiler will squeak.
+
+A similar decode exists in SDecode.cpp, intended specifically for classes that
+derive from SBase. Do not use this file (Decode.cpp) if you are deriving from
+SBase. Similarly, do not use SDecode.cpp if you derive directly from CommonBase.
 */
 
 //==============================================================================
