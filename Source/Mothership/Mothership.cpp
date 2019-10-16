@@ -1296,7 +1296,6 @@ void* Mothership::Twig(void* par)
 // 'for later'.
 {
      Mothership* parent = static_cast<Mothership*>(par);
-     const uint32_t szFlit = (1<<TinselLogBytesPerFlit);
      char* recv_buf = new char[p_msg_size()]; // buffer for one packet at a time
      void* p_recv_buf = static_cast<void*>(recv_buf);
      FILE* OutFile;
@@ -1329,9 +1328,6 @@ void* Mothership::Twig(void* par)
 		 // if not set up a new buffer for the device
 	            if (parent->TwigExtMap[m_hdr->destDeviceAddr] == 0)
 		       parent->TwigExtMap[m_hdr->destDeviceAddr] = new deque<P_Msg_t>;
-		    // if the message is multi-flit, get the rest of it now
-	            if (m_hdr->messageLenBytes > szFlit)
-		       parent->recvMsg(recv_buf+szFlit, m_hdr->messageLenBytes-szFlit);
 	            parent->TwigExtMap[m_hdr->destDeviceAddr]->push_back(*(static_cast<P_Msg_t*>(p_recv_buf)));
 		 }
 	         else
@@ -1374,19 +1370,8 @@ void* Mothership::Twig(void* par)
                        P_Sup_Msg_t* recvdMsg =
 			 static_cast<P_Sup_Msg_t*>(static_cast<void*>
 			  ((*(parent->TwigMap[s_hdr->sourceDeviceAddr]))[s_hdr->destPin]));
-		       // stuff header into the persistent buffer
-	               memcpy(recvdMsg+s_hdr->seq,s_hdr,p_sup_hdr_size());
-		       DebugPrint("Expecting message of total length %d\n",
-                                  s_hdr->cmdLenBytes);
-		       // more message to receive?
-                       uint32_t len = s_hdr->seq == s_hdr->cmdLenBytes/p_sup_msg_size() ?
-			              s_hdr->cmdLenBytes%p_sup_msg_size() :
-			              p_sup_msg_size();
-		       DebugPrint("Length for sequence number %d: %d\n",
-                                  s_hdr->seq, len);
-		        // get the whole message
-	               if (len > szFlit) parent->recvMsg(((recvdMsg+s_hdr->seq)->data),
-                                                         len-szFlit);
+		       // stuff message into the persistent buffer
+	               memcpy(recvdMsg+s_hdr->seq,recv_buf,p_sup_msg_size());
 	               if (super_buf_recvd(recvdMsg))
 	               {
 		          DebugPrint("Entire Supervisor message received of length %d\n", s_hdr->cmdLenBytes);
