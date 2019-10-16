@@ -147,7 +147,8 @@ void BucketFilling::poke_iterators(std::vector<HardwareIterator>* iterators)
                 }
             }
 
-            /* Shortcut. */
+            /* If the first core is empty, we don't need to check the
+             * second. */
             if (not areCoresEmpty) break;
         }
 
@@ -159,8 +160,12 @@ void BucketFilling::poke_iterators(std::vector<HardwareIterator>* iterators)
         if ((*iterators)[1].has_wrapped())
             throw NoSpaceToPlaceException("[ERROR] Engine is full.");
 
-        /* Increment the iterators. */
+        /* Increment the iterators to the next core pair. */
         for (hardwareIt = iterators->begin(); hardwareIt != iterators->end();
-             hardwareIt++) hardwareIt->next_core();
+             hardwareIt++)
+        {
+            hardwareIt->next_core();
+            hardwareIt->next_core();
+        }
     }
 }
