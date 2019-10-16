@@ -2039,47 +2039,32 @@ unsigned P_builder::CompileBins(P_task * task)
   //============================================================================
   // Check that the binaries were made and add file pointers to each core.
   //============================================================================
-  unsigned int coreNum = 0;
-  P_core* thisCore;  // Core available during iteration.
-  P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
-  
-  WALKPDIGRAPHNODES(AddressComponent, P_board*, unsigned, P_link*, unsigned,
-                    P_port*, par->pE->G, boardNode)
+  unsigned int coreNum = 0;  // Just a counter.
+
+  // Walk through all cores in the system that are used by this task.
+  WALKSET(P_core*, par->pPlacer->taskToCores[task], coreNode)
   {
-    WALKPDIGRAPHNODES(AddressComponent, P_mailbox*, unsigned, P_link*, unsigned,
-                      P_port*, par->pE->G.NodeData(boardNode)->G, mailboxNode)
-    {
-      WALKMAP(AddressComponent, P_core*, 
-              par->pE->G.NodeData(boardNode)->G.NodeData(mailboxNode)->P_corem,
-              coreNode)
+      // a failure to read the generated binary may not be absolutely fatal;
+      // this could be retrieved later if there was a transient read error
+      // (e.g. reading over a network connection).
+
+      std::string binName;
+      binName = task_dir+BIN_PATH+"/"+COREBIN_BASE+TO_STRING(coreNum)+".elf";
+
+      FILE* binary = fopen(binName.c_str(),"r");
+
+      if(binary == PNULL)
       {
-        thisCore = coreNode->second;
-        firstThread = thisCore->P_threadm.begin()->second;
-        if (firstThread->P_devicel.size() 
-            && (firstThread->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
-        {
-          // a failure to read the generated binary may not be absolutely fatal;
-          // this could be retrieved later if there was a transient read error 
-          // (e.g. reading over a network connection).
-          
-          std::string binName;
-          binName = task_dir+BIN_PATH+"/"+COREBIN_BASE+TO_STRING(coreNum)+".elf";
-          
-          FILE* binary = fopen(binName.c_str(),"r");
-          
-          if(binary == PNULL)
-          {     // Check that the file opened successfully. 
-            par->Post(806, binName, POETS::getSysErrorString(errno));  
-          }
-          else
-          {     // Add the file pointer to the core. 
-            thisCore->instructionBinary->Binary = binary;
-          }
-            
-          ++coreNum;                // Move onto the next core.
-        }
+          // Check that the file opened successfully.
+          par->Post(806, binName, POETS::getSysErrorString(errno));
       }
-    }
+      else
+      {
+          // Add the file pointer to the core.
+          (*coreNode)->instructionBinary->Binary = binary;
+      }
+
+      ++coreNum;  // Move onto the next core.
   }
   //============================================================================
   return 0;
