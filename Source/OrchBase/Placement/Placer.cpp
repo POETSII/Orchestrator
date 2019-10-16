@@ -216,8 +216,16 @@ void Placer::dump_map(P_task* task, const char* path)
 /* Low-level method to create a thread-device binding. Does no checking. */
 void Placer::link(P_thread* thread, P_device* device)
 {
+    /* Update placer maps. */
     threadToDevices[thread].push_back(device);
     deviceToThread[device] = thread;
+
+    /* Define the device component of the address object in the device. */
+    device->addr.SetDevice(threadToDevices[thread].size() - 1);
+
+    /* Define the other components of the address object in the device. */
+    thread->get_hardware_address()->
+        populate_a_software_address(&(device->addr), false);
 }
 
 /* Maps a task to the engine associated with this placer, using a certain
