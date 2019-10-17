@@ -13,6 +13,15 @@
 #include "P_addr.h"
 
 //==============================================================================
+typedef std::map<uint32_t, TM_LogMessage*> TM_LogMsgMap_t;
+struct TM_LogMessage
+{   
+    unsigned            logMsgCnt;
+    unsigned            logMsgMax;    
+    P_Log_Msg_Pyld_t    logMsgBuf[P_MAX_LOGMSG_FRAG];
+};
+
+
 
 class TMoth : public CommonBase, public HostLink
 {
@@ -62,9 +71,7 @@ unsigned              SystTopo();
 void*                 SuperHandle; // dynamically loadable supervisor
 int                   (*SupervisorCall)(PMsg_p*, PMsg_p*); // entry point for the Supervisor
 
-P_Msg_t               logMsgBuf[P_MAX_LOGMSG_FRAG];
-unsigned              logMsgCnt;
-unsigned              logMsgMax;
+TM_LogMsgMap_t        LogMsgMap;
  
 public:
 unsigned              PAddress; // address of this mothership in POETS-space

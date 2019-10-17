@@ -64,6 +64,9 @@ TMoth::~TMoth()
     //printf("********* Mothership rank %d destructor\n",Urank); fflush(stdout);
     WALKMAP(string,TaskInfo_t*,TaskMap,T)
     delete T->second;
+    
+    WALKMAP(uint32_t,TM_LogMessage*,LogMsgMap,L)
+    delete L->second;
 }
 
 //------------------------------------------------------------------------------
@@ -972,25 +975,44 @@ unsigned TMoth::OnTinselOut(P_Msg_t* msg)
          * log message.
          */
         
+        TM_LogMessage* logMsg;
+        uint32_t srcAddr = msg->header.pinAddr;
+        
         P_Log_Msg_Pyld_t* pyld = reinterpret_cast<P_Log_Msg_Pyld_t*>(msg->payload);
         
-        memcpy(&logMsgBuf[pyld->seq], msg, p_msg_size());
         
-        logMsgCnt++;
-        if(logMsgMax < pyld->seq) logMsgMax = pyld->seq;
-        
-        
-        if(logMsgCnt == (logMsgMax +1))
+        TM_LogMsgMap_t::iterator MSearch = LogMsgMap.find(srcAddr);
+        if(MSearch == LogMsgMap.end())
+        {   // First message of a new log message
+            logMsg = new TM_LogMessage();
+            
+            logMsg->logMsgCnt = 0;
+            logMsg->logMsgMax = 0;
+            
+            LogMsgMap.insert(TM_LogMsgMap_t::value_type(srcAddr, logMsg))
+        }
+        else
         {
-            // Received the last log message. Re-assemble & print it.
+            logMsg = MSearch->second;
+        }
+        
+        // Drop the message into the map.
+        memcpy(&(logMsg->logMsgBuf[pyld->seq]), pyld, p_logmsg_pyld_size);
+        
+        // Update the logmessage counters
+        logMsg->logMsgCnt++;
+        if(logMsg->logMsgMax < pyld->seq) logMsg->logMsgMax = pyld->seq;
+        
+        
+        // Received the last log message. Re-assemble & print it.
+        if(logMsg->logMsgCnt == (logMsg->logMsgMax +1))
+        {
             char logStr[(p_logmsg_pyld_size << P_LOG_MAX_LOGMSG_FRAG)+1];
             char* logPtr = logStr;
             
-            uint32_t srcAddr = logMsgBuf[logMsgMax].header.pinAddr;
-            
-            for(unsigned int i = 0; i < logMsgCnt; i++)
+            for(unsigned int i = 0; i < logMsg->logMsgCnt; i++)
             {
-                pyld = reinterpret_cast<P_Log_Msg_Pyld_t*>(logMsgBuf[logMsgMax].payload);
+                pyld = logMsg->logMsgBuf[logMsgMax];
              
                 memcpy(logPtr, pyld->payload, p_logmsg_pyld_size);
                 
@@ -1001,34 +1023,43 @@ unsigned TMoth::OnTinselOut(P_Msg_t* msg)
             std::string logString(logStr);
             std::cout << "\n\nString:\t" << logString << "\n" << std::endl;
             
-            Post(601, int2str(srcAddr), 
-                    int2str(srcAddr),
-                    string(logStr));
+            Post(601, int2str(srcAddr), int2str(srcAddr), string(logStr));
             
-            logMsgCnt = 0;
-            logMsgMax = 0;
+            // Cleanup the message
+            LogMsgMap.erase(srcAddr);
+            delete logMsg;
         }
-        return 0;
     }
     
-
-    DebugPrint("Message from device is a Supervisor call. Redirecting\n");
+    else if (opcode == P_CNC_INSTR)
+    {
+        DebugPrint("Received an instrumentation message from device\n");
+        
+        
+        
+    }
     
-    // Bung the message in a vector "because"
-    std::vector<P_Super_Msg_t> msgs; 
-    P_Super_Msg_t sMsg = {0, (1<<TinselLogBytesPerFlit*TinselMaxFlitsPerMsg), *msg};
-    msgs.push_back(sMsg);
-    
-    // Populate a PMessage
-    PMsg_p W(Comms[0]);     // Create a new msg on the local comm
-    W.Key(Q::SUPR);         // it'll be a Supervisor msg
-    W.Src(Urank);           // coming from the us
-    W.Tgt(Urank);           // and directed at us
-    W.Put<P_Super_Msg_t>(0,&msgs);  // stuff the Tinsel message into the msg
-    
-    return OnSuper(&W, 0);
-    // W.Send();                        // away it goes.
-    // return 0;
+    else
+    {
+        DebugPrint("Message from device is a Supervisor call. Redirecting\n");
+        
+        // Bung the message in a vector "because"
+        std::vector<P_Super_Msg_t> msgs; 
+        P_Super_Msg_t sMsg = {0, (1<<TinselLogBytesPerFlit*TinselMaxFlitsPerMsg), *msg};
+        msgs.push_back(sMsg);
+        
+        // Populate a PMessage
+        PMsg_p W(Comms[0]);     // Create a new msg on the local comm
+        W.Key(Q::SUPR);         // it'll be a Supervisor msg
+        W.Src(Urank);           // coming from the us
+        W.Tgt(Urank);           // and directed at us
+        W.Put<P_Super_Msg_t>(0,&msgs);  // stuff the Tinsel message into the msg
+        
+        return OnSuper(&W, 0);
+        // W.Send();                        // away it goes.
+        // return 0;
+    }
+    return 0;
 }
 
 //------------------------------------------------------------------------------
