@@ -167,37 +167,23 @@ typedef struct PThreadContext
     uint32_t           cycleIdx;            // Update index
 } ThreadCtxt_t;
 
-// these functions would be more cleanly done as methods of a class PThread.
 
-/* softswitch_init should:
-   1) set internal variables to their initial state (which state should
-      simply be in DRAM at a fixed location)
-   2) configure the internal nameserver tables by querying the main NameServer.
-   3) populate the context structure
-   5) place any initial messages in the RTS queues.
-   6) go into barrier and await other cores in the application.
-*/
-// template<class T> T offset_ptr(ThreadCtxt_t* base, T offset);
-void softswitch_init(ThreadCtxt_t* thr_ctxt);
-void softswitch_finalize(ThreadCtxt_t* thr_ctxt, volatile void** send_buf, volatile void** recv_buf);
-// void softswitch_alive(volatile void* send_buf); // debug: send alive message to host
-void softswitch_barrier(ThreadCtxt_t* thr_ctxt, volatile void* send_buf, volatile void* recv_buf);
+void softswitch_loop(ThreadCtxt_t* ThreadContext);
+
+void softswitch_init(ThreadCtxt_t* ThreadContext);
+void softswitch_finalise(ThreadCtxt_t* ThreadContext);
+
+void softswitch_barrier(ThreadCtxt_t* ThreadContext);
+
+
 void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt);
-// handlers should reside in instruction memory and thus shouldn't need setup.
-// inline void outputPinType_init(uint32_t pin, uint32_t dev_typ, ThreadCtxt_t* thr_ctxt) {thr_ctxt->devTyps[dev_typ].outputTypes[pin].Send_Handler = Send_Handlers[thr_ctxt->threadID.PThread][dev_typ][pin];};
-// inline void inputPinType_init(uint32_t pin, uint32_t dev_typ, ThreadCtxt_t* thr_ctxt) {thr_ctxt->devTyps[dev_typ].inputTypes[pin].Recv_Handler = Recv_Handlers[thr_ctxt->threadID.PThread][dev_typ][pin];};
 void device_init(devInst_t* device, ThreadCtxt_t* thr_ctxt);
-void outPin_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt);
-void outPinTgt_init(uint32_t tgt, outPin_t* pin, ThreadCtxt_t* thr_ctxt);
-void inPin_init(uint32_t pin, devInst_t* device, ThreadCtxt_t* thr_ctxt);
-void inPinSrc_init(uint32_t src, inPin_t* pin, ThreadCtxt_t* thr_ctxt);
 
-// wrappers for the basic handlers.
-// the onSend handler needs to be responsible for updating the send address and managing the RTS list.
 uint32_t softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf);
-void softswitch_onReceive(ThreadCtxt_t* thr_ctxt, volatile void* recv_buf);
+void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf);
 bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt);
 uint32_t softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device);
+
 
 // utility functions to manage ready-to-send queue 
 inline bool softswitch_IsRTSReady(ThreadCtxt_t* ThreadContext) {return (ThreadContext->rtsStart != ThreadContext->rtsEnd);};
