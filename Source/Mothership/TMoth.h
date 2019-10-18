@@ -13,7 +13,6 @@
 #include "P_addr.h"
 
 //==============================================================================
-typedef std::map<uint32_t, TM_LogMessage*> TM_LogMsgMap_t;
 struct TM_LogMessage
 {   
     unsigned            logMsgCnt;
@@ -21,6 +20,7 @@ struct TM_LogMessage
     P_Log_Msg_Pyld_t    logMsgBuf[P_MAX_LOGMSG_FRAG];
 };
 
+typedef std::map<uint32_t, TM_LogMessage*> TM_LogMsgMap_t;
 
 
 class TMoth : public CommonBase, public HostLink
@@ -67,6 +67,9 @@ unsigned              SystHW(const vector<string>&);
 unsigned              SystKill();
 unsigned              SystShow();
 unsigned              SystTopo();
+
+unsigned              LogHandler(P_Msg_t*);
+unsigned              TrivialLogHandler(TM_LogMessage*, char*);
 
 void*                 SuperHandle; // dynamically loadable supervisor
 int                   (*SupervisorCall)(PMsg_p*, PMsg_p*); // entry point for the Supervisor

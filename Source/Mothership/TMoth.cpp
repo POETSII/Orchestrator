@@ -43,9 +43,6 @@ CommonBase(argc,argv,d,string(__FILE__)), HostLink()
     // Y coordinate max (within box?? TODO: check this!). TODO: Update this for multi-box!
     PAddress = TinselMeshYLenWithinBox << (TinselMeshXBits+TinselLogCoresPerBoard+TinselLogThreadsPerCore);
     
-    logMsgCnt = 0;
-    logMsgMax = 0;
-    
     twig_running = false;
     ForwardMsgs = false; // don't forward tinsel traffic yet
 
@@ -966,76 +963,12 @@ unsigned TMoth::OnTinselOut(P_Msg_t* msg)
     if (opcode == P_CNC_LOG)
     {
         DebugPrint("Received a handler_log message from device\n");
-        
-        /* TODO: This needs to be more robust. This does not handle all edge cases.
-         * Assumes that there are no duplicate messages and that different log
-         * messages are not interspersed and that things arrive (mostly) in order.
-         * 
-         * This can be made much more resilient by using a map for each in-progress
-         * log message.
-         */
-        
-        TM_LogMessage* logMsg;
-        uint32_t srcAddr = msg->header.pinAddr;
-        
-        P_Log_Msg_Pyld_t* pyld = reinterpret_cast<P_Log_Msg_Pyld_t*>(msg->payload);
-        
-        
-        TM_LogMsgMap_t::iterator MSearch = LogMsgMap.find(srcAddr);
-        if(MSearch == LogMsgMap.end())
-        {   // First message of a new log message
-            logMsg = new TM_LogMessage();
-            
-            logMsg->logMsgCnt = 0;
-            logMsg->logMsgMax = 0;
-            
-            LogMsgMap.insert(TM_LogMsgMap_t::value_type(srcAddr, logMsg))
-        }
-        else
-        {
-            logMsg = MSearch->second;
-        }
-        
-        // Drop the message into the map.
-        memcpy(&(logMsg->logMsgBuf[pyld->seq]), pyld, p_logmsg_pyld_size);
-        
-        // Update the logmessage counters
-        logMsg->logMsgCnt++;
-        if(logMsg->logMsgMax < pyld->seq) logMsg->logMsgMax = pyld->seq;
-        
-        
-        // Received the last log message. Re-assemble & print it.
-        if(logMsg->logMsgCnt == (logMsg->logMsgMax +1))
-        {
-            char logStr[(p_logmsg_pyld_size << P_LOG_MAX_LOGMSG_FRAG)+1];
-            char* logPtr = logStr;
-            
-            for(unsigned int i = 0; i < logMsg->logMsgCnt; i++)
-            {
-                pyld = logMsg->logMsgBuf[logMsgMax];
-             
-                memcpy(logPtr, pyld->payload, p_logmsg_pyld_size);
-                
-                logPtr += p_logmsg_pyld_size;                
-                logMsgMax--;
-            }
-            
-            std::string logString(logStr);
-            std::cout << "\n\nString:\t" << logString << "\n" << std::endl;
-            
-            Post(601, int2str(srcAddr), int2str(srcAddr), string(logStr));
-            
-            // Cleanup the message
-            LogMsgMap.erase(srcAddr);
-            delete logMsg;
-        }
+        LogHandler(msg);
     }
     
     else if (opcode == P_CNC_INSTR)
     {
         DebugPrint("Received an instrumentation message from device\n");
-        
-        
         
     }
     
@@ -1086,6 +1019,85 @@ void TMoth::StopTwig()
 }
 
 //------------------------------------------------------------------------------
+
+
+unsigned TMoth::LogHandler(P_Msg_t* msg)
+{
+    /* TODO: This needs to be more robust. This does not handle all edge cases.
+     * Assumes that things arrive (mostly) in order, e.g. the last message
+     * cannot arrive first.
+     */
+    
+    TM_LogMessage* logMsg;
+    uint32_t srcAddr = msg->header.pinAddr;
+    
+    P_Log_Msg_Pyld_t* pyld = reinterpret_cast<P_Log_Msg_Pyld_t*>(msg->payload);
+    
+    
+    TM_LogMsgMap_t::iterator MSearch = LogMsgMap.find(srcAddr);
+    if(MSearch == LogMsgMap.end())
+    {   // First message of a new log message
+        logMsg = new TM_LogMessage();
+        
+        logMsg->logMsgCnt = 0;
+        logMsg->logMsgMax = 0;
+        
+        LogMsgMap.insert(TM_LogMsgMap_t::value_type(srcAddr, logMsg));
+    }
+    else
+    {
+        logMsg = MSearch->second;
+    }
+    
+    // Drop the message into the map.
+    memcpy(&(logMsg->logMsgBuf[pyld->seq]), pyld, p_msg_pyld_size);
+    
+    // Update the logmessage counters
+    logMsg->logMsgCnt++;
+    if(logMsg->logMsgMax < pyld->seq) logMsg->logMsgMax = pyld->seq;
+    
+    
+    // Received the last log message. Re-assemble & print it.
+    if(logMsg->logMsgCnt == (logMsg->logMsgMax +1))
+    {  
+        char logStr[(p_logmsg_pyld_size << P_LOG_MAX_LOGMSG_FRAG)+1];
+    
+#ifdef TRIVIAL_LOG_HANDLER
+        // Call the trivial logmessage handler.
+        TrivialLogHandler(logMsg, logStr);
+#else
+        strcpy(logStr, "ERROR: No Log Handler Defined!");   // (in)sanity check
+#endif   
+
+        // Post to the log server
+        Post(601, int2str(srcAddr), int2str(srcAddr), string(logStr));
+        
+        // Cleanup the message
+        LogMsgMap.erase(srcAddr);
+        delete logMsg;
+    }
+    return 0;
+}
+
+unsigned TMoth::TrivialLogHandler(TM_LogMessage* logMsg, char* logPtr)
+{
+    //char* logPtr = logStr;
+    P_Log_Msg_Pyld_t* pyld;
+    
+    // Re-assemble the full log message string
+    for(unsigned int i = 0; i < logMsg->logMsgCnt; i++)
+    {        
+        pyld = &(logMsg->logMsgBuf[logMsg->logMsgMax]);
+     
+        memcpy(logPtr, pyld->payload, p_logmsg_pyld_size);
+        
+        logPtr += p_logmsg_pyld_size;                
+        logMsg->logMsgMax--;
+    }
+    
+    return 0;
+}
+
 
 unsigned TMoth::SystHW(const vector<string>& args)
 // Execute some command directly on the Mothership itself. Unlike a Supervisor
