@@ -247,12 +247,124 @@ if (!ufs.empty()) {
   if (tfp!=0) fp = tfp;
   else Post(109,ufs);
 }
+// added additional dump parameters: summary (-s), NameServer (-n),
+// task name (<task> || "*") 13 July 2019 ADR
+string ufo = Cl.GetO(1);               // Look for summary operator "-"
+string ufn = Cl.GetP(1);
+if (!(ufo.empty() || ufo == "-"))      // reject other operators
+{
+   Post(25, ufo+ufs, "task /dump");
+   return;  
+}
+bool summary = false;
+bool dumpNs = false;
+if (!ufn.empty())                      // look for dump qualifiers
+{
+   if (ufo == "-")                     // expect a summary with a "-" sign
+   {
+      if (ufn != "s")
+      {
+ 	 Post(25, ufo+ufn, "task /dump"); // other switches are invalid
+         return; 
+      }
+      summary = true;
+      ufn = "*"; // summary always outputs all tasks
+   }
+   ufo = Cl.GetO(2);
+   if (!(ufo.empty() || ufo == "-"))      // reject other operators
+   {
+      Post(25, ufo+Cl.GetP(2), "task /dump");
+      return;  
+   }
+   if (ufo == "-")               // expect a NameServer dump with a "-" sign
+   {
+      if (Cl.GetP(2) != "n")     // look for the "-n"
+      {
+	 Post(25, ufo+Cl.GetP(2), "task /dump"); // other switches are invalid
+         return; 
+      }
+      dumpNs = true;
+   }
+   
+}
+else ufn = "*";            // default to dumping all tasks.
+map<string,P_task*>::iterator task = P_taskm.begin(); // may need to find a specific task
+ 
                                        // Just the task structures
 if (P_taskm.empty()) fprintf(fp,"Task map empty\n");
-else WALKMAP(string,P_task *,P_taskm,i) (*i).second->Dump(fp);
-if (P_typdclm.empty()) fprintf(fp,"Type declaration map empty\n");
-else WALKMAP(string,P_typdcl *,P_typdclm,i) (*i).second->Dump(fp);
-if (fp!=stdout) fclose(fp);
+else
+{
+   if (ufn == "*")          // all tasks
+      WALKMAP(string,P_task *,P_taskm,i) i->second->Dump(fp);
+   else                    // a named task given by parameter 1
+   {
+      task = P_taskm.find(ufn);
+      if (task == P_taskm.end())
+      {
+	 Post(105,ufn);
+	 fprintf(fp,"No such task: %s\n", ufn.c_str());
+      }
+      else task->second->Dump(fp);
+   }
+}
+if (!summary) // print out type declares if not simply doing a summary
+{
+   if (P_typdclm.empty()) fprintf(fp,"Type declaration map empty\n");
+   else
+   {
+      if (ufn == "*") // all type declarations 
+         WALKMAP(string,P_typdcl *,P_typdclm,i) (*i).second->Dump(fp);
+      else if (task != P_taskm.end()) // just the type declaration for a named task
+      {
+	 if (!task->second->pP_typdcl) // if it exists!
+	 {
+	    Post(113,ufn);
+	    fprintf(fp,"Task %s has no type declarations\n", ufn.c_str());
+	 }
+	 else task->second->pP_typdcl->Dump(fp);
+      }
+   }
+}
+// close the file BEFORE sending to NameServer, so that if it happens to be on the
+// same machine, the dumpfile won't have multiple open handles.
+if (fp!=stdout) fclose(fp); 
+if (dumpNs) // also dump NameServer info?
+{
+   int nsRank = Q::NAP; // search for NameServer
+   MPI_Comm nsComm = MPI_COMM_NULL;
+   for (unsigned comm = 0; comm < Comms.size(); comm++)
+   {
+       // find NameServer's comm
+       if ((nsRank = pPmap[comm]->U.NameServer) != Q::NAP)
+       {
+          nsComm = Comms[comm];
+          break;
+       }
+   }
+   if (nsRank == Q::NAP)
+   {
+      Post(711); // No nameserver. This should be fatal 
+      return;    // (need to return with a value from TaskDump)
+   }
+   if (nsComm == MPI_COMM_NULL)
+   {
+      Post(712); // Unknown comm for nameserver. VERY fatal
+      return;    // (should abort)
+   }
+   PMsg_p nsDump(nsComm); // set up a dump message
+   nsDump.Src(Urank);
+   nsDump.Tgt(nsRank);
+   // of the appropriate type (summary, all, or a named task)
+   if (summary) nsDump.Key(Q::NAME,Q::DUMP,Q::LIST);
+   if (ufn == "*") nsDump.Key(Q::NAME,Q::DUMP,Q::TASK,Q::ALL);
+   else
+   {
+      nsDump.Key(Q::NAME,Q::DUMP,Q::TASK,Q::NM);
+      nsDump.Zname(0,ufn);
+   }
+   nsDump.Zname(1,ufs); // NameServer should open the appropriate dumpfile
+   nsDump.Send();       
+}
 }
 
 //------------------------------------------------------------------------------
@@ -312,6 +424,93 @@ if (Fn.Err()) Post(104,file);          // If not, warn the monkey
 // pB->Build(pT);                         // Build the thing
 pB->Load(file);                           // Parse the xml description of the task
 //pB->Build();                            // Build the thing
+
+// additions for NameServer/SBase 11 July 2019 ADR
+int nsRank = Q::NAP;
+MPI_Comm nsComm = MPI_COMM_NULL;
+for (unsigned comm = 0; comm < Comms.size(); comm++)
+{
+    if ((nsRank = pPmap[comm]->U.NameServer) != Q::NAP)
+    {
+       nsComm = Comms[comm];
+       break;
+    }
+}
+if (nsRank == Q::NAP)
+{
+   Post(711); // No nameserver. This should be fatal 
+   return;    // (need to return with a value from TaskLoad)
+}
+if (nsComm == MPI_COMM_NULL)
+{
+   Post(712); // Unknown comm for nameserver. VERY fatal
+   return;    // (should abort)
+}
+PMsg_p nsTask(nsComm);
+nsTask.Src(Urank);
+WALKMAP(string, P_task*, P_taskm, task)
+{
+   if (task->second->state == Unknown)
+   {
+      nsTask.Key(Q::NAME,Q::DATA,Q::TASK);
+      nsTask.Zname(0,task->first);
+      nsTask.Zname(1,taskpath);
+      nsTask.Zname(2,file);
+      vector<string> msgs;
+      WALKVECTOR(P_message*,task->second->pP_typdcl->P_messagev,msg) msgs.push_back((*msg)->Name());
+      nsTask.PutX(0, &msgs);
+      // in future should place attributes here.
+      vector<string> attrs;
+      attrs.push_back("_NO_ATTRIBUTE_");
+      nsTask.PutX(1,&attrs);
+      vector<unsigned long> counts;
+      unsigned long deviceCount = 0;
+      // tediously, we have to walk the graph because supervisors and externals
+      // must be disambiguated.
+      for (map<unsigned,pdigraph<unsigned,P_device *,unsigned,P_message *,unsigned,P_pin *>::node>::iterator dn = task->second->pD->G.index_n.begin(); dn != task->second->pD->G.index_n.end(); dn++)
+           if (dn->second.data != task->second->pSup) ++deviceCount;
+      counts.push_back(deviceCount);
+      // it would be so much easier if we could do something like the following!
+      // counts.push_back(task->second->pD->G.SizeNodes());
+      counts.push_back(0); // number of externals. In future this will need to be distinguished.
+      deviceCount = 0;
+      nsTask.Put(2,&counts);
+      nsTask.Send(nsRank);
+      nsTask.Clear();
+      nsTask.Src(Urank);
+      nsTask.Key(Q::NAME,Q::DATA,Q::DEVT);
+      nsTask.Zname(0,task->first);
+      WALKVECTOR(P_devtyp*,task->second->pP_typdcl->P_devtypv,devType)
+      {
+	 nsTask.Zname(2,(*devType)->Name());
+	 vector<unsigned>inMsgs;
+	 vector<unsigned>outMsgs;
+	 for (unsigned m = 0; m < task->second->pP_typdcl->P_messagev.size(); m++)
+	 {
+	   WALKVECTOR(P_pintyp*,(*devType)->P_pintypIv,iPin)
+	   {
+	      if ((*iPin)->pMsg == task->second->pP_typdcl->P_messagev[m])
+	      {
+                 inMsgs.push_back(m);
+		 break;
+	      }
+	   }
+	   WALKVECTOR(P_pintyp*,(*devType)->P_pintypOv,oPin)
+	   {
+	      if ((*oPin)->pMsg == task->second->pP_typdcl->P_messagev[m])
+	      {
+                 outMsgs.push_back(m);
+		 break;
+	      }
+	   }
+	 }
+	 nsTask.Put(0,&inMsgs);
+	 nsTask.Put(1,&outMsgs);
+	 nsTask.Send(nsRank);
+      }
+      task->second->state = Loaded;
+   }
+}
 }
 
 //------------------------------------------------------------------------------
@@ -379,15 +578,12 @@ vector<pair<unsigned,P_addr_t> > coreVec;  // core map container to send
 vector<ProcMap::ProcMap_t>::iterator currBox = pPmap[cIdx]->vPmap.begin(); // process map for the Mothership being deployed to
 
 
-CMsg_p PktC;
-PMsg_p PktD;
-//PMsg_p PktC, PktD;                      // messages to send to each participating box
-PktC.Key(Q::NAME,Q::DIST);                // distributing the core mappings
-PktD.Key(Q::NAME,Q::TDIR);                // and the data directory
+CMsg_p PktC;                              // message to send to each participating box                    
+PktC.Key(Q::NAME,Q::CFG,Q::DIST);         // distributing the core mappings and the data directory
 PktC.Src(Urank);
 string taskname = task->first;
-PktC.Put(0, &taskname);                    // first field in the packet is the task name
-PktD.Put(0, &taskname);
+PktC.Zname(0, taskname);                  // first string field in the packet is the task name
+//PktC.Put(0, &taskname);                 // first field in the packet is the task name
 // duplicate P_builder's iteration through the task
 P_core* thisCore;  // Core available during iteration.
 P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
@@ -470,7 +666,7 @@ std::vector<std::string> commands;
 std::string target = string("/home/") + currBox->P_user + "/" +
     TASK_DEPLOY_DIR + "/" + task->first;
 std::string sourceBins = taskpath + task->first + "/" + BIN_PATH + "/*";
-PktD.Put(1,&target);
+PktC.Zname(1,target); // second string field is the task binary directory
 if (RootProcMapI->P_proc == currBox->P_proc)
 {
    // then copy locally (inefficient, wasteful, using the files in place would be better but this would require
@@ -507,19 +703,28 @@ WALKVECTOR(std::string, commands, command)
         return;
     }
 }
-
-PktD.comm = PktC.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
-printf("Sending a distribution message to mothership with %lu cores\n", coreVec.size());
-PktC.Put(&coreVec); // place the core map in the packet to this Mothership
-/*
-printf("Sending a single-core distribution message to mothership cores\n");
-PktC.Put<unsigned>(1,&(coreVec[0].first),1);
-PktC.Put<P_addr_t>(2,&(coreVec[0].second),1);
-*/
-PktC.Send(currBox->P_rank);                    // Send to the target Mothership
-PktD.Send(currBox->P_rank);
+PktC.comm = Comms[cIdx];  // Packet will go on the communicator it was found on
+Post(726,int2str(currBox->P_rank),uint2str(coreVec.size()));
+PktC.Put(0,&currBox->P_rank); // first field is the Mothership's address (rank or symbolic address)
+PktC.Put(&coreVec);           // place the core map in the packet to this Mothership
+// PktC.Send(currBox->P_rank);   // Send to the target Mothership
+unsigned nsComm = 0;
+for (; nsComm < pPmap.size(); nsComm++) // find the NameServer
+{
+    if (pPmap[nsComm]->U.NameServer != Q::NAP)
+    {
+       PktC.comm = Comms[nsComm];              // send the distribution message
+       PktC.Send(pPmap[nsComm]->U.NameServer); // to the NameServer
+       break;
+    }
 }
-}                                              // Next Mothership (box)
+if (nsComm >= pPmap.size())                    // No NameServer. A severe error.
+{
+   Post(711);
+   return;
+}
+}
+}                                              // Next Mothership
 }
 
 //------------------------------------------------------------------------------

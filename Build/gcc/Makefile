@@ -91,7 +91,11 @@ CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
            -std=c++11 -Wall -fPIC -pthread -pedantic
 
 # Debug target logic.
+ifdef ORCHESTRATOR_DEBUG
+CXXFLAGS += -g3 -DORCHESTRATOR_DEBUG=1
+else 
 debug: CXXFLAGS += -g3 -DORCHESTRATOR_DEBUG=1
+endif
 debug: all
 
 # Handy aliases for building executables, scripts, and libraries. Order doesn't
@@ -104,20 +108,24 @@ ROOT_EXECUTABLE = $(EXECUTABLE_DIR)/root
 DUMMY_EXECUTABLE = $(EXECUTABLE_DIR)/dummy
 LOGSERVER_EXECUTABLE = $(EXECUTABLE_DIR)/logserver
 LOGSERVER_MESSAGE_FILE = $(EXECUTABLE_DIR)/OrchestratorMessages.txt
+NAMESERVER_EXECUTABLE = $(EXECUTABLE_DIR)/nameserver
 RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
+MOTHERSHIP_DUMMY_EXECUTABLE = $(EXECUTABLE_DIR)/mothershipdummy
 
-all: orchestrate launcher root dummy logserver rtcl injector mothership \
-     application_staging_environment
+all: orchestrate launcher root dummy logserver nameserver rtcl injector \
+     mothership mothershipdummy application_staging_environment
 launcher: $(LAUNCHER_EXECUTABLE)
 orchestrate: $(ORCHESTRATE_SCRIPT)
 root: $(ROOT_EXECUTABLE)
 dummy: $(DUMMY_EXECUTABLE)
 logserver: $(LOGSERVER_EXECUTABLE) $(LOGSERVER_MESSAGE_FILE)
+nameserver: $(NAMESERVER_EXECUTABLE)
 rtcl: $(RTCL_EXECUTABLE)
 injector: $(INJECTOR_EXECUTABLE)
 mothership: $(MOTHERSHIP_EXECUTABLE)
+mothershipdummy: $(MOTHERSHIP_DUMMY_EXECUTABLE)
 
 # Prerequisites (objects) for building executables are defined here:
 include Makefile.executable_prerequisites
@@ -133,7 +141,8 @@ tests: $(ALL_TESTS) $(TEST_SCRIPT)
 # Makefile.executable_prerequisites for the prerequisites of these executables
 # (obviously...)
 $(LAUNCHER_EXECUTABLE) $(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) \
-$(LOGSERVER_EXECUTABLE) $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
+$(LOGSERVER_EXECUTABLE) $(NAMESERVER_EXECUTABLE) $(RTCL_EXECUTABLE) \
+$(INJECTOR_EXECUTABLE) $(MOTHERSHIP_DUMMY_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
         -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
@@ -282,8 +291,8 @@ clean: application_staging_environment_teardown
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
 
 # Non-builtin targets that do not explicitly represent files that are created.
-.PHONY: all clean debug tests orchestrate root dummy logserver rtcl injector \
-    mothership application_staging_environment \
+.PHONY: all clean debug tests orchestrate root dummy logserver nameserver rtcl injector \
+    mothership mothershipdummy application_staging_environment \
     application_staging_environment_teardown
 
 # The "all" target should be the default.

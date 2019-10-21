@@ -12,9 +12,11 @@ DON'T PUT ANY #include IN THIS FILE
 It's virtual here because this makes it an invalid translation unit, so if you
 try to compile it, the compiler will squeak.
 
-A similar decode exists in SDecode.cpp, intended specifically for classes that
-derive from SBase. Do not use this file (Decode.cpp) if you are deriving from
-SBase. Similarly, do not use SDecode.cpp if you derive directly from CommonBase.
+This particular version - SDecode, is intended for use in classes that 
+derive from SBase. It's duplicated from Decode.cpp because (1) you can't use
+a dynamic_cast to check whether the class is derived from SBase without including
+all the SBase code anyway in classes that have nothing to do with it; (2) we
+don't want to use an #ifdef directive as an ugly 'solution' for this.
 */
 
 //==============================================================================
@@ -30,6 +32,11 @@ virtual unsigned Decode(PMsg_p * pPkt, unsigned cIdx)
 if (FnMapx[cIdx]->find(pPkt->Key())!=FnMapx[cIdx]->end()) {
   // printf(".. derived, key 0x%x\n", pPkt->Key()); fflush(stdout);
   return (this->*(*FnMapx[cIdx])[pPkt->Key()])(pPkt,cIdx);
+}
+                                       // No. In SBase?
+if (SBase::FnMapx[cIdx]->find(pPkt->Key())!=SBase::FnMapx[cIdx]->end()) {
+  // printf(".. sbase, key 0x%x\n", pPkt->Key()); fflush(stdout);
+  return (this->*(*SBase::FnMapx[cIdx])[pPkt->Key()])(pPkt,cIdx);
 }
                                        // Nope. Base class?
 if (CommonBase::FnMapx[cIdx]->find(pPkt->Key())!=CommonBase::FnMapx[cIdx]->end()) {

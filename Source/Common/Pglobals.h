@@ -127,22 +127,63 @@ static const byte RUN   = 0x48;
 static const byte LOAD  = 0x49;
 static const byte STOP  = 0x4a;
 static const byte TOPO  = 0x4b;
-static const byte DIST  = 0x4c;
-static const byte RECL  = 0x4d;
-static const byte TDIR  = 0x4e;
-static const byte SHOW  = 0x4f;
-static const byte ACPT  = 0x50;
+static const byte SHOW  = 0x4c;
+static const byte ACPT  = 0x4d;
+// Nameserver additions ----------------------------------------------------
+static const byte SEND  = 0x4e;
+static const byte QRY   = 0x4f;
+static const byte RPLY  = 0x50;
+static const byte DATA  = 0x51;
+static const byte CFG   = 0x52;
+static const byte CMDC  = 0x53;
+static const byte DUMP  = 0x54;
 // temporary use: for MPI testing ------------------------------------------
 static const byte M0    = 0x60;
 static const byte M1    = 0x61;
 static const byte MN    = 0x62;
-//--------------------------------------------------------------------------
+// _________________________________________________________________________
 // Level 2 subkeys
 static const byte REQ   = 0x80;
 static const byte ACK   = 0x81;
 static const byte FWD   = 0x82;
+// Nameserver additions ---------------------------------------------------
+static const byte TASK  = 0x83;
+static const byte DEVT  = 0x84;
+static const byte DEVI  = 0x85;
+static const byte SUPV  = 0x86;
+static const byte EXTN  = 0x87;
+static const byte ATTR  = 0x88;
+static const byte LIST  = 0x89;
+static const byte BLD   = 0x8a;
+static const byte INTG  = 0x8b;
+// moved from L1 to L2 for Nameserver --------------------------------------
+static const byte DIST  = 0x8c;
+static const byte RECL  = 0x8d;
+static const byte TDIR  = 0x8e;
+static const byte STATE = 0x8f;
+static const byte DEL   = 0x90;
+static const byte MONI  = 0x91;
+static const byte LOGN  = 0x92;
+static const byte DEVE  = 0x93;
+// _________________________________________________________________________
 // Level 3 subkeys
-
+static const byte FALSE = 0xc0;
+static const byte TRUE  = 0xc1;
+static const byte OFF   = 0xc2;
+static const byte ON    = 0xc3;
+static const byte NF    = 0xc4;
+static const byte TNF   = 0xc5;
+static const byte NM    = 0xc6;
+static const byte ID    = 0xc7;
+static const byte ALL   = 0xc8;
+static const byte NGRP  = 0xc9;
+static const byte IGRP  = 0xca;
+static const byte NSUP  = 0xcb;
+static const byte ISUP  = 0xcc;
+static const byte IN    = 0xcd;
+static const byte OUT   = 0xce;
+static const byte ATR   = 0xcf;
+ 
 // Not a value
 static const byte NAV   = 0xff;
 static const int  NAP   = -1;
@@ -156,9 +197,10 @@ static const byte ROOT  = 0x00;
 #define csLOGSERVERproc  "LogServer:CommonBase"
 #define csRTCLproc       "RTCL:CommonBase"
 #define csINJECTORproc   "Injector:CommonBase"
-#define csNAMESERVERproc "NameServer:CommonBase"
+#define csNAMESERVERproc "NameServer:SBase:CommonBase"
 #define csMONITORproc    "Monitor:CommonBase"
-#define csMOTHERSHIPproc "TMoth:CommonBase"
+#define csMOTHERSHIPproc "Mothership:SBase:CommonBase"
+//#define csMOTHERSHIPproc "TMoth:CommonBase"
 #define csMPITESTproc    "MPITest:CommonBase"
 
 // tag defined as a directive because MPI libraries are c-based, have no concept

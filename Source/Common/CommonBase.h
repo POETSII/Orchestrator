@@ -5,6 +5,7 @@
 #include <string>
 #include <cstring>
 using namespace std;
+#include "Debug.h"
 #include "PMsg_p.hpp"
 #include "ProcMap.h"
 #include "pthread.h"

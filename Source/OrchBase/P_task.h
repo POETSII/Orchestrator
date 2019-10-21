@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "NameBase.h"
 #include "OrchBase.h"
+#include "ABDefs.hpp" // TODO: take TaskState_t and refactor into a common .h
 class P_owner;
 //#include "P_owner.h"
 
@@ -27,6 +28,7 @@ P_typdcl *          pP_typdcl;         // Declare block
 string              filename;          // XML source from HbD-land
 P_owner *           pOwn;              // Task owner
 bool                linked;
+AddressBookNS::TaskState_t state;             // Task state (TODO: integrate this)
 
 struct PoL_t {
 public:

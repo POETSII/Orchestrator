@@ -1,32 +1,34 @@
 #ifndef __NameServerH__H
 #define __NameServerH__H
 
-#include "CommonBase.h"
-#include "Ns_el.h"
+#include "SBase.h"
+#include "Debug.h"
 
 //==============================================================================
 
-class NameServer : public CommonBase
+class NameServer : public SBase
 {
 
 public:
                     NameServer(int,char **,string);
 virtual ~           NameServer();
 
-private:
-#include            "Decode.cpp"
-void                Dump(FILE * = stdout);
-void                Load1(Ns_0 *);
-unsigned            OnClr  (PMsg_p *);
-unsigned            OnDump (PMsg_p *);
-unsigned            OnFwd  (PMsg_p *);
-unsigned            OnLoad (PMsg_p *);
-unsigned            OnLog  (PMsg_p *);
-unsigned            OnMoni (PMsg_p *);
-unsigned            OnQuery(PMsg_p *);
+        unsigned    Connect          (string="");
+        unsigned    OnCfg            (PMsg_p *, unsigned);
+	unsigned    OnDump           (PMsg_p *, unsigned);
 
-typedef unsigned    (NameServer::*pMeth)(PMsg_p *);
-map<unsigned,pMeth> FnMapx;
+private:
+#include            "SDecode.cpp"
+        void        Dump(FILE * = stdout, string s = "");
+
+        unsigned    ConfigDir        (PMsg_p *, unsigned);
+        unsigned    ConfigDistribute (PMsg_p *, unsigned);
+        unsigned    ConfigRecall     (PMsg_p *, unsigned);
+	unsigned    ConfigState      (PMsg_p *, unsigned);
+
+typedef unsigned    (NameServer::*pMeth)(PMsg_p *, unsigned);
+typedef map<unsigned,pMeth> FnMap_t;
+vector<FnMap_t*> FnMapx;
 
 };
 

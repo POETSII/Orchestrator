@@ -74,6 +74,11 @@ void P_super::Attach(P_board* targetBoard)
     // Store the index in the board, so the board can access the supervisor by
     // querying its parent box.
     targetBoard->sup_offv.push_back(supervisorIndex);
+    // append the box address to the supervisor if it's not already there.
+    // added 12 July 2019 ADR
+    unsigned boxAddr;
+    if (!addr.GetBox(boxAddr))
+       addr.SetBox(parentBox->get_hardware_address()->get_box());
 }
 
 //------------------------------------------------------------------------------

@@ -132,9 +132,9 @@ return false;
 void Placement::Xlink(P_device * pDe,P_thread * pTh)
 // Actually link a real device to a real thread
 {
-printf("XLinking device %s with id %d to thread %s\n",
+DebugPrint("XLinking device %s with id %d to thread %s\n",
         pDe->FullName().c_str(), pDe->addr.A_device, pTh->FullName().c_str());
-fflush(stdout);
+// fflush(stdout);
 pDe->pP_thread = pTh;                  // Device to thread
 pTh->P_devicel.push_back(pDe);         // Thread to device
 
