@@ -270,7 +270,6 @@ inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile voi
     
     
     // Load the Message
-    pyld->threadID = tinselId();
     pyld->cIDX = ThreadContext->cycleIdx++;
     pyld->cycles = cycles - ThreadContext->lastCycles;
     pyld->txCnt = ThreadContext->txCount;

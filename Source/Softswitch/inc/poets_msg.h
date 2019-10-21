@@ -141,27 +141,28 @@ typedef struct poets_log_message_payload
 typedef struct poets_instr_message_payload
 {
     // First Flit
-    uint32_t threadID;
     uint32_t cIDX;
+    uint32_t cycles;
     
     // Second Flit
-    uint32_t cycles;
+    uint32_t rxCnt;
+    uint32_t rxHanCnt;
     uint32_t txCnt;
     uint32_t supCnt;
-    uint32_t rxCnt;
     
     // Third Flit
-    uint32_t rxHanCnt;
     uint32_t txHanCnt;
     uint32_t idleCnt;
     uint32_t idleHanCnt;
-
 #if TinselEnablePerfCount == true   
-    // Fourth Flit
     uint32_t missCount;         // Cache miss count
+    
+    // Fourth Flit
     uint32_t hitCount;          // Cache hit count
     uint32_t writebackCount;    // Cache writeback count
     uint32_t CPUIdleCount;      // CPU idle-cycle count (lower 32 bits)
+    
+    // 32-bits free
 #endif 
     
 } P_Instr_Msg_Pyld_t;

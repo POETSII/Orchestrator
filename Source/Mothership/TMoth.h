@@ -23,6 +23,18 @@ struct TM_LogMessage
 typedef std::map<uint32_t, TM_LogMessage*> TM_LogMsgMap_t;
 
 
+
+struct TM_Instrumentation
+{
+    double              totalTime;
+    uint64_t            txCount;
+    uint64_t            rxCount;
+    std::ofstream       tFile;
+};
+
+typedef std::map<uint32_t, TM_Instrumentation*> TM_InstrMap_t;
+
+
 class TMoth : public CommonBase, public HostLink
 {
 
@@ -68,14 +80,20 @@ unsigned              SystKill();
 unsigned              SystShow();
 unsigned              SystTopo();
 
+// Instrumentation messages
+TM_InstrMap_t         InstrMap;
+void                  InstrumentationEnd(void);
+unsigned              InstrumentationHandler(P_Msg_t* msg);
+
+// Log Handler methods
+TM_LogMsgMap_t        LogMsgMap;
+void                  LogHandlerEnd(void);
 unsigned              LogHandler(P_Msg_t*);
 unsigned              TrivialLogHandler(TM_LogMessage*, char*);
 
 void*                 SuperHandle; // dynamically loadable supervisor
 int                   (*SupervisorCall)(PMsg_p*, PMsg_p*); // entry point for the Supervisor
 
-TM_LogMsgMap_t        LogMsgMap;
- 
 public:
 unsigned              PAddress; // address of this mothership in POETS-space
 bool                  ForwardMsgs;
