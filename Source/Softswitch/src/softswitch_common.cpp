@@ -11,6 +11,28 @@ void softswitch_init(ThreadCtxt_t* ThreadContext)
         tinselAlloc(tinselSlot(i)); // allocate receive slots.
     }
     
+#ifdef SOFTSWITCH_INSTRUMENTATION
+    // Initialise instrumentation
+    ThreadContext->lastCycles = 0;
+    ThreadContext->pendCycles = 0;
+    ThreadContext->txCount = 0;
+    ThreadContext->superCount = 0;
+    ThreadContext->rxCount = 0;
+    ThreadContext->txHandlerCount = 0;
+    ThreadContext->rxHandlerCount = 0;
+    ThreadContext->idleCount = 0;
+    ThreadContext->idleHandlerCount = 0;
+    ThreadContext->cycleIdx = 0;
+
+#if TinselEnablePerfCount == true   
+    // Initialise the optional Tinsel instrumentation
+    ThreadContext->lastmissCount = 0;
+    ThreadContext->lasthitCount = 0;
+    ThreadContext->lastwritebackCount = 0;
+    ThreadContext->lastCPUIdleCount = 0;
+#endif
+#endif 
+    
     // Initialise device types
     for (uint32_t deviceType = 0; 
             deviceType < ThreadContext->numDevTyps; 
@@ -88,13 +110,14 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
     
     while (!ThreadContext->ctlEnd)
     {
+#ifdef SOFTSWITCH_INSTRUMENTATION
         uint32_t cycles = tinselCycleCount();		// cycle counter is per-core
-        if(!(ThreadContext->pendCycles) 
-            && ((cycles - ThreadContext->lastCycles) > 250000000)) //~1s at 250 MHz
+        if((cycles - ThreadContext->lastCycles) > P_INSTR_INTERVAL)
         {
           // Trigger a message to supervisor.
-          ThreadContext->pendCycles = 2;
+          ThreadContext->pendCycles = 1;
         }
+#endif        
         
         // Something to receive
         if (tinselCanRecv())
@@ -103,6 +126,14 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
             softswitch_onReceive(ThreadContext, recvBuffer); // decode the receive and handle
             tinselAlloc(recvBuffer); // return control of the receive buffer to the hardware
         }
+
+#ifdef SOFTSWITCH_INSTRUMENTATION        
+        // Time to send Instrumentation
+        else if(ThreadContext->pendCycles && tinselCanSend())
+        {
+            softswitch_instrumentation(ThreadContext, sendBuffer);
+        }
+#endif
         
         // Something to send
         else if (ThreadContext->rtsStart != ThreadContext->rtsEnd) //softswitch_IsRTSReady(ThreadContext))
@@ -221,6 +252,77 @@ inline void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* ThreadContext
 /*==============================================================================
  * Softswitch handlers.
  *============================================================================*/
+ /*------------------------------------------------------------------------------
+ * softswitch_instrumentation: Sends instrumentation to the Mothership
+ *----------------------------------------------------------------------------*/
+inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
+{
+    uint32_t cycles = tinselCycleCount();
+    
+    P_Msg_t* msg = static_cast<P_Msg_t*>(const_cast<void*>(send_buf));
+    P_Msg_Hdr_t* hdr = &(msg->header);
+    P_Instr_Msg_Pyld_t* pyld = reinterpret_cast<P_Instr_Msg_Pyld_t*>(msg->payload);
+    
+    // Set the Header
+    hdr->swAddr = P_SW_MOTHERSHIP_MASK | P_SW_CNC_MASK;
+    hdr->swAddr |= ((P_CNC_INSTR << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK);
+    hdr->pinAddr = tinselId(); // usurp Pin Addr for the source HW addr
+    
+    
+    // Load the Message
+    pyld->threadID = tinselId();
+    pyld->cIDX = ThreadContext->cycleIdx++;
+    pyld->cycles = cycles - ThreadContext->lastCycles;
+    pyld->txCnt = ThreadContext->txCount;
+    pyld->supCnt = ThreadContext->superCount;
+    pyld->rxCnt = ThreadContext->rxCount;
+    pyld->txHanCnt = ThreadContext->txHandlerCount;
+    pyld->rxHanCnt = ThreadContext->rxHandlerCount;
+    pyld->idleCnt = ThreadContext->idleCount;
+    pyld->idleHanCnt = ThreadContext->idleHandlerCount;
+
+#if TinselEnablePerfCount == true
+    // Optional Tinsel instrumentation
+    uint32_t missCount = tinselMissCount();
+    uint32_t hitCount = tinselHitCount();
+    uint32_t writebackCount = tinselWritebackCount();
+    uint32_t CPUIdleCount = tinselCPUIdleCount();
+    
+    pyld->missCount = miscount - ThreadContext->lastmissCount;
+    pyld->hitCount = hitCount - ThreadContext->lasthitCount;
+    pyld->writebackCount = writebackCount - ThreadContext->lastwritebackCount;
+    pyld->CPUIdleCount = CPUIdleCount - ThreadContext->lastCPUIdleCount;
+#endif 
+    
+    // Send it
+    uint32_t len = p_hdr_size() + p_instrmsg_pyld_size
+    tinselSetLen((len - 1) >> TinselLogBytesPerFlit);    // Set the message length
+    tinselSend(tinselHostId(), send_buf); // Send it
+    
+    
+    // Reset fields.
+    ThreadContext->lastCycles = cycles;
+    ThreadContext->pendCycles = 0;
+    ThreadContext->txCount = 0;
+    ThreadContext->superCount = 0;
+    ThreadContext->rxCount = 0;
+    ThreadContext->txHandlerCount = 0;
+    ThreadContext->rxHandlerCount = 0;
+    ThreadContext->idleCount = 0;
+    ThreadContext->idleHandlerCount = 0;
+
+#if TinselEnablePerfCount == true   
+    ThreadContext->lastmissCount = missCount;
+    ThreadContext->lasthitCount = hitCount;
+    ThreadContext->lastwritebackCount = writebackCount;
+    ThreadContext->lastCPUIdleCount = CPUIdleCount;
+#endif 
+  
+    // Clear the pending message
+    ThreadContext->pendCycles = 0;
+}
+ 
+ 
 /*------------------------------------------------------------------------------
  * softswitch_onSend: Executed any time there is an entry in the RTS list.
  *

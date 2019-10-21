@@ -10,6 +10,11 @@
 #define P_ONIDLE_CHANGE 0x80000000
 #define IDLE_SWEEP_CHUNK_SIZE 128
 
+#define P_DEFAULT_INSTRUMENTATION_INTERVAL     250000000    //~1s at 250 MHz
+#ifndef P_INSTR_INTERVAL
+#define P_INSTR_INTERVAL P_DEFAULT_INSTRUMENTATION_INTERVAL
+#endif
+
 struct PDeviceInstance;
 struct PThreadContext;
 struct POutputPin;
@@ -162,9 +167,17 @@ typedef struct PThreadContext
     uint32_t           rxCount;             // Number of actual messages sent
     uint32_t           txHandlerCount;      // Number of On Send handler called
     uint32_t           rxHandlerCount;      // Number of On Receive handler called
-    uint32_t           idleCount;           // number of times softswitch enters Idle branch
-    uint32_t           idleHandlerCount;    // Number of OnIdle/OnCompute handlers called.
+    uint32_t           idleCount;           // number of times  Idle branch
+    uint32_t           idleHandlerCount;    // Number of OnIdle handlers called.
     uint32_t           cycleIdx;            // Update index
+    
+#if TinselEnablePerfCount == true   
+    // Optional Tinsel Instrumentation
+    uint32_t            lastmissCount;         // Cache miss count
+    uint32_t            lasthitCount;          // Cache hit count
+    uint32_t            lastwritebackCount;    // Cache writeback count
+    uint32_t            lastCPUIdleCount;      // CPU idle-cycle count (lower 32 bits)
+#endif 
 } ThreadCtxt_t;
 
 
@@ -179,6 +192,7 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext);
 void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* thr_ctxt);
 void device_init(devInst_t* device, ThreadCtxt_t* thr_ctxt);
 
+void softswitch_instrumentation(ThreadCtxt_t* thr_ctxt, volatile void* send_buf);
 uint32_t softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf);
 void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf);
 bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt);
