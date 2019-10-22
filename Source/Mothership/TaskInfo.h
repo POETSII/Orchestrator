@@ -42,7 +42,6 @@ public:
   void deleteCore(P_core*);
   vector<P_core*>& CoresForTask();
   vector<P_thread*>& ThreadsForTask();
-  vector<P_device*>& DevicesForTask();
   vector<BinPair_t>& BinariesForBoard(P_board*);
 
 
@@ -69,7 +68,6 @@ private:
   vector<P_device*> devices;
   void populateCoreVector();
   void populateThreadVector();
-  void populateDeviceVector();
 
   map<P_board*,vector<BinPair_t>*> binaries;
 

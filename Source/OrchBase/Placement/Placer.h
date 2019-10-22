@@ -39,6 +39,7 @@ struct Result;
 #include "HardwareModel.h"
 #include "OSFixes.hpp"
 #include "P_device.h"
+#include "P_devtyp.h"
 #include "P_task.h"
 
 class Placer
@@ -70,6 +71,10 @@ public:
     /* Diagnostics (note the lowercase D). This is not a dumpchan method -
      * we're doing something fundamentally different here. */
     void dump(P_task* task);
+
+    /* Convenient way to get all boxes mapped with a given task in the
+     * engine. */
+    void get_boxes_for_task(P_task* task, std::set<P_box*>* boxes);
 
     /* Low-level placement operation, to be used only be algorithms */
     void link(P_thread* thread, P_device* device);

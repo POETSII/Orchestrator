@@ -261,27 +261,6 @@ void TaskInfo_t::populateThreadVector()
     }
 }
 
-// Populates the "devices" member of this object, if it has not already been
-// populated.
-void TaskInfo_t::populateDeviceVector()
-{
-    P_thread* VirtualThread;
-    P_device* VirtualDevice;
-    if (!devices.size())
-    {
-        populateThreadVector();
-        WALKVECTOR(P_thread*, threads, TH)
-        {
-            VirtualThread = (*TH);
-            WALKLIST(P_device*, VirtualThread->P_devicel, DV)
-            {
-                VirtualDevice = (*DV);
-                devices.push_back(VirtualDevice);
-            }
-        }
-    }
-}
-
 vector<P_core*>& TaskInfo_t::CoresForTask()
 {
     populateCoreVector();
@@ -292,12 +271,6 @@ vector<P_thread*>& TaskInfo_t::ThreadsForTask()
 {
     populateThreadVector();
     return threads;
-}
-
-vector<P_device*>& TaskInfo_t::DevicesForTask()
-{
-    populateDeviceVector();
-    return devices;
 }
 
 vector<BinPair_t>& TaskInfo_t::BinariesForBoard(P_board* board)

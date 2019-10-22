@@ -57,7 +57,7 @@ void OrchBase::ClearTasks()
 // The code is different to the clear-individual-tasks because it's faster
 {
 
-// Walk the hardware, killing all the links into the task structures
+// Walk the hardware, killing all binaries and supervisor links.
 if (pE != 0)
 {
     // Walk the boxes and remove the supervisor links therein.
@@ -82,18 +82,14 @@ if (pE != 0)
                         coreIterator)
                 {
                     coreIterator->second->clear_binaries();
-
-                    // Walk the threads and remove the device links.
-                    WALKMAP(AddressComponent, P_thread*,
-                            coreIterator->second->P_threadm, threadIterator)
-                    {
-                        threadIterator->second->P_devicel.clear();
-                    }
                 }
             }
         }
     }
 }
+
+// Clear placement data
+PlacementReset();
 
 // Kill the supervisors
 WALKMAP(string,P_super *,P_superm,i) delete (*i).second;
@@ -146,22 +142,12 @@ if (p==0) {                            // Paranoia
   Post(904,st);
   return;
 }
-                                       // OK, the task pointer is valid....
-if (p->pD!=0) WALKPDIGRAPHNODES
-  (unsigned,P_device *,unsigned,P_message *,unsigned,P_pin *,p->pD->G,i) {
-  if (i==p->pD->G.NodeEnd()) break;
-  P_device * pd = p->pD->G.NodeData(i);// Device
-                                       // Now disconnect from the hardware
-  P_thread * pt = pd->pP_thread;       // Corresponding thread (if any)
-  if (pt!=0)                           // If there's a thread.....
-    WALKLIST(P_device *,pt->P_devicel,it)      // Look for the backlink...
-      if ((*it)==pd)
-      {
-         pt->P_devicel.erase(it);      // ..and remove it
-         break;
-      }
-}
-                                       // Now disconnect from the declare block
+// OK, the task pointer is valid....
+
+// Remove placement information for this task.
+pPlacer->unplace(p);
+
+// Now disconnect from the declare block
 P_typdcl * pdcl = p->pP_typdcl;        // This is the declare block
 if (pdcl!=0)
 {
@@ -388,7 +374,7 @@ PktC.Src(Urank);
 string taskname = task->first;
 PktC.Put(0, &taskname);                    // first field in the packet is the task name
 PktD.Put(0, &taskname);
-// duplicate P_builder's iteration through the task
+
 P_core* thisCore;  // Core available during iteration.
 P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
 bool isTaskMappedToThisBox;
@@ -414,7 +400,7 @@ WALKMAP(AddressComponent, P_core*,
 {
 thisCore = core->second;
 firstThread = thisCore->P_threadm.begin()->second;
-if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
+if (pPlacer->threadToDevices[firstThread].size() && (pPlacer->threadToDevices[firstThread].front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
 {
     isTaskMappedToThisBox = true;
     // determine the last thread that has a device mapped onto it (recall that all devices within a core service the same task.
@@ -422,7 +408,7 @@ if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par =
     for (thread=thisCore->P_threadm.rbegin();
          thread!=thisCore->P_threadm.rend(); thread++)
     {
-        if (thread->second->P_devicel.size() > 0) break;
+        if (pPlacer->threadToDevices[thread->second].size() > 0) break;
     }
 
     // Add the thread address to coreVec as a device address.
@@ -570,7 +556,10 @@ while (cIdx < Comms.size()) // grab the next available mothership
       ++cIdx;
 }
 PktD.comm = 0; // reset the comm for the recall packet
-// inefficient way to detect which boxes have this task mapped. In future the NameServer will hold this table and we should just be able to look it up.
+// inefficient way to detect which boxes have this task mapped. In future the
+// NameServer will hold this table and we should just be able to look it up.
+//
+// Agree, though we could use the placer for this. Thoughts? --MLV
 WALKVECTOR(P_board*,boxNode->second->P_boardv,board)
 {
 WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
@@ -581,7 +570,7 @@ WALKMAP(AddressComponent, P_core*,
         (*board)->G.NodeData(mailbox)->P_corem, core)
 {
 firstThread = core->second->P_threadm.begin()->second;
-if (firstThread->P_devicel.size() && (firstThread->P_devicel.front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
+if (pPlacer->threadToDevices[firstThread].size() && (pPlacer->threadToDevices[firstThread].front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
 {
    PktD.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
    PktD.Send(currBox->P_rank);        // Send to the target Mothership
@@ -686,7 +675,7 @@ Pkt.Put(0, &taskname);                    // first field in the packet is the ta
 
 // search for boxes to deploy to
 std::set<P_box*> boxesToDeployTo;
-pE->get_boxes_for_task(task->second, &boxesToDeployTo);
+pPlacer->get_boxes_for_task(task->second, &boxesToDeployTo);
 
 // search for mothership processes. For now, we naively ignore whether the
 // mothership matches the box in the hardware graph. This is bad, because:

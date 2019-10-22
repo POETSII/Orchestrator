@@ -213,6 +213,25 @@ void Placer::dump_map(P_task* task, const char* path)
     out.close();  /* We out, yo. */
 }
 
+/* Grabs all boxes associated with a given task in this placer's
+ * engine. Arguments:
+ *
+ * - task: Task to search for.
+ * - boxes: Set to populate with box addresses found. */
+void Placer::get_boxes_for_task(P_task* task, std::set<P_box*>* boxes)
+{
+    boxes->clear();
+
+    /* For each core associated with this task, add its box to the set. */
+    std::set<P_core*>::iterator coreIterator;
+    std::set<P_core*>* setToScan = &(taskToCores[task]);
+    for (coreIterator = setToScan->begin(); coreIterator != setToScan->end();
+         coreIterator++)
+    {
+        boxes->insert((*coreIterator)->parent->parent->parent);  /* Sowi */
+    }
+}
+
 /* Low-level method to create a thread-device binding. Does no checking. */
 void Placer::link(P_thread* thread, P_device* device)
 {

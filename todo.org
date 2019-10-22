@@ -1,15 +1,15 @@
 If you see this file in a PR, let MLV know (it shouldn't be there).
 
 * Check for balloons (<!>)
-* P_builder integration
 * Removals
-  - [ ] Placement.{h,cpp}
-    - [ ] OrchBase::pPlace
-  - [ ] Constraints.{h,cpp}
-  - [ ] OrchBaseLink.cpp
-    - [ ] And the exclusion in the Makefile
-  - [ ] P_thread::P_devicel
+  - [X] Placement.{h,cpp}
+    - [X] OrchBase::pPlace
+  - [X] Constraints.{h,cpp}
+  - [X] OrchBaseLink.cpp
+    - [X] And the exclusion in the Makefile
+  - [X] P_thread::P_devicel
   - [ ] This file
+* Dump pathing
 * Tests
   - Simple bucket fill with trivial application (not testing application
     loading...)
