@@ -2,6 +2,7 @@
 #define __TMothH__H
 
 #include <deque>
+#include <fstream>
 #include "CommonBase.h"
 #include "Debug.h"
 #include "PMsg_p.hpp"

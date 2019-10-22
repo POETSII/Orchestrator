@@ -1047,7 +1047,7 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
     uint32_t srcAddr = msg->header.pinAddr;
     
     // Pointer to the Instrumentation
-    P_Instr_Msg_Pyld_t* instrMsg = static_cast<P_Instr_Msg_Pyld_t*>(msg->payload);
+    P_Instr_Msg_Pyld_t* instrMsg = reinterpret_cast<P_Instr_Msg_Pyld_t*>(msg->payload);
     
     
     TM_InstrMap_t::iterator MSearch = InstrMap.find(srcAddr);
@@ -1069,7 +1069,7 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
         // Check it is open
         if(instr->tFile.fail()) // Check that the file opened
         {   // if it didn't, tell logserver, delete the entry and return
-            par->Post(541, fName.str(), POETS::getSysErrorString(errno));
+            Post(541, fName.str(), POETS::getSysErrorString(errno));
             
             delete instr;
             return 1;
@@ -1077,9 +1077,9 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
         
         // Write the CSV header
         instr->tFile << "ThreadID, cIDX, Time, cycles, deltaT, ";
-        instr->tFile << "RX, OnRX, TX, SupTX, OnTX, Idle, OnIdle";
+        instr->tFile << "RX, OnRX, TX, SupTX, OnTX, Idle, OnIdle, ";
 #if TinselEnablePerfCount == true
-        instr->tFile << "CacheMiss, CacheHit, CacheWB, CPUIdle";
+        instr->tFile << "CacheMiss, CacheHit, CacheWB, CPUIdle, ";
 #endif
         instr->tFile << "RX/s, TX/s, Sup/s" << std::endl;
         
@@ -1107,12 +1107,12 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
         fName << "instrumentation_thread_" << srcAddr << ".csv";
         
         // Re-open on append
-        instr->tFile.open(sst.str(), std::ofstream::out | std::ofstream::app);
+        instr->tFile.open(fName.str(), std::ofstream::out | std::ofstream::app);
         
         // Check it is open
         if(instr->tFile.fail()) // Check that the file opened
         {   // if it didn't, tell logserver, delete the entry and return
-            par->Post(542, fName.str(), POETS::getSysErrorString(errno));
+            Post(542, fName.str(), POETS::getSysErrorString(errno));
             
             delete instr;
             InstrMap.erase(srcAddr);
@@ -1121,7 +1121,7 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
     }
     
     // Write the raw instrumentation
-    instr->tFile << instrMsg->threadID << ", ";         // HW address
+    instr->tFile << srcAddr << ", ";                    // HW address
     instr->tFile << instrMsg->cIDX << ", ";             // Index of the message
     instr->tFile << instr->totalTime << ", ";           // Total Time
     instr->tFile << instrMsg->cycles << ", ";           // Cycle difference
@@ -1149,6 +1149,8 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
     instr->tFile << instrMsg->txCnt/deltaT << ", ";     // TX per second
     instr->tFile << instrMsg->supCnt/deltaT;            // Sup TX per second
     instr->tFile << std::endl;
+    
+    return 0;
 }
 //------------------------------------------------------------------------------
 

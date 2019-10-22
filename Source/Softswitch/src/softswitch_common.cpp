@@ -107,15 +107,19 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
     // Create RX buffer pointer and get Tinsel Slots
     volatile void *recvBuffer = PNULL;
     volatile void *sendBuffer = tinselSlot(P_MSG_SLOT);     // Send slot
+
+#ifdef SOFTSWITCH_INSTRUMENTATION    
+    uint32_t cycles = tinselCycleCount();		// cycle counter is per-core
+    ThreadContext->lastCycles = cycles;         // save initial cycle count
+#endif    
     
     while (!ThreadContext->ctlEnd)
     {
 #ifdef SOFTSWITCH_INSTRUMENTATION
-        uint32_t cycles = tinselCycleCount();		// cycle counter is per-core
+        cycles = tinselCycleCount();
         if((cycles - ThreadContext->lastCycles) > P_INSTR_INTERVAL)
-        {
-          // Trigger a message to supervisor.
-          ThreadContext->pendCycles = 1;
+        {   // Trigger a message to supervisor.
+            ThreadContext->pendCycles = 1;
         }
 #endif        
         
@@ -287,14 +291,14 @@ inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile voi
     uint32_t writebackCount = tinselWritebackCount();
     uint32_t CPUIdleCount = tinselCPUIdleCount();
     
-    pyld->missCount = miscount - ThreadContext->lastmissCount;
+    pyld->missCount = missCount - ThreadContext->lastmissCount;
     pyld->hitCount = hitCount - ThreadContext->lasthitCount;
     pyld->writebackCount = writebackCount - ThreadContext->lastwritebackCount;
     pyld->CPUIdleCount = CPUIdleCount - ThreadContext->lastCPUIdleCount;
 #endif 
     
     // Send it
-    uint32_t len = p_hdr_size() + p_instrmsg_pyld_size
+    uint32_t len = p_hdr_size() + p_instrmsg_pyld_size;
     tinselSetLen((len - 1) >> TinselLogBytesPerFlit);    // Set the message length
     tinselSend(tinselHostId(), send_buf); // Send it
     
