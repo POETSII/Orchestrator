@@ -65,6 +65,10 @@ public:
      * the cores (and threads) that contain devices owned by a certain task. */
     std::map<P_task*, std::set<P_core*>> taskToCores;
 
+    /* Dealing with hard constraints. */
+    bool are_all_hard_constraints_satisfied(P_task* task,
+                                            std::vector<Constraint*>* broken);
+
     /* Fitness evaluation. */
     float compute_fitness(P_task* task);
 
@@ -95,6 +99,7 @@ private:
                                   std::vector<P_device*>* unmapped);
     // <!> Could have a method that verifies that no core pairs have more than
     // one device type placed upon them.
+    // <!> Add are_all_hard_constraints_satisfied to the integrity check.
 
     void populate_result_structures(Result* result, P_task* task, float score);
 

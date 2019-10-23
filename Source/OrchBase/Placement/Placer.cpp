@@ -38,6 +38,47 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
     return output;
 }
 
+/* Returns true if no hard constraints are broken, and false
+ * otherwise. Arguments:
+ *
+ * - task: Task to match constraints against (don't care about constraints that
+ *   only apply to other tasks). If PNULL, checks against all tasks.
+ *
+ * - broken: Vector populated with constraints that are not
+ *   satisfied. Cleared before being populated. */
+bool Placer::are_all_hard_constraints_satisfied(P_task* task,
+    std::vector<Constraint*>* broken)
+{
+    /* Sanity. */
+    broken->clear();
+
+    /* For each constraint... */
+    std::list<Constraint*>::iterator constraintIterator;
+    for (constraintIterator = constraints.begin();
+         constraintIterator != constraints.end(); constraintIterator++)
+    {
+        /* Ignore constraints whose task doesn't match this task. Skip this
+         * check if the task input argument is PNULL. */
+        if (task == PNULL or
+            (*constraintIterator)->task == PNULL or
+            (*constraintIterator)->task == task)
+        {
+            /* Ignore soft constraints. */
+            if ((*constraintIterator)->mandatory)
+            {
+                /* Expensive! */
+                if (not (*constraintIterator)->is_satisfied(this))
+                {
+                    broken->push_back(*constraintIterator);
+                }
+            }
+        }
+
+    }
+
+    return broken->empty();
+}
+
 /* Returns true if all of the devices in a task are mapped to a thread, and
  * false otherwise. Arguments:
  *
