@@ -4,7 +4,11 @@
 /* Defines the logic that constraints the maximum number of devices allowed on
  * any thread in a Placer. */
 
+#include <list>
+#include <map>
+
 #include "Constraint.h"
+#include "HardwareModel.h"
 
 #define MAX_DEVICES_PER_THREAD_DEFAULT 1024
 
