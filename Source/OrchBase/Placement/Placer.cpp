@@ -80,7 +80,31 @@ bool Placer::check_all_devices_mapped(P_task* task,
  * Returns the fitness as a float. */
 float Placer::compute_fitness(P_task* task)
 {
-    return 0; // <!>
+    float fitness = 0;
+
+    /* Iterate through each edge in the task, and add its weight to it. Note
+     * that algorithms are responsible for updating the edge weights. */
+    WALKPDIGRAPHARCS(unsigned, P_device*, unsigned, P_message*, unsigned,
+                     P_pin*, task->pD->G, edgeIt)
+    {
+        fitness += task->pD->G.ArcData(edgeIt)->weight;
+    }
+
+    /* Iterate through each constraint, and add their soft-cost to the
+     * fitness. */
+    std::list<Constraint*>::iterator constraintIterator;
+    for (constraintIterator = constraints.begin();
+         constraintIterator != constraints.end(); constraintIterator++)
+    {
+        /* Ignore constraints whose task doesn't match this task. */
+        if ((*constraintIterator)->task == PNULL or
+            (*constraintIterator)->task == task)
+        {
+            fitness += (*constraintIterator)->penalty;
+        }
+    }
+
+    return fitness;
 }
 
 /* Returns the maximum number of devices permitted to be placed on a thread
