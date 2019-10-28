@@ -40,5 +40,20 @@ bool MaxDevicesPerThread::is_satisfied_delta(Placer* placer,
     return true;  /* Innocent until proven guilty. */
 }
 
-/* <!> Stubs */
-void MaxDevicesPerThread::Dump(FILE*){return;}
+void MaxDevicesPerThread::Dump(FILE* file)
+{
+    std::string prefix = dformat("MaxDevicesPerThread Constraint");
+    DumpUtils::open_breaker(file, prefix);
+
+    /* Properties */
+    if (mandatory) fprintf(file, "This is a hard constraint.\n");
+    else fprintf(file,
+                 "This is a soft constraint with penalty %f.\n", penalty);
+
+    if (task == PNULL) fprintf(file, "Task: None\n");
+    else fprintf(file, "Task: %s\n", task->Name().c_str());
+
+    /* Close breaker and flush the dump. */
+    DumpUtils::close_breaker(file, prefix);
+    fflush(file);
+}

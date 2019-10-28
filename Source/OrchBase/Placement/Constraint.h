@@ -16,7 +16,7 @@ class P_device;
 class P_task;
 class Placer;
 
-class Constraint: public NameBase
+class Constraint: public NameBase, public DumpChan
 {
 public:
     Constraint(constraintCategory category, bool mandatory, float penalty,
