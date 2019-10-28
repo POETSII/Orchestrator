@@ -4,7 +4,11 @@ MaxDevicesPerThread::MaxDevicesPerThread(
     bool mandatory, float penalty, P_task* task, unsigned maximum):
     Constraint(category, mandatory, penalty, task),
     maximum(maximum)
-{}
+{
+    Name(dformat(
+        "Maximum devices per thread must be less than or equal to %d.",
+        maximum));
+}
 
 /* Returns true if there are no threads in the placer that have more than
  * "maximum" devices, and false otherwise. */

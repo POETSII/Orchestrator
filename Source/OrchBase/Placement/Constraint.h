@@ -8,6 +8,7 @@
 
 #include "ConstraintCategory.h"
 #include "DumpUtils.h"
+#include "NameBase.h"
 
 #include <vector>
 
@@ -15,7 +16,7 @@ class P_device;
 class P_task;
 class Placer;
 
-class Constraint
+class Constraint: public NameBase
 {
 public:
     Constraint(constraintCategory category, bool mandatory, float penalty,

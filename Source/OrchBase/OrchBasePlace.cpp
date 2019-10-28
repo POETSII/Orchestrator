@@ -78,7 +78,7 @@ bool OrchBase::PlacementDoit(Cli::Cl_t clause)
                         * commands. */
     }
     catch (AlreadyPlacedException&) {Post(203, taskHandle);}
-    catch (BadIntegrityException&) {Post(204, taskHandle);}
+    catch (BadIntegrityException& e) {Post(204, taskHandle, e.message);}
     catch (NoEngineException&) {Post(205, taskHandle);}
     catch (NoSpaceToPlaceException&) {Post(206, taskHandle);}
     return true;

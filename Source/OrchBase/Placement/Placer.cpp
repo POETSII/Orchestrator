@@ -110,6 +110,63 @@ bool Placer::check_all_devices_mapped(P_task* task,
     return unmapped->empty();
 }
 
+/* Checks the integrity of the placement of a given task. In order, this
+ * method:
+ *
+ * 1) Checks that all devices have been mapped to a thread.
+ *
+ * 2) Checks that no hard constraints have been violated.
+ *
+ * Throws a BadIntegrityException if a check fails. */
+void Placer::check_integrity(P_task* task, std::string algorithmDescription)
+{
+    /* Step 1: Check all devices have been mapped. */
+    std::vector<P_device*> unmappedDevices;
+    if (!check_all_devices_mapped(task, &unmappedDevices))
+    {
+        /* Prepare a nice printout of the devices that weren't mapped. */
+        std::string devicePrint;
+        std::vector<P_device*>::iterator deviceIt;
+        for (deviceIt = unmappedDevices.begin();
+             deviceIt != unmappedDevices.end(); deviceIt++)
+        {
+            devicePrint.append(dformat("\n - %s",
+                                       (*deviceIt)->Name().c_str()));
+        }
+
+        /* Toys out of the pram. */
+        throw BadIntegrityException(dformat(
+            "[ERROR] Use of algorithm '%s' on the task from file '%s' "
+            "resulted in some normal devices not being placed "
+            "correctly. These devices are:%s\n",
+            algorithmDescription.c_str(), task->filename.c_str(),
+            devicePrint.c_str()));
+    }
+
+    /* Step 2: Check for any violated hard constraints. */
+    std::vector<Constraint*> brokenConstraints;
+    if (!are_all_hard_constraints_satisfied(task, &brokenConstraints))
+    {
+        /* Prepare a nice printout of the constraints that weren't
+         * satisfied. */
+        std::string constraintPrint;
+        std::vector<Constraint*>::iterator constraintIt;
+        for (constraintIt = brokenConstraints.begin();
+             constraintIt != brokenConstraints.end(); constraintIt++)
+        {
+            constraintPrint.append(dformat("\n - %s",
+                                           (*constraintIt)->Name().c_str()));
+        }
+
+        /* Toys out of the pram. */
+        throw BadIntegrityException(dformat(
+            "[ERROR] Hard constraints were violated when using algorithm '%s' "
+            "on the task from file '%s'. The violated constraints are:%s\n",
+            algorithmDescription.c_str(), task->filename.c_str(),
+            constraintPrint.c_str()));
+    }
+}
+
 /* Computes the fitness for a task.
  *
  * Fitness is simply the sum of all costs on all edges, along with the sum of
@@ -177,7 +234,6 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
             }
         }
     }
-
     return maximumSoFar;
 }
 
@@ -329,52 +385,30 @@ float Placer::place(P_task* task, std::string algorithmDescription)
         "in the placer. If you're running this from OrchBase, how did you get "
         "here?");
 
-    /* Grab an algorithm (exception will propagate). */
+    /* Grab an algorithm, may throw. */
     Algorithm* algorithm = algorithm_from_string(algorithmDescription);
 
-    /* Don't do it if the task has already been placed (by address). */
+    /* Complain if the task has already been placed (by memory address). */
     if (placedTasks.find(task) != placedTasks.end())
         throw AlreadyPlacedException(dformat(
             "[ERROR] Task from file '%s' has already been placed.",
             task->filename.c_str()));
 
-    /* Run it. */
+    /* Run the algorithm on the task. */
     float score = algorithm->do_it(task);
 
-    /* Check integrity. */
-    std::vector<P_device*> unmappedDevices;
-    if (check_all_devices_mapped(task, &unmappedDevices))
-    {
-        /* Update task-keyed maps. */
-        placedTasks[task] = algorithm;
-        update_task_to_cores_map(task);
+    /* Check placement integrity, throwing if there's a problem. */
+    check_integrity(task, algorithmDescription);
 
-        /* Update result structure for this algorithm object. */
-        populate_result_structures(&algorithm->result, task, score);
+    /* Update task-keyed maps. */
+    placedTasks[task] = algorithm;
+    update_task_to_cores_map(task);
 
-        /* Tell the task it's been placed. */
-        task->LinkFlag();
-    }
-    else
-    {
-        /* Prepare a nice printout of the devices that weren't mapped. */
-        std::string devicePrint;
-        std::vector<P_device*>::iterator deviceIt;
-        for (deviceIt = unmappedDevices.begin();
-             deviceIt != unmappedDevices.end(); deviceIt++)
-        {
-            devicePrint.append(dformat("\n - %s",
-                                       (*deviceIt)->Name().c_str()));
-        }
+    /* Update result structure for this algorithm object. */
+    populate_result_structures(&algorithm->result, task, score);
 
-        /* Toys out of the pram. */
-        throw BadIntegrityException(dformat(
-            "[ERROR] Use of algorithm '%s' on the task from file '%s' "
-            "resulted in some normal devices not being placed "
-            "correctly. These devices are:%s\n",
-            algorithmDescription.c_str(), task->filename.c_str(),
-            devicePrint.c_str()));
-    }
+    /* Tell the task it's been placed. */
+    task->LinkFlag();
 
     return score;
 }
