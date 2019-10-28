@@ -81,7 +81,7 @@
 201(W) : "Unable to place task '%s' - no task has been loaded with that name."
 202(I) : "Task '%s' placed successfully."
 203(W) : "Unable to place task '%s' - a task with that name has already been placed. If you are trying to re-place it, instead unplace this task first."
-204(W) : "Unable to place task '%s' - we tried, but an integrity check failed. You should shout at MLV (or whoever wrote the algorithm you're trying to use). In the short term, consider trying a different algorithm. Details: %s"
+204(W) : "Unable to place task '%s' - we tried, but an integrity check failed. You should shout at MLV (or whoever wrote the algorithm you're trying to use). In the short term, consider resetting the placer, and trying a different algorithm. Details: %s"
 205(W) : "Unable to place task '%s' - no engine has been loaded. You should not have been able to reach this error message (200 should have been used instead). Please let MLV know you've broken his logic (and give yourself a pat on the back)."
 206(W) : "Unable to place task '%s' - not enough space in the hardware model."
 207(I) : "Task '%s' is not placed (idempotently)."
