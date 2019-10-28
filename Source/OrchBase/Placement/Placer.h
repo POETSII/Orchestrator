@@ -67,12 +67,13 @@ public:
 
     /* Check integrity of a placed task. */
     void check_integrity(P_task* task, std::string algorithmDescription);
+    bool are_all_core_pairs_device_locked(P_task* task,
+        std::map<std::pair<P_core*, P_core*>,
+                 std::set<P_devtyp*>>* badCoresToDeviceTypes);
     bool are_all_devices_mapped(P_task* task,
                                 std::vector<P_device*>* unmapped);
     bool are_all_hard_constraints_satisfied(P_task* task,
                                             std::vector<Constraint*>* broken);
-    // <!> Could have a method that verifies that no core pairs have more than
-    // one device type placed upon them.
 
     /* Fitness evaluation. */
     float compute_fitness(P_task* task);

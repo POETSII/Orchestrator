@@ -399,7 +399,7 @@ bool HardwareFileReader::d3_define_board_fields_from_section(
          * ignore the definition here. */
         else if (variable == "type")
 		{
-			
+
 		}
     }
 
@@ -1179,7 +1179,7 @@ bool HardwareFileReader::d3_populate_validate_engine_board_and_below(
          * ignore the definition here. */
         else if (variable == "type")
 		{
-			
+
 		}
     }
 
@@ -1638,7 +1638,7 @@ bool HardwareFileReader::d3_populate_validate_engine_box(P_engine* engine)
              * ignore the definition here. */
             else if (variable == "type")
 			{
-				
+
 			}
 
             /* This continue is here to reduce the amount of indentation for

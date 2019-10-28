@@ -44,6 +44,111 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
     return output;
 }
 
+/* Returns true if all core pairs devices of one (or zero) type mapped to them,
+ * and false otherwise. Arguments:
+ *
+ * - task: Task to scan for devices.
+ *
+ * - badCoresToDeviceTypes: Map of cores to device types, where the vectors are
+ *   more than one element in length. Cleared before being populated. */
+bool Placer::are_all_core_pairs_device_locked(P_task* task,
+    std::map<std::pair<P_core*, P_core*>,
+             std::set<P_devtyp*>>* badCoresToDeviceTypes)
+{
+    /* Sanity. */
+    badCoresToDeviceTypes->clear();
+
+    /* Build a map of cores to devices, by iterating through all placed
+     * threads. */
+    std::map<P_core*, std::set<P_device*>> coreToDevices;
+    std::map<P_thread*, std::list<P_device*>>::iterator threadDevsIt;
+    std::list<P_device*>::iterator deviceIt;
+
+    for (threadDevsIt = threadToDevices.begin();
+         threadDevsIt != threadToDevices.end(); threadDevsIt++)
+    {
+        for (deviceIt = threadDevsIt->second.begin();
+             deviceIt != threadDevsIt->second.end(); deviceIt++)
+        {
+            coreToDevices[threadDevsIt->first->parent].insert(*deviceIt);
+        }
+    }
+
+    /* For each core pair, build a set of device types for the devices that
+     * inhabit that core pair, and store it in the "bad" map. Then, if the size
+     * of that set less than two, remove it. (This means we effectively check
+     * each pair twice, but this beats the time required to search for the
+     * corresponding pair as the number of cores grows.) */
+    std::map<P_core*, std::set<P_device*>>::iterator coreIt;
+    std::map<AddressComponent, P_thread*>::iterator threadIt;
+    P_core* firstCore;
+    P_core* secondCore;
+
+    /* Iterate over each core found from the loop above. */
+    for (coreIt = coreToDevices.begin(); coreIt != coreToDevices.end();
+         coreIt++)
+    {
+        firstCore = coreIt->first;
+        secondCore = firstCore->pair;
+
+        std::pair<P_core*, P_core*> corePair =
+            std::make_pair(firstCore, secondCore);
+        std::set<P_devtyp*>* devTypSet = &((*badCoresToDeviceTypes)[corePair]);
+
+        /* From each thread in that core... */
+        for (threadIt = firstCore->P_threadm.begin();
+             threadIt != firstCore->P_threadm.end(); threadIt++)
+        {
+            std::list<P_device*>* devList =
+                &(threadToDevices[threadIt->second]);
+
+            /* ...from each device mapped to that thread... */
+            for (deviceIt = devList->begin(); deviceIt != devList->end();
+                 deviceIt++)
+            {
+                /* ...get its device type. */
+                devTypSet->insert((*deviceIt)->pP_devtyp);
+            }
+        }
+
+        /* Remove the entry from the map if it is of size 1 or less. */
+        if (devTypSet->size() < 2) badCoresToDeviceTypes->erase(corePair);
+    }
+
+    return badCoresToDeviceTypes->empty();
+}
+
+/* Returns true if all of the devices in a task are mapped to a thread, and
+ * false otherwise. Arguments:
+ *
+ * - task: Task to scan for devices.
+ *
+ * - unmapped: Vector populated with unmapped devices (for further
+ *   diagnosis). Cleared before being populated. */
+bool Placer::are_all_devices_mapped(P_task* task,
+                                    std::vector<P_device*>* unmapped)
+{
+    /* Sanity. */
+    unmapped->clear();
+
+    /* Iterate through each device in the task. */
+    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
+                      P_pin*, task->pD->G, deviceIterator)
+    {
+        P_device* device = task->pD->G.NodeData(deviceIterator);
+
+        /* Ignore if it's a supervisor device (we don't map those). */
+        if (!(device->pP_devtyp->pOnRTS)) continue;
+
+        /* If it's mapped, we move on. If not, we add it to unmapped. */
+        std::map<P_device*, P_thread*>::iterator deviceFinder;
+        deviceFinder = deviceToThread.find(device);
+        if (deviceFinder == deviceToThread.end()) unmapped->push_back(device);
+    }
+
+    return unmapped->empty();
+}
+
 /* Returns true if no hard constraints are broken, and false
  * otherwise. Arguments:
  *
@@ -85,43 +190,14 @@ bool Placer::are_all_hard_constraints_satisfied(P_task* task,
     return broken->empty();
 }
 
-/* Returns true if all of the devices in a task are mapped to a thread, and
- * false otherwise. Arguments:
- *
- * - task: Task to scan for devices.
- *
- * - unmapped: Vector populated with unmapped devices (for further
- *   diagnosis). Cleared before being populated. */
-bool Placer::are_all_devices_mapped(P_task* task,
-                                    std::vector<P_device*>* unmapped)
-{
-    /* Sanity. */
-    unmapped->clear();
-
-    /* Iterate through each device in the task. */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
-    {
-        P_device* device = task->pD->G.NodeData(deviceIterator);
-
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pP_devtyp->pOnRTS)) continue;
-
-        /* If it's mapped, we move on. If not, we add it to unmapped. */
-        std::map<P_device*, P_thread*>::iterator deviceFinder;
-        deviceFinder = deviceToThread.find(device);
-        if (deviceFinder == deviceToThread.end()) unmapped->push_back(device);
-    }
-
-    return unmapped->empty();
-}
-
 /* Checks the integrity of the placement of a given task. In order, this
  * method:
  *
  * 1) Checks that all devices have been mapped to a thread.
  *
  * 2) Checks that no hard constraints have been violated.
+ *
+ * 3) Checks that all core pairs have devices of only one (or zero) types.
  *
  * Throws a BadIntegrityException if a check fails. */
 void Placer::check_integrity(P_task* task, std::string algorithmDescription)
@@ -170,6 +246,51 @@ void Placer::check_integrity(P_task* task, std::string algorithmDescription)
             "on the task from file '%s'. The violated constraints are:%s\n",
             algorithmDescription.c_str(), task->filename.c_str(),
             constraintPrint.c_str()));
+    }
+
+    /* Step 3: Check device types. */
+    std::map<std::pair<P_core*, P_core*>,
+             std::set<P_devtyp*>> badCoresToDeviceTypes;
+    if (!are_all_core_pairs_device_locked(task, &badCoresToDeviceTypes))
+    {
+        /* Prepare a nice printout of core pairs with multiple device types. */
+        std::string corePrint;
+        std::map<std::pair<P_core*, P_core*>,
+                 std::set<P_devtyp*>>::iterator badCoreIt;
+        std::set<P_devtyp*>::iterator devTypIt;
+
+        /* For each entry in the map... */
+        for (badCoreIt = badCoresToDeviceTypes.begin();
+             badCoreIt != badCoresToDeviceTypes.end(); badCoreIt++)
+        {
+            /* ...we write a line. */
+            corePrint.append(
+                dformat("\n - '%s' and '%s':",
+                        badCoreIt->first.first->FullName().c_str(),
+                        badCoreIt->first.second->FullName().c_str()));
+
+            /* For each device type associated with that core pair... */
+            for (devTypIt = badCoreIt->second.begin();
+                 devTypIt != badCoreIt->second.end(); devTypIt++)
+            {
+                /* We write an entry after the comma, separating device types
+                 * with a comma. */
+                if (devTypIt != badCoreIt->second.begin())
+                {
+                    corePrint.append(",");
+                }
+                corePrint.append(dformat(" '%s'",
+                                         (*devTypIt)->Name().c_str()));
+            }
+        }
+
+        /* Toys out of the pram. */
+        throw BadIntegrityException(dformat(
+            "[ERROR] Some core pairs have multiple device types associated "
+            "with them when using algorithm '%s' on the task from file '%s'. "
+            "The core pairs and their device types are:%s\n",
+            algorithmDescription.c_str(), task->filename.c_str(),
+            corePrint.c_str()));
     }
 }
 
