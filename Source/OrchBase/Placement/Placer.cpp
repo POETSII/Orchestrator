@@ -92,8 +92,8 @@ bool Placer::are_all_hard_constraints_satisfied(P_task* task,
  *
  * - unmapped: Vector populated with unmapped devices (for further
  *   diagnosis). Cleared before being populated. */
-bool Placer::check_all_devices_mapped(P_task* task,
-                                      std::vector<P_device*>* unmapped)
+bool Placer::are_all_devices_mapped(P_task* task,
+                                    std::vector<P_device*>* unmapped)
 {
     /* Sanity. */
     unmapped->clear();
@@ -128,7 +128,7 @@ void Placer::check_integrity(P_task* task, std::string algorithmDescription)
 {
     /* Step 1: Check all devices have been mapped. */
     std::vector<P_device*> unmappedDevices;
-    if (!check_all_devices_mapped(task, &unmappedDevices))
+    if (!are_all_devices_mapped(task, &unmappedDevices))
     {
         /* Prepare a nice printout of the devices that weren't mapped. */
         std::string devicePrint;
