@@ -49,6 +49,10 @@ public:
     unsigned int instructionMemory;
     void clear_binaries();
 
+    /* Cores are joined by implicit pairs - a pair of cores shares instruction
+     * space. */
+    P_core* pair;
+
     float costCoreThread;
     float costThreadThread;
 

@@ -26,22 +26,35 @@ bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
     sectionName = "core";
 
     /* Create all of the cores, and add them to the mailbox. Don't validate the
-     * address component (but still catch if we go out of bounds). */
-    P_core* tmpCore;
+     * address component (but still catch if we go out of bounds).
+     *
+     * Cores are created in pairs */
+    P_core* firstCore;
+    P_core* secondCore;
     AddressComponent coreId;
-    for (coreId = 0; coreId < coreQuantity; coreId++)
+    for (coreId = 0; coreId < coreQuantity; coreId+=2)
     {
-        tmpCore = new P_core(dformat(
-                             "C%0*u", how_many_digits(coreQuantity), coreId));
+        /* Create */
+        firstCore = new P_core(dformat("C%0*u", how_many_digits(coreQuantity),
+                                       coreId));
+        secondCore = new P_core(dformat("C%0*u", how_many_digits(coreQuantity),
+                                        coreId + 1));
+
+        /* Contain */
         try
         {
-            mailbox->contain(coreId, tmpCore);
+            mailbox->contain(coreId, firstCore);
+            mailbox->contain(coreId + 1, secondCore);
         }
         catch (OrchestratorException &e)
         {
             errors.push_back(e.message.c_str());
             anyErrors = true;
         }
+
+        /* Conjoin */
+        firstCore->pair = secondCore;
+        secondCore->pair = firstCore;
     }
 
     /* Valid fields for the core section. All fields are mandatory. */
