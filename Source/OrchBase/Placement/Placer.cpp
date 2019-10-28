@@ -9,14 +9,12 @@ Placer::Placer(P_engine* engine):engine(engine){}
 Placer::~Placer()
 {
     /* Free memory for each constraint and algorithm. */
-    std::list<Constraint*>::iterator constraintIterator;
-    std::map<P_task*, Algorithm*>::iterator algorithmIterator;
-    for (constraintIterator = constraints.begin();
-         constraintIterator != constraints.end();
-         delete (*constraintIterator)++);
-    for (algorithmIterator = placedTasks.begin();
-         algorithmIterator != placedTasks.end();
-         delete algorithmIterator++->second);
+    std::list<Constraint*>::iterator constraintIt;
+    std::map<P_task*, Algorithm*>::iterator algorithmIt;
+    for (constraintIt = constraints.begin(); constraintIt != constraints.end();
+         constraintIt++) delete (*constraintIt);
+    for (algorithmIt = placedTasks.begin(); algorithmIt != placedTasks.end();
+         algorithmIt++) delete algorithmIt->second;
 }
 
 /* Given a string and a set of arguments, creates an instance of a "derived
