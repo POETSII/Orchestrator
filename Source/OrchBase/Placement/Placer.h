@@ -17,6 +17,7 @@
 #include <vector>
 
 class Algorithm;
+class CostCache;
 struct Result;
 
 /* Algorithms! */
@@ -35,6 +36,7 @@ struct Result;
 #include "NoTaskToDumpException.h"
 
 /* And everything else. */
+#include "CostCache.h"
 #include "DumpUtils.h"
 #include "HardwareModel.h"
 #include "OSFixes.hpp"
@@ -49,6 +51,7 @@ public:
     Placer(P_engine* engine);
     ~Placer();
     P_engine* engine;
+    CostCache* cache;
 
     /* Placement information for the entire system is held in these maps. */
     std::map<P_device*, P_thread*> deviceToThread;

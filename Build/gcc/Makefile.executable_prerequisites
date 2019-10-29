@@ -82,7 +82,8 @@ HARDWARE_FILE_READER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileReader/Hardwar
 # Sources used by placement
 PLACEMENT_SOURCES = $(SOURCE_DIR)/OrchBase/Placement/Placer.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/BucketFilling.cpp \
-                    $(SOURCE_DIR)/OrchBase/Placement/Constraints/MaxDevicesPerThread.cpp
+                    $(SOURCE_DIR)/OrchBase/Placement/Constraints/MaxDevicesPerThread.cpp \
+                    $(SOURCE_DIR)/Common/HardwareModel/CostCache.cpp
 
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh

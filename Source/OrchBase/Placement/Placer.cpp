@@ -6,6 +6,8 @@ Placer::Placer(){engine = PNULL;}
 
 Placer::Placer(P_engine* engine):engine(engine)
 {
+    cache = new CostCache(engine);
+
     /* Psst, do you want to add a constraint to the placer in a hard-coded
      * manner?  You're in the right place. Just define your constraint
      * here... see the constructor in Constraints.h for what the arguments
@@ -16,6 +18,8 @@ Placer::Placer(P_engine* engine):engine(engine)
 
 Placer::~Placer()
 {
+    delete cache;
+
     /* Free memory for each constraint and algorithm. */
     std::list<Constraint*>::iterator constraintIt;
     std::map<P_task*, Algorithm*>::iterator algorithmIt;
@@ -386,11 +390,16 @@ void Placer::dump(P_task* task)
                                    task->Name().c_str(), timeBuf);
     std::string mapPath = dformat("placement_task_to_hardware_%s_%s.txt",
                                   task->Name().c_str(), timeBuf);
+    std::string cachePath = dformat("placement_edge_cache_%s.txt", timeBuf);
 
     /* Call subordinate dumping methods. */
     dump_costs(task, costPath.c_str());
     dump_diagnostics(task, diagPath.c_str());
     dump_map(task, mapPath.c_str());
+
+    FILE* cacheFile = fopen(cachePath.c_str(), "w");
+    cache->Dump(cacheFile);
+    fclose(cacheFile);
 }
 
 /* Dumps the cost of each edge for a task. */
