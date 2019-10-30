@@ -30,7 +30,7 @@ public:
     void build_cache();
     float compute_cost(P_thread*, P_thread*);
     void get_path(P_mailbox*, P_mailbox*, std::vector<P_mailbox*>*);
-    void populate_combined_graph(CombinedGraph*);
+    void populate_combined_graph(CombinedGraph*, std::ofstream* = PNULL);
     void Dump(FILE* = stdout);
 };
 

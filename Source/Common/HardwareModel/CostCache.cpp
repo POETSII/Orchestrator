@@ -13,6 +13,15 @@ void CostCache::build_cache()
     CombinedGraph combinedGraph;
     populate_combined_graph(&combinedGraph);
 
+    /* Optionally, we can dump bits of the graph as we go, but the file is
+     * redundant with the cache dump. It's pretty useful for debugging
+     * though. -- Past Mark
+    std::ofstream ofs;
+    ofs.open("graph_detail.txt", std::ofstream::out | std::ofstream::app);
+    populate_combined_graph(&combinedGraph, &ofs);
+    ofs.close();
+    */
+
     /* Initialise members (we may be called twice). All path lengths are
      * initialised to a big float, and all 'next-nodes' are initialised to a
      * special 'uninitialised' value. */
@@ -169,16 +178,27 @@ void CostCache::get_path(P_mailbox* from, P_mailbox* to,
 }
 
 /* Defines a combined graph from the engine's board graph, and each board's
- * mailbox graph, to aid with cache computation.
+ * mailbox graph, to aid with cache computation. Arguments:
+ *
+ * - graph: graph to populate (is cleared).
+ *
+ * - stream: ofstream to write debugging output to. If PNULL, no output is
+ *   written.
  *
  * This is going to change significantly when mailbox-ports are introduced. */
-void CostCache::populate_combined_graph(CombinedGraph* graph)
+void CostCache::populate_combined_graph(CombinedGraph* graph,
+                                        std::ofstream* stream)
 {
     /* We don't care about these. */
     unsigned mailboxKey = 0;
     unsigned edgeKey = 0;
     unsigned portKey = 0;
     unsigned portValue = 0;
+
+    /* This maps mailboxes to their keys in the combined graph. Note that the
+     * keys held by this map are not related to the keys in the engine
+     * graph. */
+    std::map<P_mailbox*, unsigned> mailboxToKey;
 
     /* Iterate through each board, and translate its nodes and edges into the
      * combined graph. This will result a number of component subgraphs equal
@@ -193,7 +213,17 @@ void CostCache::populate_combined_graph(CombinedGraph* graph)
                           unsigned, P_link*,
                           unsigned, P_port*,
                           boardNode->second.data->G, mailboxNode)
+        {
+            mailboxToKey[mailboxNode->second.data] = mailboxKey;
             graph->InsertNode(mailboxKey++, mailboxNode->second.data);
+
+            /* Logging, if enabled. */
+            if (stream != PNULL)
+                *stream << "Adding mailbox "
+                        << mailboxNode->second.data->FullName().c_str()
+                        << " to key "
+                        << mailboxKey - 1 << "\n.";
+        }
 
         /* Add each edge. */
         WALKPDIGRAPHARCS(AddressComponent, P_mailbox*,
@@ -201,13 +231,29 @@ void CostCache::populate_combined_graph(CombinedGraph* graph)
                          unsigned, P_port*,
                          boardNode->second.data->G, edge)
         {
-            /* Forward and not reverse - because the graph bidirectional. */
+            /* Forward and not reverse - because the graph is bidirectional. */
             graph->InsertArc(edgeKey++,
                              edge->second.fr_n->first,
                              edge->second.to_n->first,
                              edge->second.data->weight,
                              portKey, portValue,
                              portKey + 1, portValue + 1);
+
+            /* Logging, if enabled. */
+            if (stream != PNULL)
+                *stream << "Joining mailbox "
+                        << edge->second.fr_n->second.data->FullName().c_str()
+                        << " (key="
+                        << edge->second.fr_n->first
+                        << ") with mailbox "
+                        << edge->second.to_n->second.data->FullName().c_str()
+                        << " (key="
+                        << edge->second.to_n->first
+                        << ") with cost "
+                        << edge->second.data->weight
+                        << " and edge key "
+                        << edgeKey - 1
+                        << ".\n";
 
             portKey += 2;
             portValue += 2;
@@ -242,13 +288,33 @@ void CostCache::populate_combined_graph(CombinedGraph* graph)
                               mailboxToNode)
             {
                 /* Join them up. */
-                graph->InsertArc(edgeKey++,
-                    mailboxFromNode->first, mailboxToNode->first,
+                float cost =
                     boardEdge->second.fr_n->second.data->costBoardMailbox +
-                    boardEdge->second.data->weight,
-                    portKey, portValue, portKey + 1, portValue + 1);
+                    boardEdge->second.data->weight;
+
+                graph->InsertArc(edgeKey++,
+                    mailboxToKey[mailboxFromNode->second.data],
+                    mailboxToKey[mailboxToNode->second.data],
+                    cost, portKey, portValue, portKey + 1, portValue + 1);
+
                 portKey += 2;
                 portValue += 2;
+
+                /* Logging, if enabled. */
+                if (stream != PNULL)
+                    *stream << "Joining mailbox "
+                            << mailboxFromNode->second.data->FullName().c_str()
+                            << " (key="
+                            << mailboxToKey[mailboxFromNode->second.data]
+                            << ") with mailbox "
+                            << mailboxToNode->second.data->FullName().c_str()
+                            << " (key="
+                            << mailboxToKey[mailboxToNode->second.data]
+                            << ") with cost "
+                            << cost
+                            << " and edge key "
+                            << edgeKey - 1
+                            << ".\n";
             }
         }
     }
