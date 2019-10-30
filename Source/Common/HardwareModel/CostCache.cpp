@@ -189,7 +189,10 @@ void CostCache::get_path(P_mailbox* from, P_mailbox* to,
 void CostCache::populate_combined_graph(CombinedGraph* graph,
                                         std::ofstream* stream)
 {
-    /* We don't care about these. */
+    graph->Clear();
+
+    /* We don't care about the value of these - as long as they are distinct
+     * for every node/vertex/pin. */
     unsigned mailboxKey = 0;
     unsigned edgeKey = 0;
     unsigned portKey = 0;
