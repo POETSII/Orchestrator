@@ -13,10 +13,13 @@
 
 //------------------------------------------------------------------------------
 // Tinsel Slot Allocations.
-// Slot 0 is used to send "normal" messages. Slot 1 is used for log messages.
+// Slot 0 is used to send "normal" messages.
+// Slot 1 is used for supervisor messages (e.g. instrumentation)
+// Slot 2 is used for log messages.
 // Remaining slots are used for receive slots.
 //------------------------------------------------------------------------------
 #define P_MSG_SLOT      0
+#define P_SUPMSG_SLOT   1
 #define P_LOGMSG_SLOT   2
 #define P_RXSLOT_START  3
 //------------------------------------------------------------------------------

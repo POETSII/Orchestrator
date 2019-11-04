@@ -94,6 +94,8 @@
 #define P_ADDR_BROADCAST            0xFFFF
 
 
+#define P_CNC_MAX_USER              0xEF
+
 #define P_CNC_INSTR                 0xFA
 #define P_CNC_LOG                   0xFB
 #define P_CNC_BARRIER               0xFC

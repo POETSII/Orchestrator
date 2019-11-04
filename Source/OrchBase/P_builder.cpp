@@ -855,6 +855,8 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   // Form the common handler preamble (deviceProperties & deviceState)
   //============================================================================
   stringstream handlerPreamble("");
+  stringstream handlerPreambleS("");        // "normal" state
+  stringstream handlerPreambleCS("");       // Const-protected state
   handlerPreamble << "{\n";
   
   if (c_devtyp->par->pPropsD)
@@ -863,12 +865,12 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     handlerPreamble << "OS_ATTRIBUTE_UNUSED= ";
     handlerPreamble << "static_cast<const global_props_t*>";
     handlerPreamble << "(graphProps);\n";
-    handlerPreamble << "OS_PRAGMA_UNUSED(graphProperties)\n";
+    handlerPreamble << "   OS_PRAGMA_UNUSED(graphProperties)\n";
   }
   handlerPreamble << "   PDeviceInstance* deviceInstance ";
   handlerPreamble << "OS_ATTRIBUTE_UNUSED= ";
   handlerPreamble << "static_cast<PDeviceInstance*>(device);\n";
-  handlerPreamble << "OS_PRAGMA_UNUSED(deviceInstance)\n";
+  handlerPreamble << "   OS_PRAGMA_UNUSED(deviceInstance)\n";
   
   // deviceProperties (with unused variable handling)
   if (c_devtyp->pPropsD)
@@ -883,7 +885,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     handlerPreamble << "static_cast<const devtyp_";
     handlerPreamble << devtyp_name;
     handlerPreamble << "_props_t*>(deviceInstance->properties);\n";
-    handlerPreamble << "OS_PRAGMA_UNUSED(deviceProperties)\n";
+    handlerPreamble << "   OS_PRAGMA_UNUSED(deviceProperties)\n";
   }
   
   // deviceState (with unused variable handling)
@@ -893,13 +895,24 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     vars_h << string(c_devtyp->pStateD->c_src).erase(c_devtyp->pStateD->c_src.length()-2).c_str();
     vars_h << " devtyp_" << devtyp_name << "_state_t;\n\n";
     
-    handlerPreamble << "   devtyp_" << devtyp_name;
-    handlerPreamble << "_state_t* deviceState ";
-    handlerPreamble << "OS_ATTRIBUTE_UNUSED= ";
-    handlerPreamble << "static_cast<devtyp_";
-    handlerPreamble << devtyp_name;
-    handlerPreamble << "_state_t*>(deviceInstance->state);\n";
-    handlerPreamble << "OS_PRAGMA_UNUSED(deviceState)\n";
+    // Const-protected state
+    handlerPreambleCS << "   const devtyp_" << devtyp_name;
+    handlerPreambleCS << "   devtyp_" << devtyp_name;
+    handlerPreambleCS << "_state_t* deviceState ";
+    handlerPreambleCS << "OS_ATTRIBUTE_UNUSED= ";
+    handlerPreambleCS << "static_cast<devtyp_";
+    handlerPreambleCS << devtyp_name;
+    handlerPreambleCS << "_state_t*>(deviceInstance->state);\n";
+    handlerPreambleCS << "   OS_PRAGMA_UNUSED(deviceState)\n";
+    
+    // "normal" state
+    handlerPreambleS << "   devtyp_" << devtyp_name;
+    handlerPreambleS << "_state_t* deviceState ";
+    handlerPreambleS << "OS_ATTRIBUTE_UNUSED= ";
+    handlerPreambleS << "static_cast<devtyp_";
+    handlerPreambleS << devtyp_name;
+    handlerPreambleS << "_state_t*>(deviceInstance->state);\n";
+    handlerPreambleS << "   OS_PRAGMA_UNUSED(deviceState)\n";
   }
   handlers_cpp << "\n";
   //============================================================================
@@ -917,6 +930,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   handlers_cpp << "_RTS_handler (const void* graphProps, ";
   handlers_cpp << "void* device, uint32_t* readyToSend)\n";
   handlers_cpp << handlerPreamble.str();
+  handlers_cpp << handlerPreambleCS.str();
   handlers_cpp << c_devtyp->pOnRTS->c_src << "\n";
   handlers_cpp << "   return *readyToSend;\n"; // we assume here the return value is intended to be an RTS bitmap.
   handlers_cpp << "}\n\n";
@@ -929,11 +943,13 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   handlers_cpp << "uint32_t devtyp_" << devtyp_name;
   handlers_cpp << "_OnIdle_handler (const void* graphProps, ";
   handlers_cpp << "void* device)\n";
-  handlers_cpp << handlerPreamble.str() << "\n";
+  handlers_cpp << handlerPreamble.str();
+  handlers_cpp << handlerPreambleS.str() << "\n";
   
   if (c_devtyp->pOnIdle) // insert the OnIdle handler if there is one
   {
-    handlers_cpp << c_devtyp->pOnIdle->c_src << "\n"; 
+    handlers_cpp << c_devtyp->pOnIdle->c_src << "\n";
+    handlers_cpp << "    return 1;\n";  // Default return 1
   }
   else handlers_cpp << "   return 0;\n"; // or a stub if not
   handlers_cpp << "}\n\n";
@@ -968,7 +984,8 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     handlers_cpp << "_InPin_" << Ipin_name;
     handlers_cpp << "_Recv_handler (const void* graphProps, ";
     handlers_cpp << "void* device, void* edge, const void* msg)\n";
-    handlers_cpp << handlerPreamble.str().c_str();
+    handlers_cpp << handlerPreamble.str();
+    handlers_cpp << handlerPreambleS.str();
     handlers_cpp << "   inEdge_t* edgeInstance ";
     handlers_cpp << "OS_ATTRIBUTE_UNUSED= ";
     handlers_cpp << "static_cast<inEdge_t*>(edge);\n";
@@ -1054,6 +1071,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     handlers_cpp << "void* device, void* msg)\n";
     
     handlers_cpp << handlerPreamble.str();
+    handlers_cpp << handlerPreambleS.str();
     
     if ((*O_pin)->pMsg->pPropsD)
     {
@@ -1158,7 +1176,6 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << "ThreadCtxt_t Thread_" << thread_num << "_Context ";              // Set the ThreadContext name
   vars_cpp << "__attribute__ ((section (\".thr" << thread_num << "_base\"))) "; // Set the target memory area
   vars_cpp << "= {";
-  vars_cpp << "&Thread_" << thread_num << "_Context,";              // VirtualAddr
   vars_cpp << "1,";                                                 // numDevTyps        
   vars_cpp << "Thread_" << thread_num << "_DeviceTypes,";           // devTyps
   vars_cpp << thread->P_devicel.size() <<  ",";                     // numDevInsts

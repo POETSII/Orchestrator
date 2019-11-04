@@ -76,15 +76,15 @@ typedef struct POutputType
 
 typedef struct PDeviceType
 {
-    RTS_handler_t     RTS_Handler;
-    OnIdle_handler_t  OnIdle_Handler;
-    OnCtl_handler_t   OnCtl_Handler;
-    uint32_t          sz_props;
-    uint32_t          sz_state;
-    uint32_t          numInputTypes;
-    in_pintyp_t*      inputTypes;
-    uint32_t          numOutputTypes;
-    out_pintyp_t*     outputTypes;
+    RTS_handler_t     RTS_Handler;      // Function pointer to the device type’s RTS handler
+    OnIdle_handler_t  OnIdle_Handler;   // Function pointer to the device type’s OnIdle handler
+    OnCtl_handler_t   OnCtl_Handler;    // Function pointer to the device type’s OnCtl handler
+    uint32_t          sz_props;         // Size in bytes of the device type’s properties
+    uint32_t          sz_state;         // Size in bytes of the device type’s state
+    uint32_t          numInputTypes;    // Number of input pin types the device type has
+    in_pintyp_t*      inputTypes;       // Array of input pin types. Devices pins point to this
+    uint32_t          numOutputTypes;   // Number of output pin types the device type has
+    out_pintyp_t*     outputTypes;      // Array of output pin types. Devices pins point to this
 } devTyp_t;
 
 // this maps output edges by target (device, pin, edge_index). While
@@ -133,20 +133,19 @@ typedef struct PInputPin
   
 typedef struct PDeviceInstance
 {
-    PThreadContext*                     thread;
-    const devTyp_t*                     devType;
-    uint32_t                            deviceID;
-    uint32_t                            numInputs;
-    inPin_t*                            inputPins;
-    uint32_t                            numOutputs;
-    outPin_t*                           outputPins;
-    const void*                         properties;
-    void*                               state;
+    PThreadContext*    thread;          // Back pointer to the ThreadContext
+    const devTyp_t*    devType;         // Pointer to the Device Instance
+    uint32_t           deviceID;        // Thread-unique device ID
+    uint32_t           numInputs;       // Number of inputs the device has
+    inPin_t*           inputPins;       // Pointer to the inputPin array
+    uint32_t           numOutputs;      // Number of outputs the device has
+    outPin_t*          outputPins;      // Pointer to the outputPin array
+    const void*        properties;      // Pointer to the device's properties
+    void*              state;           // Pointer to the device's state
 } devInst_t;
 
 typedef struct PThreadContext
 {
-    PThreadContext*    virtualAddr; // used to calculate offsets at initialisation time
     uint32_t           numDevTyps;
     devTyp_t*          devTyps;
     uint32_t           numDevInsts;
@@ -155,16 +154,16 @@ typedef struct PThreadContext
     uint32_t           rtsBufSize;      // The size of the RTS buffer
     outPin_t**         rtsBuf;          // Pointer to the RTS buffer array
     uint32_t           rtsStart;        // index of the first pending RTS
-    uint32_t           rtsEnd;          // index of the last pending RTS.
+    uint32_t           rtsEnd;          // index of the last pending RTS
     uint32_t           idleStart;       // index of where to start OnIdle from
     uint32_t           ctlEnd;
     
     // Instrumentation
     uint32_t           lastCycles;          // cached last cycle count
-    uint8_t            pendCycles;          // Is there an instrumentation update pending? 2=yes, 1=claimed, 0=no
+    uint32_t            pendCycles;          // Is there an instrumentation update pending? 2=yes, 1=claimed, 0=no
     uint32_t           txCount;             // Number of actual messages sent
     uint32_t           superCount;          // Number of supervisor messages sent
-    uint32_t           rxCount;             // Number of actual messages sent
+    uint32_t           rxCount;             // Number of actual messages received
     uint32_t           txHandlerCount;      // Number of On Send handler called
     uint32_t           rxHandlerCount;      // Number of On Receive handler called
     uint32_t           idleCount;           // number of times  Idle branch
