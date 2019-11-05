@@ -329,7 +329,11 @@ float Placer::compute_fitness(P_task* task)
         if ((*constraintIterator)->task == PNULL or
             (*constraintIterator)->task == task)
         {
-            fitness += (*constraintIterator)->penalty;
+            /* Ignore satisfied constraints. */
+            if (not (*constraintIterator)->is_satisfied(this))
+            {
+                fitness += (*constraintIterator)->penalty;
+            }
         }
     }
 
