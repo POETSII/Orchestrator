@@ -107,8 +107,10 @@ void CostCache::build_cache()
 
                 mailboxIterators[2]->next_mailbox();
             }
+            mailboxIterators[2]->reset_all_iterators();
             mailboxIterators[1]->next_mailbox();
         }
+        mailboxIterators[1]->reset_all_iterators();
         mailboxIterators[0]->next_mailbox();
     }
 
