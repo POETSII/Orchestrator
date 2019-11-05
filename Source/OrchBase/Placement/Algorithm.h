@@ -23,7 +23,6 @@ public:
     Algorithm(Placer* placer):placer(placer){}
     virtual ~Algorithm() = default;
     virtual float do_it(P_task*) = 0;
-    void populate_result_structures(P_task* task, float score);
 
     Placer* placer;
     Result result;
