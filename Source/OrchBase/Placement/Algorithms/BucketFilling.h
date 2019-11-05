@@ -15,7 +15,6 @@ public:
     BucketFilling(Placer* placer);
     float do_it(P_task* task);
     void poke_iterators(std::vector<HardwareIterator>* iterators);
-    /* <!> NB: Need to update graph edge weights. */
 };
 
 #endif

@@ -98,13 +98,23 @@ void OrchBase::PlacementDump(Cli::Cl_t clause)
     P_task* task = PlacementGetTaskByName(taskHandle);
     if (task == PNULL) return;
 
-    /* Have a pop. */
-    try
+    /* Don't do anything if the task has not been placed (by address). */
+    std::map<P_task*, Algorithm*>::iterator tasksIt;
+    tasksIt = pPlacer->placedTasks.find(task);
+    if (tasksIt == pPlacer->placedTasks.end())
     {
-        pPlacer->dump(task);
-        Post(210, taskHandle);
+        Post(211, taskHandle);
+        return;
     }
-    catch (NoTaskToDump&)  {Post(211, taskHandle);}
+
+    /* If the task has a placement score of zero, warn the user that the dump
+     * will take a while, because we need to calculate that to make the dump
+     * meaningful. */
+    if (tasksIt->second->result.score == 0) Post(212, taskHandle);
+
+    /* Have a pop. */
+    pPlacer->dump(task);
+    Post(210, taskHandle);
 }
 
 /* Shortcut method to get a task object from its handle. */

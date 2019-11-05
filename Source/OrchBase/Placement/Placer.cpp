@@ -4,21 +4,20 @@
 
 Placer::Placer(){engine = PNULL;}
 
-Placer::Placer(P_engine* engine):engine(engine)
+Placer::Placer(P_engine* engine):engine(engine),cache(PNULL)
 {
-    cache = new CostCache(engine);
 
     /* Psst, do you want to add a constraint to the placer in a hard-coded
      * manner?  You're in the right place. Just define your constraint
-     * here... see the constructor in Constraints.h for what the arguments
-     * do. */
+     * here... see the constructor for what the arguments do. */
 
     /* constraints.push_back(new MaxDevicesPerThread(true, 10, PNULL, 1)); */
+    constraints.push_back(new MaxDevicesPerThread(true, 10, PNULL, 1));
 }
 
 Placer::~Placer()
 {
-    delete cache;
+    if (cache != PNULL) delete cache;
 
     /* Free memory for each constraint and algorithm. */
     std::list<Constraint*>::iterator constraintIt;
@@ -372,14 +371,29 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
     return maximumSoFar;
 }
 
-/* Dumps placement information for a task. See the documentation. */
+/* Dumps placement information for a task. Assumes the task has been
+ * placed. See the documentation. */
 void Placer::dump(P_task* task)
 {
-    /* Don't do anything if the task has not been placed (by address). */
-    if (placedTasks.find(task) == placedTasks.end())
-        throw NoTaskToDump(dformat(
-            "[ERROR] Task from file '%s' has not been placed, so we can't "
-            "dump", task->filename.c_str()));
+    /* If the score is zero, we're naturally quite suspicious. For example, if
+     * the task was placed using bucket-filling (i.e. the algorithm that works
+     * the fastest but doesn't care about the score), we need to compute the
+     * score now. */
+    std::map<P_task*, Algorithm*>::iterator tasksIt = placedTasks.find(task);
+    if (tasksIt->second->result.score == 0)
+    {
+        /* Build the cost cache. */
+        if (cache == PNULL) cache = new CostCache(engine);
+
+        /* Define edge weights for the task graph. */
+        populate_edge_weights(task);
+
+        /* Compute the score. */
+        float score = compute_fitness(task);
+
+        /* Fill in fields for the result structure. */
+        populate_result_structures(&(tasksIt->second->result), task, score);
+    }
 
     /* Get the time. */
     time_t timeNtv;  /* "Native" */
