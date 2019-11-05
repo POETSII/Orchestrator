@@ -6,13 +6,11 @@ Placer::Placer(){engine = PNULL;}
 
 Placer::Placer(P_engine* engine):engine(engine),cache(PNULL)
 {
-
     /* Psst, do you want to add a constraint to the placer in a hard-coded
      * manner?  You're in the right place. Just define your constraint
      * here... see the constructor for what the arguments do. */
 
     /* constraints.push_back(new MaxDevicesPerThread(true, 10, PNULL, 1)); */
-    constraints.push_back(new MaxDevicesPerThread(true, 10, PNULL, 1));
 }
 
 Placer::~Placer()
