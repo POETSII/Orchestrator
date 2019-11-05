@@ -225,7 +225,7 @@ void CostCache::populate_combined_graph(CombinedGraph* graph,
                 *stream << "Adding mailbox "
                         << mailboxNode->second.data->FullName().c_str()
                         << " to key "
-                        << mailboxKey - 1 << "\n.";
+                        << mailboxKey - 1 << ".\n";
         }
 
         /* Add each edge. */
