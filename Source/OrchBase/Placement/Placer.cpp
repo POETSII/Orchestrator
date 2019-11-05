@@ -301,8 +301,8 @@ void Placer::check_integrity(P_task* task, std::string algorithmDescription)
 /* Computes the fitness for a task.
  *
  * Fitness is simply the sum of all costs on all edges, along with the sum of
- * any broken soft constraints. This evaluation does not factor in broken hard
- * constraints. Arguments:
+ * any broken soft constraints. Low fitness is good. This evaluation does not
+ * factor in broken hard constraints. Arguments:
  *
  *  - task: Task to evaluate the fitness of.
  *
