@@ -312,10 +312,11 @@ float Placer::compute_fitness(P_task* task)
 
     /* Iterate through each edge in the task, and add its weight to it. Note
      * that algorithms are responsible for updating the edge weights. */
-    WALKPDIGRAPHARCS(unsigned, P_device*, unsigned, P_message*, unsigned,
-                     P_pin*, task->pD->G, edgeIt)
+    std::map<std::pair<P_device*, P_device*>, float>::iterator edgeIt;
+    for (edgeIt = taskEdgeCosts[task].begin();
+         edgeIt != taskEdgeCosts[task].end(); edgeIt++)
     {
-        fitness += task->pD->G.ArcData(edgeIt)->weight;
+        fitness += edgeIt->second;
     }
 
     /* Iterate through each constraint, and add their soft-cost to the
@@ -428,17 +429,13 @@ void Placer::dump_costs(P_task* task, const char* path)
     out.open(path);
 
     /* Iterate through each edge in the task. */
-    WALKPDIGRAPHARCS(unsigned, P_device*, unsigned, P_message*, unsigned,
-                     P_pin*, task->pD->G, edgeIt)
+    std::map<std::pair<P_device*, P_device*>, float>::iterator edgeIt;
+    for (edgeIt = taskEdgeCosts[task].begin();
+         edgeIt != taskEdgeCosts[task].end(); edgeIt++)
     {
-        /* Get the nodes connected by the arc (No pdigraph internal for
-         * this?). */
-        P_device* from = task->pD->G.NodeData(edgeIt->second.fr_n);
-        P_device* to = task->pD->G.NodeData(edgeIt->second.to_n);
-
-        /* Write a line. */
-        out << from->FullName() << "\t" << to->FullName() << "\t"
-            << task->pD->G.ArcData(edgeIt)->weight << std::endl;
+        out << edgeIt->first.first->FullName() << "\t"
+            << edgeIt->first.second->FullName() << "\t"
+            << edgeIt->second << std::endl;
     }
 
     out.close();
@@ -585,7 +582,50 @@ void Placer::populate_edge_weights(P_task* task)
         P_thread* toThread = deviceToThread[toDevice];
 
         float weight = cache->compute_cost(fromThread, toThread);
-        task->pD->G.ArcData(edgeIt)->weight = weight;
+        taskEdgeCosts[task][std::make_pair(fromDevice, toDevice)] = weight;
+
+        // Here's another set of checks <!>
+        bool nonZeroWeightSet = false;
+        if (weight > 0)
+            nonZeroWeightSet = true;
+
+        P_board* fromBoard = fromThread->parent->parent->parent;
+        P_board* toBoard = toThread->parent->parent->parent;
+        if (fromBoard != toBoard)
+        {
+            if (nonZeroWeightSet == false)
+            {
+                printf("Different boards, but weight is zero!\n");
+            }
+        }
+        else
+        {
+            if (nonZeroWeightSet == true)
+            {
+                printf("Same board, but weight is non-zero!\n");
+            }
+        }
+    }
+
+    // Here's a check. <!>
+    WALKPDIGRAPHARCS(unsigned, P_device*, unsigned, P_message*, unsigned,
+                     P_pin*, task->pD->G, edgeIt)
+    {
+        P_device* fromDevice = task->pD->G.NodeData(edgeIt->second.fr_n);
+        P_device* toDevice = task->pD->G.NodeData(edgeIt->second.to_n);
+
+        /* Skip this edge if one of the devices is a supervisor device. */
+        if (!(fromDevice)->pP_devtyp->pOnRTS) continue;
+        if (!(toDevice)->pP_devtyp->pOnRTS) continue;
+
+        P_board* fromBoard = deviceToThread[fromDevice]->parent->parent->parent;
+        P_board* toBoard = deviceToThread[toDevice]->parent->parent->parent;
+
+        /* By now, edges spanning different boards should have been allocated a
+         * non-zero weight. If not, something's gone horribly wrong. */
+        if (fromBoard != toBoard)
+            if (taskEdgeCosts[task][std::make_pair(fromDevice, toDevice)] == 0)
+                printf("Something's gone horribly wrong.\n");
     }
 }
 
@@ -627,13 +667,13 @@ void Placer::populate_result_structures(Result* result, P_task* task,
      * application graph. */
     result->maxEdgeCost = 0;  /* Again, mindless optimism. */
 
-    WALKPDIGRAPHARCS(unsigned, P_device*, unsigned, P_message*, unsigned,
-                     P_pin*, task->pD->G, edgeIt)
+    std::map<std::pair<P_device*, P_device*>, float>::iterator edgeIt;
+    for (edgeIt = taskEdgeCosts[task].begin();
+         edgeIt != taskEdgeCosts[task].end(); edgeIt++)
     {
         /* If the weight on the edge is greater than the current stored
          * maximum, update the maximum. */
-        P_message* edge = task->pD->G.ArcData(edgeIt);
-        result->maxEdgeCost = std::max(result->maxEdgeCost, edge->weight);
+        result->maxEdgeCost = std::max(result->maxEdgeCost, edgeIt->second);
     }
 }
 

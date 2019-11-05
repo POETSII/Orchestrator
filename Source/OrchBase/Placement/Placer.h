@@ -60,6 +60,10 @@ public:
     /* Constraint management. */
     std::list<Constraint*> constraints;
 
+    /* Edge costs. */
+    std::map<P_task*, std::map<std::pair<P_device*, P_device*>, float>> \
+        taskEdgeCosts;
+
     /* Information on tasks that have been placed. */
     std::map<P_task*, Algorithm*> placedTasks;
 

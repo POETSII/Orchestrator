@@ -22,7 +22,6 @@ P_typdcl *          par;
 CFrag *             pPropsD;
 size_t              MsgSize;
 unsigned            MsgType; // this is the same as the index in P_messagev.
-float               weight; // Defined by placement
 
 };
 

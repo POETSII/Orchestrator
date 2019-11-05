@@ -5,7 +5,7 @@
 
 //==============================================================================
 
-P_message::P_message(P_typdcl * _p,string _s):par(_p),pPropsD(0),MsgSize(0),MsgType(0),weight(0)
+P_message::P_message(P_typdcl * _p,string _s):par(_p),pPropsD(0),MsgSize(0),MsgType(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
@@ -26,7 +26,6 @@ fprintf(fp,"P_message+++++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"NameBase       %s\n",FullName().c_str());
 fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
         (uint64_t) this, (uint64_t) par);
-fprintf(fp,"Weight         %f\n",weight);
 NameBase::Dump(fp);
 DumpChan::Dump(fp);
 fprintf(fp,"P_message-----------------------------------\n");
