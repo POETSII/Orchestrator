@@ -236,8 +236,8 @@ void CostCache::populate_combined_graph(CombinedGraph* graph,
         {
             /* Forward and not reverse - because the graph is bidirectional. */
             graph->InsertArc(edgeKey++,
-                             edge->second.fr_n->first,
-                             edge->second.to_n->first,
+                             mailboxToKey[edge->second.fr_n->second.data],
+                             mailboxToKey[edge->second.to_n->second.data],
                              edge->second.data->weight,
                              portKey, portValue,
                              portKey + 1, portValue + 1);
@@ -247,11 +247,11 @@ void CostCache::populate_combined_graph(CombinedGraph* graph,
                 *stream << "Joining mailbox "
                         << edge->second.fr_n->second.data->FullName().c_str()
                         << " (key="
-                        << edge->second.fr_n->first
+                        << mailboxToKey[edge->second.fr_n->second.data]
                         << ") with mailbox "
                         << edge->second.to_n->second.data->FullName().c_str()
                         << " (key="
-                        << edge->second.to_n->first
+                        << mailboxToKey[edge->second.to_n->second.data]
                         << ") with cost "
                         << edge->second.data->weight
                         << " and edge key "
