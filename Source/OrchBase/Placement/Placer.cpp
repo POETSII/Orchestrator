@@ -567,6 +567,28 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     return score;
 }
 
+/* Given the placement maps and an initialised cost cache, populates the
+ * weights on each edge of the application graph for a given task. */
+void Placer::populate_edge_weights(P_task* task)
+{
+    WALKPDIGRAPHARCS(unsigned, P_device*, unsigned, P_message*, unsigned,
+                     P_pin*, task->pD->G, edgeIt)
+    {
+        P_device* fromDevice = task->pD->G.NodeData(edgeIt->second.fr_n);
+        P_device* toDevice = task->pD->G.NodeData(edgeIt->second.to_n);
+
+        /* Skip this edge if one of the devices is a supervisor device. */
+        if (!(fromDevice)->pP_devtyp->pOnRTS) continue;
+        if (!(toDevice)->pP_devtyp->pOnRTS) continue;
+
+        P_thread* fromThread = deviceToThread[fromDevice];
+        P_thread* toThread = deviceToThread[toDevice];
+
+        float weight = cache->compute_cost(fromThread, toThread);
+        task->pD->G.ArcData(edgeIt)->weight = weight;
+    }
+}
+
 /* Defines the contents of the result struct of an algorithm. */
 void Placer::populate_result_structures(Result* result, P_task* task,
                                         float score)

@@ -80,6 +80,7 @@ public:
 
     /* Fitness evaluation. */
     float compute_fitness(P_task* task);
+    void populate_edge_weights(P_task* task);
 
     /* Diagnostics (note the lowercase D). This is not a dumpchan method -
      * we're doing something fundamentally different here. */
