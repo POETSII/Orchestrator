@@ -25,30 +25,27 @@ void CostCache::build_cache()
     /* Initialise members (we may be called twice). All path lengths are
      * initialised to a big float, and all 'next-nodes' are initialised to a
      * special 'uninitialised' value. */
-    std::vector<HardwareIterator*> mailboxIterators;  /* Two of them */
-    mailboxIterators.push_back(new HardwareIterator(engine));
-    mailboxIterators.push_back(new HardwareIterator(engine));
+    HardwareIterator outerIt = HardwareIterator(engine);
+    HardwareIterator middleIt = HardwareIterator(engine);
 
-    std::vector<P_mailbox*> mailboxLevels;  /* Three of them (one used */
-    mailboxLevels.push_back(PNULL);         /* later) */
-    mailboxLevels.push_back(PNULL);
-    mailboxLevels.push_back(PNULL);
+    P_mailbox* outer = PNULL;
+    P_mailbox* middle = PNULL;
 
-    while (!(mailboxIterators[0]->has_wrapped()))
+    while (!(outerIt.has_wrapped()))
     {
-        mailboxLevels[0] = mailboxIterators[0]->get_mailbox();
-        while (!(mailboxIterators[1]->has_wrapped()))
+        outer = outerIt.get_mailbox();
+        while (!(middleIt.has_wrapped()))
         {
-            mailboxLevels[1] = mailboxIterators[1]->get_mailbox();
+            middle = middleIt.get_mailbox();
 
             /* Here's the initialisation. */
-            costs[mailboxLevels[0]][mailboxLevels[1]] = HUGE_VAL;
-            pathNext[mailboxLevels[0]][mailboxLevels[1]] = PNULL;
+            costs[outer][middle] = HUGE_VAL;
+            pathNext[outer][middle] = PNULL;
 
-            mailboxIterators[1]->next_mailbox();
+            middleIt.next_mailbox();
         }
 
-        mailboxIterators[0]->next_mailbox();
+        outerIt.next_mailbox();
     }
 
     /* Floyd-Warshall (with path extension) starts here. Look at the psuedocode
@@ -77,45 +74,51 @@ void CostCache::build_cache()
     }
 
     /* O(node^3) */
-    mailboxIterators[0]->reset_all_iterators();
-    mailboxIterators[1]->reset_all_iterators();
-    mailboxIterators.push_back(new HardwareIterator(engine));
-    while (!(mailboxIterators[0]->has_wrapped()))
+    outerIt.reset_all_iterators();
+    middleIt.reset_all_iterators();
+    std::vector<pthread_t> threads;
+    std::vector<FWThreadArg*> threadArgs;
+    while (!(outerIt.has_wrapped()))
     {
-        mailboxLevels[0] = mailboxIterators[0]->get_mailbox();
+        outer = outerIt.get_mailbox();
 
-        while (!(mailboxIterators[1]->has_wrapped()))
+        /* Create one thread for each middle-level mailbox. */
+        while (!(middleIt.has_wrapped()))
         {
-            mailboxLevels[1] = mailboxIterators[1]->get_mailbox();
+            middle = middleIt.get_mailbox();
 
-            while (!(mailboxIterators[2]->has_wrapped()))
-            {
-                mailboxLevels[2] = mailboxIterators[2]->get_mailbox();
+            /* Kick off a thread. */
+            threads.push_back(0);
+            threadArgs.push_back(new FWThreadArg);
+            threadArgs.back()->outer = outer;
+            threadArgs.back()->middle = middle;
+            threadArgs.back()->engine = engine;
+            threadArgs.back()->costs = &costs;
+            threadArgs.back()->pathNext = &pathNext;
 
-                /* Improved path conditional */
-                if (costs[mailboxLevels[0]][mailboxLevels[1]] >
-                    costs[mailboxLevels[0]][mailboxLevels[2]] +
-                    costs[mailboxLevels[2]][mailboxLevels[1]])
-                {
-                    /* Update! */
-                    costs[mailboxLevels[0]][mailboxLevels[1]] =
-                        costs[mailboxLevels[0]][mailboxLevels[2]] +
-                        costs[mailboxLevels[2]][mailboxLevels[1]];
-                    pathNext[mailboxLevels[0]][mailboxLevels[1]] =
-                        pathNext[mailboxLevels[0]][mailboxLevels[2]];
-                }
+            int rc = pthread_create(&(threads.back()), PNULL,
+                                    inner_floyd_warshall,
+                                    (void*)threadArgs.back());
+            if (rc) printf("Oh dear... no thread! (rc = %d)\n", rc); // <!>
 
-                mailboxIterators[2]->next_mailbox();
-            }
-            mailboxIterators[2]->reset_all_iterators();
-            mailboxIterators[1]->next_mailbox();
+            middleIt.next_mailbox();
         }
-        mailboxIterators[1]->reset_all_iterators();
-        mailboxIterators[0]->next_mailbox();
-    }
 
-    /* Clean up our heaped iterators. */
-    for (unsigned idx = 0; idx < 3; idx++) delete mailboxIterators[idx];
+        /* Thread barrier. */
+        for (std::vector<pthread_t>::iterator threadIt = threads.begin();
+             threadIt != threads.end(); threadIt++)
+        {
+            pthread_join(*threadIt, PNULL);
+        }
+
+        /* Cleanup */
+        threads.clear();
+        threadArgs.clear();
+
+        /* Next iteration */
+        middleIt.reset_all_iterators();
+        outerIt.next_mailbox();
+    }
 }
 
 /* Computes the communication cost between two threads, given the cache has
@@ -177,6 +180,41 @@ void CostCache::get_path(P_mailbox* from, P_mailbox* to,
         currentNode = pathNext[currentNode][to];
         path->push_back(currentNode);
     }
+}
+
+/* Performs the middle and inner loop computation of the O(N^3) loop of the
+ * Floyd-Warshall algorithm. Arguments:
+ *
+ * - mailboxes: A casted std::pair<P_mailbox*, P_mailbox*>, where the first
+ *   mailbox represents the outer mailbox of the loop, and the second
+ *   represents the middle mailbox of the loop. */
+void* CostCache::inner_floyd_warshall(void* arg)
+{
+    FWThreadArg* args = (FWThreadArg*) arg;
+
+    P_mailbox* outer = args->outer;
+    P_mailbox* middle = args->middle;
+    P_mailbox* inner;
+    HardwareIterator innerIt = HardwareIterator(args->engine);
+
+    while (!(innerIt.has_wrapped()))
+    {
+        inner = innerIt.get_mailbox();
+
+        /* Have we found a better path? */
+        if ((*args->costs)[outer][middle] >
+                (*args->costs)[outer][inner] + (*args->costs)[inner][middle])
+        {
+            /* Update! */
+            (*args->costs)[outer][middle] =
+                (*args->costs)[outer][inner] + (*args->costs)[inner][middle];
+            (*args->pathNext)[outer][middle] = (*args->pathNext)[outer][inner];
+        }
+
+        innerIt.next_mailbox();
+    }
+
+    pthread_exit(PNULL);
 }
 
 /* Defines a combined graph from the engine's board graph, and each board's

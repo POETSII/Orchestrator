@@ -20,6 +20,17 @@ typedef pdigraph<unsigned, P_mailbox*,
                  unsigned, float,
                  unsigned, unsigned> CombinedGraph;
 
+/* In order to do pthreaded Floyd-Warshall, we need to define an argument
+ * structure... */
+struct FWThreadArg
+{
+    P_mailbox* outer;
+    P_mailbox* middle;
+    P_engine* engine;
+    std::map<P_mailbox*, std::map<P_mailbox*, float>>* costs;
+    std::map<P_mailbox*, std::map<P_mailbox*, P_mailbox*>>* pathNext;
+};
+
 class CostCache: public DumpChan
 {
 public:
@@ -30,6 +41,7 @@ public:
     void build_cache();
     float compute_cost(P_thread*, P_thread*);
     void get_path(P_mailbox*, P_mailbox*, std::vector<P_mailbox*>*);
+    static void* inner_floyd_warshall(void* floydWarshallThreadArgs);
     void populate_combined_graph(CombinedGraph*, std::ofstream* = PNULL);
     void Dump(FILE* = stdout);
 };
