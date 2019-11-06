@@ -24,9 +24,13 @@ typedef pdigraph<unsigned, P_mailbox*,
  * structure... */
 struct FWThreadArg
 {
-    P_mailbox* outer;
-    P_mailbox* middle;
-    P_engine* engine;
+    P_mailbox* outer;  /* The mailbox in the current outer loop. */
+    P_mailbox* middleStart;  /* Start of the middle-level mailbox range for
+                              * this thread to iterate over. */
+    P_mailbox* middleEnd;  /* End of the middle-level mailbox range for this
+                              thread to iterate over. This mailbox is not
+                              included. */
+    P_engine* engine; /* Engine pointer for the inner iterator. */
     std::map<P_mailbox*, std::map<P_mailbox*, float>>* costs;
     std::map<P_mailbox*, std::map<P_mailbox*, P_mailbox*>>* pathNext;
 };
