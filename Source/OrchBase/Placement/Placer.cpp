@@ -741,6 +741,15 @@ void Placer::unplace(P_task* task)
     {
         taskToCores.erase(taskToCoresFinder);
     }
+
+    /* Clear the appropriate entry in taskEdgeCosts. */
+    std::map<P_task*, std::map<std::pair<P_device*, P_device*>,
+                               float>>::iterator edgeCostsFinder;
+    edgeCostsFinder = taskEdgeCosts.find(task);
+    if (edgeCostsFinder != taskEdgeCosts.end())
+    {
+        taskEdgeCosts.erase(edgeCostsFinder);
+    }
 }
 
 /* Updates taskToCores with the entries of a task, which has been placed
