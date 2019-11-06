@@ -13,6 +13,8 @@
 #include "DumpUtils.h"
 #include "HardwareModel.h"
 
+#define SERIAL_FLOYD_WARSHALL false
+
 /* To construct the cache, we need to create a large graph of mailboxes from
  * the engine's board graph, and each board's mailbox graph. Pins aren't
  * explicitly used, but edges are floats (which represent costs). */
@@ -28,7 +30,7 @@ struct FWThreadArg
     P_mailbox* middleStart;  /* Start of the middle-level mailbox range for
                               * this thread to iterate over. */
     P_mailbox* middleEnd;  /* End of the middle-level mailbox range for this
-                              thread to iterate over. This mailbox is not
+                              thread to iterate over. This mailbox is
                               included. */
     P_engine* engine; /* Engine pointer for the inner iterator. */
     std::map<P_mailbox*, std::map<P_mailbox*, float>>* costs;

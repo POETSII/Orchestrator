@@ -81,15 +81,32 @@ void CostCache::build_cache()
      * now.
      *
      * The result of this loop is that threadRanges is populated, for one entry
-     * per thread, with a range of mailboxes for each thread to consider. */
+     * per thread, with a range of mailboxes for each thread to consider.
+     *
+     * Alternatively, if we're duressed into running in serial, we simply spawn
+     * a single thread spanning the entire engine. */
     std::vector<std::pair<P_mailbox*, P_mailbox*>> threadRanges;
-    WALKPDIGRAPHNODES(AddressComponent, P_board*,
-                      unsigned, P_link*,
-                      unsigned, P_port*, engine->G, boardNode)
+    P_mailbox* first;
+    P_mailbox* last;
+    if (SERIAL_FLOYD_WARSHALL)
     {
-        threadRanges.push_back(std::make_pair(
-            boardNode->second.data->G.index_n.begin()->second.data,
-            boardNode->second.data->G.index_n.rbegin()->second.data));
+        /* Look how easy pdigraph is to use! :p */
+        first = engine->G.index_n.begin()->second.data->
+            G.index_n.begin()->second.data;
+        last = engine->G.index_n.rbegin()->second.data->
+            G.index_n.rbegin()->second.data;
+        threadRanges.push_back(std::make_pair(first, last));
+    }
+    else
+    {
+        WALKPDIGRAPHNODES(AddressComponent, P_board*,
+                          unsigned, P_link*,
+                          unsigned, P_port*, engine->G, boardNode)
+        {
+            first = boardNode->second.data->G.index_n.begin()->second.data;
+            last = boardNode->second.data->G.index_n.rbegin()->second.data;
+            threadRanges.push_back(std::make_pair(first, last));
+        }
     }
 
     /* We'll need an object to hold all of the pthread_ts we're going to start
@@ -118,12 +135,20 @@ void CostCache::build_cache()
             threadArgs.back()->costs = &costs;
             threadArgs.back()->pathNext = &pathNext;
 
-            if (threadIndex == 48)
-                printf("Break here.\n");
+            /* If we're in serial, just call the method. */
+            int rc;
+            if (SERIAL_FLOYD_WARSHALL)
+            {
+                inner_floyd_warshall((void*)threadArgs.back());
+                rc = 0;
+            }
 
-            int rc = pthread_create(&(threads[threadIndex]), PNULL,
+            else
+            {
+                rc = pthread_create(&(threads[threadIndex]), PNULL,
                                     inner_floyd_warshall,
                                     (void*)threadArgs.back());
+            }
 
             // <!> Some handy prints and checks - in production, we should be
             // checking rc though.
@@ -135,10 +160,13 @@ void CostCache::build_cache()
         }
 
         /* Thread barrier. */
-        for (std::vector<pthread_t>::iterator threadIt = threads.begin();
-             threadIt != threads.end(); threadIt++)
+        if (!SERIAL_FLOYD_WARSHALL)
         {
-            pthread_join(*threadIt, PNULL);
+            for (std::vector<pthread_t>::iterator threadIt = threads.begin();
+                 threadIt != threads.end(); threadIt++)
+            {
+                pthread_join(*threadIt, PNULL);
+            }
         }
 
         /* Cleanup */
@@ -235,8 +263,8 @@ void* CostCache::inner_floyd_warshall(void* arg)
     /* Move the middle iterator to middleStart. */
     while (middleIt.get_mailbox() != middleStart) middleIt.next_mailbox();
 
-    /* O(node^2) loop (iterate over mailbox range) */
-    while (middleIt.get_mailbox() != middleEnd)
+    /* O(node^2) loop (iterate over mailbox range, including the end point) */
+    do
     {
         middle = middleIt.get_mailbox();
 
@@ -258,10 +286,17 @@ void* CostCache::inner_floyd_warshall(void* arg)
             innerIt.next_mailbox();
         }
 
-        middleIt.next_mailbox();
     }
+    /* This is a bit weird, but it basically means "was that the last mailbox?
+     * If so, leave. If not, we look at the next mailbox in the next
+     * iteration. If the first predicate is false (i.e. we just did the last
+     * mailbox), we don't care about the second predicate - incrementing it
+     * will do no harm. */
+    while (middle != middleEnd && middleIt.next_mailbox());
 
-    pthread_exit(PNULL);  /* We out, yo. */
+    /* How we exit depends on whether or not this was called from a thread. */
+    if (SERIAL_FLOYD_WARSHALL) return PNULL;
+    else pthread_exit(PNULL);
 }
 
 /* Defines a combined graph from the engine's board graph, and each board's
