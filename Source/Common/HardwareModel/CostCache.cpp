@@ -119,8 +119,6 @@ void CostCache::build_cache()
     middleIt.reset_all_iterators();
     while (!(outerIt.has_wrapped()))
     {
-        printf("On mailbox %s.\n", outerIt.get_mailbox()->FullName().c_str());
-
         /* Here's the parallel O(node^2) loop - spawn one thread to deal with
          * all mailboxes per board. */
         for (unsigned threadIndex = 0; threadIndex < threads.size();
@@ -136,27 +134,32 @@ void CostCache::build_cache()
             threadArgs.back()->pathNext = &pathNext;
 
             /* If we're in serial, just call the method. */
-            int rc;
             if (SERIAL_FLOYD_WARSHALL)
             {
                 inner_floyd_warshall((void*)threadArgs.back());
-                rc = 0;
             }
 
+            /* Parallel land */
             else
             {
-                rc = pthread_create(&(threads[threadIndex]), PNULL,
-                                    inner_floyd_warshall,
-                                    (void*)threadArgs.back());
-            }
+                /* Create thread. */
+                int rc = pthread_create(&(threads[threadIndex]), PNULL,
+                                        inner_floyd_warshall,
+                                        (void*)threadArgs.back());
 
-            // <!> Some handy prints and checks - in production, we should be
-            // checking rc though.
-            if (rc) printf("Oh dear... no thread! (rc = %d)\n", rc);
-            //else printf("Spawned thread %u to iterate from %s to %s.\n",
-            //            threadIndex,
-            //            threadRanges[threadIndex].first->FullName().c_str(),
-            //            threadRanges[threadIndex].second->FullName().c_str());
+                /* Check that the thread could be created. If not, join to all
+                 * of the successfully-created threads, and error out. */
+                if (rc)
+                {
+                    for (unsigned errThreadIndex = 0;
+                         errThreadIndex < threadIndex; errThreadIndex++)
+                    {
+                        pthread_join(threads[errThreadIndex], PNULL);
+                    }
+
+                    throw PthreadException(uint2str(rc));
+                }
+            }
         }
 
         /* Thread barrier. */

@@ -90,6 +90,7 @@
 210(I) : "Dump of task '%s' complete."
 211(W) : "Unable to dump task '%s' - it's not been placed."
 212(I) : "Starting to dump task '%s' - this might take a while, because the fitness score needs to be computed."
+213(E) : "Unable to create a pthread when building the placement cost cache. pthread_create returned %s. Look at the manual page to decode this problem (from experience, it's always a problem involving exceeing the stack-size limit."
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"

@@ -113,8 +113,15 @@ void OrchBase::PlacementDump(Cli::Cl_t clause)
     if (tasksIt->second->result.score == 0) Post(212, taskHandle);
 
     /* Have a pop. */
-    pPlacer->dump(task);
-    Post(210, taskHandle);
+    try
+    {
+        pPlacer->dump(task);
+        Post(210, taskHandle);
+    }
+    catch (PthreadException& e)
+    {
+        Post(213, e.message);
+    }
 }
 
 /* Shortcut method to get a task object from its handle. */
