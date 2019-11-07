@@ -897,7 +897,6 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     
     // Const-protected state
     handlerPreambleCS << "   const devtyp_" << devtyp_name;
-    handlerPreambleCS << "   devtyp_" << devtyp_name;
     handlerPreambleCS << "_state_t* deviceState ";
     handlerPreambleCS << "OS_ATTRIBUTE_UNUSED= ";
     handlerPreambleCS << "static_cast<devtyp_";
