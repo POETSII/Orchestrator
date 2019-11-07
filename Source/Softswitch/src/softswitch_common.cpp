@@ -447,6 +447,23 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
     uint32_t edgeIdx = (recvHdr->pinAddr & P_HD_DESTEDGEINDEX_MASK) 
                         >> P_HD_DESTEDGEINDEX_SHIFT;
     
+    // Decode the destination address
+    if(devAdr == P_ADDR_BROADCAST)
+    {   // Message is a broadcast to all devices.
+        recvDevBegin = ThreadContext->devInsts;
+        recvDevEnd = ThreadContext->devInsts + ThreadContext->numDevInsts;
+    }
+    else if (devAdr < ThreadContext->numDevInsts)
+    {   // Message is for a single device in range.
+        recvDevBegin = &ThreadContext->devInsts[devAdr];
+        recvDevEnd = recvDevBegin + 1;
+    }
+    else 
+    {
+        handler_log(5, "dIDX OOR %d", devAdr);
+        return;    // Message target is out of range. //TODO: - log/flag
+    }
+    
     
     if((recvHdr->swAddr & P_SW_CNC_MASK) && (opcode > P_CNC_MAX_USER))
     {   // Check for reserved Opcodes
@@ -470,11 +487,14 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
                 // unique, or likewise this wouldn't work if the device had no
                 // __init__ pin. This test should be removed as soon as __init__
                 // pins lose any special meaning in existing XML!
-                inPin_t* pin = &device->inputPins[pinIdx];    // Get the pin
-                pin->pinType->Recv_handler(ThreadContext->properties, device, 0,
-                                            static_cast<const uint8_t*>(
-                                            const_cast<const void*>(recv_buf)
-                                            )+p_hdr_size());
+                for (devInst_t* device = recvDevBegin; device != recvDevEnd; device++)
+                {
+                    inPin_t* pin = &device->inputPins[pinIdx];    // Get the pin
+                    pin->pinType->Recv_handler(ThreadContext->properties, device, 0,
+                                                static_cast<const uint8_t*>(
+                                                const_cast<const void*>(recv_buf)
+                                                )+p_hdr_size());
+                }
                 break;
             default:            // Unused reserved Opcode - log it.
                                 handler_log(5, "BAD-OP %d", opcode);
@@ -483,23 +503,6 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
         return;
     }
     
-    // Decode the destination address
-    if(devAdr == P_ADDR_BROADCAST)
-    {   // Message is a broadcast to all devices.
-        recvDevBegin = ThreadContext->devInsts;
-        recvDevEnd = ThreadContext->devInsts + ThreadContext->numDevInsts;
-    }
-    else if (devAdr < ThreadContext->numDevInsts)
-    {   // Message is for a single device in range.
-        recvDevBegin = &ThreadContext->devInsts[devAdr];
-        recvDevEnd = recvDevBegin + 1;
-    }
-    else 
-    {
-        handler_log(5, "dIDX OOR %d", devAdr);
-        return;    // Message target is out of range. //TODO: - log/flag
-    }
-
     // Loop through each target device (1 unless a broadcast message)
     for (devInst_t* device = recvDevBegin; device != recvDevEnd; device++)
     {
