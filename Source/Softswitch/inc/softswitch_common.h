@@ -60,18 +60,18 @@ typedef uint32_t (*Send_handler_t)
 
 typedef struct PInputType
 {
-    Recv_handler_t Recv_handler;
-    uint32_t       sz_msg;
-    uint32_t       msgType;
-    uint32_t       sz_props;
-    uint32_t       sz_state;
+    Recv_handler_t Recv_handler;        // Function pointer to the input type’s receive handler
+    uint32_t       sz_msg;              // Size in bytes of the message
+    uint32_t       msgType;             // Index of the message type
+    uint32_t       sz_props;            // Size of the edge's properties
+    uint32_t       sz_state;            // Size of the edge's state
 } in_pintyp_t;
 
 typedef struct POutputType
 {
-    Send_handler_t Send_Handler;
-    uint32_t       sz_msg;
-    uint32_t       msgType;
+    Send_handler_t Send_Handler;        // Function pointer to the input type’s send handler
+    uint32_t       sz_msg;              // Size in bytes of the message
+    uint32_t       msgType;             // Index of the message type
 } out_pintyp_t;
 
 typedef struct PDeviceType
@@ -94,41 +94,41 @@ typedef struct PDeviceType
 
 typedef struct POutputEdge
 {
-    POutputPin*       pin;        // back pointer to pin
-    uint32_t          hwAddr;   //tgt;        // destination device
-    uint32_t          swAddr;   //tgtPin;     // destination pin
-    uint32_t          pinAddr;  //tgtEdge;    // destination edge index
+    POutputPin*       pin;                  // Back pointer to pin the pin instance
+    uint32_t          hwAddr;               // Target Hardware Address
+    uint32_t          swAddr;               // Target Software Address
+    uint32_t          pinAddr;              // Target Pin Address
 } outEdge_t;
 
 typedef struct POutputPin
 {
-    PDeviceInstance*  device;
-    out_pintyp_t*     pinType;
-    uint32_t          numTgts;
-    outEdge_t*        targets;
-    uint32_t          idxTgts;              // Where we are up to with sending this pin
-    uint32_t          sendPending;          // Flag that the pin wants to send
+    PDeviceInstance*  device;               // Back pointer to the device instance
+    out_pintyp_t*     pinType;              // Pointer to the pin type
+    uint32_t          numTgts;              // Number of targets the pin has
+    outEdge_t*        targets;              // Pointer to the array of output edges
+    uint32_t          idxTgts;              // Index of the next edge to send on
+    uint32_t          sendPending;          // Flag indicating the pin wants to send
 } outPin_t;
 
 // this maps input edges by pin.
 
 typedef struct PInputEdge
 {
-    const PInputPin*  pin;        // back pointer to pin
-    uint32_t          tgt;        // destination device (for convenience)
-    uint32_t          src;        // source device (for convenience)
-    const void*       properties; // globally available
-    void*             state;
+    const PInputPin*  pin;              // Back pointer to pin the pin instance
+    uint32_t          tgt;              // Destination device hwAddr (for convenience)
+    uint32_t          src;              // Source device hwAddr (for convenience)
+    const void*       properties;       // Pointer to the edge properties
+    void*             state;            // Pointer to the edge state
 } inEdge_t;
 
 // this maps input pins by device
 
 typedef struct PInputPin
 {
-    const PDeviceInstance*   device;
-    in_pintyp_t*             pinType;
-    uint32_t                 numSrcs;
-    inEdge_t*                sources;
+    const PDeviceInstance*   device;    // Back pointer to the device instance
+    in_pintyp_t*             pinType;   // Pointer to the pin type
+    uint32_t                 numSrcs;   // Number of sources
+    inEdge_t*                sources;   // Pointer to array of input edges
 } inPin_t;
   
 typedef struct PDeviceInstance
