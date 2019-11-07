@@ -1083,12 +1083,12 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
 #endif
         instr->tFile << "RX/s, TX/s, Sup/s" << std::endl;
         
-        instr->tFile << srcAddr << "0, 0, 0, 0, "
-        instr->tFile << "0, 0, 0, 0, 0, 0, 0, "
+        instr->tFile << srcAddr << "0, 0, 0, 0, ";
+        instr->tFile << "0, 0, 0, 0, 0, 0, 0, ";
 #if TinselEnablePerfCount == true
-        instr->tFile << "0, 0, 0, 0, "
+        instr->tFile << "0, 0, 0, 0, ";
 #endif
-        instr->tFile << "0, 0, 0"
+        instr->tFile << "0, 0, 0" << std::endl;
         
         // Add the map entry
         InstrMap.insert(TM_InstrMap_t::value_type(srcAddr, instr));
