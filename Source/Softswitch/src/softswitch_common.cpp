@@ -470,6 +470,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
                 // unique, or likewise this wouldn't work if the device had no
                 // __init__ pin. This test should be removed as soon as __init__
                 // pins lose any special meaning in existing XML!
+                inPin_t* pin = &device->inputPins[pinIdx];    // Get the pin
                 pin->pinType->Recv_handler(ThreadContext->properties, device, 0,
                                             static_cast<const uint8_t*>(
                                             const_cast<const void*>(recv_buf)
