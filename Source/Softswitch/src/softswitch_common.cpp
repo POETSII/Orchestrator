@@ -164,7 +164,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
         
         // Nothing to RX, nothing to TX: iterate through all devices until 
         // something happens or all OnComputes have returned 0. 
-        softswitch_onIdle(ThreadContext)
+        softswitch_onIdle(ThreadContext);
         
         // Skip the block for now so that we can do SW Idle detection stuff
       /*else if(!softswitch_onIdle(ThreadContext)) 
@@ -346,17 +346,16 @@ inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile voi
 inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
 {
     outPin_t* pin = ThreadContext->rtsBuf[ThreadContext->rtsStart]; // Get the next pin
+    
+    // Pointers of convenience
+    devInst_t* device = pin->device;                                // Get the Device
+    const outEdge_t* target = &pin->targets[pin->idxTgts];          // Get the target
+    volatile char* buf = static_cast<volatile char*>(send_buf);    // Send Buffer
+    volatile P_Msg_Hdr_t* hdr = static_cast<volatile P_Msg_Hdr_t*>(send_buf); // Header
+    size_t hdrSize = p_hdr_size(); //Size of the header.
+    
     if(pin->numTgts > 0)     // Sanity check: make sure the pin has targets
     {
-        
-        // Pointers of convenience
-        devInst_t* device = pin->device;                                // Get the Device
-        const outEdge_t* target = &pin->targets[pin->idxTgts];          // Get the target
-        volatile char* buf = static_cast<volatile char*>(send_buf);    // Send Buffer
-        volatile P_Msg_Hdr_t* hdr = static_cast<volatile P_Msg_Hdr_t*>(send_buf); // Header
-        
-        size_t hdrSize = p_hdr_size(); //Size of the header.
-        
         //----------------------------------------------------------------------
         // First target, need to run pin's OnSend.
         //----------------------------------------------------------------------
