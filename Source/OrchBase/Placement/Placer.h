@@ -104,6 +104,9 @@ public:
     /* Constraint query */
     unsigned constrained_max_devices_per_thread(P_task* task);
 
+    /* Updates software addresses for placed devices. */
+    void update_software_addresses(P_task* task);
+
 private:
     Algorithm* algorithm_from_string(std::string);
     void update_task_to_cores_map(P_task* task);

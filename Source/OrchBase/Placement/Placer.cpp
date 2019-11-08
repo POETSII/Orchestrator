@@ -502,19 +502,14 @@ void Placer::get_boxes_for_task(P_task* task, std::set<P_box*>* boxes)
     }
 }
 
-/* Low-level method to create a thread-device binding. Does no checking. */
+/* Low-level method to create a thread-device binding. Does no checking, does
+ * not define the address of the device.
+ *
+ * I mean, it just updates the placer maps. */
 void Placer::link(P_thread* thread, P_device* device)
 {
-    /* Update placer maps. */
     threadToDevices[thread].push_back(device);
     deviceToThread[device] = thread;
-
-    /* Define the device component of the address object in the device. */
-    device->addr.SetDevice(threadToDevices[thread].size() - 1);
-
-    /* Define the other components of the address object in the device. */
-    thread->get_hardware_address()->
-        populate_a_software_address(&(device->addr), false);
 }
 
 /* Maps a task to the engine associated with this placer, using a certain
@@ -555,6 +550,9 @@ float Placer::place(P_task* task, std::string algorithmDescription)
 
     /* Update result structure for this algorithm object. */
     populate_result_structures(&algorithm->result, task, score);
+
+    /* Update software addresses for each device placed in this task. */
+    update_software_addresses(task);
 
     /* Tell the task it's been placed. */
     task->LinkFlag();
@@ -705,6 +703,51 @@ void Placer::unplace(P_task* task)
     if (edgeCostsFinder != taskEdgeCosts.end())
     {
         taskEdgeCosts.erase(edgeCostsFinder);
+    }
+}
+
+/* Updates the software addresses of each device in a task, clearing it if it
+ * not currently placed (for example, if the task has been unplaced. */
+void Placer::update_software_addresses(P_task* task)
+{
+    std::map<P_device*, P_thread*>::iterator deviceFinder;
+    std::map<P_thread*, std::list<P_device*>>::iterator threadFinder;
+    bool found;  /* Is this device currently placed? */
+
+    /* Iterate through each device in the task. */
+    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
+                      P_pin*, task->pD->G, deviceIterator)
+    {
+        /* Grab the device, for readability. */
+        P_device* device = task->pD->G.NodeData(deviceIterator);
+
+        /* Is the device currently placed? */
+        found = false;
+        deviceFinder = deviceToThread.find(device);
+        if (deviceFinder != deviceToThread.end())
+        {
+            threadFinder = threadToDevices.find(deviceFinder->second);
+            if (threadFinder != threadToDevices.end())
+            {
+                found = true;
+            }
+        }
+
+        /* If it has not been placed, clear the address. */
+        if (!found) device->addr.Reset();
+
+        /* If it has, update it. */
+        else
+        {
+            /* Define the device component of the address object in the
+             * device. */
+            device->addr.SetDevice(threadFinder->second.size() - 1);
+
+            /* Define the other components of the address object in the
+             * device. */
+            threadFinder->first->get_hardware_address()->
+                populate_a_software_address(&(device->addr), false);
+        }
     }
 }
 
