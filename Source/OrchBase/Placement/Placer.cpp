@@ -576,54 +576,10 @@ void Placer::populate_edge_weights(P_task* task)
         if (!(fromDevice)->pP_devtyp->pOnRTS) continue;
         if (!(toDevice)->pP_devtyp->pOnRTS) continue;
 
-        P_thread* fromThread = deviceToThread[fromDevice];
-        P_thread* toThread = deviceToThread[toDevice];
-
-        float weight = cache->compute_cost(fromThread, toThread);
+        /* Store the weight. */
+        float weight = cache->compute_cost(deviceToThread[fromDevice],
+                                           deviceToThread[toDevice]);
         taskEdgeCosts[task][std::make_pair(fromDevice, toDevice)] = weight;
-
-        // Here's another set of checks <!>
-        bool nonZeroWeightSet = false;
-        if (weight > 0)
-            nonZeroWeightSet = true;
-
-        P_board* fromBoard = fromThread->parent->parent->parent;
-        P_board* toBoard = toThread->parent->parent->parent;
-        if (fromBoard != toBoard)
-        {
-            if (nonZeroWeightSet == false)
-            {
-                printf("Different boards, but weight is zero!\n");
-            }
-        }
-        else
-        {
-            if (nonZeroWeightSet == true)
-            {
-                printf("Same board, but weight is non-zero!\n");
-            }
-        }
-    }
-
-    // Here's a check. <!>
-    WALKPDIGRAPHARCS(unsigned, P_device*, unsigned, P_message*, unsigned,
-                     P_pin*, task->pD->G, edgeIt)
-    {
-        P_device* fromDevice = task->pD->G.NodeData(edgeIt->second.fr_n);
-        P_device* toDevice = task->pD->G.NodeData(edgeIt->second.to_n);
-
-        /* Skip this edge if one of the devices is a supervisor device. */
-        if (!(fromDevice)->pP_devtyp->pOnRTS) continue;
-        if (!(toDevice)->pP_devtyp->pOnRTS) continue;
-
-        P_board* fromBoard = deviceToThread[fromDevice]->parent->parent->parent;
-        P_board* toBoard = deviceToThread[toDevice]->parent->parent->parent;
-
-        /* By now, edges spanning different boards should have been allocated a
-         * non-zero weight. If not, something's gone horribly wrong. */
-        if (fromBoard != toBoard)
-            if (taskEdgeCosts[task][std::make_pair(fromDevice, toDevice)] == 0)
-                printf("Something's gone horribly wrong.\n");
     }
 }
 
