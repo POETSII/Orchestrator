@@ -502,12 +502,35 @@ void Placer::get_boxes_for_task(P_task* task, std::set<P_box*>* boxes)
     }
 }
 
-/* Low-level method to create a thread-device binding. Does no checking, does
- * not define the address of the device.
+/* Low-level method to create a thread-device binding.
+ *
+ * Does no constraint checking, does not define the address of the device, but
+ * does move the device from it's previous location if it was there before.
  *
  * I mean, it just updates the placer maps. */
 void Placer::link(P_thread* thread, P_device* device)
 {
+    /* If this device has already been placed on a thread, remove the device
+     * from the thread's threadToDevices entry. */
+    std::map<P_device*, P_thread*>::iterator threadFinder;
+    threadFinder = deviceToThread.find(device);
+    if (threadFinder != deviceToThread.end())
+    {
+        std::list<P_device*>* listToEraseFrom;
+        listToEraseFrom = &(threadToDevices[threadFinder->second]);
+        std::list<P_device*>::iterator deviceFinder;
+        deviceFinder = std::find(listToEraseFrom->begin(),
+                                 listToEraseFrom->end(), device);
+
+        /* Conditional block to prevent us from erasing at an "end"
+         * iterator. */
+        if (deviceFinder != listToEraseFrom->end())
+        {
+            listToEraseFrom->erase(deviceFinder);
+        }
+    }
+
+    /* Link! */
     threadToDevices[thread].push_back(device);
     deviceToThread[device] = thread;
 }
