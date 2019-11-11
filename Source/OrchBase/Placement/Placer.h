@@ -72,6 +72,10 @@ public:
      * the cores (and threads) that contain devices owned by a certain task. */
     std::map<P_task*, std::set<P_core*>> taskToCores;
 
+    /* The reverse of the node map in a task graph - given a device, what is
+     * the key in the graph? */
+    std::map<P_device*, unsigned> deviceToGraphKey;
+
     /* Check integrity of a placed task. */
     void check_integrity(P_task* task, std::string algorithmDescription);
     bool are_all_core_pairs_device_locked(P_task* task,
@@ -112,6 +116,7 @@ private:
     void update_task_to_cores_map(P_task* task);
 
     void populate_result_structures(Result* result, P_task* task, float score);
+    void populate_device_to_graph_key_map(P_task* task);
 
     /* Fine-grained diagnostics. */
     void dump_costs(P_task* task, const char* path);

@@ -561,6 +561,9 @@ float Placer::place(P_task* task, std::string algorithmDescription)
             "[ERROR] Task from file '%s' has already been placed.",
             task->filename.c_str()));
 
+    /* Define deviceToGraphKey for devices in this task. */
+    populate_device_to_graph_key_map(task);
+
     /* Run the algorithm on the task. */
     float score = algorithm->do_it(task);
 
@@ -581,6 +584,18 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     task->LinkFlag();
 
     return score;
+}
+
+/* For each device in the task, define the placer's reverse-map so that edges
+ * can be looked up as a function of device in the task graph. */
+void Placer::populate_device_to_graph_key_map(P_task* task)
+{
+    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
+                      P_pin*, task->pD->G, deviceIterator)
+    {
+        deviceToGraphKey[task->pD->G.NodeData(deviceIterator)] = \
+            task->pD->G.NodeKey(deviceIterator);
+    }
 }
 
 /* Given the placement maps and an initialised cost cache, populates the
