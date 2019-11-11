@@ -30,7 +30,7 @@ struct TM_Instrumentation
     double              totalTime;
     uint64_t            txCount;
     uint64_t            rxCount;
-    std::ofstream       tFile;
+    //std::ofstream       tFile;
 };
 
 typedef std::map<uint32_t, TM_Instrumentation*> TM_InstrMap_t;

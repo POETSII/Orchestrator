@@ -1049,6 +1049,10 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
     // Pointer to the Instrumentation
     P_Instr_Msg_Pyld_t* instrMsg = reinterpret_cast<P_Instr_Msg_Pyld_t*>(msg->payload);
     
+    std::ofstream tFile;        // Thread instrumentation file
+    // Set Filename
+    std::ostringstream fName;
+    fName << "instrumentation_thread_" << srcAddr << ".csv";
     
     TM_InstrMap_t::iterator MSearch = InstrMap.find(srcAddr);
     if(MSearch == InstrMap.end())
@@ -1059,15 +1063,20 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
         instr->txCount = 0;
         instr->rxCount = 0;
         
+        /* This falls over for large plates, so we open every time.
         // Set Filename
         std::ostringstream fName;
         fName << "instrumentation_thread_" << srcAddr << ".csv";
         
         // Open file
         instr->tFile.open(fName.str(), std::ofstream::out);
+        */
+        
+        // Open file and overwrite contents
+        tFile.open(fName.str(), std::ofstream::out);
         
         // Check it is open
-        if(instr->tFile.fail()) // Check that the file opened
+        if(tFile.fail())    //instr->tFile.fail()) // Check that the file opened
         {   // if it didn't, tell logserver, delete the entry and return
             Post(541, fName.str(), POETS::getSysErrorString(errno));
             
@@ -1076,19 +1085,19 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
         }
         
         // Write the CSV header
-        instr->tFile << "ThreadID, cIDX, Time, cycles, deltaT, ";
-        instr->tFile << "RX, OnRX, TX, SupTX, OnTX, Idle, OnIdle, ";
+        tFile << "ThreadID, cIDX, Time, cycles, deltaT, ";
+        tFile << "RX, OnRX, TX, SupTX, OnTX, Idle, OnIdle, ";
 #if TinselEnablePerfCount == true
-        instr->tFile << "CacheMiss, CacheHit, CacheWB, CPUIdle, ";
+        tFile << "CacheMiss, CacheHit, CacheWB, CPUIdle, ";
 #endif
-        instr->tFile << "RX/s, TX/s, Sup/s" << std::endl;
+        tFile << "RX/s, TX/s, Sup/s" << std::endl;
         
-        instr->tFile << srcAddr << ", 0, 0, 0, 0, ";
-        instr->tFile << "0, 0, 0, 0, 0, 0, 0, ";
+        tFile << srcAddr << ", 0, 0, 0, 0, ";
+        tFile << "0, 0, 0, 0, 0, 0, 0, ";
 #if TinselEnablePerfCount == true
-        instr->tFile << "0, 0, 0, 0, ";
+        tFile << "0, 0, 0, 0, ";
 #endif
-        instr->tFile << "0, 0, 0" << std::endl;
+        tFile << "0, 0, 0" << std::endl;
         
         // Add the map entry
         InstrMap.insert(TM_InstrMap_t::value_type(srcAddr, instr));
@@ -1096,6 +1105,18 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
     else
     { // Instrumentation for an existing thread.
         instr = MSearch->second;
+        
+        // Open the file in append mode
+        tFile.open(fName.str(), std::ofstream::out | std::ofstream::app);
+        
+        if(tFile.fail()) // Check that the file opened
+        {   // if it didn't, tell logserver, delete the entry and return
+            Post(542, fName.str(), POETS::getSysErrorString(errno));
+            
+            delete instr;
+            InstrMap.erase(srcAddr);
+            return 1;
+        }
     }
     
     // TODO: parameterise this - this needs to be tied back to the task.
@@ -1108,54 +1129,35 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
     instr->rxCount += instrMsg->rxCnt;
     
     
-    if(!(instr->tFile.is_open()))
-    { // File is not open for some reason?
-        std::ostringstream fName;
-        fName << "instrumentation_thread_" << srcAddr << ".csv";
-        
-        // Re-open on append
-        instr->tFile.open(fName.str(), std::ofstream::out | std::ofstream::app);
-        
-        // Check it is open
-        if(instr->tFile.fail()) // Check that the file opened
-        {   // if it didn't, tell logserver, delete the entry and return
-            Post(542, fName.str(), POETS::getSysErrorString(errno));
-            
-            delete instr;
-            InstrMap.erase(srcAddr);
-            return 1;
-        }
-    }
-    
     // Write the raw instrumentation
-    instr->tFile << srcAddr << ", ";                    // HW address
-    instr->tFile << instrMsg->cIDX << ", ";             // Index of the message
-    instr->tFile << instr->totalTime << ", ";           // Total Time
-    instr->tFile << instrMsg->cycles << ", ";           // Cycle difference
-    instr->tFile << deltaT << ", ";                     // Change in time
+    tFile << srcAddr << ", ";                    // HW address
+    tFile << instrMsg->cIDX << ", ";             // Index of the message
+    tFile << instr->totalTime << ", ";           // Total Time
+    tFile << instrMsg->cycles << ", ";           // Cycle difference
+    tFile << deltaT << ", ";                     // Change in time
     
-    instr->tFile << instrMsg->rxCnt << ", ";            // Number of messages received
-    instr->tFile << instrMsg->rxHanCnt << ", ";         // Number of times application OnReceive handler called
+    tFile << instrMsg->rxCnt << ", ";            // Number of messages received
+    tFile << instrMsg->rxHanCnt << ", ";         // Number of times application OnReceive handler called
     
-    instr->tFile << instrMsg->txCnt << ", ";            // Number of messages sent
-    instr->tFile << instrMsg->supCnt << ", ";           // Number of messages sent to Supervisor
-    instr->tFile << instrMsg->txHanCnt << ", ";         // Number of times application OnSend handler called
+    tFile << instrMsg->txCnt << ", ";            // Number of messages sent
+    tFile << instrMsg->supCnt << ", ";           // Number of messages sent to Supervisor
+    tFile << instrMsg->txHanCnt << ", ";         // Number of times application OnSend handler called
     
-    instr->tFile << instrMsg->idleCnt << ", ";          // Number of times SoftswitchOnIdle called
-    instr->tFile << instrMsg->idleHanCnt << ", ";       // Number of times application OnCompute called
+    tFile << instrMsg->idleCnt << ", ";          // Number of times SoftswitchOnIdle called
+    tFile << instrMsg->idleHanCnt << ", ";       // Number of times application OnCompute called
     
 #if TinselEnablePerfCount == true      
-    instr->tFile << instrMsg->missCount << ", ";        // Cache miss count since last instrumentation
-    instr->tFile << instrMsg->hitCount << ", ";         // Cache hit count since last instrumentation
-    instr->tFile << instrMsg->writebackCount << ", ";   // Cache writeback count since last instrumentation
-    instr->tFile << instrMsg->CPUIdleCount << ", ";     // CPU Idle count since last instrumentation
+    tFile << instrMsg->missCount << ", ";        // Cache miss count since last instrumentation
+    tFile << instrMsg->hitCount << ", ";         // Cache hit count since last instrumentation
+    tFile << instrMsg->writebackCount << ", ";   // Cache writeback count since last instrumentation
+    tFile << instrMsg->CPUIdleCount << ", ";     // CPU Idle count since last instrumentation
 #endif 
     
     // Write the calculated instrumentation values
-    instr->tFile << instrMsg->rxCnt/deltaT << ", ";     // RX per second
-    instr->tFile << instrMsg->txCnt/deltaT << ", ";     // TX per second
-    instr->tFile << instrMsg->supCnt/deltaT;            // Sup TX per second
-    instr->tFile << std::endl;
+    tFile << instrMsg->rxCnt/deltaT << ", ";     // RX per second
+    tFile << instrMsg->txCnt/deltaT << ", ";     // TX per second
+    tFile << instrMsg->supCnt/deltaT;            // Sup TX per second
+    tFile << std::endl;
     
     return 0;
 }
