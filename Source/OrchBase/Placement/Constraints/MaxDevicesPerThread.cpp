@@ -18,8 +18,13 @@ bool MaxDevicesPerThread::is_satisfied(Placer* placer)
     for (it = placer->threadToDevices.begin();
          it != placer->threadToDevices.end(); it++)
     {
-        if (it->second.size() > maximum) return false;
+        if (it->second.size() > maximum)
+        {
+            satisfied = false;
+            return false;
+        }
     }
+    satisfied = true;
     return true;  /* Innocent until proven guilty. */
 }
 

@@ -23,6 +23,7 @@ struct Result;
 /* Algorithms! */
 #include "Algorithm.h"
 #include "BucketFilling.h"
+#include "SimulatedAnnealing.h"
 
 /* Constraints! */
 #include "MaxDevicesPerThread.h"
@@ -84,11 +85,15 @@ public:
     bool are_all_devices_mapped(P_task* task,
                                 std::vector<P_device*>* unmapped);
     bool are_all_hard_constraints_satisfied(P_task* task,
-                                            std::vector<Constraint*>* broken);
+        std::vector<Constraint*>* broken,
+        std::vector<P_device*> devices = std::vector<P_device*>());
 
     /* Fitness evaluation. */
     float compute_fitness(P_task* task);
+    float compute_fitness(P_task* task, P_device* device);
+    void populate_edge_weight(P_task* task, P_device* from, P_device* to);
     void populate_edge_weights(P_task* task);
+    void populate_edge_weights(P_task* task, P_device* device = PNULL);
 
     /* Diagnostics (note the lowercase D). This is not a dumpchan method -
      * we're doing something fundamentally different here. */
@@ -97,6 +102,11 @@ public:
     /* Convenient way to get all boxes mapped with a given task in the
      * engine. */
     void get_boxes_for_task(P_task* task, std::set<P_box*>* boxes);
+
+    /* Convenient way to get all edges (as device-device pairs) that involve a
+     * given device. */
+    void get_edges_for_device(P_task* task, P_device* device,
+        std::vector<std::pair<P_device*, P_device>>* devicePairs);
 
     /* Low-level placement operation, to be used only be algorithms */
     void link(P_thread* thread, P_device* device);

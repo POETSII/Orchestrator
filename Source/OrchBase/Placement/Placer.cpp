@@ -152,15 +152,20 @@ bool Placer::are_all_devices_mapped(P_task* task,
 }
 
 /* Returns true if no hard constraints are broken, and false
- * otherwise. Arguments:
+ * otherwise.
+ *
+ * Optionally uses the delta method if devices are defined. Arguments:
  *
  * - task: Task to match constraints against (don't care about constraints that
  *   only apply to other tasks). If PNULL, checks against all tasks.
  *
  * - broken: Vector populated with constraints that are not
- *   satisfied. Cleared before being populated. */
+ *   satisfied. Cleared before being populated.
+ *
+ * - devices: Series of device pointers; delta computation is performed using
+ *   these devices if this container is not empty. */
 bool Placer::are_all_hard_constraints_satisfied(P_task* task,
-    std::vector<Constraint*>* broken)
+    std::vector<Constraint*>* broken, std::vector<P_device*> devices)
 {
     /* Sanity. */
     broken->clear();
@@ -179,14 +184,26 @@ bool Placer::are_all_hard_constraints_satisfied(P_task* task,
             /* Ignore soft constraints. */
             if ((*constraintIterator)->mandatory)
             {
-                /* Expensive! */
-                if (not (*constraintIterator)->is_satisfied(this))
+                /* Global check (expensive) */
+                if (devices.empty())
                 {
-                    broken->push_back(*constraintIterator);
+                    if (not (*constraintIterator)->is_satisfied(this))
+                    {
+                        broken->push_back(*constraintIterator);
+                    }
+                }
+
+                /* Local check */
+                else
+                {
+                    if (not (*constraintIterator)->
+                        is_satisfied_delta(this, devices))
+                    {
+                        broken->push_back(*constraintIterator);
+                    }
                 }
             }
         }
-
     }
 
     return broken->empty();
@@ -294,6 +311,33 @@ void Placer::check_integrity(P_task* task, std::string algorithmDescription)
             algorithmDescription.c_str(), task->filename.c_str(),
             corePrint.c_str()));
     }
+}
+
+/* Returns the fitness contribution by this device.
+ *
+ * Adds the weights of all edges involving the passed device, where that device
+ * has an entry in deviceToGraphKey (this is assumed). These weights are
+ * looked up from taskEdgeCosts.
+ *
+ * Note that this method doesn't consider constraints.
+ *
+ * Arguments:
+ *
+ * - task: The device must be owned by this task.
+ *
+ * - device: The device to investigate. */
+float Placer::compute_fitness(P_task* task, P_device* device)
+{
+    /* Grab the device pair from each edge. */
+    std::vector<std::pair<P_device*, P_device*>> devicePairs;
+    get_edges_for_device(task, device, &devicePairs);
+
+    /* Reduce! */
+    float fitness = 0;
+    std::vector<std::pair<P_device*, P_device*>>::iterator devicePairIt;
+    for (devicePairIt = devicePairs.begin(); devicePairIt != devicePairs.end();
+         devicePairIt++) fitness += taskEdgeCosts[task][*devicePairIt];
+    return fitness;
 }
 
 /* Computes the fitness for a task.
@@ -503,6 +547,41 @@ void Placer::get_boxes_for_task(P_task* task, std::set<P_box*>* boxes)
     }
 }
 
+/* Grabs all of the device pairs for each edge in the application graph that
+ * involves the given device. */
+void Placer::get_edges_for_device(P_task* task, P_device* device,
+    std::vector<std::pair<P_device*, P_device>>* devicePairs)
+{
+    devicePairs->clear();
+
+    /* Get all of the arcs in the task graph that involve this device, in both
+     * directions. */
+    std::vector<unsigned> arcKeysIn;
+    std::vector<unsigned> arcKeysOut;
+    task->pD->G.FindArcs(deviceToGraphKey[device], &arcKeysIn, &arcKeysOut);
+
+    /* Treat each arc the same, regardless of its direction. */
+    std::vector<unsigned> arcKeys;  /* All */
+    arcKeys.reserve(arcKeysIn.size() + arcKeysOut.size());
+    arcKeys.insert(arcKeys.end(), arcKeysIn.begin(), arcKeysIn.end());
+    arcKeys.insert(arcKeys.end(), arcKeysOut.begin(), arcKeysOut.end());
+
+    /* Grab the device pair from each edge. */
+    std::vector<std::pair<P_device*, P_device*>> devicePairs;
+    for (std::vector<unsigned>::iterator arcKeyIt = arcKeys.begin();
+         arcKeyIt != arcKeys.end(); arcKeyIt++)
+    {
+        /* Sorry pdigraph API, but I need the actual arc object. We could find
+         * it twice (once for the 'from' device and once for the 'to' device),
+         * but that's less efficient. */
+        pdigraph<unsigned, P_device*, unsigned, P_message*,
+                 unsigned, P_pin*>::arc arc;
+        arc = task->pD->G.index_a.find(*arcKeyIt);
+        devicePairs->push_back(std::make_pair(arc.fr_n->second.data,
+                                              arc.to_n->second.data));
+    }
+}
+
 /* Low-level method to create a thread-device binding.
  *
  * Does no constraint checking, does not define the address of the device, but
@@ -599,6 +678,38 @@ void Placer::populate_device_to_graph_key_map(P_task* task)
     }
 }
 
+/* Given a pair of devices connected in the task graph and an initialised cost
+ * cache, populates the weight on the edge connecting them. */
+void Placer::populate_edge_weight(P_task* task, P_device* from, P_device* to)
+{
+    /* Skip this edge if one of the devices is a supervisor device. */
+    if (!(fromDevice)->pP_devtyp->pOnRTS) continue;
+    if (!(toDevice)->pP_devtyp->pOnRTS) continue;
+
+    /* Store the weight. */
+    float weight = cache->compute_cost(deviceToThread[fromDevice],
+                                       deviceToThread[toDevice]);
+    taskEdgeCosts[task][std::make_pair(fromDevice, toDevice)] = weight;
+}
+
+/* Given the placement maps and an initialised cost cache, populates the
+ * weights on each edge of the application graph for a given task that involves
+ * a given device. */
+void Placer::populate_edge_weights(P_task* task, P_device* device)
+{
+    /* Grab the device pair from each edge. */
+    std::vector<std::pair<P_device*, P_device*>> devicePairs;
+    get_edges_for_device(task, device, &devicePairs);
+
+    /* Populate */
+    std::vector<std::pair<P_device*, P_device*>>::iterator devicePairIt;
+    for (devicePairIt = devicePairs.begin(); devicePairIt != devicePairs.end();
+         devicePairIt++)
+    {
+        populate_edge_weight(task, devicePairIt->first, devicePairIt->second);
+    }
+}
+
 /* Given the placement maps and an initialised cost cache, populates the
  * weights on each edge of the application graph for a given task. */
 void Placer::populate_edge_weights(P_task* task)
@@ -606,17 +717,9 @@ void Placer::populate_edge_weights(P_task* task)
     WALKPDIGRAPHARCS(unsigned, P_device*, unsigned, P_message*, unsigned,
                      P_pin*, task->pD->G, edgeIt)
     {
-        P_device* fromDevice = task->pD->G.NodeData(edgeIt->second.fr_n);
-        P_device* toDevice = task->pD->G.NodeData(edgeIt->second.to_n);
-
-        /* Skip this edge if one of the devices is a supervisor device. */
-        if (!(fromDevice)->pP_devtyp->pOnRTS) continue;
-        if (!(toDevice)->pP_devtyp->pOnRTS) continue;
-
-        /* Store the weight. */
-        float weight = cache->compute_cost(deviceToThread[fromDevice],
-                                           deviceToThread[toDevice]);
-        taskEdgeCosts[task][std::make_pair(fromDevice, toDevice)] = weight;
+        populate_edge_weight(task,
+                             task->pD->G.NodeData(edgeIt->second.fr_n),
+                             task->pD->G.NodeData(edgeIt->second.to_n));
     }
 }
 

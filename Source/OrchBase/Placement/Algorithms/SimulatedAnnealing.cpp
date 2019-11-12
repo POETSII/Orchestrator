@@ -5,6 +5,19 @@ SimulatedAnnealing::SimulatedAnnealing(Placer* placer):Algorithm(placer)
     iteration = 0;
 }
 
+/* Computes the probability with which a transformation is accepted, given the
+ * fitness of the states before and after the transformation, and the disorder
+ * parameter.
+ *
+ * A higher acceptance probability means that the transformation is more likely
+ * to be accepted. */
+float acceptance_probability(float fitnessBefore, float fitnessAfter)
+{
+    float ratio = fitnessBefore / fitnessAfter;
+    if (ratio > 1) return 1;
+    else return ratio * compute_disorder();
+}
+
 /* Computes the disorder value as a function of the iteration number, between
  * one (at iteration=0) and zero (lim iteration ->inf). Decrease must be
  * monotonic. For now, it's a simple exponential decay. */
@@ -107,11 +120,22 @@ float SimulatedAnnealing::do_it(P_task* task)
     devicesPerThreadSoftMax = placer->constrained_max_devices_per_thread(task);
 
     /* Iteration loop - we exit when the termination condition is satisfied. */
+    std::vector<Constraint*> brokenHardConstraints;
+    std::list<Constraint*> dissatisfiedConstraints;
+    std::list<Constraint*> satisfiedConstraints;
     P_device* selectedDevice;
     P_thread* selectedThread;
+    P_thread* previousThread;
     P_device* swapDevice;
+    bool revert;
+    float fitnessChange;  /* Negative represents "before the transformation",
+                           * and positive represents "after the
+                           * transformation" */
     while (!is_finished())
     {
+        revert = false;
+        fitnessChange = 0;
+
         /* Select a device, a thread, and (optionally) another device on that
          * thread to swap with. */
         select(task, &selectedDevice, &selectedThread, &swapDevice);
@@ -119,23 +143,184 @@ float SimulatedAnnealing::do_it(P_task* task)
         /* Transform for move operation. */
         if (swapDevice == PNULL)
         {
-            // <!> Compute fitness before:
-            //  - Add the cost of each edge in the map (placer->taskEdgeCosts).
-            //  - For each constraint, if it is violated.
+            /* Compute the fitness from device-device connections before the
+             * move. Note the sign convention (see the comment where
+             * fitnessChange is declared). */
+            fitnessChange -= placer->compute_fitness(task, selectedDevice);
 
-            // <!> Get previous thread for this device - we might need it if we
-            // have to revert our placement.
+            /* Grab the thread for this device to allow reversion, (in case
+             * determination rejects the transformed state), and to allow
+             * validCoresForDeviceType to be updated if the transformation is
+             * accepted. */
+            previousThread = deviceToThread[selectedDevice];
 
+            /* Apply transformation. */
             placer->link(selectedThread, selectedDevice);
+            placer->populate_edge_weights(task, selectedDevice);
 
-            // <!> Check if any hard constraints are broken. If so, revert.
+            /* If any hard constraints are broken, decline the
+             * transformation without computing fitness. */
+            revert = !placer->are_all_hard_constraints_satisfied(
+                task, &brokenHardConstraints,
+                std::vector<P_device*>(1, selectedDevice));
+            if (!revert)
+            {
+                /* Compute the fitness from device-device connections after the
+                 * move. */
+                fitnessChange += placer->compute_fitness(task, selectedDevice);
 
-            // <!> Compute fitness after:
-            //  - For each edge affected by the device move, add its cost using
-            //    placer->cache->compute_cost.
-            //  - For each constraint, if it is violated.
+                /* Compute constraint change, storing changed constraints in a
+                 * pair of maps. */
+                std::list<Constraint*>::iterator constraintIt;
+                dissatisfiedConstraints.clear();
+                satisfiedConstraints.clear();
 
-            // <!> Determination, reverting if necessary.
+                /* For each soft constraint whose task matches our task (or
+                 * that applies to all tasks)... */
+                for (constraintIt = constraints.begin();
+                     constraintIt != constraints.end(); constraintIt++)
+                {
+                    if (((*constraintIt)->task == PNULL or
+                         (*constraintIt)->task == task)
+                        and !(*constraintIt)->mandatory)
+                    {
+                        /* We only care about:
+                         *
+                         * - constraints that were satisfied but are no longer,
+                         * - constraints that were not satisfied, but now
+                         *   are. */
+                        bool delta = (*constraintIt)->is_satisfied_delta(
+                            placer, std::vector<P_device*>(1, selectedDevice));
+                        if (delta && !(*constraintIt)->satisfied)
+                        {
+                            satisfiedConstraints.push_back(*constraintIt);
+                        }
+                        if (!delta && (*constraintIt)->satisfied)
+                        {
+                            dissatisfiedConstraints.push_back(*constraintIt);
+                        }
+                    }
+                }
+
+                /* Apply changed constraints costs to the fitness change. */
+                for (constraintIt = dissatisfiedConstraints.begin();
+                     constraintIt != dissatisfiedConstraints.end();
+                     constraintIt++)
+                {
+                    fitnessChange += (*constraintIt)->penalty;
+                }
+
+                for (constraintIt = satisfiedConstraints.begin();
+                     constraintIt != satisfiedConstraints.end();
+                     constraintIt++)
+                {
+                    fitnessChange -= (*constraintIt)->penalty;
+                }
+
+                /* Determination - do we keep our selected state? (A roll of
+                 * zero means we always keep). */
+                float roll = static_cast<float>(rand()) /
+                    static_cast<float>(RAND_MAX);  /* Uniform float in [0,1] */
+                revert = roll > acceptance_probability(
+                    fitness, fitness + fitnessChange);
+            }
+
+            /* Apply reversion, if deemed appropriate. */
+            if (revert)
+            {
+                placer->link(previousThread, selectedDevice);
+                placer->populate_edge_weights(task, selectedDevice);
+            }
+
+            /* Otherwise, we need to update some structures... */
+            else
+            {
+                /* Update the fitness value. */
+                fitness = fitness + fitnessChange;
+
+                /* Update the state of all constraints that have changed
+                 * state. */
+                for (constraintIt = dissatisfiedConstraints.begin();
+                     constraintIt != dissatisfiedConstraints.end();
+                     constraintIt++)
+                {
+                    (*constraintIt)->satisfied = false;
+                }
+
+                for (constraintIt = satisfiedConstraints.begin();
+                     constraintIt != satisfiedConstraints.end();
+                     constraintIt++)
+                {
+                    (*constraintIt)->satisfied = true;
+                }
+
+                /* Update validCoresForDeviceType, for selection. */
+                std::map<P_devtyp*, std::set<P_core*>>::iterator devtypIt;
+
+                /* If we removed the last device from this core pair, make the
+                 * core pair available for other device types. First check on
+                 * the thread level, because it's cheaper. */
+                if (placer->threadToDevices[previousThread].empty())
+                {
+                    /* Determine whether or not the core pair we moved the
+                     * thread from is now empty. */
+                    bool coresEmpty = true;
+                    P_core* firstCore = previousThread->parent;
+                    P_core* secondCore = previousThread->parent->pair;
+                    std::map<AddressComponent, P_thread*>::iterator threadIt;
+                    for (threadIt = firstCore->P_threadm.begin();
+                         threadIt != firstCore->P_threadm.end(); threadIt++)
+                    {
+                        if (!threadToDevices[threadIt->second].empty())
+                        {
+                            coresEmpty = false;
+                            break;
+                        }
+                    }
+
+                    if (coresEmpty)
+                    {
+                        for (threadIt = secondCore->P_threadm.begin();
+                             threadIt != secondCore->P_threadm.end();
+                             threadIt++)
+                        {
+                            if (!threadToDevices[threadIt->second].empty())
+                            {
+                                coresEmpty = false;
+                                break;
+                            }
+                        }
+                    }
+
+                    /* If both cores are empty, make them available in the
+                     * validCores map. */
+                    if (coresEmpty)
+                    {
+
+                        for (devtypIt = validCoresForDeviceType.begin();
+                             devtypIt != validCoresForDeviceType.end();
+                             devtypIt++)
+                        {
+                            devtypIt->second.insert(firstCore);
+                            devtypIt->second.insert(secondCore);
+                        }
+                    }
+                }
+
+                /* And likewise, "unfree" this core pair for each other device
+                 * type. Handily, set.erase doesn't moan if no element
+                 * matches. */
+                for (devtypIt = validCoresForDeviceType.begin();
+                     devtypIt != validCoresForDeviceType.end();
+                     devtypIt++)
+                {
+                    if (devtypIt->first != selectedDevice->pP_devtyp)
+                    {
+                        devtypIt->second.erase(firstCore);
+                        devtypIt->second.erase(secondCore);
+                    }
+                }
+            }
         }
 
         /* Transform for swap operation. */
@@ -143,8 +328,12 @@ float SimulatedAnnealing::do_it(P_task* task)
         {
             // <!>
         }
+
+        iteration++;
     }
 
+    /* Write our result structure, and leave. */
+    placer->populate_result_structures(&result, task, fitness);
     return fitness;
 }
 
@@ -202,6 +391,9 @@ void SimulatedAnnealing::select(P_task* task, P_device** device,
     threadIterator = core->P_threadm.begin();
     std::advance(threadIterator, rand() % core->P_threadm.size());
     thread = &(threadIterator->second);
+
+    /* <!> NB: Disabling swap operations for now, to make debugging simpler. */
+    return; // <!>
 
     /* Choose a device (or empty space) on that core. This determines whether
      * the operation is a move or swap - if we roll and land on an "empty
