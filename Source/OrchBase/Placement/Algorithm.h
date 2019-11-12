@@ -9,12 +9,9 @@
 #include <algorithm>  /* How ironic (used for std::max). */
 #include <set>
 
-class P_core;
-class P_engine;
 class P_task;
 class Placer;
 
-#include "Placer.h"
 #include "Result.h"
 
 class Algorithm

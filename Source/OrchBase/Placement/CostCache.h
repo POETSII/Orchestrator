@@ -12,6 +12,7 @@
 
 #include "DumpUtils.h"
 #include "HardwareModel.h"
+#include "HardwareIterator.h"
 #include "PthreadException.h"
 
 #define SERIAL_FLOYD_WARSHALL false

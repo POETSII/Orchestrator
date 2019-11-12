@@ -7,7 +7,6 @@ class HardwareIterator;
 
 #include "Algorithm.h"
 #include "HardwareIterator.h"
-#include "Placer.h"
 
 class BucketFilling: public Algorithm
 {

@@ -11,7 +11,8 @@ SimulatedAnnealing::SimulatedAnnealing(Placer* placer):Algorithm(placer)
  *
  * A higher acceptance probability means that the transformation is more likely
  * to be accepted. */
-float acceptance_probability(float fitnessBefore, float fitnessAfter)
+float SimulatedAnnealing::acceptance_probability(float fitnessBefore,
+                                                 float fitnessAfter)
 {
     float ratio = fitnessBefore / fitnessAfter;
     if (ratio > 1) return 1;
@@ -44,7 +45,7 @@ void SimulatedAnnealing::define_valid_cores_map(P_task* task)
         /* Skip if an entry in the map already exists for a device of this
          * type */
         P_devtyp* deviceType = device->pP_devtyp;
-        std::map<P_devtyp*, std::set<P_core*>>::iterator devTypeFinder;
+        std::map<P_devtyp*, std::set<P_core*>>::iterator devTypFinder;
         devTypFinder = validCoresForDeviceType.find(deviceType);
         if (devTypFinder == validCoresForDeviceType.end())
         {
@@ -52,7 +53,7 @@ void SimulatedAnnealing::define_valid_cores_map(P_task* task)
             std::set<P_core*>* setToPopulate;
             P_core* currentCore;
             setToPopulate = &(validCoresForDeviceType[deviceType]);
-            coreIterator = HardwareIterator(placer->engine);
+            HardwareIterator coreIterator = HardwareIterator(placer->engine);
             currentCore = coreIterator.get_core();
             while (!coreIterator.has_wrapped())
             {
@@ -112,9 +113,6 @@ float SimulatedAnnealing::do_it(P_task* task)
     /* Define the valid-cores map. */
     define_valid_cores_map(task);
 
-    /* Define the number of devices in the task we're placing. */
-    numberOfDevices = task->pD->G.SizeNodes();
-
     /* Define the number of devices allowed per thread before constraints are
      * violated - used during selection. */
     devicesPerThreadSoftMax = placer->constrained_max_devices_per_thread(task);
@@ -123,6 +121,7 @@ float SimulatedAnnealing::do_it(P_task* task)
     std::vector<Constraint*> brokenHardConstraints;
     std::list<Constraint*> dissatisfiedConstraints;
     std::list<Constraint*> satisfiedConstraints;
+    std::list<Constraint*>::iterator constraintIt;
     P_device* selectedDevice;
     P_thread* selectedThread;
     P_thread* previousThread;
@@ -152,7 +151,7 @@ float SimulatedAnnealing::do_it(P_task* task)
              * determination rejects the transformed state), and to allow
              * validCoresForDeviceType to be updated if the transformation is
              * accepted. */
-            previousThread = deviceToThread[selectedDevice];
+            previousThread = placer->deviceToThread[selectedDevice];
 
             /* Apply transformation. */
             placer->link(selectedThread, selectedDevice);
@@ -171,14 +170,13 @@ float SimulatedAnnealing::do_it(P_task* task)
 
                 /* Compute constraint change, storing changed constraints in a
                  * pair of maps. */
-                std::list<Constraint*>::iterator constraintIt;
                 dissatisfiedConstraints.clear();
                 satisfiedConstraints.clear();
 
                 /* For each soft constraint whose task matches our task (or
                  * that applies to all tasks)... */
-                for (constraintIt = constraints.begin();
-                     constraintIt != constraints.end(); constraintIt++)
+                for (constraintIt = placer->constraints.begin();
+                     constraintIt != placer->constraints.end(); constraintIt++)
                 {
                     if (((*constraintIt)->task == PNULL or
                          (*constraintIt)->task == task)
@@ -256,6 +254,8 @@ float SimulatedAnnealing::do_it(P_task* task)
 
                 /* Update validCoresForDeviceType, for selection. */
                 std::map<P_devtyp*, std::set<P_core*>>::iterator devtypIt;
+                P_core* firstCore = previousThread->parent;
+                P_core* secondCore = previousThread->parent->pair;
 
                 /* If we removed the last device from this core pair, make the
                  * core pair available for other device types. First check on
@@ -265,13 +265,11 @@ float SimulatedAnnealing::do_it(P_task* task)
                     /* Determine whether or not the core pair we moved the
                      * thread from is now empty. */
                     bool coresEmpty = true;
-                    P_core* firstCore = previousThread->parent;
-                    P_core* secondCore = previousThread->parent->pair;
                     std::map<AddressComponent, P_thread*>::iterator threadIt;
                     for (threadIt = firstCore->P_threadm.begin();
                          threadIt != firstCore->P_threadm.end(); threadIt++)
                     {
-                        if (!threadToDevices[threadIt->second].empty())
+                        if (!placer->threadToDevices[threadIt->second].empty())
                         {
                             coresEmpty = false;
                             break;
@@ -284,7 +282,8 @@ float SimulatedAnnealing::do_it(P_task* task)
                              threadIt != secondCore->P_threadm.end();
                              threadIt++)
                         {
-                            if (!threadToDevices[threadIt->second].empty())
+                            if (!placer->
+                                threadToDevices[threadIt->second].empty())
                             {
                                 coresEmpty = false;
                                 break;
@@ -367,11 +366,9 @@ void SimulatedAnnealing::select(P_task* task, P_device** device,
      * is going to do that... */
     do
     {
-        std::map<unsigned, P_device*>::iterator deviceIterator;
-        deviceIterator = task->pD->G.NodeBegin();
-        std::advance(deviceIterator, rand() % numberOfDevices);
-        device = &(deviceIterator->second);
-    } while (!((*device)->pP_devtyp->pOnRTS))
+        unsigned nodeKey;  /* Unused */
+        task->pD->G.RandomNode(nodeKey, *device);
+    } while (!((*device)->pP_devtyp->pOnRTS));
 
     /* Choose a (valid) core. */
     P_core* core;
@@ -403,8 +400,8 @@ void SimulatedAnnealing::select(P_task* task, P_device** device,
 
     /* Determine the maximum slot size - the number of devices on this thread,
      * or the maximum imposed by the constraint (whichever is bigger). */
-    unsigned slotMax = std::max(devicesPerThreadSoftMax,
-                                placer->threadToDevices[*thread].size());
+    unsigned slotMax = std::max<unsigned>(devicesPerThreadSoftMax,
+        placer->threadToDevices[*thread].size());
 
     /* Roll! */
     unsigned swapDeviceIndex = rand() % slotMax;
@@ -413,7 +410,7 @@ void SimulatedAnnealing::select(P_task* task, P_device** device,
     if (swapDeviceIndex <= placer->threadToDevices[*thread].size())  /* Swap */
     {
         std::list<P_device*>::iterator swapDeviceIterator;
-        swapDeviceIterator = threadToDevices[*thread].begin();
+        swapDeviceIterator = placer->threadToDevices[*thread].begin();
         std::advance(swapDeviceIterator, swapDeviceIndex);
         swapDevice = &(*swapDeviceIterator);
     }

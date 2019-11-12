@@ -7,7 +7,7 @@
 
 class HardwareIterator;
 
-#include "Algorithm.h"
+#include "BucketFilling.h"
 #include "HardwareIterator.h"
 #include "Placer.h"
 
@@ -27,8 +27,8 @@ public:
      * devices of that type. */
     std::map<P_devtyp*, std::set<P_core*>> validCoresForDeviceType;
 
-    /* Driven by the task, shouldn't change (so we precompute it for speed). */
-    unsigned numberOfDevices;
+    /* Driven by the placer, shouldn't change (so we precompute it for
+     * speed). */
     unsigned devicesPerThreadSoftMax;
 
     SimulatedAnnealing(Placer* placer);

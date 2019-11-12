@@ -16,13 +16,11 @@
 #include <map>
 #include <vector>
 
-class Algorithm;
 class CostCache;
 struct Result;
 
 /* Algorithms! */
 #include "Algorithm.h"
-#include "BucketFilling.h"
 #include "SimulatedAnnealing.h"
 
 /* Constraints! */
@@ -93,7 +91,9 @@ public:
     float compute_fitness(P_task* task, P_device* device);
     void populate_edge_weight(P_task* task, P_device* from, P_device* to);
     void populate_edge_weights(P_task* task);
-    void populate_edge_weights(P_task* task, P_device* device = PNULL);
+    void populate_edge_weights(P_task* task, P_device* device);
+
+    void populate_result_structures(Result* result, P_task* task, float score);
 
     /* Diagnostics (note the lowercase D). This is not a dumpchan method -
      * we're doing something fundamentally different here. */
@@ -106,7 +106,7 @@ public:
     /* Convenient way to get all edges (as device-device pairs) that involve a
      * given device. */
     void get_edges_for_device(P_task* task, P_device* device,
-        std::vector<std::pair<P_device*, P_device>>* devicePairs);
+        std::vector<std::pair<P_device*, P_device*>>* devicePairs);
 
     /* Low-level placement operation, to be used only be algorithms */
     void link(P_thread* thread, P_device* device);
@@ -125,7 +125,6 @@ private:
     Algorithm* algorithm_from_string(std::string);
     void update_task_to_cores_map(P_task* task);
 
-    void populate_result_structures(Result* result, P_task* task, float score);
     void populate_device_to_graph_key_map(P_task* task);
 
     /* Fine-grained diagnostics. */

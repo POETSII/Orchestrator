@@ -550,7 +550,7 @@ void Placer::get_boxes_for_task(P_task* task, std::set<P_box*>* boxes)
 /* Grabs all of the device pairs for each edge in the application graph that
  * involves the given device. */
 void Placer::get_edges_for_device(P_task* task, P_device* device,
-    std::vector<std::pair<P_device*, P_device>>* devicePairs)
+    std::vector<std::pair<P_device*, P_device*>>* devicePairs)
 {
     devicePairs->clear();
 
@@ -558,7 +558,7 @@ void Placer::get_edges_for_device(P_task* task, P_device* device,
      * directions. */
     std::vector<unsigned> arcKeysIn;
     std::vector<unsigned> arcKeysOut;
-    task->pD->G.FindArcs(deviceToGraphKey[device], &arcKeysIn, &arcKeysOut);
+    task->pD->G.FindArcs(deviceToGraphKey[device], arcKeysIn, arcKeysOut);
 
     /* Treat each arc the same, regardless of its direction. */
     std::vector<unsigned> arcKeys;  /* All */
@@ -567,18 +567,16 @@ void Placer::get_edges_for_device(P_task* task, P_device* device,
     arcKeys.insert(arcKeys.end(), arcKeysOut.begin(), arcKeysOut.end());
 
     /* Grab the device pair from each edge. */
-    std::vector<std::pair<P_device*, P_device*>> devicePairs;
     for (std::vector<unsigned>::iterator arcKeyIt = arcKeys.begin();
          arcKeyIt != arcKeys.end(); arcKeyIt++)
     {
-        /* Sorry pdigraph API, but I need the actual arc object. We could find
-         * it twice (once for the 'from' device and once for the 'to' device),
-         * but that's less efficient. */
-        pdigraph<unsigned, P_device*, unsigned, P_message*,
-                 unsigned, P_pin*>::arc arc;
-        arc = task->pD->G.index_a.find(*arcKeyIt);
-        devicePairs->push_back(std::make_pair(arc.fr_n->second.data,
-                                              arc.to_n->second.data));
+        unsigned firstDeviceKey = 0;
+        unsigned secondDeviceKey = 0;
+        task->pD->G.FindNodes(*arcKeyIt, firstDeviceKey, secondDeviceKey);
+        devicePairs->push_back(
+            std::make_pair(
+                *(task->pD->G.FindNode(firstDeviceKey)),
+                *(task->pD->G.FindNode(secondDeviceKey))));
     }
 }
 
@@ -683,13 +681,13 @@ void Placer::populate_device_to_graph_key_map(P_task* task)
 void Placer::populate_edge_weight(P_task* task, P_device* from, P_device* to)
 {
     /* Skip this edge if one of the devices is a supervisor device. */
-    if (!(fromDevice)->pP_devtyp->pOnRTS) continue;
-    if (!(toDevice)->pP_devtyp->pOnRTS) continue;
+    if (!(from)->pP_devtyp->pOnRTS) return;
+    if (!(to)->pP_devtyp->pOnRTS) return;
 
     /* Store the weight. */
-    float weight = cache->compute_cost(deviceToThread[fromDevice],
-                                       deviceToThread[toDevice]);
-    taskEdgeCosts[task][std::make_pair(fromDevice, toDevice)] = weight;
+    float weight = cache->compute_cost(deviceToThread[from],
+                                       deviceToThread[to]);
+    taskEdgeCosts[task][std::make_pair(from, to)] = weight;
 }
 
 /* Given the placement maps and an initialised cost cache, populates the
