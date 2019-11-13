@@ -1121,7 +1121,7 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
     
     // TODO: parameterise this - this needs to be tied back to the task.
     double deltaT;
-    deltaT = static_cast<double>(instrMsg->cycles)/250000000;        // Convert cycles to seconds
+    deltaT = static_cast<double>(instrMsg->cycles)/P_INSTR_INTERVAL;        // Convert cycles to seconds
     
     // Update the instrumentation entry
     instr->totalTime += deltaT;

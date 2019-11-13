@@ -12,6 +12,20 @@
 #include "poets_hardware.h"
 #include "SoftwareAddressDefs.h"
 
+#ifdef TinselClockFreq 
+ #define P_DEFAULT_INSTRUMENTATION_INTERVAL     (TinselClockFreq * 1000000)
+#else
+ #define P_DEFAULT_INSTRUMENTATION_INTERVAL     240000000    //~1s at 240 MHz
+ #warning "TinselClockFreq not defined: Assuming 240MHz clock"
+#endif
+
+#ifndef P_INSTR_INTERVAL
+#define P_INSTR_INTERVAL P_DEFAULT_INSTRUMENTATION_INTERVAL
+#endif
+
+
+
+
 #define DEST_BROADCAST 0xFFFFFFFF
 
 #define MAX_P_SUP_MSG_BYTES 256

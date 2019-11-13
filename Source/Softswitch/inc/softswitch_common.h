@@ -10,11 +10,6 @@
 #define P_ONIDLE_CHANGE 0x80000000
 #define IDLE_SWEEP_CHUNK_SIZE 128
 
-#define P_DEFAULT_INSTRUMENTATION_INTERVAL     250000000    //~1s at 250 MHz
-#ifndef P_INSTR_INTERVAL
-#define P_INSTR_INTERVAL P_DEFAULT_INSTRUMENTATION_INTERVAL
-#endif
-
 struct PDeviceInstance;
 struct PThreadContext;
 struct POutputPin;
