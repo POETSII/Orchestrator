@@ -81,17 +81,17 @@ P_device* PDeviceInstance::elaborateDeviceInstance(D_graph* graph_instance)
        if (device_type != NULL) // but it still could turn out to be empty
        {
            device->pP_devtyp = const_cast<PDeviceType*>(device_type)->elaborateDeviceType();
-       }
-       if (numSubObjects(STATE))
-       {
-           PIDataValue* devState = static_cast<PIDataValue*>(subObject(STATE, 0));
-           if (!devState->data_type) devState->data_type = static_cast<const PIDataType*>(device_type->constSubObject(PDeviceType::STATE, 0));
-           device->pStateI = static_cast<PIDataValue*>(subObject(STATE, 0))->elaborateDataValue();
-       }
-       if (properties() != NULL)
-       {
-           if (!(properties()->data_type)) setPropsDataType(device_type->properties());
-           device->pPropsI = const_cast<PIDataValue*>(properties())->elaborateDataValue();
+           if (numSubObjects(STATE))
+           {
+              PIDataValue* devState = static_cast<PIDataValue*>(subObject(STATE, 0));
+              if (!devState->data_type) devState->data_type = static_cast<const PIDataType*>(device_type->constSubObject(PDeviceType::STATE, 0));
+              device->pStateI = static_cast<PIDataValue*>(subObject(STATE, 0))->elaborateDataValue();
+           }
+          if (properties() != NULL)
+          {
+             if (!(properties()->data_type)) setPropsDataType(device_type->properties());
+             device->pPropsI = const_cast<PIDataValue*>(properties())->elaborateDataValue();
+          }
        }
     }
     return device;

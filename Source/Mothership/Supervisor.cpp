@@ -18,7 +18,8 @@ int SupervisorCall(PMsg_p* In, PMsg_p* Out)
   if (!devMsg) return -1;                                 // bad message
   for (int msg=0; msg < numMsgs; msg++)
   {
-      // run as necessary any OnReceive handler 
+      // run as necessary any OnReceive handler
+      if (devMsg[msg].header.destPin >= Supervisor::inputs.size()) return -1;  // invalid pin
       supInputPin* dest = Supervisor::inputs[devMsg[msg].header.destPin];
       // more thought needed about accumulation of error messages vs. send indications
       sentErr += dest->OnReceive(dest->properties, dest->state, &devMsg[msg], Out, outMsgBuf);

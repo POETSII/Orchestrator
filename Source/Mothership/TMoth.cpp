@@ -813,6 +813,7 @@ unsigned TMoth::OnSuper(PMsg_p * Z, unsigned cIdx)
     W.Key(Q::SUPR);
     W.Src(Z->Tgt());
     int superReturn = 0;
+    DebugPrint("Executing Supervisor call\n");
     if ((superReturn = (*SupervisorCall)(Z,&W)) > 0) // Execute. Send a reply if one is expected
     {
         if (!cIdx && (Z->Tgt() == Urank) && (Z->Src() == Urank)) OnTinsel(&W, 0); // either to Tinsels,
@@ -902,9 +903,11 @@ unsigned TMoth::OnTinselOut(P_Sup_Msg_t * packet)
     W.Key(Q::SUPR);                            // it'll be a Supervisor packet
     W.Src(Urank);                              // coming from the us
     W.Tgt(Urank);                              // and directed at us
+    DebugPrint("Built a Supervisor packet from/to Mothership at rank %d\n", W.Src());
     unsigned last_index = packet->header.cmdLenBytes/p_sup_msg_size() + (packet->header.cmdLenBytes%p_sup_msg_size() ? 1 : 0);
     vector<P_Sup_Msg_t> pkt_v(packet,&packet[last_index]); // maybe slightly more efficient using the constructor
     W.Put<P_Sup_Msg_t>(0,&pkt_v);    // stuff the Tinsel message into the packet
+    DebugPrint("Calling Supervisor for device %u at pin %hu\n", packet->header.sourceDeviceAddr, packet->header.destPin);
     return OnSuper(&W, 0);
     // W.Send();                        // away it goes.
     // return 0;
