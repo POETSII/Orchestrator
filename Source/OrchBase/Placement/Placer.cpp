@@ -31,7 +31,8 @@ Placer::~Placer()
 Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
 {
     Algorithm* output = PNULL;
-    if (colloquialDescription == "sa") output = new SimulatedAnnealing(this);
+    if (colloquialDescription.substr(0, 2) == "sa")
+        output = new SimulatedAnnealing(this);
     if (colloquialDescription == "buck") output = new BucketFilling(this);
     if (colloquialDescription == "link") output = new BucketFilling(this);
 
