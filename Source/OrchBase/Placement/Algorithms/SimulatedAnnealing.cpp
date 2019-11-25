@@ -357,9 +357,9 @@ void SimulatedAnnealing::select(P_task* task, P_device** device,
                                 P_thread** thread, P_device** swapDevice)
 {
     /* Sanity. */
-    device = PNULL;
-    thread = PNULL;
-    swapDevice = PNULL;
+    *device = PNULL;
+    *thread = PNULL;
+    *swapDevice = PNULL;
 
     /* Choose a non-supervisor device. Note that this will loop infinitely if
      * there are only supervisor devices in this task (but I'm assuming nobody
