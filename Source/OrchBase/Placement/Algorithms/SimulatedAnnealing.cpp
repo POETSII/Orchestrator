@@ -151,7 +151,8 @@ float SimulatedAnnealing::do_it(P_task* task)
              * determination rejects the transformed state), and to allow
              * validCoresForDeviceType to be updated if the transformation is
              * accepted. */
-            previousThread = placer->deviceToThread[selectedDevice];
+            previousThread = placer->deviceToThread.\
+                find(selectedDevice)->second;
 
             /* Apply transformation. */
             placer->link(selectedThread, selectedDevice);
@@ -387,7 +388,7 @@ void SimulatedAnnealing::select(P_task* task, P_device** device,
     std::map<AddressComponent, P_thread*>::iterator threadIterator;
     threadIterator = core->P_threadm.begin();
     std::advance(threadIterator, rand() % core->P_threadm.size());
-    thread = &(threadIterator->second);
+    *thread = threadIterator->second;
 
     /* <!> NB: Disabling swap operations for now, to make debugging simpler. */
     return; // <!>
