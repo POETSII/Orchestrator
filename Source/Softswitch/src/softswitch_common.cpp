@@ -594,7 +594,7 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
     
     // Creating multiple bit-fields for RTS depending on a config flag.
     // 32 = 1 bit-field, 64 = 2 bit-fields, etc. etc.
-    uint32_t rts = 0; //[(P_MAX_OPINS_PER_DEVICE+31)>>5];        // flags for new ready-to-send pins
+    uint32_t rts = 0; // flags for new ready-to-send pins
     uint32_t pin;
     
     // Run device's RTS handler.

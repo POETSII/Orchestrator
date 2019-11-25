@@ -422,14 +422,11 @@ unsigned TMoth::CmStop(string task)
             stop_msg.header.swAddr |= ((1 << P_SW_CNC_SHIFT)
                                         & P_SW_CNC_MASK);
             stop_msg.header.swAddr |= ((P_CNC_STOP << P_SW_OPCODE_SHIFT)
-                                        & P_SW_OPCODE_MASK);                // and is of message type __init__
+                                        & P_SW_OPCODE_MASK);                // and is of message type STOP
             stop_msg.header.swAddr |= ((P_ADDR_BROADCAST << P_SW_DEVICE_SHIFT)
                                         & P_SW_DEVICE_MASK);                               
             
-            stop_msg.header.pinAddr = ((P_SUP_PIN_SYS_SHORT << P_HD_TGTPIN_SHIFT)
-                                        & P_HD_TGTPIN_MASK);                // it goes to the system __init__ pin
-            stop_msg.header.pinAddr |= ((0 << P_HD_DESTEDGEINDEX_SHIFT)
-                                        & P_HD_DESTEDGEINDEX_MASK);         // no edge index necessary.
+            stop_msg.header.pinAddr = 0;                 // Pin address does not matter
             
             uint32_t flits = p_hdr_size() >> TinselLogBytesPerFlit;
             if(flits == 0) ++flits;
