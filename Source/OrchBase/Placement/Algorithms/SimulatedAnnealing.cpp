@@ -256,7 +256,7 @@ float SimulatedAnnealing::do_it(P_task* task)
                 /* Update validCoresForDeviceType, for selection. */
                 std::map<P_devtyp*, std::set<P_core*>>::iterator devtypIt;
                 P_core* firstCore = previousThread->parent;
-                P_core* secondCore = previousThread->parent->pair;
+                P_core* secondCore = firstCore->pair;
 
                 /* If we removed the last device from this core pair, make the
                  * core pair available for other device types. First check on
@@ -296,7 +296,6 @@ float SimulatedAnnealing::do_it(P_task* task)
                      * validCores map. */
                     if (coresEmpty)
                     {
-
                         for (devtypIt = validCoresForDeviceType.begin();
                              devtypIt != validCoresForDeviceType.end();
                              devtypIt++)
@@ -307,9 +306,12 @@ float SimulatedAnnealing::do_it(P_task* task)
                     }
                 }
 
-                /* And likewise, "unfree" this core pair for each other device
-                 * type. Handily, set.erase doesn't moan if no element
+                /* And likewise, "unfree" the new core pair for each other
+                 * device type. Handily, set.erase doesn't moan if no element
                  * matches. */
+                P_core* firstCore = selectedThread->parent;
+                P_core* secondCore = firstCore->pair;
+
                 for (devtypIt = validCoresForDeviceType.begin();
                      devtypIt != validCoresForDeviceType.end();
                      devtypIt++)
