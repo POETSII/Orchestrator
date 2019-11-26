@@ -20,11 +20,11 @@ float SimulatedAnnealing::acceptance_probability(float fitnessBefore,
 }
 
 /* Computes the disorder value as a function of the iteration number, between
- * one (at iteration=0) and zero (lim iteration ->inf). Decrease must be
+ * half (at iteration=0) and zero (lim iteration ->inf). Decrease must be
  * monotonic. For now, it's a simple exponential decay. */
 float SimulatedAnnealing::compute_disorder()
 {
-    return exp(-DISORDER_DECAY * iteration);
+    return 0.5 * exp(-DISORDER_DECAY * iteration);
 }
 
 /* Populates a map with information about which devices can be placed where. */

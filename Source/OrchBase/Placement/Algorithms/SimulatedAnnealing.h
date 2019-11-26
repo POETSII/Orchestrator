@@ -16,7 +16,7 @@ class HardwareIterator;
 
 /* Exponential decay (half life of 5000 iterations:
  * DISORDER_DECAY = - ln(0.5) / 5000. */
-#define DISORDER_DECAY -0.0001386  /* More or less. */
+#define DISORDER_DECAY 0.0001386  /* More or less. */
 
 class SimulatedAnnealing: public Algorithm
 {
