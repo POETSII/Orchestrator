@@ -34,6 +34,14 @@ float SimulatedAnnealing::compute_disorder()
 float SimulatedAnnealing::do_it(P_task* task)
 {
     FILE* log = fopen("./simulated_annealing.log", "w");
+    FILE* data = fopen("./simulated_annealing_fitness_graph.csv", "w");
+
+    /* Get the time and write it. */
+    time_t timeNtv;  /* "Native" */
+    time(&timeNtv);
+    char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
+    strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
+    fprintf(log, "[I] Placement starting at %s.\n", timeBuf);
 
     /* Build the hardware communication matrix (cost cache), if it hasn't
      * already been built by this placer. */
@@ -92,6 +100,7 @@ float SimulatedAnnealing::do_it(P_task* task)
     fprintf(log, "[I] Starting iteration.\n");
     while (!is_finished())
     {
+        fprintf(data, "%u,%f\n", iteration, fitness);
         fprintf(log, "[D] Iteration %u...\n", iteration);
         revert = false;
         fitnessChange = 0;
@@ -330,6 +339,8 @@ float SimulatedAnnealing::do_it(P_task* task)
     placer->populate_result_structures(&result, task, fitness);
     fprintf(log, "[I] Final fitness: %f, Iteration count: %d.\n",
             fitness, iteration);
+    strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
+    fprintf(log, "[I] Placement complete at %s.\n", timeBuf);
     fclose(log);
     return fitness;
 }
