@@ -138,7 +138,9 @@ private:
     /* Fine-grained diagnostics. */
     void dump_costs(P_task* task, const char* path);
     void dump_diagnostics(P_task* task, const char* path);
+    void dump_edge_loading(const char* path);
     void dump_map(P_task* task, const char* path);
+    void dump_node_loading(const char* path);
 };
 
 #endif

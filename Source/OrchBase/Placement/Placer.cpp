@@ -516,11 +516,17 @@ void Placer::dump(P_task* task)
                                   task->Name().c_str(), timeBuf.c_str());
     std::string cachePath = dformat("placement_edge_cache_%s.txt",
                                     timeBuf.c_str());
+    std::string nodeLoadPath = dformat("placement_node_loading_%s.txt",
+                                       timeBuf.c_str());
+    std::string edgeLoadPath = dformat("placement_edge_loading_%s.txt",
+                                       timeBuf.c_str());
 
     /* Call subordinate dumping methods. */
     dump_costs(task, costPath.c_str());
     dump_diagnostics(task, diagPath.c_str());
+    dump_edge_loading(edgeLoadPath.c_str());
     dump_map(task, mapPath.c_str());
+    dump_node_loading(nodeLoadPath.c_str());
 
     FILE* cacheFile = fopen(cachePath.c_str(), "w");
     cache->Dump(cacheFile);
@@ -567,6 +573,73 @@ void Placer::dump_diagnostics(P_task* task, const char* path)
     out.close();
 }
 
+/* Dump mailbox-level edge loading using the cost cache. */
+void Placer::dump_edge_loading(const char* path)
+{
+    /* File setup. */
+    ofstream out;
+    out.open(path);
+
+    std::map<P_mailbox*, std::map<P_mailbox*, unsigned>> edgeLoading;
+
+    /* Iterate over each task. */
+    P_device* fromDevice;
+    P_device* toDevice;
+    P_mailbox* fromMailbox;
+    P_mailbox* toMailbox;
+
+    std::map<P_task*, Algorithm*>::iterator taskIt;
+    for (taskIt = placedTasks.begin(); taskIt != placedTasks.end(); taskIt++)
+    {
+        /* Iterate over each edge for that task. */
+        std::map<std::pair<P_device*, P_device*>, float>::iterator edgeIt;
+        for (edgeIt = taskEdgeCosts[taskIt->first].begin();
+             edgeIt != taskEdgeCosts[taskIt->first].end(); edgeIt++)
+        {
+            /* Grab the mailboxes. */
+            fromDevice = edgeIt->first.first;
+            toDevice = edgeIt->first.second;
+            fromMailbox = deviceToThread[fromDevice]->parent->parent;
+            toMailbox = deviceToThread[toDevice]->parent->parent;
+
+            /* Walk through the 'pathNext' cache in the CostCache to get all of
+             * the edges, and increment each edge in edgeLoading. */
+            std::vector<P_mailbox*> path;
+            cache->get_path(fromMailbox, toMailbox, &path);
+            std::vector<P_mailbox*>::iterator mailboxIt;
+            P_mailbox* previousMailbox;
+            for (mailboxIt = path.begin(); mailboxIt != path.end();
+                 mailboxIt++)
+            {
+                /* Add backwards - skip index 0. */
+                if (mailboxIt != path.begin())
+                {
+                    edgeLoading[previousMailbox][*mailboxIt] += 1;
+                }
+                previousMailbox = *mailboxIt;
+                continue;
+            }
+        }
+    }
+
+    /* Writeout. */
+    std::map<P_mailbox*, std::map<P_mailbox*, unsigned>>::iterator edgeOuterIt;
+    std::map<P_mailbox*, unsigned>::iterator edgeInnerIt;
+    for (edgeOuterIt = edgeLoading.begin(); edgeOuterIt != edgeLoading.end();
+         edgeOuterIt++)
+    {
+        for (edgeInnerIt = edgeOuterIt->second.begin();
+             edgeInnerIt != edgeOuterIt->second.end(); edgeInnerIt++)
+        {
+            out << edgeOuterIt->first->FullName() << ","
+                << edgeInnerIt->first->FullName() << ","
+                << edgeInnerIt->second << std::endl;
+        }
+    }
+    out.close();
+}
+
+
 /* Dumps mapping information for a task. */
 void Placer::dump_map(P_task* task, const char* path)
 {
@@ -591,6 +664,47 @@ void Placer::dump_map(P_task* task, const char* path)
     }
 
     out.close();  /* We out, yo. */
+}
+
+/* Dumps node loading information for the entire placer. Core-level and
+ * mailbox-level dumps are written to the same file. */
+void Placer::dump_node_loading(const char* path)
+{
+    /* File setup. */
+    ofstream out;
+    out.open(path);
+
+    std::map<P_core*, unsigned> coreLoading;
+    std::map<P_core*, unsigned>::iterator coreIt;
+    std::map<P_mailbox*, unsigned> mailboxLoading;
+    std::map<P_mailbox*, unsigned>::iterator mailboxIt;
+
+    /* Iterate over each placed device. */
+    std::map<P_device*, P_thread*>::iterator threadIt;
+    for (threadIt = deviceToThread.begin(); threadIt != deviceToThread.end();
+         threadIt++)
+    {
+        /* Increment loading. */
+        coreLoading[threadIt->second->parent] += 1;
+        mailboxLoading[threadIt->second->parent->parent] += 1;
+    }
+
+    /* Blargh. */
+    out << "[core]" << std::endl;
+    for (coreIt = coreLoading.begin(); coreIt != coreLoading.end(); coreIt++)
+    {
+        out << coreIt->first->FullName() << "," << coreIt->second << std::endl;
+    }
+
+    out << "[mailbox]" << std::endl;
+    for (mailboxIt = mailboxLoading.begin(); mailboxIt != mailboxLoading.end();
+         mailboxIt++)
+    {
+        out << mailboxIt->first->FullName() << "," << mailboxIt->second
+            << std::endl;
+    }
+
+    out.close();
 }
 
 /* Grabs all boxes associated with a given task in this placer's
