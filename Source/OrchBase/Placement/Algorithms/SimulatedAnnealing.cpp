@@ -309,8 +309,8 @@ float SimulatedAnnealing::do_it(P_task* task)
                 /* And likewise, "unfree" the new core pair for each other
                  * device type. Handily, set.erase doesn't moan if no element
                  * matches. */
-                P_core* firstCore = selectedThread->parent;
-                P_core* secondCore = firstCore->pair;
+                firstCore = selectedThread->parent;
+                secondCore = firstCore->pair;
 
                 for (devtypIt = validCoresForDeviceType.begin();
                      devtypIt != validCoresForDeviceType.end();

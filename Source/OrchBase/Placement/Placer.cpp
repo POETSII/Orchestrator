@@ -79,9 +79,9 @@ bool Placer::are_all_core_pairs_device_locked(P_task* task,
 
     /* For each core pair, build a set of device types for the devices that
      * inhabit that core pair, and store it in the "bad" map. Then, if the size
-     * of that set less than two, remove it. (This means we effectively check
-     * each pair twice, but this beats the time required to search for the
-     * corresponding pair as the number of cores grows.) */
+     * of that set is less than two, remove it. (This means we effectively
+     * check each pair twice, but this beats the time required to search for
+     * the corresponding pair as the number of cores grows.) */
     std::map<P_core*, std::set<P_device*>>::iterator coreIt;
     std::map<AddressComponent, P_thread*>::iterator threadIt;
     P_core* firstCore;
