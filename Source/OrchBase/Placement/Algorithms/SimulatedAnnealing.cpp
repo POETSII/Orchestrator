@@ -177,7 +177,9 @@ float SimulatedAnnealing::do_it(P_task* task)
             revert = !placer->are_all_hard_constraints_satisfied(
                 task, &brokenHardConstraints,
                 std::vector<P_device*>(1, selectedDevice));
-            if (!revert)
+
+            if (revert) fprintf(log, "[D]     Hard constraint violated!\n");
+            else
             {
                 /* Compute the fitness from device-device connections after the
                  * move. */
@@ -237,7 +239,7 @@ float SimulatedAnnealing::do_it(P_task* task)
                 float acceptance = acceptance_probability(
                     fitness, fitness + fitnessChange);
                 revert = roll > acceptance;
-                fprintf(log, "[D] Current fitness: %f, Fitness delta: %f, "
+                fprintf(log, "[D]     Current fitness: %f, Fitness delta: %f, "
                         "Roll: %f, Acceptance: %f.\n",
                         fitness, fitnessChange, roll, acceptance);
             }
@@ -245,7 +247,7 @@ float SimulatedAnnealing::do_it(P_task* task)
             /* Apply reversion, if deemed appropriate. */
             if (revert)
             {
-                fprintf(log, "[D] Failed to move device '%s' to thread "
+                fprintf(log, "[D]     Failed to move device '%s' to thread "
                         "'%s'.\n",
                        selectedDevice->Name().c_str(),
                        selectedThread->FullName().c_str());
@@ -256,7 +258,7 @@ float SimulatedAnnealing::do_it(P_task* task)
             /* Otherwise, we need to update some structures... */
             else
             {
-                fprintf(log, "[D] Moved device '%s' to thread '%s'.\n",
+                fprintf(log, "[D]     Moved device '%s' to thread '%s'.\n",
                        selectedDevice->Name().c_str(),
                        selectedThread->FullName().c_str());
                 std::map<std::pair<P_core*, P_core*>,
