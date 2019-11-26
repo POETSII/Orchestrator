@@ -153,6 +153,22 @@ float SimulatedAnnealing::do_it(P_task* task)
          * thread to swap with. */
         select(task, &selectedDevice, &selectedThread, &swapDevice);
 
+        /* Panic if we chose a device, but there was nowhere to put it. */
+        if (selectedThread == PNULL)
+        {
+            fprintf(log, "[W]     Selected device '%s' of type '%s' can't "
+                    "be put anywhere. Choosing a different device...\n",
+                    selectedDevice->Name().c_str(),
+                    selectedDevice->pP_devtyp->Name().c_str());
+            iteration++;
+            continue;
+        }
+
+        fprintf(log, "[D]     Selected device: '%s'\n",
+                selectedDevice->Name().c_str());
+        fprintf(log, "[D]     Selected thread: '%s'\n",
+                selectedThread->FullName().c_str());
+
         /* Transform for move operation. */
         if (swapDevice == PNULL)
         {
@@ -247,10 +263,7 @@ float SimulatedAnnealing::do_it(P_task* task)
             /* Apply reversion, if deemed appropriate. */
             if (revert)
             {
-                fprintf(log, "[D]     Failed to move device '%s' to thread "
-                        "'%s'.\n",
-                       selectedDevice->Name().c_str(),
-                       selectedThread->FullName().c_str());
+                fprintf(log, "[D]     [FAIL]\n");
                 placer->link(previousThread, selectedDevice);
                 placer->populate_edge_weights(task, selectedDevice);
             }
@@ -258,9 +271,7 @@ float SimulatedAnnealing::do_it(P_task* task)
             /* Otherwise, we need to update some structures... */
             else
             {
-                fprintf(log, "[D]     Moved device '%s' to thread '%s'.\n",
-                       selectedDevice->Name().c_str(),
-                       selectedThread->FullName().c_str());
+                fprintf(log, "[D]     [PASS]\n");
                 std::map<std::pair<P_core*, P_core*>,
                          std::set<P_devtyp*>> mymap;
                 if (!placer->are_all_core_pairs_device_locked(task, &mymap))
@@ -370,6 +381,8 @@ float SimulatedAnnealing::do_it(P_task* task)
 
     /* Write our result structure, and leave. */
     placer->populate_result_structures(&result, task, fitness);
+    fprintf(log, "[I] Final fitness: %f, Iteration count: %d.\n",
+            fitness, iteration);
     fclose(log);
     return fitness;
 }
@@ -408,11 +421,14 @@ void SimulatedAnnealing::select(P_task* task, P_device** device,
         task->pD->G.RandomNode(nodeKey, *device);
     } while (!((*device)->pP_devtyp->pOnRTS));
 
-    /* Choose a (valid) core. */
+    /* Choose a (valid) core. If there are no valid cores, set thread to NULL
+     * and leave. */
     P_core* core;
     P_devtyp* deviceType = (*device)->pP_devtyp;
     std::map<P_devtyp*, std::set<P_core*>>::iterator bigScaryMapIterator;
     bigScaryMapIterator = validCoresForDeviceType.find(deviceType);
+    if (bigScaryMapIterator->second.empty()) return;
+
     /* Note that we don't need to check for "unfound" device types, because
      * validCoresForDeviceType has been populated with all non-supervisor
      * device types earlier. */

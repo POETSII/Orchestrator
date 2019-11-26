@@ -12,7 +12,7 @@ class HardwareIterator;
 #include "Placer.h"
 
 /* Naive end point. */
-#define ITERATION_MAX 30000
+#define ITERATION_MAX 300000
 
 /* Exponential decay (half life of 5000 iterations:
  * DISORDER_DECAY = - ln(0.5) / 5000. */
