@@ -22,6 +22,7 @@ struct Result;
 /* Algorithms! */
 #include "Algorithm.h"
 #include "SimulatedAnnealing.h"
+#include "SmartRandom.h"
 
 /* Constraints! */
 #include "MaxDevicesPerThread.h"
@@ -108,12 +109,16 @@ public:
     void get_edges_for_device(P_task* task, P_device* device,
         std::vector<std::pair<P_device*, P_device*>>* devicePairs);
 
+    /* Convenient way to get core occupation. */
+    void define_valid_cores_map(P_task* task,
+        std::map<P_devtyp*, std::set<P_core*>>* validCoresForDeviceType);
+
     /* Low-level placement operation, to be used only be algorithms */
     void link(P_thread* thread, P_device* device);
 
     /* Doing the dirty */
     float place(P_task* task, std::string algorithmDescription);
-    void unplace(P_task* task);
+    void unplace(P_task* task, bool andConstraints=true);
 
     /* Constraint query */
     unsigned constrained_max_devices_per_thread(P_task* task);

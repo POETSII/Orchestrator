@@ -27,67 +27,6 @@ float SimulatedAnnealing::compute_disorder()
     return 0.5 * exp(-DISORDER_DECAY * iteration);
 }
 
-/* Populates a map with information about which devices can be placed where. */
-void SimulatedAnnealing::define_valid_cores_map(P_task* task)
-{
-    /* Firstly, populate the map with an entry for each core and each device
-     * type in this task. NB: It would be handy if the task a container of
-     * pointers to each device type, but it doesn't, so we walk the devices
-     * instead (won't take too long). */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
-    {
-        P_device* device = task->pD->G.NodeData(deviceIterator);
-
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pP_devtyp->pOnRTS)) continue;
-
-        /* Skip if an entry in the map already exists for a device of this
-         * type */
-        P_devtyp* deviceType = device->pP_devtyp;
-        std::map<P_devtyp*, std::set<P_core*>>::iterator devTypFinder;
-        devTypFinder = validCoresForDeviceType.find(deviceType);
-        if (devTypFinder == validCoresForDeviceType.end())
-        {
-            /* Populate the entry with every core in the engine. */
-            std::set<P_core*>* setToPopulate;
-            P_core* currentCore;
-            setToPopulate = &(validCoresForDeviceType[deviceType]);
-            HardwareIterator coreIterator = HardwareIterator(placer->engine);
-            currentCore = coreIterator.get_core();
-            while (!coreIterator.has_wrapped())
-            {
-                setToPopulate->insert(currentCore);
-                currentCore = coreIterator.next_core();
-            }
-        }
-    }
-
-    /* Secondly, remove entries for each placed device (including those from
-     * other tasks! We don't want to interact with them at all...) */
-    std::map<P_device*, P_thread*>::iterator deviceIterator;
-    std::map<P_devtyp*, std::set<P_core*>>::iterator bigScaryMapIterator;
-    for (deviceIterator = placer->deviceToThread.begin();
-         deviceIterator != placer->deviceToThread.end(); deviceIterator++)
-    {
-        P_devtyp* deviceType = deviceIterator->first->pP_devtyp;
-
-        /* Remove the placed core from each device type entry... */
-        for (bigScaryMapIterator = validCoresForDeviceType.begin();
-             bigScaryMapIterator != validCoresForDeviceType.end();
-             bigScaryMapIterator++)
-        {
-            /* ...except it's own (there's a device placed there, after
-             * all). */
-            if (bigScaryMapIterator->first != deviceType)
-            {
-                P_core* placedCore = deviceIterator->second->parent;
-                bigScaryMapIterator->second.erase(placedCore);
-            }
-        }
-    }
-}
-
 /* Places a task onto the engine held by a placer using a simulated annealing
  * algorithm.
  *
@@ -105,12 +44,20 @@ float SimulatedAnnealing::do_it(P_task* task)
         placer->cache = new CostCache(placer->engine);
     }
 
-    /* Initial placement using bucket filling. Note that we rely on this being
-     * a valid placement in order for this algorithm to select across the
-     * domain. (MLV never writes broken code! >_>) */
-    fprintf(log, "[I] Performing initial placement (bucket filling).\n");
-    BucketFilling initialAlgorithm = BucketFilling(placer);
-    initialAlgorithm.do_it(task);
+    /* Initial placement using smart-random. Note that we rely on this being a
+     * valid placement in order for this algorithm to select across the
+     * domain. (MLV never writes broken code! >_>). If it doesn't work, fall
+     * back to bucket filling (which is more stiff and harder to "anneal", but
+     * is generally safer). */
+    fprintf(log, "[I] Performing initial placement (smart-random).\n");
+    SmartRandom initialAlgorithm = SmartRandom(placer);
+    if (initialAlgorithm.do_it(task) == -1)
+    {
+        fprintf(log, "[I] It failed. Trying bucket-filling instead...\n");
+        placer->unplace(task, false);  /* Leave the constraints alone. */
+        BucketFilling otherInitialAlgorithm = BucketFilling(placer);
+        otherInitialAlgorithm.do_it(task);
+    }
 
     /* Compute fitness of initial placement. */
     placer->populate_edge_weights(task);
@@ -122,7 +69,7 @@ float SimulatedAnnealing::do_it(P_task* task)
         fitness);
 
     /* Define the valid-cores map. */
-    define_valid_cores_map(task);
+    placer->define_valid_cores_map(task, &validCoresForDeviceType);
 
     /* Define the number of devices allowed per thread before constraints are
      * violated - used during selection. */

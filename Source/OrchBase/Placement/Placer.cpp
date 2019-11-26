@@ -35,6 +35,7 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
         output = new SimulatedAnnealing(this);
     if (colloquialDescription == "buck") output = new BucketFilling(this);
     if (colloquialDescription == "link") output = new BucketFilling(this);
+    if (colloquialDescription == "rand") output = new SmartRandom(this);
 
     if (output == PNULL)
     {
@@ -416,6 +417,69 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
     return maximumSoFar;
 }
 
+/* Populates a map with information about which devices can be placed
+ * where. Useful for algorithms. */
+void Placer::define_valid_cores_map(P_task* task,
+        std::map<P_devtyp*, std::set<P_core*>>* validCoresForDeviceType)
+{
+    /* Firstly, populate the map with an entry for each core and each device
+     * type in this task. NB: It would be handy if the task a container of
+     * pointers to each device type, but it doesn't, so we walk the devices
+     * instead (won't take too long). */
+    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
+                      P_pin*, task->pD->G, deviceIterator)
+    {
+        P_device* device = task->pD->G.NodeData(deviceIterator);
+
+        /* Ignore if it's a supervisor device (we don't map those). */
+        if (!(device->pP_devtyp->pOnRTS)) continue;
+
+        /* Skip if an entry in the map already exists for a device of this
+         * type */
+        P_devtyp* deviceType = device->pP_devtyp;
+        std::map<P_devtyp*, std::set<P_core*>>::iterator devTypFinder;
+        devTypFinder = validCoresForDeviceType->find(deviceType);
+        if (devTypFinder == validCoresForDeviceType->end())
+        {
+            /* Populate the entry with every core in the engine. */
+            std::set<P_core*>* setToPopulate;
+            P_core* currentCore;
+            setToPopulate = &((*validCoresForDeviceType)[deviceType]);
+            HardwareIterator coreIterator = HardwareIterator(engine);
+            currentCore = coreIterator.get_core();
+            while (!coreIterator.has_wrapped())
+            {
+                setToPopulate->insert(currentCore);
+                currentCore = coreIterator.next_core();
+            }
+        }
+    }
+
+    /* Secondly, remove entries for each placed device (including those from
+     * other tasks! We don't want to interact with them at all...) */
+    std::map<P_device*, P_thread*>::iterator deviceIterator;
+    std::map<P_devtyp*, std::set<P_core*>>::iterator bigScaryMapIterator;
+    for (deviceIterator = deviceToThread.begin();
+         deviceIterator != deviceToThread.end(); deviceIterator++)
+    {
+        P_devtyp* deviceType = deviceIterator->first->pP_devtyp;
+
+        /* Remove the placed core from each device type entry... */
+        for (bigScaryMapIterator = validCoresForDeviceType->begin();
+             bigScaryMapIterator != validCoresForDeviceType->end();
+             bigScaryMapIterator++)
+        {
+            /* ...except it's own (there's a device placed there, after
+             * all). */
+            if (bigScaryMapIterator->first != deviceType)
+            {
+                P_core* placedCore = deviceIterator->second->parent;
+                bigScaryMapIterator->second.erase(placedCore);
+            }
+        }
+    }
+}
+
 /* Dumps placement information for a task. Assumes the task has been
  * placed. See the documentation. */
 void Placer::dump(P_task* task)
@@ -778,23 +842,27 @@ void Placer::populate_result_structures(Result* result, P_task* task,
  *
  * This implementation assumes that each thread contains only devices belonging
  * to a given task (to save many extra list.erases). */
-void Placer::unplace(P_task* task)
+void Placer::unplace(P_task* task, bool andConstraints)
 {
-    /* Remove task-imposed constraints. NB: This is not a for loop, because
-     * elements are removed from the container within the loop. */
-    std::list<Constraint*>::iterator constraintIterator = \
-        constraints.begin();
-    while (constraintIterator != constraints.end())
+    /* Remove task-imposed constraints (unless explicitly told otherwise). NB:
+     * This is not a for loop, because elements are removed from the container
+     * within the loop. */
+    if (andConstraints)
     {
-        /* Say goodbye! */
-        if ((*constraintIterator)->task == task)
+        std::list<Constraint*>::iterator constraintIterator =   \
+            constraints.begin();
+        while (constraintIterator != constraints.end())
         {
-            delete *constraintIterator;
-            constraintIterator = constraints.erase(constraintIterator);
-        }
+            /* Say goodbye! */
+            if ((*constraintIterator)->task == task)
+            {
+                delete *constraintIterator;
+                constraintIterator = constraints.erase(constraintIterator);
+            }
 
-        /* Safe for now. */
-        else constraintIterator++;
+            /* You're safe for now. */
+            else constraintIterator++;
+        }
     }
 
     /* Clear the maps - iterate through each device in the task. */

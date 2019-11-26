@@ -34,7 +34,6 @@ public:
     SimulatedAnnealing(Placer* placer);
     float acceptance_probability(float fitnessBefore, float fitnessAfter);
     inline float compute_disorder();
-    void define_valid_cores_map(P_task* task);
     float do_it(P_task* task);
     inline bool is_finished();
     void select(P_task* task, P_device** device, P_thread** thread,
