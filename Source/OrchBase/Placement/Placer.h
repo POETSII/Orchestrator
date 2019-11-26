@@ -126,6 +126,9 @@ public:
     /* Updates software addresses for placed devices. */
     void update_software_addresses(P_task* task);
 
+    /* Timing for algorithms */
+    std::string timestamp();
+
 private:
     Algorithm* algorithm_from_string(std::string);
     void update_task_to_cores_map(P_task* task);

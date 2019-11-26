@@ -505,19 +505,17 @@ void Placer::dump(P_task* task)
     }
 
     /* Get the time. */
-    time_t timeNtv;  /* "Native" */
-    time(&timeNtv);
-    char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
-    strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
+    std::string timeBuf = timestamp();
 
     /* Figure out paths. */
     std::string costPath = dformat("placement_task_edges_%s_%s.txt",
-                                  task->Name().c_str(), timeBuf);
+                                   task->Name().c_str(), timeBuf.c_str());
     std::string diagPath = dformat("placement_diagnostics_%s_%s.txt",
-                                   task->Name().c_str(), timeBuf);
+                                   task->Name().c_str(), timeBuf.c_str());
     std::string mapPath = dformat("placement_task_to_hardware_%s_%s.txt",
-                                  task->Name().c_str(), timeBuf);
-    std::string cachePath = dformat("placement_edge_cache_%s.txt", timeBuf);
+                                  task->Name().c_str(), timeBuf.c_str());
+    std::string cachePath = dformat("placement_edge_cache_%s.txt",
+                                    timeBuf.c_str());
 
     /* Call subordinate dumping methods. */
     dump_costs(task, costPath.c_str());
@@ -562,7 +560,9 @@ void Placer::dump_diagnostics(P_task* task, const char* path)
 
     out << "maxDevicesPerThread:" << result->maxDevicesPerThread << std::endl;
     out << "maxEdgeCost:" << result->maxEdgeCost << std::endl;
-    out << "when:" << result->when << std::endl;
+    out << "method:" << result->method << std::endl;
+    out << "startTime:" << result->startTime << std::endl;
+    out << "endTime:" << result->endTime << std::endl;
     out << "score:" << result->score << std::endl;
     out.close();
 }
@@ -791,18 +791,18 @@ void Placer::populate_result_structures(Result* result, P_task* task,
                                         float score)
 {
     /* Time! */
-    time_t timeNtv;  /* "Native" */
-    time(&timeNtv);
-    char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
-    strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
-    result->when = timeBuf;
+    if (result->endTime.empty())
+    {
+        result->endTime = timestamp();
+        result->startTime = "1970-01-01T00:00:00";
+    }
 
     /* Easy one. */
     result->score = score;
 
     /* Maximum number of devices per thread - compute by going through the
      * cores assigned to this task. */
-    result->maxDevicesPerThread = 0;  /* Optimistic; we'll change this later. */
+    result->maxDevicesPerThread = 0;  /* Optimistic. */
 
     std::set<P_core*>::iterator coreIt;
     std::set<P_core*>* targetSet = &(taskToCores[task]);
@@ -832,6 +832,16 @@ void Placer::populate_result_structures(Result* result, P_task* task,
          * maximum, update the maximum. */
         result->maxEdgeCost = std::max(result->maxEdgeCost, edgeIt->second);
     }
+}
+
+/* Gets the time in ISO-8601=seconds format, and returns a string of it. */
+std::string Placer::timestamp()
+{
+    time_t timeNtv;  /* "Native" */
+    time(&timeNtv);
+    char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
+    strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
+    return timeBuf;
 }
 
 /* Removes all device-thread relations for all devices in a task, and removes

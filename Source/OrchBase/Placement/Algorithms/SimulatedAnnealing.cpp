@@ -2,6 +2,7 @@
 
 SimulatedAnnealing::SimulatedAnnealing(Placer* placer):Algorithm(placer)
 {
+    result.method = "sa";
     iteration = 0;
 }
 
@@ -33,15 +34,16 @@ float SimulatedAnnealing::compute_disorder()
  * Returns the placement score. */
 float SimulatedAnnealing::do_it(P_task* task)
 {
-    FILE* log = fopen("./simulated_annealing.log", "w");
-    FILE* data = fopen("./simulated_annealing_fitness_graph.csv", "w");
+    std::string time = placer->timestamp();
 
-    /* Get the time and write it. */
-    time_t timeNtv;  /* "Native" */
-    time(&timeNtv);
-    char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
-    strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
-    fprintf(log, "[I] Placement starting at %s.\n", timeBuf);
+    FILE* log = fopen(dformat("./simulated_annealing_%s_%s.txt",
+                              task->Name().c_str(), time.c_str()).c_str(),
+                      "w");
+    FILE* data = fopen(dformat("./simulated_annealing_fitness_graph_%s_%s.csv",
+                               task->Name().c_str(), time.c_str()).c_str(),
+                       "w");
+    result.startTime = time;
+    fprintf(log, "[I] Placement starting at %s.\n", time.c_str());
 
     /* Build the hardware communication matrix (cost cache), if it hasn't
      * already been built by this placer. */
@@ -339,8 +341,8 @@ float SimulatedAnnealing::do_it(P_task* task)
     placer->populate_result_structures(&result, task, fitness);
     fprintf(log, "[I] Final fitness: %f, Iteration count: %d.\n",
             fitness, iteration);
-    strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
-    fprintf(log, "[I] Placement complete at %s.\n", timeBuf);
+    fprintf(log, "[I] Placement complete at %s.\n",
+            placer->timestamp().c_str());
     fclose(log);
     return fitness;
 }

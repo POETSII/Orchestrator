@@ -1,6 +1,9 @@
 #include "BucketFilling.h"
 
-BucketFilling::BucketFilling(Placer* placer):Algorithm(placer){}
+BucketFilling::BucketFilling(Placer* placer):Algorithm(placer)
+{
+    result.method = "buck";
+}
 
 /* Places a task onto the engine held by a placer using a naive bucket-filling
  * algorithm.
@@ -14,6 +17,8 @@ BucketFilling::BucketFilling(Placer* placer):Algorithm(placer){}
  * Returns zero (for now - later will return fitness). */
 float BucketFilling::do_it(P_task* task)
 {
+    result.startTime = placer->timestamp();
+
     /* Start from the first core pair in the engine that has no devices
      * associated with it. */
 
@@ -92,6 +97,7 @@ float BucketFilling::do_it(P_task* task)
         }
     }
 
+    result.endTime = placer->timestamp();
     return 0;
 }
 

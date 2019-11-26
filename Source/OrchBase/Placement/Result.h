@@ -12,8 +12,10 @@ struct Result
 {
     unsigned maxDevicesPerThread;
     float maxEdgeCost;
+    std::string method;
     float score;
-    std::string when;
+    std::string startTime;
+    std::string endTime;
 };
 
 #endif

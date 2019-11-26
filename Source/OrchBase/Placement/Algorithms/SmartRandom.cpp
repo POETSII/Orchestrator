@@ -1,6 +1,9 @@
 #include "SmartRandom.h"
 
-SmartRandom::SmartRandom(Placer* placer):Algorithm(placer){}
+SmartRandom::SmartRandom(Placer* placer):Algorithm(placer)
+{
+    result.method = "rand";
+}
 
 /* Places a task onto the engine held by a placer using a random placer.
  *
@@ -18,6 +21,8 @@ float SmartRandom::do_it(P_task* task)
     P_thread* thread;
     P_devtyp* deviceType;
     std::map<P_devtyp*, std::set<P_core*>>::iterator validCoreIt, badCoreIt;
+
+    result.startTime = placer->timestamp();
 
     /* Define the number of devices allowed per thread before constraints are
      * violated - used during selection. */
@@ -96,5 +101,6 @@ float SmartRandom::do_it(P_task* task)
         }
     }
 
+    result.endTime = placer->timestamp();
     return 0;
 }
