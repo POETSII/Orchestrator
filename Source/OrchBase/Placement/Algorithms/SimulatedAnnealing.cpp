@@ -94,13 +94,21 @@ void SimulatedAnnealing::define_valid_cores_map(P_task* task)
  * Returns the placement score. */
 float SimulatedAnnealing::do_it(P_task* task)
 {
+    FILE* log = fopen("./simulated_annealing.log", "w");
+
     /* Build the hardware communication matrix (cost cache), if it hasn't
      * already been built by this placer. */
-    if (placer->cache == PNULL) placer->cache = new CostCache(placer->engine);
+    if (placer->cache == PNULL)
+    {
+        fprintf(log, "[I] Hardware cost cache has not been built - building "
+                "it now.\n");
+        placer->cache = new CostCache(placer->engine);
+    }
 
     /* Initial placement using bucket filling. Note that we rely on this being
      * a valid placement in order for this algorithm to select across the
      * domain. (MLV never writes broken code! >_>) */
+    fprintf(log, "[I] Performing initial placement (bucket filling).\n");
     BucketFilling initialAlgorithm = BucketFilling(placer);
     initialAlgorithm.do_it(task);
 
@@ -109,6 +117,9 @@ float SimulatedAnnealing::do_it(P_task* task)
 
     /* Compute the fitness score. */
     float fitness = placer->compute_fitness(task);
+
+    fprintf(log, "[I] Initial placement complete with fitness score %f.\n",
+        fitness);
 
     /* Define the valid-cores map. */
     define_valid_cores_map(task);
@@ -130,8 +141,11 @@ float SimulatedAnnealing::do_it(P_task* task)
     float fitnessChange;  /* Negative represents "before the transformation",
                            * and positive represents "after the
                            * transformation" */
+
+    fprintf(log, "[I] Starting iteration.\n");
     while (!is_finished())
     {
+        fprintf(log, "[D] Iteration %u...\n", iteration);
         revert = false;
         fitnessChange = 0;
 
@@ -220,13 +234,21 @@ float SimulatedAnnealing::do_it(P_task* task)
                  * zero means we always keep). */
                 float roll = static_cast<float>(rand()) /
                     static_cast<float>(RAND_MAX);  /* Uniform float in [0,1] */
-                revert = roll > acceptance_probability(
+                float acceptance = acceptance_probability(
                     fitness, fitness + fitnessChange);
+                revert = roll > acceptance;
+                fprintf(log, "[D] Current fitness: %f, Fitness delta: %f, "
+                        "Roll: %f, Acceptance: %f.\n",
+                        fitness, fitnessChange, roll, acceptance);
             }
 
             /* Apply reversion, if deemed appropriate. */
             if (revert)
             {
+                fprintf(log, "[D] Failed to move device '%s' to thread "
+                        "'%s'.\n",
+                       selectedDevice->Name().c_str(),
+                       selectedThread->FullName().c_str());
                 placer->link(previousThread, selectedDevice);
                 placer->populate_edge_weights(task, selectedDevice);
             }
@@ -234,6 +256,16 @@ float SimulatedAnnealing::do_it(P_task* task)
             /* Otherwise, we need to update some structures... */
             else
             {
+                fprintf(log, "[D] Moved device '%s' to thread '%s'.\n",
+                       selectedDevice->Name().c_str(),
+                       selectedThread->FullName().c_str());
+                std::map<std::pair<P_core*, P_core*>,
+                         std::set<P_devtyp*>> mymap;
+                if (!placer->are_all_core_pairs_device_locked(task, &mymap))
+                {
+                    printf("We've violated the core-pair condition.\n");
+                }
+
                 /* Update the fitness value. */
                 fitness = fitness + fitnessChange;
 
@@ -336,6 +368,7 @@ float SimulatedAnnealing::do_it(P_task* task)
 
     /* Write our result structure, and leave. */
     placer->populate_result_structures(&result, task, fitness);
+    fclose(log);
     return fitness;
 }
 
