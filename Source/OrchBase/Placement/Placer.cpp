@@ -516,9 +516,9 @@ void Placer::dump(P_task* task)
                                   task->Name().c_str(), timeBuf.c_str());
     std::string cachePath = dformat("placement_edge_cache_%s.txt",
                                     timeBuf.c_str());
-    std::string nodeLoadPath = dformat("placement_node_loading_%s.txt",
+    std::string nodeLoadPath = dformat("placement_node_loading_%s.csv",
                                        timeBuf.c_str());
-    std::string edgeLoadPath = dformat("placement_edge_loading_%s.txt",
+    std::string edgeLoadPath = dformat("placement_edge_loading_%s.csv",
                                        timeBuf.c_str());
 
     /* Call subordinate dumping methods. */
@@ -596,9 +596,17 @@ void Placer::dump_edge_loading(const char* path)
         for (edgeIt = taskEdgeCosts[taskIt->first].begin();
              edgeIt != taskEdgeCosts[taskIt->first].end(); edgeIt++)
         {
-            /* Grab the mailboxes. */
+            /* Ignore edges with supervisor devices. <!> Long-term, we
+             * obviously don't want to do this - we want to impose a location
+             * of supervisors in the compute fabric, and find the edge based
+             * off that. Perhaps a "proxy mailbox" in the bridge board or
+             * so. */
             fromDevice = edgeIt->first.first;
             toDevice = edgeIt->first.second;
+            if (!(fromDevice->pP_devtyp->pOnRTS)) continue;
+            if (!(toDevice->pP_devtyp->pOnRTS)) continue;
+
+            /* Grab the mailboxes. */
             fromMailbox = deviceToThread[fromDevice]->parent->parent;
             toMailbox = deviceToThread[toDevice]->parent->parent;
 
