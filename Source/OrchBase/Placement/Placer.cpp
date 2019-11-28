@@ -508,11 +508,11 @@ void Placer::dump(P_task* task)
     std::string timeBuf = timestamp();
 
     /* Figure out paths. */
-    std::string costPath = dformat("placement_task_edges_%s_%s.txt",
+    std::string costPath = dformat("placement_task_edges_%s_%s.csv",
                                    task->Name().c_str(), timeBuf.c_str());
     std::string diagPath = dformat("placement_diagnostics_%s_%s.txt",
                                    task->Name().c_str(), timeBuf.c_str());
-    std::string mapPath = dformat("placement_task_to_hardware_%s_%s.txt",
+    std::string mapPath = dformat("placement_task_to_hardware_%s_%s.csv",
                                   task->Name().c_str(), timeBuf.c_str());
     std::string cachePath = dformat("placement_edge_cache_%s.txt",
                                     timeBuf.c_str());
@@ -545,8 +545,8 @@ void Placer::dump_costs(P_task* task, const char* path)
     for (edgeIt = taskEdgeCosts[task].begin();
          edgeIt != taskEdgeCosts[task].end(); edgeIt++)
     {
-        out << edgeIt->first.first->FullName() << "\t"
-            << edgeIt->first.second->FullName() << "\t"
+        out << edgeIt->first.first->FullName() << ","
+            << edgeIt->first.second->FullName() << ","
             << edgeIt->second << std::endl;
     }
 
@@ -668,7 +668,7 @@ void Placer::dump_map(P_task* task, const char* path)
         if (deviceFinder == deviceToThread.end()) continue;
         P_thread* thread = deviceFinder->second;
 
-        out << device->FullName() << "\t" << thread->FullName() << std::endl;
+        out << device->FullName() << "," << thread->FullName() << std::endl;
     }
 
     out.close();  /* We out, yo. */
