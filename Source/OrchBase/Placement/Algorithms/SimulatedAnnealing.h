@@ -12,11 +12,10 @@ class HardwareIterator;
 #include "Placer.h"
 
 /* Naive end point. */
-#define ITERATION_MAX 3000000
+#define ITERATION_MAX 100000000
 
-/* Exponential decay (half life of 5000 iterations:
- * DISORDER_DECAY = ln(0.5) / 500000. */
-#define DISORDER_DECAY 0.000001386  /* More or less. */
+/* Exponential decay with half life of a third of the number of iterations. */
+#define DISORDER_DECAY log(0.5) / (ITERATION_MAX / 3.0)
 
 class SimulatedAnnealing: public Algorithm
 {
