@@ -177,7 +177,7 @@ Ib(addr(111),boards(B00,B01,B10,B11,B20,B21),hostname(ibsen))
 (3,3):M33(addr(11,11))=M32,M23
 +board_mailbox_cost=0
 +supervisor_memory=0
-+mailbox_mailbox_cost=0 // Relative to box::board_board_cost
++mailbox_mailbox_cost=1 // Relative to box::board_board_cost
 +dram=4096  // MiB, two DDR3 DRAM boards.
 
 [mailbox(CommonMbox)]
