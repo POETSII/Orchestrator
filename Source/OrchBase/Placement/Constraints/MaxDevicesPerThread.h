@@ -10,7 +10,7 @@
 #include "Constraint.h"
 #include "HardwareModel.h"
 
-#define MAX_DEVICES_PER_THREAD_DEFAULT 1024
+#define MAX_DEVICES_PER_THREAD_DEFAULT 256
 
 class MaxDevicesPerThread: public Constraint
 {
