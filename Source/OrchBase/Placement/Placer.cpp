@@ -319,7 +319,7 @@ void Placer::check_integrity(P_task* task, std::string algorithmDescription)
  *
  * Adds the weights of all edges involving the passed device, where that device
  * has an entry in deviceToGraphKey (this is assumed). These weights are
- * looked up from taskEdgeCosts.
+ * looked up from taskEdgeCosts. Also includes the thread-loading delta.
  *
  * Note that this method doesn't consider constraints.
  *
@@ -339,14 +339,32 @@ float Placer::compute_fitness(P_task* task, P_device* device)
     std::vector<std::pair<P_device*, P_device*>>::iterator devicePairIt;
     for (devicePairIt = devicePairs.begin(); devicePairIt != devicePairs.end();
          devicePairIt++) fitness += taskEdgeCosts[task][*devicePairIt];
+
+    /* Thread loading cost for this device. This can be interpreted as the
+     * amount contributed to the total fitness by this device with regards to
+     * thread loading. The fitness contribution by thread loading is
+     * proportional (THREAD_LOADING_SCALE_FACTOR is the constant of
+     * proportionality) to T^2, where T is the number of devices mapped to a
+     * given thread, summed for each thread. From this, we infer the
+     * "contribution" by one device as the total contribution for it's thread,
+     * minus the contribution if the thread was not there, i.e.:
+     *
+     *  T^2 - (T-1)^2 == 2T-1 */
+    fitness += (threadToDevices[deviceToThread[device]].size() * 2 - 1)
+        * THREAD_LOADING_SCALING_FACTOR;
     return fitness;
 }
 
 /* Computes the fitness for a task.
  *
- * Fitness is simply the sum of all costs on all edges, along with the sum of
- * any broken soft constraints. Low fitness is good. This evaluation does not
- * factor in broken hard constraints. Arguments:
+ * Fitness is the sum of:
+ *
+ *  - All costs on all edges,
+ *  - Each device placed on each thread, beyond the first, and
+ *  - The penalty of all broken soft constraints.
+ *
+ * Low fitness is good. This evaluation does not factor in broken hard
+ * constraints. Arguments:
  *
  *  - task: Task to evaluate the fitness of.
  *
@@ -362,6 +380,48 @@ float Placer::compute_fitness(P_task* task)
          edgeIt != taskEdgeCosts[task].end(); edgeIt++)
     {
         fitness += edgeIt->second;
+    }
+
+    /* Iterate through each thread used by the task and, for each of those
+     * threads, increase fitness for each device on that thread beyond the
+     * first.
+     *
+     * We do this by going through each thread in threadToDevices and, if that
+     * thread holds devices of a type that are part of this task, then we
+     * increase the fitness based off the number of devices mapped to that
+     * thread.
+     *
+     * The increase is equal to the square of the number of devices placed on
+     * the thread, subject to a scaling factor (otherwise it completely
+     * dominates the edge weights). This corresponds with observations from the
+     * heated plate, where a linear decrease in thread loading results in a
+     * linear decrease in runtime for a large device/thread ratio. For example:
+     *
+     * - 90 devices, mapped under 10 devices per thread onto 9 threads will
+     *   result in a fitness contribution proportional to 9 * (10 ^ 2) = 900.
+     *
+     * - 90 devices, mapped under 30 devices per thread onto 3 threads will
+     *   result in a fitness contribution proportional to 3 * (30 ^ 2) = 2700.
+     *
+     * These numbers are subjected to a scaling factor to ensure that the
+     * benefit of "sprading the load" is traded off fairly with the edge
+     * weights, which want the application to be as tightly packed as
+     * possible. */
+    std::map<P_thread*, std::list<P_device*>>::iterator threadIt;
+    for (threadIt = threadToDevices.begin(); threadIt != threadToDevices.end();
+         threadIt++)
+    {
+        /* Ignore empty threads. */
+        if (threadIt.second.empty()) continue;
+
+        /* Does the first device's task match the task passed to this function
+         * as argument? */
+        if (threadIt.second[0]->par->par == task)
+        {
+            /* If so, we count it. */
+            fitness += threadIt.second.size() * threadIt.second.size() *
+                THREAD_LOADING_SCALING_FACTOR;
+        }
     }
 
     /* Iterate through each constraint, and add their soft-cost to the
