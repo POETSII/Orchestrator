@@ -168,6 +168,7 @@ void P_builder::Preplace(P_task* task)
       MultiSimpleDeployer deployer(numBoxes);
       par->Post(138,par->pE->Name());
       deployer.deploy(par->pE);
+      par->pPlace->Init();
     }
     if (!par->pPlace->Place(task)) task->LinkFlag(); // then preplace on the real or virtual board.
   }

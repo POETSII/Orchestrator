@@ -18,8 +18,8 @@ public:
 
     void defineObject(QXmlStreamReader* xml_def);
     const PIGraphObject* appendSubObject(QXmlStreamReader* xml_def);
-    void elaborateEdge(D_graph* graph_rep);
-    inline void setPropsDataType(const PIDataType* data_type = 0) {PConcreteInstance::setPropsDataType(path.dst.pin ? NULL : path.dst.pin->properties());};
+    int elaborateEdge(D_graph* graph_rep);
+    inline void setPropsDataType(const PIDataType* data_type = 0) {PConcreteInstance::setPropsDataType(path.dst.pin ? path.dst.pin->properties() : NULL);};
 
 private:
 
@@ -52,6 +52,7 @@ private:
         unsigned int opin_i;
     } path_index;
 
+    static const unsigned int INVALID_INDEX = 0xFFFFFFFF;
     D_graph* containing_graph;
     enum vld_elem_types {OTHER, STATE};
     QHash<QString, vld_elem_types> valid_elements;
