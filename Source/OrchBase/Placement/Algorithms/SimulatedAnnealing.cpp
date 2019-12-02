@@ -25,7 +25,7 @@ float SimulatedAnnealing::acceptance_probability(float fitnessBefore,
  * monotonic. For now, it's a simple exponential decay. */
 float SimulatedAnnealing::compute_disorder()
 {
-    return 0.5 * exp(-DISORDER_DECAY * iteration);
+    return 0.5 * exp(DISORDER_DECAY * iteration);
 }
 
 /* Places a task onto the engine held by a placer using a simulated annealing
