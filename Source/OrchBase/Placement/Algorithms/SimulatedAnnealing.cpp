@@ -331,12 +331,17 @@ float SimulatedAnnealing::do_it(P_task* task)
         iteration++;
     }
 
-    /* Write our result structure, and leave. */
+    /* Write our result structure, and leave. We don't mind that there is a
+     * small difference between the many millions of fitness deltas and the
+     * actual fitness - the difference is relatively small, and is due to
+     * rounding. */
+    float finalFitness = placer->compute_fitness(task);
     time = placer->timestamp();
     result.endTime = time;
-    placer->populate_result_structures(&result, task, fitness);
-    fprintf(log, "[I] Final fitness: %f, Iteration count: %d.\n",
-            fitness, iteration);
+    placer->populate_result_structures(&result, task, finalFitness);
+    fprintf(log, "[I] Final fitness from deltas: %f, Iteration count: %d, "
+            "actual final fitness: %f\n",
+            fitness, iteration, finalFitness);
     fprintf(log, "[I] Placement complete at %s.\n", time.c_str());
     fclose(log);
     return fitness;
