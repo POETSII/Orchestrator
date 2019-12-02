@@ -338,7 +338,7 @@ float SimulatedAnnealing::do_it(P_task* task)
     }
 
     /* Write our result structure, and leave. */
-    time = placer->timestamp()
+    time = placer->timestamp();
     result.endTime = time;
     placer->populate_result_structures(&result, task, fitness);
     fprintf(log, "[I] Final fitness: %f, Iteration count: %d.\n",

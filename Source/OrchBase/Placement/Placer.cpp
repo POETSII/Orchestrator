@@ -412,14 +412,14 @@ float Placer::compute_fitness(P_task* task)
          threadIt++)
     {
         /* Ignore empty threads. */
-        if (threadIt.second.empty()) continue;
+        if (threadIt->second.empty()) continue;
 
         /* Does the first device's task match the task passed to this function
          * as argument? */
-        if (threadIt.second[0]->par->par == task)
+        if ((*threadIt->second.begin())->par->par == task)
         {
             /* If so, we count it. */
-            fitness += threadIt.second.size() * threadIt.second.size() *
+            fitness += threadIt->second.size() * threadIt->second.size() *
                 THREAD_LOADING_SCALING_FACTOR;
         }
     }
