@@ -230,12 +230,6 @@ float SimulatedAnnealing::do_it(P_task* task)
             else
             {
                 fprintf(log, "[D]     [PASS]\n");
-                std::map<std::pair<P_core*, P_core*>,
-                         std::set<P_devtyp*>> mymap;
-                if (!placer->are_all_core_pairs_device_locked(task, &mymap))
-                {
-                    printf("We've violated the core-pair condition.\n");
-                }
 
                 /* Update the fitness value. */
                 fitness = fitness + fitnessChange;
