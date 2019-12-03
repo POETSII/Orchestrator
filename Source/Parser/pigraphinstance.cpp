@@ -141,6 +141,7 @@ P_task* PIGraphInstance::elaborateGraphInstance(OrchBase* orch_root)
              PDeviceInstance* devInstance = static_cast<PDeviceInstance*>(subObject(DEVINSTS, dev_inst));
              if (!devInstance->deviceType()) devInstance->setDeviceType(); // retrofit the device type if needed
              P_device* device = devInstance->elaborateDeviceInstance(graph_instance->pD);
+             if (device->pP_devtyp == NULL) orch_root->Post(114,device->Name());
              device->idx = static_cast<unsigned>(dev_inst);
              graph_instance->pD->G.InsertNode(static_cast<unsigned>(dev_inst), device);
          }
@@ -157,7 +158,10 @@ P_task* PIGraphInstance::elaborateGraphInstance(OrchBase* orch_root)
          }
          // and then add all the edge instances
          for (QVector<PIGraphObject*>::iterator edge = beginSubObjects(EDGEINSTS); edge < endSubObjects(EDGEINSTS); edge++)
-             static_cast<PEdgeInstance*>(*edge)->elaborateEdge(graph_instance->pD);
+         {
+             int edgeFailure = static_cast<PEdgeInstance*>(*edge)->elaborateEdge(graph_instance->pD);
+             if (edgeFailure) orch_root->Post(112+edgeFailure,edgeFailure == 3 ? (*edge)->name().toStdString() : graph_instance->Name());
+         }
          graph_instance->PoL.IsPoL = false; // set the flag to indicate non-proof-of-life
       }
       return graph_instance;

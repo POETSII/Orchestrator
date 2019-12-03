@@ -23,7 +23,7 @@ const PIGraphObject* PConcreteDef::appendSubObject(QXmlStreamReader* xml_def)
            necessary. Rather roundabout...
         */
         if (xml_def->attributes().hasAttribute("", "cTypeName"))
-                _properties = new PIDataType(xml_def->attributes().value("", "cTypeName").toString(), this);
+           _properties = new PIDataType(xml_def->attributes().value("", "cTypeName").toString(), this);
         else
         {
             QString prop_name("properties_t");

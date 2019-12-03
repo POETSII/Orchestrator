@@ -2,13 +2,7 @@
 #define _SOFTSWITCH_COMMON_H_
 
 #include "softswitch.h"
-
 #include "OSFixes.hpp"
-
-#define P_MAX_OPINS_PER_DEVICE 32
-#define P_MSG_Q_MAXCOUNT 1
-#define P_ONIDLE_CHANGE 0x80000000
-#define IDLE_SWEEP_CHUNK_SIZE 128
 
 struct PDeviceInstance;
 struct PThreadContext;
