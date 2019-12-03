@@ -389,60 +389,179 @@ void CostCache::populate_combined_graph(CombinedGraph* graph,
     }
 
     /* Now here's the funky bit - for each edge in the engine's board graph,
-     * connect each mailbox in the "from" board to each mailbox in the "to"
-     * board. The edge weight for those edges is the weight of the edge in the
-     * engine graph, plus the costBoardMailbox value of the board.
+     * figure out which mailboxes are on that edge (from their name (!!)), and
+     * connect them together, where the edge weight is the weight of the edge
+     * in the engine graph, plus the costBoardMailbox value of the board.
      *
-     * This is a bit silly, but again, will be replaced with more intelligent
-     * logic when mailbox ports are introduced. It's good enough for now. */
-
-    /* For each board edge (each direction)... */
-    WALKPDIGRAPHARCS(AddressComponent, P_board*,
-                     unsigned, P_link*,
-                     unsigned, P_port*, engine->G, boardEdge)
+     * This is tremendously silly, but again, will be replaced with more
+     * intelligent logic when mailbox ports are introduced. It's good enough
+     * for now.
+     *
+     * 1-Box shortcut for Ayres only <!> */
+    if (engine->P_boxm.size() == 1 and engine->P_boxm[0]->Name() == "Ay")
     {
-        /* For each mailbox in the 'from' board... */
-        WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
-                          unsigned, P_link*,
-                          unsigned, P_port*,
-                          boardEdge->second.fr_n->second.data->G,
-                          mailboxFromNode)
+        /* For each board edge (in each direction)... */
+        P_board* fromBoard;
+        P_board* toBoard;
+
+        WALKPDIGRAPHARCS(AddressComponent, P_board*,
+                         unsigned, P_link*,
+                         unsigned, P_port*, engine->G, boardEdge)
         {
-            /* For each mailbox in the 'to' board... */
+            /* Get the boards. */
+            fromBoard = boardEdge->second.fr_n->second.data;
+            toBoard = boardEdge->second.to_n->second.data;
+
+
+            /* Grab each mailbox pairing */
+            P_mailbox* fromMailbox;
+            P_mailbox* toMailbox;
+            bool join;
+
             WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
                               unsigned, P_link*,
                               unsigned, P_port*,
-                              boardEdge->second.to_n->second.data->G,
-                              mailboxToNode)
+                              fromBoard->G, mailboxFromNode)
+            WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                              unsigned, P_link*,
+                              unsigned, P_port*,
+                              toBoard->G, mailboxToNode)
             {
-                /* Join them up. */
-                float cost =
-                    boardEdge->second.fr_n->second.data->costBoardMailbox +
-                    boardEdge->second.data->weight;
+                fromMailbox = mailboxFromNode->second.data;
+                toMailbox = mailboxToNode->second.data;
+                join = false;
 
-                graph->InsertArc(edgeKey++,
-                    mailboxToKey[mailboxFromNode->second.data],
-                    mailboxToKey[mailboxToNode->second.data],
-                    cost, portKey, portValue, portKey + 1, portValue + 1);
+                /* N->S */
+                if (fromBoard->Name()[2] == '1' and toBoard->Name()[2] == '0')
+                {
+                    if (fromMailbox->Name()[2] == '0' and
+                        toMailbox->Name()[2] == '3' and
+                        fromMailbox->Name()[1] == toMailbox->Name()[1]) join = true;
+                }
 
-                portKey += 2;
-                portValue += 2;
+                /* S->N */
+                else if (fromBoard->Name()[2] == '0' and toBoard->Name()[2] == '1')
+                {
+                    if (fromMailbox->Name()[2] == '3' and
+                        toMailbox->Name()[2] == '0' and
+                        fromMailbox->Name()[1] == toMailbox->Name()[1]) join = true;
+                }
 
-                /* Logging, if enabled. */
-                if (stream != PNULL)
-                    *stream << "Joining mailbox "
-                            << mailboxFromNode->second.data->FullName().c_str()
-                            << " (key="
-                            << mailboxToKey[mailboxFromNode->second.data]
-                            << ") with mailbox "
-                            << mailboxToNode->second.data->FullName().c_str()
-                            << " (key="
-                            << mailboxToKey[mailboxToNode->second.data]
-                            << ") with cost "
-                            << cost
-                            << " and edge key "
-                            << edgeKey - 1
-                            << ".\n";
+                /* E->W */
+                else if ((fromBoard->Name()[1] == '0' and toBoard->Name()[1] == '1') or
+                         (fromBoard->Name()[1] == '1' and toBoard->Name()[1] == '2'))
+                {
+                    if (fromMailbox->Name()[1] == '3' and
+                        toMailbox->Name()[1] == '0' and
+                        fromMailbox->Name()[2] == toMailbox->Name()[2]) join = true;
+                }
+
+                /* W->E */
+                else if ((fromBoard->Name()[1] == '1' and toBoard->Name()[1] == '0') or
+                         (fromBoard->Name()[1] == '2' and toBoard->Name()[1] == '1'))
+                {
+                    if (fromMailbox->Name()[1] == '0' and
+                        toMailbox->Name()[1] == '3' and
+                        fromMailbox->Name()[2] == toMailbox->Name()[2]) join = true;
+                }
+
+                else
+                {
+                    printf("Couldn't determine relationship between boards "
+                           "'%s' and '%s'. Failing catastrophically.\n",
+                           fromBoard->FullName().c_str(),
+                           toBoard->FullName().c_str());
+                    return;
+                }
+
+                /* Join them up if appropriate. */
+                if (join)
+                {
+                    float cost = fromBoard->costBoardMailbox +
+                        boardEdge->second.data->weight;
+
+                    graph->InsertArc(edgeKey++,
+                                     mailboxToKey[fromMailbox],
+                                     mailboxToKey[toMailbox],
+                                     cost, portKey, portValue,
+                                     portKey + 1, portValue + 1);
+
+                    portKey += 2;
+                    portValue += 2;
+
+                    /* Logging, if enabled. */
+                    if (stream != PNULL)
+                        *stream << "Joining mailbox "
+                                << fromMailbox->FullName().c_str()
+                                << " (key="
+                                << mailboxToKey[fromMailbox]
+                                << ") with mailbox "
+                                << toMailbox->FullName().c_str()
+                                << " (key="
+                                << mailboxToKey[toMailbox]
+                                << ") with cost "
+                                << cost
+                                << " and edge key "
+                                << edgeKey - 1
+                                << ".\n";
+                }
+            }
+        }
+    }
+
+    /* More than one box... connects all mailboxes to all mailboxes across each
+     * board edge. Again, will be refactored when mailbox-ports are formally
+     * introduced. */
+    else
+    {
+        /* For each board edge (each direction)... */
+        WALKPDIGRAPHARCS(AddressComponent, P_board*,
+                         unsigned, P_link*,
+                         unsigned, P_port*, engine->G, boardEdge)
+        {
+            /* For each mailbox in the 'from' board... */
+            WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                              unsigned, P_link*,
+                              unsigned, P_port*,
+                              boardEdge->second.fr_n->second.data->G,
+                              mailboxFromNode)
+            {
+                /* For each mailbox in the 'to' board... */
+                WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                                  unsigned, P_link*,
+                                  unsigned, P_port*,
+                                  boardEdge->second.to_n->second.data->G,
+                                  mailboxToNode)
+                {
+                    /* Join them up. */
+                    float cost =
+                        boardEdge->second.fr_n->second.data->costBoardMailbox +
+                        boardEdge->second.data->weight;
+
+                    graph->InsertArc(edgeKey++,
+                                     mailboxToKey[mailboxFromNode->second.data],
+                                     mailboxToKey[mailboxToNode->second.data],
+                                     cost, portKey, portValue, portKey + 1, portValue + 1);
+
+                    portKey += 2;
+                    portValue += 2;
+
+                    /* Logging, if enabled. */
+                    if (stream != PNULL)
+                        *stream << "Joining mailbox "
+                                << mailboxFromNode->second.data->FullName().c_str()
+                                << " (key="
+                                << mailboxToKey[mailboxFromNode->second.data]
+                                << ") with mailbox "
+                                << mailboxToNode->second.data->FullName().c_str()
+                                << " (key="
+                                << mailboxToKey[mailboxToNode->second.data]
+                                << ") with cost "
+                                << cost
+                                << " and edge key "
+                                << edgeKey - 1
+                                << ".\n";
+                }
             }
         }
     }
