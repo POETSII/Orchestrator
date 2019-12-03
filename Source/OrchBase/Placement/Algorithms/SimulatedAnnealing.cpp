@@ -344,6 +344,7 @@ float SimulatedAnnealing::do_it(P_task* task)
             fitness, iteration, finalFitness);
     fprintf(log, "[I] Placement complete at %s.\n", time.c_str());
     fclose(log);
+    fclose(data);
     return fitness;
 }
 
