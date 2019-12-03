@@ -91,8 +91,9 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
 # All flags to be used in compilation. We're not complying with C++98 yet due
 # to the hostlink and some other minor changes, though nobody has studied this
 # comprehensively.
+# Trivial log handler is defined for now - we need to think about this more.
 CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
-           -std=c++11 -Wall -fPIC -pthread -pedantic
+           -std=c++11 -Wall -fPIC -pthread -pedantic -DTRIVIAL_LOG_HANDLER
 
 # Debug target logic.
 debug: CXXFLAGS += -g3 -DORCHESTRATOR_DEBUG=1
