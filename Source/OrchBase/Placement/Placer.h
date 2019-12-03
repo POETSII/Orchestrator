@@ -44,7 +44,7 @@ struct Result;
 #include "P_devtyp.h"
 #include "P_task.h"
 
-#define THREAD_LOADING_SCALING_FACTOR 0.0001
+#define THREAD_LOADING_SCALING_FACTOR 0.01
 
 class Placer
 {
