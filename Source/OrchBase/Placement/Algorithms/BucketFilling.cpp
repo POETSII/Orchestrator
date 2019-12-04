@@ -10,9 +10,9 @@ BucketFilling::BucketFilling(Placer* placer):Algorithm(placer)
  *
  * This algorithm is very basic - it does not adhere to constraints (for now),
  * it does not compute fitness (for now), and simply encapsulates the old
- * placement logic.
- *
- * This algorithm iterates through each device type in the task
+ * placement logic. It does not play nice with tasks placed using simulated
+ * annealing - as they may populate the non-zeroth thread in a given core,
+ * making some of the checks in this method ineffective.
  *
  * Returns zero (for now - later will return fitness). */
 float BucketFilling::do_it(P_task* task)
@@ -45,7 +45,8 @@ float BucketFilling::do_it(P_task* task)
         /* Skip this device type if it is a supervisor device type. */
         if (!(*deviceTypeIterator)->pOnRTS) continue;
 
-        /* Move iterators to the next empty core pair. */
+        /* Move iterators to the next empty core pair (or don't if this core
+         * pair is empty). */
         poke_iterators(&hardwareIterators);
 
         /* Complain about running out of space if the ahead-iterator has
@@ -166,12 +167,8 @@ void BucketFilling::poke_iterators(std::vector<HardwareIterator>* iterators)
         if ((*iterators)[1].has_wrapped())
             throw NoSpaceToPlaceException("[ERROR] Engine is full.");
 
-        /* Increment the iterators to the next core pair. */
+        /* Increment the iterators to the next core. */
         for (hardwareIt = iterators->begin(); hardwareIt != iterators->end();
-             hardwareIt++)
-        {
-            hardwareIt->next_core();
-            hardwareIt->next_core();
-        }
+             hardwareIt++) hardwareIt->next_core();
     }
 }
