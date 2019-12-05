@@ -9,7 +9,7 @@
  * - checkEngine: Whether or not to check the engine when constructing the
  *   iterator. It is usually a good idea to do this. */
 HardwareIterator::HardwareIterator(P_engine* engine, bool checkEngine):
-    engine(engine), isWrapped(false)
+    engine(engine), isWrapped(false), pCon(0), threadCount(0)
 {
     /* Namebase setup; the engine is the parent. */
     Name("Iterator");  /* Namebase will print the engine we're pointing to. */
@@ -140,9 +140,15 @@ bool HardwareIterator::has_wrapped()
 P_thread* HardwareIterator::next_thread()
 {
     threadIterator++;
+    ++threadCount;
+
+    /* Check against constraints whether we have overflowed the thread limit */
+    bool threadOver = false;
+    if ((pCon != 0) && (pCon->Constraintm.find("ThreadsPerCore") != pCon->Constraintm.end()))
+       threadOver = (threadCount >= pCon->Constraintm["ThreadsPerCore"]); 
 
     /* If we've run out of threads, increment the core. */
-    if (threadIterator == get_core()->P_threadm.end())
+    if (threadOver || threadIterator == get_core()->P_threadm.end())
     {
         next_core();
     }
@@ -155,6 +161,7 @@ P_thread* HardwareIterator::next_thread()
 P_core* HardwareIterator::next_core()
 {
     coreIterator++;
+    threadCount = 0; // reset the thread index
 
     /* If we've run out of cores, increment the mailbox. */
     if (coreIterator == get_mailbox()->P_corem.end())

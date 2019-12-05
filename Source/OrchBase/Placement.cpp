@@ -79,6 +79,8 @@ WALKVECTOR(P_devtyp*,pT->pP_typdcl->P_devtypv,dT)
                                                         MAX_DEVICES_PER_THREAD);
         if (pCon->Constraintm.find("ThreadsPerCore") == pCon->Constraintm.end())
             pCon->Constraintm["ThreadsPerCore"] = THREADS_PER_CORE;
+	// add the constraints to the iterator
+	iterator->set_constraints(pCon);
 
         // For each device.....
         for (unsigned devIdx = 0; devIdx < dVs.size(); devIdx++)

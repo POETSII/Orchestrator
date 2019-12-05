@@ -28,6 +28,7 @@
 #include "pdigraph.hpp"
 #include "P_link.h"
 #include "P_port.h"
+#include "Constraints.h" // ADR added to constrain threads
 
 class HardwareIterator: public NameBase, public DumpChan
 {
@@ -40,6 +41,8 @@ public:
     P_mailbox* get_mailbox();
     P_core* get_core();
     P_thread* get_thread();
+    
+    inline const Constraints *const get_constraints() {return pCon;}
 
     /* Convenience methods to determine whether the iterator at a certain level
      * of the hierarchy has changed value since the last time these methods
@@ -59,6 +62,8 @@ public:
     void reset_mailbox_iterator();
     void reset_core_iterator();
     void reset_thread_iterator();
+
+    inline void set_constraints(Constraints* pConstraints) {pCon=pConstraints;} 
 
     /* Incrementers, returns incremented items */
     P_board* next_board();
@@ -94,6 +99,10 @@ private:
     /* Variables to store whether certain levels of the hierarchy have
      * changed. */
     bool isWrapped;
+
+    /* Additional members to store constraint info */
+    Constraints* pCon;
+    unsigned threadCount;
 
     /* I don't use an enum to index this, because I need to calculate the
      * length procedurally. */
