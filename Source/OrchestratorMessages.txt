@@ -48,6 +48,8 @@
 111(E) : "Internal task generator has no PoL task type %s"
 112(E) : "Cannot find file %s"
 113(E) : "No graph declaration block for task %s - cannot instantiate"
+114(E) : "No or invalid device type for device %s - cannot instantiate"
+115(E) : "Invalid pin or device type for edge %s - cannot instantiate"
 131(I) : "Loading box configuration file %s"
 132(W) : "Cannot open topology dump file %s"
 133(I) : "Topology discovery %s"
@@ -111,6 +113,8 @@
 533(E) : "Bad symbol %s in the Supervisor library on Mothership %s: check XML definition. Error was %s"
 534(E) : "Supervisor library could not be successfully unloaded on Mothership %s. Future attempts to run tasks may have strange I/O behaviour"
 540(I) : "Application Supervisor being started on Mothership %s"
+541(E) : "Unable to create instrumentation file %s. Error: %s"
+542(E) : "Unable to open instrumentation file %s. Error: %s"
 
 600(I) : "%s"
 601(I) : "Core %s: (part %s): %s"
