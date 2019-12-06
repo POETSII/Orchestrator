@@ -39,6 +39,9 @@ unsigned OrchBase::CmPlace(Cli* cli)
          * Praise the deities of software design. */
         else if (clauseRoot == "rese") PlacementReset(true);
 
+        /* Are we loading a placement spec? */
+        else if (clauseRoot == "load") PlacementLoad(*clause);
+
         /* If nothing is appropriate, assume it's a placement algorithm. */
         else isClauseValid = PlacementDoit(*clause);
 
@@ -138,6 +141,38 @@ P_task* OrchBase::PlacementGetTaskByName(std::string taskHandle)
     {
         return taskFinder->second;
     }
+}
+
+/* Load a placement map. Will fall over violently if the file is invalid. */
+void OrchBase::PlacementLoad(Cli::Cl_t clause)
+{
+    /* Skip (and post) if there are not exactly two parameters (i.e. task and
+     * file). */
+    if (clause.Pa_v.size() != 2)
+    {
+        Post(47, clause.Cl, "placement", "1");
+        return;
+    }
+
+    /* Get (what we assume to be) the task handle, and the task. */
+    std::string taskHandle = clause.Pa_v[0].Val;
+    P_task* task = PlacementGetTaskByName(taskHandle);
+    if (task == PNULL) return;
+
+    std::string path = clause.Pa_v[1].Val;
+
+    /* Have a pop. */
+    try
+    {
+        Post(214, path, taskHandle);
+        pPlacer->place_load(task, path);
+        Post(202, taskHandle);
+    }
+    catch (AlreadyPlacedException&) {Post(203, taskHandle);}
+    catch (BadIntegrityException& e) {Post(204, taskHandle, e.message);}
+    catch (NoEngineException&) {Post(205, taskHandle);}
+    catch (NoSpaceToPlaceException&) {Post(206, taskHandle);}
+    return;
 }
 
 void OrchBase::PlacementReset(bool post)
