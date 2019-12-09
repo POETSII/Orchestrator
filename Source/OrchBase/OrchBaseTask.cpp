@@ -331,181 +331,211 @@ pB->Build(task->second);                      // Build the thing
 
 void OrchBase::TaskDeploy(Cli::Cl_t Cl)
 {
-// Send the process map in simplified form to the Motherships, and the location of
-// binaries. Argument is the task name, which needs to exist and be mapped to hardware.
-// In large systems, there is a chance the user may ask to deploy the task before
-// all available hardware has registered itself in the process map. In such a situation,
-// a large task may not be able to be deployed yet. This isn't a fatal error; the user
-// can try again and hope for success.
-if (Cl.Pa_v.size()>1) {                       // Command make sense?
-  Post(47,Cl.Cl,"task","1");
-  return;
-}
-if (!P_taskm.size()){                          // Some tasks exist?
-  Post(107,"definitions");
-  return;
-}
-map<string, P_task*>::iterator task = P_taskm.begin(); // Default to first task
-if (Cl.Pa_v.size()){
-string name = Cl.Pa_v[0].Val;                 // Unpack task name
-if ((task=P_taskm.find(name))==P_taskm.end()){// Is the task there?
-  Post(107,name);
-  return;
-}
-}
-if (!task->second->linked){                   // task mapped?
-  Post(157,task->first);
-  return;
-}
-
-unsigned coreNum = 0;                     // virtual core number counter
-unsigned cIdx = 0;                        // comm number to look for Motherships. Start from local MPI_COMM_WORLD.
-
-vector<pair<unsigned,P_addr_t> > coreVec;  // core map container to send
-vector<ProcMap::ProcMap_t>::iterator currBox = pPmap[cIdx]->vPmap.begin(); // process map for the Mothership being deployed to
-
-
-CMsg_p PktC;
-PMsg_p PktD;
-//PMsg_p PktC, PktD;                      // messages to send to each participating box
-PktC.Key(Q::NAME,Q::DIST);                // distributing the core mappings
-PktD.Key(Q::NAME,Q::TDIR);                // and the data directory
-PktC.Src(Urank);
-string taskname = task->first;
-PktC.Put(0, &taskname);                    // first field in the packet is the task name
-PktD.Put(0, &taskname);
-
-P_core* thisCore;  // Core available during iteration.
-P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
-bool isTaskMappedToThisBox;
-WALKMAP(AddressComponent, P_box*, pE->P_boxm, boxNode)
-{
-while (cIdx < Comms.size()) // grab the next available mothership
-{
-      while ((currBox != pPmap[cIdx]->vPmap.end()) && (currBox->P_class != csMOTHERSHIPproc)) ++currBox;
-      if (currBox != pPmap[cIdx]->vPmap.end()) break;
-      ++cIdx;
-}
-
-isTaskMappedToThisBox = false;
-coreVec.clear();   // reset the packet content
-WALKVECTOR(P_board*,boxNode->second->P_boardv,board)
-{
-WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
-                  unsigned, P_link*,
-                  unsigned, P_port*, (*board)->G, mailbox)
-{
-WALKMAP(AddressComponent, P_core*,
-        (*board)->G.NodeData(mailbox)->P_corem, core)
-{
-thisCore = core->second;
-firstThread = thisCore->P_threadm.begin()->second;
-if (pPlacer->threadToDevices[firstThread].size() && (pPlacer->threadToDevices[firstThread].front()->par->par == task->second)) // only for cores which have something placed on them and which belong to the task
-{
-    isTaskMappedToThisBox = true;
-    // determine the last thread that has a device mapped onto it (recall that all devices within a core service the same task.
-    std::map<AddressComponent, P_thread*>::reverse_iterator thread;
-    for (thread=thisCore->P_threadm.rbegin();
-         thread!=thisCore->P_threadm.rend(); thread++)
-    {
-        if (pPlacer->threadToDevices[thread->second].size() > 0) break;
-    }
-
-    // Add the thread address to coreVec as a device address.
-    HardwareAddress* threadHardwareAddress;
-    threadHardwareAddress = thread->second->get_hardware_address();
-    P_addr_t threadFullAddress;
-    threadFullAddress.A_box = threadHardwareAddress->get_box();
-    threadFullAddress.A_board = threadHardwareAddress->get_board();
-    threadFullAddress.A_mailbox = threadHardwareAddress->get_mailbox();
-    threadFullAddress.A_core = threadHardwareAddress->get_core();
-    threadFullAddress.A_thread = threadHardwareAddress->get_thread();
-    coreVec.push_back(pair<unsigned, P_addr_t>
-                      (coreNum++, threadFullAddress));
-
-   /* MLV and ADR, on 2019-01-18, discussed that the above was effectively synonymous with the below (for the new hardware model).
-   // core lists here indicate the available hardware rather than the placed hardware, so we have
-   // to search for the last placed thread.
-   unsigned t_i = 1;
-   while (t_i < thisCore->P_threadv.size() && thisCore->P_threadv[t_i]->P_devicel.size()) ++t_i;
-   coreVec.push_back(pair<unsigned,P_addr_t>(coreNum++, *(dynamic_cast<P_addr_t*>(&(thisCore->P_threadv[--t_i]->addr))))); // add it to the core list to be sent (may need to cast thisCore->addr to P_addr_t)
-   */
-}
-}
-}
-}
-if ((cIdx >= Comms.size()) && coreVec.size()) // not enough Motherships have reported to deploy this task
-{
-   Post(166, task->first);
-   return;
-}
-
-if (isTaskMappedToThisBox)
-{
-// same machine running Root and Mothership? (Tediously this requires searching the
-// process maps linearly because there is no method within a ProcMap to get the
-// index of the entry which is Root)
-int RootIndex = RootCIdx();
-vector<ProcMap::ProcMap_t>::iterator RootProcMapI = pPmap[RootIndex]->vPmap.begin();
-while (RootProcMapI->P_rank != pPmap[RootIndex]->U.Root) RootProcMapI++;
-
-// stages commands for execution
-std::vector<std::string> commands;
-// where the binaries are (target is where the binaries will go). The asterisk
-// is a Bash glob (thanks system!)
-std::string target = string("/home/") + currBox->P_user + "/" +
-    TASK_DEPLOY_DIR + "/" + task->first;
-std::string sourceBins = taskpath + task->first + "/" + BIN_PATH + "/*";
-PktD.Put(1,&target);
-if (RootProcMapI->P_proc == currBox->P_proc)
-{
-   // then copy locally (inefficient, wasteful, using the files in place would be better but this would require
-   // different messages to be sent to different Motherships. For a later revision.
-   commands.push_back(string("rm -r -f ") + target);
-   commands.push_back(string("mkdir -p ") + target);
-   commands.push_back(string("cp -r ") + sourceBins + " " + target);
-}
-else
-{
-   // otherwise copy binaries to the Mothership using SCP. This assumes ssh-agent has been run for the user.
-   std::string host = currBox->P_user + "@" + currBox->P_proc;
-   commands.push_back(string("ssh ") + host + " \"rm -r -f " + target + "\"");
-   commands.push_back(string("ssh ") + host + " \"mkdir -p " + target + "\"");
-   commands.push_back(string("scp -r ") + sourceBins + " " +
-                      host + ":" + target);
-}
-
-// run each staged command, failing fast if one of them breaks.
-WALKVECTOR(std::string, commands, command)
-{
-    if (system(command->c_str()) > 0)
-    {
-        // Command failed, cancelling deployment.
-        if (errno == 0)
-        {
-            Post(165, command->c_str());
-        }
-        else
-        {
-            Post(167, command->c_str(),
-                 POETS::getSysErrorString(errno).c_str());
-        }
+    // Send the process map in simplified form to the Motherships, and the
+    // location of binaries. Argument is the task name, which needs to exist
+    // and be mapped to hardware. In large systems, there is a chance the user
+    // may ask to deploy the task before all available hardware has registered
+    // itself in the process map. In such a situation, a large task may not be
+    // able to be deployed yet. This isn't a fatal error; the user can try
+    // again and hope for success.
+    if (Cl.Pa_v.size()>1) {                       // Command make sense?
+        Post(47,Cl.Cl,"task","1");
         return;
     }
-}
+    if (!P_taskm.size()){                          // Some tasks exist?
+        Post(107,"definitions");
+        return;
+    }
+    // Default to first task
+    map<string, P_task*>::iterator task = P_taskm.begin();
+    if (Cl.Pa_v.size()){
+        string name = Cl.Pa_v[0].Val;                 // Unpack task name
+        if ((task=P_taskm.find(name))==P_taskm.end()){// Is the task there?
+            Post(107,name);
+            return;
+        }
+    }
+    if (!task->second->linked){                   // task mapped?
+        Post(157,task->first);
+        return;
+    }
 
-PktD.comm = PktC.comm = Comms[cIdx];           // Packet will go on the communicator it was found on
-printf("Sending a distribution message to mothership with %lu cores\n", coreVec.size());
-PktC.Put(&coreVec); // place the core map in the packet to this Mothership
-/*
-printf("Sending a single-core distribution message to mothership cores\n");
-PktC.Put<unsigned>(1,&(coreVec[0].first),1);
-PktC.Put<P_addr_t>(2,&(coreVec[0].second),1);
-*/
-PktC.Send(currBox->P_rank);                    // Send to the target Mothership
-PktD.Send(currBox->P_rank);
-}
-}                                              // Next Mothership (box)
+    unsigned coreNum = 0;  // virtual core number counter
+    unsigned cIdx = 0;  // comm number to look for Motherships. Start from
+                        // local MPI_COMM_WORLD.
+
+    vector<pair<unsigned,P_addr_t> > coreVec;  // core map container to send
+    vector<ProcMap::ProcMap_t>::iterator currBox =
+        pPmap[cIdx]->vPmap.begin();  // process map for the Mothership being
+                                     // deployed to
+
+    CMsg_p PktC;
+    PMsg_p PktD;
+    //PMsg_p PktC, PktD;        // messages to send to each participating box
+    PktC.Key(Q::NAME,Q::DIST);  // distributing the core mappings
+    PktD.Key(Q::NAME,Q::TDIR);  // and the data directory
+    PktC.Src(Urank);
+    string taskname = task->first;
+    PktC.Put(0, &taskname);     // first field in the packet is the task name
+    PktD.Put(0, &taskname);
+
+    P_core* thisCore;  // Core available during iteration.
+    bool isTaskMappedToThisBox;
+    WALKMAP(AddressComponent, P_box*, pE->P_boxm, boxNode)
+    {
+        while (cIdx < Comms.size()) // grab the next available mothership
+        {
+            while ((currBox != pPmap[cIdx]->vPmap.end()) &&
+                   (currBox->P_class != csMOTHERSHIPproc)) ++currBox;
+            if (currBox != pPmap[cIdx]->vPmap.end()) break;
+            ++cIdx;
+        }
+
+        isTaskMappedToThisBox = false;
+        coreVec.clear();   // reset the packet content
+        WALKVECTOR(P_board*,boxNode->second->P_boardv,board)
+        {
+            WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
+                              unsigned, P_link*,
+                              unsigned, P_port*, (*board)->G, mailbox)
+            {
+                WALKMAP(AddressComponent, P_core*,
+                        (*board)->G.NodeData(mailbox)->P_corem, core)
+                {
+                    thisCore = core->second;
+
+                    /* Only deal with cores that belong to this task. */
+                    if (pPlacer->taskToCores[task->second].find(thisCore) ==
+                        pPlacer->taskToCores[task->second].end()) continue;
+
+                    /* Only deal with cores that have at least one device
+                     * placed on them. */
+                    bool anyDevicesOnThisCore = false;
+                    WALKMAP(AddressComponent, P_thread*,
+                    thisCore->P_threadm, thread)
+                    {
+                        if (!pPlacer->threadToDevices[thread->second].empty())
+                        {
+                            anyDevicesOnThisCore = true;
+                            break;
+                        }
+                    }
+                    if (!anyDevicesOnThisCore) continue;
+
+                    isTaskMappedToThisBox = true;
+                    // determine the last thread that has a device mapped onto
+                    // it (recall that all devices within a core service the
+                    // same task.
+                    std::map<AddressComponent,
+                             P_thread*>::reverse_iterator thread;
+                    for (thread=thisCore->P_threadm.rbegin();
+                         thread!=thisCore->P_threadm.rend(); thread++)
+                    {
+                        if (pPlacer->threadToDevices[thread->second].size() > 0) break;
+                    }
+
+                    // Add the thread address to coreVec as a device address.
+                    HardwareAddress* threadHardwareAddress;
+                    threadHardwareAddress = thread->second->get_hardware_address();
+                    P_addr_t threadFullAddress;
+                    threadFullAddress.A_box = threadHardwareAddress->get_box();
+                    threadFullAddress.A_board = threadHardwareAddress->get_board();
+                    threadFullAddress.A_mailbox = threadHardwareAddress->get_mailbox();
+                    threadFullAddress.A_core = threadHardwareAddress->get_core();
+                    threadFullAddress.A_thread = threadHardwareAddress->get_thread();
+                    coreVec.push_back(pair<unsigned, P_addr_t>
+                                      (coreNum++, threadFullAddress));
+                }
+            }
+        }
+        // not enough Motherships have reported to deploy this task
+        if ((cIdx >= Comms.size()) && coreVec.size())
+        {
+            Post(166, task->first);
+            return;
+        }
+
+        if (isTaskMappedToThisBox)
+        {
+            // same machine running Root and Mothership? (Tediously this
+            // requires searching the process maps linearly because there is no
+            // method within a ProcMap to get the index of the entry which is
+            // Root)
+            int RootIndex = RootCIdx();
+            vector<ProcMap::ProcMap_t>::iterator RootProcMapI =
+                pPmap[RootIndex]->vPmap.begin();
+            while (RootProcMapI->P_rank != pPmap[RootIndex]->U.Root)
+            {
+                RootProcMapI++;
+            }
+
+            // stages commands for execution
+            std::vector<std::string> commands;
+            // where the binaries are (target is where the binaries will
+            // go). The asterisk is a Bash glob (thanks system!)
+            std::string target = string("/home/") + currBox->P_user + "/" +
+                TASK_DEPLOY_DIR + "/" + task->first;
+            std::string sourceBins = taskpath + task->first + "/" +
+                BIN_PATH + "/*";
+            PktD.Put(1,&target);
+            if (RootProcMapI->P_proc == currBox->P_proc)
+            {
+                // then copy locally (inefficient, wasteful, using the files in
+                // place would be better but this would require different
+                // messages to be sent to different Motherships. For a later
+                // revision.
+                commands.push_back(string("rm -r -f ") + target);
+                commands.push_back(string("mkdir -p ") + target);
+                commands.push_back(string("cp -r ") + sourceBins + " " +
+                                   target);
+            }
+            else
+            {
+                // otherwise copy binaries to the Mothership using SCP. This
+                // assumes ssh-agent has been run for the user.
+                std::string host = currBox->P_user + "@" + currBox->P_proc;
+                commands.push_back(string("ssh ") + host + " \"rm -r -f " +
+                                   target + "\"");
+                commands.push_back(string("ssh ") + host + " \"mkdir -p " +
+                                   target + "\"");
+                commands.push_back(string("scp -r ") + sourceBins + " " +
+                                   host + ":" + target);
+            }
+
+            // run each staged command, failing fast if one of them breaks.
+            WALKVECTOR(std::string, commands, command)
+            {
+                if (system(command->c_str()) > 0)
+                {
+                    // Command failed, cancelling deployment.
+                    if (errno == 0)
+                    {
+                        Post(165, command->c_str());
+                    }
+                    else
+                    {
+                        Post(167, command->c_str(),
+                             POETS::getSysErrorString(errno).c_str());
+                    }
+                    return;
+                }
+            }
+
+            // Packet will go on the communicator it was found on
+            PktD.comm = PktC.comm = Comms[cIdx];
+            printf("Sending a distribution message to mothership with %lu cores\n", coreVec.size());
+            // place the core map in the packet to this Mothership
+            PktC.Put(&coreVec);
+            /*
+            printf("Sending a single-core distribution message to "
+                   "mothership cores\n");
+            PktC.Put<unsigned>(1,&(coreVec[0].first),1);
+            PktC.Put<P_addr_t>(2,&(coreVec[0].second),1);
+            */
+            PktC.Send(currBox->P_rank);  // Send to the target Mothership
+            PktD.Send(currBox->P_rank);
+        }
+    }                                              // Next Mothership (box)
 }
 
 //------------------------------------------------------------------------------
