@@ -60,16 +60,15 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
     
     // first phase of barrier: set up a standard message to send to the supervisor
     volatile P_Msg_Hdr_t* hdr = static_cast<volatile P_Msg_Hdr_t*>(send_buf); // Header
-    
-    
+
+    // block until we can send it,
+    while (!tinselCanSend());
+
     // Set a Supervisor header with the correct Opcode.
     hdr->swAddr = P_SW_MOTHERSHIP_MASK | P_SW_CNC_MASK;
     hdr->swAddr |= ((P_CNC_BARRIER << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK);
     hdr->pinAddr = tinselId();          // usurp Pin Addr for the source HW addr
-    
-    // block until we can send it,
-    while (!tinselCanSend());
-    
+
     // and then issue the message indicating this thread's startup is complete.
     tinselSetLen(p_hdr_size());
     tinselSend(tinselHostId(), send_buf);

@@ -108,7 +108,21 @@ unsigned TMoth::Boot(string task)
         }
         DebugPrint("Task start bitmaps created for %d cores\n", t_start_bitmap.size());
 
-        // actually boot the cores
+        /* Actually boot the cores. This is pretty damn nuanced - at the
+         * moment, we are starting all of the cores, indiscriminantly of
+         * whether or not they are actually used for this task. This is due to
+         * bug #41 on GitHub (Some applications when restricted to
+         * NumDevicesPerThread<32 won't pass barrier), where we would get stuck
+         * in the barrier-while loop below.
+         *
+         * Problematically, starting all of the cores is undesirable, because
+         * another task could be deployed to this mothership.
+         *
+         * Another way to do this (which doesn't work), is to 'go' all cores
+         * individually, after starting them all. This is apparently safer than
+         * 'starting and going' in the same loop (verbally from MFN).
+         *
+         * YMMV. */
         WALKVECTOR(P_core*,taskCores,C)
         {
             (*C)->get_hardware_address()->populate_a_software_address(&coreAddress);
@@ -117,20 +131,10 @@ unsigned TMoth::Boot(string task)
             DebugPrint("* startOne(meshX=%u, meshY=%u, coreId=%u, numThreads=%lu)\n",
             mX, mY, core, (*C)->P_threadm.size());
             startOne(mX,mY,core,(*C)->P_threadm.size());
-            DebugPrint("%d threads started on core 0x%X (at x:%d y:%d c:%d)\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
-            DebugPrint("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
-            DebugPrint("* goOne(meshX=%u, meshY=%u, coreId=%u)\n", mX, mY, core);
-            goOne(mX,mY,core);
         }
-        // per Matt Naylor comment safer to start all cores then issue the go command to all cores separately.
-        // WALKVECTOR(P_core*,taskCores,C)
-        // {
-        //  (*C)->get_hardware_address()->populate_a_software_address(&coreAddress);
-        //  DebugPrint("Triggering %d threads on core %d at x:%d y:%d c:%d\n",(*C)->P_threadm.size(),TMoth::GetHWAddr(coreAddress),mX,mY,core);
-        //  goOne(mX,mY,core);
-        // }
-        // DebugPrint("%d cores booted\n", taskCores.size());
-
+        DebugPrint("* go()\n");
+        go();  /* From HostLink. */
+        DebugPrint("Instructed %u cores to go.\n", taskCores.size());
 
         //----------------------------------------------------------------------
         // Handle Barrier Messages
