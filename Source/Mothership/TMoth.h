@@ -13,6 +13,11 @@
 #include "poets_msg.h"
 #include "P_addr.h"
 
+
+#include <sys/socket.h>
+#include<sys/types.h>
+#include <netdb.h>
+
 //==============================================================================
 struct TM_LogMessage
 {   
@@ -83,6 +88,11 @@ unsigned              SystTopo();
 
 // Instrumentation messages
 TM_InstrMap_t         InstrMap;
+int                   InstrSocket;
+struct addrinfo *     ServAddrinfo;
+
+unsigned              InstrSocketIsOpen;
+void                  InstrumentationInit(void);
 void                  InstrumentationEnd(void);
 unsigned              InstrumentationHandler(P_Msg_t* msg);
 

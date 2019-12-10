@@ -45,6 +45,8 @@ CommonBase(argc,argv,d,string(__FILE__)), HostLink()
     
     twig_running = false;
     ForwardMsgs = false; // don't forward tinsel traffic yet
+    
+    InstrumentationInit();
 
     MPISpinner();                          // Spin on *all* messages; exit on DIE
     DebugPrint("Exiting Mothership. Closedown flags: AcceptConns: %s, "
@@ -1028,16 +1030,52 @@ void TMoth::StopTwig()
 //------------------------------------------------------------------------------
 
 // Instrumentation initialisation
-//void TMoth::InstrumentationInit(void)
-//{
-//    
-//}
+void TMoth::InstrumentationInit(void)
+{
+    // Try to open a UDP socket for instrumentation
+    if ( (InstrSocket = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) 
+    { 
+        printf("Failed to open Instrumentation socket"); 
+        InstrSocketIsOpen = 0;
+        return;
+    }
+    
+    
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+    //hints.ai_protocol = IPPROTO_UDP;
+    
+    std::string addr = "127.0.0.1";
+    std::string port = "9000";
+    
+    int r(getaddrinfo(addr.c_str(), port.c_str(), &hints, &ServAddrinfo));
+    
+    if(r != 0 || ServAddrinfo == NULL)
+    {
+        printf("Failed to set Instrumentation address"); 
+        InstrSocketIsOpen = 0;
+        return;   
+    }
+    
+    InstrSocketIsOpen = 1;
+}
 
-// Gracefully tear down the Instrumentation map
+
 void TMoth::InstrumentationEnd(void)
 {
+    // Gracefully tear down the Instrumentation map
     WALKMAP(uint32_t,TM_Instrumentation*,InstrMap,I)
         delete I->second;
+    
+    // Close the Instrumentation socket.
+    if(InstrSocketIsOpen)
+    {
+        close(InstrSocket);
+        InstrSocketIsOpen = 0;
+        InstrSocket = 0;
+    }
 }
 
 
@@ -1160,6 +1198,19 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
     tFile << instrMsg->supCnt/deltaT;            // Sup TX per second
     tFile << std::endl;
     
+    if(InstrSocketIsOpen)
+    {
+        // Punt the TX/s over the Instrumentation socket.
+        
+        std::stringstream SockMsgStream("");
+        SockMsgStream << srcAddr << "¿" << instrMsg->rxCnt/deltaT;
+        std::string SockMsg = SockMsgStream.str();
+        
+        const char *SockMsgC = SockMsg.c_str();
+        
+        sendto(InstrSocket, SockMsgC, strlen(SockMsgC), 0,
+               ServAddrinfo->ai_addr, ServAddrinfo->ai_addrlen);
+    }
     return 0;
 }
 //------------------------------------------------------------------------------
