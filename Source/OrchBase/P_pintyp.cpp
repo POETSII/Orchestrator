@@ -15,8 +15,8 @@ pStateD = 0;
 pStateI = 0;
 pHandl = 0;
 pMsg = 0;
-PinPropsSize = 0;
-PinStateSize = 0;
+// PinPropsSize = 0;
+// PinStateSize = 0;
 }
 
 //------------------------------------------------------------------------------

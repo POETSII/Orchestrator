@@ -24,8 +24,8 @@ CFrag *            pStateI;
 CFrag *            pHandl;
 P_message*         pMsg;
 P_devtyp *         par;
-size_t             PinPropsSize;
-size_t             PinStateSize;
+// size_t             PinPropsSize;
+// size_t             PinStateSize;
 unsigned           idx; // index in the parent's P_pintypXv.
 
 };
