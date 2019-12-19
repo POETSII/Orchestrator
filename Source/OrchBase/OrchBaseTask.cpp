@@ -406,7 +406,11 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
 
                     /* Only deal with cores that belong to this task. */
                     if (pPlacer->taskToCores[task->second].find(thisCore) ==
-                        pPlacer->taskToCores[task->second].end()) continue;
+                        pPlacer->taskToCores[task->second].end())
+                    {
+                        coreNum++;
+                        continue;
+                    }
 
                     /* Only deal with cores that have at least one device
                      * placed on them. */
