@@ -1169,9 +1169,18 @@ void Placer::update_software_addresses(P_task* task)
         /* If it has, update it. */
         else
         {
+            /* Get the index of the device within the list associated with the
+             * current thread (in order to define the device component of the
+             * address object). */
+            std::list<P_device*>::iterator first, found;
+            first = threadFinder->second.begin();
+            found = std::find(threadFinder->second.begin(),
+                              threadFinder->second.end(), device);
+
             /* Define the device component of the address object in the
              * device. */
             device->addr.SetDevice(threadFinder->second.size() - 1);
+            device->addr.SetDevice(std::distance(first, found));
 
             /* Define the other components of the address object in the
              * device. */

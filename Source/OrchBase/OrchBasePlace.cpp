@@ -150,7 +150,7 @@ void OrchBase::PlacementLoad(Cli::Cl_t clause)
      * file). */
     if (clause.Pa_v.size() != 2)
     {
-        Post(47, clause.Cl, "placement", "1");
+        Post(47, clause.Cl, "placement", "2");
         return;
     }
 
