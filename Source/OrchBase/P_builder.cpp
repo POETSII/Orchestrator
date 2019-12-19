@@ -278,66 +278,88 @@ unsigned P_builder::GenFiles(P_task* task)
   fstream cores_sh((task_dir+GENERATED_PATH+"/cores.sh").c_str(),
                     fstream::in | fstream::out | fstream::trunc);      // Open the cores shell script
 
-
-  // Walk through all cores in the system that are used by this task.
-  WALKSET(P_core*, par->pPlacer->taskToCores[task], coreNode)
+  // Walk through all of the boxes in the system
+  WALKMAP(AddressComponent, P_box*, par->pE->P_boxm, boxNode)
   {
-      thisCore = *coreNode;                               // Reference to the current core
-      firstThread = thisCore->P_threadm.begin()->second;  // Reference to the first thread on the core
-
-      mailboxCoreId = thisCore->get_hardware_address()->get_mailbox()   \
-	      << par->pE->addressFormat.coreWordLength;
-      mailboxCoreId += thisCore->get_hardware_address()->get_core();
-
-      cores_sh << "cores[" << coreNum << "]=";
-      cores_sh << mailboxCoreId << "\n";
-      // these consist of the declarations and definitions of variables and the handler functions.
-
-      //====================================================================
-      // Create empty files for the per-core variables declarations
-      //====================================================================
-      std::stringstream vars_hFName;
-      vars_hFName << task_dir << GENERATED_H_PATH;
-      vars_hFName << "/vars_" << coreNum << ".h";
-      std::ofstream vars_h(vars_hFName.str().c_str());  // variables header
-
-
-      //====================================================================
-
-
-      //====================================================================
-      // Write core vars.
-      //====================================================================
-      if (WriteCoreVars(task_dir, coreNum, thisCore, firstThread, vars_h))
-      {                     // Writing core vars failed - bail
-          vars_h.close();
-          cores_sh.close();
-          return 1;
-      }
-      //====================================================================
-
-
-      //====================================================================
-      // Generate thread variables
-      //====================================================================
-      WALKMAP(AddressComponent,P_thread*,thisCore->P_threadm,threadIterator)
+    // Walk through all of the boards in a box
+    WALKVECTOR(P_board*,boxNode->second->P_boardv,boardNode)
+    {
+      // Walk through all of the mailboxes on the board.
+      WALKPDIGRAPHNODES(AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,
+                          P_port*,(*boardNode)->G,mailboxNode)
       {
-          if (par->pPlacer->threadToDevices[threadIterator->second].size())
+
+        // Walk through all of the cores on the mailbox
+        WALKMAP(AddressComponent,P_core*,
+                (*boardNode)->G.NodeData(mailboxNode)->P_corem,
+                coreNode)
+        {
+          thisCore = coreNode->second;                        // Reference to the current core
+          firstThread = thisCore->P_threadm.begin()->second;  // Reference to the first thread on the core
+
+          if (par->pPlacer->threadToDevices[firstThread].size()                           // only for cores with something placed
+              && (par->pPlacer->threadToDevices[firstThread].front()->par->par == task))  // and that belong to the task
           {
-              if(WriteThreadVars(task_dir, coreNum, threadIterator->first,
-                                 threadIterator->second, vars_h))
-              {                     // Writing thread vars failed - bail
+            mailboxCoreId = thisCore->get_hardware_address()->get_mailbox() \
+	      << par->pE->addressFormat.coreWordLength;
+            mailboxCoreId += thisCore->get_hardware_address()->get_core();
+
+            cores_sh << "cores[" << coreNum << "]=";
+            cores_sh << mailboxCoreId << "\n";
+            // these consist of the declarations and definitions of variables and the handler functions.
+
+            //====================================================================
+            // Create empty files for the per-core variables declarations
+            //====================================================================
+            std::stringstream vars_hFName;
+            vars_hFName << task_dir << GENERATED_H_PATH;
+            vars_hFName << "/vars_" << coreNum << ".h";
+            std::ofstream vars_h(vars_hFName.str().c_str());  // variables header
+
+
+            //====================================================================
+
+
+            //====================================================================
+            // Write core vars.
+            //====================================================================
+            if (WriteCoreVars(task_dir, coreNum, thisCore, firstThread, vars_h))
+            {                     // Writing core vars failed - bail
+              vars_h.close();
+              cores_sh.close();
+              return 1;
+            }
+            //====================================================================
+
+
+            //====================================================================
+            // Generate thread variables
+            //====================================================================
+            WALKMAP(AddressComponent,P_thread*,thisCore->P_threadm,threadIterator)
+            {
+              if (par->pPlacer->threadToDevices[threadIterator->second].size())
+              {
+                if(WriteThreadVars(task_dir, coreNum, threadIterator->first,
+                                  threadIterator->second, vars_h))
+                {                     // Writing thread vars failed - bail
                   vars_h.close();
                   cores_sh.close();
                   return 1;
+                }
               }
+            }
+            //====================================================================
+
+            vars_h.close();       // close the core's declarations
+            ++coreNum;            // move on to the next core.
           }
+          else if (par->pPlacer->threadToDevices[firstThread].empty())
+          {
+            ++coreNum;            // move on to the next core.
+          }
+        }
       }
-      //====================================================================
-
-
-      vars_h.close();       // close the core's declarations
-      ++coreNum;            // move on to the next core.
+    }
   }
   cores_sh.close();
 
@@ -701,9 +723,8 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
                                   P_core* thisCore, P_thread* firstThread,
                                   ofstream& vars_h)
 {
-  P_device* firstDevice = par->pPlacer->threadToDevices[firstThread].front();
-  P_devtyp* c_devtyp = firstDevice->pP_devtyp;  // Pointer to the core's device type
-  std::string devtyp_name = c_devtyp->Name();   // grab a local copy of the devtype name
+  P_devtyp* c_devtyp = (*par->pPlacer->threadToDevices[firstThread].begin())->pP_devtyp;    // Pointer to the core's device type
+  std::string devtyp_name = c_devtyp->Name();                           // grab a local copy of the devtype name
 
 
   //============================================================================
@@ -775,9 +796,9 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     vars_h << "extern const global_props_t GraphProperties;\n";
 
     std::string global_init("");
-    if (firstDevice->par->pPropsI)        // Graph Instance properties
+    if ((*par->pPlacer->threadToDevices[firstThread].begin())->par->pPropsI)        // Graph Instance properties
     {
-      global_init = firstDevice->par->pPropsI->c_src;
+      global_init = (*par->pPlacer->threadToDevices[firstThread].begin())->par->pPropsI->c_src;
     }
     else //if (c_devtyp->par->pPropsI)                          // Default graph type properties
     {
@@ -1094,12 +1115,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   // a trivial bit more overhead, perhaps, then passing this as an argument.
   // The *general* method would extract the number of device types from the
   // thread's device list.
-  list<P_device*>* deviceList = &(par->pPlacer->threadToDevices[thread]);
-  P_device* firstDevice = deviceList->front();
-  P_devtyp* devTyp = firstDevice->pP_devtyp;
-
-  // a handy shortcut!
-  size_t numberOfDevices = deviceList->size();
+  P_devtyp* devTyp = (*par->pPlacer->threadToDevices[thread].begin())->pP_devtyp;
 
   unsigned int inTypCnt = devTyp->P_pintypIv.size();       // Grab the number of input pins for the device type
   unsigned int outTypCnt = devTyp->P_pintypOv.size();      // Grab the number of output pins for the device type
@@ -1165,11 +1181,11 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << "= {";
   vars_cpp << "1,";                                                 // numDevTyps
   vars_cpp << "Thread_" << thread_num << "_DeviceTypes,";           // devTyps
-  vars_cpp << numberOfDevices <<  ",";                              // numDevInsts
+  vars_cpp << par->pPlacer->threadToDevices[thread].size() <<  ",";                     // numDevInsts
   vars_cpp << "Thread_" << thread_num << "_Devices,";               // devInsts
   vars_cpp << ((devTyp->par->pPropsD)?"&GraphProperties,":"PNULL,");// properties
 
-  vars_cpp << (outTypCnt * numberOfDevices) << ",";        // rtsBuffSize
+  vars_cpp << (outTypCnt * par->pPlacer->threadToDevices[thread].size()) << ",";        // rtsBuffSize
   vars_cpp << "PNULL,";                                             // rtsBuf
   vars_cpp << "0,";                                                 // rtsStart
   vars_cpp << "0,";                                                 // rtsEnd
@@ -1324,7 +1340,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_h << "//--------------------------- Device Instance Tables ";
   vars_h << "---------------------------\n";
   vars_h << "extern devInst_t Thread_" << thread_num;
-  vars_h << "_Devices[" << numberOfDevices << "];\n\n";
+  vars_h << "_Devices[" << par->pPlacer->threadToDevices[thread].size() << "];\n\n";
   //============================================================================
 
 
@@ -1349,8 +1365,8 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   devStateInitialiser << "{";   // Add the first { to the device state array initialiser
   devInstInitialiser << "{";    // Add the first { to the device instance array initialiser
 
-  for (list<P_device*>::iterator device = deviceList->begin();
-        device != deviceList->end();
+  for (list<P_device*>::iterator device = par->pPlacer->threadToDevices[thread].begin();
+        device != par->pPlacer->threadToDevices[thread].end();
         device++)
   {
     //==========================================================================
@@ -1940,7 +1956,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   // Write the device instance array initialisers
   //============================================================================
   vars_cpp << "devInst_t Thread_" << thread_num;
-  vars_cpp << "_Devices[" << numberOfDevices << "] = ";
+  vars_cpp << "_Devices[" << par->pPlacer->threadToDevices[thread].size() << "] = ";
   vars_cpp << devInstInitialiser.str();
   //============================================================================
 
@@ -1952,7 +1968,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     //==========================================================================
     vars_h << "extern devtyp_" << devTyp->Name();
     vars_h << "_props_t Thread_" << thread_num;
-    vars_h << "_DeviceProperties[" << numberOfDevices << "];\n";
+    vars_h << "_DeviceProperties[" << par->pPlacer->threadToDevices[thread].size() << "];\n";
     //==========================================================================
 
 
@@ -1964,7 +1980,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     //==========================================================================
     vars_cpp << "devtyp_" << devTyp->Name();
     vars_cpp << "_props_t Thread_" << thread_num;
-    vars_cpp << "_DeviceProperties[" << numberOfDevices << "] = ";
+    vars_cpp << "_DeviceProperties[" << par->pPlacer->threadToDevices[thread].size() << "] = ";
     vars_cpp << devPropsInitialiser.str();
     //==========================================================================
   }
@@ -1976,7 +1992,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     //==========================================================================
     vars_h << "extern devtyp_" << devTyp->Name();
     vars_h << "_state_t Thread_" << thread_num;
-    vars_h << "_DeviceState[" << numberOfDevices << "];\n";
+    vars_h << "_DeviceState[" << par->pPlacer->threadToDevices[thread].size() << "];\n";
     //==========================================================================
 
 
@@ -1988,7 +2004,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     //==========================================================================
     vars_cpp << "devtyp_" << devTyp->Name();
     vars_cpp << "_state_t Thread_" << thread_num;
-    vars_cpp << "_DeviceState[" << numberOfDevices << "] = ";
+    vars_cpp << "_DeviceState[" << par->pPlacer->threadToDevices[thread].size() << "] = ";
     vars_cpp << devStateInitialiser.str();
     //==========================================================================
   }
@@ -2107,32 +2123,47 @@ unsigned P_builder::CompileBins(P_task * task)
   //============================================================================
   // Check that the binaries were made and add file pointers to each core.
   //============================================================================
-  unsigned int coreNum = 0;  // Just a counter.
+  unsigned int coreNum = 0;
+  P_core* thisCore;  // Core available during iteration.
+  P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
 
-  // Walk through all cores in the system that are used by this task.
-  WALKSET(P_core*, par->pPlacer->taskToCores[task], coreNode)
+  WALKPDIGRAPHNODES(AddressComponent, P_board*, unsigned, P_link*, unsigned,
+                    P_port*, par->pE->G, boardNode)
   {
-      // a failure to read the generated binary may not be absolutely fatal;
-      // this could be retrieved later if there was a transient read error
-      // (e.g. reading over a network connection).
-
-      std::string binName;
-      binName = task_dir+BIN_PATH+"/"+COREBIN_BASE+TO_STRING(coreNum)+".elf";
-
-      FILE* binary = fopen(binName.c_str(),"r");
-
-      if(binary == PNULL)
+    WALKPDIGRAPHNODES(AddressComponent, P_mailbox*, unsigned, P_link*, unsigned,
+                      P_port*, par->pE->G.NodeData(boardNode)->G, mailboxNode)
+    {
+      WALKMAP(AddressComponent, P_core*,
+              par->pE->G.NodeData(boardNode)->G.NodeData(mailboxNode)->P_corem,
+              coreNode)
       {
-          // Check that the file opened successfully.
-          par->Post(806, binName, POETS::getSysErrorString(errno));
-      }
-      else
-      {
-          // Add the file pointer to the core.
-          (*coreNode)->instructionBinary->Binary = binary;
-      }
+        thisCore = coreNode->second;
+        firstThread = thisCore->P_threadm.begin()->second;
+        if (par->pPlacer->threadToDevices[firstThread].size()
+            && (par->pPlacer->threadToDevices[firstThread].front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
+        {
+          // a failure to read the generated binary may not be absolutely fatal;
+          // this could be retrieved later if there was a transient read error
+          // (e.g. reading over a network connection).
 
-      ++coreNum;  // Move onto the next core.
+          std::string binName;
+          binName = task_dir+BIN_PATH+"/"+COREBIN_BASE+TO_STRING(coreNum)+".elf";
+
+          FILE* binary = fopen(binName.c_str(),"r");
+
+          if(binary == PNULL)
+          {     // Check that the file opened successfully.
+            par->Post(806, binName, POETS::getSysErrorString(errno));
+          }
+          else
+          {     // Add the file pointer to the core.
+            thisCore->instructionBinary->Binary = binary;
+          }
+
+          ++coreNum;                // Move onto the next core.
+        }
+      }
+    }
   }
   //============================================================================
   return 0;
