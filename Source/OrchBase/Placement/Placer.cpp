@@ -221,7 +221,7 @@ bool Placer::are_all_hard_constraints_satisfied(P_task* task,
  * 3) Checks that all core pairs have devices of only one (or zero) types.
  *
  * Throws a BadIntegrityException if a check fails. */
-void Placer::check_integrity(P_task* task, std::string algorithmDescription)
+void Placer::check_integrity(P_task* task, Algorithm* algorithm)
 {
     /* Step 1: Check all devices have been mapped. */
     std::vector<P_device*> unmappedDevices;
@@ -242,7 +242,7 @@ void Placer::check_integrity(P_task* task, std::string algorithmDescription)
             "[ERROR] Use of algorithm '%s' on the task from file '%s' "
             "resulted in some normal devices not being placed "
             "correctly. These devices are:%s\n",
-            algorithmDescription.c_str(), task->filename.c_str(),
+            algorithm->result.method.c_str(), task->filename.c_str(),
             devicePrint.c_str()));
     }
 
@@ -265,7 +265,7 @@ void Placer::check_integrity(P_task* task, std::string algorithmDescription)
         throw BadIntegrityException(dformat(
             "[ERROR] Hard constraints were violated when using algorithm '%s' "
             "on the task from file '%s'. The violated constraints are:%s\n",
-            algorithmDescription.c_str(), task->filename.c_str(),
+            algorithm->result.method.c_str(), task->filename.c_str(),
             constraintPrint.c_str()));
     }
 
@@ -310,7 +310,7 @@ void Placer::check_integrity(P_task* task, std::string algorithmDescription)
             "[ERROR] Some core pairs have multiple device types associated "
             "with them when using algorithm '%s' on the task from file '%s'. "
             "The core pairs and their device types are:%s\n",
-            algorithmDescription.c_str(), task->filename.c_str(),
+            algorithm->result.method.c_str(), task->filename.c_str(),
             corePrint.c_str()));
     }
 }
@@ -871,20 +871,36 @@ void Placer::link(P_thread* thread, P_device* device)
  * Returns the solution fitness, if appropriate (otherwise returns zero). */
 float Placer::place(P_task* task, std::string algorithmDescription)
 {
+    /* Grab an algorithm, may throw. */
+    Algorithm* algorithm = algorithm_from_string(algorithmDescription);
+
+    return place(task, algorithm);
+}
+
+/* Maps a task to the engine associated with this placer, using a certain
+ * algorithm.  Arguments:
+ *
+ * - task: Pointer to task to map.
+ *
+ * - algorithm: An algorithm instance on the heap.
+ *
+ * Returns the solution fitness, if appropriate (otherwise returns zero). */
+float Placer::place(P_task* task, Algorithm* algorithm)
+{
     /* Danger Will Robinson! (seriously though, how did you get here? --MLV) */
     if (engine == PNULL) throw NoEngineException(
         "You've attempted to place a task without defining an engine pointer "
         "in the placer. If you're running this from OrchBase, how did you get "
         "here?");
 
-    /* Grab an algorithm, may throw. */
-    Algorithm* algorithm = algorithm_from_string(algorithmDescription);
-
     /* Complain if the task has already been placed (by memory address). */
     if (placedTasks.find(task) != placedTasks.end())
+    {
+        delete algorithm;
         throw AlreadyPlacedException(dformat(
             "[ERROR] Task from file '%s' has already been placed.",
             task->filename.c_str()));
+    }
 
     /* Define deviceToGraphKey for devices in this task. */
     populate_device_to_graph_key_map(task);
@@ -893,7 +909,7 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     float score = algorithm->do_it(task);
 
     /* Check placement integrity, throwing if there's a problem. */
-    check_integrity(task, algorithmDescription);
+    check_integrity(task, algorithm);
 
     /* Update task-keyed maps. */
     placedTasks[task] = algorithm;
@@ -909,6 +925,19 @@ float Placer::place(P_task* task, std::string algorithmDescription)
     task->LinkFlag();
 
     return score;
+}
+
+/* Load a previously-placed configuration. Is pretty unsafe. Arguments:
+ *
+ * - task: Pointer to task to map.
+ *
+ * - path: String denoting path to placement information to load
+ *   (e.g. placement_task_to_hardware_file_...)
+ *
+ * Returns the solution fitness, if appropriate (otherwise returns zero). */
+float Placer::place_load(P_task* task, std::string path)
+{
+    return place(task, new PlacementLoader(this, path));
 }
 
 /* For each device in the task, define the placer's reverse-map so that edges

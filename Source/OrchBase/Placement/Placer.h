@@ -21,6 +21,7 @@ struct Result;
 
 /* Algorithms! */
 #include "Algorithm.h"
+#include "PlacementLoader.h"
 #include "SimulatedAnnealing.h"
 #include "SmartRandom.h"
 
@@ -79,7 +80,7 @@ public:
     std::map<P_device*, unsigned> deviceToGraphKey;
 
     /* Check integrity of a placed task. */
-    void check_integrity(P_task* task, std::string algorithmDescription);
+    void check_integrity(P_task* task, Algorithm* algorithm);
     bool are_all_core_pairs_device_locked(P_task* task,
         std::map<std::pair<P_core*, P_core*>,
                  std::set<P_devtyp*>>* badCoresToDeviceTypes);
@@ -120,6 +121,8 @@ public:
 
     /* Doing the dirty */
     float place(P_task* task, std::string algorithmDescription);
+    float place(P_task* task, Algorithm* algorithm);
+    float place_load(P_task* task, std::string path);
     void unplace(P_task* task, bool andConstraints=true);
 
     /* Constraint query */

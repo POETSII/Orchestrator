@@ -78,6 +78,7 @@ unsigned               CmPlace(Cli *);
 bool                   PlacementDoit(Cli::Cl_t);  // Algorithm filter
 void                   PlacementDump(Cli::Cl_t);
 P_task*                PlacementGetTaskByName(std::string);  // Shortcut
+void                   PlacementLoad(Cli::Cl_t);
 void                   PlacementReset(bool post=false);  // Shortcut
 void                   PlacementUnplace(Cli::Cl_t);
 
