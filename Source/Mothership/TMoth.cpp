@@ -139,46 +139,201 @@ unsigned TMoth::Boot(string task)
         //----------------------------------------------------------------------
         // Handle Barrier Messages
         //----------------------------------------------------------------------
+
+        /* You might want tp print some bitmaps.
+        DebugPrint("=== FIRST BITMAP ===\n");
+        map<unsigned, vector<unsigned>*>::iterator mapIt;
+        vector<unsigned>::iterator vecIt;
+        for (mapIt = t_start_bitmap.begin();
+             mapIt != t_start_bitmap.end(); mapIt++)
+        {
+            fromAddr(mapIt->first,&mX,&mY,&core,&thread);
+            DebugPrint("mX: %u, mY: %u, core: %u, thread: %u, Content: ",
+                       mX, mY, core, thread, mapIt->first);
+            for (vecIt = mapIt->second->begin();
+                 vecIt != mapIt->second->end(); vecIt++)
+            {
+                DebugPrint("%x ", *vecIt);
+            }
+            DebugPrint("\n");
+        }
+        DebugPrint("=== CURRENT BITMAP END ===\n");
+        sleep(5); */
+
+        /* Prepare to receive some UART stuff. */
+        std::map<uint32_t, std::vector<uint8_t>> uartStuff;
+        std::map<uint32_t, std::vector<uint8_t>>::iterator uartStuffIt;
+        std::vector<uint8_t>::iterator uartValIt;
+        uint32_t uartAddr;
+        uint32_t uartBoardX, uartBoardY, uartCore, uartThread;
+        uint8_t uartByte;
+        bool somethingHappened;
+
         P_Msg_t barrier_msg;
         while (!t_start_bitmap.empty())
         {
-            recvMsg(&barrier_msg, p_hdr_size());
-            DebugPrint("Received a message from a core during application barrier\n");
-            
-            if (   (barrier_msg.header.swAddr & P_SW_MOTHERSHIP_MASK)
-                && (barrier_msg.header.swAddr & P_SW_CNC_MASK)
-                && (((barrier_msg.header.swAddr & P_SW_OPCODE_MASK)
-                        >> P_SW_OPCODE_SHIFT) == P_CNC_BARRIER) )
+            somethingHappened = false;
+
+            /* Check UART. */
+            if (debugLink->canGet())
             {
-                uint32_t srcAddr = barrier_msg.header.pinAddr;
-                
-                DebugPrint("Barrier message from thread ID 0x%X\n", srcAddr);
-                
-                fromAddr(srcAddr,&mX,&mY,&core,&thread);       // Decode Address
-                
-                unsigned hw_core = toAddr(mX,mY,core,0);
-                DebugPrint("Received a barrier acknowledge from core %#X\n", hw_core);
-                
-                if (t_start_bitmap.find(hw_core) != t_start_bitmap.end())
+                somethingHappened = true;
+                uartBoardX = 0xFFFFFFFF;
+                uartBoardY = 0xFFFFFFFF;
+                uartCore = 0xFFFFFFFF;
+                uartThread = 0xFFFFFFFF;
+                uartByte = 0xFF;
+                debugLink->get(&uartBoardX, &uartBoardY, &uartCore,
+                               &uartThread, &uartByte);
+                uartAddr = toAddr(uartBoardX, uartBoardY, uartCore,
+                                  uartThread);
+                uartStuff[uartAddr].push_back(uartByte);
+                continue;
+            }
+
+            /* Check main message broker. */
+            if (canRecv())
+            {
+                somethingHappened = true;
+                recvMsg(&barrier_msg, p_hdr_size());
+                DebugPrint("========= NEW MESSAGE! =========\n");
+                //DebugPrint("Received a message from a core during application "
+                //           "barrier\n");
+
+                if ((barrier_msg.header.swAddr & P_SW_MOTHERSHIP_MASK)
+                    && (barrier_msg.header.swAddr & P_SW_CNC_MASK)
+                    && (((barrier_msg.header.swAddr & P_SW_OPCODE_MASK)
+                         >> P_SW_OPCODE_SHIFT) == P_CNC_BARRIER) )
                 {
-                    DebugPrint("Thread %d on core %d responding\n", thread, core);
-                    DebugPrint("Core bitmap for thread %d before ack: %#X\n", thread, (*t_start_bitmap[hw_core])[thread/(8*sizeof(unsigned))]);
-                    (*t_start_bitmap[hw_core])[thread/(8*sizeof(unsigned))] &= (~(1 << (thread%(8*sizeof(unsigned)))));
-                    DebugPrint("Core bitmap for thread %d after acknowledge: %#X\n", thread, (*t_start_bitmap[hw_core])[thread/(8*sizeof(unsigned))]);
-                    vector<unsigned>::iterator S;
-                    DebugPrint("Core bitmap currently has %d elements\n", t_start_bitmap.size());
-                    for (S = t_start_bitmap[hw_core]->begin(); S != t_start_bitmap[hw_core]->end(); S++) if (*S) break;
-                    DebugPrint("Core bitmap for core %d has %d subelements\n", hw_core, t_start_bitmap[hw_core]->size());
-                    if (S == t_start_bitmap[hw_core]->end())
+                    uint32_t srcAddr = barrier_msg.header.pinAddr;
+                    fromAddr(srcAddr,&mX,&mY,&core,&thread);       // Decode Address
+                    DebugPrint("From boardX: %u, boardY: %u, core: %u, "
+                               "thread: %u.\n",
+                               mX, mY, core, thread);
+
+                    unsigned hw_core = toAddr(mX,mY,core,0);
+
+                    if (t_start_bitmap.find(hw_core) != t_start_bitmap.end())
                     {
-                        DebugPrint("Removing core bitmap for core %d\n", thread, t_start_bitmap[hw_core]->size());
-                        t_start_bitmap[hw_core]->clear();
-                        delete t_start_bitmap[hw_core];
-                        t_start_bitmap.erase(hw_core);
+                        DebugPrint("Corresponding core bitmap before ack: "
+                                   "%#X\n",
+                                   (*t_start_bitmap[hw_core])[thread/(8*sizeof(unsigned))]);
+                        (*t_start_bitmap[hw_core])[thread/(8*sizeof(unsigned))] &=
+                            (~(1 << (thread%(8*sizeof(unsigned)))));
+                        DebugPrint("After ack: %#X\n",
+                                   (*t_start_bitmap[hw_core])[thread/(8*sizeof(unsigned))]);
+
+                        vector<unsigned>::iterator S;
+                        for (S = t_start_bitmap[hw_core]->begin(); S != t_start_bitmap[hw_core]->end(); S++) if (*S) break;
+                        DebugPrint("This core has %d subelements.\n",
+                                   t_start_bitmap[hw_core]->size());
+                        if (S == t_start_bitmap[hw_core]->end())
+                        {
+                            DebugPrint("Removing bitmap for this core, because "
+                                       "it is now empty.\n");
+                            t_start_bitmap[hw_core]->clear();
+                            delete t_start_bitmap[hw_core];
+                            t_start_bitmap.erase(hw_core);
+                        }
+
+                        DebugPrint("%d cores (with threads) are yet to respond "
+                                   "completely.\n",
+                                   t_start_bitmap.size());
                     }
                 }
+
+                else
+                {
+                    DebugPrint("========= BAD PACKET! =========\n");
+                    DebugPrint("Bad packet! Software address: %x, Pin "
+                               "address: %x.\n", barrier_msg.header.swAddr,
+                               barrier_msg.header.pinAddr);
+                }
+            }
+
+            if (somethingHappened)
+            {
+                FILE* uartFile = fopen("out_uart.txt", "wb");
+                fprintf(uartFile, "=== CURRENT UART MAP ===\n");
+                for (uartStuffIt = uartStuff.begin();
+                     uartStuffIt != uartStuff.end(); uartStuffIt++)
+                {
+                    fromAddr(uartStuffIt->first, &uartBoardX,
+                             &uartBoardY, &uartCore, &uartThread);
+                    fprintf(uartFile, "BX: %u, BY: %u, C: %u, T: %u, Packets:",
+                            uartBoardX, uartBoardY, uartCore,
+                            uartThread);
+                    for (uartValIt = uartStuffIt->second.begin();
+                         uartValIt != uartStuffIt->second.end();
+                         uartValIt++)
+                    {
+                        fprintf(uartFile, " %x", *uartValIt);
+                    }
+                    fprintf(uartFile, "\n");
+                }
+                fclose(uartFile);
+
+                FILE* bitmapFile = fopen("out_bitmap.txt", "wb");
+                fprintf(bitmapFile, "=== CURRENT BITMAP ===\n");
+                map<unsigned, vector<unsigned>*>::iterator mapIt;
+                vector<unsigned>::iterator vecIt;
+                for (mapIt = t_start_bitmap.begin();
+                     mapIt != t_start_bitmap.end(); mapIt++)
+                {
+                    fromAddr(mapIt->first, &mX, &mY, &core, &thread);
+                    fprintf(bitmapFile, "mX: %u, mY: %u, core: %u, thread: %u, "
+                            "Content: ", mX, mY, core, thread);
+                    for (vecIt = mapIt->second->begin();
+                         vecIt != mapIt->second->end(); vecIt++)
+                    {
+                        fprintf(bitmapFile, "%x ", *vecIt);
+                    }
+                    fprintf(bitmapFile, "\n");
+                }
+                fclose(bitmapFile);
+            }
+            else
+            {
+                // DebugPrint("Nothing happened. Waiting 30 sec...\n");
+                // sleep(30);
             }
         }
+
+        //----------------------------------------------------------------------
+
+        // // Instead of handling barrier messages, we're just going to receive
+        // // them until they stop coming. Advisory board preparation, yo.
+        // DebugPrint("Ain't nobody got time to wait for the init barrier, "
+        //            "yo.\n");
+        // P_Msg_t barrier_msg;
+        // bool receivedLastIteration = true;  // Lies
+
+        // /* If there's a message waiting for us, pick it up and try again. If
+        //  * not, wait some amount of seconds and try again. If there's still no
+        //  * message after we've waited, we assume everyone has sent their
+        //  * barrier-breaking message. */
+        // while (true)
+        // {
+        //     if (canRecv())
+        //     {
+        //         recvMsg(&barrier_msg, p_hdr_size());
+        //         receivedLastIteration = true;
+        //         continue;
+        //     }
+        //     else
+        //     {
+        //         if (receivedLastIteration)
+        //         {
+        //             receivedLastIteration = false;
+        //             DebugPrint("(though we are going to chill for about 40 "
+        //                        "seconds to drain the network).\n");
+        //             sleep(40);
+        //             continue;
+        //         }
+        //         break;
+        //     }
+
+        // }
         //----------------------------------------------------------------------
         
         
@@ -195,7 +350,7 @@ unsigned TMoth::Boot(string task)
         {
             Post (540,int2str(Urank));
             int (*SupervisorInit)() = reinterpret_cast<int (*)()>(dlsym(SuperHandle, "SupervisorInit"));
-            string badFunc("");
+            string badFunc;
             if (!SupervisorInit || (*SupervisorInit)()) badFunc = "SupervisorInit";
             else if ((SupervisorCall = reinterpret_cast<int (*)(PMsg_p*, PMsg_p*)>(dlsym(SuperHandle, "SupervisorCall"))) == NULL) badFunc = "SupervisorCall";
             if (badFunc.size()) Post(533,badFunc,int2str(Urank),string(dlerror()));
@@ -367,6 +522,8 @@ unsigned TMoth::CmRun(string task)
             {
                 DebugPrint("Attempting to send barrier release message to the thread "
                 "with hardware address %u.\n", *R);
+                DebugPrint("* send(dest=%x, numFlits=%u, ...)\n=======\n",
+                           *R, flits);
                 send(*R, flits, &barrier_msg, true);
             }
             DebugPrint("Tinsel threads now on their own for task %s\n",task.c_str());
@@ -552,6 +709,7 @@ long TMoth::LoadBoard(P_board* board)
                 data_f.c_str(), mX, mY, core);
                 loadDataViaCore(data_f.c_str(), mX, mY, core);
                 ++coresLoaded;
+                DebugPrint("=====\n");
             }
         }
     }
@@ -687,6 +845,32 @@ void* TMoth::Twig(void* par)
     }
     while (parent->ForwardMsgs) // until told otherwise,
     {
+        /* Prepare to receive some UART stuff. */
+        uint32_t uartAddr;
+        uint32_t uartBoardX, uartBoardY, uartCore, uartThread;
+        uint8_t uartByte;
+        FILE* uartFile;
+
+        /* Check UART. */
+        if (parent->debugLink->canGet())
+        {
+            uartBoardX = 0xFFFFFFFF;
+            uartBoardY = 0xFFFFFFFF;
+            uartCore = 0xFFFFFFFF;
+            uartThread = 0xFFFFFFFF;
+            uartByte = 0xFF;
+            parent->debugLink->get(&uartBoardX, &uartBoardY, &uartCore,
+                                   &uartThread, &uartByte);
+            uartAddr = parent->toAddr(uartBoardX, uartBoardY, uartCore,
+                                      uartThread);
+            uartFile = fopen(dformat("out_uart_start_%u_%u_%u_%u_%u.txt",
+                                     uartAddr, uartBoardX, uartBoardY,
+                                     uartCore, uartThread).c_str(), "a");
+            fprintf(uartFile, "%x ", uartByte);
+            fclose(uartFile);
+            continue;
+        }
+
         // receive all available traffic. Should this be done or only one packet
         // and then try again for MPI? We don't expect MPI traffic to be intensive
         // and tinsel messsages might be time-critical.
@@ -739,7 +923,9 @@ void* TMoth::Twig(void* par)
                 
                 if (parent->OnTinselOut(msg))
                 {
+                    DebugPrint("===== 13\n");
                     parent->Post(530, int2str(parent->Urank));
+                    DebugPrint("===== 14\n");
                 }
                 
                 
@@ -776,7 +962,12 @@ void* TMoth::Twig(void* par)
         {
             fflush(OutFile);
             fsetpos(OutFile, &readPos);
-            while (!feof(OutFile)) parent->Post(600, string(fgets(Line, 4*P_MSG_MAX_SIZE, OutFile)));
+            while (!feof(OutFile))
+            {
+                if (fgets(Line, 4*P_MSG_MAX_SIZE, OutFile) == PNULL)
+                    break;
+                parent->Post(600, string(Line));
+            }
             fgetpos(OutFile, &readPos);
         }
     }
@@ -1215,24 +1406,36 @@ unsigned TMoth::LogHandler(P_Msg_t* msg)
     
     
     // Received the last log message. Re-assemble & print it.
+    DebugPrint("===== 0\n");
     if(logMsg->logMsgCnt == (logMsg->logMsgMax +1))
-    {  
+    {
+        DebugPrint("===== 1\n");
         char logStr[(p_logmsg_pyld_size << P_LOG_MAX_LOGMSG_FRAG)+1];
-    
+        DebugPrint("===== 2\n");
 #ifdef TRIVIAL_LOG_HANDLER
         // Call the trivial logmessage handler.
+        DebugPrint("===== 3\n");
         TrivialLogHandler(logMsg, logStr);
+        DebugPrint("===== 4\n");
 #else
+        DebugPrint("===== 5\n");
         strcpy(logStr, "ERROR: No Log Handler Defined!");   // (in)sanity check
-#endif   
+        DebugPrint("===== 6\n");
+#endif
 
         // Post to the log server
+        DebugPrint("===== 7\n");
         Post(601, int2str(srcAddr), int2str(srcAddr), string(logStr));
-        
+        DebugPrint("===== 8\n");
+
         // Cleanup the message
+        DebugPrint("===== 9\n");
         LogMsgMap.erase(srcAddr);
+        DebugPrint("===== 10\n");
         delete logMsg;
+        DebugPrint("===== 11\n");
     }
+    DebugPrint("===== 12\n");
     return 0;
 }
 
