@@ -1169,9 +1169,17 @@ void Placer::update_software_addresses(P_task* task)
         /* If it has, update it. */
         else
         {
+            /* Get the index of the device within the list associated with the
+             * current thread (in order to define the device component of the
+             * address object). */
+            std::list<P_device*>::iterator first, found;
+            first = threadFinder->second.begin();
+            found = std::find(threadFinder->second.begin(),
+                              threadFinder->second.end(), device);
+
             /* Define the device component of the address object in the
              * device. */
-            device->addr.SetDevice(threadFinder->second.size() - 1);
+            device->addr.SetDevice(std::distance(first, found));
 
             /* Define the other components of the address object in the
              * device. */
@@ -1188,6 +1196,28 @@ void Placer::update_task_to_cores_map(P_task* task)
     /* Grab the set we're inserting into. */
     std::set<P_core*>* coreSet;
     coreSet = &(taskToCores[task]);
+
+    /* Iterate through every thread in the hardware model. If a device is
+     * placed on that thread, and that device is owned by the task, then add
+     * the core to the coreSet.
+    HardwareIterator engineIt(engine);
+    P_thread* thread;
+    P_device* firstDevice;
+    while (!engineIt.has_wrapped())
+    {
+        thread = engineIt.get_thread();
+        if (threadToDevices.find(thread) != threadToDevices.end())
+        {
+            firstDevice = *(threadToDevices[thread].begin());
+            if (firstDevice->par->par == task)
+            {
+                coreSet->insert(thread->parent);
+                engineIt.next_core();
+                continue;
+            }
+        }
+        engineIt.next_thread();
+    } */
 
     /* Iterate through each device. */
     WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,

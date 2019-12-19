@@ -43,7 +43,7 @@ float PlacementLoader::do_it(P_task* task)
             }
         }
 
-        printf("Placed %s\n", device->FullName().c_str());
+        //printf("Placed %s\n", device->FullName().c_str());
         placer->link(hwIt->get_thread(), device);
         delete hwIt;
     }
