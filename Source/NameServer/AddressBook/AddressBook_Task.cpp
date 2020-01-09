@@ -191,17 +191,21 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     {                                           // have fewer DeviceTypes than  
         dtConcurrency = DevTypes.size();        // possible threads.
     }
-    unsigned long devTypeSplit = DevTypes.size() / dtConcurrency;
-    for(i = 0; i < dtConcurrency; i++)
+    
+    if (dtConcurrency > 0)
     {
-        // Handle any remainder in the last thread - integ method checks bounds.
-        unsigned endMul = (i==(dtConcurrency-1)) ? 2 : 1;   
-        threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegDevTypeMap, this, 
-                                            Verbose, fp, (devTypeSplit * i), 
-                                            (devTypeSplit * (i+endMul)), 
-                                            std::ref(retVal));
+        unsigned long devTypeSplit = DevTypes.size() / dtConcurrency;
+        for(i = 0; i < dtConcurrency; i++)
+        {
+            // Handle any remainder in the last thread - integ method checks bounds.
+            unsigned endMul = (i==(dtConcurrency-1)) ? 2 : 1;   
+            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegDevTypeMap, this, 
+                                                Verbose, fp, (devTypeSplit * i), 
+                                                (devTypeSplit * (i+endMul)), 
+                                                std::ref(retVal));
+        }
+        threadCnt += i;
     }
-    threadCnt += i;
 
     //==========================================================================
     // Thread(s) for checking Devices vector
@@ -210,18 +214,22 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     {                                           // have fewer Devices than
         dConcurrency = Devices.size();          // possible threads.
     }
-    unsigned long long devSplit = Devices.size() / dConcurrency;
-    for(i = 0; i < dConcurrency; i++)
+    
+    if (dConcurrency > 0)   // account for 0 devices, incase we are called before devices loaded
     {
-        // Handle any remainder in the last thread - integ method checks bounds.
-        unsigned endMul = (i==(dConcurrency-1)) ? 2 : 1;   
-        threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegDevices, this, 
-                                            Verbose, fp, (devSplit * i), 
-                                            (devSplit * (i+endMul)), 
-                                            std::ref(retVal), 
-                                            std::ref(ExtConCnt));
+        unsigned long long devSplit = Devices.size() / dConcurrency;
+        for(i = 0; i < dConcurrency; i++)
+        {
+            // Handle any remainder in the last thread - integ method checks bounds.
+            unsigned endMul = (i==(dConcurrency-1)) ? 2 : 1;   
+            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegDevices, this, 
+                                                Verbose, fp, (devSplit * i), 
+                                                (devSplit * (i+endMul)), 
+                                                std::ref(retVal), 
+                                                std::ref(ExtConCnt));
+        }
+        threadCnt += i;
     }
-    threadCnt += i;
 
     //==========================================================================
     // Thread(s) for checking Externals vector
@@ -230,17 +238,21 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     {                                           // have fewer Externals than
         eConcurrency = Externals.size();        // possible threads.
     }
-    unsigned long extSplit = Externals.size() / eConcurrency;
-    for(i = 0; i < eConcurrency; i++)
+    
+    if (eConcurrency > 0)   // Account for having no externals
     {
-        // Handle any remainder in the last thread - integ method checks bounds.
-        unsigned endMul = (i==(eConcurrency-1)) ? 2 : 1;
-        threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegExternals, this, 
-                                            Verbose, fp, (extSplit * i), 
-                                            (extSplit * (i+endMul)),
-                                            std::ref(retVal));
+        unsigned long extSplit = Externals.size() / eConcurrency;
+        for(i = 0; i < eConcurrency; i++)
+        {
+            // Handle any remainder in the last thread - integ method checks bounds.
+            unsigned endMul = (i==(eConcurrency-1)) ? 2 : 1;
+            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegExternals, this, 
+                                                Verbose, fp, (extSplit * i), 
+                                                (extSplit * (i+endMul)),
+                                                std::ref(retVal));
+        }
+        threadCnt += i;
     }
-    threadCnt += i;
 
     //==========================================================================
     // Thread(s) for checking Supervisors vector. 
@@ -249,21 +261,24 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     {                                           // have fewer Supervisors than
         sConcurrency = Supervisors.size();      // possible threads.
     }
-    unsigned long superSplit = Supervisors.size() / sConcurrency;
-    for(i = 0; 
-        i < sConcurrency;
-        i++)
+    
+    if (sConcurrency > 0)   // Account for having no supervisors
     {
-        // Handle any remainder in the last thread - integ method checks bounds.
-        unsigned endMul = (i==(sConcurrency-1)) ? 2 : 1;
-        threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegSupervisors, this, 
-                                            Verbose, fp, (superSplit * i), 
-                                            (superSplit * (i+endMul)),
-                                            std::ref(retVal), 
-                                            std::ref(MappedSupervisors));
+        unsigned long superSplit = Supervisors.size() / sConcurrency;
+        for(i = 0; 
+            i < sConcurrency;
+            i++)
+        {
+            // Handle any remainder in the last thread - integ method checks bounds.
+            unsigned endMul = (i==(sConcurrency-1)) ? 2 : 1;
+            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegSupervisors, this, 
+                                                Verbose, fp, (superSplit * i), 
+                                                (superSplit * (i+endMul)),
+                                                std::ref(retVal), 
+                                                std::ref(MappedSupervisors));
+        }
+        threadCnt += i;
     }
-    threadCnt += i;
-
 
 #endif
 
