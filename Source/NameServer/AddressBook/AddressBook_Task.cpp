@@ -434,6 +434,12 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
         if (Verbose) fprintf(fp, "\tDirty Task: %d\n", static_cast<int>(retVal.retT));
         retVal.ret += retVal.retT;
     }
+#ifdef RECOVERABLEINTEGRITY
+    else
+    {
+        TaskValid = true;
+    }
+#endif
 
     if (retVal.retM > 0)   // Map integrity compromised - need to rebuild the map
     {
@@ -441,6 +447,12 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
         if (Verbose) fprintf(fp, "\tDirty Map: %d\n", static_cast<int>(retVal.retM));
         retVal.ret += retVal.retM;
     }
+#ifdef RECOVERABLEINTEGRITY
+    else
+    {
+        MapValid = true;
+    }
+#endif
 
     if (retVal.retL > 0)   // Link integrity compromised - need to rebuild the link
     {
@@ -448,6 +460,12 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
         if (Verbose) fprintf(fp, "\tDirty Link: %d\n", static_cast<int>(retVal.retL));
         retVal.ret += retVal.retL;
     }
+#ifdef RECOVERABLEINTEGRITY
+    else
+    {
+        LinkValid = true;
+    }
+#endif
 
     if (Verbose && (retVal.ret == 0)) fprintf(fp, "\tTask Clean\n");
 

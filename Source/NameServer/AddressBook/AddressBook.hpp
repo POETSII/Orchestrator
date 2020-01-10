@@ -111,6 +111,7 @@ public:
     long GetExternalCount(std::string &TaskName);
     long GetLoadedExternalCount(std::string &TaskName);
     int GetSupervisorCount(std::string &TaskName);
+    int GetMappedSupervisorCount(std::string &TaskName);
 
     // Integrity
     unsigned IntegCheck(void);                  // Integrity check of ALL tasks

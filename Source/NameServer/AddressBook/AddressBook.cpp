@@ -691,6 +691,20 @@ int AddressBook::GetSupervisorCount(std::string &TaskName)
     return static_cast<int>(TRec->SupCnt);
 }
 
+/*==============================================================================
+ * GetSupervisorCount:  Get the number of supervisors allocated to the task
+ *============================================================================*/
+int AddressBook::GetMappedSupervisorCount(std::string &TaskName)
+{
+    TaskRecord_t *TRec = FindTask(TaskName);
+    if(TRec == PNULL)
+    {
+        ERETURN("Task Does Not Exist", ERR_BAD_COUNT);
+    }
+    
+    return TRec->SupMap.size();
+}
+
 
 //==============================================================================
 //Device Queries
