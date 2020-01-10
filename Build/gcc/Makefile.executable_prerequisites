@@ -79,6 +79,13 @@ HARDWARE_FILE_READER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileReader/Hardwar
                                $(GENERICS_DIR)/uif.cpp \
                                $(HARDWARE_DEPLOYER_SOURCES)
 
+# Sources used by the Address Book object.
+ADDRESS_BOOK_SOURCES =  $(SOURCE_DIR)/NameServer/AddressBook/AddressBook_Defs.cpp \
+                        $(SOURCE_DIR)/NameServer/AddressBook/AddressBook_Record.cpp \
+                        $(SOURCE_DIR)/NameServer/AddressBook/AddressBook_Task.cpp \
+                        $(SOURCE_DIR)/NameServer/AddressBook/AddressBook.cpp
+
+
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
 
