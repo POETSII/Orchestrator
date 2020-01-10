@@ -582,9 +582,16 @@ unsigned AddressBook::AddDevice(std::string &TaskName, Record_t &DevRec, bool Va
     }
     // added 18 July 2019 ADR - if Map and Link were previously invalidated
     // rebuild everything
-    unsigned err;
-    if (!TRec->MapValid && ((err = BuildMaps(TRec->Name)) != SUCCESS)) return err;
-    if (!TRec->LinkValid && ((err = BuildLink(TRec->Name)) != SUCCESS)) return err;
+    //
+    // Reverted by GMB as this potentially means heafty rebuilding
+    // when futzing with the data structure - the correct course of
+    // action if to check the task validity after adding devices and 
+    // rebuilding the link and map then if required.
+    //
+    //unsigned err;
+    //if (!TRec->MapValid && ((err = BuildMaps(TRec->Name)) != SUCCESS)) return err;
+    //if (!TRec->LinkValid && ((err = BuildLink(TRec->Name)) != SUCCESS)) return err;
+    
     return SUCCESS;
 }
 
