@@ -13,11 +13,11 @@ struct RecordData_t
    public:
  
    SymAddr_t Address;          // Device's full sym address.
-   union
-   {
-       SymAddr_t Supervisor;   // Full sym address of the Device's Supervisor.
-       unsigned long Rank;	   // OR Supervisor's MPI Rank.
-   };
+   union                       // Disambiguated by RecordType, which appears at
+   {                           // at the end of the struct for packing reasons.
+       SymAddr_t Supervisor;    // Full sym address of the Device's Supervisor.
+       unsigned long Rank;	    // OR Supervisor's MPI Rank. 
+   };                          
    DTypeIdx DeviceType;        // Index of the Device's type in task.
    AttrIdx Attribute;          // Index of the Device's attribute in task.
    RecordType_t RecordType;    // Class of device represented by the record.     
