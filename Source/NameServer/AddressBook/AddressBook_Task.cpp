@@ -1,6 +1,6 @@
 #include "AddressBook_Task.hpp"
 
-namespace AddressBookNS
+namespace AddressBook
 {
 
 /*==============================================================================
@@ -884,4 +884,4 @@ void TaskRecord_t::IntegSupervisors(bool Verbose, FILE * fp, unsigned long SStar
     }
 }
 
-} /* namespace AddressBookNS */
+} /* namespace AddressBook */

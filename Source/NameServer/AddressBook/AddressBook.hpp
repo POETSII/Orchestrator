@@ -45,8 +45,7 @@
 #define MAXSUPERVISORS 16
 
 //==============================================================================
-namespace AddressBookNS // changed name to avoid conflicts with the class itself
-                        // 14 July 2019 ADR
+namespace AddressBook 
 {
 typedef std::map<std::string, TaskRecord_t*> TaskMap_t;
 
@@ -161,6 +160,6 @@ private:
     unsigned ClearLink(TaskRecord_t *TRec);
 
 };
-} /* namespace AddressBookNS */
+} /* namespace AddressBook */
 
 #endif /* AddressBook_H */

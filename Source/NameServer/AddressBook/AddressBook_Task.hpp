@@ -29,7 +29,7 @@
 
 #define RECOVERABLEINTEGRITY
 
-namespace AddressBookNS
+namespace AddressBook
 {
 
 typedef std::map<std::string, unsigned> IdxMap_t;
@@ -138,5 +138,5 @@ private:
 };
 
 
-} /* namespace AddressBookNS */
+} /* namespace AddressBook */
 #endif /* AddressBook_Task_H */

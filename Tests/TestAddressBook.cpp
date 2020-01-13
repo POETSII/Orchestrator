@@ -24,24 +24,24 @@
 TEST_CASE("AddressBook Small Tests", "[Simple]")
 {
     // Create the AddressBook instance
-    AddressBookNS::AddressBook AddrBook
-        = AddressBookNS::AddressBook(std::string("AddressBookMain"));
-    AddressBookNS::TaskData_t taskData;
+    AddressBook::AddressBook AddrBook
+        = AddressBook::AddressBook(std::string("AddressBookMain"));
+    AddressBook::TaskData_t taskData;
     
     //Create a Supervisor devicetype record and add some messagetypes
-    AddressBookNS::DevTypeRecord_t SuperDTR("Super");
+    AddressBook::DevTypeRecord_t SuperDTR("Super");
     SuperDTR.InMsgs.push_back(1);
     SuperDTR.OuMsgs.push_back(2);
     
     //Create a Cell devicetype record and add some messagetytpes
-    AddressBookNS::DevTypeRecord_t CellDTR("Cell");
+    AddressBook::DevTypeRecord_t CellDTR("Cell");
     CellDTR.InMsgs.push_back(0);
     CellDTR.InMsgs.push_back(2);
     CellDTR.OuMsgs.push_back(0);
     CellDTR.OuMsgs.push_back(1);
     
     //Create a Fixed node devicetype record and add some messagetytpes
-    AddressBookNS::DevTypeRecord_t FixedDTR("Fixed");
+    AddressBook::DevTypeRecord_t FixedDTR("Fixed");
     FixedDTR.InMsgs.push_back(2);
     FixedDTR.OuMsgs.push_back(0);
     FixedDTR.OuMsgs.push_back(1);
@@ -52,7 +52,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     // Add a task (and check that it added correctly)
     //==========================================================================
     std::string t1Name = "Task1";
-    AddressBookNS::TaskData_t T1Data;
+    AddressBook::TaskData_t T1Data;
     
     T1Data.DeviceCount = 5;
     T1Data.ExternalCount = 2;
@@ -70,7 +70,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     
     // Add the task to the AddressBook
     int t1Ret = AddrBook.AddTask(t1Name, T1Data);  
-    REQUIRE(t1Ret == AddressBookNS::SUCCESS);
+    REQUIRE(t1Ret == AddressBook::SUCCESS);
     
     SECTION("Check that a task added correctly", "[Simple]")
     {
@@ -79,14 +79,14 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         
         // Get the task for running tests on
         t1Ret = AddrBook.GetTask(t1Name, taskData);
-        REQUIRE(t1Ret == AddressBookNS::SUCCESS);
+        REQUIRE(t1Ret == AddressBook::SUCCESS);
         
         REQUIRE(taskData.Name == t1Name);                // Check the task name.
         REQUIRE(taskData.Path == T1Data.Path);          // Check the path string.
         REQUIRE(taskData.XML == T1Data.XML);            // Check the XML string.
         REQUIRE(taskData.ExecutablePath == T1Data.ExecutablePath);   // Check the executable path string.
         
-        REQUIRE(taskData.State == AddressBookNS::Loaded); // Check the task state.
+        REQUIRE(taskData.State == AddressBook::Loaded); // Check the task state.
         
         REQUIRE(taskData.DeviceTypes.size() == T1Data.DeviceTypes.size());
         REQUIRE(taskData.DeviceTypes.size() == 3);      // with 5 device types,
@@ -109,7 +109,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     // Add another task
     //==========================================================================
     std::string t2Name = "Task2";
-    AddressBookNS::TaskData_t T2Data;
+    AddressBook::TaskData_t T2Data;
     
     T2Data.DeviceCount = 5;
     T2Data.ExternalCount = 2;
@@ -126,7 +126,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     
     // Add the task to the AddressBook
     int t2Ret = AddrBook.AddTask(t2Name, T2Data);  
-    REQUIRE(t2Ret == AddressBookNS::SUCCESS);
+    REQUIRE(t2Ret == AddressBook::SUCCESS);
     
     
     SECTION("Check that a second task added correctly", "[Simple]")
@@ -136,14 +136,14 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         
         // Get the task for running tests on
         t2Ret = AddrBook.GetTask(t2Name, taskData);
-        REQUIRE(t2Ret == AddressBookNS::SUCCESS);
+        REQUIRE(t2Ret == AddressBook::SUCCESS);
         
         REQUIRE(taskData.Name == t2Name);                // Check the task name.
         REQUIRE(taskData.Path == T2Data.Path);          // Check the path string.
         REQUIRE(taskData.XML == T2Data.XML);            // Check the XML string.
         REQUIRE(taskData.ExecutablePath == T2Data.ExecutablePath);   // Check the executable path string.
         
-        REQUIRE(taskData.State == AddressBookNS::Loaded); // Check the task state.
+        REQUIRE(taskData.State == AddressBook::Loaded); // Check the task state.
         
         REQUIRE(taskData.DeviceTypes.size() == T2Data.DeviceTypes.size());
         REQUIRE(taskData.DeviceTypes.size() == 3);      // with 5 device types,
@@ -168,7 +168,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     SECTION("Check that a duplicate task is correctly rejected", "[Simple]")
     {
         int t3Ret = AddrBook.AddTask(t2Name, T2Data);
-        REQUIRE(t3Ret == AddressBookNS::ERR_TASKNAME_USED);
+        REQUIRE(t3Ret == AddressBook::ERR_TASKNAME_USED);
         REQUIRE(AddrBook.GetTaskCount() == 2);  // We should have two tasks,
         REQUIRE(AddrBook.IntegCheck() == 0);    // that pass integrity.
     }
@@ -182,7 +182,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     SECTION("Check that tasks can be deleted", "[Simple]")
     {
         int delRet = AddrBook.DelTask(t2Name);
-        REQUIRE(delRet == AddressBookNS::SUCCESS);
+        REQUIRE(delRet == AddressBook::SUCCESS);
         REQUIRE(AddrBook.GetTaskCount() == 1);  // We should have one task,
         REQUIRE(AddrBook.IntegCheck() == 0);    // that passes integrity.
     }
@@ -196,12 +196,12 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         AddrBook.GetTask(t1Name, taskData);
         
         // Add a supervisor
-        AddressBookNS::Record_t SData1;
+        AddressBook::Record_t SData1;
         SData1.Name = "";
         SData1.Address = 0xFFFF0001;
         SData1.Rank = 5;
         SData1.DeviceType = 0;
-        SData1.RecordType = static_cast<AddressBookNS::RecordType_t>(AddressBookNS::Supervisor);
+        SData1.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::Supervisor);
         try {
             unsigned SAdd = AddrBook.AddDevice(t1Name, SData1);
             if (SAdd > 0) std::cerr << std::endl << "ERROR adding SData1: " << SAdd << std::endl;
@@ -214,12 +214,12 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         
         
         // Add another Supervisor
-        AddressBookNS::Record_t SData2;
+        AddressBook::Record_t SData2;
         SData2.Name = "";
         SData2.Address = 0xFFFF0002;
         SData2.Rank = 5;
         SData2.DeviceType = 0;
-        SData2.RecordType = static_cast<AddressBookNS::RecordType_t>(AddressBookNS::Supervisor);
+        SData2.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::Supervisor);
         try {
             unsigned SAdd = AddrBook.AddDevice(t1Name, SData2);
             if (SAdd > 0) std::cerr << std::endl << "ERROR adding SData2: " << SAdd << std::endl;
@@ -232,11 +232,11 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         
         
         // Add an External
-        AddressBookNS::Record_t EData1;
+        AddressBook::Record_t EData1;
         EData1.Name = "E_0,0";
         EData1.Address = 0xFFFFF001;
         EData1.DeviceType = 2;
-        EData1.RecordType = static_cast<AddressBookNS::RecordType_t>(AddressBookNS::External);
+        EData1.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::External);
         try {
             unsigned EAdd = AddrBook.AddDevice(t1Name, EData1);
             if (EAdd > 0) std::cerr << std::endl << "ERROR adding EData2: " << EAdd << std::endl;
@@ -249,11 +249,11 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         
         
         // Setup common device data
-        AddressBookNS::Record_t DData1;
+        AddressBook::Record_t DData1;
         DData1.Supervisor = 0xFFFF0001;
         DData1.DeviceType = 1;
-        DData1.RecordType = static_cast<AddressBookNS::RecordType_t>(AddressBookNS::Device);
-        AddressBookNS::SymAddr_t BaseAddr = 0x00000000;
+        DData1.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::Device);
+        AddressBook::SymAddr_t BaseAddr = 0x00000000;
         
         
         // Add a Device
@@ -340,7 +340,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         DData1.Address = BaseAddr++;
         try {
             unsigned DAdd = AddrBook.AddDevice(t1Name, DData1);
-            REQUIRE(DAdd == AddressBookNS::ERR_INVALID_DEVTYPE);
+            REQUIRE(DAdd == AddressBook::ERR_INVALID_DEVTYPE);
         } catch (const char* msg) {
             std::cerr << std::endl << "ERROR adding Device "
                       << DData1.Name << " (" << DData1.Address << "): "
@@ -385,12 +385,12 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         REQUIRE(AddrBook.TaskLinkValid(t1Name) == false);   // and the link is invalid
         
         // Add the missing Supervisor
-        AddressBookNS::Record_t SData3;
+        AddressBook::Record_t SData3;
         SData3.Name = "";
         SData3.Address = 0xFFFF0005;
         SData3.Rank = 5;
         SData3.DeviceType = 0;
-        SData3.RecordType = static_cast<AddressBookNS::RecordType_t>(AddressBookNS::Supervisor);
+        SData3.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::Supervisor);
         try {
             unsigned SAdd = AddrBook.AddDevice(t1Name, SData3);
             if (SAdd > 0) std::cerr << std::endl << "ERROR adding SData3: " << SAdd << std::endl;
@@ -409,7 +409,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
 #else   
         // Otherwise it is invalid and we need to relink.
         REQUIRE(AddrBook.TaskLinkValid(t1Name) == false);
-        REQUIRE(AddrBook.BuildLink(t1Name) == AddressBookNS::SUCCESS);
+        REQUIRE(AddrBook.BuildLink(t1Name) == AddressBook::SUCCESS);
         REQUIRE(AddrBook.TaskLinkValid(t1Name) == true);    // Link should now be valid
 #endif
         // Check that the rest of the task is valid
@@ -445,17 +445,17 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
 TEST_CASE("AddressBook Large Plate Test", "[Simple]")
 {
     // Create the AddressBook instance
-    AddressBookNS::AddressBook AddrBook
-        = AddressBookNS::AddressBook(std::string("AddressBookMain"));
+    AddressBook::AddressBook AddrBook
+        = AddressBook::AddressBook(std::string("AddressBookMain"));
     
     std::string tName = "plate_1000x1000";
-    AddressBookNS::TaskData_t taskData;
+    AddressBook::TaskData_t taskData;
     
     
     //==========================================================================
     // Create a "fake" 1000x1000 heated plate.
     //==========================================================================
-    AddressBookNS::TaskData_t TData;
+    AddressBook::TaskData_t TData;
 
     TData.DeviceCount = 65536;
     TData.ExternalCount = 1;
@@ -467,31 +467,31 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     TData.MessageTypes.push_back("Done");
     
     //Create a Supervisor devicetype record and add some messagetypes
-    AddressBookNS::DevTypeRecord_t SuperDTR("Super");
+    AddressBook::DevTypeRecord_t SuperDTR("Super");
     SuperDTR.InMsgs.push_back(1);
     SuperDTR.OuMsgs.push_back(2);
     
     //Create a Cell devicetype record and add some messagetytpes
-    AddressBookNS::DevTypeRecord_t CellDTR("Cell");
+    AddressBook::DevTypeRecord_t CellDTR("Cell");
     CellDTR.InMsgs.push_back(0);
     CellDTR.InMsgs.push_back(2);
     CellDTR.OuMsgs.push_back(0);
     CellDTR.OuMsgs.push_back(1);
     
     //Create a Fixed node devicetype record and add some messagetytpes
-    AddressBookNS::DevTypeRecord_t FixedDTR("Fixed");
+    AddressBook::DevTypeRecord_t FixedDTR("Fixed");
     FixedDTR.InMsgs.push_back(2);
     FixedDTR.OuMsgs.push_back(0);
     FixedDTR.OuMsgs.push_back(1);
     
     //Create a Router devicetype record and add some messagetytpes
-    AddressBookNS::DevTypeRecord_t RouterDTR("Router");
+    AddressBook::DevTypeRecord_t RouterDTR("Router");
     RouterDTR.InMsgs.push_back(1);
     RouterDTR.OuMsgs.push_back(1);
     RouterDTR.OuMsgs.push_back(2);
     
     //Create a Extern devicetype record and add some messagetytpes
-    AddressBookNS::DevTypeRecord_t ExternDTR("Extern");
+    AddressBook::DevTypeRecord_t ExternDTR("Extern");
     ExternDTR.InMsgs.push_back(2);
     ExternDTR.OuMsgs.push_back(0);
 
@@ -529,7 +529,7 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
         REQUIRE(taskData.XML == TData.XML);             // Check the XML string.
         REQUIRE(taskData.ExecutablePath == TData.ExecutablePath);   // Check the executable path string.
         
-        REQUIRE(taskData.State == AddressBookNS::Loaded); // Check the task state.
+        REQUIRE(taskData.State == AddressBook::Loaded); // Check the task state.
         
         REQUIRE(taskData.DeviceTypes.size() == TData.DeviceTypes.size());
         REQUIRE(taskData.DeviceTypes.size() == 5);      // with 5 device types,
@@ -551,12 +551,12 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     //==========================================================================
     // Add a supervisor
     //==========================================================================
-    AddressBookNS::Record_t SData1;
+    AddressBook::Record_t SData1;
     SData1.Name = "";
     SData1.Address = 0xFFFF0001;
     SData1.Rank = 5;
     SData1.DeviceType = 0;  // SuperDTR
-    SData1.RecordType = static_cast<AddressBookNS::RecordType_t>(AddressBookNS::Supervisor);
+    SData1.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::Supervisor);
     
     REQUIRE(taskData.DeviceTypes.size() == 5);      // with 5 device types,
 
@@ -574,12 +574,12 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     //==========================================================================
     // Add two fixed nodes
     //==========================================================================
-    AddressBookNS::Record_t FData1;
+    AddressBook::Record_t FData1;
     FData1.Name = "C_0,0";
     FData1.Address = 0xFFE00000;
     FData1.Supervisor = 0xFFFF0001;
     FData1.DeviceType = 2;
-    FData1.RecordType = static_cast<AddressBookNS::RecordType_t>(AddressBookNS::DeviceExt);
+    FData1.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::DeviceExt);
 
     try {
         unsigned FAdd = AddrBook.AddDevice(tName, FData1);
@@ -591,12 +591,12 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     }
     
     
-    AddressBookNS::Record_t FData2;
+    AddressBook::Record_t FData2;
     FData2.Name = "C_255,255";
     FData2.Address = 0xFFE00001;
     FData2.Supervisor = 0xFFFF0001;
     FData2.DeviceType = 2;
-    FData2.RecordType = static_cast<AddressBookNS::RecordType_t>(AddressBookNS::DeviceExt);
+    FData2.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::DeviceExt);
 
     try {
         unsigned FAdd = AddrBook.AddDevice(tName, FData2);
@@ -612,11 +612,11 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     //==========================================================================
     // Add an External
     //==========================================================================
-    AddressBookNS::Record_t EData1;
+    AddressBook::Record_t EData1;
     EData1.Name = "E_0,0";
     EData1.Address = 0xFFFFF001;
     EData1.DeviceType = 4;
-    EData1.RecordType = static_cast<AddressBookNS::RecordType_t>(AddressBookNS::External);
+    EData1.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::External);
 
     try {
         unsigned EAdd = AddrBook.AddDevice(tName, EData1);
@@ -632,12 +632,12 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     //==========================================================================
     // Add 999998 Cells
     //==========================================================================
-    AddressBookNS::SymAddr_t BaseAddr = 0x00000000;
+    AddressBook::SymAddr_t BaseAddr = 0x00000000;
 
-    AddressBookNS::Record_t DData1;
+    AddressBook::Record_t DData1;
     DData1.Supervisor = 0xFFFF0001;
     DData1.DeviceType = 1;
-    DData1.RecordType = static_cast<AddressBookNS::RecordType_t>(AddressBookNS::Device);
+    DData1.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::Device);
 
     for (long i = 0; i < 256; i++)
     {
@@ -683,7 +683,7 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
         REQUIRE(taskData.XML == TData.XML);             // Check the XML string.
         REQUIRE(taskData.ExecutablePath == TData.ExecutablePath);   // Check the executable path string.
     
-        REQUIRE(taskData.State == AddressBookNS::Loaded);   // Check the task state.
+        REQUIRE(taskData.State == AddressBook::Loaded);   // Check the task state.
         
         //REQUIRE(taskData.DeviceTypes.size() == TData.DeviceTypes.size());
         REQUIRE(taskData.DeviceTypes.size() == 5);      // with 5 device types,
@@ -709,12 +709,12 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     SECTION("Check that devices added as expected and can be found by name and address", "[Simple]")
     {
         std::string DName = "C_75,199";                  // Name of a device we are going to search for
-        AddressBookNS::SymAddr_t DNameAddr = 0x4BC6;    // and its address
+        AddressBook::SymAddr_t DNameAddr = 0x4BC6;    // and its address
     
         std::string DAddrName = "C_1,119";               // and its name    
-        AddressBookNS::SymAddr_t DAddr = 0x0176;        // Address to search for
+        AddressBook::SymAddr_t DAddr = 0x0176;        // Address to search for
         
-        const AddressBookNS::Record_t * DeviceRecord;     // pointer to a const-qualified Device record
+        const AddressBook::Record_t * DeviceRecord;     // pointer to a const-qualified Device record
         
         // Find device by name
         int a = AddrBook.FindDevice(tName, DName, DeviceRecord);

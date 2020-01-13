@@ -5,7 +5,7 @@
 #include <iostream>
 
 //==============================================================================
-namespace AddressBookNS
+namespace AddressBook
 {
 //Constructors
 AddressBook::AddressBook(std::string d)
@@ -1358,4 +1358,4 @@ void AddressBook::Dump(FILE * fp, std::string Name)
     fprintf(fp,"AddressBook_--------------------------------\n");
     fflush(fp);
 }
-} /* namespace AddressBookNS */
+} /* namespace AddressBook */

@@ -3,7 +3,7 @@
 
 #include "AddressBook_Defs.hpp"
 
-namespace AddressBookNS
+namespace AddressBook
 {
 enum RecordType_t { Device = 0, DeviceExt, External, Supervisor };
 
@@ -35,5 +35,5 @@ class Record_t : public RecordData_t
     std::string Name;           // Device's canonical name. 
 };
 
-} /* namespace AddressBookNS */
+} /* namespace AddressBook */
 #endif /* AddressBook_Record_H */

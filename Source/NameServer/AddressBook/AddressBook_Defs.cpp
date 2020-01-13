@@ -1,6 +1,6 @@
 #include "AddressBook_Defs.hpp"
 
-namespace AddressBookNS
+namespace AddressBook
 {
 
 // const SymAddr_t INVALID_ADDRESS;
@@ -51,4 +51,4 @@ int MsgTypeRecord_t::size() const
 
 
 
-} /* namespace AddressBookNS */
+} /* namespace AddressBook */

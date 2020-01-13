@@ -1,6 +1,6 @@
 #include "AddressBook_Record.hpp"
 
-namespace AddressBookNS
+namespace AddressBook
 {
 
 /*==============================================================================
@@ -46,4 +46,4 @@ int Record_t::size() const
 }
 
     
-} /* namespace AddressBookNS */
+} /* namespace AddressBook */

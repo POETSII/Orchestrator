@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace AddressBookNS
+namespace AddressBook
 {
 
 //----------------------------------------
@@ -55,5 +55,5 @@ struct MsgTypeRecord_t {
     std::vector<MsgIdx> Outputs;    // Indicies of DeviceTypes that have this MessageType as an output
 };
     
-} /* namespace AddressBookNS */
+} /* namespace AddressBook */
 #endif /* AddressBook_Defs_H */
