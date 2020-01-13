@@ -98,8 +98,14 @@ unsigned AddressBook::AddTask(const std::string &TaskName, TaskData_t &Data)
        really gains anything because a DevTypeRecord_t contains 2 internal
        vectors (which would be zero-initialised) and a resize is thus inevitable
        anyway when actual device types are inserted.
+       
+       GMB: The pre-allocation here saves potentially disastrous re-allocation
+       later - the outer vector will not be re-sized when the inner ones are as
+       the inner vectors are not stored in the continuous memory space of the
+       outer vector, so inserting the inner vectors will not cause the outer to
+       reallocate. Added a reserve (rather than resize) back in for expediency.
     */
-    // Task->DevTypes.resize(Data.DeviceTypes.size());   //pre-alloc vector
+    Task->DevTypes.reserve(Data.DeviceTypes.size());   //pre-alloc vector
     std::vector<DevTypeRecord_t> *DTypes = &(Data.DeviceTypes);
     for(std::vector<DevTypeRecord_t>::iterator D=DTypes->begin();
             D!=DTypes->end(); D++)       
@@ -557,7 +563,7 @@ unsigned AddressBook::AddDevice(std::string &TaskName, Record_t &DevRec, bool Va
     //
     // Reverted by GMB as this potentially means heafty rebuilding
     // when futzing with the data structure - the correct course of
-    // action if to check the task validity after adding devices and 
+    // action is to check the task validity after adding devices and 
     // rebuilding the link and map then if required.
     //
     //unsigned err;
