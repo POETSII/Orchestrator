@@ -1,7 +1,7 @@
 /*==============================================================================
  *  AddressBook: A back-end implementation for the POETS sbase & Nameserver
  *
- *  Tasks can be *maped* and *linked*:
+ *  Tasks can be *mapped* and *linked*:
  *      Mapped: Device Records connected to Device (and Message) and Attribute
  *              types. Device Records with External Connections also listed.
  *      Linked: Device Records connected to Addresses in Address Map and listed
