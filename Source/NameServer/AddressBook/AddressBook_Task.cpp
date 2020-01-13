@@ -25,8 +25,9 @@ TaskData_t::TaskData_t()
 /*==============================================================================
  * TaskData_t::TaskData_t(): Full initialiser for a TaskData_t
  *============================================================================*/
-TaskData_t::TaskData_t(std::string &N, std::string &P, std::string &X, std::string &E,
-                        TaskState_t S, unsigned long DC, unsigned long EC)
+TaskData_t::TaskData_t(std::string &N, std::string &P, std::string &X,
+                       std::string &E, TaskState_t S, unsigned long DC,
+                       unsigned long EC)
 {
     Name = N;
     Path = P;
@@ -102,8 +103,9 @@ TaskRecord_t::TaskRecord_t()
 /*==============================================================================
  * TaskRecord_t::TaskRecord_t(): Full initialiser for a TaskRecord_t
  *============================================================================*/
-TaskRecord_t::TaskRecord_t(std::string &N, std::string &P, std::string &X, std::string &E,
-                TaskState_t S, unsigned long DC, unsigned long EC)
+TaskRecord_t::TaskRecord_t(std::string &N, std::string &P, std::string &X,
+                           std::string &E, TaskState_t S, unsigned long DC, 
+                           unsigned long EC)
 {
     Name = N;
     Path = P;
@@ -462,7 +464,7 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     }
 
 
-    if (retVal.retT > 0)   // Task integrity compromised - need to rbuild the task
+    if (retVal.retT > 0)   // Task integrity compromised - need to rebuild the task
     {
         TaskValid = false;
         if (Verbose) fprintf(fp, "\tDirty Task: %d\n", static_cast<int>(retVal.retT));
@@ -512,7 +514,7 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
  * map in the range of DStart-DEnd. 
  *============================================================================*/
 void TaskRecord_t::IntegDevTypeMap(bool Verbose, FILE * fp, unsigned long DTStart, 
-                                    unsigned long DTEnd, IntegVals_t &retVal)
+                                   unsigned long DTEnd, IntegVals_t &retVal)
 {
     for(std::vector<DevTypePair>::iterator D = DevTypes.begin() + DTStart;
         (D != DevTypes.end()) && (D < (DevTypes.begin() + DTEnd));
@@ -708,7 +710,7 @@ void TaskRecord_t::IntegDevices(bool Verbose, FILE * fp, unsigned long DStart,
  * the range of DStart-DEnd. 
  *============================================================================*/
 void TaskRecord_t::IntegExternals(bool Verbose, FILE * fp, unsigned long EStart, 
-                                    unsigned long EEnd, IntegVals_t &retVal)
+                                  unsigned long EEnd, IntegVals_t &retVal)
 {
     for(std::vector<Record_t>::const_iterator E = Externals.begin() + EStart;
         (E != Externals.end()) && (E < (Externals.begin() + EEnd));
