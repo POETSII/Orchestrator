@@ -16,7 +16,6 @@ namespace AddressBookNS
 typedef uint64_t    SymAddr_t;     // A 64-bit full-symbolic address
 
 static const SymAddr_t INVALID_ADDRESS = UINT64_MAX; 
-//typedef unsigned long    SymAddr_t;     // A 64-bit full-symbolic address
 
 //----------------------------------------
 
@@ -30,9 +29,9 @@ typedef unsigned MsgIdx;
 struct DeviceData_t {
     int size() const;           // Get the size of the DeviceData
     
-    SymAddr_t Address;          // Device's full sym address.
-    SymAddr_t Supervisor;       // Full sym address of the Device's Supervisor.
-    std::string Name;           // Device's cnonical name.
+    SymAddr_t Address;          // Device's full symbolic address.
+    SymAddr_t Supervisor;       // Full symbolic address of the Device's Supervisor.
+    std::string Name;           // Device's canonical name.
 };
 
 
@@ -40,7 +39,7 @@ struct DevTypeRecord_t {
     DevTypeRecord_t(std::string N = "");
     int size() const;               // Get the size of the DeviceType Record
     
-    std::string Name;               // Device Type cnonical name.
+    std::string Name;               // Device Type canonical name.
     std::vector<MsgIdx> InMsgs;     // Vector of Input Message indexes
     std::vector<MsgIdx> OuMsgs;     // Vector of Output Message indexes
 };

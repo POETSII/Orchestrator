@@ -4,7 +4,7 @@ namespace AddressBookNS
 {
 
 /*==============================================================================
- * TaskData
+ * TaskData - used to communicate task data without maps and pointers.
  *============================================================================*/
 TaskData_t::TaskData_t()
 {
@@ -22,6 +22,9 @@ TaskData_t::TaskData_t()
     State = Loaded;
 }
 
+/*==============================================================================
+ * TaskData_t::TaskData_t(): Full initialiser for a TaskData_t
+ *============================================================================*/
 TaskData_t::TaskData_t(std::string &N, std::string &P, std::string &X, std::string &E,
                         TaskState_t S, unsigned long DC, unsigned long EC)
 {
@@ -39,6 +42,9 @@ TaskData_t::TaskData_t(std::string &N, std::string &P, std::string &X, std::stri
     State = S;
 }
 
+/*==============================================================================
+ * TaskData_t::size(): Return the size (in bytes) of the address record.
+ *============================================================================*/
 int TaskData_t::size() const
 {
     int size = 0;
@@ -72,7 +78,7 @@ int TaskData_t::size() const
 }
 
 /*==============================================================================
- * TaskRecord
+ * TaskRecord - stores data about the task in an instance of AddressBook
  *============================================================================*/
 TaskRecord_t::TaskRecord_t()
 {
@@ -93,6 +99,9 @@ TaskRecord_t::TaskRecord_t()
     LinkValid = true;
 }
 
+/*==============================================================================
+ * TaskRecord_t::TaskRecord_t(): Full initialiser for a TaskRecord_t
+ *============================================================================*/
 TaskRecord_t::TaskRecord_t(std::string &N, std::string &P, std::string &X, std::string &E,
                 TaskState_t S, unsigned long DC, unsigned long EC)
 {
@@ -113,10 +122,36 @@ TaskRecord_t::TaskRecord_t(std::string &N, std::string &P, std::string &X, std::
     LinkValid = true;
 }
 
+
+/*==============================================================================
+ * TaskRecord_t::Integrity(): Run an integrity check on the entire task.
+ *
+ *      Verbose:  Print lots of information to *fp (stdout by default).
+ *
+ *      Scours the data structure checking that all of the maps and vectors all
+ *      point to valid data and that there are no invalid indicies or pointers.
+ *
+ *      This will mark the underlying data structure as dirty if it finds any
+ *      inconsistencies. If RECOVERABLEINTEGRITY is defined, a successful
+ *      integrity check marks the data structure as clean.
+ *
+ *      When AB_THREADING is defined (by default this is when built with C++11 
+ *      (or newer) AND (C11 (or newer) OR POSIX)), the integrity checks are
+ *      parallelised to reduce the potentially significant runtime of large
+ *      applications. The number of threads is set based on the available
+ *      concurrency, with at least one thread used for each check type (minimum
+ *      4 threads). Where concurrency is high, 2*concurrency threads are used in
+ *      the following way:
+ *          Devices vector              1*concurrency threads
+ *          DeviceType vectors, etc.    0.5*concurrency threads
+ *          Supervisors vector          0.25*concurrency threads
+ *          Externals vector            0.25*concurrency threads
+ *       
+ *============================================================================*/
 unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
 {   
-    ABULONG ExtConCnt(0);
-    ABUNSIGNED MappedSupervisors(0);
+    AB_ULONG ExtConCnt(0);
+    AB_UNSIGNED MappedSupervisors(0);
 
     IntegVals_t retVal;
     retVal.ret = 0;
@@ -124,7 +159,6 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     retVal.retL = 0;
     retVal.retM = 0;
 
-    //fprintf(fp,"Task: %s\n", Search->first.c_str());
 
     if (Verbose) fprintf(fp, "Integrity check of %s:\n", Name.c_str());
 
@@ -472,6 +506,11 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     return retVal.ret;
 }
 
+
+/*==============================================================================
+ * TaskRecord_t::IntegDevTypeMap(): Run an integrity check on the device type
+ * map in the range of DStart-DEnd. 
+ *============================================================================*/
 void TaskRecord_t::IntegDevTypeMap(bool Verbose, FILE * fp, unsigned long DTStart, 
                                     unsigned long DTEnd, IntegVals_t &retVal)
 {
@@ -537,10 +576,13 @@ void TaskRecord_t::IntegDevTypeMap(bool Verbose, FILE * fp, unsigned long DTStar
     }
 }
 
-
+/*==============================================================================
+ * TaskRecord_t::IntegDevices(): Run an integrity check on the devices in the
+ * range of DStart-DEnd. 
+ *============================================================================*/
 void TaskRecord_t::IntegDevices(bool Verbose, FILE * fp, unsigned long DStart, 
                                 unsigned long DEnd, IntegVals_t &retVal, 
-                                ABULONG &ExtConCnt)
+                                AB_ULONG &ExtConCnt)
 {
     for(std::vector<Record_t>::const_iterator D = Devices.begin() + DStart;
         (D != Devices.end()) && (D < (Devices.begin() + DEnd));
@@ -661,6 +703,10 @@ void TaskRecord_t::IntegDevices(bool Verbose, FILE * fp, unsigned long DStart,
     }
 }
 
+/*==============================================================================
+ * TaskRecord_t::IntegExternals(): Run an integrity check on the externals in 
+ * the range of DStart-DEnd. 
+ *============================================================================*/
 void TaskRecord_t::IntegExternals(bool Verbose, FILE * fp, unsigned long EStart, 
                                     unsigned long EEnd, IntegVals_t &retVal)
 {
@@ -751,9 +797,13 @@ void TaskRecord_t::IntegExternals(bool Verbose, FILE * fp, unsigned long EStart,
     }
 }
 
+/*==============================================================================
+ * TaskRecord_t::IntegSupervisors(): Run an integrity check on the supervisors
+ * in the range of DStart-DEnd. 
+ *============================================================================*/
 void TaskRecord_t::IntegSupervisors(bool Verbose, FILE * fp, unsigned long SStart, 
                                     unsigned long SEnd, IntegVals_t &retVal, 
-                                    ABUNSIGNED &MappedSupervisors)
+                                    AB_UNSIGNED &MappedSupervisors)
 {
     for(std::vector<Record_t>::const_iterator S = Supervisors.begin() + SStart;
         (S != Supervisors.end()) && (S < (Supervisors.begin() + SEnd));

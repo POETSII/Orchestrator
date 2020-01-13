@@ -18,11 +18,11 @@
  #define AB_THREADING
 
  // We need Atomic types if we are using threading.
- #define ABUNSIGNED std::atomic<unsigned> 
- #define ABULONG    std::atomic<unsigned long> 
+ #define AB_UNSIGNED std::atomic<unsigned> 
+ #define AB_ULONG    std::atomic<unsigned long> 
 #else
- #define ABUNSIGNED unsigned
- #define ABULONG    unsigned long
+ #define AB_UNSIGNED unsigned
+ #define AB_ULONG    unsigned long
 
 #endif
 
@@ -43,10 +43,10 @@ typedef std::pair<DevTypeRecord_t, RecordVect_t> DevTypePair;
 typedef std::pair<std::string, RecordVect_t> AttrTypePair;
 
 struct IntegVals_t {
-    ABUNSIGNED ret;
-    ABUNSIGNED retT;
-    ABUNSIGNED retL;
-    ABUNSIGNED retM;
+    AB_UNSIGNED ret;
+    AB_UNSIGNED retT;
+    AB_UNSIGNED retL;
+    AB_UNSIGNED retM;
 };
 
 struct TaskData_t {
@@ -124,14 +124,14 @@ public:
 private:
     void IntegDevices(bool Verbose, FILE * fp, unsigned long DStart, 
                         unsigned long DEnd, IntegVals_t &retVal, 
-                        ABULONG &ExtConCnt);
+                        AB_ULONG &ExtConCnt);
 
     void IntegExternals(bool Verbose, FILE * fp, unsigned long EStart, 
                         unsigned long EEnd, IntegVals_t &retVal);
 
     void IntegSupervisors(bool Verbose, FILE * fp, unsigned long SStart, 
                         unsigned long SEnd, IntegVals_t &retVal, 
-                        ABUNSIGNED &MappedSupervisors);
+                        AB_UNSIGNED &MappedSupervisors);
 
     void IntegDevTypeMap(bool Verbose, FILE * fp, unsigned long DTStart, 
                         unsigned long DTEnd, IntegVals_t &retVal);
