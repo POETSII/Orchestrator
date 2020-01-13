@@ -50,6 +50,25 @@ namespace AddressBookNS // changed name to avoid conflicts with the class itself
 {
 typedef std::map<std::string, TaskRecord_t*> TaskMap_t;
 
+enum ReturnCode_t { ERR_BAD_COUNT = -1, 
+                    SUCCESS = 0,
+                    ERR_NONFATAL,
+                    ERR_INVALID_TASK,
+                    ERR_INVALID_DEVTYPE,
+                    ERR_INVALID_DEVICE,
+                    ERR_INVALID_MESSAGE_TYPE,
+                    ERR_INVALID_ATTRIBUTE,
+                    ERR_DEVICE_DATA_MISMATCH,
+                    ERR_TASKNAME_USED,
+                    ERR_DEVICENAME_USED,
+                    ERR_DEVICE_ADDR_USED,
+                    ERR_TASK_NOT_FOUND,
+                    ERR_DEVICE_NOT_FOUND,
+                    ERR_INVALID_MAP,
+                    ERR_INVALID_SUPERVISOR,
+                    ERR_INVALID_STATE
+                  };
+
 class AddressBook
 {
 public:
@@ -122,25 +141,6 @@ public:
     // Debugging
     void Dump(std::string &Name);
     void Dump(FILE * = stdout, std::string Name = "");
-
-    static const long     ERR_BAD_COUNT = -1;
-  
-    static const unsigned SUCCESS = 0;
-    static const unsigned ERR_NONFATAL = 0;
-    static const unsigned ERR_INVALID_TASK = 1;
-    static const unsigned ERR_INVALID_DEVTYPE = 2;
-    static const unsigned ERR_INVALID_DEVICE = 3;
-    static const unsigned ERR_INVALID_MESSAGE_TYPE = 4;
-    static const unsigned ERR_INVALID_ATTRIBUTE = 5;
-    static const unsigned ERR_DEVICE_DATA_MISMATCH = 6;
-    static const unsigned ERR_TASKNAME_USED = 7;
-    static const unsigned ERR_DEVICENAME_USED = 8;
-    static const unsigned ERR_DEVICE_ADDR_USED = 9;
-    static const unsigned ERR_TASK_NOT_FOUND = 10;
-    static const unsigned ERR_DEVICE_NOT_FOUND = 11;
-    static const unsigned ERR_INVALID_MAP = 12;
-    static const unsigned ERR_INVALID_SUPERVISOR = 13;
-    static const unsigned ERR_INVALID_STATE = 14;
 
 private:
     TaskMap_t TaskMap;

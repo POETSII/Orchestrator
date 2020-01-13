@@ -13,24 +13,6 @@ namespace AddressBookNS
 #define ERETURN(X, Y) return Y
 #endif
 
-// static constant definitions
-const unsigned AddressBook::SUCCESS;
-const unsigned AddressBook::ERR_NONFATAL;
-const unsigned AddressBook::ERR_INVALID_TASK;
-const unsigned AddressBook::ERR_INVALID_DEVTYPE;
-const unsigned AddressBook::ERR_INVALID_DEVICE;
-const unsigned AddressBook::ERR_INVALID_MESSAGE_TYPE;
-const unsigned AddressBook::ERR_INVALID_ATTRIBUTE;
-const unsigned AddressBook::ERR_DEVICE_DATA_MISMATCH;
-const unsigned AddressBook::ERR_TASKNAME_USED;
-const unsigned AddressBook::ERR_DEVICENAME_USED;
-const unsigned AddressBook::ERR_DEVICE_ADDR_USED;
-const unsigned AddressBook::ERR_TASK_NOT_FOUND;
-const unsigned AddressBook::ERR_DEVICE_NOT_FOUND;
-const unsigned AddressBook::ERR_INVALID_MAP;
-const unsigned AddressBook::ERR_INVALID_SUPERVISOR;
-const unsigned AddressBook::ERR_INVALID_STATE;
-
 //Constructors
 AddressBook::AddressBook(std::string d)
 {

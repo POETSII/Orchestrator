@@ -70,7 +70,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     
     // Add the task to the AddressBook
     int t1Ret = AddrBook.AddTask(t1Name, T1Data);  
-    REQUIRE(t1Ret == AddressBookNS::AddressBook::SUCCESS);
+    REQUIRE(t1Ret == AddressBookNS::SUCCESS);
     
     SECTION("Check that a task added correctly", "[Simple]")
     {
@@ -79,7 +79,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         
         // Get the task for running tests on
         t1Ret = AddrBook.GetTask(t1Name, taskData);
-        REQUIRE(t1Ret == AddressBookNS::AddressBook::SUCCESS);
+        REQUIRE(t1Ret == AddressBookNS::SUCCESS);
         
         REQUIRE(taskData.Name == t1Name);                // Check the task name.
         REQUIRE(taskData.Path == T1Data.Path);          // Check the path string.
@@ -126,7 +126,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     
     // Add the task to the AddressBook
     int t2Ret = AddrBook.AddTask(t2Name, T2Data);  
-    REQUIRE(t2Ret == AddressBookNS::AddressBook::SUCCESS);
+    REQUIRE(t2Ret == AddressBookNS::SUCCESS);
     
     
     SECTION("Check that a second task added correctly", "[Simple]")
@@ -136,7 +136,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         
         // Get the task for running tests on
         t2Ret = AddrBook.GetTask(t2Name, taskData);
-        REQUIRE(t2Ret == AddressBookNS::AddressBook::SUCCESS);
+        REQUIRE(t2Ret == AddressBookNS::SUCCESS);
         
         REQUIRE(taskData.Name == t2Name);                // Check the task name.
         REQUIRE(taskData.Path == T2Data.Path);          // Check the path string.
@@ -168,7 +168,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     SECTION("Check that a duplicate task is correctly rejected", "[Simple]")
     {
         int t3Ret = AddrBook.AddTask(t2Name, T2Data);
-        REQUIRE(t3Ret == AddressBookNS::AddressBook::ERR_TASKNAME_USED);
+        REQUIRE(t3Ret == AddressBookNS::ERR_TASKNAME_USED);
         REQUIRE(AddrBook.GetTaskCount() == 2);  // We should have two tasks,
         REQUIRE(AddrBook.IntegCheck() == 0);    // that pass integrity.
     }
@@ -182,7 +182,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     SECTION("Check that tasks can be deleted", "[Simple]")
     {
         int delRet = AddrBook.DelTask(t2Name);
-        REQUIRE(delRet == AddressBookNS::AddressBook::SUCCESS);
+        REQUIRE(delRet == AddressBookNS::SUCCESS);
         REQUIRE(AddrBook.GetTaskCount() == 1);  // We should have one task,
         REQUIRE(AddrBook.IntegCheck() == 0);    // that passes integrity.
     }
@@ -340,7 +340,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         DData1.Address = BaseAddr++;
         try {
             unsigned DAdd = AddrBook.AddDevice(t1Name, DData1);
-            REQUIRE(DAdd == 2);
+            REQUIRE(DAdd == AddressBookNS::ERR_INVALID_DEVTYPE);
         } catch (const char* msg) {
             std::cerr << std::endl << "ERROR adding Device "
                       << DData1.Name << " (" << DData1.Address << "): "
@@ -409,7 +409,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
 #else   
         // Otherwise it is invalid and we need to relink.
         REQUIRE(AddrBook.TaskLinkValid(t1Name) == false);
-        REQUIRE(AddrBook.BuildLink(t1Name) == AddressBookNS::AddressBook::SUCCESS);
+        REQUIRE(AddrBook.BuildLink(t1Name) == AddressBookNS::SUCCESS);
         REQUIRE(AddrBook.TaskLinkValid(t1Name) == true);    // Link should now be valid
 #endif
         // Check that the rest of the task is valid
