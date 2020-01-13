@@ -11,7 +11,6 @@ namespace AddressBookNS
 AddressBook::AddressBook(std::string d)
 {
    ABderived = d;
-   TaskCount = 0;
 }
 
 AddressBook::~AddressBook()
@@ -93,7 +92,6 @@ unsigned AddressBook::AddTask(const std::string &TaskName, TaskData_t &Data)
 
     // Add to the Task Map.
     TaskMap.insert(TaskMap_t::value_type(Task->Name, Task));
-    ++TaskCount; // Pedantic: avoid assignment to temporary 5 July 2019 ADR
 
     /* Insert DeviceTypes. Changed order and call subfunction 5 July 2019 ADR
        Original had pre-allocation below, but it's hard to see how this
@@ -243,8 +241,6 @@ unsigned AddressBook::DelTask(const std::string &TaskName)
     // Erase it
     delete TRec;
     TaskMap.erase(TaskName);
-
-    TaskCount--;
 
     return SUCCESS;
 }
@@ -1178,7 +1174,7 @@ void AddressBook::Dump(FILE * fp, std::string Name)
 
     if(Name == std::string(""))  // Dump high-level task data.
     {
-        fprintf(fp,"Total number of tasks: %d:\n", TaskCount);
+        fprintf(fp,"Total number of tasks: %lu:\n", TaskMap.size());
         for(TaskMap_t::iterator T=TaskMap.begin();
             T!=TaskMap.end();T++)
         {

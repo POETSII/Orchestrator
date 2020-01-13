@@ -144,7 +144,6 @@ public:
 
 private:
     TaskMap_t TaskMap;
-    int TaskCount;
     std::string ABderived; // changed to allow multiple inheritance (from CommonBase) 14 July 2019 ADR
 
     TaskRecord_t * FindTask(const std::string &TaskName);
