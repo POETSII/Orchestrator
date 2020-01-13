@@ -7,12 +7,6 @@
 //==============================================================================
 namespace AddressBookNS
 {
-#ifdef EXCEPTS
-#define ERETURN(X, Y) throw(X)
-#else
-#define ERETURN(X, Y) return Y
-#endif
-
 //Constructors
 AddressBook::AddressBook(std::string d)
 {
@@ -310,7 +304,7 @@ unsigned AddressBook::TaskExecPath(std::string &TaskName, std::string &NewPath)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     TRec->ExecPath = NewPath;
@@ -325,7 +319,7 @@ bool AddressBook::TaskValid(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", false);
+        return(false);
     }
 
     return TRec->TaskValid;
@@ -339,7 +333,7 @@ bool AddressBook::TaskMapValid(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", false);
+        return(false);
     }
 
     return TRec->MapValid;
@@ -353,7 +347,7 @@ bool AddressBook::TaskLinkValid(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", false);
+        return(false);
     }
 
     return TRec->LinkValid;
@@ -368,7 +362,7 @@ unsigned AddressBook::RebuildTask(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     //TODO: test this
@@ -422,7 +416,7 @@ unsigned AddressBook::BuildMaps(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(TRec->MapValid || TRec->NameMap.size() > 0
@@ -464,7 +458,7 @@ unsigned AddressBook::BuildLink(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(TRec->LinkValid || TRec->AddrMap.size() > 0) ClearLink(TRec);   // Existing link, clear it
@@ -504,7 +498,7 @@ unsigned AddressBook::AddDevice(std::string &TaskName, Record_t &DevRec, bool Va
     if(TRec == PNULL)
     {
         // DebugPrint("No such task: %s\n", TaskName.c_str());
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     Record_t *DRec;
@@ -587,7 +581,7 @@ unsigned AddressBook::UpdateDevice(std::string &TaskName, DeviceData_t &Data)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     // Check that the Device Name exists
@@ -611,7 +605,7 @@ long AddressBook::GetDeviceCount(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_BAD_COUNT);
+        return(ERR_BAD_COUNT);
     }
 
     return static_cast<long>(TRec->DevCntMax);
@@ -625,7 +619,7 @@ long AddressBook::GetLoadedDeviceCount(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_BAD_COUNT);
+        return(ERR_BAD_COUNT);
     }
 
     return static_cast<long>(TRec->DevCnt);
@@ -639,7 +633,7 @@ long AddressBook::GetExternalCount(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_BAD_COUNT);
+        return(ERR_BAD_COUNT);
     }
 
     return static_cast<long>(TRec->ExtCntMax);
@@ -653,7 +647,7 @@ long AddressBook::GetLoadedExternalCount(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_BAD_COUNT);
+        return(ERR_BAD_COUNT);
     }
 
     return static_cast<long>(TRec->ExtCnt);
@@ -667,7 +661,7 @@ int AddressBook::GetSupervisorCount(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_BAD_COUNT);
+        return(ERR_BAD_COUNT);
     }
 
     return static_cast<int>(TRec->SupCnt);
@@ -681,7 +675,7 @@ int AddressBook::GetMappedSupervisorCount(std::string &TaskName)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_BAD_COUNT);
+        return(ERR_BAD_COUNT);
     }
     
     return TRec->SupMap.size();
@@ -700,7 +694,7 @@ unsigned AddressBook::FindDevice(std::string &TaskName, SymAddr_t Address, const
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(!(TRec->TaskValid && TRec->MapValid && TRec->LinkValid))        // Return NotFound if dirty
@@ -710,7 +704,7 @@ unsigned AddressBook::FindDevice(std::string &TaskName, SymAddr_t Address, const
 
     AddrMap_t::iterator DSearch = TRec->AddrMap.find(Address);    // Find the Device
     if (DSearch == TRec->AddrMap.end()) {
-        ERETURN("Device Not Found", ERR_DEVICE_NOT_FOUND);
+        return(ERR_DEVICE_NOT_FOUND);
     }
 
     DRec = &(*DSearch->second);
@@ -727,7 +721,7 @@ unsigned AddressBook::FindDevice(std::string &TaskName, std::string &Name, const
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(!(TRec->TaskValid && TRec->MapValid && TRec->LinkValid))        // Return NotFound if dirty
@@ -737,7 +731,7 @@ unsigned AddressBook::FindDevice(std::string &TaskName, std::string &Name, const
 
     NameMap_t::iterator DSearch = TRec->NameMap.find(Name);        // Find the Device
     if (DSearch == TRec->NameMap.end()) {
-        ERETURN("Device Not Found", ERR_DEVICE_NOT_FOUND);
+        return(ERR_DEVICE_NOT_FOUND);
     }
 
     DRec = &(*DSearch->second);
@@ -755,7 +749,7 @@ unsigned AddressBook::FindBySuper(std::string &TaskName, SymAddr_t Supervisor, c
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(!(TRec->TaskValid && TRec->MapValid && TRec->LinkValid))        // Return NotFound if dirty
@@ -765,7 +759,7 @@ unsigned AddressBook::FindBySuper(std::string &TaskName, SymAddr_t Supervisor, c
 
     SupMap_t::iterator SSearch = TRec->SupMap.find(Supervisor);   // Find the Supervisor
     if (SSearch == TRec->SupMap.end()) {
-        ERETURN("Device Not Found", ERR_DEVICE_NOT_FOUND);
+        return(ERR_DEVICE_NOT_FOUND);
     }
 
     Records = &SSearch->second;
@@ -777,7 +771,7 @@ unsigned AddressBook::FindByType(std::string &TaskName, std::string Type, const 
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(!(TRec->TaskValid && TRec->MapValid && TRec->LinkValid))        // Return NotFound if dirty
@@ -787,7 +781,7 @@ unsigned AddressBook::FindByType(std::string &TaskName, std::string Type, const 
 
     IdxMap_t::iterator TSearch = TRec->DevTypeMap.find(Type);  // Find the Index
     if (TSearch == TRec->DevTypeMap.end()) {
-        ERETURN("Device Type Not Found", ERR_DEVICE_NOT_FOUND);
+        return(ERR_DEVICE_NOT_FOUND);
     }
 
     Records = &(TRec->DevTypes[TSearch->second].second);
@@ -800,7 +794,7 @@ unsigned AddressBook::FindByAttribute(std::string &TaskName, std::string Attribu
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(!(TRec->TaskValid && TRec->MapValid && TRec->LinkValid))        // Return NotFound if dirty
@@ -810,7 +804,7 @@ unsigned AddressBook::FindByAttribute(std::string &TaskName, std::string Attribu
 
     IdxMap_t::iterator ASearch = TRec->AttrTypeMap.find(Attribute);  // Find the Index
     if (ASearch == TRec->AttrTypeMap.end()) {
-        ERETURN("Device Type Not Found", ERR_DEVICE_NOT_FOUND);
+        return(ERR_DEVICE_NOT_FOUND);
     }
 
     Records = &(TRec->AttrTypes[ASearch->second].second);
@@ -823,7 +817,7 @@ unsigned AddressBook::FindByInMsg(std::string &TaskName, std::string Msg, const 
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(!(TRec->TaskValid && TRec->MapValid && TRec->LinkValid))        // Return NotFound if dirty
@@ -839,7 +833,7 @@ unsigned AddressBook::FindByOuMsg(std::string &TaskName, std::string Msg, const 
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(!(TRec->TaskValid && TRec->MapValid && TRec->LinkValid))        // Return NotFound if dirty
@@ -855,7 +849,7 @@ unsigned AddressBook::GetDevices(std::string &TaskName, const std::vector<Record
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(!(TRec->TaskValid && TRec->MapValid && TRec->LinkValid))        // Return NotFound if dirty
@@ -873,7 +867,7 @@ unsigned AddressBook::GetExternals(std::string &TaskName, const std::vector<Reco
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(!(TRec->TaskValid && TRec->MapValid && TRec->LinkValid))        // Return NotFound if dirty
@@ -891,7 +885,7 @@ unsigned AddressBook::GetSupervisors(std::string &TaskName, const std::vector<Re
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(!(TRec->TaskValid && TRec->MapValid && TRec->LinkValid))        // Return NotFound if dirty
@@ -909,7 +903,7 @@ unsigned AddressBook::GetExtCon(std::string &TaskName, const RecordVect_t* &Reco
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     if(!(TRec->TaskValid && TRec->MapValid && TRec->LinkValid))        // Return NotFound if dirty
@@ -936,7 +930,7 @@ TaskRecord_t * AddressBook::FindTask(const std::string &TaskName)
     // Check that the task exists.
     TaskMap_t::iterator TSearch = TaskMap.find(TaskName);
     if (TSearch == TaskMap.end()) {
-        ERETURN("Task Does Not Exist", PNULL);
+        return(PNULL);
     }
 
     return TSearch->second;
@@ -1013,7 +1007,7 @@ unsigned AddressBook::ValidateDeviceType(const DevTypeRecord_t& DevTypRec, unsig
     {
         if(*I >= MaxIdx)
         {
-            ERETURN("Invalid MessageType Index", ERR_INVALID_MESSAGE_TYPE);
+            return(ERR_INVALID_MESSAGE_TYPE);
         }
     }
 
@@ -1023,7 +1017,7 @@ unsigned AddressBook::ValidateDeviceType(const DevTypeRecord_t& DevTypRec, unsig
     {
         if(*O >= MaxIdx)
         {
-            ERETURN("Invalid MessageType Index", ERR_INVALID_MESSAGE_TYPE);
+            return(ERR_INVALID_MESSAGE_TYPE);
         }
     }
     return 0;
@@ -1040,24 +1034,24 @@ unsigned AddressBook::ValidateDevice(TaskRecord_t *TRec, Record_t &DevRec)
     AddrMap_t::const_iterator DASearch = TRec->AddrMap.find(DevRec.Address);
     if (DASearch != TRec->AddrMap.end()) {
         // DebugPrint("Device address %llu already exists\n", DevRec.Address);
-        ERETURN("DUPADDR: Device Address already added", ERR_DEVICE_ADDR_USED);
+        return(ERR_DEVICE_ADDR_USED);
     }
 
     NameMap_t::const_iterator DNSearch = TRec->NameMap.find(DevRec.Name);
     if (DNSearch != TRec->NameMap.end()) {
         // DebugPrint("Device name %s already exists\n", DevRec.Name.c_str());
-        ERETURN("DUPNAME: Device Name already added", ERR_DEVICENAME_USED);
+        return(ERR_DEVICENAME_USED);
     }
 
     // Check that the indices are valid BEFORE adding the Device.
     if (DevRec.DeviceType >= TRec->DevTypes.size()) {
         // DebugPrint("Device type %u does not exist\n", DevRec.DeviceType);
-        ERETURN("Invalid DeviceType Index", ERR_INVALID_DEVTYPE);
+        return(ERR_INVALID_DEVTYPE);
     }
 
     if (DevRec.Attribute >= static_cast<int>(TRec->AttrTypes.size())) {
         // DebugPrint("Device attribute type %u does not exist\n", DevRec.Attribute);
-        ERETURN("Invalid AttributeType Index", ERR_INVALID_ATTRIBUTE);
+        return(ERR_INVALID_ATTRIBUTE);
     }
 
     return SUCCESS;   // Validation Successful
@@ -1161,7 +1155,7 @@ unsigned AddressBook::IntegTask(std::string &TaskName, bool Verbose, FILE * fp)
     TaskRecord_t *TRec = FindTask(TaskName);
     if(TRec == PNULL)
     {
-        ERETURN("Task Does Not Exist", ERR_TASK_NOT_FOUND);
+        return(ERR_TASK_NOT_FOUND);
     }
 
     return TRec->Integrity(Verbose, fp);
