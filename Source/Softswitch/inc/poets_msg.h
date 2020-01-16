@@ -140,15 +140,16 @@ typedef struct poets_instr_message_payload
     uint32_t txHanCnt;
     uint32_t idleCnt;
     uint32_t idleHanCnt;
-#if TinselEnablePerfCount == true   
-    uint32_t missCount;         // Cache miss count
+    uint32_t blockCnt;
     
+#if TinselEnablePerfCount == true   
     // Fourth Flit
+    uint32_t missCount;         // Cache miss count
     uint32_t hitCount;          // Cache hit count
     uint32_t writebackCount;    // Cache writeback count
     uint32_t CPUIdleCount;      // CPU idle-cycle count (lower 32 bits)
     
-    // 32-bits free
+    // 0-bits free
 #endif 
     
 } P_Instr_Msg_Pyld_t;

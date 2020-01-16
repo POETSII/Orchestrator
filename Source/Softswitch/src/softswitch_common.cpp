@@ -22,6 +22,7 @@ void softswitch_init(ThreadCtxt_t* ThreadContext)
     ThreadContext->rxHandlerCount = 0;
     ThreadContext->idleCount = 0;
     ThreadContext->idleHandlerCount = 0;
+    ThreadContext->blockCount = 0;
     ThreadContext->cycleIdx = 0;
 
  #if TinselEnablePerfCount == true   
@@ -152,6 +153,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
             if (!tinselCanSend())
             {
                 // But channel is blocked. Wait until we have something to do.
+                ThreadContext->blockCount++;    // Increment Softswitch block count
                 tinselWaitUntil(TINSEL_CAN_SEND | TINSEL_CAN_RECV);
             }
             else
@@ -292,6 +294,7 @@ inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile voi
     pyld->txHanCnt = ThreadContext->txHandlerCount;
     pyld->rxHanCnt = ThreadContext->rxHandlerCount;
     pyld->idleCnt = ThreadContext->idleCount;
+    pyld->blockCnt = ThreadContext->blockCount;
     pyld->idleHanCnt = ThreadContext->idleHandlerCount;
 
 #if TinselEnablePerfCount == true
@@ -322,6 +325,7 @@ inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile voi
     ThreadContext->txHandlerCount = 0;
     ThreadContext->rxHandlerCount = 0;
     ThreadContext->idleCount = 0;
+    ThreadContext->blockCount = 0;
     ThreadContext->idleHandlerCount = 0;
 
 #if TinselEnablePerfCount == true   

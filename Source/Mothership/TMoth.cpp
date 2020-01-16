@@ -1087,14 +1087,14 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
         
         // Write the CSV header
         tFile << "ThreadID, cIDX, Time, cycles, deltaT, ";
-        tFile << "RX, OnRX, TX, SupTX, OnTX, Idle, OnIdle, ";
+        tFile << "RX, OnRX, TX, SupTX, OnTX, Idle, OnIdle, Blocked";
 #if TinselEnablePerfCount == true
         tFile << "CacheMiss, CacheHit, CacheWB, CPUIdle, ";
 #endif
         tFile << "RX/s, TX/s, Sup/s" << std::endl;
-        
+         
         tFile << srcAddr << ", 0, 0, 0, 0, ";
-        tFile << "0, 0, 0, 0, 0, 0, 0, ";
+        tFile << "0, 0, 0, 0, 0, 0, 0, 0, ";
 #if TinselEnablePerfCount == true
         tFile << "0, 0, 0, 0, ";
 #endif
@@ -1146,6 +1146,8 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
     
     tFile << instrMsg->idleCnt << ", ";          // Number of times SoftswitchOnIdle called
     tFile << instrMsg->idleHanCnt << ", ";       // Number of times application OnCompute called
+    
+    tFile << instrMsg->blockCnt << ", ";          // Number of times send has been blocked
     
 #if TinselEnablePerfCount == true      
     tFile << instrMsg->missCount << ", ";        // Cache miss count since last instrumentation

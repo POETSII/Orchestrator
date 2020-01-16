@@ -122,42 +122,43 @@ typedef struct PInputPin
   
 typedef struct PDeviceInstance
 {
-    PThreadContext*    thread;          // Back pointer to the ThreadContext
-    const devTyp_t*    devType;         // Pointer to the Device Instance
-    uint32_t           deviceID;        // Thread-unique device ID
-    uint32_t           numInputs;       // Number of inputs the device has
-    inPin_t*           inputPins;       // Pointer to the inputPin array
-    uint32_t           numOutputs;      // Number of outputs the device has
-    outPin_t*          outputPins;      // Pointer to the outputPin array
-    const void*        properties;      // Pointer to the device's properties
-    void*              state;           // Pointer to the device's state
+    PThreadContext*     thread;          // Back pointer to the ThreadContext
+    const devTyp_t*     devType;         // Pointer to the Device Instance
+    uint32_t            deviceID;        // Thread-unique device ID
+    uint32_t            numInputs;       // Number of inputs the device has
+    inPin_t*            inputPins;       // Pointer to the inputPin array
+    uint32_t            numOutputs;      // Number of outputs the device has
+    outPin_t*           outputPins;      // Pointer to the outputPin array
+    const void*         properties;      // Pointer to the device's properties
+    void*               state;           // Pointer to the device's state
 } devInst_t;
 
 typedef struct PThreadContext
 {
-    uint32_t           numDevTyps;
-    devTyp_t*          devTyps;
-    uint32_t           numDevInsts;
-    devInst_t*         devInsts;
-    const void*        properties;
-    uint32_t           rtsBufSize;      // The size of the RTS buffer
-    outPin_t**         rtsBuf;          // Pointer to the RTS buffer array
-    uint32_t           rtsStart;        // index of the first pending RTS
-    uint32_t           rtsEnd;          // index of the last pending RTS
-    uint32_t           idleStart;       // index of where to start OnIdle from
-    uint32_t           ctlEnd;
+    uint32_t            numDevTyps;
+    devTyp_t*           devTyps;
+    uint32_t            numDevInsts;
+    devInst_t*          devInsts;
+    const void*         properties;
+    uint32_t            rtsBufSize;      // The size of the RTS buffer
+    outPin_t**          rtsBuf;          // Pointer to the RTS buffer array
+    uint32_t            rtsStart;        // index of the first pending RTS
+    uint32_t            rtsEnd;          // index of the last pending RTS
+    uint32_t            idleStart;       // index of where to start OnIdle from
+    uint32_t            ctlEnd;
     
     // Instrumentation
-    uint32_t           lastCycles;          // cached last cycle count
-    uint32_t            pendCycles;          // Is there an instrumentation update pending? 2=yes, 1=claimed, 0=no
-    uint32_t           txCount;             // Number of actual messages sent
-    uint32_t           superCount;          // Number of supervisor messages sent
-    uint32_t           rxCount;             // Number of actual messages received
-    uint32_t           txHandlerCount;      // Number of On Send handler called
-    uint32_t           rxHandlerCount;      // Number of On Receive handler called
-    uint32_t           idleCount;           // number of times  Idle branch
-    uint32_t           idleHandlerCount;    // Number of OnIdle handlers called.
-    uint32_t           cycleIdx;            // Update index
+    uint32_t            lastCycles;         // cached last cycle count
+    uint32_t            pendCycles;         // Is there an instrumentation update pending? 2=yes, 1=claimed, 0=no
+    uint32_t            txCount;            // Number of actual messages sent
+    uint32_t            superCount;         // Number of supervisor messages sent
+    uint32_t            rxCount;            // Number of actual messages received
+    uint32_t            txHandlerCount;     // Number of On Send handler called
+    uint32_t            rxHandlerCount;     // Number of On Receive handler called
+    uint32_t            idleCount;          // number of times  Idle branch
+    uint32_t            idleHandlerCount;   // Number of OnIdle handlers called.
+    uint32_t            blockCount;         // Number of times we have been blocked by being unable to send
+    uint32_t            cycleIdx;           // Update index
     
 #if TinselEnablePerfCount == true   
     // Optional Tinsel Instrumentation
