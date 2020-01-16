@@ -10,7 +10,7 @@ namespace AddressBook
 //Constructors
 AddressBook::AddressBook(std::string d)
 {
-   ABderived = d;
+   AddressBookDerived = d;
 }
 
 AddressBook::~AddressBook()
@@ -366,8 +366,6 @@ unsigned AddressBook::RebuildTask(std::string &TaskName)
     {
         return(ERR_TASK_NOT_FOUND);
     }
-
-    //TODO: test this
 
     // Rebuild MessageType map
     TRec->MsgTypeMap.clear();
@@ -1176,7 +1174,7 @@ void AddressBook::Dump(std::string &Name)
 void AddressBook::Dump(FILE * fp, std::string Name)
 {
     fprintf(fp,"AddressBook+++++++++++++++++++++++++++++++++\n");
-    fprintf(fp,"ABderived (this derived process) : %s\n",ABderived.c_str());
+    fprintf(fp,"AddressBookDerived (this derived process) : %s\n",AddressBookDerived.c_str());
 
     if(Name == std::string(""))  // Dump high-level task data.
     {

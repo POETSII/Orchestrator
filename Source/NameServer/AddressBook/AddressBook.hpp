@@ -39,6 +39,7 @@
 #include <iterator>
 #include <algorithm>
 #include <map>
+#include <climits>
 
 
 
@@ -143,7 +144,7 @@ public:
 
 private:
     TaskMap_t TaskMap;
-    std::string ABderived; // changed to allow multiple inheritance (from CommonBase) 14 July 2019 ADR
+    std::string AddressBookDerived; // changed to allow multiple inheritance (from CommonBase) 14 July 2019 ADR
 
     TaskRecord_t * FindTask(const std::string &TaskName);
 
