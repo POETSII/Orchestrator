@@ -29,6 +29,7 @@ TestHardwareIterator_SOURCES = $(HARDWARE_MODEL_SOURCES)
 TestHardwareModel_SOURCES = $(HARDWARE_MODEL_SOURCES)
 TestSimpleDeployment_SOURCES = $(HARDWARE_DEPLOYER_SOURCES)
 TestSoftwareAddress_SOURCES = $(SOFTWARE_ADDRESS_SOURCES)
+TestAddressBook_SOURCES = $(ADDRESS_BOOK_SOURCES)
 
 # Define test rules. TEST_RULE_TEMPLATE defines the substitutions made in the
 # foreach loop below.
