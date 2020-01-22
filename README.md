@@ -15,3 +15,24 @@ Note: This repository contains Tinsel as a submodule. This is not needed for
 operation on Tinsel-POETS boxes (because they already have a Tinsel
 installation), but if you wish to build or run the Orchestrator elsewhere, you
 will need this submodule.
+
+# Dependencies
+
+The Orchestrator depends on the list of software below to function. Note that,
+if you are running the Orchestrator on a POETS system (as per the usage
+documentation), the "Orchestrator Dependencies tarball"
+(https://github.com/POETSII/orchestrator-dependencies, private) may already be
+installed on that system. If so, you do not need to install these dependencies
+in order to use the Orchestrator.
+
+ - MPICH 3.2.1. Used for multiprocess communication.
+
+ - Qt 5.6.3. Used by the XML parser.
+
+ - GCC 7.3.0: Used to compile C extracted by the XML parser into supervisor
+   binaries.
+
+ - RISCV GCC: Must support the rv32imf target.
+
+ - Tinsel 0.6+: For running applications on POETS hardware
+   (https://github.com/poetsii/tinsel).
