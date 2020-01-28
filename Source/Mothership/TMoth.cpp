@@ -573,7 +573,10 @@ unsigned TMoth::NameRecl(PMsg_p* mTask_Info)
             return 1;
         }
     }
-    system((string("rm -r -f ")+TaskMap[TaskName]->BinPath).c_str());
+    if (system((string("rm -r -f ")+TaskMap[TaskName]->BinPath).c_str()))
+    {
+        Post(817, TaskMap[TaskName]->BinPath, POETS::getSysErrorString(errno));
+    }
     delete T->second; // get rid of its TaskInfo object
     TaskMap.erase(T); // and then remove it from the task map
     return 0;
