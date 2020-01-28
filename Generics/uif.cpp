@@ -60,8 +60,8 @@ pRecd->Add(pNH->new_Node(0,No_body));
 
 for(int state=0;;) {
   Lx.GetTok(Td);                       // Get the next token...
-  switch (state) {                     // Pre-transition (entry) actions
-    case 0 : cOp = Lex::S_00; break;   // Null current argument sign
+  if (state == 0) {                    // Pre-transition (entry) actions
+      cOp = Lex::S_00;                 // Null current argument sign
   }
                                        // No exceptional cases (EOF in table)
   if (Lx.IsError(Td)) problem = true;
@@ -160,17 +160,17 @@ for(int state=0;;) {                   // And around and around we go ...
   Node * pName;
   Lx.GetTok(Td);                       // Get the next token...
   if (Lx.IsError(Td)) break;           // Lexer reports a problem?
-  switch (state) {                     // Pre-transition (entry) actions
-    case 0 : PruneRec();               // Delete unnecessary nodes
-             RCB();
-             pSect->Add(pRecd = pNH->new_Node(Td.l,No_recd));
-             pRecd->Add(pBody = pNH->new_Node(Td.c,No_body));
-             pBody->Add(pLabl = pNH->new_Node(Td.c,No_labl));
-             pBody->Add(pVari = pNH->new_Node(Td.c,No_vari));
-             pBody->Add(pValu = pNH->new_Node(Td.c,No_valu));
-             break;
-    case 9 : SCB(true);
-             break;
+  if (state == 0) {                    // Pre-transition (entry) actions
+      PruneRec();                      // Delete unnecessary nodes
+      RCB();
+      pSect->Add(pRecd = pNH->new_Node(Td.l,No_recd));
+      pRecd->Add(pBody = pNH->new_Node(Td.c,No_body));
+      pBody->Add(pLabl = pNH->new_Node(Td.c,No_labl));
+      pBody->Add(pVari = pNH->new_Node(Td.c,No_vari));
+      pBody->Add(pValu = pNH->new_Node(Td.c,No_valu));
+  }
+  else if (state == 9) {
+      SCB(true);
   }
                                        // No exceptional cases (EOF in table)
   switch (Td.t) {                      // Map to array index
@@ -688,12 +688,11 @@ for(int state=0;;) {
   Node * pExpr;
   Node * tmp;
   Lx.GetTok(Td);                       // Get the next token...
-  switch (state) {                     // Pre-transition (entry) actions
-    case 0 : in->Add(pAttr = pNH->new_Node(in->pos,No_attr));
-             pAttr->Add(pLabl = pNH->new_Node(Td.c,No_labl));
-             pAttr->Add(pVari = pNH->new_Node(Td.c,No_vari));
-             pAttr->Add(pExpr = pNH->new_Node(Td.c,No_expr));
-             break;
+  if (state == 0) {                    // Pre-transition (entry) actions
+      in->Add(pAttr = pNH->new_Node(in->pos,No_attr));
+      pAttr->Add(pLabl = pNH->new_Node(Td.c,No_labl));
+      pAttr->Add(pVari = pNH->new_Node(Td.c,No_vari));
+      pAttr->Add(pExpr = pNH->new_Node(Td.c,No_expr));
   }
   if (Td.t == Lex::Sy_EOF) return;     // Exceptional case
   if (Lx.IsError(Td)) problem = true;
