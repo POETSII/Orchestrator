@@ -2,6 +2,14 @@
 
 #include "flat.h"
 
+// In this file, certain functions are decorated with calls to "ignore_rc"
+// below. This ludicrous wrapper is needed to suppress GCC 7.4.0 unused result
+// warnings under O3. These warnings were introduced because some GCC
+// developers in 2005 decided that programmers aren't allowed to be responsible
+// for ignoring values from certain functions.
+
+void ignore_rc(int rc){if(rc)(void)0;}
+
 //------------------------------------------------------------------------------
 
 int cmp_noc(const string &s1,const string &s2)
@@ -377,7 +385,7 @@ printf("\n\n*********************************************\n\n"
        "*********************************************\n",e);
 printf("Type any character to be gone.....");
 char cc;
-scanf("%c",&cc);
+ignore_rc(scanf("%c",&cc));
 exit(0);
 }
 
@@ -661,8 +669,8 @@ const unsigned LEN = 512;              // UNCOOL UNCOOL UNCOOL but probably OK
 char buf[LEN];
 unsigned len = 0;
 if (fb==0) return string();
-fread(&len,2,1,fb);                    // Length written as 2 bytes
-fread(buf,sizeof(char),min(len,LEN)+1,fb);
+ignore_rc(fread(&len,2,1,fb));         // Length written as 2 bytes
+ignore_rc(fread(buf,sizeof(char),min(len,LEN)+1,fb));
 return string(buf);
 }
 
@@ -838,17 +846,19 @@ void freadstr(string & name,FILE * fp)
 // The string itself
 {
 unsigned len;
-fread(&len,sizeof(unsigned),1,fp);     // Pull in the string length
+ignore_rc(fread(&len,sizeof(unsigned),1,fp));  // Pull in the string length
 //printf("freadstr pulling in %d characters....\n",len);
-const unsigned BUF = 1024;             // Buffer on the stack
+const unsigned BUF = 1024;                     // Buffer on the stack
 char buf[BUF];
-char * pbuf = &buf[0];                 // If not big enough, replace with heap
+char * pbuf = &buf[0];                         // If not big enough, replace
+                                               // with heap
 if (len>=BUF) pbuf = (char *) new char[len+1];
-fread(pbuf,1,len,fp);                  // Pull the characters in
-pbuf[len] = '\0';                      // Write the terminator
-name = string(buf);                    // Create the string
+ignore_rc(fread(pbuf,1,len,fp));               // Pull the characters in
+pbuf[len] = '\0';                              // Write the terminator
+name = string(buf);                            // Create the string
 //printf("freadstr gets ||%s||\n",name.c_str());
-if (pbuf!=&buf[0]) delete [] pbuf;     // Kill the heap buffer if it's there
+if (pbuf!=&buf[0]) delete [] pbuf;             // Kill the heap buffer if it's
+                                               // there
 }
 
 //------------------------------------------------------------------------------
