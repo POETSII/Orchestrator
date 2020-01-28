@@ -253,6 +253,7 @@ if (!stack.empty()) {
   return 0;
 }
 int p, pL, tpL, lIdx;
+lIdx = 0;
 pL = -1;                               // maybe we have no LogServer?
 PMsg_p Pkt;                            // Burst closedown command to all ranks
 Pkt.Src(Urank);
