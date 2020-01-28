@@ -591,6 +591,7 @@ for(int state=0;;) {
     case t4 : No_x = No_XXXX;  break;
     case t5 : No_x = No_XXXX;  break;
     case t6 : No_x = No_XXXX;  break;
+    default : No_x = No_XXXX;  break;
   }
   next = table[state][toktyp];
   switch (next.ac) {
