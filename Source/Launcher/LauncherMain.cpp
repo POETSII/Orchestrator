@@ -273,8 +273,8 @@ int DeployBinaries(std::set<std::string>* hosts,
     }
 
     /* Deploy! */
-    std::string stdout;
-    std::string stderr;
+    std::string cmdstdout;
+    std::string cmdstderr;
     int sshRc;
     WALKSET(string, (*hosts), host)
     {
@@ -285,17 +285,19 @@ int DeployBinaries(std::set<std::string>* hosts,
         sshRc = SSH::call((*host),
                           dformat("mkdir --parents \"%s\"\n",
                                   POETS::dirname(deployDir).c_str()),
-                          &stdout, &stderr);
+                          &cmdstdout, &cmdstderr);
         if (sshRc > 0)
         {
-            printf("%sSSH command to host '%s' failed (can you connect to the "
-                   "host by SSH?): %s",
-                   errorHeader, (*host).c_str(), stderr.c_str());
+            fprintf(stderr,
+                    "%sSSH command to host '%s' failed (can you connect to "
+                    "the host by SSH?): %s",
+                    errorHeader, (*host).c_str(), cmdstderr.c_str());
             return 1;
         }
         else if (sshRc == -1)
         {
-            printf("Error calling SSH: %s.\n", strerror(errno));
+            fprintf(stderr, "%sError calling SSH: %s.\n", errorHeader,
+                    strerror(errno));
             return 1;
         }
 
@@ -303,33 +305,37 @@ int DeployBinaries(std::set<std::string>* hosts,
         sshRc = SSH::call((*host),
                           dformat("rm --force --recursive \"%s\"\n",
                                   deployDir),
-                          &stdout, &stderr);
+                          &cmdstdout, &cmdstderr);
         if (sshRc > 0)
         {
             /* NB: rm -rf can't fail outside mad edge cases... */
-            printf("%sSSH command to host '%s' failed (can you connect to the "
-                   "host by SSH?): %s",
-                   errorHeader, (*host).c_str(), stderr.c_str());
+            fprintf(stderr,
+                    "%sSSH command to host '%s' failed (can you connect to "
+                    "the host by SSH?): %s",
+                    errorHeader, (*host).c_str(), cmdstderr.c_str());
             return 1;
         }
         else if (sshRc == -1)
         {
-            printf("Error calling SSH: %s.\n", strerror(errno));
+            fprintf(stderr, "%sError calling SSH: %s.\n", errorHeader,
+                    strerror(errno));
             return 1;
         }
 
         /* Deploy binaries. */
         sshRc = SSH::deploy_directory((*host), sourceDir, deployDir,
-                                      &stdout, &stderr);
+                                      &cmdstdout, &cmdstderr);
         if (sshRc > 0)
         {
-            printf("%sFailed to deploy to host '%s': %s",
-                   errorHeader, (*host).c_str(), stderr.c_str());
+            fprintf(stderr,
+                    "%sFailed to deploy to host '%s': %s",
+                    errorHeader, (*host).c_str(), cmdstderr.c_str());
             return 1;
         }
         else if (sshRc == -1)
         {
-            printf("Error calling SSH: %s.\n", strerror(errno));
+            fprintf(stderr, "%sError calling SSH: %s.\n", errorHeader,
+                    strerror(errno));
             return 1;
         }
 
@@ -338,24 +344,26 @@ int DeployBinaries(std::set<std::string>* hosts,
         sshRc = SSH::call((*host),
                           dformat("realpath \"%s\" | tr --delete '\n'\n",
                                   deployDir),
-                          &stdout, &stderr);
+                          &cmdstdout, &cmdstderr);
         if (sshRc > 0)
         {
-            printf("%sSSH command to host '%s' failed (can you connect to the "
-                   "host by SSH?): %s",
-                   errorHeader, (*host).c_str(), stderr.c_str());
+            fprintf(stderr,
+                    "%sSSH command to host '%s' failed (can you connect to "
+                    "the host by SSH?): %s",
+                    errorHeader, (*host).c_str(), cmdstderr.c_str());
             return 1;
         }
         else if (sshRc == -1)
         {
-            printf("Error calling SSH: %s.\n", strerror(errno));
+            fprintf(stderr, "%sError calling SSH: %s.\n", errorHeader,
+                    strerror(errno));
             return 1;
         }
 
         DebugPrint("%sDeployment to host '%s' complete.\n",
                    debugHeader, host->c_str());
 
-        (*paths)[*host] = stdout;
+        (*paths)[*host] = cmdstdout;
     }
 
     return 0;
