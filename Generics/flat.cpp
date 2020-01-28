@@ -670,7 +670,7 @@ char buf[LEN];
 unsigned len = 0;
 if (fb==0) return string();
 ignore_rc(fread(&len,2,1,fb));         // Length written as 2 bytes
-ignore_rc(fread(buf,sizeof(char),min(len,LEN)+1,fb));
+ignore_rc(fread(buf,sizeof(char),min(len+1,LEN),fb));
 return string(buf);
 }
 
