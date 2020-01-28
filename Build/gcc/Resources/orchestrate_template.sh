@@ -60,11 +60,16 @@ while [ $# -gt 0 ]; do
     case "$1" in
         /*) # Windows
             THIS_ARG_MODE="Windows"  # i.e. not GNU.
-            SWITCH="$1"
-            if [ "$2" == "=" ]; then  # e.g. "/f = FILE"
+            if [[ "$1" =~ /[a-z]=* ]]; then  # e.g. "/f=FILE"
+                SWITCH="${1:0:2}"
+                VALUE="${1:3}"
+                shift;
+            elif [ "$2" == "=" ]; then  # e.g. "/f = FILE"
+                SWITCH="$1"
                 VALUE="$3"
                 shift; shift; shift
             else  # e.g. "/d"
+                SWITCH="$1"
                 shift;
             fi
             ;;
