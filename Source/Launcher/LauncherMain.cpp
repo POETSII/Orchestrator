@@ -275,27 +275,36 @@ int DeployBinaries(std::set<std::string>* hosts,
     /* Deploy! */
     std::string stdout;
     std::string stderr;
+    int sshRc;
     WALKSET(string, (*hosts), host)
     {
         DebugPrint("%sDeploying to host '%s'...\n",
                    debugHeader, host->c_str());
 
         /* Ensure .orchestrator exists. */
-        if (SSH::call((*host),
-                      dformat("mkdir --parents \"%s\"\n",
-                              POETS::dirname(deployDir).c_str()),
-                      &stdout, &stderr) > 0)
+        sshRc = SSH::call((*host),
+                          dformat("mkdir --parents \"%s\"\n",
+                                  POETS::dirname(deployDir).c_str()),
+                          &stdout, &stderr);
+        if (sshRc > 0)
         {
             printf("%sSSH command to host '%s' failed (can you connect to the "
                    "host by SSH?): %s",
                    errorHeader, (*host).c_str(), stderr.c_str());
             return 1;
         }
+        else if (sshRc == -1)
+        {
+            printf("Error calling SSH: %s.\n", strerror(errno));
+            return 1;
+        }
 
         /* Remove the target directory, dangerously. */
-        if (SSH::call((*host),
-                      dformat("rm --force --recursive \"%s\"\n", deployDir),
-                      &stdout, &stderr) > 0)
+        sshRc = SSH::call((*host),
+                          dformat("rm --force --recursive \"%s\"\n",
+                                  deployDir),
+                          &stdout, &stderr);
+        if (sshRc > 0)
         {
             /* NB: rm -rf can't fail outside mad edge cases... */
             printf("%sSSH command to host '%s' failed (can you connect to the "
@@ -303,26 +312,43 @@ int DeployBinaries(std::set<std::string>* hosts,
                    errorHeader, (*host).c_str(), stderr.c_str());
             return 1;
         }
+        else if (sshRc == -1)
+        {
+            printf("Error calling SSH: %s.\n", strerror(errno));
+            return 1;
+        }
 
         /* Deploy binaries. */
-        if (SSH::deploy_directory((*host), sourceDir, deployDir,
-                                  &stdout, &stderr) > 0)
+        sshRc = SSH::deploy_directory((*host), sourceDir, deployDir,
+                                      &stdout, &stderr);
+        if (sshRc > 0)
         {
             printf("%sFailed to deploy to host '%s': %s",
                    errorHeader, (*host).c_str(), stderr.c_str());
             return 1;
         }
+        else if (sshRc == -1)
+        {
+            printf("Error calling SSH: %s.\n", strerror(errno));
+            return 1;
+        }
 
         /* Grab the full path of the directory created (we can't compute that
          * here, because user names may vary, etc.) */
-        if (SSH::call((*host),
-                      dformat("realpath \"%s\" | tr --delete '\n'\n",
-                              deployDir),
-                      &stdout, &stderr) > 0)
+        sshRc = SSH::call((*host),
+                          dformat("realpath \"%s\" | tr --delete '\n'\n",
+                                  deployDir),
+                          &stdout, &stderr);
+        if (sshRc > 0)
         {
             printf("%sSSH command to host '%s' failed (can you connect to the "
                    "host by SSH?): %s",
                    errorHeader, (*host).c_str(), stderr.c_str());
+            return 1;
+        }
+        else if (sshRc == -1)
+        {
+            printf("Error calling SSH: %s.\n", strerror(errno));
             return 1;
         }
 
