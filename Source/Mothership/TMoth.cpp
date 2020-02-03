@@ -1087,7 +1087,7 @@ unsigned TMoth::InstrumentationHandler(P_Msg_t* msg)
         
         // Write the CSV header
         tFile << "ThreadID, cIDX, Time, cycles, deltaT, ";
-        tFile << "RX, OnRX, TX, SupTX, OnTX, Idle, OnIdle, Blocked";
+        tFile << "RX, OnRX, TX, SupTX, OnTX, Idle, OnIdle, Blocked, ";
 #if TinselEnablePerfCount == true
         tFile << "CacheMiss, CacheHit, CacheWB, CPUIdle, ";
 #endif
