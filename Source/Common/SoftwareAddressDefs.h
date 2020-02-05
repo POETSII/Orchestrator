@@ -1,6 +1,8 @@
 #ifndef __ORCHESTRATOR_SOURCE_COMMON_SOFTWAREADDRESSDEFS_H
 #define __ORCHESTRATOR_SOURCE_COMMON_SOFTWAREADDRESSDEFS_H
 
+#include "OSFixes.hpp"
+
 /* Software Address definitions, masks and shifts.
  * Separated from SoftwareAddress.h to stop Softswitch bloat. */
 
