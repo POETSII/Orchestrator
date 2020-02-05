@@ -77,6 +77,7 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/Parser \
                 -I$(SOURCE_DIR)/Root \
                 -I$(SOURCE_DIR)/NameServer \
+                -I$(SOURCE_DIR)/NameServer/AddressBook \
                 -I$(SOURCE_DIR)/Softswitch/inc \
                 -I$(MPICH_INC_DIR) \
                 -I$(QT_INC_DIR) \
