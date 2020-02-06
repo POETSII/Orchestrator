@@ -3,6 +3,7 @@
 #include <cstring>
 #include "stdint.h"
 
+
 void softswitch_init(ThreadCtxt_t* ThreadContext)
 {
     // Allocate Tinsel receive slots.
@@ -99,6 +100,34 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
 //------------------------------------------------------------------------------
 
 
+
+/*------------------------------------------------------------------------------
+ * Two utility inline functions to reduce code duplication when configuring
+ * loop execution order.
+ *----------------------------------------------------------------------------*/
+inline void receiveInline(ThreadCtxt_t* ThreadContext, volatile void* recvBuffer)
+{
+    recvBuffer=tinselRecv();
+    softswitch_onReceive(ThreadContext, recvBuffer); // decode the receive and handle
+    tinselAlloc(recvBuffer); // return control of the receive buffer to the hardware
+}
+
+inline void sendInline(ThreadCtxt_t* ThreadContext, volatile void* sendBuffer)
+{
+    if (!tinselCanSend())
+    {
+        // Channel is blocked. Wait until we have something to do.
+        ThreadContext->blockCount++;    // Increment Softswitch block count
+        tinselWaitUntil(TINSEL_CAN_SEND | TINSEL_CAN_RECV);
+    }
+    else
+    {
+        // Let's send something.
+        softswitch_onSend(ThreadContext, sendBuffer);
+    }
+}
+/*----------------------------------------------------------------------------*/
+
 /*------------------------------------------------------------------------------
  * softswitch_loop: Where the work happens
  *----------------------------------------------------------------------------*/
@@ -123,51 +152,60 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
     
     while (!ThreadContext->ctlEnd)
     {
-#ifdef SOFTSWITCH_INSTRUMENTATION
+    #ifdef SOFTSWITCH_INSTRUMENTATION
         cycles = tinselCycleCount();
         if((cycles - ThreadContext->lastCycles) > P_INSTR_INTERVAL)
         {   // Trigger a message to supervisor.
             ThreadContext->pendCycles = 1;
         }
-#endif        
+    #endif        
         
-        // Something to receive
-        if (tinselCanRecv())
-        {
-            recvBuffer=tinselRecv();
-            softswitch_onReceive(ThreadContext, recvBuffer); // decode the receive and handle
-            tinselAlloc(recvBuffer); // return control of the receive buffer to the hardware
-        }
-
-#ifdef SOFTSWITCH_INSTRUMENTATION        
-        // Time to send Instrumentation
-        else if(ThreadContext->pendCycles && tinselCanSend())
-        {
+/* Support reordering of the execution order to prioritise the sending of 
+ * instrumentation. This is useful where an application expects to be inundated
+ * with receives.
+ *
+ * This could be extended to allow sending to be prioritised over receive (and 
+ * instrumentation to be prioritised over that), however when I attempted this,
+ * the examples broke so more work is needed to implement.
+ */     
+#if defined SOFTSWITCH_INSTRUMENTATION \
+      && defined SOFTSWITCH_PRIORITISE_INSTRUMENTATION
+// Prioritise Instrumentation: Send Instrumentation, RX, TX     
+        if(ThreadContext->pendCycles && tinselCanSend())
+        {   // Time to send Instrumentation
             softswitch_instrumentation(ThreadContext, superBuffer);
         }
-#endif
-        
-        // Something to send
-        else if (ThreadContext->rtsStart != ThreadContext->rtsEnd) //softswitch_IsRTSReady(ThreadContext))
-        {
-            if (!tinselCanSend())
-            {
-                // But channel is blocked. Wait until we have something to do.
-                ThreadContext->blockCount++;    // Increment Softswitch block count
-                tinselWaitUntil(TINSEL_CAN_SEND | TINSEL_CAN_RECV);
-            }
-            else
-            {
-                // Let's send something.
-                softswitch_onSend(ThreadContext, sendBuffer);
-            }
+        else if (tinselCanRecv())
+        {   // Something to receive
+            receiveInline(ThreadContext, recvBuffer);
         }
+        else if (ThreadContext->rtsStart != ThreadContext->rtsEnd)
+        {   // Something to send
+            sendInline(ThreadContext, sendBuffer);
+        }
+        
+#else   
+// Default order: RX, Send Instrumentation, TX
+        if (tinselCanRecv())
+        {   // Something to receive
+            receiveInline(ThreadContext, recvBuffer);
+        }
+    #ifdef SOFTSWITCH_INSTRUMENTATION        
+        else if(ThreadContext->pendCycles && tinselCanSend())
+        {   // Time to send Instrumentation
+            softswitch_instrumentation(ThreadContext, superBuffer);
+        }
+    #endif
+        else if (ThreadContext->rtsStart != ThreadContext->rtsEnd)
+        {   // Something to send
+            sendInline(ThreadContext, sendBuffer);
+        }
+#endif        
+        
         
         // Nothing to RX, nothing to TX: iterate through all devices until 
         // something happens or all OnComputes have returned 0. 
         //softswitch_onIdle(ThreadContext);
-        
-        // Skip the block for now so that we can do SW Idle detection stuff
         else if(!softswitch_onIdle(ThreadContext)) 
         {                                           
             tinselWaitUntil(TINSEL_CAN_RECV);
