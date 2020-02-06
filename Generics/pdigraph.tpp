@@ -256,10 +256,12 @@ PDIGRAPH_ bool  _PDIGRAPH::FindArcs(const NKT & n_k,const PKT & p_k,
                                    vector<AKT> & vI,vector<AKT> & vO)
 // Given a node and a pin key, return any/all arc keys
 {
-if (FindNode(n_k)==0) return false;    // Node not there
-if (FindPin(n_k,p_k)==0) return false; // Pin not there
 vI.clear();
 vO.clear();
+
+if (FindNode(n_k)==0) return false;    // Node not there
+if (FindPin(n_k,p_k)==0) return false; // Pin not there
+
                                        // Walk right there...
 pair<TPp_it,TPp_it> pi = index_n[n_k].fano.equal_range(p_k);
 for(typename multimap<PKT,pin>::iterator i=pi.first;i!=pi.second;i++)
