@@ -1202,6 +1202,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << "0,";                                 // rxHandlerCount
   vars_cpp << "0,";                                 // idleCount
   vars_cpp << "0,";                                 // idleHandlerCount
+  vars_cpp << "0,";                                 // blockCount
   vars_cpp << "0";                                  // cycleIdx
   vars_cpp << "};\n";
   //============================================================================
