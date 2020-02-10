@@ -221,7 +221,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
 void softswitch_finalise(ThreadCtxt_t* ThreadContext)
 {
     // Loop through everything in the RTS buffer and clear it
-    uint32_t maxIdx = ThreadContext->rtsBufSize;   // # devices we are looping through
+    uint32_t maxIdx = ThreadContext->rtsBuffSize;   // # devices we are looping through
     while(ThreadContext->rtsStart != ThreadContext->rtsEnd)
     {
         uint32_t rtsStart = ThreadContext->rtsStart;
@@ -456,7 +456,7 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
 
         // Move the circular RTS buffer index
         ThreadContext->rtsStart++;
-        if(ThreadContext->rtsStart == ThreadContext->rtsBufSize)
+        if(ThreadContext->rtsStart == ThreadContext->rtsBuffSize)
         {
             ThreadContext->rtsStart = 0;
         }
@@ -659,7 +659,7 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
                     ThreadContext->rtsBuf[ThreadContext->rtsEnd] = output_pin;
                     
                     ThreadContext->rtsEnd++;
-                    if(ThreadContext->rtsEnd == ThreadContext->rtsBufSize)
+                    if(ThreadContext->rtsEnd == ThreadContext->rtsBuffSize)
                     {
                         ThreadContext->rtsEnd = 0;
                     }

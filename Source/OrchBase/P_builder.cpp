@@ -1117,6 +1117,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   unsigned int inTypCnt = devTyp->P_pintypIv.size();       // Grab the number of input pins for the device type
   unsigned int outTypCnt = devTyp->P_pintypOv.size();      // Grab the number of output pins for the device type
   
+  vector<unsigned int>inPinArcs;    //Vector used for finding how many connections a pin has. TODO: fix the type
+  vector<unsigned int>outPinArcs;   //Vector used for finding how many connections a pin has. TODO: fix the type
+  
   // we could choose to create separate .h files for each thread giving the externs but it seems simpler
   // and arguably more flexible to put all the external declarations in a single .h
   // The actual data definitions go one file per thread so we can load the resultant data files individually.
@@ -1182,8 +1185,38 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << "Thread_" << thread_num << "_Devices,";               // devInsts
   vars_cpp << ((devTyp->par->pPropsD)?"&GraphProperties,":"PNULL,");// properties
   
-  // Need a minimum size for rtsBuffSize.
-  uint32_t outputCount = (outTypCnt * thread->P_devicel.size());
+  
+  
+  // Work out the required size for the rtsBuffSize.
+  uint32_t outputCount = 1;     // Yes, this is intentionally 1 to cope with wrapping.
+  for (list<P_device*>::iterator device = thread->P_devicel.begin(); 
+        device != thread->P_devicel.end(); device++)
+  { // Iterate through all devices counting pins.
+    if (outTypCnt)
+    {
+      for (vector<P_pintyp*>::iterator pin = devTyp->P_pintypOv.begin();
+            pin != devTyp->P_pintypOv.end(); pin++)
+      {
+        // Check that we have connections.
+        if((*device)->par->G.FindArcs((*device)->idx,
+            (*pin)->idx,inPinArcs,outPinArcs))
+        {
+          outputCount++;    // If we do, add an rtsBuffSlot for the pin.
+        }
+      }
+    }
+  }  
+  if (outputCount > MAX_RTSBUFFSIZE)
+  { // If we have too many pins for one buffer entry per ping, set to max &warn.
+    // This may need a check adding to the Softswitch to stop buffer overflow.
+    outputCount = MAX_RTSBUFFSIZE;
+    par->Post(819,int2str(thread_num),int2str(coreNum),int2str(MAX_RTSBUFFSIZE),
+              int2str(MAX_RTSBUFFSIZE));
+  }
+  else if (outputCount < 10)
+  {
+    outputCount = 10;
+  }
   vars_cpp << ((outputCount < 10)? 10 : outputCount) << ",";        // rtsBuffSize
   
   vars_cpp << "PNULL,";                                             // rtsBuf
@@ -1252,7 +1285,8 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   
   
   //============================================================================
-  // Form the initialiser(s) for the input pins array. PInputType/in_pintyp_t struct
+  // Form the initialiser(s) for the input pins array if we have input pins.
+  // PInputType/in_pintyp_t struct
   //============================================================================
   vars_h << "//------------------------------ Pin Type Tables ";
   vars_h << "-------------------------------\n";
@@ -1300,7 +1334,8 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   
   
   //============================================================================
-  // Form the initialiser(s) for the output pins array. POutputType/in_pouttyp_t struct
+  // Form the initialiser(s) for the output pins array if we have output pins.
+  // POutputType/in_pouttyp_t struct
   //============================================================================
   if (outTypCnt)
   {
@@ -1358,14 +1393,13 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   std::stringstream inPinPropsInitialiser("");// device type input pin properties (devtyp_XXX_InPin_YYY_props_t) initialiser
   std::stringstream inPinStateInitialiser("");// device type input pin properties (devtyp_XXX_InPin_YYY_state_t) initialiser
   
-  vector<unsigned int>inPinArcs;                //TODO: fix the type
-  vector<unsigned int>outPinArcs;               //TODO: fix the type
-  
   
   devPropsInitialiser << "{";   // Add the first { to the device properties array initialiser
   devStateInitialiser << "{";   // Add the first { to the device state array initialiser
   devInstInitialiser << "{";    // Add the first { to the device instance array initialiser
   
+  
+  // Iterate through all of the devices
   for (list<P_device*>::iterator device = thread->P_devicel.begin(); 
         device != thread->P_devicel.end(); 
         device++)

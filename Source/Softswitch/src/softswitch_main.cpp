@@ -7,7 +7,7 @@ void softswitch_main()
     PThreadContext* ThreadContext = static_cast<PThreadContext*>(tinselHeapBase());
     
     // Configure rtsBuf 
-    outPin_t* rtsBuf[ThreadContext->rtsBufSize+1];
+    outPin_t* rtsBuf[ThreadContext->rtsBuffSize+1];
     ThreadContext->rtsBuf = rtsBuf;
     
     // Softswitch Initialisation

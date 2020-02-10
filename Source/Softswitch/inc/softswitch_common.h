@@ -140,7 +140,7 @@ typedef struct PThreadContext
     uint32_t            numDevInsts;
     devInst_t*          devInsts;
     const void*         properties;
-    uint32_t            rtsBufSize;      // The size of the RTS buffer
+    uint32_t            rtsBuffSize;      // The size of the RTS buffer
     outPin_t**          rtsBuf;          // Pointer to the RTS buffer array
     uint32_t            rtsStart;        // index of the first pending RTS
     uint32_t            rtsEnd;          // index of the last pending RTS

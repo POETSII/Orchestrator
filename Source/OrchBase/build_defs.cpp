@@ -15,6 +15,7 @@ const string MAKEDIR = "mkdir";
 const string REMOVEDIR = "rm --force --recursive";
 #endif
 
+const unsigned int MAX_RTSBUFFSIZE = 4096;
 const unsigned int MAX_HANDLERS = 1024;
 const unsigned int BYTES_PER_THREAD = 0x1 << (TinselLogBytesPerDRAM - TinselLogThreadsPerDRAM);
 const unsigned int MAX_DEVICES_PER_THREAD = 1024;

@@ -122,6 +122,7 @@
 816(E) : "P_Builder: Cannot open %s for writing: %s"
 817(E) : "Unable to remove directory %s: %s"
 818(E) : "Unable to create directory %s: %s"
+819(W) : "P_Builder: Thread %s on Core %s has more than %s output pins. Limiting rtsBuffSize to %s"
 
 
 901(U) : "%s: %s corrupt ?"
