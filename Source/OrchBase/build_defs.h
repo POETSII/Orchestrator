@@ -11,6 +11,7 @@ extern const std::string MAKEDIR;
 extern const std::string REMOVEDIR;
 
 extern const unsigned int MAX_RTSBUFFSIZE;
+extern const unsigned int MIN_RTSBUFFSIZE;
 extern const unsigned int MAX_HANDLERS;
 extern const unsigned int BYTES_PER_THREAD;
 extern const unsigned int MAX_DEVICES_PER_THREAD;

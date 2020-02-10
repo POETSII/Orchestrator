@@ -1213,11 +1213,11 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     par->Post(819,int2str(thread_num),int2str(coreNum),int2str(MAX_RTSBUFFSIZE),
               int2str(MAX_RTSBUFFSIZE));
   }
-  else if (outputCount < 10)
+  else if (outputCount < MIN_RTSBUFFSIZE)
   {
-    outputCount = 10;
+    outputCount = MIN_RTSBUFFSIZE;
   }
-  vars_cpp << ((outputCount < 10)? 10 : outputCount) << ",";        // rtsBuffSize
+  vars_cpp << outputCount << ",";                                   // rtsBuffSize
   
   vars_cpp << "PNULL,";                                             // rtsBuf
   vars_cpp << "0,";                                                 // rtsStart
