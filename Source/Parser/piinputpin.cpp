@@ -73,13 +73,11 @@ P_pintyp* PIInputPin::elaboratePinType(P_devtyp* device_type)
        {
            pin_type->pPropsD = const_cast<PIDataType*>(properties())->elaborateDataType();
            pin_type->pPropsI = const_cast<PIDataType*>(properties())->elaborateDataDefault();
-           pin_type->PinPropsSize = properties()->size();
        }
        if (numSubObjects(STATE))
        {
            pin_type->pStateD = static_cast<PIDataType*>(subObject(STATE, 0))->elaborateDataType();
            pin_type->pStateI = static_cast<PIDataType*>(subObject(STATE, 0))->elaborateDataDefault();
-           pin_type->PinStateSize = static_cast<PIDataType*>(subObject(STATE,0))->size();
        }
        if (numSubObjects(ONRECEIVE)) pin_type->pHandl = static_cast<PCodeFragment*>(subObject(ONRECEIVE, 0))->elaborateCodeFragment();
        pin_type->pMsg = const_cast<PMessageType*>(msgType())->elaborateMessage();
