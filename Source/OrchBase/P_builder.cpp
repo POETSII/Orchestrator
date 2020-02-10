@@ -1382,7 +1382,14 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
         inPinStateInitialiser << "{";
         
         pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it next_pin = (*device)->par->G.index_n[(*device)->idx].fani.upper_bound(pin_num << PIN_POS | 0xFFFFFFFF >> (32-PIN_POS));
-        for (pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it p_edge = (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS); p_edge != next_pin; p_edge++)
+        // ADR 10 December 2019: A hack here to get the names of edge properties and state arrays the same in initialiser: the
+        // variable definition in a section below creates a name dependent upon a condition in next pin which we won't have
+        // here unless we decrement the iterator, but we want to retain an identical iterator for the generation of
+        // the definition itself. This awkward approach simply creates an identical iterator and uses it as is
+        pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it next_init_pin = next_pin;
+        bool pinHasConnections = (next_pin != (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS)); // pin has connections? 
+        if (pinHasConnections) --next_pin; 
+        for (pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it p_edge = (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS); p_edge != next_init_pin; p_edge++)
         {
           //====================================================================
           // Form the first bit of an initialiser for PInputEdge/inEdge_t array member
@@ -1394,16 +1401,18 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           edgeInitialiser << (*device)->idx << ",";                             // tgt
           edgeInitialiser << p_edge->second.iArc->second.fr_n->first << ",";    // src
           //====================================================================
-          
+	  
           // if the pin has properties,
-          if (p_edge->second.data->pP_pintyp->PinPropsSize)
+          if (pinHasConnections && p_edge->second.data->pP_pintyp->pPropsD)
           {     // set them up in the edge list
             //==================================================================
             // Form some more of the PInputEdge/inEdge_t initialiser
             //==================================================================
-            edgeInitialiser << "&Device_" << (*device)->Name();
-            edgeInitialiser << "_InEdge_" << (p_edge->first >> PIN_POS);
-            edgeInitialiser << "_Properties[";
+
+            edgeInitialiser << "&Thread_" << thread_num;
+            edgeInitialiser << "_Device_" << (*device)->Name();
+            edgeInitialiser << "_Pin_" << next_pin->second.data->pP_pintyp->Name();
+            edgeInitialiser << "_InEdgeProps[";
             edgeInitialiser << (p_edge->first & (0xFFFFFFFF >> (32-PIN_POS)));
             edgeInitialiser << "],";                                            // properties
             //==================================================================
@@ -1435,14 +1444,15 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           }
           
           // if the pin has state,
-          if (p_edge->second.data->pP_pintyp->PinStateSize)
+          if (pinHasConnections && p_edge->second.data->pP_pintyp->pStateD)
           {
             //==================================================================
             // Form the last bit of this PInputEdge/inEdge_t initialiser
             //==================================================================
-            edgeInitialiser << "&Device_" << (*device)->Name(); 
-            edgeInitialiser << "_InEdge_" << (p_edge->first >> PIN_POS); 
-            edgeInitialiser << "_State["; 
+            edgeInitialiser << "&Thread_" << thread_num;
+            edgeInitialiser << "_Device_" << (*device)->Name();
+            edgeInitialiser << "_Pin_" << next_pin->second.data->pP_pintyp->Name();
+            edgeInitialiser << "_InEdgeStates["; 
             edgeInitialiser << (p_edge->first & (0xFFFFFFFF >> (32-PIN_POS))); 
             edgeInitialiser << "]";                                             // state
             edgeInitialiser << "},";
@@ -1477,10 +1487,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
         }
         
         
-        if (next_pin != (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS)) // pin has connections?
+        if (pinHasConnections)
         {
           // create input edge data structures
-          --next_pin;
           
           
           //====================================================================
@@ -1514,7 +1523,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
                  
                  
           // with associated properties if they exist
-          if (next_pin->second.data->pP_pintyp->PinPropsSize)
+          if (next_pin->second.data->pP_pintyp->pPropsD)
           {
             //==================================================================
             // Add the input pin properties array declaration to vars h
@@ -1550,7 +1559,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           
           
           // and associated state (again, if it exists)
-          if (next_pin->second.data->pP_pintyp->PinStateSize)
+          if (next_pin->second.data->pP_pintyp->pStateD)
           {
             vars_h << "extern devtyp_" << devTyp->Name();
             vars_h << "_InPin_" << next_pin->second.data->pP_pintyp->Name();
