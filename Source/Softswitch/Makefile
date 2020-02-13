@@ -87,6 +87,7 @@ vpath libgcc.a $(RV_GCC_LIBS)
 vpath mpi%.h $(MPICHINC)
 vpath opa_%.h $(MPICHINC)
 vpath PMsg_p.hpp $(PCOMMONINC)
+vpath poets_pkt.h $(PCOMMONINC)
 vpath OSFixes.hpp $(PCOMMONINC)
 vpath Supervisor.% $(realpath ../$(DEFAULT_GEN_DIR))
 VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC)
@@ -126,13 +127,10 @@ $(BIN_DIR)/softswitch_code_%.v: $(BIN_DIR)/softswitch_%.elf
 $(BIN_DIR)/softswitch_data_%.v: $(BIN_DIR)/softswitch_%.elf
 	$(RV_OBJCOPY) -O verilog --remove-section=.text --set-section-flags .bss=alloc,load,contents $< $@
 
-softswitch_%.o : softswitch_%.cpp softswitch_common.h softswitch.h poets_msg.h poets_hardware.h tinsel.h $(TINSELINC)/config.h $(SOFTSWITCH_DEPS)
+softswitch_%.o : softswitch_%.cpp softswitch_common.h softswitch.h poets_pkt.h poets_hardware.h tinsel.h $(TINSELINC)/config.h $(SOFTSWITCH_DEPS)
 	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
 
-softswitch.o : softswitch.cpp softswitch.h poets_msg.h poets_hardware.h tinsel.h $(TINSELINC)/config.h $(SOFTSWITCH_DEPS)
-	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
-
-poets_msg.o : poets_msg.cpp poets_msg.h poets_hardware.h $(TINSELINC)/config.h
+softswitch.o : softswitch.cpp softswitch.h poets_pkt.h poets_hardware.h tinsel.h $(TINSELINC)/config.h $(SOFTSWITCH_DEPS)
 	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
 
 io.o : io.c io.h tinsel.h $(TINSELINC)/config.h
@@ -140,7 +138,7 @@ io.o : io.c io.h tinsel.h $(TINSELINC)/config.h
 
 ## the pattern substitution should find all vars_x_y.o created from vars_x_y.cpp
 .SECONDEXPANSION:
-$(BIN_DIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o softswitch.o poets_msg.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link_%.ld entry.o libc.a libgcc.a
+$(BIN_DIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o softswitch.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link_%.ld entry.o libc.a libgcc.a
 	$(RV_LD) $(LDFLAGS) -T link_$(notdir $*).ld -o $@ $(filter-out link_$(notdir $*).ld, $^)
 
 # this convoluted rule (we hope) will establish as a prerequisite for any file

@@ -9,13 +9,6 @@ struct PThreadContext;
 struct POutputPin;
 struct PInputPin;
 
-typedef struct p_message_q
-{
-    P_Msg_t msg;
-    p_message_q* prev;
-    p_message_q* next;
-} P_Msg_Q_t;
-
 typedef uint32_t (*RTS_handler_t)
 (   const void* graphProps,
     void*       device,
@@ -31,27 +24,27 @@ typedef uint32_t (*OnCtl_handler_t)
 (   const void* graphProps,
     void*       device,
     uint8_t     opcode,
-    const void* msg
+    const void* pkt
 );
 
 typedef uint32_t (*Recv_handler_t)
 (   const void* graphProps,
     void*       device,
     void*       edge,
-    const void* msg
+    const void* pkt
 );
 
 typedef uint32_t (*Send_handler_t)
 (   const void* graphProps,
     void*       device,
-    void*       msg
+    void*       pkt
 );
 
 typedef struct PInputType
 {
     Recv_handler_t Recv_handler;        // Function pointer to the input type’s receive handler
-    uint32_t       sz_msg;              // Size in bytes of the message
-    uint32_t       msgType;             // Index of the message type
+    uint32_t       sz_pkt;              // Size in bytes of the packet
+    uint32_t       pktType;             // Index of the packet type
     uint32_t       sz_props;            // Size of the edge's properties
     uint32_t       sz_state;            // Size of the edge's state
 } in_pintyp_t;
@@ -59,8 +52,8 @@ typedef struct PInputType
 typedef struct POutputType
 {
     Send_handler_t Send_Handler;        // Function pointer to the input type’s send handler
-    uint32_t       sz_msg;              // Size in bytes of the message
-    uint32_t       msgType;             // Index of the message type
+    uint32_t       sz_pkt;              // Size in bytes of the packet
+    uint32_t       pktType;             // Index of the packet type
 } out_pintyp_t;
 
 typedef struct PDeviceType
@@ -150,9 +143,9 @@ typedef struct PThreadContext
     // Instrumentation
     uint32_t            lastCycles;         // cached last cycle count
     uint32_t            pendCycles;         // Is there an instrumentation update pending? 2=yes, 1=claimed, 0=no
-    uint32_t            txCount;            // Number of actual messages sent
-    uint32_t            superCount;         // Number of supervisor messages sent
-    uint32_t            rxCount;            // Number of actual messages received
+    uint32_t            txCount;            // Number of actual packets sent
+    uint32_t            superCount;         // Number of supervisor packets sent
+    uint32_t            rxCount;            // Number of actual packets received
     uint32_t            txHandlerCount;     // Number of On Send handler called
     uint32_t            rxHandlerCount;     // Number of On Receive handler called
     uint32_t            idleCount;          // number of times  Idle branch

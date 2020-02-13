@@ -13,8 +13,8 @@ void softswitch_main()
     // Softswitch Initialisation
     softswitch_init(ThreadContext);
     
-    // send a message to the local supervisor saying we are ready;
-    // then wait for the __init__ message to return by interrogating tinselCanRecv(). 
+    // send a packet to the local supervisor saying we are ready;
+    // then wait for the __init__ packet to return by interrogating tinselCanRecv(). 
     softswitch_barrier(ThreadContext);
     
     // Endless main loop, that is until thread context says to stop.

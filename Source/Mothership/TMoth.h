@@ -10,18 +10,18 @@
 #include "HostLink.h"
 #include "pthread.h"
 #include "TaskInfo.h"
-#include "poets_msg.h"
+#include "poets_pkt.h"
 #include "P_addr.h"
 
 //==============================================================================
-struct TM_LogMessage
+struct TM_LogPacket
 {   
-    unsigned            logMsgCnt;
-    unsigned            logMsgMax;    
-    P_Log_Msg_Pyld_t    logMsgBuf[P_MAX_LOGMSG_FRAG];
+    unsigned            logPktCnt;
+    unsigned            logPktMax;    
+    P_Log_Pkt_Pyld_t    logPktBuf[P_MAX_LOGPKT_FRAG];
 };
 
-typedef std::map<uint32_t, TM_LogMessage*> TM_LogMsgMap_t;
+typedef std::map<uint32_t, TM_LogPacket*> TM_LogPktMap_t;
 
 
 
@@ -53,7 +53,7 @@ static inline unsigned GetHWAddr(P_addr& VAddr) {
 			| (VAddr.A_thread << P_THREAD_HWOS);
 												};
 // static void*          LoadBoard(void*); // threaded version of bootloader
-static void*          Twig(void*); // thread to handle Tinsel messages
+static void*          Twig(void*); // thread to handle Tinsel packets
 
 private:
 unsigned              Boot(string);
@@ -74,30 +74,30 @@ unsigned              OnName(PMsg_p *,unsigned);
 unsigned              OnSuper(PMsg_p *,unsigned);
 unsigned              OnSyst(PMsg_p *,unsigned);
 unsigned              OnTinsel(PMsg_p*, unsigned);
-unsigned              OnTinselOut(P_Msg_t *);
+unsigned              OnTinselOut(P_Pkt_t *);
 void                  StopTwig();
 unsigned              SystHW(const vector<string>&);
 unsigned              SystKill();
 unsigned              SystShow();
 unsigned              SystTopo();
 
-// Instrumentation messages
+// Instrumentation packets
 TM_InstrMap_t         InstrMap;
 void                  InstrumentationEnd(void);
-unsigned              InstrumentationHandler(P_Msg_t* msg);
+unsigned              InstrumentationHandler(P_Pkt_t* pkt);
 
 // Log Handler methods
-TM_LogMsgMap_t        LogMsgMap;
+TM_LogPktMap_t        LogPktMap;
 void                  LogHandlerEnd(void);
-unsigned              LogHandler(P_Msg_t*);
-unsigned              TrivialLogHandler(TM_LogMessage*, char*);
+unsigned              LogHandler(P_Pkt_t*);
+unsigned              TrivialLogHandler(TM_LogPacket*, char*);
 
 void*                 SuperHandle; // dynamically loadable supervisor
 int                   (*SupervisorCall)(PMsg_p*, PMsg_p*); // entry point for the Supervisor
 
 public:
 unsigned              PAddress; // address of this mothership in POETS-space
-bool                  ForwardMsgs;
+bool                  ForwardPkts;
  
 typedef unsigned (TMoth::*pMeth)(PMsg_p *,unsigned);
 typedef map<unsigned,pMeth> FnMap_t;

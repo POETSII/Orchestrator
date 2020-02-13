@@ -12,20 +12,20 @@ extern "C"
 int SupervisorCall(PMsg_p* In, PMsg_p* Out)
 {
     int sentErr = 0;
-    char outMsgBuf[P_MSG_MAX_SIZE];
+    char outPktBuf[P_PKT_MAX_SIZE];
 
-    vector<P_Super_Msg_t> msgs; // messages are packed in Tinsel message format
-    In->Get(0, msgs);      // We assume they're directly placed in the message
-    WALKVECTOR(P_Super_Msg_t, msgs, msg) // and they're sent blindly
+    vector<P_Super_Pkt_t> pkts; // packets are packed in Tinsel packet format
+    In->Get(0, pkts);      // We assume they're directly placed in the message
+    WALKVECTOR(P_Super_Pkt_t, pkts, pkt) // and they're sent blindly
     {
-        uint8_t pin = (((msg->msg.header.pinAddr) & P_HD_TGTPIN_MASK)
+        uint8_t pin = (((pkt->pkt.header.pinAddr) & P_HD_TGTPIN_MASK)
                         >> P_HD_TGTPIN_SHIFT);
         if (pin >= Supervisor::inputs.size())
         {
             return -1;      // invalid pin
         }
         supInputPin* dest = Supervisor::inputs[pin];
-        sentErr += dest->OnReceive(dest->properties, dest->state, &(msg->msg), Out, outMsgBuf);
+        sentErr += dest->OnReceive(dest->properties, dest->state, &(pkt->pkt), Out, outPktBuf);
     }
     return sentErr;
 }
