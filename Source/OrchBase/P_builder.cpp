@@ -9,7 +9,7 @@
 #include "P_device.h"
 #include "P_pintyp.h"
 #include "P_pin.h"
-#include "poets_pkt.h" // TEMPORARY? include
+#include "poets_pkt.h"
 #include <sstream>
 #include <algorithm>
 #include <set>
