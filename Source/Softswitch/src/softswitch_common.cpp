@@ -12,7 +12,7 @@ void softswitch_init(ThreadCtxt_t* ThreadContext)
         tinselAlloc(tinselSlot(i)); // allocate receive slots.
     }
     
-#ifdef SOFTSWITCH_INSTRUMENTATION
+#ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION
     // Initialise instrumentation
     ThreadContext->lastCycles = 0;
     ThreadContext->pendCycles = 0;
@@ -138,7 +138,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
     volatile void *sendBuffer = tinselSlot(P_PKT_SLOT);     // Send slot
     volatile void *superBuffer = tinselSlot(P_SUPPKT_SLOT); // Supervisor send slot
 
-#ifdef SOFTSWITCH_INSTRUMENTATION    
+#ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION    
     uint32_t cycles = tinselCycleCount();		// cycle counter is per-core
     ThreadContext->lastCycles = cycles;         // save initial cycle count
  #if TinselEnablePerfCount == true   
@@ -152,7 +152,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
     
     while (!ThreadContext->ctlEnd)
     {
-    #ifdef SOFTSWITCH_INSTRUMENTATION
+    #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION
         cycles = tinselCycleCount();
         if((cycles - ThreadContext->lastCycles) > P_INSTR_INTERVAL)
         {   // Trigger a packet to supervisor.
@@ -168,7 +168,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
  * instrumentation to be prioritised over that), however when I attempted this,
  * the examples broke so more work is needed to implement.
  */     
-#if defined SOFTSWITCH_INSTRUMENTATION \
+#if !defined DISABLE_SOFTSWITCH_INSTRUMENTATION \
       && defined SOFTSWITCH_PRIORITISE_INSTRUMENTATION
 // Prioritise Instrumentation: Send Instrumentation, RX, TX     
         if(ThreadContext->pendCycles && tinselCanSend())
@@ -190,7 +190,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
         {   // Something to receive
             receiveInline(ThreadContext, recvBuffer);
         }
-    #ifdef SOFTSWITCH_INSTRUMENTATION        
+    #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION        
         else if(ThreadContext->pendCycles && tinselCanSend())
         {   // Time to send Instrumentation
             softswitch_instrumentation(ThreadContext, superBuffer);
@@ -514,7 +514,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
             case P_CNC_STOP:    // Stop packet ends the simulation
                 ThreadContext->ctlEnd = 1;
                 break;
-#ifdef SOFTSWITCH_INSTRUMENTATION
+#ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION
             case P_CNC_INSTR:   // Request Instrumentation from the Softswitch
                 ThreadContext->pendCycles = 1;
                 break;
