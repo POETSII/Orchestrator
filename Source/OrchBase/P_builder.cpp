@@ -1187,7 +1187,24 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   
   
   
-  // Work out the required size for the rtsBuffSize.
+  /* Work out the required size for rtsBuffSize: The size of the RTS buffer is
+   * dependant on the number of connected output pins hosted on the Softswitch.
+   * The size is set to 1 + <number of connected pins>, as long as this is less
+   * than MAX_RTSBUFFSIZE, so that each connected pin can have a pending send. 
+   *
+   * The additional slot is required to ensure that the crude, simple wrapping 
+   * mechanism for the circular buffer does not set rtsEnd to be the same as 
+   * rtsStart when adding to the buffer. If this occurs, softswitch_IsRTSReady()
+   * will always return false (as it simply checks that rtsStart != rtsEnd) and
+   * no further application-generated packets will be sent by the softswitch (as
+   * softswitch_onRTS will only alter rtsEnd if it adds an entry to the buffer, 
+   * which it wont do in this case as all pins will already be marked as send 
+   * pending).
+   * 
+   * If the buffer size is constrained to MAX_RTSBUFFSIZE, a warning is
+   * generated - if this occurs frequently, more graceful handling of rtsBuf
+   * overflowing may be required.
+   */
   uint32_t outputCount = 1;     // Yes, this is intentionally 1 to cope with wrapping.
   for (list<P_device*>::iterator device = thread->P_devicel.begin(); 
         device != thread->P_devicel.end(); device++)
