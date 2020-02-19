@@ -83,6 +83,7 @@ unsigned              SystTopo();
 
 // Instrumentation packets
 TM_InstrMap_t         InstrMap;
+void                  InstrumentationInit(void);
 void                  InstrumentationEnd(void);
 unsigned              InstrumentationHandler(P_Pkt_t* pkt);
 

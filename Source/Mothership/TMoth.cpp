@@ -45,6 +45,8 @@ CommonBase(argc,argv,d,string(__FILE__)), HostLink()
     
     twig_running = false;
     ForwardPkts = false; // don't forward tinsel traffic yet
+    
+    InstrumentationInit();          // Inisitalise Instrumentation dir
 
     MPISpinner();                          // Spin on *all* messages; exit on DIE
     DebugPrint("Exiting Mothership. Closedown flags: AcceptConns: %s, "
@@ -1029,10 +1031,16 @@ void TMoth::StopTwig()
 //------------------------------------------------------------------------------
 
 // Instrumentation initialisation
-//void TMoth::InstrumentationInit(void)
-//{
-//    
-//}
+void TMoth::InstrumentationInit(void)
+{
+    // TODO: during the Mothership re-write, this should be parameterised.
+    
+    // Create ~/.orchestrator/instrumentation/ if it does not exist
+    system("mkdir --parents ~/.orchestrator/instrumentation");
+    
+    // Remove any existing instrumentation files
+    system("rm -rf ~/.orchestrator/instrumentation/instrumentation_thread*.csv");
+}
 
 // Gracefully tear down the Instrumentation map
 void TMoth::InstrumentationEnd(void)
@@ -1052,9 +1060,11 @@ unsigned TMoth::InstrumentationHandler(P_Pkt_t* pkt)
     P_Instr_Pkt_Pyld_t* instrPkt = reinterpret_cast<P_Instr_Pkt_Pyld_t*>(pkt->payload);
     
     std::ofstream tFile;        // Thread instrumentation file
+    
     // Set Filename
+    const char* home = getenv("HOME");
     std::ostringstream fName;
-    fName << "instrumentation_thread_" << srcAddr << ".csv";
+    fName << home << "/.orchestrator/instrumentation/instrumentation_thread_" << srcAddr << ".csv";
     
     TM_InstrMap_t::iterator MSearch = InstrMap.find(srcAddr);
     if(MSearch == InstrMap.end())
@@ -1068,7 +1078,7 @@ unsigned TMoth::InstrumentationHandler(P_Pkt_t* pkt)
         /* This falls over for large plates, so we open every time.
         // Set Filename
         std::ostringstream fName;
-        fName << "instrumentation_thread_" << srcAddr << ".csv";
+        fName << "~/.orchestrator/instrumentation/instrumentation_thread_" << srcAddr << ".csv";
         
         // Open file
         instr->tFile.open(fName.str(), std::ofstream::out);
