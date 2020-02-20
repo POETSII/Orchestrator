@@ -81,7 +81,7 @@ NAME |DIST |-    |-    | (0:string)Task name
 NAME |RECL |-    |-    | (0:string)Task name
 NAME |TDIR |-    |-    | (0:string)Task name
                          (1:string)File directory
-SUPR |-    |-    |-    | (0:vector<P_Sup_Msg_t>)Args
+SUPR |-    |-    |-    | (0:vector<P_Msg_t>)Args
 SYST |HARD |-    |-    | (0:vector<string>)Args
 SYST |KILL |-    |-    | (None)
 SYST |SHOW |-    |-    | (None)
