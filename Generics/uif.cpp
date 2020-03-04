@@ -44,7 +44,7 @@ duple table[6][t6+1] =
  {{0, 1},{X, X},{X, X},{X, X},{X, X},{X, X},{X, X}},  // 4
  {{0, 4},{X, X},{X, X},{X, X},{X, X},{X, X},{X, X}}}; // 5
 
-Lex::Sytype cOp;
+Lex::Sytype cOp = Lex::S_0;
 Node * pBody;
 Node * pVari;
 Node * pName;
@@ -152,12 +152,12 @@ duple table[10][t12+1] =
 
 
 for(int state=0;;) {                   // And around and around we go ...
-  Node * pBody;                        // Local declares
-  Node * pLabl;
-  Node * pVari;
-  Node * pValu;
+  Node * pName = 0;
+  Node * pBody = 0;                    // Local declares - keep compiler happy
+  Node * pLabl = 0;
+  Node * pVari = 0;
+  Node * pValu = 0;
   Node * tmp;
-  Node * pName;
   Lx.GetTok(Td);                       // Get the next token...
   if (Lx.IsError(Td)) break;           // Lexer reports a problem?
   if (state == 0) {                    // Pre-transition (entry) actions
@@ -200,7 +200,8 @@ for(int state=0;;) {                   // And around and around we go ...
               pSect->Add(pName = pNH->new_Node(Td.c,No_name));
               pQal(pName);                                                break;
     case 2  : // Create a blank section header
-              UIF_root->Add(pSect = pNH->new_Node(Td.l,No_sect));         break;
+              UIF_root->Add(pSect = pNH->new_Node(Td.l,No_sect));
+              pSect->Add(pName = pNH->new_Node(Td.c, No_name));           break;
     case 3  : // Pull in the first qualified name field - assume it's the
               // *variable* field by default
               Lx.push_back();
@@ -227,7 +228,8 @@ for(int state=0;;) {                   // And around and around we go ...
                                                                           break;
     case 9  : // *Now* we know which field is which; swap variable and value
               tmp = pVari; pVari = pLabl; pLabl = tmp;
-              pVari->Type(No_vari); pLabl->Type(No_labl);                 break;
+              pVari->Type(No_vari);
+              pLabl->Type(No_labl);                                       break;
     case 10 : // Start a new section; remove unnecessary record node
               PruneRec(); SCB(false); pSect->Sub(this); pRecd = 0;        break;
     default :                                                             break;
@@ -446,7 +448,8 @@ void UIF::CmtProc(Node * pS, Node * pP)
 {
 if (Td.t == Lex::Sy_cmnt) {
   pS->str = Td.s;
-  pP->pos = Td.c - (int)(pS->str).size();   // Adjust pointer to hold comment start
+                                       // Adjust pointer to hold comment start
+  pP->pos = Td.c - (int)(pS->str).size();
   Lx.SkipTo('\n');                     // Chuck away superfluous EOR
 } else {
   pS->str = Lx.SkipTo('\n');
@@ -682,12 +685,13 @@ duple table[5][t7+1] =
  {{X, X},{X, X},{R, 0},{X, X},{0, 0},{4, 3},{X, X},{X, X}},  // 3
  {{X, X},{X, X},{R, 0},{X, X},{0, 0},{X, X},{X, X},{X, X}}}; // 4
 
+Node * pLabl = 0;                      // Keep the compiler happy
+Node * pVari = 0;
+Node * pExpr = 0;
+Node * pAttr;
+Node * tmp;
+
 for(int state=0;;) {
-  Node * pAttr;
-  Node * pLabl;
-  Node * pVari;
-  Node * pExpr;
-  Node * tmp;
   Lx.GetTok(Td);                       // Get the next token...
   if (state == 0) {                    // Pre-transition (entry) actions
       in->Add(pAttr = pNH->new_Node(in->pos,No_attr));
@@ -846,7 +850,7 @@ Lex::tokdat & UIF::Query(bool * pe)
 if (pe!=0) *pe = Lx.IsError(Td);
 return Td;
 }
-             
+
 //------------------------------------------------------------------------------
 
 void UIF::RCB()
@@ -940,11 +944,10 @@ switch (t) {
                    // Find the attribute list (if it exists)
                    WALKVECTOR(Node *,p->leaf,i) {
                      if ((*i)->Type()==No_attr) Save0(sf,(*i),sv);
-                     if (i!=p->leaf.begin()) {
+                     if (i!=p->leaf.begin())
                        if (i!=(p->leaf.end()-1)) dprintf(sv,"; ");
-                       else dprintf(sv,"}");
-                     }
-                   }
+                   } // WALKVECTOR
+                   dprintf(sv,"}");
                  }
                  // Any comment ?
                  if (p->str.size()!=0) {
@@ -1028,7 +1031,9 @@ switch (t) {
                  break;
 // Name:
   case No_name :  //dprintf(sv,"%s%s",Lex::Sytype_str[p->qop],p->str.c_str());
+                  if (p->qop==Lex::Sy_dqut) dprintf(sv,"\"");
                   dprintf(sv,"%s",p->str.c_str());
+                  if (p->qop==Lex::Sy_dqut) dprintf(sv,"\"");
                   if (p->leaf.size()!=0) dprintf(sv,"(");
                   WALKVECTOR(Node *,p->leaf,i) {
                     Save0(sf,(*i),sv);
@@ -1448,8 +1453,7 @@ p->P()=0;                              // Disconnect parent pointer
 void UIF::Node::Dump(FILE * df,string s0)
 {
 fprintf(df,"\n---\n%sDumping node %p (par %p) type |%s|\n",
-           s0.c_str(), static_cast<void*>(this),
-		   static_cast<void*>(par), Notype_str[typ]);
+        s0.c_str(),(void*)this,(void*)par,Notype_str[typ]);
 fprintf(df,"%sOpcode |%s|\n",s0.c_str(),Lex::Sytype_str[qop]);
 fprintf(df,"%sString |%s|\n",s0.c_str(),str.c_str());
 fprintf(df,"%sPos %d\n",s0.c_str(),pos);
@@ -1466,8 +1470,7 @@ void UIF::Node::Dumpt(FILE * fp)
 // Tiny inline Node dump
 {
 fprintf(fp,"%6p(%2d) %s:%s[%s]\n",
-        static_cast<void*>(this),pos,Notype_str[typ],
-		str.c_str(),Lex::Sytype_str[qop]);
+        (void*)this,pos,Notype_str[typ],str.c_str(),Lex::Sytype_str[qop]);
 }
 
 //------------------------------------------------------------------------------
@@ -1499,7 +1502,7 @@ switch (typ) {
 
 //------------------------------------------------------------------------------
 
-bool UIF::Node::IsEx()                                         
+bool UIF::Node::IsEx()
 {
 return typ == No_e_ex;
 }
@@ -1551,7 +1554,7 @@ return par;
 }
 
 //------------------------------------------------------------------------------
- 
+
 UIF::Node * & UIF::Node::R()
 // As above; node[2] is the right child.
 {
@@ -1646,4 +1649,3 @@ return pN;
 }
 
 //==============================================================================
-
