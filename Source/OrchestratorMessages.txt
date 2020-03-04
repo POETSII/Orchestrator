@@ -97,6 +97,8 @@
 533(E) : "Bad symbol %s in the Supervisor library on Mothership %s: check XML definition. Error was %s"
 534(E) : "Supervisor library could not be successfully unloaded on Mothership %s. Future attempts to run tasks may have strange I/O behaviour"
 540(I) : "Application Supervisor being started on Mothership %s"
+541(E) : "Unable to create instrumentation file %s. Error: %s"
+542(E) : "Unable to open instrumentation file %s. Error: %s"
 
 600(I) : "%s"
 601(I) : "Core %s: (part %s): %s"
@@ -120,6 +122,7 @@
 816(E) : "P_Builder: Cannot open %s for writing: %s"
 817(E) : "Unable to remove directory %s: %s"
 818(E) : "Unable to create directory %s: %s"
+819(W) : "P_Builder: Thread %s on Core %s has more than %s output pins. Limiting rtsBuffSize to %s"
 
 
 901(U) : "%s: %s corrupt ?"

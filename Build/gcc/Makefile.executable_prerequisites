@@ -237,7 +237,6 @@ INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/TaskInfo.cpp \
                      $(SOURCE_DIR)/Mothership/TMoth.cpp \
-                     $(SOURCE_DIR)/Softswitch/src/poets_msg.cpp \
                      $(GENERICS_DIR)/dumpchan.cpp \
                      $(GENERICS_DIR)/rand.cpp \
                      $(SOURCE_DIR)/OrchBase/Bin.cpp \

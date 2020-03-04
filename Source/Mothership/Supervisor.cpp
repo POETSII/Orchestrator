@@ -11,29 +11,32 @@ extern "C"
 */
 int SupervisorCall(PMsg_p* In, PMsg_p* Out)
 {
-  int numMsgs = 0;
-  int sentErr = 0;
-  char outMsgBuf[P_MSG_MAX_SIZE];
-  P_Sup_Msg_t* devMsg = In->Get<P_Sup_Msg_t>(0, numMsgs); // decode the message
-  if (!devMsg) return -1;                                 // bad message
-  for (int msg=0; msg < numMsgs; msg++)
-  {
-      // run as necessary any OnReceive handler
-      if (devMsg[msg].header.destPin >= Supervisor::inputs.size()) return -1;  // invalid pin
-      supInputPin* dest = Supervisor::inputs[devMsg[msg].header.destPin];
-      // more thought needed about accumulation of error messages vs. send indications
-      sentErr += dest->OnReceive(dest->properties, dest->state, &devMsg[msg], Out, outMsgBuf);
-  }
-  return sentErr;
+    int sentErr = 0;
+    char outPktBuf[P_PKT_MAX_SIZE];
+
+    vector<P_Super_Pkt_t> pkts; // packets are packed in Tinsel packet format
+    In->Get(0, pkts);      // We assume they're directly placed in the message
+    WALKVECTOR(P_Super_Pkt_t, pkts, pkt) // and they're sent blindly
+    {
+        uint8_t pin = (((pkt->pkt.header.pinAddr) & P_HD_TGTPIN_MASK)
+                        >> P_HD_TGTPIN_SHIFT);
+        if (pin >= Supervisor::inputs.size())
+        {
+            return -1;      // invalid pin
+        }
+        supInputPin* dest = Supervisor::inputs[pin];
+        sentErr += dest->OnReceive(dest->properties, dest->state, &(pkt->pkt), Out, outPktBuf);
+    }
+    return sentErr;
 }
 
 int SupervisorExit()
 {
-  for (vector<supInputPin*>::iterator ipin = Supervisor::inputs.begin(); ipin != Supervisor::inputs.end(); ipin++)
+    for (vector<supInputPin*>::iterator ipin = Supervisor::inputs.begin(); ipin != Supervisor::inputs.end(); ipin++)
       delete *ipin;
-  for (vector<supOutputPin*>::iterator opin = Supervisor::outputs.begin(); opin != Supervisor::outputs.end(); opin++)
+    for (vector<supOutputPin*>::iterator opin = Supervisor::outputs.begin(); opin != Supervisor::outputs.end(); opin++)
       delete *opin;
-  return 0;
+    return 0;
 } 
 }
 
@@ -42,17 +45,17 @@ extern "C"
 {
 int SupervisorCall(PMsg_p* In, PMsg_p* Out)
 {
-  return -1;
+    return -1;
 }
 
 int SupervisorExit()
 {
-  return 0;
+    return 0;
 }
 
 int SupervisorInit()
 {
-  return 0;
+    return 0;
 }
 }
 
@@ -62,10 +65,10 @@ supInputPin::supInputPin(Sup_OnReceive_t recvHandler,
                          Sup_PinTeardown_t pinTeardown, 
                          const void* props, void* st)
 {
-      OnReceive = recvHandler;
-      PinTeardown = pinTeardown;
-      properties = props;
-      state = st;
+    OnReceive = recvHandler;
+    PinTeardown = pinTeardown;
+    properties = props;
+    state = st;
 }
 
 supInputPin::~supInputPin()
@@ -77,7 +80,7 @@ supInputPin::~supInputPin()
 
 supOutputPin::supOutputPin(Sup_OnSend_t sendHandler)
 {
-      OnSend = sendHandler;
+    OnSend = sendHandler;
 }
 
 supOutputPin::~supOutputPin()
