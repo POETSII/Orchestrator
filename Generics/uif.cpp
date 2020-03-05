@@ -44,7 +44,7 @@ duple table[6][t6+1] =
  {{0, 1},{X, X},{X, X},{X, X},{X, X},{X, X},{X, X}},  // 4
  {{0, 4},{X, X},{X, X},{X, X},{X, X},{X, X},{X, X}}}; // 5
 
-Lex::Sytype cOp = Lex::S_0;
+Lex::Sytype cOp = Lex::S_0;            // Keep the compiler happy
 Node * pBody;
 Node * pVari;
 Node * pName;
@@ -60,8 +60,8 @@ pRecd->Add(pNH->new_Node(0,No_body));
 
 for(int state=0;;) {
   Lx.GetTok(Td);                       // Get the next token...
-  if (state == 0) {                    // Pre-transition (entry) actions
-      cOp = Lex::S_00;                 // Null current argument sign
+  switch (state) {                     // Pre-transition (entry) actions
+    case 0 : cOp = Lex::S_00; break;   // Null current argument sign
   }
                                        // No exceptional cases (EOF in table)
   if (Lx.IsError(Td)) problem = true;
@@ -150,27 +150,27 @@ duple table[10][t12+1] =
  {{X, X},{X, X},{X, X},{X, X},{X, X},{X, X},{9, 0},{X, X},{X, X},{X, X},{X, X},{X, X},{X, X}},  // 8
  {{X, X},{X, X},{X, X},{X, X},{X, X},{X, X},{X, X},{X, X},{0, 0},{0, 8},{X, X},{X, X},{R, 0}}}; // 9
 
+Node * pName = 0;
+Node * pBody = 0;                      // Local declares - keep compiler happy
+Node * pLabl = 0;
+Node * pVari = 0;
+Node * pValu = 0;
+Node * tmp;
 
 for(int state=0;;) {                   // And around and around we go ...
-  Node * pName = 0;
-  Node * pBody = 0;                    // Local declares - keep compiler happy
-  Node * pLabl = 0;
-  Node * pVari = 0;
-  Node * pValu = 0;
-  Node * tmp;
   Lx.GetTok(Td);                       // Get the next token...
   if (Lx.IsError(Td)) break;           // Lexer reports a problem?
-  if (state == 0) {                    // Pre-transition (entry) actions
-      PruneRec();                      // Delete unnecessary nodes
-      RCB();
-      pSect->Add(pRecd = pNH->new_Node(Td.l,No_recd));
-      pRecd->Add(pBody = pNH->new_Node(Td.c,No_body));
-      pBody->Add(pLabl = pNH->new_Node(Td.c,No_labl));
-      pBody->Add(pVari = pNH->new_Node(Td.c,No_vari));
-      pBody->Add(pValu = pNH->new_Node(Td.c,No_valu));
-  }
-  else if (state == 9) {
-      SCB(true);
+  switch (state) {                     // Pre-transition (entry) actions
+    case 0 : PruneRec();               // Delete unnecessary nodes
+             RCB();
+             pSect->Add(pRecd = pNH->new_Node(Td.l,No_recd));
+             pRecd->Add(pBody = pNH->new_Node(Td.c,No_body));
+             pBody->Add(pLabl = pNH->new_Node(Td.c,No_labl));
+             pBody->Add(pVari = pNH->new_Node(Td.c,No_vari));
+             pBody->Add(pValu = pNH->new_Node(Td.c,No_valu));
+             break;
+    case 9 : SCB(true);
+             break;
   }
                                        // No exceptional cases (EOF in table)
   switch (Td.t) {                      // Map to array index
@@ -199,9 +199,9 @@ for(int state=0;;) {                   // And around and around we go ...
               UIF_root->Add(pSect = pNH->new_Node(Td.l,No_sect,s_));
               pSect->Add(pName = pNH->new_Node(Td.c,No_name));
               pQal(pName);                                                break;
-    case 2  : // Create a blank section header
+    case 2  : // Create a blank section header. Need the name to hold a comment
               UIF_root->Add(pSect = pNH->new_Node(Td.l,No_sect));
-              pSect->Add(pName = pNH->new_Node(Td.c, No_name));           break;
+              pSect->Add(pName = pNH->new_Node(Td.c,No_name));            break;
     case 3  : // Pull in the first qualified name field - assume it's the
               // *variable* field by default
               Lx.push_back();
@@ -594,7 +594,7 @@ for(int state=0;;) {
     case t4 : No_x = No_XXXX;  break;
     case t5 : No_x = No_XXXX;  break;
     case t6 : No_x = No_XXXX;  break;
-    default : No_x = No_XXXX;  break;
+    default : No_x = No_XXXX;  break;  // Keeping GCC happy
   }
   next = table[state][toktyp];
   switch (next.ac) {
@@ -693,11 +693,12 @@ Node * tmp;
 
 for(int state=0;;) {
   Lx.GetTok(Td);                       // Get the next token...
-  if (state == 0) {                    // Pre-transition (entry) actions
-      in->Add(pAttr = pNH->new_Node(in->pos,No_attr));
-      pAttr->Add(pLabl = pNH->new_Node(Td.c,No_labl));
-      pAttr->Add(pVari = pNH->new_Node(Td.c,No_vari));
-      pAttr->Add(pExpr = pNH->new_Node(Td.c,No_expr));
+  switch (state) {                     // Pre-transition (entry) actions
+    case 0 : in->Add(pAttr = pNH->new_Node(in->pos,No_attr));
+             pAttr->Add(pLabl = pNH->new_Node(Td.c,No_labl));
+             pAttr->Add(pVari = pNH->new_Node(Td.c,No_vari));
+             pAttr->Add(pExpr = pNH->new_Node(Td.c,No_expr));
+             break;
   }
   if (Td.t == Lex::Sy_EOF) return;     // Exceptional case
   if (Lx.IsError(Td)) problem = true;
