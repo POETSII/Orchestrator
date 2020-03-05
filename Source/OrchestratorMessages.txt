@@ -99,6 +99,8 @@
 540(I) : "Application Supervisor being started on Mothership %s"
 541(E) : "Unable to create instrumentation file %s. Error: %s"
 542(E) : "Unable to open instrumentation file %s. Error: %s"
+543(W) : "While initialising instrumentation, the system command '%s' ran unsuccessfully. Instrumentation data may not be recorded correctly."
+544(W) : "While initialising instrumentation, the system command '%s' ran unsuccessfully with message '%s'. Instrumentation data may not be recorded correctly."
 
 600(I) : "%s"
 601(I) : "Core %s: (part %s): %s"

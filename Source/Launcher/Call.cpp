@@ -16,7 +16,7 @@
  * - stderr: string populated with the contents of the standard error, or other
  *   connection errors.
  *
- * Returns the exit code of the called process. */
+ * Returns the exit code of the called process (or -1, and populates errno). */
 int Call::call(std::vector<std::string> command, std::string* stdout,
                std::string* stderr)
 {
@@ -26,8 +26,8 @@ int Call::call(std::vector<std::string> command, std::string* stdout,
     /* Construct some pipes for reading stdout and stderr. */
     int stdoutPipe[2];
     int stderrPipe[2];
-    pipe(stdoutPipe);
-    pipe(stderrPipe);
+    if (pipe(stdoutPipe) == 0) return -1;
+    if (pipe(stderrPipe) == 0) return -1;
 
     /* They should not block. */
     fcntl(stdoutPipe[0], F_SETFL, O_NONBLOCK);

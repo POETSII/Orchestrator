@@ -338,7 +338,9 @@ bool HardwareFileReader::d3_get_validate_default_types(
             itemType = "board";
             arrayIndex = board;
         }
-        else if (variable == "mailbox_type")
+        else  /* Must be mailbox_type, as this is the only possible field name
+               * remaining (we have already validated against the validFields
+               * map). */
         {
             itemType = "mailbox";
             arrayIndex = mailbox;

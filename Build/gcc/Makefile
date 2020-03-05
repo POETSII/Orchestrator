@@ -88,12 +88,16 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
 # All flags to be used in compilation. We're not complying with C++98 yet due
 # to the hostlink and some other minor changes, though nobody has studied this
 # comprehensively.
+#
 # Trivial log handler is defined for now - we need to think about this more.
 CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
-           -std=c++11 -Wall -fPIC -pthread -pedantic -DTRIVIAL_LOG_HANDLER
+           -std=c++11 -Wall -fPIC -pthread -pedantic -O3 -DTRIVIAL_LOG_HANDLER
+
+# Debugging!
+DEBUGFLAGS = -g3 -Og
 
 # Debug target logic.
-debug: CXXFLAGS += -g3 -DORCHESTRATOR_DEBUG=1
+debug: CXXFLAGS += $(DEBUGFLAGS) -DORCHESTRATOR_DEBUG=1
 debug: all
 
 # Handy aliases for building executables, scripts, and libraries. Order doesn't
@@ -128,7 +132,7 @@ include Makefile.executable_prerequisites
 include Makefile.test_prerequisites
 TEST_SCRIPT_BASENAME = run-tests.sh
 TEST_SCRIPT = $(TEST_EXECUTABLE_DIR)/$(TEST_SCRIPT_BASENAME)
-tests: CXXFLAGS += -g3
+tests: CXXFLAGS += $(DEBUGFLAGS)
 tests: $(ALL_TESTS) $(TEST_SCRIPT)
 
 # Linking targets (to generate executables). See
