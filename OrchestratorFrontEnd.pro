@@ -188,7 +188,7 @@ HEADERS += \
     ./Source/Common/DumpUtils.h \
     ./Source/Common/Environment.h \
     ./Source/Common/OrchestratorException.h \
-    ./Source/Common/OSFixes.hpp \
+    ./Generics/OSFixes.hpp \
     ./Source/Common/P_frame.h \
     ./Source/Common/Pglobals.h \
     ./Source/Common/PMsg_p.hpp \

@@ -88,7 +88,7 @@ vpath mpi%.h $(MPICHINC)
 vpath opa_%.h $(MPICHINC)
 vpath PMsg_p.hpp $(PCOMMONINC)
 vpath poets_pkt.h $(PCOMMONINC)
-vpath OSFixes.hpp $(PCOMMONINC)
+vpath OSFixes.hpp $(GENERICSINC)
 vpath Supervisor.% $(realpath ../$(DEFAULT_GEN_DIR))
 VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC)
 
