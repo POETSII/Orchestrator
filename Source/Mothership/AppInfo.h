@@ -37,6 +37,8 @@ enum AppState{UNDERDEFINED,  /* We're still receiving DIST messages. */
 class AppInfo
 {
 public:
+    AppInfo(std::string nameArg, uint32_t distCountExpected);
+
     uint32_t distCountExpected;
     uint32_t distCountCurrent;
     std::string name;
@@ -56,7 +58,7 @@ public:
     inline void is_stop_staged(){is_command_staged(STAGE_STOP_BIT);};
     inline void is_recl_staged(){is_command_staged(STAGE_RECL_BIT);};
 
-    void dump(std::string);
+    void dump(ofstream*);
 
 private:
     uint8_t pendingCommands;

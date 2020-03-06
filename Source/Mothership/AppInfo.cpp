@@ -1,5 +1,13 @@
 #include "AppInfo.h"
 
+AppInfo::AppInfo(std::string name, uint32_t distCountExpected):
+    name(name),
+    distCountExpected(distCountExpected)
+{
+    distCountCurrent = 0;
+    state = UNDERDEFINED;
+}
+
 /* Returns true if a state transition is possible for this application, and
  * false otherwise. A state transition is possible if the application has been
  * commanded to move to its next state, and it is ready to do so. */
@@ -29,73 +37,69 @@ bool AppInfo::continue()
 }
 
 /* Prints a bunch of diagnostic information. Obviously. The argument is the
- * path to dump to (passed directly to ofstream::open), in clobber mode. */
-void AppInfo::dump(std::string path)
+ * stream to dump to. */
+void AppInfo::dump(ofstream* stream)
 {
-    ofstream dumpStream;
     bool anyStagedCommands = false;
 
-    dumpStream.open(path);
-    dumpStream << "AppInfo dump for application \"" << name << "\":\n";
+    *stream << "AppInfo dump for application \"" << name << "\":\n";
 
-    dumpStream << "Current state: ";
+    *stream << "Current state: ";
     /* Bloody C enums. */
-    if (state == UNDERDEFINED) dumpStream << "UNDERDEFINED";
-    if (state == DEFINED) dumpStream << "DEFINED";
-    if (state == LOADING) dumpStream << "LOADING";
-    if (state == READY) dumpStream << "READY";
-    if (state == RUNNING) dumpStream << "RUNNING";
-    if (state == STOPPING) dumpStream << "STOPPING";
-    if (state == STOPPED) dumpStream << "STOPPED";
-    if (state == BROKEN) dumpStream << "BROKEN";
-    dumpStream << "\n";
+    if (state == UNDERDEFINED) *stream << "UNDERDEFINED";
+    if (state == DEFINED) *stream << "DEFINED";
+    if (state == LOADING) *stream << "LOADING";
+    if (state == READY) *stream << "READY";
+    if (state == RUNNING) *stream << "RUNNING";
+    if (state == STOPPING) *stream << "STOPPING";
+    if (state == STOPPED) *stream << "STOPPED";
+    if (state == BROKEN) *stream << "BROKEN";
+    *stream << "\n";
 
-    dumpStream << "Staged commands: ";
+    *stream << "Staged commands: ";
     if (is_init_staged())
     {
-        dumpStream << "INIT ";
+        *stream << "INIT ";
         anyStagedCommands = true;
     }
     if (is_run_staged())
     {
-        dumpStream << "RUN ";
+        *stream << "RUN ";
         anyStagedCommands = true;
     }
     if (is_stop_staged())
     {
-        dumpStream << "STOP ";
+        *stream << "STOP ";
         anyStagedCommands = true;
     }
     if (is_recl_staged())
     {
-        dumpStream << "RECL ";
+        *stream << "RECL ";
         anyStagedCommands = true;
     }
-    if (!anyStagedCommands) dumpStream << "(none)";
-    dumpStream << "\n";
+    if (!anyStagedCommands) *stream << "(none)";
+    *stream << "\n";
 
-    dumpStream << "Cores loaded: " << distCountCurrent << "/" <<
+    *stream << "Cores loaded: " << distCountCurrent << "/" <<
         distCountExpected << "\n";
 
     if (!coreInfos.empty())
     {
-        dumpStream << "Known core information:\n";
+        *stream << "Known core information:\n";
         std::map<uint32_t, coreInfo>::iterator coreInfoIt;
         for (coreInfoIt = coreInfos.begin(); coreInfoIt != coreInfos.end();
              coreInfoIt++)
         {
             coreInfo info = coreInfoIt->second;
-            dumpStream << "Core " << std::hex << coreInfoIt->first << ":\n";
-            dumpStream << "  Threads reported in: " << info.numThreadsCurrent
+            *stream << "Core " << std::hex << coreInfoIt->first << ":\n";
+            *stream << "  Threads reported in: " << info.numThreadsCurrent
                        << "/" << info.numThreadsExpected << "\n";
-            dumpStream << "  Data Binary: " << info.dataPath << "\n";
-            dumpStream << "  Instruction Binary: " << info.codePath << "\n";
+            *stream << "  Data Binary: " << info.dataPath << "\n";
+            *stream << "  Instruction Binary: " << info.codePath << "\n";
         }
     }
     else
     {
-        dumpStream << "No core information.\n");
+        *stream << "No core information.\n");
     }
-
-    dumpStream.close();
 }
