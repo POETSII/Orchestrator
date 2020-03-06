@@ -65,6 +65,6 @@ private:
     inline void stage_command(uint8_t bit){pendingCommands |= 1 << bit;};
     inline bool is_command_staged(uint8_t bit)
         {return pendingCommands & 1 << bit;};
-}
+};
 
 #endif

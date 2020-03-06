@@ -43,7 +43,7 @@ void AppDB::dump(ofstream* stream)
     }
     for (AppInfoIt appIt = appInfos.begin(); appIt != appInfos.end(); appIt++)
     {
-        appIt->second.dump(path);
+        appIt->second.dump(stream);
     }
 
     if (coreToApp.empty())
