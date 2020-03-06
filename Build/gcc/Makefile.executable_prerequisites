@@ -221,9 +221,9 @@ INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 
 # The mothership component consists of:
 #
-# - The "main" file (/Source/Mothership/MothershipMain.cpp) and its
+# - The "main" file (/Source/Mothership/adr/MothershipMain.cpp) and its
 #   dependencies in /Source/Mothership, but not
-#   /Source/Mothership/Supervisor.cpp.
+#   /Source/Mothership/adr/Supervisor.cpp.
 #
 # - An interface source file from the softswitch, in /Source/Softswitch/src.
 #
@@ -234,9 +234,9 @@ INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 # - A set of base Orchestrator (/Source/OrchBase) sources.
 #
 # Hostlink sources are to be compiled separately.
-MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
-                     $(SOURCE_DIR)/Mothership/TaskInfo.cpp \
-                     $(SOURCE_DIR)/Mothership/TMoth.cpp \
+MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/adr/MothershipMain.cpp \
+                     $(SOURCE_DIR)/Mothership/adr/TaskInfo.cpp \
+                     $(SOURCE_DIR)/Mothership/adr/TMoth.cpp \
                      $(GENERICS_DIR)/dumpchan.cpp \
                      $(GENERICS_DIR)/rand.cpp \
                      $(SOURCE_DIR)/OrchBase/Bin.cpp \
