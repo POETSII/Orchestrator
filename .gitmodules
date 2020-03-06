@@ -2,3 +2,7 @@
 	path = Tinsel
 	url = https://github.com/poetsii/tinsel
 	branch = master
+[submodule "Generics"]
+	path = Generics
+	url = https://github.com/heliosfa/Generics.git
+	branch = master
