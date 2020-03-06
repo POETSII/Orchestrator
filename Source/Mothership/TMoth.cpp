@@ -625,7 +625,7 @@ unsigned TMoth::NameRecl(PMsg_p* mTask_Info)
     }
     if (system((string("rm -r -f ")+TaskMap[TaskName]->BinPath).c_str()))
     {
-        Post(817, TaskMap[TaskName]->BinPath, POETS::getSysErrorString(errno));
+        Post(817, TaskMap[TaskName]->BinPath, OSFixes::getSysErrorString(errno));
     }
     delete T->second; // get rid of its TaskInfo object
     TaskMap.erase(T); // and then remove it from the task map
@@ -1059,7 +1059,7 @@ void TMoth::InstrumentationInit(void)
             else
             {
                 Post(544, command->c_str(),
-                     POETS::getSysErrorString(errno).c_str());
+                     OSFixes::getSysErrorString(errno).c_str());
             }
         }
     }
@@ -1113,7 +1113,7 @@ unsigned TMoth::InstrumentationHandler(P_Pkt_t* pkt)
         // Check it is open
         if(tFile.fail())    //instr->tFile.fail()) // Check that the file opened
         {   // if it didn't, tell logserver, delete the entry and return
-            Post(541, fName.str(), POETS::getSysErrorString(errno));
+            Post(541, fName.str(), OSFixes::getSysErrorString(errno));
 
             delete instr;
             return 1;
@@ -1146,7 +1146,7 @@ unsigned TMoth::InstrumentationHandler(P_Pkt_t* pkt)
 
         if(tFile.fail()) // Check that the file opened
         {   // if it didn't, tell logserver, delete the entry and return
-            Post(542, fName.str(), POETS::getSysErrorString(errno));
+            Post(542, fName.str(), OSFixes::getSysErrorString(errno));
 
             delete instr;
             InstrMap.erase(srcAddr);

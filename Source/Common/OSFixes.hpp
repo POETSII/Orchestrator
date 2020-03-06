@@ -73,8 +73,8 @@
 #if __cplusplus >= 201103               // C++11+ land
  #define TO_STRING   std::to_string
 #else                                   // C++98 land
- #define TO_STRING   POETS::to_string
- namespace POETS
+ #define TO_STRING   OSFixes::to_string
+ namespace OSFixes
  {
     template<typename T>
     std::string to_string(const T& value)
@@ -97,9 +97,9 @@
  * Other options (using sterror_s and friends) need adding for Windows/Borland.
  *
  * Example Usage:
- *  std::cout << getSysErrorString(errno) << std::endl;
+ *  std::cout << OSFixes::getSysErrorString(errno) << std::endl;
  * ===========================================================================*/
-namespace POETS
+namespace OSFixes
 {
     inline std::string getSysErrorString(int errNum)
     {

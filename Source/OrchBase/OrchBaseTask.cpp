@@ -502,7 +502,7 @@ WALKVECTOR(std::string, commands, command)
         else
         {
             Post(167, command->c_str(),
-                 POETS::getSysErrorString(errno).c_str());
+                 OSFixes::getSysErrorString(errno).c_str());
         }
         return;
     }
