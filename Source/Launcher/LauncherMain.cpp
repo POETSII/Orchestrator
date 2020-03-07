@@ -284,7 +284,7 @@ int DeployBinaries(std::set<std::string>* hosts,
         /* Ensure .orchestrator exists. */
         sshRc = SSH::call((*host),
                           dformat("mkdir --parents \"%s\"\n",
-                                  POETS::dirname(deployDir).c_str()),
+                                  OSFixes::dirname(deployDir).c_str()),
                           &cmdstdout, &cmdstderr);
         if (sshRc > 0)
         {
