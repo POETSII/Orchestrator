@@ -80,7 +80,7 @@ void BuildCommand(bool useMotherships, std::string internalPath,
     std::vector<std::string> orderedHosts;
 
     /* We'll need our hostname. */
-    std::string ourHostname = POETS::get_hostname();
+    std::string ourHostname = OSFixes::get_hostname();
 
     /* Boilerplate */
     commandStream << "mpiexec.hydra";
