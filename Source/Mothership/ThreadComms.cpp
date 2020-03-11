@@ -19,8 +19,10 @@ ThreadComms::~ThreadComms()
     pthread_mutex_destroy(&mutex_backend_output_queue);
 }
 
-/* Starts all of the threads. Only returns when threads have exited, or if
- * there was an error starting or joining with a thread. */
+/* Starts all of the threads. Returns when one of the following is true:
+ *  - All threads have exited
+ *  - There was an error starting or joining to a thread
+ *  - MPIInputBroker exited without setting the quit flag (ala SYST,KILL). */
 void ThreadComms::go()
 {
     try
@@ -41,6 +43,7 @@ void ThreadComms::go()
     try
     {
         join_mpi_input_broker();
+        if(!is_it_time_to_go()){return;}
         join_mpi_cnc_resolver();
         join_mpi_application_resolver();
         join_backend_output_broker();
