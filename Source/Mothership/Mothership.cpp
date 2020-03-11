@@ -10,6 +10,7 @@ Mothership::Mothership(int argc, char** argv):
 /* Dumps dumpable datastructures to a stream. */
 void Mothership::dump(ofstream* stream)
 {
+    /* <!> Include dump from CommonBase here. */
     *stream << "Mothership (" << POETS::get_hostname() << ") dump:\n";
     appdb.dump(stream);
     superdb.dump(stream);
