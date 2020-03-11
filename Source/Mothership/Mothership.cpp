@@ -1,7 +1,8 @@
 #include "Mothership.h"
 
 Mothership::Mothership(int argc, char** argv):
-    CommonBase(argc, argv, std::string(Mothership), std::string(__FILE__))
+    CommonBase(argc, argv, std::string(csMOTHERSHIPproc),
+               std::string(__FILE__))
 {
     threading = ThreadComms(this);
 }
