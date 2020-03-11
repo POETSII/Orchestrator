@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <queue>
 
+#include "OSFixes.hpp"
 #include "ThreadException.h"
 #include "Mothership.h"
 #include "poets_pkt.h"
