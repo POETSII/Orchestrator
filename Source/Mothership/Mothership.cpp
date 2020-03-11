@@ -59,7 +59,7 @@ void Mothership::setup_mpi_hooks()
 {
     FnMapx.push_back(new FnMap_t);
     (*FnMapx[0])[PMsg_p::KEY(Q::EXIT)] = &Mothership::HandleExit;
-    (*FnMapx[0])[PMsg_p::KEY(Q::KILL)] = &Mothership::HandleKill;
+    (*FnMapx[0])[PMsg_p::KEY(Q::SYST,Q::KILL)] = &Mothership::HandleSystKill;
     (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SPEC)] = &Mothership::HandleAppSpec;
     (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::DIST)] = &Mothership::HandleAppDist;
     (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SUPD)] = &Mothership::HandleAppSupd;

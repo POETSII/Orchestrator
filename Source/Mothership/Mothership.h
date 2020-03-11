@@ -31,7 +31,7 @@ private:
     void setup_mpi_hooks();
 
     unsigned HandleExit(PMsg_p* message, unsigned commIndex);
-    unsigned HandleKill(PMsg_p* message, unsigned commIndex);
+    unsigned HandleSystKill(PMsg_p* message, unsigned commIndex);
     unsigned HandleAppSpec(PMsg_p* message, unsigned commIndex);
     unsigned HandleAppDist(PMsg_p* message, unsigned commIndex);
     unsigned HandleAppSupd(PMsg_p* message, unsigned commIndex);
