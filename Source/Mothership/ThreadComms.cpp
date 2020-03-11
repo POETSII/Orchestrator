@@ -265,3 +265,12 @@ bool ThreadComms::push_debug_in_queue(std::vector<P_Pkt_t>* packets)
         DebugInputQueue.push(packet);
     }
 }
+
+/* ===== Methods for Starting Threads ====================================== */
+START_THREAD_METHOD_DEFINITION(MPIInputBroker&, mpi_input_broker)
+START_THREAD_METHOD_DEFINITION(MPICncResolver&, mpi_cnc_resolver)
+START_THREAD_METHOD_DEFINITION(MPIApplicationResolver&,
+                               mpi_application_resolver)
+START_THREAD_METHOD_DEFINITION(BackendOutputBroker&, backend_output_broker)
+START_THREAD_METHOD_DEFINITION(BackendInputBroker&, backend_input_broker)
+START_THREAD_METHOD_DEFINITION(DebugInputBroker&, debug_input_broker)

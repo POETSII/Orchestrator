@@ -16,7 +16,20 @@
 /* Used to declare some methods. */
 #define START_THREAD_METHOD_DECLARATIONS(THREAD) \
     void start_THREAD(); \
-    void* THREAD(Mothership*);
+    void* THREAD(void* mothership);
+
+#define START_THREAD_DEFINITION(THREAD_OBJ, THREAD_NAME) \
+void ThreadComms::start_THREAD() \
+{ \
+    int result = pthread_create(THREAD_OBJ, PNULL, THREAD_NAME, \
+                                (void*)mothership); \
+    if(!result) \
+    { \
+        throw ThreadCreationFailureException(dformat( \
+            "Mothership could not create pthread 'THREAD_NAME': %s", \
+            POETS::getSysErrorString(result).c_str())); \
+    } \
+}
 
 class ThreadComms
 {
