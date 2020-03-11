@@ -70,6 +70,28 @@ Injector
 INJCT|ACK  |-    |-    | (????)
 INJCT|FLAG |-    |-    | (1:string)Command string
 
+Mothership
+----------
+EXIT |-    |-    |-    | (None)
+SYST |KILL |-    |-    | (None)
+APP  |SPEC |-    |-    | (0:string)Application name
+                         (1:uint32_t)Number of expected distribution messages
+APP  |DIST |-    |-    | (0:string)Application name
+                         (1:string)Code path for this core
+                         (2:string)Data path for this core
+                         (3:uint32_t)Core hardware address
+                         (4:uint8_t)Number of expected threads for this core
+APP  |SUPD |-    |-    | (0:string)Application name
+                         (1:string)Shared object path for this Supervisor
+CMND |RECL |-    |-    | (0:string)Application name
+CMND |INIT |-    |-    | (0:string)Application name
+CMND |RUN  |-    |-    | (0:string)Application name
+CMND |STOP |-    |-    | (0:string)Application name
+BEND |CNC  |-    |-    | (0:P_Pkt_t)Packet
+BEND |SUPR |-    |-    | (0:P_Pkt_t)Packet
+PKTS |-    |-    |-    | (0:vector<P_Pkt_t>)Packets
+DUMP |-    |-    |-    | (0:string)Path to write the dump to
+
 Mothercore
 ----------
 CMND |LOAD |-    |-    | (0:string)Task name
