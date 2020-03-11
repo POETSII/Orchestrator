@@ -19,8 +19,58 @@ ThreadComms::~ThreadComms()
     pthread_mutex_destroy(&mutex_backend_output_queue);
 }
 
-/* Code repetition ahoy! I would use the preprocessor to generate this, but
- * then it would be too hard for your mere-mortal eyes to read. */
+/* Starts all of the threads. Only returns when threads have exited, or if
+ * there was an error starting or joining with a thread. */
+void ThreadComms::go()
+{
+    try
+    {
+        start_mpi_input_broker();
+        start_mpi_cnc_resolver();
+        start_mpi_application_resolver();
+        start_backend_output_broker();
+        start_backend_input_broker();
+        start_debug_input_broker();
+    }
+    catch (ThreadException &e)
+    {
+        mothership->Post(400, e.message);
+        return;
+    }
+
+    try
+    {
+        join_mpi_input_broker();
+        join_mpi_cnc_resolver();
+        join_mpi_application_resolver();
+        join_backend_output_broker();
+        join_backend_input_broker();
+        join_debug_input_broker();
+    }
+    catch (ThreadException &e)
+    {
+        mothership->Post(401, e.message);
+    }
+}
+
+/* Code repetition ahoy! (methods for starting threads) */
+START_THREAD_DEFINITION(&MPIInputBroker, mpi_input_broker)
+START_THREAD_DEFINITION(&MPICncResolver, mpi_cnc_resolver)
+START_THREAD_DEFINITION(&MPIApplicationResolver, mpi_application_resolver)
+START_THREAD_DEFINITION(&BackendOutputBroker, backend_output_broker)
+START_THREAD_DEFINITION(&BackendInputBroker, backend_input_broker)
+START_THREAD_DEFINITION(&DebugInputBroker, debug_input_broker)
+
+/* Code repetition ahoy! (methods for joining threads) */
+JOIN_THREAD_DEFINITION(&MPIInputBroker, mpi_input_broker)
+JOIN_THREAD_DEFINITION(&MPICncResolver, mpi_cnc_resolver)
+JOIN_THREAD_DEFINITION(&MPIApplicationResolver, mpi_application_resolver)
+JOIN_THREAD_DEFINITION(&BackendOutputBroker, backend_output_broker)
+JOIN_THREAD_DEFINITION(&BackendInputBroker, backend_input_broker)
+JOIN_THREAD_DEFINITION(&DebugInputBroker, debug_input_broker)
+
+/* More code repetition ahoy! I would use the preprocessor to generate this,
+ * but then it would be too hard for your mere-mortal eyes to read. */
 
 /* ===== MPICncQueue ======================================================= */
 
@@ -265,12 +315,3 @@ bool ThreadComms::push_debug_in_queue(std::vector<P_Pkt_t>* packets)
         DebugInputQueue.push(packet);
     }
 }
-
-/* ===== Methods for Starting Threads ====================================== */
-START_THREAD_METHOD_DEFINITION(MPIInputBroker&, mpi_input_broker)
-START_THREAD_METHOD_DEFINITION(MPICncResolver&, mpi_cnc_resolver)
-START_THREAD_METHOD_DEFINITION(MPIApplicationResolver&,
-                               mpi_application_resolver)
-START_THREAD_METHOD_DEFINITION(BackendOutputBroker&, backend_output_broker)
-START_THREAD_METHOD_DEFINITION(BackendInputBroker&, backend_input_broker)
-START_THREAD_METHOD_DEFINITION(DebugInputBroker&, debug_input_broker)

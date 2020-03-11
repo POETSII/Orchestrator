@@ -9,24 +9,35 @@
 #include <pthread.h>
 #include <queue>
 
+#include "ThreadException.h"
 #include "Mothership.h"
 #include "poets_pkt.h"
 #include "PMsg_p.h"
 
-/* Used to declare some methods. */
-#define START_THREAD_METHOD_DECLARATIONS(THREAD) \
+#define THREAD_METHOD_DECLARATIONS(THREAD) \
     void start_THREAD(); \
+    void join_THREAD(); \
     void* THREAD(void* mothership);
 
-#define START_THREAD_DEFINITION(THREAD_OBJ, THREAD_NAME) \
+#define START_THREAD_DEFINITION(THREAD_PTR, THREAD_NAME) \
 void ThreadComms::start_THREAD() \
 { \
-    int result = pthread_create(THREAD_OBJ, PNULL, THREAD_NAME, \
+    int result = pthread_create(THREAD_PTR, PNULL, THREAD_NAME, \
                                 (void*)mothership); \
     if(!result) \
     { \
-        throw ThreadCreationFailureException(dformat( \
-            "Mothership could not create pthread 'THREAD_NAME': %s", \
+        throw ThreadException(dformat("'THREAD_NAME': %s", \
+            POETS::getSysErrorString(result).c_str())); \
+    } \
+}
+
+#define JOIN_THREAD_DEFINITION(THREAD_PTR, THREAD_NAME) \
+void ThreadComms::join_THREAD() \
+{ \
+    int result = pthread_join(THREAD_PTR); \
+    if(!result) \
+    { \
+        throw ThreadException(dformat("'THREAD_NAME': %s", \
             POETS::getSysErrorString(result).c_str())); \
     } \
 }
@@ -85,13 +96,13 @@ private:
     pthread_t BackendInputBroker;
     pthread_t DebugInputBroker;
 
-    /* Starting threads and their methods */
-    START_THREAD_METHOD_DECLARATIONS(mpi_input_broker)
-    START_THREAD_METHOD_DECLARATIONS(mpi_cnc_resolver)
-    START_THREAD_METHOD_DECLARATIONS(mpi_application_resolver)
-    START_THREAD_METHOD_DECLARATIONS(backend_output_broker)
-    START_THREAD_METHOD_DECLARATIONS(backend_input_broker)
-    START_THREAD_METHOD_DECLARATIONS(debug_input_broker)
+    /* Thread controls */
+    THREAD_METHOD_DECLARATIONS(mpi_input_broker)
+    THREAD_METHOD_DECLARATIONS(mpi_cnc_resolver)
+    THREAD_METHOD_DECLARATIONS(mpi_application_resolver)
+    THREAD_METHOD_DECLARATIONS(backend_output_broker)
+    THREAD_METHOD_DECLARATIONS(backend_input_broker)
+    THREAD_METHOD_DECLARATIONS(debug_input_broker)
 
     /* Queues */
     std::queue<PMsg_p> MPICncQueue;

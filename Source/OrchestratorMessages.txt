@@ -79,6 +79,9 @@
 166(E) : "Not enough mothership processes exist to deploy task %s. Is a mothership running?"
 167(E) : "System command '%s' ran unsuccessfully with message '%s'. Aborting deployment."
 
+400(F) : "Mothership could not create pthread %s. Exiting."
+401(F) : "Mothership could not join to pthread %s. Exiting."
+
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"
 510(W) : "Unrecognised %s command to mothership %s"
