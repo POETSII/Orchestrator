@@ -37,12 +37,10 @@ const byte Q::TDIR;
 const byte Q::SHOW;
 const byte Q::ACPT;
 const byte Q::SPEC;
-const byte Q::DIST;
 const byte Q::SUPD;
 const byte Q::RECL;
 const byte Q::INIT;
 const byte Q::CNC;
-const byte Q::SUPR;
 // temporary use: for MPI testing ------------------------------------------
 const byte Q::M0;
 const byte Q::M1;
