@@ -5,7 +5,7 @@
  * applications. */
 
 #include <map>
-#include <ofstream>
+#include <fstream>
 #include <string>
 
 #include "AppInfo.h"
@@ -20,9 +20,9 @@ public:
     std::map<std::string, AppInfo> appInfos;
     std::map<uint32_t, std::string> coreToApp;
 
-    AppInfo* check_create_app(std::string);
+    AppInfo* check_create_app(std::string, uint32_t);
     bool check_defined_app(std::string);
-    void dump(ofstream*);
+    void dump(std::ofstream*);
 };
 
 #endif

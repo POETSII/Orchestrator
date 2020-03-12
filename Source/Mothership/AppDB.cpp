@@ -3,8 +3,8 @@
 /* Checks appInfos for an application of a given name. If it doesn't exist,
  * AppDB creates it and returns a pointer to it (passing distCountExpected to
  * it as an argument). If it already exists, returns a pointer to the existing
- * application. */
-AppInfo* AppDB::check_create_app(std::string name)
+ * application, and does not use distCountExpected. */
+AppInfo* AppDB::check_create_app(std::string name, uint32_t distCountExpected)
 {
     AppInfoIt appFinder = appInfos.find(name);
 
@@ -14,7 +14,7 @@ AppInfo* AppDB::check_create_app(std::string name)
     {
         appInfos.insert(std::pair<std::string, AppInfo>
                         (name, AppInfo(name, distCountExpected)));
-        return &(appInfos[name]);
+        return &(appInfos.find(name)->second);
     }
 
     /* Branch if the application does exist (we return a pointer to it). */
@@ -34,7 +34,7 @@ bool AppDB::check_defined_app(std::string name)
 
 /* Prints a bunch of diagnostic information. Obviously. The argument is the
  * stream to dump to. */
-void AppDB::dump(ofstream* stream)
+void AppDB::dump(std::ofstream* stream)
 {
     *stream << "AppDB dump:\n";
     if (appInfos.empty())

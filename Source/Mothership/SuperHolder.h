@@ -1,20 +1,20 @@
 #ifndef __ORCHESTRATOR_SOURCE_MOTHERSHIP_SUPERHOLDER_H
 #define __ORCHESTRATOR_SOURCE_MOTHERSHIP_SUPERHOLDER_H
 
-/* Defines the Superholder object, which holds loaded supervisors. */
+/* Defines the SuperHolder object, which holds loaded supervisors. */
 
 #include <dlfcn.h>
 #include <string>
-#include <ofstream>
+#include <fstream>
 
-class Superholder
+class SuperHolder
 {
 public:
-    Superholder(std::string path);
-    ~Superholder();
+    SuperHolder(std::string path);
+    ~SuperHolder();
     std::string path;
     void* so;
-    void dump(ofstream*);
+    void dump(std::ofstream*);
 };
 
 #endif

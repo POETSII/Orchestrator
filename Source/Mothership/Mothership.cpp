@@ -2,13 +2,13 @@
 
 Mothership::Mothership(int argc, char** argv):
     CommonBase(argc, argv, std::string(csMOTHERSHIPproc),
-               std::string(__FILE__))
+               std::string(__FILE__)),
+    threading(ThreadComms(this))
 {
-    threading = ThreadComms(this);
 }
 
 /* Dumps dumpable datastructures to a stream. */
-void Mothership::dump(ofstream* stream)
+void Mothership::dump(std::ofstream* stream)
 {
     /* <!> Include dump from CommonBase here. */
     *stream << "Mothership (" << POETS::get_hostname() << ") dump:\n";
@@ -18,7 +18,7 @@ void Mothership::dump(ofstream* stream)
 
 /* Loads the backend and sets the threads spinning, waiting for them to
  * exit. */
-void Mothership::go();
+void Mothership::go()
 {
     setup_mpi_hooks();
     load_backend();
@@ -31,7 +31,7 @@ void Mothership::go();
  * stub for now. */
 std::string Mothership::task_from_swaddr(uint32_t address)
 {
-    return "WARNING (Mothership::task_from_swaddr): This method is a stub!"
+    return "WARNING (Mothership::task_from_swaddr): This method is a stub!";
 }
 
 /* Sends a message using MPI to the process defined in the message.

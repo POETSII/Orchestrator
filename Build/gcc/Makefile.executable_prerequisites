@@ -219,10 +219,31 @@ INJECTOR_SOURCES = $(SOURCE_DIR)/Injector/InjectorMain.cpp \
 
 INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 
-# The mothership component consists of:
+# The Mothership component consists of:
+#
+# - The "main" file (/Source/Mothership/MothershipMain.cpp) and its
+#   dependencies in /Source/Mothership.
+#
+# - The truly common sources.
+#
+# - Some "generics" (/Generics) sources.
+#
+# Hostlink sources are to be compiled separately.
+MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
+                     $(SOURCE_DIR)/Mothership/AppDB.cpp \
+                     $(SOURCE_DIR)/Mothership/AppInfo.cpp \
+                     $(SOURCE_DIR)/Mothership/Mothership.cpp \
+                     $(SOURCE_DIR)/Mothership/MPIHandlers.cpp \
+                     $(SOURCE_DIR)/Mothership/StubThreads.cpp \
+                     $(SOURCE_DIR)/Mothership/SuperDB.cpp \
+                     $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
+                     $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
+                     $(SOURCE_DIR)/Mothership/ThreadComms.cpp
+
+# The old mothership component consists of:
 #
 # - The "main" file (/Source/Mothership/adr/MothershipMain.cpp) and its
-#   dependencies in /Source/Mothership, but not
+#   dependencies in /Source/Mothership/adr, but not
 #   /Source/Mothership/adr/Supervisor.cpp.
 #
 # - An interface source file from the softswitch, in /Source/Softswitch/src.
@@ -234,7 +255,7 @@ INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 # - A set of base Orchestrator (/Source/OrchBase) sources.
 #
 # Hostlink sources are to be compiled separately.
-MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/adr/MothershipMain.cpp \
+ADR_MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/adr/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/adr/TaskInfo.cpp \
                      $(SOURCE_DIR)/Mothership/adr/TMoth.cpp \
                      $(GENERICS_DIR)/dumpchan.cpp \
@@ -252,7 +273,7 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/adr/MothershipMain.cpp \
                      $(SOURCE_DIR)/Common/Debug.cpp \
                      $(HARDWARE_DEPLOYER_SOURCES)
 
-MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
+ADR_MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 
 # Convert these lists of sources into a list of objects to define a dependency
 # system for the linker.
@@ -285,7 +306,7 @@ $(1)_OBJECTS := $(call orch_sources_to_objects, $($(1)_SOURCES))
 endef
 
 $(foreach object_set,\
-          LAUNCHER ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP,\
+          LAUNCHER ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP ADR_MOTHERSHIP,\
           $(eval $(call OBJECT_TEMPLATE,$(object_set))))
 
 # Define executable prerequisites. RULE_TEMPLATE defines the substitutions made
@@ -298,5 +319,5 @@ $($(1)_EXECUTABLE): $($(1)_OBJECTS)
 endef
 
 $(foreach executable_name,\
-          LAUNCHER ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP,\
+          LAUNCHER ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP ADR_MOTHERSHIP,\
           $(eval $(call RULE_TEMPLATE,$(executable_name))))

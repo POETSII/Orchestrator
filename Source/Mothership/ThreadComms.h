@@ -9,19 +9,24 @@
 #include <pthread.h>
 #include <queue>
 
+class Mothership;
+
 #include "OSFixes.hpp"
 #include "ThreadException.h"
 #include "Mothership.h"
 #include "poets_pkt.h"
-#include "PMsg_p.h"
+#include "PMsg_p.hpp"
+
+#define START_THREAD_FN_NAME(THREAD) start_ ## THREAD
+#define JOIN_THREAD_FN_NAME(THREAD) join_ ## THREAD
 
 #define THREAD_METHOD_DECLARATIONS(THREAD) \
-    void start_THREAD(); \
-    void join_THREAD(); \
+    void START_THREAD_FN_NAME(THREAD)(); \
+    void JOIN_THREAD_FN_NAME(THREAD)(); \
     void* THREAD(void* mothership);
 
 #define START_THREAD_DEFINITION(THREAD_PTR, THREAD_NAME) \
-void ThreadComms::start_THREAD() \
+void ThreadComms::START_THREAD_FN_NAME(THREAD)() \
 { \
     int result = pthread_create(THREAD_PTR, PNULL, THREAD_NAME, \
                                 (void*)mothership); \
@@ -33,7 +38,7 @@ void ThreadComms::start_THREAD() \
 }
 
 #define JOIN_THREAD_DEFINITION(THREAD_PTR, THREAD_NAME) \
-void ThreadComms::join_THREAD() \
+void ThreadComms::JOIN_THREAD_FN_NAME(THREAD)() \
 { \
     int result = pthread_join(THREAD_PTR); \
     if(!result) \

@@ -11,7 +11,7 @@ AppInfo::AppInfo(std::string name, uint32_t distCountExpected):
 /* Returns true if a state transition is possible for this application, and
  * false otherwise. A state transition is possible if the application has been
  * commanded to move to its next state, and it is ready to do so. */
-bool AppInfo::continue()
+bool AppInfo::should_we_continue()
 {
     /* Only continue under certain application states. */
     if (state == DEFINED or
@@ -38,7 +38,7 @@ bool AppInfo::continue()
 
 /* Prints a bunch of diagnostic information. Obviously. The argument is the
  * stream to dump to. */
-void AppInfo::dump(ofstream* stream)
+void AppInfo::dump(std::ofstream* stream)
 {
     bool anyStagedCommands = false;
 
@@ -86,11 +86,11 @@ void AppInfo::dump(ofstream* stream)
     if (!coreInfos.empty())
     {
         *stream << "Known core information:\n";
-        std::map<uint32_t, coreInfo>::iterator coreInfoIt;
+        std::map<uint32_t, CoreInfo>::iterator coreInfoIt;
         for (coreInfoIt = coreInfos.begin(); coreInfoIt != coreInfos.end();
              coreInfoIt++)
         {
-            coreInfo info = coreInfoIt->second;
+            CoreInfo info = coreInfoIt->second;
             *stream << "Core " << std::hex << coreInfoIt->first << ":\n";
             *stream << "  Threads reported in: " << info.numThreadsCurrent
                        << "/" << info.numThreadsExpected << "\n";
@@ -100,6 +100,6 @@ void AppInfo::dump(ofstream* stream)
     }
     else
     {
-        *stream << "No core information.\n");
+        *stream << "No core information.\n";
     }
 }

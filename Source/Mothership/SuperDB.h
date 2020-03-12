@@ -5,7 +5,7 @@
  * supervisors running under applications. */
 
 #include <map>
-#include <ofstream>
+#include <fstream>
 #include <string>
 
 #include "dfprintf.h"
@@ -21,7 +21,7 @@ public:
     bool load_supervisor(std::string appName, std::string path,
                          std::string* errorMessage);
     bool unload_supervisor(std::string appName, std::string* errorMessage);
-    void dump(ofstream*);
+    void dump(std::ofstream*);
 };
 
 #endif

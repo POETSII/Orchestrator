@@ -8,6 +8,7 @@
 #include "CommonBase.h"
 #include "HostLink.h"
 #include "OSFixes.hpp"
+#include "Pglobals.h"
 #include "SuperDB.h"
 #include "ThreadComms.h"
 
@@ -16,7 +17,7 @@ class Mothership: public CommonBase
 public:
     Mothership(int argc, char** argv);  /* Args for CommonBase */
 
-    void dump(ofstream*);
+    void dump(std::ofstream*);
     void go();
     std::string task_from_swaddr(uint32_t address);
     void queue_mpi_message(PMsg_p message, unsigned commIndex);
@@ -43,6 +44,9 @@ private:
     unsigned HandleBendSupr(PMsg_p* message, unsigned commIndex);
     unsigned HandlePkts(PMsg_p* message, unsigned commIndex);
     unsigned HandleDump(PMsg_p* message, unsigned commIndex);
+
+    /* Note the comment at the top of this file. */
+#include "Decode.cpp"
 };
 
 #endif

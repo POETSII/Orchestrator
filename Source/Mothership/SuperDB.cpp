@@ -50,7 +50,7 @@ bool SuperDB::unload_supervisor(std::string appName)
 
 /* Prints a diagnostic line for each supervisor. The argument is the stream to
  * dump to. */
-void SuperDB::dump(ofstream* stream)
+void SuperDB::dump(std::ofstream* stream)
 {
     *stream << "SuperDB dump:\n";
     if (supers.empty())

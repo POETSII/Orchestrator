@@ -7,9 +7,11 @@
  * and removal. */
 
 #include <map>
-#include <ofstream>
+#include <fstream>
 #include <set>
 #include <string>
+
+class CoreInfo;
 
 #include "CoreInfo.h"
 #include "OSFixes.hpp"
@@ -39,26 +41,26 @@ class AppInfo
 public:
     AppInfo(std::string nameArg, uint32_t distCountExpected);
 
+    std::string name;
     uint32_t distCountExpected;
     uint32_t distCountCurrent;
-    std::string name;
     AppState state;
     std::map<uint32_t, CoreInfo> coreInfos;
     std::set<uint32_t> coresLoaded;
 
-    bool continue();
+    bool should_we_continue();
 
     inline void stage_init(){stage_command(STAGE_INIT_BIT);};
     inline void stage_run(){stage_command(STAGE_RUN_BIT);};
     inline void stage_stop(){stage_command(STAGE_STOP_BIT);};
     inline void stage_recl(){stage_command(STAGE_RECL_BIT);};
 
-    inline void is_init_staged(){is_command_staged(STAGE_INIT_BIT);};
-    inline void is_run_staged(){is_command_staged(STAGE_RUN_BIT);};
-    inline void is_stop_staged(){is_command_staged(STAGE_STOP_BIT);};
-    inline void is_recl_staged(){is_command_staged(STAGE_RECL_BIT);};
+    inline bool is_init_staged(){return is_command_staged(STAGE_INIT_BIT);};
+    inline bool is_run_staged(){return is_command_staged(STAGE_RUN_BIT);};
+    inline bool is_stop_staged(){return is_command_staged(STAGE_STOP_BIT);};
+    inline bool is_recl_staged(){return is_command_staged(STAGE_RECL_BIT);};
 
-    void dump(ofstream*);
+    void dump(std::ofstream*);
 
 private:
     uint8_t pendingCommands;
