@@ -27,6 +27,12 @@ public:
     SuperDB superdb;
     ThreadComms threading;
 
+    /* More stuff needed for CommonBase to work. */
+    typedef unsigned (Mothership::*pMeth)(PMsg_p*, unsigned);
+    typedef std::map<unsigned, pMeth> FnMap_t;
+    std::vector<FnMap_t*> FnMapx;
+#include "Decode.cpp"
+
 private:
     void load_backend();
     void setup_mpi_hooks();
@@ -45,8 +51,6 @@ private:
     unsigned HandlePkts(PMsg_p* message, unsigned commIndex);
     unsigned HandleDump(PMsg_p* message, unsigned commIndex);
 
-    /* Note the comment at the top of this file. */
-#include "Decode.cpp"
 };
 
 #endif
