@@ -1,4 +1,4 @@
-#include "SuperHolder.cpp"
+#include "SuperHolder.h"
 
 /* Here we load the shared objects! It is down to the creator to verify the
  * success of the loading process (i.e. by checking (!so), and by calling

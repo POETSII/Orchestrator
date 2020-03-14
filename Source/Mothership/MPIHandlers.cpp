@@ -5,60 +5,61 @@
 
 #include "Mothership.h"
 
-unsigned HandleExit(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleExit(PMsg_p* message, unsigned commIndex)
 {
     threading.set_quit();
     return 1;  /* CommonBase's Decode reads this, returning from MPISpinner. */
 }
 
-unsigned HandleSystKill(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleSystKill(PMsg_p* message, unsigned commIndex)
 {
     return 1;
 }
 
 /* And here are some stubs. */
 
-unsigned HandleAppSpec(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleAppSpec(PMsg_p* message, unsigned commIndex)
 {
     printf("AppSpec message received!\n");
+    return 0;
 }
-unsigned HandleAppDist(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleAppDist(PMsg_p* message, unsigned commIndex)
 {
-    printf("AppDist message received!\n");
+    printf("AppDist message received!\n"); return 0;
 }
-unsigned HandleAppSupd(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleAppSupd(PMsg_p* message, unsigned commIndex)
 {
-    printf("AppSupd message received!\n");
+    printf("AppSupd message received!\n"); return 0;
 }
-unsigned HandleCmndRecl(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleCmndRecl(PMsg_p* message, unsigned commIndex)
 {
-    printf("CmndRecl message received!\n");
+    printf("CmndRecl message received!\n"); return 0;
 }
-unsigned HandleCmndInit(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleCmndInit(PMsg_p* message, unsigned commIndex)
 {
-    printf("CmndInit message received!\n");
+    printf("CmndInit message received!\n"); return 0;
 }
-unsigned HandleCmndRun(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleCmndRun(PMsg_p* message, unsigned commIndex)
 {
-    printf("CmndRun message received!\n");
+    printf("CmndRun message received!\n"); return 0;
 }
-unsigned HandleCmndStop(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleCmndStop(PMsg_p* message, unsigned commIndex)
 {
-    printf("CmndStop message received!\n");
+    printf("CmndStop message received!\n"); return 0;
 }
-unsigned HandleBendCnc(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleBendCnc(PMsg_p* message, unsigned commIndex)
 {
-    printf("BendCnc message received!\n");
+    printf("BendCnc message received!\n"); return 0;
 }
-unsigned HandleBendSupr(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleBendSupr(PMsg_p* message, unsigned commIndex)
 {
-    printf("BendSupr message received!\n");
+    printf("BendSupr message received!\n"); return 0;
 }
-unsigned HandlePkts(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandlePkts(PMsg_p* message, unsigned commIndex)
 {
-    printf("Pkts message received!\n");
+    printf("Pkts message received!\n"); return 0;
 }
-unsigned HandleDump(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::HandleDump(PMsg_p* message, unsigned commIndex)
 {
-    printf("Dump message received!\n");
+    printf("Dump message received!\n"); return 0;
 }

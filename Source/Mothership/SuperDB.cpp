@@ -21,8 +21,8 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
     supervisors.insert(std::pair<std::string, SuperHolder>
                        (appName, SuperHolder(path)));
 
-    /* Check for errors. */
-    if (supervisors[appName].so == NULL)  /* As per the specification... */
+    /* Check for errors as per the specification... */
+    if (supervisors.find(appName)->second.so == NULL)
     {
         *errorMessage = dlerror();
         return false;
@@ -53,7 +53,7 @@ bool SuperDB::unload_supervisor(std::string appName)
 void SuperDB::dump(std::ofstream* stream)
 {
     *stream << "SuperDB dump:\n";
-    if (supers.empty())
+    if (supervisors.empty())
     {
         *stream << "No supervisor devices defined.\n";
     }

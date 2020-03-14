@@ -1,4 +1,4 @@
-#include "ThreadComms.h"
+#include "Mothership.h"  /* Avoiding include ordering issue */
 
 ThreadComms::ThreadComms(Mothership* mothership):
     mothership(mothership)
@@ -6,9 +6,9 @@ ThreadComms::ThreadComms(Mothership* mothership):
     quit = false;
 
     /* Initialise mutexes. */
-    pthread_mutex_init(&mutex_MPI_cnc_queue);
-    pthread_mutex_init(&mutex_MPI_app_queue);
-    pthread_mutex_init(&mutex_backend_output_queue);
+    pthread_mutex_init(&mutex_MPI_cnc_queue, PNULL);
+    pthread_mutex_init(&mutex_MPI_app_queue, PNULL);
+    pthread_mutex_init(&mutex_backend_output_queue, PNULL);
 }
 
 ThreadComms::~ThreadComms()
@@ -65,12 +65,12 @@ START_THREAD_DEFINITION(&BackendInputBroker, backend_input_broker)
 START_THREAD_DEFINITION(&DebugInputBroker, debug_input_broker)
 
 /* Code repetition ahoy! (methods for joining threads) */
-JOIN_THREAD_DEFINITION(&MPIInputBroker, mpi_input_broker)
-JOIN_THREAD_DEFINITION(&MPICncResolver, mpi_cnc_resolver)
-JOIN_THREAD_DEFINITION(&MPIApplicationResolver, mpi_application_resolver)
-JOIN_THREAD_DEFINITION(&BackendOutputBroker, backend_output_broker)
-JOIN_THREAD_DEFINITION(&BackendInputBroker, backend_input_broker)
-JOIN_THREAD_DEFINITION(&DebugInputBroker, debug_input_broker)
+JOIN_THREAD_DEFINITION(MPIInputBroker, mpi_input_broker)
+JOIN_THREAD_DEFINITION(MPICncResolver, mpi_cnc_resolver)
+JOIN_THREAD_DEFINITION(MPIApplicationResolver, mpi_application_resolver)
+JOIN_THREAD_DEFINITION(BackendOutputBroker, backend_output_broker)
+JOIN_THREAD_DEFINITION(BackendInputBroker, backend_input_broker)
+JOIN_THREAD_DEFINITION(DebugInputBroker, debug_input_broker)
 
 /* More code repetition ahoy! I would use the preprocessor to generate this,
  * but then it would be too hard for your mere-mortal eyes to read. */
@@ -94,19 +94,19 @@ bool ThreadComms::pop_MPI_cnc_queue(PMsg_p* message)
 bool ThreadComms::pop_MPI_cnc_queue(std::vector<PMsg_p>* messages)
 {
     if (MPICncQueue.empty()) return false;
-    pthread_mutex_lock(&mutex_MPI_app_queue);
+    pthread_mutex_lock(&mutex_MPI_cnc_queue);
     messages->clear();
     while (!MPICncQueue.empty())
     {
         messages->push_back(MPICncQueue.front());
         MPICncQueue.pop();
     }
-    pthread_mutex_unlock(&mutex_MPI_app_queue);
+    pthread_mutex_unlock(&mutex_MPI_cnc_queue);
     return true;
 }
 
 /* Takes message and places it into the queue. */
-bool ThreadComms::push_MPI_cnc_queue(PMsg_p message)
+void ThreadComms::push_MPI_cnc_queue(PMsg_p message)
 {
     pthread_mutex_lock(&mutex_MPI_cnc_queue);
     MPICncQueue.push(message);
@@ -115,13 +115,13 @@ bool ThreadComms::push_MPI_cnc_queue(PMsg_p message)
 
 /* Takes all messages and pushes them into the queue in the order in which they
  * are stored in the vector. */
-bool ThreadComms::push_MPI_cnc_queue(std::vector<PMsg_p>* messages)
+void ThreadComms::push_MPI_cnc_queue(std::vector<PMsg_p>* messages)
 {
     pthread_mutex_lock(&mutex_MPI_cnc_queue);
-    for (std::vector<PMsg_p>::iterator message = messages.begin();
-         message != messages.end(); message++)
+    for (std::vector<PMsg_p>::iterator message = messages->begin();
+         message != messages->end(); message++)
     {
-        MPICncQueue.push(message);
+        MPICncQueue.push(*message);
     }
     pthread_mutex_unlock(&mutex_MPI_cnc_queue);
 }
@@ -157,7 +157,7 @@ bool ThreadComms::pop_MPI_app_queue(std::vector<PMsg_p>* messages)
 }
 
 /* Takes message and places it into the queue. */
-bool ThreadComms::push_MPI_app_queue(PMsg_p message)
+void ThreadComms::push_MPI_app_queue(PMsg_p message)
 {
     pthread_mutex_lock(&mutex_MPI_app_queue);
     MPIAppQueue.push(message);
@@ -166,13 +166,13 @@ bool ThreadComms::push_MPI_app_queue(PMsg_p message)
 
 /* Takes all messages and pushes them into the queue in the order in which they
  * are stored in the vector. */
-bool ThreadComms::push_MPI_app_queue(std::vector<PMsg_p>* messages)
+void ThreadComms::push_MPI_app_queue(std::vector<PMsg_p>* messages)
 {
     pthread_mutex_lock(&mutex_MPI_app_queue);
-    for (std::vector<PMsg_p>::iterator message = messages.begin();
-         message != messages.end(); message++)
+    for (std::vector<PMsg_p>::iterator message = messages->begin();
+         message != messages->end(); message++)
     {
-        MPIAppQueue.push(message);
+        MPIAppQueue.push(*message);
     }
     pthread_mutex_unlock(&mutex_MPI_app_queue);
 }
@@ -185,10 +185,10 @@ bool ThreadComms::push_MPI_app_queue(std::vector<PMsg_p>* messages)
 bool ThreadComms::pop_backend_out_queue(P_Pkt_t* packet)
 {
     if (BackendOutputQueue.empty()) return false;
-    pthread_mutex_lock(&mutex_backend_out_queue);
+    pthread_mutex_lock(&mutex_backend_output_queue);
     *packet = BackendOutputQueue.front();
     BackendOutputQueue.pop();
-    pthread_mutex_unlock(&mutex_backend_out_queue);
+    pthread_mutex_unlock(&mutex_backend_output_queue);
     return true;
 }
 
@@ -198,36 +198,36 @@ bool ThreadComms::pop_backend_out_queue(P_Pkt_t* packet)
 bool ThreadComms::pop_backend_out_queue(std::vector<P_Pkt_t>* packets)
 {
     if (BackendOutputQueue.empty()) return false;
-    pthread_mutex_lock(&mutex_backend_out_queue);
+    pthread_mutex_lock(&mutex_backend_output_queue);
     packets->clear();
     while (!BackendOutputQueue.empty())
     {
         packets->push_back(BackendOutputQueue.front());
         BackendOutputQueue.pop();
     }
-    pthread_mutex_unlock(&mutex_backend_out_queue);
+    pthread_mutex_unlock(&mutex_backend_output_queue);
     return true;
 }
 
 /* Takes packet and places it into the queue. */
-bool ThreadComms::push_backend_out_queue(P_Pkt_t packet)
+void ThreadComms::push_backend_out_queue(P_Pkt_t packet)
 {
-    pthread_mutex_lock(&mutex_backend_out_queue);
+    pthread_mutex_lock(&mutex_backend_output_queue);
     BackendOutputQueue.push(packet);
-    pthread_mutex_unlock(&mutex_backend_out_queue);
+    pthread_mutex_unlock(&mutex_backend_output_queue);
 }
 
 /* Takes all packets and pushes them into the queue in the order in which they
  * are stored in the vector. */
-bool ThreadComms::push_backend_out_queue(std::vector<P_Pkt_t>* packets)
+void ThreadComms::push_backend_out_queue(std::vector<P_Pkt_t>* packets)
 {
-    pthread_mutex_lock(&mutex_backend_out_queue);
-    for (std::vector<P_Pkt_t>::iterator packet = packets.begin();
-         packet != packets.end(); packet++)
+    pthread_mutex_lock(&mutex_backend_output_queue);
+    for (std::vector<P_Pkt_t>::iterator packet = packets->begin();
+         packet != packets->end(); packet++)
     {
-        BackendOutputQueue.push(packet);
+        BackendOutputQueue.push(*packet);
     }
-    pthread_mutex_unlock(&mutex_backend_out_queue);
+    pthread_mutex_unlock(&mutex_backend_output_queue);
 }
 
 /* ===== BackendInputQueue ================================================= */
@@ -259,19 +259,19 @@ bool ThreadComms::pop_backend_in_queue(std::vector<P_Pkt_t>* packets)
 }
 
 /* Takes packet and places it into the queue. */
-bool ThreadComms::push_backend_in_queue(P_Pkt_t packet)
+void ThreadComms::push_backend_in_queue(P_Pkt_t packet)
 {
     BackendInputQueue.push(packet);
 }
 
 /* Takes all packets and pushes them into the queue in the order in which they
  * are stored in the vector. */
-bool ThreadComms::push_backend_in_queue(std::vector<P_Pkt_t>* packets)
+void ThreadComms::push_backend_in_queue(std::vector<P_Pkt_t>* packets)
 {
-    for (std::vector<P_Pkt_t>::iterator packet = packets.begin();
-         packet != packets.end(); packet++)
+    for (std::vector<P_Pkt_t>::iterator packet = packets->begin();
+         packet != packets->end(); packet++)
     {
-        BackendInputQueue.push(packet);
+        BackendInputQueue.push(*packet);
     }
 }
 
@@ -303,18 +303,18 @@ bool ThreadComms::pop_debug_in_queue(std::vector<P_Pkt_t>* packets)
 }
 
 /* Takes packet and places it into the queue. */
-bool ThreadComms::push_debug_in_queue(P_Pkt_t packet)
+void ThreadComms::push_debug_in_queue(P_Pkt_t packet)
 {
     DebugInputQueue.push(packet);
 }
 
 /* Takes all packets and pushes them into the queue in the order in which they
  * are stored in the vector. */
-bool ThreadComms::push_debug_in_queue(std::vector<P_Pkt_t>* packets)
+void ThreadComms::push_debug_in_queue(std::vector<P_Pkt_t>* packets)
 {
-    for (std::vector<P_Pkt_t>::iterator packet = packets.begin();
-         packet != packets.end(); packet++)
+    for (std::vector<P_Pkt_t>::iterator packet = packets->begin();
+         packet != packets->end(); packet++)
     {
-        DebugInputQueue.push(packet);
+        DebugInputQueue.push(*packet);
     }
 }

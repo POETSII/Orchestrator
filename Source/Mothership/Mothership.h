@@ -4,6 +4,8 @@
 /* Describes the Mothership object, which is instantiated as part of the
  * Mothership process. */
 
+class ThreadComms;
+
 #include "AppDB.h"
 #include "CommonBase.h"
 #include "HostLink.h"
@@ -19,6 +21,7 @@ public:
 
     void dump(std::ofstream*);
     void go();
+    void mpi_spin(){MPISpinner();};
     std::string task_from_swaddr(uint32_t address);
     void queue_mpi_message(PMsg_p message, unsigned commIndex);
 

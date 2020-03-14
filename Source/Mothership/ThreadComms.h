@@ -17,16 +17,16 @@ class Mothership;
 #include "poets_pkt.h"
 #include "PMsg_p.hpp"
 
-#define START_THREAD_FN_NAME(THREAD) start_ ## THREAD
-#define JOIN_THREAD_FN_NAME(THREAD) join_ ## THREAD
+#define START_THREAD_FN_NAME(THREAD) start_##THREAD
+#define JOIN_THREAD_FN_NAME(THREAD) join_##THREAD
 
 #define THREAD_METHOD_DECLARATIONS(THREAD) \
     void START_THREAD_FN_NAME(THREAD)(); \
     void JOIN_THREAD_FN_NAME(THREAD)(); \
-    void* THREAD(void* mothership);
+    static void* THREAD (void* mothership);
 
 #define START_THREAD_DEFINITION(THREAD_PTR, THREAD_NAME) \
-void ThreadComms::START_THREAD_FN_NAME(THREAD)() \
+void ThreadComms::START_THREAD_FN_NAME(THREAD_NAME)() \
 { \
     int result = pthread_create(THREAD_PTR, PNULL, THREAD_NAME, \
                                 (void*)mothership); \
@@ -37,10 +37,10 @@ void ThreadComms::START_THREAD_FN_NAME(THREAD)() \
     } \
 }
 
-#define JOIN_THREAD_DEFINITION(THREAD_PTR, THREAD_NAME) \
-void ThreadComms::JOIN_THREAD_FN_NAME(THREAD)() \
+#define JOIN_THREAD_DEFINITION(THREAD_OBJ, THREAD_NAME) \
+void ThreadComms::JOIN_THREAD_FN_NAME(THREAD_NAME)() \
 { \
-    int result = pthread_join(THREAD_PTR); \
+    int result = pthread_join(THREAD_OBJ, PNULL);     \
     if(!result) \
     { \
         throw ThreadException(dformat("'THREAD_NAME': %s", \
