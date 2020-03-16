@@ -11,6 +11,7 @@ public :
               PMsg_p(MPI_Comm c=MPI_COMM_NULL);
               PMsg_p(byte * pb,int l,MPI_Comm c=MPI_COMM_NULL);
               PMsg_p(PMsg_p & r);
+              PMsg_p(const PMsg_p & r);
 virtual ~     PMsg_p(void);
 void          Bcast();
 void          Send();
