@@ -113,6 +113,7 @@ LOGSERVER_MESSAGE_FILE = $(EXECUTABLE_DIR)/OrchestratorMessages.txt
 RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
+ADR_MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/adr_mothership
 
 all: orchestrate launcher root dummy logserver rtcl injector mothership \
      application_staging_environment
@@ -124,6 +125,7 @@ logserver: $(LOGSERVER_EXECUTABLE) $(LOGSERVER_MESSAGE_FILE)
 rtcl: $(RTCL_EXECUTABLE)
 injector: $(INJECTOR_EXECUTABLE)
 mothership: $(MOTHERSHIP_EXECUTABLE)
+adr_mothership: $(ADR_MOTHERSHIP_EXECUTABLE)
 
 # Prerequisites (objects) for building executables are defined here:
 include Makefile.executable_prerequisites
@@ -157,7 +159,7 @@ $(TEST_SCRIPT): $(TEST_SCRIPT_RESOURCE)
 	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
 	cp "$(TEST_SCRIPT_RESOURCE)" "$(TEST_SCRIPT)"
 
-$(MOTHERSHIP_EXECUTABLE):
+$(MOTHERSHIP_EXECUTABLE) $(ADR_MOTHERSHIP_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
         -Wl,-export-dynamic \

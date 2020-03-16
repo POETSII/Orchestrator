@@ -232,13 +232,14 @@ INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/AppDB.cpp \
                      $(SOURCE_DIR)/Mothership/AppInfo.cpp \
-                     $(SOURCE_DIR)/Mothership/Mothership.cpp \
                      $(SOURCE_DIR)/Mothership/MPIHandlers.cpp \
                      $(SOURCE_DIR)/Mothership/StubThreads.cpp \
                      $(SOURCE_DIR)/Mothership/SuperDB.cpp \
                      $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
                      $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
-                     $(SOURCE_DIR)/Mothership/ThreadComms.cpp
+                     $(SOURCE_DIR)/Mothership/ThreadComms.cpp \
+                     $(SOURCE_DIR)/Mothership/Mothership.cpp
+
 
 # The old mothership component consists of:
 #
