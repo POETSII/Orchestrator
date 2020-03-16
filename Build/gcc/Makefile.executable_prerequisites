@@ -230,6 +230,7 @@ INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 #
 # Hostlink sources are to be compiled separately.
 MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
+                     $(SOURCE_DIR)/Mothership/Mothership.cpp \
                      $(SOURCE_DIR)/Mothership/AppDB.cpp \
                      $(SOURCE_DIR)/Mothership/AppInfo.cpp \
                      $(SOURCE_DIR)/Mothership/MPIHandlers.cpp \
@@ -237,9 +238,9 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/SuperDB.cpp \
                      $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
                      $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
-                     $(SOURCE_DIR)/Mothership/ThreadComms.cpp \
-                     $(SOURCE_DIR)/Mothership/Mothership.cpp
+                     $(SOURCE_DIR)/Mothership/ThreadComms.cpp
 
+MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 
 # The old mothership component consists of:
 #
