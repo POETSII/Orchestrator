@@ -21,6 +21,7 @@ public:
     std::map<uint32_t, std::string> coreToApp;
 
     AppInfo* check_create_app(std::string, uint32_t);
+    AppInfo* check_create_app(std::string);
     bool check_defined_app(std::string);
     void dump(std::ofstream*);
 };

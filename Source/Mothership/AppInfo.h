@@ -40,6 +40,7 @@ class AppInfo
 {
 public:
     AppInfo(std::string nameArg, uint32_t distCountExpected);
+    AppInfo(std::string nameArg);
 
     std::string name;
     uint32_t distCountExpected;
@@ -48,7 +49,10 @@ public:
     std::map<uint32_t, CoreInfo> coreInfos;
     std::set<uint32_t> coresLoaded;
 
+    bool check_update_defined_state();
+    std::string get_state_colloquial();
     bool should_we_continue();
+    bool should_we_recall();
 
     inline void stage_init(){stage_command(STAGE_INIT_BIT);};
     inline void stage_run(){stage_command(STAGE_RUN_BIT);};

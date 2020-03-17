@@ -1,11 +1,57 @@
 #include "AppInfo.h"
 
+/* This constructor is used by SPEC messages. */
 AppInfo::AppInfo(std::string name, uint32_t distCountExpected):
     name(name),
     distCountExpected(distCountExpected)
 {
     distCountCurrent = 0;
     state = UNDERDEFINED;
+}
+
+/* This constructor is used by non-SPEC messages. The zero in distCountExpected
+ * is a special value (see the documentation). */
+AppInfo::AppInfo(std::string name):
+    name(name)
+{
+    distCountExpected = 0;
+    distCountCurrent = 0;
+    state = UNDERDEFINED;
+}
+
+/* Checks whether this application, is now fully defined, given that it's state
+ * is UNDERDEFINED. If so, update the state to DEFINED. If the state is not
+ * UNDERDEFINED, this does nothing. Returns true if the state is not
+ * UNDERDEFINED or BROKEN, and false otherwise. */
+bool AppInfo::check_update_defined_state()
+{
+    /* If the task is underdefined, but we've received all dist messages and a
+     * spec message, update the state to DEFINED. */
+    if (state == UNDERDEFINED)
+    {
+        if (distCountExpected > 0 and distCountExpected == distCountCurrent)
+        {
+            state = DEFINED;
+        }
+    }
+
+    /* Return according to state. */
+    return not(state == UNDERDEFINED or state == BROKEN);
+}
+
+/* Returns the current state of the application as a string, inelegantly
+ * (because we're working with C++98 enumerated types...). */
+std::string AppInfo::get_state_colloquial()
+{
+    if (state == UNDERDEFINED) return "UNDERDEFINED";
+    if (state == DEFINED) return "DEFINED";
+    if (state == LOADING) return "LOADING";
+    if (state == READY) return "READY";
+    if (state == RUNNING) return "RUNNING";
+    if (state == STOPPING) return "STOPPING";
+    if (state == STOPPED) return "STOPPED";
+    if (state == BROKEN) return "BROKEN";
+    return "UNKNOWN";
 }
 
 /* Returns true if a state transition is possible for this application, and
@@ -19,9 +65,6 @@ bool AppInfo::should_we_continue()
         state == RUNNING or
         state == STOPPED)
     {
-        /* RECL takes precedence. */
-        if (is_recl_staged()) return true;
-
         /* If defined and we're waiting to INIT... */
         if (state == DEFINED and is_init_staged()) return true;
 
@@ -36,6 +79,21 @@ bool AppInfo::should_we_continue()
     return false;
 }
 
+/* Returns true if a recall state transition is possible for this application,
+ * and false otherwise. This transition is only possible if the application has
+ * been recalled from a message. */
+bool AppInfo::should_we_recall()
+{
+    if (state == DEFINED or
+        state == READY or
+        state == RUNNING or
+        state == STOPPED)
+    {
+        return is_recl_staged();
+    }
+    return false;
+}
+
 /* Prints a bunch of diagnostic information. Obviously. The argument is the
  * stream to dump to. */
 void AppInfo::dump(std::ofstream* stream)
@@ -44,17 +102,7 @@ void AppInfo::dump(std::ofstream* stream)
 
     *stream << "AppInfo dump for application \"" << name << "\":\n";
 
-    *stream << "Current state: ";
-    /* Bloody C enums. */
-    if (state == UNDERDEFINED) *stream << "UNDERDEFINED";
-    if (state == DEFINED) *stream << "DEFINED";
-    if (state == LOADING) *stream << "LOADING";
-    if (state == READY) *stream << "READY";
-    if (state == RUNNING) *stream << "RUNNING";
-    if (state == STOPPING) *stream << "STOPPING";
-    if (state == STOPPED) *stream << "STOPPED";
-    if (state == BROKEN) *stream << "BROKEN";
-    *stream << "\n";
+    *stream << "Current state: " << get_state_colloquial() << "\n";
 
     *stream << "Staged commands: ";
     if (is_init_staged())

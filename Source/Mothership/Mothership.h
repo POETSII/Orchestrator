@@ -30,6 +30,13 @@ public:
     SuperDB superdb;
     ThreadComms threading;
 
+    /* Methods for transitioning applications through states, triggered by
+     * different Q::APP message keys. */
+    void initialise_application(AppInfo*);
+    void run_application(AppInfo*);
+    void stop_application(AppInfo*);
+    void recall_application(AppInfo*);
+
     /* More stuff needed for CommonBase to work. */
     typedef unsigned (Mothership::*pMeth)(PMsg_p*, unsigned);
     typedef std::map<unsigned, pMeth> FnMap_t;

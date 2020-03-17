@@ -12,8 +12,18 @@ AppInfo* AppDB::check_create_app(std::string name, uint32_t distCountExpected)
      * pointer to it). */
     if (appFinder == appInfos.end())
     {
-        appInfos.insert(std::pair<std::string, AppInfo>
-                        (name, AppInfo(name, distCountExpected)));
+        if (distCountExpected == 0)
+        {
+            appInfos.insert(std::pair<std::string, AppInfo>
+                            (name, AppInfo(name)));
+        }
+
+        else
+        {
+            appInfos.insert(std::pair<std::string, AppInfo>
+                            (name, AppInfo(name, distCountExpected)));
+        }
+
         return &(appInfos.find(name)->second);
     }
 
@@ -22,6 +32,12 @@ AppInfo* AppDB::check_create_app(std::string name, uint32_t distCountExpected)
     {
         return &(appFinder->second);
     }
+}
+
+/* Sub-synonym. */
+AppInfo* AppDB::check_create_app(std::string name)
+{
+    return check_create_app(name, 0);
 }
 
 /* Checks appInfos for an application of a given name, returning true if such
