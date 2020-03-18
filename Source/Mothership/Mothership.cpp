@@ -40,7 +40,7 @@ std::string Mothership::task_from_swaddr(uint32_t address)
  * You might reasonably thing this is largely superfluous, but this is here to
  * aid debugging as an elegant hook for all outgoing MPI communications. The
  * compiler (assuming it's not bad) will inline it under optimisation. */
-void Mothership::queue_mpi_message(PMsg_p message, unsigned commIndex)
+void Mothership::queue_mpi_message(PMsg_p message)
 {
     message.Send();
 }

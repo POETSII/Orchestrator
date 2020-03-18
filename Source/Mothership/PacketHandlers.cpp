@@ -24,6 +24,12 @@ void Mothership::handle_pkt_barrier(P_Pkt_t* packet)
 void Mothership::handle_pkt_stop(P_Pkt_t* packet)
 {}
 
-/* Stub */
 void Mothership::handle_pkt_kill(P_Pkt_t* packet)
-{}
+{
+    /* We manage killing the Mothership via MPI - the message is consumed by
+     * MPIInputBroker, which tells everything to stop gracefully. */
+    PMsg_p message;
+    message.Key(Q::EXIT);
+    message.Tgt(Urank);  /* Send to ourselves */
+    queue_mpi_message(message);
+}

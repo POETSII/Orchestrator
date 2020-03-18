@@ -23,7 +23,7 @@ public:
     void go();
     void mpi_spin(){MPISpinner();};
     std::string task_from_swaddr(uint32_t address);
-    void queue_mpi_message(PMsg_p message, unsigned commIndex);
+    void queue_mpi_message(PMsg_p message);
 
     AppDB appdb;
     HostLink backend;
