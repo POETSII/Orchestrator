@@ -234,6 +234,7 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/AppDB.cpp \
                      $(SOURCE_DIR)/Mothership/AppInfo.cpp \
                      $(SOURCE_DIR)/Mothership/AppTransitions.cpp \
+                     $(SOURCE_DIR)/Mothership/MessageUtils.cpp \
                      $(SOURCE_DIR)/Mothership/MPIHandlers.cpp \
                      $(SOURCE_DIR)/Mothership/StubThreads.cpp \
                      $(SOURCE_DIR)/Mothership/SuperDB.cpp \

@@ -22,11 +22,10 @@ unsigned Mothership::handle_app_spec(PMsg_p* message, unsigned commIndex)
 {
     AppInfo* appInfo;
 
-    /* Pull message contents */
+    /* Pull message contents. */
     std::string appName;
     uint32_t distCount;
-    message->Get(0, appName);
-    message->Get(1, distCount);
+    if (!decode_app_spec_message(message, &appName, &distCount)) return 0;
 
     /* Ensure application existence idempotently (it might have been created by
      * an AppDist message). */
@@ -63,12 +62,9 @@ unsigned Mothership::handle_app_dist(PMsg_p* message, unsigned commIndex)
     std::string codePath;
     std::string dataPath;
     uint32_t coreAddr;
-    uint8_t numThreads;
-    message->Get(0, appName);
-    message->Get(1, codePath);
-    message->Get(2, dataPath);
-    message->Get(3, coreAddr);
-    message->Get(4, numThreads);
+    unsigned numThreads;
+    if (!decode_app_dist_message(message, &appName, &codePath,
+                                 &dataPath, &coreAddr, &numThreads)) return 0;
 
     /* Ensure application existence idempotently. */
     appInfo = appdb.check_create_app(appName);
@@ -109,8 +105,7 @@ unsigned Mothership::handle_app_supd(PMsg_p* message, unsigned commIndex)
     /* Pull message contents. */
     std::string appName;
     std::string soPath;
-    message->Get(0, appName);
-    message->Get(1, soPath);
+    if (!decode_app_supd_message(message, &appName, &soPath)) return 0;
 
     /* Ensure application existence idempotently, either to set its status to
      * BROKEN (on failure), or to update the distribution count. */
@@ -144,7 +139,7 @@ unsigned Mothership::handle_cmnd_recl(PMsg_p* message, unsigned commIndex)
 
     /* Pull message contents. */
     std::string appName;
-    message->Get(0, appName);
+    if (!decode_string_message(message, &appName)) return 0;
 
     /* Get the application */
     appInfo = appdb.check_create_app(appName);
@@ -161,7 +156,7 @@ unsigned Mothership::handle_cmnd_init(PMsg_p* message, unsigned commIndex)
 
     /* Pull message contents. */
     std::string appName;
-    message->Get(0, appName);
+    if (!decode_string_message(message, &appName)) return 0;
 
     /* Get the application */
     appInfo = appdb.check_create_app(appName);
@@ -178,7 +173,7 @@ unsigned Mothership::handle_cmnd_run(PMsg_p* message, unsigned commIndex)
 
     /* Pull message contents. */
     std::string appName;
-    message->Get(0, appName);
+    if (!decode_string_message(message, &appName)) return 0;
 
     /* Get the application */
     appInfo = appdb.check_create_app(appName);
@@ -195,7 +190,7 @@ unsigned Mothership::handle_cmnd_stop(PMsg_p* message, unsigned commIndex)
 
     /* Pull message contents. */
     std::string appName;
-    message->Get(0, appName);
+    if (!decode_string_message(message, &appName)) return 0;
 
     /* Get the application */
     appInfo = appdb.check_create_app(appName);

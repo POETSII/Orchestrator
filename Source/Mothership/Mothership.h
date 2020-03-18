@@ -61,6 +61,19 @@ private:
     unsigned handle_bend_supr(PMsg_p* message, unsigned commIndex);
     unsigned handle_pkts(PMsg_p* message, unsigned commIndex);
     unsigned handle_dump(PMsg_p* message, unsigned commIndex);
+
+    /* Methods for decoding MPI messages with certain field configurations. */
+    bool decode_app_dist_message(PMsg_p* message, std::string* appName,
+                                 std::string* codePath, std::string* dataPath,
+                                 uint32_t* coreAddr, unsigned* numThreads);
+    bool decode_app_supd_message(PMsg_p* message, std::string* appName,
+                                 std::string* soPath);
+    bool decode_app_spec_message(PMsg_p* message, std::string* appName,
+                                 uint32_t* distCount);
+    bool decode_string_message(PMsg_p* message, std::string* result,
+                               unsigned index=0);
+    bool decode_unsigned_message(PMsg_p* message, unsigned* result,
+                                 unsigned index=0);
 };
 
 #endif

@@ -83,6 +83,8 @@
 401(F) : "Mothership: Could not join to pthread %s. Exiting."
 402(W) : "Mothership: Received a message defining an application with name '%s', but the Mothership's application database already holds an application named '%s' that is fully defined (with state '%s'). Recall it first before defining another application with that name."
 403(E) : "Mothership: Error loading supervisor for application '%s': '%s'."
+404(E) : "Mothership: Error decoding MPI message with key '%s': Expected non-empty string in field %s. Ignoring message."
+405(E) : "Mothership: Error decoding MPI message with key '%s': Expected unsigned in field %s. Ignoring message."
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"

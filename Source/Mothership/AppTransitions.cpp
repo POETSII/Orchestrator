@@ -3,22 +3,22 @@
 
 #include "Mothership.h"
 
-void initialise_application(AppInfo* app)
+void Mothership::initialise_application(AppInfo* app)
 {
     printf("Initialising application '%s'!\n", app->name.c_str());
 }
 
-void run_application(AppInfo* app)
+void Mothership::run_application(AppInfo* app)
 {
     printf("Running application '%s'!\n", app->name.c_str());
 }
 
-void stop_application(AppInfo* app)
+void Mothership::stop_application(AppInfo* app)
 {
     printf("Stopping application '%s'!\n", app->name.c_str());
 }
 
-void recall_application(AppInfo* app)
+void Mothership::recall_application(AppInfo* app)
 {
     printf("Recalling application '%s'!\n", app->name.c_str());
 }
