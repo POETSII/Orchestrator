@@ -37,23 +37,23 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
         {
             key = messageIt->Key();
             if (key == PMsg_p::KEY(Q::APP, Q::SPEC))
-                mothership->handle_app_spec(&*messageIt);
+                mothership->handle_msg_app_spec(&*messageIt);
             else if (key == PMsg_p::KEY(Q::APP, Q::DIST))
-                mothership->handle_app_dist(&*messageIt);
+                mothership->handle_msg_app_dist(&*messageIt);
             else if (key == PMsg_p::KEY(Q::APP, Q::SUPD))
-                mothership->handle_app_supd(&*messageIt);
+                mothership->handle_msg_app_supd(&*messageIt);
             else if (key == PMsg_p::KEY(Q::CMND, Q::RECL))
-                mothership->handle_cmnd_recl(&*messageIt);
+                mothership->handle_msg_cmnd_recl(&*messageIt);
             else if (key == PMsg_p::KEY(Q::CMND, Q::INIT))
-                mothership->handle_cmnd_init(&*messageIt);
+                mothership->handle_msg_cmnd_init(&*messageIt);
             else if (key == PMsg_p::KEY(Q::CMND, Q::RUN))
-                mothership->handle_cmnd_run(&*messageIt);
+                mothership->handle_msg_cmnd_run(&*messageIt);
             else if (key == PMsg_p::KEY(Q::CMND, Q::STOP))
-                mothership->handle_cmnd_stop(&*messageIt);
+                mothership->handle_msg_cmnd_stop(&*messageIt);
             else if (key == PMsg_p::KEY(Q::BEND, Q::CNC))
-                mothership->handle_bend_cnc(&*messageIt);
+                mothership->handle_msg_bend_cnc(&*messageIt);
             else if (key == PMsg_p::KEY(Q::DUMP))
-                mothership->handle_dump(&*messageIt);
+                mothership->handle_msg_dump(&*messageIt);
             else
                 mothership->Post(407, "MPICncResolver", uint2str(key));
         }
@@ -91,9 +91,9 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
         {
             key = messageIt->Key();
             if (key == PMsg_p::KEY(Q::BEND, Q::SUPR))
-                mothership->handle_bend_supr(&*messageIt);
+                mothership->handle_msg_bend_supr(&*messageIt);
             else if (key == PMsg_p::KEY(Q::PKTS))
-                mothership->handle_pkts(&*messageIt);
+                mothership->handle_msg_pkts(&*messageIt);
             else
                 mothership->Post(407, "MPIAppResolver", uint2str(key));
         }

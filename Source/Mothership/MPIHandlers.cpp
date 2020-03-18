@@ -14,32 +14,32 @@
 
 #include "Mothership.h"
 
-unsigned Mothership::handle_exit(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_exit(PMsg_p* message, unsigned commIndex)
 {
     threading.set_quit();
     return 1;  /* CommonBase's Decode reads this, returning from MPISpinner. */
 }
 
-unsigned Mothership::handle_syst_kill(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_syst_kill(PMsg_p* message, unsigned commIndex)
 {
     /* ThreadComms notices that we haven't set_quit, so it doesn't wait for the
      * other threads to finish before leaving. */
     return 1;
 }
 
-unsigned Mothership::handle_app(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_app(PMsg_p* message, unsigned commIndex)
 {
     threading.push_MPI_app_queue(*message);
     return 0;
 }
 
-unsigned Mothership::handle_cnc(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_cnc(PMsg_p* message, unsigned commIndex)
 {
     threading.push_MPI_cnc_queue(*message);
     return 0;
 }
 
-unsigned Mothership::handle_app_spec(PMsg_p* message)
+unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
 {
     AppInfo* appInfo;
 
@@ -73,7 +73,7 @@ unsigned Mothership::handle_app_spec(PMsg_p* message)
     return 0;
 }
 
-unsigned Mothership::handle_app_dist(PMsg_p* message)
+unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
 {
     AppInfo* appInfo;
     CoreInfo* coreInfo;
@@ -118,7 +118,7 @@ unsigned Mothership::handle_app_dist(PMsg_p* message)
     return 0;
 }
 
-unsigned Mothership::handle_app_supd(PMsg_p* message)
+unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
 {
     std::string errorMessage;
     AppInfo* appInfo;
@@ -154,7 +154,7 @@ unsigned Mothership::handle_app_supd(PMsg_p* message)
     return 0;
 }
 
-unsigned Mothership::handle_cmnd_recl(PMsg_p* message)
+unsigned Mothership::handle_msg_cmnd_recl(PMsg_p* message)
 {
     AppInfo* appInfo;
 
@@ -171,7 +171,7 @@ unsigned Mothership::handle_cmnd_recl(PMsg_p* message)
     return 0;
 }
 
-unsigned Mothership::handle_cmnd_init(PMsg_p* message)
+unsigned Mothership::handle_msg_cmnd_init(PMsg_p* message)
 {
     AppInfo* appInfo;
 
@@ -188,7 +188,7 @@ unsigned Mothership::handle_cmnd_init(PMsg_p* message)
     return 0;
 }
 
-unsigned Mothership::handle_cmnd_run(PMsg_p* message)
+unsigned Mothership::handle_msg_cmnd_run(PMsg_p* message)
 {
     AppInfo* appInfo;
 
@@ -205,7 +205,7 @@ unsigned Mothership::handle_cmnd_run(PMsg_p* message)
     return 0;
 }
 
-unsigned Mothership::handle_cmnd_stop(PMsg_p* message)
+unsigned Mothership::handle_msg_cmnd_stop(PMsg_p* message)
 {
     AppInfo* appInfo;
 
@@ -223,7 +223,7 @@ unsigned Mothership::handle_cmnd_stop(PMsg_p* message)
 }
 
 /* Stub */
-unsigned Mothership::handle_bend_cnc(PMsg_p* message)
+unsigned Mothership::handle_msg_bend_cnc(PMsg_p* message)
 {
     /* Pull message contents. */
     std::vector<P_Pkt_t> packets;
@@ -233,7 +233,7 @@ unsigned Mothership::handle_bend_cnc(PMsg_p* message)
 }
 
 /* Stub */
-unsigned Mothership::handle_bend_supr(PMsg_p* message)
+unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
 {
     /* Pull message contents. */
     std::vector<P_Pkt_t> packets;
@@ -242,7 +242,7 @@ unsigned Mothership::handle_bend_supr(PMsg_p* message)
     printf("BendSupr message received!\n"); return 0;
 }
 
-unsigned Mothership::handle_pkts(PMsg_p* message)
+unsigned Mothership::handle_msg_pkts(PMsg_p* message)
 {
     /* Pull message contents. */
     std::vector<P_Pkt_t> packets;
@@ -253,7 +253,7 @@ unsigned Mothership::handle_pkts(PMsg_p* message)
     return 0;
 }
 
-unsigned Mothership::handle_dump(PMsg_p* message)
+unsigned Mothership::handle_msg_dump(PMsg_p* message)
 {
     std::string dumpPath;
     std::ofstream outS;

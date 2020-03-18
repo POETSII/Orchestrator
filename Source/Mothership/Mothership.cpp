@@ -59,17 +59,18 @@ void Mothership::load_backend()
 void Mothership::setup_mpi_hooks()
 {
     FnMapx.push_back(new FnMap_t);
-    (*FnMapx[0])[PMsg_p::KEY(Q::EXIT)] = &Mothership::handle_exit;
-    (*FnMapx[0])[PMsg_p::KEY(Q::SYST,Q::KILL)] = &Mothership::handle_syst_kill;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SPEC)] = &Mothership::handle_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::DIST)] = &Mothership::handle_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SUPD)] = &Mothership::handle_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RECL)] = &Mothership::handle_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::INIT)] = &Mothership::handle_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RUN)] = &Mothership::handle_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::STOP)] = &Mothership::handle_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::CNC)] = &Mothership::handle_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::SUPR)] = &Mothership::handle_app;
-    (*FnMapx[0])[PMsg_p::KEY(Q::PKTS)] = &Mothership::handle_app;
-    (*FnMapx[0])[PMsg_p::KEY(Q::DUMP)] = &Mothership::handle_cnc;
+    (*FnMapx[0])[PMsg_p::KEY(Q::EXIT)] = &Mothership::handle_msg_exit;
+    (*FnMapx[0])[PMsg_p::KEY(Q::SYST,Q::KILL)] =
+        &Mothership::handle_msg_syst_kill;
+    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SPEC)] = &Mothership::handle_msg_cnc;
+    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::DIST)] = &Mothership::handle_msg_cnc;
+    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SUPD)] = &Mothership::handle_msg_cnc;
+    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RECL)] = &Mothership::handle_msg_cnc;
+    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::INIT)] = &Mothership::handle_msg_cnc;
+    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RUN)] = &Mothership::handle_msg_cnc;
+    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::STOP)] = &Mothership::handle_msg_cnc;
+    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::CNC)] = &Mothership::handle_msg_cnc;
+    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::SUPR)] = &Mothership::handle_msg_app;
+    (*FnMapx[0])[PMsg_p::KEY(Q::PKTS)] = &Mothership::handle_msg_app;
+    (*FnMapx[0])[PMsg_p::KEY(Q::DUMP)] = &Mothership::handle_msg_cnc;
 }
