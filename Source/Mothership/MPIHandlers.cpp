@@ -1,6 +1,6 @@
-/* This source file defines the private Mothership methods for handling
- * incoming MPI messages. The functionality of these handlers is described in
- * the Mothership documentation.
+/* This source file defines the Mothership methods for handling incoming MPI
+ * messages. The functionality of these handlers is described in the Mothership
+ * documentation.
  *
  * Each handler is called by one of two sources (disambiguated by the dyadic
  * nature of their signature):

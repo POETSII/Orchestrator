@@ -50,6 +50,14 @@ public:
     unsigned handle_msg_pkts(PMsg_p* message);
     unsigned handle_msg_dump(PMsg_p* message);
 
+    /* Methods for handling command-and-control packets received by the
+     * Mothership from the compute fabric (called by consumer threads). */
+    void handle_pkt_instr(P_Pkt_t* packet);
+    void handle_pkt_log(P_Pkt_t* packet);
+    void handle_pkt_barrier(P_Pkt_t* packet);
+    void handle_pkt_stop(P_Pkt_t* packet);
+    void handle_pkt_kill(P_Pkt_t* packet);
+
     /* More stuff needed for CommonBase to work. */
     typedef unsigned (Mothership::*pMeth)(PMsg_p*, unsigned);
     typedef std::map<unsigned, pMeth> FnMap_t;
