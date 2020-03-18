@@ -242,14 +242,15 @@ unsigned Mothership::handle_bend_supr(PMsg_p* message)
     printf("BendSupr message received!\n"); return 0;
 }
 
-/* Stub */
 unsigned Mothership::handle_pkts(PMsg_p* message)
 {
     /* Pull message contents. */
     std::vector<P_Pkt_t> packets;
     if (!decode_packets_message(message, &packets)) return 0;
 
-    printf("Pkts message received!\n"); return 0;
+    /* Queue 'em. */
+    threading.push_backend_out_queue(&packets);
+    return 0;
 }
 
 unsigned Mothership::handle_dump(PMsg_p* message)
