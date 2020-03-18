@@ -222,20 +222,51 @@ unsigned Mothership::handle_cmnd_stop(PMsg_p* message)
     return 0;
 }
 
-/* Stubs */
+/* Stub */
 unsigned Mothership::handle_bend_cnc(PMsg_p* message)
 {
     printf("BendCnc message received!\n"); return 0;
 }
+
+/* Stub */
 unsigned Mothership::handle_bend_supr(PMsg_p* message)
 {
     printf("BendSupr message received!\n"); return 0;
 }
+
+/* Stub */
 unsigned Mothership::handle_pkts(PMsg_p* message)
 {
     printf("Pkts message received!\n"); return 0;
 }
+
 unsigned Mothership::handle_dump(PMsg_p* message)
 {
-    printf("Dump message received!\n"); return 0;
+    std::string dumpPath;
+    std::ofstream outS;
+    FILE* outF;
+
+    /* Pull message contents. */
+    if (!decode_string_message(message, &dumpPath)) return 0;
+
+    /* Mothership dump */
+    outS.open(dumpPath.c_str(), std::ofstream::out | std::ofstream::trunc);
+    if (outS.fail())
+    {
+        Post(407, dumpPath, POETS::getSysErrorString(errno));
+        return 0;
+    }
+    dump(&outS);
+    outS.close();
+
+    /* CommonBase dump (see comment heading of Mothership::dump) */
+    outF = fopen(dumpPath.c_str(), "a");
+    if (outF == PNULL)
+    {
+        Post(407, dumpPath, POETS::getSysErrorString(errno));
+        return 0;
+    }
+    Dump(outF);
+    fclose(outF);
+    return 0;
 }

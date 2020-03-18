@@ -7,10 +7,11 @@ Mothership::Mothership(int argc, char** argv):
 {
 }
 
-/* Dumps dumpable datastructures to a stream. */
+/* Dumps dumpable datastructures to a stream. Note that the CommonBase data
+ * structure is not dumped by this, because it requires a file pointer (and
+ * there's no portable way to interface the two). See the dump handler. */
 void Mothership::dump(std::ofstream* stream)
 {
-    /* <!> Include dump from CommonBase here. */
     *stream << "Mothership (" << POETS::get_hostname() << ") dump:\n";
     appdb.dump(stream);
     superdb.dump(stream);
