@@ -66,7 +66,8 @@ private:
     unsigned handle_app(PMsg_p* message, unsigned commIndex);
     unsigned handle_cnc(PMsg_p* message, unsigned commIndex);
 
-    /* Methods for decoding MPI messages with certain field configurations. */
+    /* Methods for safely decoding MPI messages with certain field
+     * configurations. */
     bool decode_app_dist_message(PMsg_p* message, std::string* appName,
                                  std::string* codePath, std::string* dataPath,
                                  uint32_t* coreAddr, unsigned* numThreads);
@@ -74,6 +75,9 @@ private:
                                  std::string* soPath);
     bool decode_app_spec_message(PMsg_p* message, std::string* appName,
                                  uint32_t* distCount);
+    bool decode_packets_message(PMsg_p* message,
+                                std::vector<P_Pkt_t>* packets,
+                                unsigned index=0);
     bool decode_string_message(PMsg_p* message, std::string* result,
                                unsigned index=0);
     bool decode_unsigned_message(PMsg_p* message, unsigned* result,

@@ -225,18 +225,30 @@ unsigned Mothership::handle_cmnd_stop(PMsg_p* message)
 /* Stub */
 unsigned Mothership::handle_bend_cnc(PMsg_p* message)
 {
+    /* Pull message contents. */
+    std::vector<P_Pkt_t> packets;
+    if (!decode_packets_message(message, &packets)) return 0;
+
     printf("BendCnc message received!\n"); return 0;
 }
 
 /* Stub */
 unsigned Mothership::handle_bend_supr(PMsg_p* message)
 {
+    /* Pull message contents. */
+    std::vector<P_Pkt_t> packets;
+    if (!decode_packets_message(message, &packets)) return 0;
+
     printf("BendSupr message received!\n"); return 0;
 }
 
 /* Stub */
 unsigned Mothership::handle_pkts(PMsg_p* message)
 {
+    /* Pull message contents. */
+    std::vector<P_Pkt_t> packets;
+    if (!decode_packets_message(message, &packets)) return 0;
+
     printf("Pkts message received!\n"); return 0;
 }
 
@@ -253,7 +265,7 @@ unsigned Mothership::handle_dump(PMsg_p* message)
     outS.open(dumpPath.c_str(), std::ofstream::out | std::ofstream::trunc);
     if (outS.fail())
     {
-        Post(407, dumpPath, POETS::getSysErrorString(errno));
+        Post(408, dumpPath, POETS::getSysErrorString(errno));
         return 0;
     }
     dump(&outS);
@@ -263,7 +275,7 @@ unsigned Mothership::handle_dump(PMsg_p* message)
     outF = fopen(dumpPath.c_str(), "a");
     if (outF == PNULL)
     {
-        Post(407, dumpPath, POETS::getSysErrorString(errno));
+        Post(408, dumpPath, POETS::getSysErrorString(errno));
         return 0;
     }
     Dump(outF);

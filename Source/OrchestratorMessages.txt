@@ -85,8 +85,9 @@
 403(E) : "Mothership: Error loading supervisor for application '%s': '%s'."
 404(E) : "Mothership: Error decoding MPI message with key '%s': Expected non-empty string in field %s. Ignoring message."
 405(E) : "Mothership: Error decoding MPI message with key '%s': Expected unsigned in field %s. Ignoring message."
-406(E) : "Mothership: Thread '%s' received MPI message with key '%s', which it did not know how to decode. Ignoring message."
-407(E) : "Mothership: Error opening file '%s' for dumping: %s."
+406(E) : "Mothership: Error decoding MPI message with key '%s': Expected a vector of P_Pkt_t values in field %s. Ignoring message."
+407(E) : "Mothership: Thread '%s' received MPI message with key '%s', which it did not know how to decode. Ignoring message."
+408(E) : "Mothership: Error opening file '%s' for dumping: %s."
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"
