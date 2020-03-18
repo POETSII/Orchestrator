@@ -1,6 +1,8 @@
-#include "Mothership.h"
+/* This source file defines what the threads do when started via
+ * pthread_create. Keep calm; this is just a producer-consumer system. It's all
+ * in the Mothership documentation. */
 
-/* A temporary file to hold stubbed thread logic. */
+#include "Mothership.h"
 
 void* ThreadComms::mpi_input_broker(void* mothershipArg)
 {
@@ -8,6 +10,8 @@ void* ThreadComms::mpi_input_broker(void* mothershipArg)
     mothership->mpi_spin();
     return mothership;
 }
+
+/* Stubs follow */
 
 void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
 {

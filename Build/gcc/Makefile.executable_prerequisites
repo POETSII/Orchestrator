@@ -236,11 +236,11 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/AppTransitions.cpp \
                      $(SOURCE_DIR)/Mothership/MessageUtils.cpp \
                      $(SOURCE_DIR)/Mothership/MPIHandlers.cpp \
-                     $(SOURCE_DIR)/Mothership/StubThreads.cpp \
                      $(SOURCE_DIR)/Mothership/SuperDB.cpp \
                      $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
                      $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
                      $(SOURCE_DIR)/Mothership/ThreadComms.cpp \
+                     $(SOURCE_DIR)/Mothership/ThreadLogic.cpp \
                      $(GENERICS_DIR)/dfprintf.cpp \
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
