@@ -58,17 +58,17 @@ void Mothership::load_backend()
 void Mothership::setup_mpi_hooks()
 {
     FnMapx.push_back(new FnMap_t);
-    (*FnMapx[0])[PMsg_p::KEY(Q::EXIT)] = &Mothership::HandleExit;
-    (*FnMapx[0])[PMsg_p::KEY(Q::SYST,Q::KILL)] = &Mothership::HandleSystKill;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SPEC)] = &Mothership::HandleAppSpec;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::DIST)] = &Mothership::HandleAppDist;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SUPD)] = &Mothership::HandleAppSupd;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RECL)] = &Mothership::HandleCmndRecl;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::INIT)] = &Mothership::HandleCmndInit;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RUN)] = &Mothership::HandleCmndRun;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::STOP)] = &Mothership::HandleCmndStop;
-    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::CNC)] = &Mothership::HandleBendCnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::SUPR)] = &Mothership::HandleBendSupr;
-    (*FnMapx[0])[PMsg_p::KEY(Q::PKTS)] = &Mothership::HandlePkts;
-    (*FnMapx[0])[PMsg_p::KEY(Q::DUMP)] = &Mothership::HandleDump;
+    (*FnMapx[0])[PMsg_p::KEY(Q::EXIT)] = &Mothership::handle_exit;
+    (*FnMapx[0])[PMsg_p::KEY(Q::SYST,Q::KILL)] = &Mothership::handle_syst_kill;
+    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SPEC)] = &Mothership::handle_app_spec;
+    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::DIST)] = &Mothership::handle_app_dist;
+    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SUPD)] = &Mothership::handle_app_supd;
+    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RECL)] = &Mothership::handle_cmnd_recl;
+    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::INIT)] = &Mothership::handle_cmnd_init;
+    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RUN)] = &Mothership::handle_cmnd_run;
+    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::STOP)] = &Mothership::handle_cmnd_stop;
+    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::CNC)] = &Mothership::handle_bend_cnc;
+    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::SUPR)] = &Mothership::handle_bend_supr;
+    (*FnMapx[0])[PMsg_p::KEY(Q::PKTS)] = &Mothership::handle_pkts;
+    (*FnMapx[0])[PMsg_p::KEY(Q::DUMP)] = &Mothership::handle_dump;
 }

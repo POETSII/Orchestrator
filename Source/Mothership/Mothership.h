@@ -47,20 +47,20 @@ private:
     void load_backend();
     void setup_mpi_hooks();
 
-    unsigned HandleExit(PMsg_p* message, unsigned commIndex);
-    unsigned HandleSystKill(PMsg_p* message, unsigned commIndex);
-    unsigned HandleAppSpec(PMsg_p* message, unsigned commIndex);
-    unsigned HandleAppDist(PMsg_p* message, unsigned commIndex);
-    unsigned HandleAppSupd(PMsg_p* message, unsigned commIndex);
-    unsigned HandleCmndRecl(PMsg_p* message, unsigned commIndex);
-    unsigned HandleCmndInit(PMsg_p* message, unsigned commIndex);
-    unsigned HandleCmndRun(PMsg_p* message, unsigned commIndex);
-    unsigned HandleCmndStop(PMsg_p* message, unsigned commIndex);
-    unsigned HandleBendCnc(PMsg_p* message, unsigned commIndex);
-    unsigned HandleBendSupr(PMsg_p* message, unsigned commIndex);
-    unsigned HandlePkts(PMsg_p* message, unsigned commIndex);
-    unsigned HandleDump(PMsg_p* message, unsigned commIndex);
-
+    /* Methods for handling MPI messages. */
+    unsigned handle_exit(PMsg_p* message, unsigned commIndex);
+    unsigned handle_syst_kill(PMsg_p* message, unsigned commIndex);
+    unsigned handle_app_spec(PMsg_p* message, unsigned commIndex);
+    unsigned handle_app_dist(PMsg_p* message, unsigned commIndex);
+    unsigned handle_app_supd(PMsg_p* message, unsigned commIndex);
+    unsigned handle_cmnd_recl(PMsg_p* message, unsigned commIndex);
+    unsigned handle_cmnd_init(PMsg_p* message, unsigned commIndex);
+    unsigned handle_cmnd_run(PMsg_p* message, unsigned commIndex);
+    unsigned handle_cmnd_stop(PMsg_p* message, unsigned commIndex);
+    unsigned handle_bend_cnc(PMsg_p* message, unsigned commIndex);
+    unsigned handle_bend_supr(PMsg_p* message, unsigned commIndex);
+    unsigned handle_pkts(PMsg_p* message, unsigned commIndex);
+    unsigned handle_dump(PMsg_p* message, unsigned commIndex);
 };
 
 #endif
