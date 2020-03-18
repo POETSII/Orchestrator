@@ -37,6 +37,19 @@ public:
     void stop_application(AppInfo*);
     void recall_application(AppInfo*);
 
+    /* Methods for handling MPI messages (called by consumer threads). */
+    unsigned handle_app_spec(PMsg_p* message);
+    unsigned handle_app_dist(PMsg_p* message);
+    unsigned handle_app_supd(PMsg_p* message);
+    unsigned handle_cmnd_recl(PMsg_p* message);
+    unsigned handle_cmnd_init(PMsg_p* message);
+    unsigned handle_cmnd_run(PMsg_p* message);
+    unsigned handle_cmnd_stop(PMsg_p* message);
+    unsigned handle_bend_cnc(PMsg_p* message);
+    unsigned handle_bend_supr(PMsg_p* message);
+    unsigned handle_pkts(PMsg_p* message);
+    unsigned handle_dump(PMsg_p* message);
+
     /* More stuff needed for CommonBase to work. */
     typedef unsigned (Mothership::*pMeth)(PMsg_p*, unsigned);
     typedef std::map<unsigned, pMeth> FnMap_t;
@@ -52,19 +65,6 @@ private:
     unsigned handle_syst_kill(PMsg_p* message, unsigned commIndex);
     unsigned handle_app(PMsg_p* message, unsigned commIndex);
     unsigned handle_cnc(PMsg_p* message, unsigned commIndex);
-
-    /* Methods for handling MPI messages. */
-    unsigned handle_app_spec(PMsg_p* message);
-    unsigned handle_app_dist(PMsg_p* message);
-    unsigned handle_app_supd(PMsg_p* message);
-    unsigned handle_cmnd_recl(PMsg_p* message);
-    unsigned handle_cmnd_init(PMsg_p* message);
-    unsigned handle_cmnd_run(PMsg_p* message);
-    unsigned handle_cmnd_stop(PMsg_p* message);
-    unsigned handle_bend_cnc(PMsg_p* message);
-    unsigned handle_bend_supr(PMsg_p* message);
-    unsigned handle_pkts(PMsg_p* message);
-    unsigned handle_dump(PMsg_p* message);
 
     /* Methods for decoding MPI messages with certain field configurations. */
     bool decode_app_dist_message(PMsg_p* message, std::string* appName,
