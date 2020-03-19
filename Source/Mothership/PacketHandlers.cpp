@@ -8,7 +8,6 @@
 
 #include "Mothership.h"
 
-/* Stub */
 void Mothership::handle_pkt_instr(P_Pkt_t* packet)
 {
     try
