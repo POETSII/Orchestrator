@@ -5,6 +5,14 @@ Mothership::Mothership(int argc, char** argv):
                std::string(__FILE__)),
     threading(ThreadComms(this))
 {
+    try
+    {
+        instrumentation = InstrumentationWriter();
+    }
+    catch (InstrumentationException &e)
+    {
+        Post(409, e.message);
+    }
 }
 
 /* Dumps dumpable datastructures to a stream. Note that the CommonBase data

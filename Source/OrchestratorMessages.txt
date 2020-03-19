@@ -88,6 +88,7 @@
 406(E) : "Mothership: Error decoding MPI message with key '%s': Expected a vector of P_Pkt_t values in field %s. Ignoring message."
 407(E) : "Mothership: Thread '%s' received MPI message with key '%s', which it did not know how to decode. Ignoring message."
 408(E) : "Mothership: Error opening file '%s' for dumping: %s."
+409(E) : "Instrumentation: %s"
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"

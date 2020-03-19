@@ -10,7 +10,17 @@
 
 /* Stub */
 void Mothership::handle_pkt_instr(P_Pkt_t* packet)
-{}
+{
+    try
+    {
+        instrumentation.consume_instrumentation_packet(packet);
+    }
+
+    catch (InstrumentationException &e)
+    {
+        Post(409, e.message);
+    }
+}
 
 /* Stub */
 void Mothership::handle_pkt_log(P_Pkt_t* packet)

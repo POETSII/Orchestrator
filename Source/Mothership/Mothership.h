@@ -9,6 +9,7 @@ class ThreadComms;
 #include "AppDB.h"
 #include "CommonBase.h"
 #include "HostLink.h"
+#include "InstrumentationWriter.h"
 #include "OSFixes.hpp"
 #include "Pglobals.h"
 #include "SuperDB.h"
@@ -27,6 +28,7 @@ public:
 
     AppDB appdb;
     HostLink backend;
+    InstrumentationWriter instrumentation;
     SuperDB superdb;
     ThreadComms threading;
 
