@@ -21,9 +21,12 @@ void Mothership::handle_pkt_instr(P_Pkt_t* packet)
     }
 }
 
-/* Stub */
 void Mothership::handle_pkt_log(P_Pkt_t* packet)
-{}
+{
+    std::string message;
+    logging.consume_log_packet(packet, &message);
+    if (!message.empty()) Post(410, message);
+}
 
 /* Stub */
 void Mothership::handle_pkt_barrier(P_Pkt_t* packet)
