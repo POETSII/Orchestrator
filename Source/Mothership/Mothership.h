@@ -82,11 +82,15 @@ private:
      * configurations. */
     bool decode_app_dist_message(PMsg_p* message, std::string* appName,
                                  std::string* codePath, std::string* dataPath,
-                                 uint32_t* coreAddr, unsigned* numThreads);
+                                 uint32_t* coreAddr,
+                                 std::vector<uint32_t>* threadsExpected);
     bool decode_app_supd_message(PMsg_p* message, std::string* appName,
                                  std::string* soPath);
     bool decode_app_spec_message(PMsg_p* message, std::string* appName,
                                  uint32_t* distCount);
+    bool decode_addresses_message(PMsg_p* message,
+                                  std::vector<uint32_t>* addresses,
+                                  unsigned index=0);
     bool decode_packets_message(PMsg_p* message,
                                 std::vector<P_Pkt_t>* packets,
                                 unsigned index=0);

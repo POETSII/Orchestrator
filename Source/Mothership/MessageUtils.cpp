@@ -12,17 +12,18 @@
 
 bool Mothership::decode_app_dist_message(
     PMsg_p* message, std::string* appName, std::string* codePath,
-    std::string* dataPath, uint32_t* coreAddr, unsigned* numThreads)
+    std::string* dataPath, uint32_t* coreAddr,
+    std::vector<uint32_t>* threadsExpected)
 {
     codePath->clear();
     dataPath->clear();
     *coreAddr = 0;
-    *numThreads = 0;
+    threadsExpected->clear();
     if(!decode_string_message(message, appName)) return false;
     if(!decode_string_message(message, codePath, 1)) return false;
     if(!decode_string_message(message, dataPath, 2)) return false;
     if(!decode_unsigned_message(message, coreAddr, 3)) return false;
-    if(!decode_unsigned_message(message, numThreads, 4)) return false;
+    if(!decode_addresses_message(message, threadsExpected, 4)) return false;
     return true;
 }
 
@@ -41,6 +42,32 @@ bool Mothership::decode_app_spec_message(PMsg_p* message, std::string* appName,
     *distCount = 0;
     if(!decode_string_message(message, appName)) return false;
     if(!decode_unsigned_message(message, distCount, 1)) return false;
+    return true;
+}
+
+bool Mothership::decode_addresses_message(PMsg_p* message,
+                                          std::vector<uint32_t>* addresses,
+                                          unsigned index)
+{
+    int countBuffer;
+    std::vector<uint32_t>* addressesBuffer;
+
+    addresses->clear();
+
+    addressesBuffer = message->Get<std::vector<uint32_t> >(index, countBuffer);
+    if (addressesBuffer == PNULL)
+    {
+        Post(406, uint2str(message->Key()), uint2str(index));
+        return false;
+    }
+
+    /* Copy the addresses from the buffer to the input argument. */
+    for (std::vector<uint32_t>::iterator packetIt=addressesBuffer->begin();
+         packetIt!=addressesBuffer->end(); packetIt++)
+    {
+        addresses->push_back(*packetIt);
+    }
+
     return true;
 }
 

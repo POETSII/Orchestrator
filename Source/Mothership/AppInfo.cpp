@@ -135,13 +135,30 @@ void AppInfo::dump(std::ofstream* stream)
     {
         *stream << "Known core information:\n";
         std::map<uint32_t, CoreInfo>::iterator coreInfoIt;
+        std::set<uint32_t>::iterator addressIt;
         for (coreInfoIt = coreInfos.begin(); coreInfoIt != coreInfos.end();
              coreInfoIt++)
         {
             CoreInfo info = coreInfoIt->second;
             *stream << "Core " << std::hex << coreInfoIt->first << ":\n";
-            *stream << "  Threads reported in: " << info.numThreadsCurrent
-                       << "/" << info.numThreadsExpected << "\n";
+            *stream << "  Threads reported in: (" <<
+                info.threadsCurrent.size() << ") " << std::hex;
+            for (addressIt = info.threadsCurrent.begin();
+                 addressIt != info.threadsCurrent.end(); addressIt++)
+            {
+                *stream << *addressIt << " ";
+            }
+            *stream << std::dec << "\n";
+
+            *stream << "  Threads expected: (" <<
+                info.threadsExpected.size() << ") " << std::hex;
+            for (addressIt = info.threadsExpected.begin();
+                 addressIt != info.threadsExpected.end(); addressIt++)
+            {
+                *stream << *addressIt << " ";
+            }
+            *stream << std::dec << "\n";
+
             *stream << "  Data Binary: " << info.dataPath << "\n";
             *stream << "  Instruction Binary: " << info.codePath << "\n";
         }

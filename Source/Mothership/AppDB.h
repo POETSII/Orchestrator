@@ -19,6 +19,7 @@ class AppDB
 public:
     std::map<std::string, AppInfo> appInfos;
     std::map<uint32_t, std::string> coreToApp;
+    std::map<uint32_t, uint32_t> threadToCoreAddr;
 
     AppInfo* check_create_app(std::string, uint32_t);
     AppInfo* check_create_app(std::string);

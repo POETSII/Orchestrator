@@ -83,9 +83,11 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
     std::string codePath;
     std::string dataPath;
     uint32_t coreAddr;
-    unsigned numThreads;
+    std::vector<uint32_t>::iterator threadAddrIt;
+    std::vector<uint32_t> threadsExpected;
     if (!decode_app_dist_message(message, &appName, &codePath,
-                                 &dataPath, &coreAddr, &numThreads)) return 0;
+                                 &dataPath, &coreAddr,
+                                 &threadsExpected)) return 0;
 
     /* Ensure application existence idempotently. */
     appInfo = appdb.check_create_app(appName);
@@ -105,8 +107,20 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
     coreInfo = &(appInfo->coreInfos[coreAddr]);
     coreInfo->codePath = codePath;
     coreInfo->dataPath = dataPath;
-    coreInfo->numThreadsExpected = numThreads;
-    coreInfo->numThreadsCurrent = 0;  /* He's only a baby after all. */
+
+    /* For each thread, add it to:
+     *
+     * 1. The list of expected threads for the core
+     *
+     * 2. The "reverse" map in AppDB (so we can get the application and the
+     * core from the hardware address of an incoming packet. */
+    for (threadAddrIt = threadsExpected.begin();
+         threadAddrIt != threadsExpected.end();
+         threadAddrIt++)
+    {
+        coreInfo->threadsExpected.insert(*threadAddrIt);  /* (1) */
+        appdb.threadToCoreAddr[*threadAddrIt] = coreAddr;  /* (2) */
+    }
 
     /* Check for being fully defined (transition from UNDERDEFINED to
      * DEFINED). */
