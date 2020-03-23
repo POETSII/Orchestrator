@@ -3,11 +3,14 @@
  * by MPICncResolver (which also handles command-and-control tasks from
  * Root).
  *
- * See the Mothership documentation for descriptions of what these methods
- * do. */
+ * See the Mothership documentation (particularly the Tinsel Command and
+ * Control section) for more information on how these command-and-control
+ * packets are handled. */
 
 #include "Mothership.h"
 
+/* Handle a packet as an instrumentation packet (see
+ * InstrumentationWriter::consume_instrumentation_packet) */
 void Mothership::handle_pkt_instr(P_Pkt_t* packet)
 {
     try
@@ -21,6 +24,8 @@ void Mothership::handle_pkt_instr(P_Pkt_t* packet)
     }
 }
 
+/* Handle a packet as an instrumentation packet (see
+ * LogHandler::consume_log_packet) */
 void Mothership::handle_pkt_log(P_Pkt_t* packet)
 {
     std::string message;
