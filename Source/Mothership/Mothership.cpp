@@ -34,15 +34,6 @@ void Mothership::go()
     threading.go();
 }
 
-/* Given a software address, returns the name of the task.
- *
- * NB: This queries SBase (which is currently not here), so this method is a
- * stub for now. */
-std::string Mothership::task_from_swaddr(uint32_t address)
-{
-    return "WARNING (Mothership::task_from_swaddr): This method is a stub!";
-}
-
 /* Sends a message using MPI to the process defined in the message.
  *
  * You might reasonably thing this is largely superfluous, but this is here to
