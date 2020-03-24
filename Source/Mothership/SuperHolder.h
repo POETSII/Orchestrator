@@ -17,11 +17,10 @@ public:
     std::string path;
     void dump(std::ofstream*);
     bool error;
-
-private:
-    void* so;
     int (*entryPoint)(PMsg_p*, PMsg_p*);
     int (*initialise)();
+private:
+    void* so;
 };
 
 #endif

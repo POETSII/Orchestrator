@@ -265,14 +265,28 @@ unsigned Mothership::handle_msg_bend_cnc(PMsg_p* message)
     return 0;
 }
 
-/* Stub */
 unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
 {
-    /* Pull message contents. */
-    std::vector<P_Pkt_t> packets;
-    if (!decode_packets_message(message, &packets)) return 0;
+    int rc;
 
-    printf("BendSupr message received!\n"); return 0;
+    /* Get the application from the message. */
+    std::string appName;
+    if (!decode_string_message(message, &appName)) return 0;
+
+    /* Set up a message for the supervisor entry point to modify. This output
+     * message is always going to be a "packets" message (it's just a device
+     * after all, sending information to another device in the compute
+     * fabric). */
+    PMsg_p outputMessage(message->comm);
+    outputMessage.Src(message->Tgt());
+    outputMessage.Key(Q::PKTS);
+
+    /* Invoke the supervisor, send the message if instructed to do so, and
+     * propagate errors. */
+    rc = superdb.call_supervisor(appName, message, &outputMessage);
+    if (rc > 0) queue_mpi_message(outputMessage);
+    else if (rc < 0) Post(415, appName);
+    return 0;
 }
 
 unsigned Mothership::handle_msg_pkts(PMsg_p* message)

@@ -31,6 +31,27 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
     return true;
 }
 
+/* Calls the supervisor for a given application using its entry point. */
+int SuperDB::call_supervisor(std::string appName, PMsg_p* inputMessage,
+                             PMsg_p* outputMessage)
+{
+    std::map<std::string, SuperHolder>::iterator superFinder;
+    superFinder = supervisors.find(appName);
+    if (superFinder == supervisors.end()) return -2;
+    /* I know this is hideous, but that's function pointers for you. */
+    return (*(superFinder->second.entryPoint))(inputMessage, outputMessage);
+}
+
+/* Initialises the supervisor for a given application. */
+int SuperDB::initialise_supervisor(std::string appName)
+{
+    std::map<std::string, SuperHolder>::iterator superFinder;
+    superFinder = supervisors.find(appName);
+    if (superFinder == supervisors.end()) return -2;
+    /* I know this is hideous, but that's function pointers for you. */
+    return (*(superFinder->second.initialise))();
+}
+
 /* Unloads a supervisor from the database, returning true on success and false
  * if no such supervisor exists. */
 bool SuperDB::unload_supervisor(std::string appName)

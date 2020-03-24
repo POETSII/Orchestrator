@@ -15,7 +15,7 @@ int SupervisorCall(PMsg_p* In, PMsg_p* Out)
     char outPktBuf[P_PKT_MAX_SIZE];
 
     vector<P_Super_Pkt_t> pkts; // packets are packed in Tinsel packet format
-    In->Get(0, pkts);      // We assume they're directly placed in the message
+    In->Get(1, pkts);
     WALKVECTOR(P_Super_Pkt_t, pkts, pkt) // and they're sent blindly
     {
         uint8_t pin = (((pkt->pkt.header.pinAddr) & P_HD_TGTPIN_MASK)
