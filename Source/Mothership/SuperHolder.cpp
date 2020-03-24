@@ -7,7 +7,25 @@
 SuperHolder::SuperHolder(std::string path):
     path(path)
 {
+    error = false;
     so = dlopen(path.c_str(), RTLD_NOW);
+
+    /* We aren't loading anything else without so. */
+    if (so == NULL)
+    {
+        error = true;
+        return;
+    }
+
+    /* Load hooks. */
+    initialise = reinterpret_cast<int (*)()>(dlsym(so, "SupervisorInit"));
+    entryPoint = reinterpret_cast<int (*)(PMsg_p*, PMsg_p*)>
+        (dlsym(so, "SupervisorCall"));
+    if (initialise == NULL or entryPoint == NULL)
+    {
+        error = true;
+        return;
+    }
 }
 
 /* And here we close them. */
@@ -20,6 +38,7 @@ SuperHolder::~SuperHolder()
 void SuperHolder::dump(std::ofstream* stream)
 {
     *stream << "Supervisor at \"" << path << "\" is ";
-    if (so == NULL) *stream << "NOT ";
+    if (so == NULL or entryPoint == NULL or initialise == NULL)
+        *stream << "NOT ";
     *stream << "loaded correctly.\n";
 }

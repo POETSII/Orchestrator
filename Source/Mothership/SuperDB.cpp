@@ -22,7 +22,7 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
                        (appName, SuperHolder(path)));
 
     /* Check for errors as per the specification... */
-    if (supervisors.find(appName)->second.so == NULL)
+    if (supervisors.find(appName)->second.error)
     {
         *errorMessage = dlerror();
         return false;

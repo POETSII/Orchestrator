@@ -7,14 +7,21 @@
 #include <string>
 #include <fstream>
 
+#include "PMsg_p.hpp"
+
 class SuperHolder
 {
 public:
     SuperHolder(std::string path);
     ~SuperHolder();
     std::string path;
-    void* so;
     void dump(std::ofstream*);
+    bool error;
+
+private:
+    void* so;
+    int (*entryPoint)(PMsg_p*, PMsg_p*);
+    int (*initialise)();
 };
 
 #endif
