@@ -236,14 +236,33 @@ unsigned Mothership::handle_msg_cmnd_stop(PMsg_p* message)
     return 0;
 }
 
-/* Stub */
 unsigned Mothership::handle_msg_bend_cnc(PMsg_p* message)
 {
+    uint8_t opcode;
+
     /* Pull message contents. */
     std::vector<P_Pkt_t> packets;
     if (!decode_packets_message(message, &packets)) return 0;
 
-    printf("BendCnc message received!\n"); return 0;
+    /* For each packet, get its opcode, and call the appropriate packet
+     * handling method, Posting if we don't recognise it. */
+    for (std::vector<P_Pkt_t>::iterator packetIt = packets.begin();
+         packetIt != packets.end(); packetIt++)
+    {
+        opcode = ((*packetIt).header.swAddr & P_SW_OPCODE_MASK)
+            >> P_SW_OPCODE_SHIFT;
+        switch (opcode)
+        {
+            case P_CNC_INSTR : handle_pkt_instr(&*packetIt); break;
+            case P_CNC_LOG : handle_pkt_log(&*packetIt); break;
+            case P_CNC_BARRIER : handle_pkt_barrier(&*packetIt); break;
+            case P_CNC_STOP : handle_pkt_stop(&*packetIt); break;
+            case P_CNC_KILL : handle_pkt_kill(&*packetIt); break;
+            default : Post(414, hex2str(opcode));
+        }
+    }
+
+    return 0;
 }
 
 /* Stub */

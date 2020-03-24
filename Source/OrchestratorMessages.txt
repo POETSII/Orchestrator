@@ -93,6 +93,7 @@
 411(W) : "Mothership: Unknown core for thread '%s' in '%s' packet. Ignoring."
 412(W) : "Mothership: Unknown application for core '%s' in '%s' packet. Ignoring."
 413(W) : "Mothership: Received an unexpected '%s' packet for an application in state '%s'. Ignoring."
+414(W) : "Mothership: Received a command-and-control packet with unknown opcode '%s'. Ignoring."
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"
