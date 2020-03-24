@@ -61,6 +61,8 @@ public:
     void handle_pkt_barrier(P_Pkt_t* packet);
     void handle_pkt_stop(P_Pkt_t* packet);
     void handle_pkt_kill(P_Pkt_t* packet);
+    /* Reducing code duplication. */
+    void handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop=false);
 
     /* More stuff needed for CommonBase to work. */
     typedef unsigned (Mothership::*pMeth)(PMsg_p*, unsigned);
