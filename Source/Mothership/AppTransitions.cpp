@@ -3,6 +3,7 @@
 
 #include "Mothership.h"
 
+/* Stubs follow */
 void Mothership::initialise_application(AppInfo* app)
 {
     printf("Initialising application '%s'!\n", app->name.c_str());
