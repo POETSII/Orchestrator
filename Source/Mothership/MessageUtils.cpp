@@ -71,6 +71,33 @@ bool Mothership::decode_addresses_message(PMsg_p* message,
     return true;
 }
 
+bool Mothership::decode_addressed_packets_message(PMsg_p* message,
+    std::vector<std::pair<uint32_t, P_Pkt_t> >* packets, unsigned index)
+{
+    int countBuffer;
+    std::vector<std::pair<uint32_t, P_Pkt_t> >* packetsBuffer;
+    std::vector<std::pair<uint32_t, P_Pkt_t> >::iterator packetIt;
+
+    packets->clear();
+
+    packetsBuffer = message->Get<std::vector<std::pair<uint32_t, P_Pkt_t> > >
+        (index, countBuffer);
+    if (packetsBuffer == PNULL)
+    {
+        Post(416, uint2str(message->Key()), uint2str(index));
+        return false;
+    }
+
+    /* Copy the packets from the buffer to the input argument. */
+    for (packetIt = packetsBuffer->begin(); packetIt != packetsBuffer->end();
+         packetIt++)
+    {
+        packets->push_back(*packetIt);
+    }
+
+    return true;
+}
+
 bool Mothership::decode_packets_message(PMsg_p* message,
                                         std::vector<P_Pkt_t>* packets,
                                         unsigned index)

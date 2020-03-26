@@ -292,8 +292,8 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
 unsigned Mothership::handle_msg_pkts(PMsg_p* message)
 {
     /* Pull message contents. */
-    std::vector<P_Pkt_t> packets;
-    if (!decode_packets_message(message, &packets)) return 0;
+    std::vector<std::pair<uint32_t, P_Pkt_t> > packets;
+    if (!decode_addressed_packets_message(message, &packets)) return 0;
 
     /* Queue 'em. */
     threading.push_backend_out_queue(&packets);

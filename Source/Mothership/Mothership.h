@@ -92,6 +92,8 @@ private:
     bool decode_addresses_message(PMsg_p* message,
                                   std::vector<uint32_t>* addresses,
                                   unsigned index=0);
+    bool decode_addressed_packets_message(PMsg_p* message,
+        std::vector<std::pair<uint32_t, P_Pkt_t> >* packets, unsigned index=0);
     bool decode_packets_message(PMsg_p* message,
                                 std::vector<P_Pkt_t>* packets,
                                 unsigned index=0);
