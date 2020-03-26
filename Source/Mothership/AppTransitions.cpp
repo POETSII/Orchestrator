@@ -78,6 +78,22 @@ void Mothership::initialise_application(AppInfo* app)
  * softswitch, commands all of the executors under its command to start. */
 void Mothership::run_application(AppInfo* app)
 {
+    app->state = RUNNING;
+    send_cnc_packet_to_all(app, P_CNC_BARRIER);
+}
+
+/* Stops an application, by queueing STOP packets to each thread to be
+ * processed by BackendOutputBroker. This packet shuts down the softswitch when
+ * received. */
+void Mothership::stop_application(AppInfo* app)
+{
+    app->state = STOPPING;
+    send_cnc_packet_to_all(app, P_CNC_STOP);
+}
+
+/* Sends a CNC packet with a given opcode to each thread in an application. */
+void Mothership::send_cnc_packet_to_all(AppInfo* app, uint8_t opcode)
+{
     /* Looping variables. */
     std::map<uint32_t, CoreInfo>::iterator coreIt;
     std::set<uint32_t>::iterator threadAddressIt;
@@ -88,12 +104,10 @@ void Mothership::run_application(AppInfo* app)
     /* It's a CNC packet for a softswitch. */
     packet.header.swAddr = ((0 << P_SW_MOTHERSHIP_SHIFT)
                             & P_SW_MOTHERSHIP_MASK);
-    packet.header.swAddr |= ((1 << P_SW_CNC_SHIFT)
-                             & P_SW_CNC_MASK);
+    packet.header.swAddr |= ((1 << P_SW_CNC_SHIFT) & P_SW_CNC_MASK);
 
     /* It has the barrier opcode. */
-    packet.header.swAddr |= ((P_CNC_BARRIER << P_SW_OPCODE_SHIFT)
-                             & P_SW_OPCODE_MASK);
+    packet.header.swAddr |= ((opcode << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK);
 
     /* It uses a magic broadcast address to apply to all devices under the
      * control of the Softswitch. */
@@ -123,12 +137,6 @@ void Mothership::run_application(AppInfo* app)
                                  (*threadAddressIt, packet));
         }
     threading.push_backend_out_queue(&allPackets);
-}
-
-/* Stub */
-void Mothership::stop_application(AppInfo* app)
-{
-    printf("Stopping application '%s'!\n", app->name.c_str());
 }
 
 /* Purges all mention of an application in Mothership datastructures, as well

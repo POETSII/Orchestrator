@@ -73,6 +73,9 @@ private:
     void load_backend();
     void setup_mpi_hooks();
 
+    /* Reduces code duplication in some app transition methods. */
+    void send_cnc_packet_to_all(AppInfo* app, uint8_t opcode);
+
     /* Methods for handling MPI messages via MPIInputBroker */
     unsigned handle_msg_exit(PMsg_p* message, unsigned commIndex);
     unsigned handle_msg_syst_kill(PMsg_p* message, unsigned commIndex);
