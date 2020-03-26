@@ -86,7 +86,7 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
         volatile P_Pkt_t* rcv_pkt = static_cast<volatile P_Pkt_t*>(recv_buf);
         // look for barrier packet
         if (((rcv_pkt->header.swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT)
-                == P_CNC_INIT)
+                == P_CNC_BARRIER)
         {
             // *Debug: send packet out to show we have passed the barrier* 
             // softswitch_alive(send_buf);
@@ -519,10 +519,10 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
                 ThreadContext->pendCycles = 1;
                 break;
 #endif
-            case P_CNC_INIT:
-                // **BODGE BODGE BODGE** not so temporary handler for dealing 
-                // with __init__. This works ONLY because the __init__ pin on 
-                // all devices that have it in existing XML happens to be pin 0 
+            case P_CNC_BARRIER:
+                // **BODGE BODGE BODGE** not so temporary handler for dealing
+                // with __init__. This works ONLY because the __init__ pin on
+                // all devices that have it in existing XML happens to be pin 0
                 // (which means that a Supervisor can guess what the pin number
                 // is supposed to be). In any case, this should route it through
                 // the __init__ handler. Luckily packet types are globally 
