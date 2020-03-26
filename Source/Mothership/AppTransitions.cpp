@@ -73,10 +73,56 @@ void Mothership::initialise_application(AppInfo* app)
      * Mothership. */
 }
 
-/* Stub */
+/* Starts an application, by queueing BARRIER packets to each thread to be
+ * processed by BackendOutputBroker. This packet, when received by the
+ * softswitch, commands all of the executors under its command to start. */
 void Mothership::run_application(AppInfo* app)
 {
-    printf("Running application '%s'!\n", app->name.c_str());
+    /* Looping variables. */
+    std::map<uint32_t, CoreInfo>::iterator coreIt;
+    std::set<uint32_t>::iterator threadAddressIt;
+
+    /* Assemble the BARRIER packet. */
+    P_Pkt_t packet;
+
+    /* It's a CNC packet for a softswitch. */
+    packet.header.swAddr = ((0 << P_SW_MOTHERSHIP_SHIFT)
+                            & P_SW_MOTHERSHIP_MASK);
+    packet.header.swAddr |= ((1 << P_SW_CNC_SHIFT)
+                             & P_SW_CNC_MASK);
+
+    /* It has the barrier opcode. */
+    packet.header.swAddr |= ((P_CNC_BARRIER << P_SW_OPCODE_SHIFT)
+                             & P_SW_OPCODE_MASK);
+
+    /* It uses a magic broadcast address to apply to all devices under the
+     * control of the Softswitch. */
+    packet.header.swAddr |= ((P_ADDR_BROADCAST << P_SW_DEVICE_SHIFT)
+                             & P_SW_DEVICE_MASK);
+
+    /* It goes to the __INIT__ pin (NB: Not sure what this means... was used in
+     * old Mothership. GMB will find this comment in the review and tell me
+     * about it I'm sure. */
+    packet.header.pinAddr = ((P_SUP_PIN_INIT << P_HD_TGTPIN_SHIFT)
+                             & P_HD_TGTPIN_MASK);
+
+    /* No edge index necessary. */
+    packet.header.pinAddr |= ((0 << P_HD_DESTEDGEINDEX_SHIFT)
+                              & P_HD_DESTEDGEINDEX_MASK);
+
+    /* For each thread in the task, queue a copy of this packet for that
+     * thread. */
+    std::vector<std::pair<uint32_t, P_Pkt_t> > allPackets;
+    for (coreIt = app->coreInfos.begin(); coreIt != app->coreInfos.end();
+         coreIt++)
+        for (threadAddressIt = coreIt->second.threadsExpected.begin();
+             threadAddressIt != coreIt->second.threadsExpected.end();
+             threadAddressIt++)
+        {
+            allPackets.push_back(std::pair<uint32_t, P_Pkt_t>
+                                 (*threadAddressIt, packet));
+        }
+    threading.push_backend_out_queue(&allPackets);
 }
 
 /* Stub */
