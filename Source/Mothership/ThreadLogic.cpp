@@ -78,7 +78,11 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
         /* Is there anything in the queue? */
         mothership->threading.pop_MPI_app_queue(&messages);
 
-        /* If the queue is empty, chill for a bit before checking again. */
+        /* If the queue is empty, chill for a bit before checking again.
+         *
+         * NB: If we want to add Supervisor OnIdle functionality in future, we
+         * should do so in this block. Search tags: OnCompute OnSuperIdle
+         * OnSupervisorIdle. */
         if (messages.empty())
         {
             sleep(1);
