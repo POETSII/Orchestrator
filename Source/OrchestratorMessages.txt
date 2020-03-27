@@ -94,8 +94,12 @@
 412(W) : "Mothership: Unknown application for core '%s' in '%s' packet. Ignoring."
 413(W) : "Mothership: Received an unexpected '%s' packet for an application in state '%s'. Ignoring."
 414(W) : "Mothership: Received a command-and-control packet with unknown opcode '%s'. Ignoring."
-415(E) : "Mothership: A message for the supervisor for task '%s' contained a packet that could not be handled correctly. One possible cause for this is that the pin field in the packet was set out of bounds.
+415(E) : "Mothership: A message for the supervisor for task '%s' contained a packet that could not be handled correctly. One possible cause for this is that the pin field in the packet was set out of bounds."
 416(E) : "Mothership: Error decoding MPI message with key '%s': Expected a vector of uint32_t-P_Pkt_t pairs in field %s. Ignoring message."
+417(W) : "Mothership: Received a packet from an application in error - the isMothership bit was not set in the software address field for the packet. The software address of this packet is '%s'. Ignoring packet."
+418(W) : "Mothership: Received a packet for an external device - external support is not yet implemented. The software address of this packet is '%s'. Ignoring packet."
+419(E) : "Mothership: Error decoding MPI message with key '%s': Expected char in field %s. Ignoring message."
+420(W) : "Mothership: Invalid task ID '%s' in packet received from the compute fabric. Ignoring packet."
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"

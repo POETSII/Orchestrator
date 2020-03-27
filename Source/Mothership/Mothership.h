@@ -91,12 +91,14 @@ private:
     bool decode_app_supd_message(PMsg_p* message, std::string* appName,
                                  std::string* soPath);
     bool decode_app_spec_message(PMsg_p* message, std::string* appName,
-                                 uint32_t* distCount);
+                                 uint32_t* distCount, uint8_t* appNumber);
     bool decode_addresses_message(PMsg_p* message,
                                   std::vector<uint32_t>* addresses,
                                   unsigned index=0);
     bool decode_addressed_packets_message(PMsg_p* message,
         std::vector<std::pair<uint32_t, P_Pkt_t> >* packets, unsigned index=0);
+    bool decode_char_message(PMsg_p* message, unsigned char* result,
+                             unsigned index=0);
     bool decode_packets_message(PMsg_p* message,
                                 std::vector<P_Pkt_t>* packets,
                                 unsigned index=0);

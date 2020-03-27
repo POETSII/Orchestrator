@@ -46,7 +46,9 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
     /* Pull message contents. */
     std::string appName;
     uint32_t distCount;
-    if (!decode_app_spec_message(message, &appName, &distCount)) return 0;
+    uint8_t appNumber;
+    if (!decode_app_spec_message(message, &appName, &distCount,
+                                 &appNumber)) return 0;
 
     /* Ensure application existence idempotently (it might have been created by
      * an AppDist message). */
@@ -59,6 +61,9 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
         Post(402, appName, appInfo->get_state_colloquial());
         return 0;
     }
+
+    /* Define the application number in the database. */
+    appdb.numberToApp[appNumber] = appName;
 
     /* Otherwise, set the distCount. */
     appInfo->distCountExpected = distCount;

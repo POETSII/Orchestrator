@@ -37,11 +37,13 @@ bool Mothership::decode_app_supd_message(PMsg_p* message, std::string* appName,
 }
 
 bool Mothership::decode_app_spec_message(PMsg_p* message, std::string* appName,
-                                         uint32_t* distCount)
+                                         uint32_t* distCount,
+                                         uint8_t* appNumber)
 {
     *distCount = 0;
     if(!decode_string_message(message, appName)) return false;
     if(!decode_unsigned_message(message, distCount, 1)) return false;
+    if(!decode_char_message(message, appNumber, 2)) return false;
     return true;
 }
 
@@ -95,6 +97,24 @@ bool Mothership::decode_addressed_packets_message(PMsg_p* message,
         packets->push_back(*packetIt);
     }
 
+    return true;
+}
+
+bool Mothership::decode_char_message(PMsg_p* message, unsigned char* result,
+                                     unsigned index)
+{
+    int countBuffer;
+    unsigned char* resultBuffer;
+
+    /* Get and check for errors. */
+    resultBuffer = message->Get<unsigned char>(index, countBuffer);
+    if (resultBuffer == PNULL)
+    {
+        *result = 0;
+        Post(419, uint2str(message->Key()), uint2str(index));
+        return false;
+    }
+    *result = *resultBuffer;
     return true;
 }
 
