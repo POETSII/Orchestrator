@@ -25,6 +25,7 @@ public:
     AppInfo* check_create_app(std::string, uint32_t);
     AppInfo* check_create_app(std::string);
     bool check_defined_app(std::string);
+    void recall_app(AppInfo*);
     void dump(std::ofstream*);
 };
 

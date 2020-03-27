@@ -48,6 +48,46 @@ bool AppDB::check_defined_app(std::string name)
     return appFinder != appInfos.end();
 }
 
+/* Removes an application from the database. */
+void AppDB::recall_app(AppInfo* app)
+{
+    std::set<uint32_t>::iterator threadIt;
+    std::map<uint32_t, std::string>::iterator coreIt;
+    std::map<uint32_t, CoreInfo>::iterator coreInfoIt;
+    std::map<uint8_t, std::string>::iterator numberIt;
+
+    /* Clear threadToCore entries. */
+    for (coreInfoIt = app->coreInfos.begin();
+         coreInfoIt != app->coreInfos.end(); coreInfoIt++)
+    {
+        for (threadIt = coreInfoIt->second.threadsExpected.begin();
+             threadIt != coreInfoIt->second.threadsExpected.end(); threadIt++)
+        {
+            threadToCoreAddr.erase(*threadIt);
+        }
+    }
+
+    /* Clear coreToApp entries (erasing while iterating). */
+    coreIt = coreToApp.begin();
+    while (coreIt != coreToApp.end())
+    {
+        if (coreIt->second == app->name) coreToApp.erase(coreIt++);
+        else coreIt++;
+    }
+
+    /* Clear numberToApp entry. */
+    numberIt = numberToApp.begin();
+    while (numberIt != numberToApp.end())
+    {
+        if (numberIt->second == app->name) break;
+    }
+    numberToApp.erase(numberIt);
+
+    /* Say good bye. */
+    app->state = BROKEN;
+    appInfos.erase(app->name);
+}
+
 /* Prints a bunch of diagnostic information. Obviously. The argument is the
  * stream to dump to. */
 void AppDB::dump(std::ofstream* stream)

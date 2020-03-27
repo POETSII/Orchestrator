@@ -143,35 +143,6 @@ void Mothership::send_cnc_packet_to_all(AppInfo* app, uint8_t opcode)
  * as cores and threads associated with it. */
 void Mothership::recall_application(AppInfo* app)
 {
-    std::set<uint32_t>::iterator threadIt;
-    std::map<uint32_t, std::string>::iterator coreIt;
-    std::map<uint32_t, CoreInfo>::iterator coreInfoIt;
-
-    /* Supervisor */
     superdb.unload_supervisor(app->name);
-
-    /* Clear threadToCore entries. */
-    for (coreInfoIt = app->coreInfos.begin();
-         coreInfoIt != app->coreInfos.end(); coreInfoIt++)
-    {
-        for (threadIt = coreInfoIt->second.threadsExpected.begin();
-             threadIt != coreInfoIt->second.threadsExpected.end(); threadIt++)
-        {
-            appdb.threadToCoreAddr.erase(*threadIt);
-        }
-    }
-
-    /* Clear coreToApp entries (erasing while iterating). */
-    coreIt = appdb.coreToApp.begin();
-    while (coreIt != appdb.coreToApp.end())
-    {
-        if (coreIt->second == app->name) appdb.coreToApp.erase(coreIt++);
-        else coreIt++;
-    }
-
-    /* For good measure (we're going to delete it anyway...) */
-    app->state = BROKEN;
-
-    /* Say good bye. */
-    appdb.appInfos.erase(app->name);
+    appdb.recall_app(app);
 }
