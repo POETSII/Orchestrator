@@ -26,7 +26,7 @@ struct ThreadLogDatum
     P_Log_Pkt_Pyld_t payloads[P_MAX_LOGPKT_FRAG];
 };
 
-class LogManager
+class LogPacketManager
 {
 public:
     /* This 'data' buffer holds payloads of log packets that haven't been

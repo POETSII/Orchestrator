@@ -10,7 +10,7 @@ class ThreadComms;
 #include "CommonBase.h"
 #include "HostLink.h"
 #include "InstrumentationWriter.h"
-#include "LogManager.h"
+#include "LogPacketManager.h"
 #include "OSFixes.hpp"
 #include "Pglobals.h"
 #include "SuperDB.h"
@@ -29,7 +29,7 @@ public:
     AppDB appdb;
     HostLink backend;
     InstrumentationWriter instrumentation;
-    LogManager logging;
+    LogPacketManager logging;
     SuperDB superdb;
     ThreadComms threading;
 
