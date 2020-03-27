@@ -100,6 +100,7 @@
 418(W) : "Mothership: Received a packet for an external device - external support is not yet implemented. The software address of this packet is '%s'. Ignoring packet."
 419(E) : "Mothership: Error decoding MPI message with key '%s': Expected char in field %s. Ignoring message."
 420(W) : "Mothership: Invalid task ID '%s' in packet received from the compute fabric. Ignoring packet."
+421(I) : "Debug byte received from thread '%s' with content '%s'."
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"

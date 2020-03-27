@@ -111,6 +111,12 @@ typedef struct poets_packet
     // Further flits contain data.
 } P_Pkt_t;
 
+typedef struct poets_debug_packet
+{
+    uint32_t origin;  /* Hardware address */
+    uint8_t payload;
+} P_Debug_Pkt_t;
+
 typedef struct poets_log_packet_payload
 {
     uint8_t seq;

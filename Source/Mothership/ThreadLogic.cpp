@@ -309,7 +309,53 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
 /* Stub */
 void* ThreadComms::debug_input_broker(void* mothershipArg)
 {
+    /* Packet sender data and payload */
+    uint32_t brdX, brdY, coreId, threadId;
+    uint8_t payload;
+
+    /* Packet queueing */
+    P_Debug_Pkt_t debugPacket;
+    std::vector<P_Debug_Pkt_t> debugPackets;
+    std::vector<P_Debug_Pkt_t>::iterator packetIt;
+
     Mothership* mothership = (Mothership*)mothershipArg;
-    while(1);
+    DebugLink* debug = mothership->backend.debugLink;
+
+    /* We spin until we're told to stop. */
+    while (!mothership->threading.is_it_time_to_go())
+    {
+        /* Drain the debug channel as quickly as possible, until there's
+         * nothing left. */
+        while (debug->canGet())
+        {
+            debug->get(&brdX, &brdY, &coreId, &threadId, &payload);
+            debugPacket.origin = mothership->backend.toAddr(brdX, brdY, coreId,
+                                                            threadId);
+            debugPacket.payload = payload;
+            mothership->threading.push_debug_in_queue(debugPacket);
+        }
+
+        /* If the queue is empty, it means we've not received anything on the
+         * debug channel. We chill, because debug output is not time
+         * critical. */
+        if (!(mothership->threading.pop_debug_in_queue(&debugPackets)))
+        {
+            sleep(1);
+        }
+
+        /* Otherwise, post them all one at a time. */
+        else
+        {
+            for (packetIt = debugPackets.begin();
+                 packetIt != debugPackets.end(); packetIt++)
+            {
+                mothership->Post(421, hex2str(packetIt->origin),
+                                 hex2str(packetIt->payload));
+            }
+
+            debugPackets.clear();
+        }
+    }
+
     return mothership;
 }

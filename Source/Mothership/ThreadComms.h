@@ -80,10 +80,10 @@ public:
     void push_backend_in_queue(P_Pkt_t);
     void push_backend_in_queue(std::vector<P_Pkt_t>*);
 
-    bool pop_debug_in_queue(P_Pkt_t*);
-    bool pop_debug_in_queue(std::vector<P_Pkt_t>*);
-    void push_debug_in_queue(P_Pkt_t);
-    void push_debug_in_queue(std::vector<P_Pkt_t>*);
+    bool pop_debug_in_queue(P_Debug_Pkt_t*);
+    bool pop_debug_in_queue(std::vector<P_Debug_Pkt_t>*);
+    void push_debug_in_queue(P_Debug_Pkt_t);
+    void push_debug_in_queue(std::vector<P_Debug_Pkt_t>*);
 
 private:
     Mothership* mothership;
@@ -115,7 +115,7 @@ private:
     std::queue<PMsg_p> MPIAppQueue;
     std::queue<std::pair<uint32_t, P_Pkt_t> > BackendOutputQueue;
     std::queue<P_Pkt_t> BackendInputQueue;
-    std::queue<P_Pkt_t> DebugInputQueue;
+    std::queue<P_Debug_Pkt_t> DebugInputQueue;
 };
 
 #endif

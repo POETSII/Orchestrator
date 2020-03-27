@@ -282,7 +282,7 @@ void ThreadComms::push_backend_in_queue(std::vector<P_Pkt_t>* packets)
 /* If there are packets in the queue, grabs the next packet from
  * DebugInputQueue, writes packet with it, and returns true. Otherwise, returns
  * false. */
-bool ThreadComms::pop_debug_in_queue(P_Pkt_t* packet)
+bool ThreadComms::pop_debug_in_queue(P_Debug_Pkt_t* packet)
 {
     if (DebugInputQueue.empty()) return false;
     *packet = DebugInputQueue.front();
@@ -292,7 +292,7 @@ bool ThreadComms::pop_debug_in_queue(P_Pkt_t* packet)
 
 /* If there are packets in the queue, grabs all packets from DebugInputQueue,
  * writes them to packets, and returns true. Otherwise, returns false. */
-bool ThreadComms::pop_debug_in_queue(std::vector<P_Pkt_t>* packets)
+bool ThreadComms::pop_debug_in_queue(std::vector<P_Debug_Pkt_t>* packets)
 {
     if (DebugInputQueue.empty()) return false;
     packets->clear();
@@ -305,16 +305,16 @@ bool ThreadComms::pop_debug_in_queue(std::vector<P_Pkt_t>* packets)
 }
 
 /* Takes packet and places it into the queue. */
-void ThreadComms::push_debug_in_queue(P_Pkt_t packet)
+void ThreadComms::push_debug_in_queue(P_Debug_Pkt_t packet)
 {
     DebugInputQueue.push(packet);
 }
 
 /* Takes all packets and pushes them into the queue in the order in which they
  * are stored in the vector. */
-void ThreadComms::push_debug_in_queue(std::vector<P_Pkt_t>* packets)
+void ThreadComms::push_debug_in_queue(std::vector<P_Debug_Pkt_t>* packets)
 {
-    for (std::vector<P_Pkt_t>::iterator packet = packets->begin();
+    for (std::vector<P_Debug_Pkt_t>::iterator packet = packets->begin();
          packet != packets->end(); packet++)
     {
         DebugInputQueue.push(*packet);
