@@ -32,7 +32,7 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
         }
 
         /* Otherwise, handle each message in turn. */
-        for (messageIt=messages.begin(); messageIt!=messages.end();
+        for (messageIt = messages.begin(); messageIt != messages.end();
              messageIt++)
         {
             key = messageIt->Key();
@@ -86,7 +86,7 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
         }
 
         /* Otherwise, handle each message in turn. */
-        for (messageIt=messages.begin(); messageIt!=messages.end();
+        for (messageIt = messages.begin(); messageIt != messages.end();
              messageIt++)
         {
             key = messageIt->Key();
@@ -105,14 +105,45 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
     return mothership;
 }
 
-/* Stubs follow */
-
 void* ThreadComms::backend_output_broker(void* mothershipArg)
 {
+    std::vector<std::pair<uint32_t, P_Pkt_t> >packets;
+    std::vector<std::pair<uint32_t, P_Pkt_t> >::iterator packetIt;
+    uint32_t numberOfFlitsForThisPacket;
     Mothership* mothership = (Mothership*)mothershipArg;
-    while(1);
+
+    /* We spin until we're told to stop. */
+    while (!mothership->threading.is_it_time_to_go())
+    {
+        /* Is there anything in the queue? */
+        mothership->threading.pop_backend_out_queue(&packets);
+
+        /* If the queue is empty, chill for a bit before checking again. */
+        if (packets.empty())
+        {
+            sleep(1);
+            continue;
+        }
+
+        /* Otherwise, blocking-send each packet in turn. */
+        for (packetIt = packets.begin(); packetIt != packets.end(); packetIt++)
+        {
+            /* Compute number of flits for this packet. */
+            numberOfFlitsForThisPacket = p_hdr_size() >> TinselLogBytesPerFlit;
+            if (numberOfFlitsForThisPacket == 0) ++numberOfFlitsForThisPacket;
+
+            /* Send the packet (with that number of flits) */
+            mothership->backend.send(packetIt->first,
+                                     numberOfFlitsForThisPacket,
+                                     &(packetIt->second), true);
+
+        }
+    }
+
     return mothership;
 }
+
+/* Stubs follow */
 
 void* ThreadComms::backend_input_broker(void* mothershipArg)
 {
