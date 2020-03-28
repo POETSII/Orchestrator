@@ -80,6 +80,15 @@ void Mothership::run_application(AppInfo* app)
 {
     app->state = RUNNING;
     send_cnc_packet_to_all(app, P_CNC_BARRIER);
+
+    /* Send "acknowledgement" message to root. */
+    PMsg_p acknowledgement;
+    acknowledgement.comm = Comms[RootCIdx()];
+    acknowledgement.Src(Urank);
+    acknowledgement.Key(Q::MSHP, Q::ACK, Q::RUN);
+    acknowledgement.Put<std::string>(0, &(app->name));
+    acknowledgement.Tgt(pPmap[RootCIdx()]->U.Root);
+    queue_mpi_message(acknowledgement);
 }
 
 /* Stops an application, by queueing STOP packets to each thread to be

@@ -54,6 +54,10 @@ LOG  |FULL |-    |-    | (1:int)Message id
                          (2:char)Message type
                          (3:string)Full message
 INJCT|REQ  |-    |-    | (1:string)Command string
+MSHP |ACK  |DEFD |-    | (0:string)Application name
+MSHP |ACK  |LOAD |-    | (0:string)Application name
+MSHP |ACK  |RUN  |-    | (0:string)Application name
+MSHP |ACK  |STOP |-    | (0:string)Application name
 
 LogServer
 ---------
@@ -140,6 +144,7 @@ static const byte APP   = 0x10;
 static const byte BEND  = 0x11;
 static const byte PKTS  = 0x12;
 static const byte DUMP  = 0x13;
+static const byte MSHP  = 0x14;
 // Level 1 subkeys
 static const byte PING  = 0x40;
 static const byte POST  = 0x41;
@@ -162,6 +167,7 @@ static const byte SPEC  = 0x51;
 static const byte SUPD  = 0x52;
 static const byte INIT  = 0x53;
 static const byte CNC   = 0x54;
+static const byte ACK   = 0x55;
 // temporary use: for MPI testing ------------------------------------------
 static const byte M0    = 0x60;
 static const byte M1    = 0x61;
@@ -169,9 +175,9 @@ static const byte MN    = 0x62;
 //--------------------------------------------------------------------------
 // Level 2 subkeys
 static const byte REQ   = 0x80;
-static const byte ACK   = 0x81;
-static const byte FWD   = 0x82;
+static const byte FWD   = 0x81;
 // Level 3 subkeys
+static const byte DEFD  = 0xc0;
 
 // Not a value
 static const byte NAV   = 0xff;

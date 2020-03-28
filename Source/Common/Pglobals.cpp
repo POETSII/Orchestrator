@@ -19,6 +19,7 @@ const byte Q::APP;
 const byte Q::BEND;
 const byte Q::PKTS;
 const byte Q::DUMP;
+const byte Q::MSHP;
 // Level 1 subkeys
 const byte Q::PING;
 const byte Q::POST;
@@ -51,6 +52,7 @@ const byte Q::REQ;
 const byte Q::ACK;
 const byte Q::FWD;
 // Level 3 subkeys
+const byte Q::DEFD;
 
 // Not a value
 const byte Q::NAV;
