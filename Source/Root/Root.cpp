@@ -72,6 +72,12 @@ FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
 (*FnMapx[0])[PMsg_p::KEY(Q::LOG  ,Q::FULL)] = &Root::OnLogP;
 (*FnMapx[0])[PMsg_p::KEY(Q::INJCT,Q::REQ )] = &Root::OnInje;
 
+// Mothership acknowledgements
+(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD)] = &Root::OnMshipAck;
+(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)] = &Root::OnMshipAck;
+(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN )] = &Root::OnMshipAck;
+(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)] = &Root::OnMshipAck;
+
 void * args = this;                    // Spin off a thread to handle keyboard
 pthread_t kb_thread;
 if(pthread_create(&kb_thread,NULL,kb_func,args))
@@ -552,6 +558,29 @@ printf(" %s: %3d(%c) %s\n",t.c_str(),id,ty,sfull.c_str());
 fflush(stdout);
 Prompt();
 return 0;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned Root::OnMshipAck(PMsg_p * Z, unsigned cIdx)
+// Updates the mothership acknowledgement table. The table is primarily
+// intended as a debugging tool.
+{
+    unsigned key = Z->Key();
+    string appName;
+    Z->Get(0, appName);
+    pair<int, string> mshipApp = make_pair(Z->Src(), appName);
+    if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD))
+        mshipAcks[mshipApp] = "DEFINED";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD))
+        mshipAcks[mshipApp] = "READY";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN))
+        mshipAcks[mshipApp] = "RUNNING";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP))
+        mshipAcks[mshipApp] = "STOPPED";
+    else
+        mshipAcks[mshipApp] = "YOURE-NOT-SUPPOSED-TO-BE-HERE";
+    return 0;
 }
 
 //------------------------------------------------------------------------------

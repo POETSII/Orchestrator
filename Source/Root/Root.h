@@ -40,6 +40,7 @@ void                  OnIdle();
 unsigned              OnInje(PMsg_p *,unsigned);
 unsigned              OnKeyb(PMsg_p *,unsigned);
 unsigned              OnLogP(PMsg_p *,unsigned);
+unsigned              OnMshipAck(PMsg_p *,unsigned);
 unsigned              OnTest(PMsg_p *,unsigned);
 unsigned              ProcCmnd(Cli *);
 static void           Prompt(FILE * = stdout);
@@ -51,6 +52,7 @@ void                  SystShow(Cli::Cl_t);
 void                  SystTime(Cli::Cl_t);
 
 public:
+map<pair<int, string>, string> mshipAcks;
 vector<FnMap_t*>      FnMapx;
 bool                  echo;
 vector <string>       stack;
