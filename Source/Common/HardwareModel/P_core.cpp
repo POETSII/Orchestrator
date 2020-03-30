@@ -6,12 +6,7 @@
 /* Constructs a POETS Core. Arguments:
  *
  * - name: Name of this core object (see namebase) */
-P_core::P_core(std::string name)
-{
-    Name(name);
-    dataBinary = new Bin();
-    instructionBinary = new Bin();
-}
+P_core::P_core(std::string name){Name(name);}
 
 P_core::~P_core(){clear();}
 
@@ -94,7 +89,7 @@ void P_core::Dump(FILE* file)
         fprintf(file, "Data binary: %s\n", dataBinary.c_str());
     }
 
-    if (instructionBinary != PNULL)
+    if (instructionBinary.empty())
     {
         fprintf(file, "No instruction binary assigned to this core.\n");
     }

@@ -18,14 +18,14 @@ void OrchBase::BuildMshipMap()
     unsigned commIndex;
     std::vector<ProcMap::ProcMap_t>::iterator procIt;
     std::map<AddressComponent, P_box*>::iterator boxIt;
-    bool foundAMothershipForThisBox
+    bool foundAMothershipForThisBox;
 
     /* Start from the first process on the first communicator. */
     commIndex = 0;
     procIt = pPmap[commIndex]->vPmap.begin();
 
     /* Iterate over each box in the hardware model. */
-    for (boxIt = pE->Pboxm.begin(); boxIt != pE->Pbox_m.end(); boxIt++)
+    for (boxIt = pE->P_boxm.begin(); boxIt != pE->P_boxm.end(); boxIt++)
     {
         /* Find the next available Mothership across all communicators. We need
          * the rank in order to store entries in the 'mothershipPayloads'
@@ -39,7 +39,7 @@ void OrchBase::BuildMshipMap()
 
             /* If we found one, leave the loop (usual case). Otherwise, search
              * the next communicator.*/
-            if (procIt != pPmap[cIdx]->vPmap.end())
+            if (procIt != pPmap[commIndex]->vPmap.end())
             {
                 P_SCMm2.Add(boxIt->second,
                             std::make_pair<unsigned, ProcMap::ProcMap_t*>
@@ -57,7 +57,7 @@ void OrchBase::BuildMshipMap()
             P_SCMm2.Add(boxIt->second,
                         std::make_pair<unsigned, ProcMap::ProcMap_t*>
                         (0, PNULL));
-            Post(168, boxIt->Name().c_str());
+            Post(168, boxIt->second->Name().c_str());
         }
     }
 }
@@ -142,7 +142,8 @@ if (pE != 0)
                         (*boardIterator)->G.NodeData(mailboxIterator)->P_corem,
                         coreIterator)
                 {
-                    coreIterator->second->clear_binaries();
+                    coreIterator->second->dataBinary = "";
+                    coreIterator->second->instructionBinary = "";
 
                     // Walk the threads and remove the device links.
                     WALKMAP(AddressComponent, P_thread*,
@@ -513,23 +514,23 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
 
     /* Identify the name of the machine on which Root is running. */
     rootFinder = pPmap[RootCIdx()]->vPmap.begin();
-    while (rootFinder->P_rank != pPmap[RootIndex]->U.Root) rootFinder++;
+    while (rootFinder->P_rank != pPmap[RootCIdx()]->U.Root) rootFinder++;
     rootMachineName = rootFinder->P_proc;
 
     /* Iterate over each box in the hardware model */
-    for (boxIt = pE->Pboxm.begin(); boxIt != pE->Pbox_m.end(); boxIt++)
+    for (boxIt = pE->P_boxm.begin(); boxIt != pE->P_boxm.end(); boxIt++)
     {
         /* Grab the Mothership for this box (which may be invalid). We don't
          * exit if we find an invalid entry - there may not be any devices for
          * this task mapped to the box in question. */
-        commIndex = P_SCMm2[boxIt->second]->first;
-        mothershipProc = P_SCMm2[boxIt->second]->second;
+        commIndex = P_SCMm2[boxIt->second].first;
+        mothershipProc = P_SCMm2[boxIt->second].second;
 
         /* Iterate over all cores in this box, in an attempt to find devices
          * owned by the task that are mapped to this box. Squashed indentation
          * to make logic easier to follow. */
-        for (boardIt = boxIt->P_boardv.begin();
-             boardIt != boxIt->boxIt->P_boardv.end(); boardIt++)
+        for (boardIt = boxIt->second->P_boardv.begin();
+             boardIt != boxIt->second->P_boardv.end(); boardIt++)
         WALKPDIGRAPHNODES(AddressComponent, P_mailbox*,
                           unsigned, P_link*,
                           unsigned, P_port*, (*boardIt)->G, mailboxIt)
@@ -655,8 +656,8 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
     for (messageIt = messages.begin(); messageIt != messages.end();
          messageIt++)
     {
-        messageIt->Src(Urank);
-        messageIt->Put<std::string>(0, &taskName);
+        (*messageIt)->Src(Urank);
+        (*messageIt)->Put<std::string>(0, &taskName);
     }
     specMessage.Key(Q::APP, Q::SPEC);
     distMessage.Key(Q::APP, Q::DIST);
@@ -671,8 +672,8 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
         for (messageIt = messages.begin(); messageIt != messages.end();
              messageIt++)
         {
-            messageIt->comm(Comms[mothershipPayloadsIt->first->first]);
-            messageIt->Tgt(mothershipPayloadsIt->first->second);
+            (*messageIt)->comm(Comms[mothershipPayloadsIt->first->first]);
+            (*messageIt)->Tgt(mothershipPayloadsIt->first->second);
         }
 
         /* Customise and send the SPEC message. */
@@ -834,8 +835,8 @@ void OrchBase::TaskMCmd(Cli::Cl_t Cl, std::string command)
     /* For each box, send to the Mothership on that box. */
     for (boxIt = boxesOfImport.begin(); boxIt != boxesOfImport.end(); boxIt++)
     {
-        message.comm = P_SCMm2[boxIt].first;
-        message.Tgt(P_SCMm2[boxIt].second->P_rank);
+        message.comm = P_SCMm2[*boxIt].first;
+        message.Tgt(P_SCMm2[*boxIt].second->P_rank);
         message.Send();
     }
 }
