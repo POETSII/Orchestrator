@@ -2182,7 +2182,7 @@ unsigned P_builder::CompileBins(P_task * task)
   
   
   //============================================================================
-  // Check that the binaries were made and add file pointers to each core.
+  // Check that the backend-compute binaries were made, and link them to each core.
   //============================================================================
   unsigned int coreNum = 0;
   P_core* thisCore;  // Core available during iteration.
@@ -2203,22 +2203,28 @@ unsigned P_builder::CompileBins(P_task * task)
         if (firstThread->P_devicel.size() 
             && (firstThread->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
         {
-          // a failure to read the generated binary may not be absolutely fatal;
-          // this could be retrieved later if there was a transient read error 
-          // (e.g. reading over a network connection).
-          
-          std::string binName;
-          binName = task_dir+BIN_PATH+"/"+COREBIN_BASE+TO_STRING(coreNum)+".elf";
-          
-          FILE* binary = fopen(binName.c_str(),"r");
-          
-          if(binary == PNULL)
-          {     // Check that the file opened successfully. 
-            par->Post(806, binName, POETS::getSysErrorString(errno));  
-          }
-          else
-          {     // Add the file pointer to the core. 
-            thisCore->instructionBinary->Binary = binary;
+          // a failure to read the generated binaries may not be absolutely
+          // fatal; this could be retrieved later if there was a transient read
+          // error (e.g. reading over a network connection).
+          std::vector<std::string> binaries;
+          FILE* binary;
+
+          // Instruction binary
+          binaries.push_back(task_dir+BIN_PATH+"/"+COREBIN_CODE_BASE+TO_STRING(coreNum)+".v");
+          thiseCore->instructionBinary = binaries.back();
+
+          // Data binary
+          binaries.push_back(task_dir+BIN_PATH+"/"+COREBIN_DATA_BASE+TO_STRING(coreNum)+".v");
+          thisCore->dataBinary = binaries.back();
+
+          for (std::vector<std::string>::iterator binaryIt = binaries.begin();
+               binaryIt != binaries.end(); binaryIt++)
+          {
+            binary = fopen(binaryIt->c_str(),"r");
+            // Check that the file opened successfully.
+            if(binary == PNULL)
+                par->Post(806, binName, POETS::getSysErrorString(errno));
+            else fclose(binary);
           }
             
           ++coreNum;                // Move onto the next core.
@@ -2226,6 +2232,24 @@ unsigned P_builder::CompileBins(P_task * task)
       }
     }
   }
+
+  //============================================================================
+  // Check that the supervisor binary was made.
+  //============================================================================
+  FILE* binary;
+  std::string binaryPath;
+
+  binaryPath = task_dir+BIN_PATH+"/libSupervisor.so";
+  task->pSup.binPath = binaryPath;
+  binary = fopen(binaryIt->c_str(),"r");
+  // Check that the file opened successfully.
+  if(binary == PNULL)
+      par->Post(806, binName, POETS::getSysErrorString(errno));
+  else
+      fclose(binary);
+
+
+
   //============================================================================
   return 0;
 }

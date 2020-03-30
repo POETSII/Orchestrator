@@ -23,6 +23,7 @@ void                Detach(P_board *);
 void                Detach();
 void                Dump(FILE * = stdout);
 
+string              binPath;
 vector<P_board*>    P_boardv;  // Points to all boards that contain this
                                // supervisor
 };
