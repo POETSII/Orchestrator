@@ -355,3 +355,94 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
         }
     }
 }
+
+/* Sends a command, relating to a single task, to Motherships operating on that
+ * task.
+ *
+ * If no task name is defined in the command-line argument structure, the first
+ * task is used by default. */
+void OrchBase::TaskMCmd(Cli::Cl_t Cl, std::string command)
+{
+    std::map<std::string, P_task*>::iterator taskFinder;
+    std::string taskName;
+    P_task* task;
+
+    PMsg_p message;
+
+    /* Boxes that are relevant for the application being commanded. */
+    std::set<P_box*> boxesOfImport;
+    std::set<P_box*>::iterator boxIt;
+
+    /* The task must exist. */
+    if (Cl.Pa_v.size() > 1)
+    {
+        Post(47, Cl.Cl, "task", "1");
+        return;
+    }
+
+    if (!P_taskm.size())
+    {
+        Post(107, "definitions");
+        return;
+    }
+
+    /* Grab the name from the input argument, and the task object address from
+     * the name. */
+    if (Cl.Pa_v.size())
+    {
+        taskName = Cl.Pa_v[0].Val;
+        taskFinder = P_taskm.find(taskName);
+
+        /* If a task name is provided, complain if it can't be found. */
+        if (taskFinder == P_taskm.end())
+        {
+            Post(107, taskName);
+            return;
+        }
+    }
+
+    /* By default (if no arguments are passed), use the first task by
+     * default. */
+    else
+    {
+        taskFinder = P_taskm.begin();
+        taskName = taskFinder->first;
+    }
+    task = taskFinder->second;
+
+    /* Ensure the task has been placed before proceeding. */
+    if (!task->linked)
+    {
+        Post(157, taskName);
+        return;
+    }
+
+    /* Set up the message given the input arguments (catching an invalid
+     * command input from somewhere). */
+    if (command == "recl")
+        message.Key(Q::CMND, Q::RECL);
+    else if (command == "init")
+        message.Key(Q::CMND, Q::INIT);
+    else if (command == "run")
+        Pkt.Key(Q::CMND,Q::RUN);
+    else if (command == "stop")
+        Pkt.Key(Q::CMND,Q::STOP);
+    else
+    {
+        Post(25, command, "task");
+        return;
+    }
+    message.Src(Urank);
+    message.Put(0, &taskName);
+
+    /* Get the set of important boxes. */
+    pE->get_boxes_for_task(task, &boxesOfImport);
+
+    /* For each box, send to the Mothership on that box. */
+    for (boxIt = boxesOfImport.begin(); boxIt != boxesOfImport.end(); boxIt++)
+    {
+        message.comm = P_SCMm2[boxIt].first;
+        message.Tgt(P_SCMm2[boxIt].second->P_rank);
+        message.Send();
+    }
+}
