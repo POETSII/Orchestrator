@@ -4,6 +4,57 @@ struct DistPayload
     std::string dataPath;
     AddressComponent coreAddr;
     std::vector<AddressComponent> threadsExpected;
+};
+
+/* Constructs the bimap of mothership processes to boxes in the engine
+ * (OrchBase.P_SCMm2). */
+void OrchBase::BuildMshipMap()
+{
+    unsigned commIndex;
+    std::vector<ProcMap::ProcMap_t>::iterator procIt;
+    std::map<AddressComponent, P_box*>::iterator boxIt;
+    bool foundAMothershipForThisBox
+
+    /* Start from the first process on the first communicator. */
+    commIndex = 0;
+    procIt = pPmap[commIndex]->vPmap.begin();
+
+    /* Iterate over each box in the hardware model. */
+    for (boxIt = pE->Pboxm.begin(); boxIt != pE->Pbox_m.end(); boxIt++)
+    {
+        /* Find the next available Mothership across all communicators. We need
+         * the rank in order to store entries in the 'mothershipPayloads'
+         * map. */
+        foundAMothershipForThisBox = false;
+        while (commIndex < Comms.size())
+        {
+            /* Find the next available Mothership in this communicator. */
+            while (procIt != pPmap[commIndex]->vPmap.end() and
+                   procIt->P_class != csMOTHERSHIPproc) procIt++;
+
+            /* If we found one, leave the loop (usual case). Otherwise, search
+             * the next communicator.*/
+            if (procIt != pPmap[cIdx]->vPmap.end())
+            {
+                P_SCMm2.Add(boxIt->second,
+                            std::make_pair<unsigned, ProcMap::ProcMap_t*>
+                            (commIndex, &*procIt));
+                foundAMothershipForThisBox = true;
+                break;
+            }
+            else commIndex++;
+        }
+
+        /* If we didn't find a Mothership for this box, map the box to 0, NULL
+         * and warn loudly. */
+        if (!foundAMothershipForThisBox)
+        {
+            P_SCMm2.Add(boxIt->second,
+                        std::make_pair<unsigned, ProcMap::ProcMap_t*>
+                        (0, PNULL));
+            Post(168, boxIt->Name().c_str());
+        }
+    }
 }
 
 /* Deploys a task to Motherships.
@@ -25,14 +76,13 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
     std::string taskName;
     P_task* task;
 
-    /* Iteration through the process map, to find Motherships. */
-    unsigned commIndex;
-    std::vector<ProcMap::ProcMap_t>::iterator procIt;
-    int rank;
-
     /* Finding the machine name of Root. */
     std::vector<ProcMap::ProcMap_t>::iterator rootFinder;
     std::string rootMachineName;
+
+    /* Holding Mothership process information. */
+    unsigned commIndex;
+    ProcMap::ProcMap_t* mothershipProc;
 
     /* Iteration through the hardware model with respect to boxes. */
     std::map<AddressComponent, P_box*>::iterator boxIt;
@@ -119,33 +169,14 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
     while (rootFinder->P_rank != pPmap[RootIndex]->U.Root) rootFinder++;
     rootMachineName = rootFinder->P_proc;
 
-    /* Iterate over each box in the hardware model - this allows us to bind
-     * boxes to Motherships (implicitly), which also going through all of the
-     * cores in the hardware model that might be relevant for the task that we
-     * are deploying. */
-    commIndex = 0;
-    procIt = pPmap[commIndex]->vPmap.begin();
+    /* Iterate over each box in the hardware model */
     for (boxIt = pE->Pboxm.begin(); boxIt != pE->Pbox_m.end(); boxIt++)
     {
-        /* Find the next available Mothership across all communicators. We need
-         * the rank in order to store entries in the 'mothershipPayloads'
-         * map. */
-        rank = -1;  /* Set to something positive when a Mothership is found. */
-        while (commIndex < Comms.size())
-        {
-            /* Find the next available Mothership in this communicator. */
-            while (procIt != pPmap[commIndex]->vPmap.end() and
-                   procIt->P_class != csMOTHERSHIPproc) procIt++;
-
-            /* If we found one, leave the loop (usual case). Otherwise, search
-             * the next communicator.*/
-            if (procIt != pPmap[cIdx]->vPmap.end())
-            {
-                rank = procIt->P_rank;
-                break;
-            }
-            else commIndex++;
-        }
+        /* Grab the Mothership for this box (which may be invalid). We don't
+         * exit if we find an invalid entry - there may not be any devices for
+         * this task mapped to the box in question. */
+        commIndex = P_SCMm2[boxIt->second]->first;
+        mothershipProc = P_SCMm2[boxIt->second]->second;
 
         /* Iterate over all cores in this box, in an attempt to find devices
          * owned by the task that are mapped to this box. Squashed indentation
@@ -180,7 +211,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
              * enough Motherships, because it's possible that the extra boxes
              * have nothing relevant placed on them. In that case, the task can
              * still execute as expected. */
-            if (rank == -1)
+            if (mothershipProc == PNULL)
             {
                 Post(166, taskName);
                 return;
@@ -218,14 +249,14 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
          * binaries to appropriate locations for the Mothership to find
          * them. To do this, we naively copy all binaries to all Motherships
          * for now. */
-        target = dformat("/home/%s/%s/%s", procIt->P_user, TASK_DEPLOY_DIR,
-                         taskName);
+        target = dformat("/home/%s/%s/%s", mothershipProc->P_user,
+                         TASK_DEPLOY_DIR, taskName);
         sourceBinaries = dformat("%s/%s/*", taskpath + taskName, BIN_PATH);
 
         /* Identify whether or not this Mothership is running on the same
          * machine as Root, to determine how we deploy binaries. Store the
          * commands-to-be-run in a vector. */
-        if (rootMachineName == procIt->P_proc)
+        if (rootMachineName == mothershipProc->P_proc)
         {
             commands.push_back(dformat("rm -r -f %s", target));
             commands.push_back(dformat("mkdir -p %s", target));
@@ -236,7 +267,8 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
          * SCP. */
         else
         {
-            host = dformat("%s@%s", procIt->P_user, procIt->P_proc);
+            host = dformat("%s@%s", mothershipProc->P_user,
+                           mothershipProc->P_proc);
             commands.push_back(dformat("ssh %s \"rm -r -f %s\"",
                                        host.c_str(), target.c_str()));
             commands.push_back(dformat("ssh %s \"mkdir -p %s\"",
