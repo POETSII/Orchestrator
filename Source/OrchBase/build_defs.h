@@ -36,6 +36,8 @@ extern const std::string BIN_PATH;
 extern const std::string BUILD_PATH;
 extern const std::string COREMAKE_BASE;
 extern const std::string COREBIN_BASE;
+extern const std::string COREBIN_DATA_BASE;
+extern const std::string COREBIN_CODE_BASE;
 extern const void* DRAM_BASE; // temporary: this should be set to the actual DRAM bottom address.
 
 #endif

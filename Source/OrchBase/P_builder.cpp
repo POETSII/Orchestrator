@@ -2211,7 +2211,7 @@ unsigned P_builder::CompileBins(P_task * task)
 
           // Instruction binary
           binaries.push_back(task_dir+BIN_PATH+"/"+COREBIN_CODE_BASE+TO_STRING(coreNum)+".v");
-          thiseCore->instructionBinary = binaries.back();
+          thisCore->instructionBinary = binaries.back();
 
           // Data binary
           binaries.push_back(task_dir+BIN_PATH+"/"+COREBIN_DATA_BASE+TO_STRING(coreNum)+".v");
@@ -2223,7 +2223,8 @@ unsigned P_builder::CompileBins(P_task * task)
             binary = fopen(binaryIt->c_str(),"r");
             // Check that the file opened successfully.
             if(binary == PNULL)
-                par->Post(806, binName, POETS::getSysErrorString(errno));
+                par->Post(806, binaryIt->c_str(),
+                          POETS::getSysErrorString(errno));
             else fclose(binary);
           }
             
@@ -2238,18 +2239,13 @@ unsigned P_builder::CompileBins(P_task * task)
   //============================================================================
   FILE* binary;
   std::string binaryPath;
-
   binaryPath = task_dir+BIN_PATH+"/libSupervisor.so";
-  task->pSup.binPath = binaryPath;
-  binary = fopen(binaryIt->c_str(),"r");
+  task->pSup->binPath = binaryPath;
+  binary = fopen(binaryPath.c_str(),"r");
   // Check that the file opened successfully.
   if(binary == PNULL)
-      par->Post(806, binName, POETS::getSysErrorString(errno));
-  else
-      fclose(binary);
-
-
-
+      par->Post(806, binaryPath, POETS::getSysErrorString(errno));
+  else fclose(binary);
   //============================================================================
   return 0;
 }

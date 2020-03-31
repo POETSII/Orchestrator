@@ -131,7 +131,6 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(GENERICS_DIR)/dumpchan.cpp \
                $(GENERICS_DIR)/filename.cpp \
                $(GENERICS_DIR)/lex.cpp \
-               $(GENERICS_DIR)/map2.tpp \
                $(GENERICS_DIR)/rand.cpp \
                $(SOURCE_DIR)/NameServer/Ns_el.cpp
 

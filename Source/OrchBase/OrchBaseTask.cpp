@@ -42,8 +42,7 @@ void OrchBase::BuildMshipMap()
             if (procIt != pPmap[commIndex]->vPmap.end())
             {
                 P_SCMm2.Add(boxIt->second,
-                            std::make_pair<unsigned, ProcMap::ProcMap_t*>
-                            (commIndex, &*procIt));
+                            std::make_pair(commIndex, &*procIt));
                 foundAMothershipForThisBox = true;
                 break;
             }
@@ -431,6 +430,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
     /* Holding Mothership process information. */
     unsigned commIndex;
     ProcMap::ProcMap_t* mothershipProc;
+    std::pair<unsigned, int> commRank;  /* Uniquely identifies a Mothership */
 
     /* Iteration through the hardware model with respect to boxes. */
     std::map<AddressComponent, P_box*>::iterator boxIt;
@@ -442,9 +442,9 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
 
     /* Staging area for DIST message payloads, keyed by Mothership process
      * communicator and rank. */
-    std::map<std::pair<int, int>, std::vector<DistPayload> >
+    std::map<std::pair<unsigned, int>, std::vector<DistPayload> >
         mothershipPayloads;
-    std::map<std::pair<int, int>, std::vector<DistPayload> >::iterator
+    std::map<std::pair<unsigned, int>, std::vector<DistPayload> >::iterator
         mothershipPayloadsIt;
     std::vector<DistPayload>::iterator payloadIt;
     DistPayload* payload;
@@ -564,10 +564,11 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
                 Post(166, taskName);
                 return;
             }
+            else commRank = std::make_pair(commIndex, mothershipProc->P_rank);
 
             /* Define the payload for a DIST message for this core. */
-            payload = &(mothershipPayloads[std::make_pair<int, int>
-                                           (commIndex, rank)])
+            mothershipPayloads[commRank].push_back(DistPayload());
+            payload = &(mothershipPayloads[commRank].back());
 
             /* paths */
             payload->codePath = core->instructionBinary;
@@ -587,8 +588,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
 
         /* If we found no devices for this task on this box, skip to the next
          * box. */
-        if (mothershipPayloads.find(std::make_pair<int, int>(commIndex, rank)
-                                    == mothershipPayloads.end()))
+        if (mothershipPayloads.find(commRank) == mothershipPayloads.end())
             continue;
 
         /* At this point, we are sure that there is a Mothership that can
@@ -672,8 +672,8 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
         for (messageIt = messages.begin(); messageIt != messages.end();
              messageIt++)
         {
-            (*messageIt)->comm(Comms[mothershipPayloadsIt->first->first]);
-            (*messageIt)->Tgt(mothershipPayloadsIt->first->second);
+            (*messageIt)->comm = Comms[mothershipPayloadsIt->first.first];
+            (*messageIt)->Tgt(mothershipPayloadsIt->first.second);
         }
 
         /* Customise and send the SPEC message. */
@@ -685,7 +685,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
         specMessage.Send();
 
         /* Customise and send the SUPD message. */
-        soPath = task->pSup.binPath;
+        soPath = task->pSup->binPath;
         supdMessage.Put<std::string>(1, &soPath);
         supdMessage.Send();
 
@@ -818,9 +818,9 @@ void OrchBase::TaskMCmd(Cli::Cl_t Cl, std::string command)
     else if (command == "init")
         message.Key(Q::CMND, Q::INIT);
     else if (command == "run")
-        Pkt.Key(Q::CMND,Q::RUN);
+        message.Key(Q::CMND,Q::RUN);
     else if (command == "stop")
-        Pkt.Key(Q::CMND,Q::STOP);
+        message.Key(Q::CMND,Q::STOP);
     else
     {
         Post(25, command, "task");
