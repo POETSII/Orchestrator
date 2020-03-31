@@ -3,6 +3,7 @@
 Mothership::Mothership(int argc, char** argv):
     CommonBase(argc, argv, std::string(csMOTHERSHIPproc),
                std::string(__FILE__)),
+    backend(PNULL),
     threading(ThreadComms(this))
 {
     try
@@ -14,6 +15,8 @@ Mothership::Mothership(int argc, char** argv):
         Post(409, e.message);
     }
 }
+
+Mothership::~Mothership(){if (backend != PNULL) delete backend;}
 
 /* Dumps dumpable datastructures to a stream. Note that the CommonBase data
  * structure is not dumped by this, because it requires a file pointer (and
@@ -50,7 +53,7 @@ void Mothership::load_backend()
     /* Perhaps some box-graph arguments should be passed to HostLink in the
      * one-Mothership-over-many-boxes case, but do we even want to support that
      * once we're multi-box? (It was sarcasm - we don't). */
-    backend = HostLink();
+    backend = new HostLink();
 }
 
 /* Sets up the function map for MPI communications. See the CommonBase

@@ -20,6 +20,7 @@ class Mothership: public CommonBase
 {
 public:
     Mothership(int argc, char** argv);  /* Args for CommonBase */
+    ~Mothership();
 
     void dump(std::ofstream*);
     void go();
@@ -27,7 +28,7 @@ public:
     void queue_mpi_message(PMsg_p message);
 
     AppDB appdb;
-    HostLink backend;
+    HostLink* backend;
     InstrumentationWriter instrumentation;
     LogPacketManager logging;
     SuperDB superdb;

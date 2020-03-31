@@ -137,9 +137,9 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
             if (numberOfFlitsForThisPacket == 0) ++numberOfFlitsForThisPacket;
 
             /* Send the packet (with that number of flits) */
-            mothership->backend.send(packetIt->first,
-                                     numberOfFlitsForThisPacket,
-                                     &(packetIt->second), true);
+            mothership->backend->send(packetIt->first,
+                                      numberOfFlitsForThisPacket,
+                                      &(packetIt->second), true);
 
         }
     }
@@ -172,9 +172,9 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
     {
         /* Attempt to receive packets from the backend and push them into the
          * backend-input queue. */
-        if (mothership->backend.canRecv())
+        if (mothership->backend->canRecv())
         {
-            mothership->backend.recv(receiveBuffer);
+            mothership->backend->recv(receiveBuffer);
             mothership->threading.push_backend_in_queue(
                 *(static_cast<P_Pkt_t*>(receiveBuffer)));
 
@@ -319,7 +319,7 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
     std::vector<P_Debug_Pkt_t>::iterator packetIt;
 
     Mothership* mothership = (Mothership*)mothershipArg;
-    DebugLink* debug = mothership->backend.debugLink;
+    DebugLink* debug = mothership->backend->debugLink;
 
     /* We spin until we're told to stop. */
     while (!mothership->threading.is_it_time_to_go())
@@ -329,8 +329,8 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
         while (debug->canGet())
         {
             debug->get(&brdX, &brdY, &coreId, &threadId, &payload);
-            debugPacket.origin = mothership->backend.toAddr(brdX, brdY, coreId,
-                                                            threadId);
+            debugPacket.origin = mothership->backend->toAddr(
+                brdX, brdY, coreId, threadId);
             debugPacket.payload = payload;
             mothership->threading.push_debug_in_queue(debugPacket);
         }

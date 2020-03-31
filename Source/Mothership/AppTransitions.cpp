@@ -35,16 +35,16 @@ void Mothership::initialise_application(AppInfo* app)
 
     app->state = LOADING;  /* 0: Set the application state to LOADING, duh. */
 
-    /* 1: For each core, call backend.loadInstrsOntoCore and
+    /* 1: For each core, call backend->loadInstrsOntoCore and
      * loadDataViaCore. */
     for (coreIt = app->coreInfos.begin(); coreIt != app->coreInfos.end();
          coreIt++)
     {
-        backend.fromAddr(coreIt->first, &meshX, &meshY, &coreId, &threadId);
-        backend.loadInstrsOntoCore(coreIt->second.codePath.c_str(),
+        backend->fromAddr(coreIt->first, &meshX, &meshY, &coreId, &threadId);
+        backend->loadInstrsOntoCore(coreIt->second.codePath.c_str(),
                                    meshX, meshY, coreId);
-        backend.loadDataViaCore(coreIt->second.dataPath.c_str(),
-                                meshX, meshY, coreId);
+        backend->loadDataViaCore(coreIt->second.dataPath.c_str(),
+                                 meshX, meshY, coreId);
     }
 
     /* 2: For each core, kick off the threads (mode=false).
@@ -55,14 +55,14 @@ void Mothership::initialise_application(AppInfo* app)
         for (coreIt = app->coreInfos.begin(); coreIt != app->coreInfos.end();
              coreIt++)
         {
-            backend.fromAddr(coreIt->first, &meshX, &meshY, &coreId,
-                             &threadId);
+            backend->fromAddr(coreIt->first, &meshX, &meshY, &coreId,
+                              &threadId);
 
             if (!mode)  /* 2 */
-                backend.startOne(meshX, meshY, coreId,
-                                 coreIt->second.threadsExpected.size());
+                backend->startOne(meshX, meshY, coreId,
+                                  coreIt->second.threadsExpected.size());
             else  /* 3 */
-                backend.goOne(meshX, meshY, coreId);
+                backend->goOne(meshX, meshY, coreId);
         }
 
         mode = !mode;
