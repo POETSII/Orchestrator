@@ -44,6 +44,7 @@ void OrchBase::BuildMshipMap()
                 P_SCMm2.Add(boxIt->second,
                             std::make_pair(commIndex, &*procIt));
                 foundAMothershipForThisBox = true;
+                procIt++;
                 break;
             }
             else commIndex++;
