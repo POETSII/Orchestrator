@@ -32,8 +32,11 @@ void Mothership::dump(std::ofstream* stream)
  * exit. */
 void Mothership::go()
 {
+    debug_post(499, 0);
     setup_mpi_hooks();
+    debug_post(498, 1, "HostLink");
     load_backend();
+    debug_post(497, 0);
     threading.go();
 }
 
@@ -54,6 +57,25 @@ void Mothership::load_backend()
      * one-Mothership-over-many-boxes case, but do we even want to support that
      * once we're multi-box? (It was sarcasm - we don't). */
     backend = new HostLink();
+}
+
+/* Posts a debugging message, if debugging is enabled. */
+void Mothership::debug_post(int code, unsigned numArgs, ...)
+{
+#if ORCHESTRATOR_DEBUG
+    std::vector<std::string> strings;
+    va_list args;
+    unsigned argIndex;
+
+    /* Put all of the arguments into the vector. */
+    va_start(args, numArgs);
+    for (argIndex = 0; argIndex < numArgs; argIndex++)
+        strings.push_back(va_arg(args, std::string));
+    va_end(args);
+
+    /* Throw over the fence. */
+    Post(code, strings);
+#endif
 }
 
 /* Sets up the function map for MPI communications. See the CommonBase

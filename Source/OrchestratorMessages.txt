@@ -103,6 +103,10 @@
 420(W) : "Mothership: Invalid task ID '%s' in packet received from the compute fabric. Ignoring packet."
 421(I) : "Debug byte received from thread '%s' with content '%s'."
 
+497(I) : "Mothership: Starting producer consumer threads."
+498(I) : "Mothership: Loading %s backend."
+499(I) : "Mothership: Setting up MPI hooks."
+
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"
 510(W) : "Unrecognised %s command to mothership %s"
