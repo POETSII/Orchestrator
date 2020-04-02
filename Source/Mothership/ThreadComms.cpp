@@ -27,7 +27,6 @@ void ThreadComms::go()
 {
     try
     {
-        start_mpi_input_broker();
         start_mpi_cnc_resolver();
         start_mpi_application_resolver();
         start_backend_output_broker();
@@ -42,7 +41,7 @@ void ThreadComms::go()
 
     try
     {
-        join_mpi_input_broker();
+        mothership->mpi_spin();
         if(!is_it_time_to_go()){return;}
         join_mpi_cnc_resolver();
         join_mpi_application_resolver();
