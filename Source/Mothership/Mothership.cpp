@@ -16,7 +16,10 @@ Mothership::Mothership(int argc, char** argv):
     }
 }
 
-Mothership::~Mothership(){if (backend != PNULL) delete backend;}
+Mothership::~Mothership()
+{
+    if (backend != PNULL){debug_post(494, 0); delete backend;}
+}
 
 /* Dumps dumpable datastructures to a stream. Note that the CommonBase data
  * structure is not dumped by this, because it requires a file pointer (and
@@ -32,11 +35,8 @@ void Mothership::dump(std::ofstream* stream)
  * exit. */
 void Mothership::go()
 {
-    debug_post(499, 0);
     setup_mpi_hooks();
-    debug_post(498, 1, "HostLink");
     load_backend();
-    debug_post(497, 0);
     threading.go();
 }
 
@@ -56,13 +56,14 @@ void Mothership::load_backend()
     /* Perhaps some box-graph arguments should be passed to HostLink in the
      * one-Mothership-over-many-boxes case, but do we even want to support that
      * once we're multi-box? (It was sarcasm - we don't). */
+    debug_post(498, 1, "HostLink");
     backend = new HostLink();
 }
 
 /* Posts a debugging message, if debugging is enabled. */
 void Mothership::debug_post(int code, unsigned numArgs, ...)
 {
-#if ORCHESTRATOR_DEBUG
+    #if ORCHESTRATOR_DEBUG
     std::vector<std::string> strings;
     va_list args;
     unsigned argIndex;
@@ -75,13 +76,14 @@ void Mothership::debug_post(int code, unsigned numArgs, ...)
 
     /* Throw over the fence. */
     Post(code, strings);
-#endif
+    #endif
 }
 
 /* Sets up the function map for MPI communications. See the CommonBase
  * documentation for more information on how this is expected to work. */
 void Mothership::setup_mpi_hooks()
 {
+    debug_post(499, 0);
     FnMapx.push_back(new FnMap_t);
     (*FnMapx[0])[PMsg_p::KEY(Q::EXIT)] = &Mothership::handle_msg_exit;
     (*FnMapx[0])[PMsg_p::KEY(Q::SYST,Q::KILL)] =

@@ -8,6 +8,7 @@ void* ThreadComms::mpi_input_broker(void* mothershipArg)
 {
     Mothership* mothership = (Mothership*)mothershipArg;
     mothership->mpi_spin();
+    mothership->debug_post(486, 1, "MPI Input Broker");
     return mothership;
 }
 
@@ -18,6 +19,10 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
     unsigned key;
     Mothership* mothership = (Mothership*)mothershipArg;
 
+    #if ORCHESTRATOR_DEBUG
+    bool spinningSlowly = false;
+    #endif
+
     /* We spin until we're told to stop. */
     while (!mothership->threading.is_it_time_to_go())
     {
@@ -27,9 +32,19 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
         /* If the queue is empty, chill for a bit before checking again. */
         if (messages.empty())
         {
+            #if ORCHESTRATOR_DEBUG
+            if (!spinningSlowly)
+            {
+                spinningSlowly = true;
+                mothership->debug_post(485, 2, "MPI Cnc", "MPI Cnc Resolver");
+            }
+            #endif
             sleep(1);
             continue;
         }
+        #if ORCHESTRATOR_DEBUG
+        spinningSlowly = false;
+        #endif
 
         /* Otherwise, handle each message in turn. */
         for (messageIt = messages.begin(); messageIt != messages.end();
@@ -62,6 +77,7 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
         messages.clear();
     }
 
+    mothership->debug_post(486, 1, "MPI Cnc Resolver");
     return mothership;
 }
 
@@ -71,6 +87,10 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
     std::vector<PMsg_p>::iterator messageIt;
     unsigned key;
     Mothership* mothership = (Mothership*)mothershipArg;
+
+    #if ORCHESTRATOR_DEBUG
+    bool spinningSlowly = false;
+    #endif
 
     /* We spin until we're told to stop. */
     while (!mothership->threading.is_it_time_to_go())
@@ -85,9 +105,20 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
          * OnSupervisorIdle. */
         if (messages.empty())
         {
+            #if ORCHESTRATOR_DEBUG
+            if (!spinningSlowly)
+            {
+                spinningSlowly = true;
+                mothership->debug_post(485, 2, "MPI Application",
+                                       "MPI Application Resolver");
+            }
+            #endif
             sleep(1);
             continue;
         }
+        #if ORCHESTRATOR_DEBUG
+        spinningSlowly = false;
+        #endif
 
         /* Otherwise, handle each message in turn. */
         for (messageIt = messages.begin(); messageIt != messages.end();
@@ -106,6 +137,7 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
         messages.clear();
     }
 
+    mothership->debug_post(486, 1, "MPI Application Resolver");
     return mothership;
 }
 
@@ -116,6 +148,10 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
     uint32_t numberOfFlitsForThisPacket;
     Mothership* mothership = (Mothership*)mothershipArg;
 
+    #if ORCHESTRATOR_DEBUG
+    bool spinningSlowly = false;
+    #endif
+
     /* We spin until we're told to stop. */
     while (!mothership->threading.is_it_time_to_go())
     {
@@ -125,13 +161,26 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
         /* If the queue is empty, chill for a bit before checking again. */
         if (packets.empty())
         {
+            #if ORCHESTRATOR_DEBUG
+            if (!spinningSlowly)
+            {
+                spinningSlowly = true;
+                mothership->debug_post(485, 2, "Backend Out",
+                                       "Backend Output Broker");
+            }
+            #endif
             sleep(1);
             continue;
         }
+        #if ORCHESTRATOR_DEBUG
+        spinningSlowly = false;
+        #endif
 
         /* Otherwise, blocking-send each packet in turn. */
         for (packetIt = packets.begin(); packetIt != packets.end(); packetIt++)
         {
+            mothership->debug_post(484, 1, hex2str(packetIt->first));
+
             /* Compute number of flits for this packet. */
             numberOfFlitsForThisPacket = p_hdr_size() >> TinselLogBytesPerFlit;
             if (numberOfFlitsForThisPacket == 0) ++numberOfFlitsForThisPacket;
@@ -144,6 +193,7 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
         }
     }
 
+    mothership->debug_post(486, 1, "Backend Output Broker");
     return mothership;
 }
 
@@ -257,6 +307,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
              * received to the CNC queue as a single message. */
             if (!(cncBuffer.empty()))
             {
+                mothership->debug_post(483, 1, uint2str(cncBuffer.size()));
                 PMsg_p message;
                 message.Key(Q::BEND, Q::CNC);
                 message.Put<std::vector<P_Pkt_t> >(0, &cncBuffer);
@@ -294,6 +345,8 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                     message.Put<std::vector<P_Pkt_t> >(1, &(appIt->second));
 
                     /* Out it goes. */
+                    mothership->debug_post(482, 2, appFinder->second,
+                                           uint2str(appIt->second.size()));
                     mothership->queue_mpi_message(message);
                 }
 
@@ -303,10 +356,11 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
         }
     }
 
+    mothership->debug_post(486, 1, "Backend Input Broker");
     return mothership;
 }
 
-/* Stub */
+
 void* ThreadComms::debug_input_broker(void* mothershipArg)
 {
     /* Packet sender data and payload */
@@ -320,6 +374,10 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
 
     Mothership* mothership = (Mothership*)mothershipArg;
     DebugLink* debug = mothership->backend->debugLink;
+
+    #if ORCHESTRATOR_DEBUG
+    bool spinningSlowly = false;
+    #endif
 
     /* We spin until we're told to stop. */
     while (!mothership->threading.is_it_time_to_go())
@@ -340,12 +398,26 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
          * critical. */
         if (!(mothership->threading.pop_debug_in_queue(&debugPackets)))
         {
+            #if ORCHESTRATOR_DEBUG
+            if (!spinningSlowly)
+            {
+                spinningSlowly = true;
+                mothership->debug_post(485, 2, "Debug Input",
+                                       "Debug Input Broker");
+            }
+            #endif
+
             sleep(1);
+            continue;
         }
 
         /* Otherwise, post them all one at a time. */
         else
         {
+            #if ORCHESTRATOR_DEBUG
+            spinningSlowly = false;
+            #endif
+
             for (packetIt = debugPackets.begin();
                  packetIt != debugPackets.end(); packetIt++)
             {
@@ -357,5 +429,6 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
         }
     }
 
+    mothership->debug_post(486, 1, "Debug Input Broker");
     return mothership;
 }

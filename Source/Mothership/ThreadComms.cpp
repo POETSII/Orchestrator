@@ -25,6 +25,7 @@ ThreadComms::~ThreadComms()
  *  - MPIInputBroker exited without setting the quit flag (ala SYST,KILL). */
 void ThreadComms::go()
 {
+    mothership->debug_post(497, 0);
     try
     {
         start_mpi_input_broker();
@@ -39,11 +40,12 @@ void ThreadComms::go()
         mothership->Post(400, e.message);
         return;
     }
+    mothership->debug_post(496, 0);
 
     try
     {
         join_mpi_input_broker();
-        if(!is_it_time_to_go()){return;}
+        if(!is_it_time_to_go()){mothership->debug_post(495, 0); return;}
         join_mpi_cnc_resolver();
         join_mpi_application_resolver();
         join_backend_output_broker();
