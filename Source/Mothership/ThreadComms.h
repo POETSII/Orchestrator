@@ -30,7 +30,7 @@ void ThreadComms::START_THREAD_FN_NAME(THREAD_NAME)() \
 { \
     int result = pthread_create(THREAD_PTR, PNULL, THREAD_NAME, \
                                 (void*)mothership); \
-    if(!result) \
+    if(result) \
     { \
         throw ThreadException(dformat("'THREAD_NAME': %s", \
             POETS::getSysErrorString(result).c_str())); \
@@ -41,7 +41,7 @@ void ThreadComms::START_THREAD_FN_NAME(THREAD_NAME)() \
 void ThreadComms::JOIN_THREAD_FN_NAME(THREAD_NAME)() \
 { \
     int result = pthread_join(THREAD_OBJ, PNULL);     \
-    if(!result) \
+    if(result) \
     { \
         throw ThreadException(dformat("'THREAD_NAME': %s", \
             POETS::getSysErrorString(result).c_str())); \
