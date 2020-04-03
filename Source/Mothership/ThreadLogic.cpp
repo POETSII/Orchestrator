@@ -8,7 +8,8 @@ void* ThreadComms::mpi_input_broker(void* mothershipArg)
 {
     Mothership* mothership = (Mothership*)mothershipArg;
     mothership->mpi_spin();
-    mothership->debug_post(486, 1, "MPI Input Broker");
+    debug_print("Mothership: The MPI Input Broker Thread has been told to "
+                "exit, and is doing so.\n");
     return mothership;
 }
 
@@ -77,7 +78,8 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
         messages.clear();
     }
 
-    mothership->debug_post(486, 1, "MPI Cnc Resolver");
+    debug_print("Mothership: The MPI Cnc Resolver Thread has been told to "
+                "exit, and is doing so.\n");
     return mothership;
 }
 
@@ -137,7 +139,8 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
         messages.clear();
     }
 
-    mothership->debug_post(486, 1, "MPI Application Resolver");
+    debug_print("Mothership: The MPI Application Resolver Thread has been "
+                "told to exit, and is doing so.\n");
     return mothership;
 }
 
@@ -193,7 +196,8 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
         }
     }
 
-    mothership->debug_post(486, 1, "Backend Output Broker");
+    debug_print("Mothership: The Backend Output Broker Thread has been told "
+                "to exit, and is doing so.\n");
     return mothership;
 }
 
@@ -356,7 +360,8 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
         }
     }
 
-    mothership->debug_post(486, 1, "Backend Input Broker");
+    debug_print("Mothership: The Backend Input Broker Thread has been told to "
+                "exit, and is doing so.\n");
     return mothership;
 }
 
@@ -429,6 +434,7 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
         }
     }
 
-    mothership->debug_post(486, 1, "Debug Input Broker");
+    debug_print("Mothership: The Debug Input Broker Thread has been told to "
+                "exit, and is doing so.\n");
     return mothership;
 }

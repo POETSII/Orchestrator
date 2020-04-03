@@ -108,7 +108,6 @@
 483(I) : "Mothership: On draining the Backend Input Queue of packets, the Backend Input Broker Thread has sent queued a Q::BEND,Q:CNC message containing %s packets.
 484(I) : "Mothership: Pushing packet with hardware address %s into the compute fabric."
 485(I) : "Mothership: The %s queue is empty, so the %s Thread is spinning slowly."
-486(I) : "Mothership: The %s Thread has been told to exit, and is doing so."
 487(I) : "Mothership: Recalling application '%s'."
 488(I) : "Mothership: Stopping application '%s' (which has been started)."
 489(I) : "Mothership: Starting (running) fully-initialised application '%s'."
@@ -116,12 +115,6 @@
 491(I) : "Mothership: Processing '%s' message. Fields: %s"
 492(I) : "Mothership: Received '%s' message. %s"
 493(I) : "Mothership: Received '%s' message. Pushing it to the '%s' queue."
-494(I) : "Mothership: Closing down the compute backend."
-495(I) : "Mothership: MPI Input Broker thread exited without stopping other threads. Making a quick getaway..."
-496(I) : "Mothership: Threads started successfully."
-497(I) : "Mothership: Starting producer consumer threads."
-498(I) : "Mothership: Loading %s backend."
-499(I) : "Mothership: Setting up MPI hooks."
 
 508(U) : "Task %s in an unrecognised state. Reboot the mothership"
 509(W) : "Task %s could not be loaded because task %s was already active in state %s"

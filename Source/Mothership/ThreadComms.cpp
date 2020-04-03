@@ -25,7 +25,7 @@ ThreadComms::~ThreadComms()
  *  - MPIInputBroker exited without setting the quit flag (ala SYST,KILL). */
 void ThreadComms::go()
 {
-    mothership->debug_post(497, 0);
+    debug_print("Mothership: Starting producer consumer threads.\n");
     try
     {
         start_mpi_input_broker();
@@ -37,15 +37,27 @@ void ThreadComms::go()
     }
     catch (ThreadException &e)
     {
-        mothership->Post(400, e.message);
+        /* The conditional block is needed here because we might not yet know
+         * where our logserver is. */
+        if (!(mothership->Post(400, e.message)))
+        {
+            printf("Mothership ERROR: Could not create pthread %s. Exiting.\n",
+                   e.message.c_str());
+        }
         return;
     }
-    mothership->debug_post(496, 0);
+    debug_print("Mothership: Threads started successfully. The main thread is "
+                "now waiting to join.\n");
 
     try
     {
         join_mpi_input_broker();
-        if(!is_it_time_to_go()){mothership->debug_post(495, 0); return;}
+        if(!is_it_time_to_go())
+        {
+            debug_print("Mothership WARNING: The MPI Input Broker thread "
+                        "exited without stopping other threads!\n");
+            return;
+        }
         join_mpi_cnc_resolver();
         join_mpi_application_resolver();
         join_backend_output_broker();
@@ -54,7 +66,14 @@ void ThreadComms::go()
     }
     catch (ThreadException &e)
     {
-        mothership->Post(401, e.message);
+        /* The conditional block is needed here because we might not yet know
+         * where our logserver is. */
+        if (!(mothership->Post(401, e.message)))
+        {
+            printf("Mothership ERROR: Could not join to pthread %s. Exiting.\n",
+                   e.message.c_str());
+        }
+        return;
     }
 }
 

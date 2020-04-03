@@ -244,7 +244,8 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
                      $(SOURCE_DIR)/Mothership/ThreadComms.cpp \
                      $(SOURCE_DIR)/Mothership/ThreadLogic.cpp \
-                     $(GENERICS_DIR)/dfprintf.cpp \
+                     $(SOURCE_DIR)/Common/Debug.cpp \
+                     $(GENERICS_DIR)/dfprintf.cpp
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 

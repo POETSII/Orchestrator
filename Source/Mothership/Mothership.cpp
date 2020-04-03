@@ -18,7 +18,11 @@ Mothership::Mothership(int argc, char** argv):
 
 Mothership::~Mothership()
 {
-    if (backend != PNULL){debug_post(494, 0); delete backend;}
+    if (backend != PNULL)
+    {
+        debug_print("Mothership: Closing down the compute backend.\n");
+        delete backend;
+    }
 }
 
 /* Dumps dumpable datastructures to a stream. Note that the CommonBase data
@@ -56,7 +60,7 @@ void Mothership::load_backend()
     /* Perhaps some box-graph arguments should be passed to HostLink in the
      * one-Mothership-over-many-boxes case, but do we even want to support that
      * once we're multi-box? (It was sarcasm - we don't). */
-    debug_post(498, 1, "HostLink");
+    debug_print("Mothership: Loading Tinsel backend.\n");
     backend = new HostLink();
 }
 
@@ -79,8 +83,8 @@ bool Mothership::debug_post(int code, unsigned numArgs, ...)
     bool rc = Post(code, strings);
     if (!rc)
     {
-        printf("Posting failed for some reason. Commonbase dump:\n");
-        Dump();
+        printf("Mothership WARNING: Could not post message with code %d.\n",
+               code);
     }
     return rc;
     #endif
@@ -90,7 +94,7 @@ bool Mothership::debug_post(int code, unsigned numArgs, ...)
  * documentation for more information on how this is expected to work. */
 void Mothership::setup_mpi_hooks()
 {
-    debug_post(499, 0);
+    debug_print("Mothership: Setting up MPI hooks.\n");
     FnMapx.push_back(new FnMap_t);
     (*FnMapx[0])[PMsg_p::KEY(Q::EXIT)] = &Mothership::handle_msg_exit;
     (*FnMapx[0])[PMsg_p::KEY(Q::SYST,Q::KILL)] =

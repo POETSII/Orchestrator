@@ -13,6 +13,14 @@ void DebugPrint(const char* format, ...)
     vfprintf(stdout, format, printingArguments);
     fflush(stdout);
 }
+void debug_print(const char* format, ...)
+{
+    va_list printingArguments;
+    va_start(printingArguments, format);
+    vfprintf(stdout, format, printingArguments);
+    fflush(stdout);
+}
 #else
 void DebugPrint(const char*, ...){return;}
+void debug_print(const char*, ...){return;}
 #endif
