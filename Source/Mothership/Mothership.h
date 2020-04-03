@@ -29,7 +29,7 @@ public:
     void go();
     void mpi_spin(){MPISpinner();};
     void queue_mpi_message(PMsg_p message);
-    void debug_post(int code, unsigned numArgs, ...);
+    bool debug_post(int code, unsigned numArgs, ...);
 
     AppDB appdb;
     HostLink* backend;

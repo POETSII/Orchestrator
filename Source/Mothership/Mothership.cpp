@@ -60,8 +60,9 @@ void Mothership::load_backend()
     backend = new HostLink();
 }
 
-/* Posts a debugging message, if debugging is enabled. */
-void Mothership::debug_post(int code, unsigned numArgs, ...)
+/* Posts a debugging message, if debugging is enabled. Returns as with
+ * CommonBase::Post. */
+bool Mothership::debug_post(int code, unsigned numArgs, ...)
 {
     #if ORCHESTRATOR_DEBUG
     std::vector<std::string> strings;
@@ -75,7 +76,13 @@ void Mothership::debug_post(int code, unsigned numArgs, ...)
     va_end(args);
 
     /* Throw over the fence. */
-    Post(code, strings);
+    bool rc = Post(code, strings);
+    if (!rc)
+    {
+        printf("Posting failed for some reason. Commonbase dump:\n");
+        Dump();
+    }
+    return rc;
     #endif
 }
 
