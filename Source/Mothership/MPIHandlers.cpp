@@ -18,7 +18,11 @@ unsigned Mothership::handle_msg_exit(PMsg_p* message, unsigned commIndex)
 {
     debug_post(492, 2, "Q::EXIT", "Exiting gracefully.");
     threading.set_quit();
-    return 1;  /* CommonBase's Decode reads this, returning from MPISpinner. */
+
+    /* CommonBase's OnExit (does some MPI teardown). The returncode is read by
+     * Decode, and causes MPISpinner to end. */
+    OnExit(message, commIndex);
+    return 1;
 }
 
 unsigned Mothership::handle_msg_syst_kill(PMsg_p* message, unsigned commIndex)
@@ -26,6 +30,10 @@ unsigned Mothership::handle_msg_syst_kill(PMsg_p* message, unsigned commIndex)
     /* ThreadComms notices that we haven't set_quit, so it doesn't wait for the
      * other threads to finish before leaving. */
     debug_post(492, 2, "Q::SYST,Q::KILL", "Exiting as quickly as possible.");
+
+    /* CommonBase's OnExit (does some MPI teardown). The returncode is read by
+     * Decode, and causes MPISpinner to end. */
+    OnExit(message, commIndex);
     return 1;
 }
 
