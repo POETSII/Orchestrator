@@ -6,6 +6,7 @@
 #if ORCHESTRATOR_DEBUG
 #include <stdarg.h>
 #include <stdio.h>
+#include "dfprintf.h"
 void DebugPrint(const char* format, ...)
 {
     va_list printingArguments;
@@ -17,7 +18,8 @@ void debug_print(const char* format, ...)
 {
     va_list printingArguments;
     va_start(printingArguments, format);
-    vfprintf(stdout, format, printingArguments);
+    std::string newFormat = dformat("[DEBUG]: %s", format);
+    vfprintf(stdout, newFormat.c_str(), printingArguments);
     fflush(stdout);
 }
 #else
