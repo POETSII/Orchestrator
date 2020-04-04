@@ -20,8 +20,10 @@ Mothership::~Mothership()
 {
     if (backend != PNULL)
     {
-        debug_print("Mothership: Closing down the compute backend.\n");
+        debug_print("Mothership: Closing down the compute backend...\n");
         delete backend;
+        debug_print("Mothership: Backend closed.\n");
+        debug_print("Mothership: Disconnecting from MPI (goodbye world).\n");
     }
 }
 
@@ -60,8 +62,9 @@ void Mothership::load_backend()
     /* Perhaps some box-graph arguments should be passed to HostLink in the
      * one-Mothership-over-many-boxes case, but do we even want to support that
      * once we're multi-box? (It was sarcasm - we don't). */
-    debug_print("Mothership: Loading Tinsel backend.\n");
+    debug_print("Mothership: Loading Tinsel backend...\n");
     backend = new HostLink();
+    debug_print("Mothership: Tinsel backend loaded.\n");
 }
 
 /* Posts a debugging message, if debugging is enabled. Returns as with
