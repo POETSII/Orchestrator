@@ -131,10 +131,10 @@ void BuildCommand(bool useMotherships, std::string internalPath,
     /* Clock */
     hydraProcesses.push_back(new std::stringstream);
     orderedHosts.push_back(ourHostname);
+    *(hydraProcesses.back()) << "-n 1 ";
     if (gdbProcs[execClock]) *(hydraProcesses.back()) << execGdb << " ";
     if (valgrindProcs[execClock]) *(hydraProcesses.back()) << execValgrind
                                                            << " ";
-    *(hydraProcesses.back()) << "-n 1 ";
     *(hydraProcesses.back()) << localBinDir << "/" << execClock;
 
     /* Adding motherships... */
