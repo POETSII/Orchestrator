@@ -44,7 +44,7 @@ unsigned Mothership::handle_msg_app(PMsg_p* message, unsigned commIndex)
     if (message->Key() == PMsg_p::KEY(Q::PKTS)) key = "Q::PKTS";
     else if (message->Key() == PMsg_p::KEY(Q::BEND, Q::SUPR))
         key = "Q::BEND,Q::SUPR";
-    debug_post(493, 2, key, "MPI Application");
+    debug_post(493, 2, key.c_str(), "MPI Application");
     #endif
     threading.push_MPI_app_queue(*message);
     return 0;
@@ -71,7 +71,7 @@ unsigned Mothership::handle_msg_cnc(PMsg_p* message, unsigned commIndex)
     else if (message->Key() == PMsg_p::KEY(Q::CMND,Q::STOP))
         key = "Q::CMND,Q::STOP";
     else if (message->Key() == PMsg_p::KEY(Q::DUMP)) key = "Q::DUMP";
-    debug_post(493, 2, key, "MPI Command-and-control");
+    debug_post(493, 2, key.c_str(), "MPI Command-and-control");
     #endif
     threading.push_MPI_cnc_queue(*message);
     return 0;
@@ -445,7 +445,8 @@ unsigned Mothership::handle_msg_dump(PMsg_p* message)
         return 0;
     }
 
-    debug_post(491, 2, "Q::DUMP", dformat("dumpPath=%s", dumpPath.c_str()));
+    debug_post(491, 2, "Q::DUMP",
+               dformat("dumpPath=%s", dumpPath.c_str()).c_str());
 
     /* Mothership dump */
     outS.open(dumpPath.c_str(), std::ofstream::out | std::ofstream::trunc);

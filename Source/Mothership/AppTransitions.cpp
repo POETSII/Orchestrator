@@ -33,7 +33,7 @@ void Mothership::initialise_application(AppInfo* app)
     /* Modes to reduce code repetition between steps 2 and 3. */
     bool mode;
 
-    debug_post(490, 1, app->name);
+    debug_post(490, 1, app->name.c_str());
 
     app->state = LOADING;  /* 0: Set the application state to LOADING, duh. */
 
@@ -80,7 +80,7 @@ void Mothership::initialise_application(AppInfo* app)
  * softswitch, commands all of the executors under its command to start. */
 void Mothership::run_application(AppInfo* app)
 {
-    debug_post(489, 1, app->name);
+    debug_post(489, 1, app->name.c_str());
 
     app->state = RUNNING;
     send_cnc_packet_to_all(app, P_CNC_BARRIER);
@@ -100,7 +100,7 @@ void Mothership::run_application(AppInfo* app)
  * received. */
 void Mothership::stop_application(AppInfo* app)
 {
-    debug_post(488, 1, app->name);
+    debug_post(488, 1, app->name.c_str());
     app->state = STOPPING;
     send_cnc_packet_to_all(app, P_CNC_STOP);
 }
@@ -157,7 +157,7 @@ void Mothership::send_cnc_packet_to_all(AppInfo* app, uint8_t opcode)
  * as cores and threads associated with it. */
 void Mothership::recall_application(AppInfo* app)
 {
-    debug_post(487, 1, app->name);
+    debug_post(487, 1, app->name.c_str());
     superdb.unload_supervisor(app->name);
     appdb.recall_app(app);
 }

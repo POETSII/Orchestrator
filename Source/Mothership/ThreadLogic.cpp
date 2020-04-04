@@ -182,7 +182,7 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
         /* Otherwise, blocking-send each packet in turn. */
         for (packetIt = packets.begin(); packetIt != packets.end(); packetIt++)
         {
-            mothership->debug_post(484, 1, hex2str(packetIt->first));
+            mothership->debug_post(484, 1, hex2str(packetIt->first).c_str());
 
             /* Compute number of flits for this packet. */
             numberOfFlitsForThisPacket = p_hdr_size() >> TinselLogBytesPerFlit;
@@ -313,7 +313,8 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
              * received to the CNC queue as a single message. */
             if (!(cncBuffer.empty()))
             {
-                mothership->debug_post(483, 1, uint2str(cncBuffer.size()));
+                mothership->debug_post(483, 1,
+                                       uint2str(cncBuffer.size()).c_str());
                 PMsg_p message;
                 message.Key(Q::BEND, Q::CNC);
                 message.Put<std::vector<P_Pkt_t> >(0, &cncBuffer);
@@ -351,8 +352,9 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                     message.Put<std::vector<P_Pkt_t> >(1, &(appIt->second));
 
                     /* Out it goes. */
-                    mothership->debug_post(482, 2, appFinder->second,
-                                           uint2str(appIt->second.size()));
+                    mothership->debug_post(
+                        482, 2, appFinder->second.c_str(),
+                        uint2str(appIt->second.size()).c_str());
                     mothership->queue_mpi_message(message);
                 }
 
