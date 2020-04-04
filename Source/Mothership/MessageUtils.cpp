@@ -153,7 +153,7 @@ bool Mothership::decode_string_message(PMsg_p* message, std::string* result,
     message->Get(index, *result);
     if (result->empty())
     {
-        Post(404, uint2str(message->Key()), uint2str(index));
+        Post(404, hex2str(message->Key()), uint2str(index));
         return false;
     }
     return true;
