@@ -598,18 +598,20 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
          * binaries to appropriate locations for the Mothership to find
          * them. To do this, we naively copy all binaries to all Motherships
          * for now. */
-        target = dformat("/home/%s/%s/%s", mothershipProc->P_user,
-                         TASK_DEPLOY_DIR, taskName);
-        sourceBinaries = dformat("%s/%s/*", taskpath + taskName, BIN_PATH);
+        target = dformat("/home/%s/%s/%s", mothershipProc->P_user.c_str(),
+                         TASK_DEPLOY_DIR, taskName.c_str());
+        sourceBinaries = dformat("%s/%s/*", (taskpath + taskName).c_str(),
+                                 BIN_PATH.c_str());
 
         /* Identify whether or not this Mothership is running on the same
          * machine as Root, to determine how we deploy binaries. Store the
          * commands-to-be-run in a vector. */
         if (rootMachineName == mothershipProc->P_proc)
         {
-            commands.push_back(dformat("rm -r -f %s", target));
-            commands.push_back(dformat("mkdir -p %s", target));
-            commands.push_back(dformat("cp -r %s %s", sourceBinaries, target));
+            commands.push_back(dformat("rm -r -f %s", target.c_str()));
+            commands.push_back(dformat("mkdir -p %s", target.c_str()));
+            commands.push_back(dformat("cp -r %s %s", sourceBinaries.c_str(),
+                                       target.c_str()));
         }
 
         /* Note that, if the machine is different, we deploy binaries using
