@@ -210,6 +210,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
     std::vector<P_Pkt_t>::iterator packetIt;
     uint8_t opcode;
     void* receiveBuffer;
+    char* dynamicBuffer;  /* For cleanup */
     uint8_t packetAppNumber;
 
     /* Staging CNC packets, and packets to the supervisor, to be sent. */
@@ -219,7 +220,8 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
     std::map<uint8_t, std::vector<P_Pkt_t> > superBuffer;  /* Key = app ID. */
     std::map<uint8_t, std::vector<P_Pkt_t> >::iterator appIt;
 
-    receiveBuffer = static_cast<void*>(new char[p_pkt_size()]);
+    dynamicBuffer = new char[p_pkt_size()];
+    receiveBuffer = static_cast<void*>(dynamicBuffer);
 
     /* We spin until we're told to stop. */
     while (!mothership->threading.is_it_time_to_go())
@@ -360,6 +362,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
         }
     }
 
+    delete[] dynamicBuffer;
     debug_print("Mothership: The Backend Input Broker Thread has been told to "
                 "exit, and is doing so.\n");
     return mothership;

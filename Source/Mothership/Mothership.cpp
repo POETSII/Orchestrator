@@ -18,6 +18,10 @@ Mothership::Mothership(int argc, char** argv):
 
 Mothership::~Mothership()
 {
+    /* Tear down MPI function map. */
+    WALKVECTOR(FnMap_t*, FnMapx, F) delete *F;
+
+    /* Tear down backend. */
     if (backend != PNULL)
     {
         debug_print("Mothership: Closing down the compute backend...\n");
