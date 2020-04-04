@@ -68,7 +68,8 @@ void Mothership::load_backend()
 }
 
 /* Posts a debugging message, if debugging is enabled. Returns as with
- * CommonBase::Post. */
+ * CommonBase::Post. If debugging is not enabled, always returns true and does
+ * nothing of use. */
 bool Mothership::debug_post(int code, unsigned numArgs, ...)
 {
     #if ORCHESTRATOR_DEBUG
@@ -79,17 +80,25 @@ bool Mothership::debug_post(int code, unsigned numArgs, ...)
     /* Put all of the arguments into the vector. */
     va_start(args, numArgs);
     for (argIndex = 0; argIndex < numArgs; argIndex++)
-        strings.push_back(va_arg(args, std::string));
+        strings.push_back(va_arg(args, const char*));
     va_end(args);
 
     /* Throw over the fence. */
     bool rc = Post(code, strings);
     if (!rc)
     {
-        printf("Mothership WARNING: Could not post message with code %d.\n",
-               code);
+        std::string error;
+        error = dformat("Mothership WARNING: Couldn't post message with code "
+                        "%d ", code);
+        if (!strings.empty()) error.append("and strings ");
+        for (std::vector<std::string>::iterator strIt = strings.begin();
+             strIt != strings.end(); strIt++)
+            error.append(dformat("'%s' ", strIt->c_str()));
+        fprintf(stderr, "%s\n", error.c_str());
     }
     return rc;
+    #else
+    return true;
     #endif
 }
 
