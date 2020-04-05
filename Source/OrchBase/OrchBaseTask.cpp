@@ -675,7 +675,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
         for (messageIt = messages.begin(); messageIt != messages.end();
              messageIt++)
         {
-            (*messageIt)->comm = Comms[mothershipPayloadsIt->first.first];
+            (*messageIt)->comm = mothershipPayloadsIt->first.first;
             (*messageIt)->Tgt(mothershipPayloadsIt->first.second);
         }
 
