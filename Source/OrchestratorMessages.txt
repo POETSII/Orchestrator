@@ -79,6 +79,7 @@
 166(E) : "Not enough mothership processes exist to deploy task %s. Is a mothership running?"
 167(E) : "System command '%s' ran unsuccessfully with message '%s'. Aborting deployment."
 168(W) : "Unable to map a Mothership process to box '%s' - cannot deploy applications that have devices placed on this box."
+169(W) : "Attempt to issue '%s' command for task '%s', but it has not been deployed."
 
 400(F) : "Mothership: Could not create pthread %s. Exiting."
 401(F) : "Mothership: Could not join to pthread %s. Exiting."

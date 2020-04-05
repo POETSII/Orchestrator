@@ -27,6 +27,7 @@ P_typdcl *          pP_typdcl;         // Declare block
 string              filename;          // XML source from HbD-land
 P_owner *           pOwn;              // Task owner
 bool                linked;
+bool                deployed;
 
 struct PoL_t {
 public:

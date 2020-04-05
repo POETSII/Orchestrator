@@ -705,6 +705,8 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
 
         }
     }
+
+    task->deployed = true;
 }
 
 //------------------------------------------------------------------------------
@@ -807,17 +809,20 @@ void OrchBase::TaskMCmd(Cli::Cl_t Cl, std::string command)
     }
     task = taskFinder->second;
 
-    /* Ensure the task has been placed before proceeding. */
-    if (!task->linked)
+    /* Ensure the task has been deployed before proceeding. */
+    if (!task->deployed)
     {
-        Post(157, taskName);
+        Post(169, command, taskName);
         return;
     }
 
     /* Set up the message given the input arguments (catching an invalid
      * command input from somewhere). */
     if (command == "recl")
+    {
         message.Key(Q::CMND, Q::RECL);
+        task->deployed = false;
+    }
     else if (command == "init")
         message.Key(Q::CMND, Q::INIT);
     else if (command == "run")
