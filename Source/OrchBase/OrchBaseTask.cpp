@@ -466,7 +466,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
 
     /* Other payloady bits. */
     unsigned distCount;
-    unsigned appNumber;
+    uint8_t appNumber;
     std::string soPath;
 
     /* The task must exist. */
@@ -684,7 +684,8 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
         appNumber = 0;  /* This is terrible - only one application can be
                          * loaded at a time! <!> TODO */
         specMessage.Put<unsigned>(1, &distCount);
-        specMessage.Put<unsigned>(2, &appNumber);
+        specMessage.Put<unsigned char>(2,
+            static_cast<unsigned char*>(&appNumber));
         specMessage.Send();
 
         /* Customise and send the SUPD message. */
