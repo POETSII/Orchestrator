@@ -103,6 +103,7 @@
 419(E) : "Mothership: Error decoding MPI message with key '%s': Expected char in field %s. Ignoring message."
 420(W) : "Mothership: Invalid task ID '%s' in packet received from the compute fabric. Ignoring packet."
 421(I) : "Debug byte received from thread '%s' with content '%s'."
+422(E) : "Mothership: Error decoding MPI message with key '0x%s': Expected a vector of uint32_t values in field %s. Ignoring message."
 
 481(I) : "Mothership: Consuming %s packet with pin address %s."
 482(I) : "Mothership: On draining the Backend Input Queue of packets, the Backend Input Broker Thread has sent queued a Q::BEND,Q:SUPR message for application '%s' containing %s packets.

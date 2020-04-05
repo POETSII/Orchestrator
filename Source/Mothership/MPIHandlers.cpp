@@ -95,7 +95,7 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
 
     debug_post(491, 3, "Q::APP,Q::SPEC", hex2str(message->Key()).c_str(),
                dformat("appName=%s, distCount=%u, appNumber=%u",
-                       appName.c_str(), distCount, appNumber));
+                       appName.c_str(), distCount, appNumber).c_str());
 
     /* Ensure application existence idempotently (it might have been created by
      * an AppDist message). */
@@ -155,7 +155,7 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
                dformat("appName=%s, codePath=%s, dataPath=%s, coreAddr=%x, "
                        "threadsExpected=%s",
                        appName.c_str(), codePath.c_str(), dataPath.c_str(),
-                       coreAddr, threadNames.c_str()));
+                       coreAddr, threadNames.c_str()).c_str());
     #endif
 
     /* Ensure application existence idempotently. */
@@ -227,7 +227,7 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
 
     debug_post(491, 3, "Q::APP,Q::SUPD", hex2str(message->Key()).c_str(),
                dformat("appName=%s, soPath=%s",
-                       appName.c_str(), soPath.c_str()));
+                       appName.c_str(), soPath.c_str()).c_str());
 
     /* Ensure application existence idempotently, either to set its status to
      * BROKEN (on failure), or to update the distribution count. */
@@ -269,7 +269,7 @@ unsigned Mothership::handle_msg_cmnd_recl(PMsg_p* message)
     }
 
     debug_post(491, 3, "Q::CMND,Q::RECL", hex2str(message->Key()).c_str(),
-               dformat("appName=%s", appName.c_str()));
+               dformat("appName=%s", appName.c_str()).c_str());
 
     /* Get the application */
     appInfo = appdb.check_create_app(appName);
