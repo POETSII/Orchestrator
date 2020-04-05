@@ -660,7 +660,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
          messageIt++)
     {
         (*messageIt)->Src(Urank);
-        (*messageIt)->Put<std::string>(0, &taskName);
+        (*messageIt)->Put(0, &taskName);
     }
     specMessage.Key(Q::APP, Q::SPEC);
     distMessage.Key(Q::APP, Q::DIST);
@@ -689,15 +689,15 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
 
         /* Customise and send the SUPD message. */
         soPath = task->pSup->binPath;
-        supdMessage.Put<std::string>(1, &soPath);
+        supdMessage.Put(1, &soPath);
         supdMessage.Send();
 
         /* Customise and send the DIST messages (one per core) */
         for (payloadIt = mothershipPayloadsIt->second.begin();
              payloadIt != mothershipPayloadsIt->second.end(); payloadIt++)
         {
-            distMessage.Put<std::string>(1, &(payloadIt->codePath));
-            distMessage.Put<std::string>(2, &(payloadIt->dataPath));
+            distMessage.Put(1, &(payloadIt->codePath));
+            distMessage.Put(2, &(payloadIt->dataPath));
             distMessage.Put<unsigned>(3, &(payloadIt->coreAddr));
             distMessage.Put<std::vector<unsigned> >
                 (4, &(payloadIt->threadsExpected));
