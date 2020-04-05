@@ -289,7 +289,7 @@ unsigned Mothership::handle_msg_cmnd_init(PMsg_p* message)
     }
 
     debug_post(491, 2, "Q::CMND,Q::INIT",
-               dformat("appName=%s", appName.c_str()));
+               dformat("appName=%s", appName.c_str()).c_str());
 
     /* Get the application */
     appInfo = appdb.check_create_app(appName);
@@ -313,7 +313,7 @@ unsigned Mothership::handle_msg_cmnd_run(PMsg_p* message)
     }
 
     debug_post(491, 2, "Q::CMND,Q::RUN",
-               dformat("appName=%s", appName.c_str()));
+               dformat("appName=%s", appName.c_str()).c_str());
 
     /* Get the application */
     appInfo = appdb.check_create_app(appName);
@@ -337,7 +337,7 @@ unsigned Mothership::handle_msg_cmnd_stop(PMsg_p* message)
     }
 
     debug_post(491, 2, "Q::CMND,Q::STOP",
-               dformat("appName=%s", appName.c_str()));
+               dformat("appName=%s", appName.c_str()).c_str());
 
     /* Get the application */
     appInfo = appdb.check_create_app(appName);
@@ -396,7 +396,7 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
     }
 
     debug_post(491, 2, "Q::BEND,Q::SUPR",
-               dformat("appName=%s", appName.c_str()));
+               dformat("appName=%s", appName.c_str()).c_str());
 
     /* Set up a message for the supervisor entry point to modify. This output
      * message is always going to be a "packets" message (it's just a device
