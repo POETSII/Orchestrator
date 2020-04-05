@@ -88,11 +88,12 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
     if (!decode_app_spec_message(message, &appName, &distCount,
                                  &appNumber))
     {
-        debug_post(491, 2, "Q::APP,Q::SPEC", "Failed to decode.");
+        debug_post(491, 3, "Q::APP,Q::SPEC", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
         return 0;
     }
 
-    debug_post(491, 2, "Q::APP,Q::SPEC",
+    debug_post(491, 3, "Q::APP,Q::SPEC", hex2str(message->Key()).c_str(),
                dformat("appName=%s, distCount=%u, appNumber=%u",
                        appName.c_str(), distCount, appNumber));
 
@@ -140,7 +141,8 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
                                  &dataPath, &coreAddr,
                                  &threadsExpected))
     {
-        debug_post(491, 2, "Q::APP,Q::DIST", "Failed to decode.");
+        debug_post(491, 3, "Q::APP,Q::DIST", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
         return 0;
     }
 
@@ -149,7 +151,7 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
     for (threadAddrIt = threadsExpected.begin();
          threadAddrIt != threadsExpected.end(); threadAddrIt++)
         threadNames.append(dformat("%x ", *threadAddrIt));
-    debug_post(491, 2, "Q::APP,Q::DIST",
+    debug_post(491, 3, "Q::APP,Q::DIST", hex2str(message->Key()).c_str(),
                dformat("appName=%s, codePath=%s, dataPath=%s, coreAddr=%x, "
                        "threadsExpected=%s",
                        appName.c_str(), codePath.c_str(), dataPath.c_str(),
@@ -218,11 +220,12 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
     std::string soPath;
     if (!decode_app_supd_message(message, &appName, &soPath))
     {
-        debug_post(491, 2, "Q::APP,Q::SUPD", "Failed to decode.");
+        debug_post(491, 3, "Q::APP,Q::SUPD", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
         return 0;
     }
 
-    debug_post(491, 2, "Q::APP,Q::SUPD",
+    debug_post(491, 3, "Q::APP,Q::SUPD", hex2str(message->Key()).c_str(),
                dformat("appName=%s, soPath=%s",
                        appName.c_str(), soPath.c_str()));
 
@@ -260,11 +263,12 @@ unsigned Mothership::handle_msg_cmnd_recl(PMsg_p* message)
     std::string appName;
     if (!decode_string_message(message, &appName))
     {
-        debug_post(491, 2, "Q::CMND,Q::RECL", "Failed to decode.");
+        debug_post(491, 3, "Q::CMND,Q::RECL", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
         return 0;
     }
 
-    debug_post(491, 2, "Q::CMND,Q::RECL",
+    debug_post(491, 3, "Q::CMND,Q::RECL", hex2str(message->Key()).c_str(),
                dformat("appName=%s", appName.c_str()));
 
     /* Get the application */
@@ -284,11 +288,12 @@ unsigned Mothership::handle_msg_cmnd_init(PMsg_p* message)
     std::string appName;
     if (!decode_string_message(message, &appName))
     {
-        debug_post(491, 2, "Q::CMND,Q::INIT", "Failed to decode.");
+        debug_post(491, 3, "Q::CMND,Q::INIT", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
         return 0;
     }
 
-    debug_post(491, 2, "Q::CMND,Q::INIT",
+    debug_post(491, 3, "Q::CMND,Q::INIT", hex2str(message->Key()).c_str(),
                dformat("appName=%s", appName.c_str()).c_str());
 
     /* Get the application */
@@ -308,11 +313,12 @@ unsigned Mothership::handle_msg_cmnd_run(PMsg_p* message)
     std::string appName;
     if (!decode_string_message(message, &appName))
     {
-        debug_post(491, 2, "Q::CMND,Q::RUN", "Failed to decode.");
+        debug_post(491, 3, "Q::CMND,Q::RUN", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
         return 0;
     }
 
-    debug_post(491, 2, "Q::CMND,Q::RUN",
+    debug_post(491, 3, "Q::CMND,Q::RUN", hex2str(message->Key()).c_str(),
                dformat("appName=%s", appName.c_str()).c_str());
 
     /* Get the application */
@@ -332,11 +338,12 @@ unsigned Mothership::handle_msg_cmnd_stop(PMsg_p* message)
     std::string appName;
     if (!decode_string_message(message, &appName))
     {
-        debug_post(491, 2, "Q::CMND,Q::STOP", "Failed to decode.");
+        debug_post(491, 3, "Q::CMND,Q::STOP", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
         return 0;
     }
 
-    debug_post(491, 2, "Q::CMND,Q::STOP",
+    debug_post(491, 3, "Q::CMND,Q::STOP", hex2str(message->Key()).c_str(),
                dformat("appName=%s", appName.c_str()).c_str());
 
     /* Get the application */
@@ -356,11 +363,13 @@ unsigned Mothership::handle_msg_bend_cnc(PMsg_p* message)
     std::vector<P_Pkt_t> packets;
     if (!decode_packets_message(message, &packets))
     {
-        debug_post(491, 2, "Q::BEND,Q::CNC", "Failed to decode.");
+        debug_post(491, 3, "Q::BEND,Q::CNC", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
         return 0;
     }
 
-    debug_post(491, 2, "Q::BEND,Q::CNC", "Various packets.");
+    debug_post(491, 3, "Q::BEND,Q::CNC", hex2str(message->Key()).c_str(),
+               "Various packets.");
 
     /* For each packet, get its opcode, and call the appropriate packet
      * handling method, Posting if we don't recognise it. */
@@ -391,11 +400,12 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
     std::string appName;
     if (!decode_string_message(message, &appName))
     {
-        debug_post(491, 2, "Q::BEND,Q::SUPR", "Failed to decode.");
+        debug_post(491, 3, "Q::BEND,Q::SUPR", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
         return 0;
     }
 
-    debug_post(491, 2, "Q::BEND,Q::SUPR",
+    debug_post(491, 3, "Q::BEND,Q::SUPR", hex2str(message->Key()).c_str(),
                dformat("appName=%s", appName.c_str()).c_str());
 
     /* Set up a message for the supervisor entry point to modify. This output
@@ -420,11 +430,12 @@ unsigned Mothership::handle_msg_pkts(PMsg_p* message)
     std::vector<std::pair<uint32_t, P_Pkt_t> > packets;
     if (!decode_addressed_packets_message(message, &packets))
     {
-        debug_post(491, 2, "Q::PKTS", "Failed to decode.");
+        debug_post(491, 3, "Q::PKTS", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
         return 0;
     }
 
-    debug_post(491, 2, "Q::BEND,Q::PKTS",
+    debug_post(491, 3, "Q::BEND,Q::PKTS", hex2str(message->Key()).c_str(),
                "Various packets (pushing to queue).");
 
     /* Queue 'em. */
@@ -441,11 +452,12 @@ unsigned Mothership::handle_msg_dump(PMsg_p* message)
     /* Pull message contents. */
     if (!decode_string_message(message, &dumpPath))
     {
-        debug_post(491, 2, "Q::DUMP", "Failed to decode.");
+        debug_post(491, 3, "Q::DUMP", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
         return 0;
     }
 
-    debug_post(491, 2, "Q::DUMP",
+    debug_post(491, 3, "Q::DUMP", hex2str(message->Key()).c_str(),
                dformat("dumpPath=%s", dumpPath.c_str()).c_str());
 
     /* Mothership dump */

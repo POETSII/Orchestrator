@@ -111,7 +111,7 @@ bool Mothership::decode_char_message(PMsg_p* message, unsigned char* result,
     if (resultBuffer == PNULL)
     {
         *result = 0;
-        Post(419, uint2str(message->Key()), uint2str(index));
+        Post(419, hex2str(message->Key()), uint2str(index));
         return false;
     }
     *result = *resultBuffer;
