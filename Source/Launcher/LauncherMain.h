@@ -33,7 +33,7 @@ namespace Launcher
     const char* execRoot = "root";
 
     const char* execGdb = "/usr/bin/gdb --args";
-    const char* execValgrind = "/usr/bin/valgrind";
+    const char* execValgrind = "/usr/bin/valgrind --leak-check=full --track-origins=yes";
 
     bool AreWeRunningOnAPoetsBox();
     void BuildCommand(bool useMotherships, std::string internalPath,
