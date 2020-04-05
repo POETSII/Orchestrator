@@ -21,6 +21,7 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
     Mothership* mothership = (Mothership*)mothershipArg;
 
     #if ORCHESTRATOR_DEBUG
+    bool firstSpin = true;
     bool spinningSlowly = false;
     #endif
 
@@ -37,7 +38,9 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
             if (!spinningSlowly)
             {
                 spinningSlowly = true;
-                mothership->debug_post(485, 2, "MPI Cnc", "MPI Cnc Resolver");
+                if (!firstSpin) mothership->debug_post(485, 2, "MPI Cnc",
+                                                       "MPI Cnc Resolver");
+                else firstSpin = false;
             }
             #endif
             sleep(1);
@@ -91,6 +94,7 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
     Mothership* mothership = (Mothership*)mothershipArg;
 
     #if ORCHESTRATOR_DEBUG
+    bool firstSpin = true;
     bool spinningSlowly = false;
     #endif
 
@@ -111,8 +115,10 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
             if (!spinningSlowly)
             {
                 spinningSlowly = true;
-                mothership->debug_post(485, 2, "MPI Application",
-                                       "MPI Application Resolver");
+                if (!firstSpin)
+                    mothership->debug_post(485, 2, "MPI Application",
+                                           "MPI Application Resolver");
+                else firstSpin = false;
             }
             #endif
             sleep(1);
@@ -152,6 +158,7 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
     Mothership* mothership = (Mothership*)mothershipArg;
 
     #if ORCHESTRATOR_DEBUG
+    bool firstSpin = true;
     bool spinningSlowly = false;
     #endif
 
@@ -168,8 +175,10 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
             if (!spinningSlowly)
             {
                 spinningSlowly = true;
-                mothership->debug_post(485, 2, "Backend Out",
-                                       "Backend Output Broker");
+                if (!firstSpin)
+                    mothership->debug_post(485, 2, "Backend Out",
+                                           "Backend Output Broker");
+                else firstSpin = false;
             }
             #endif
             sleep(1);
@@ -386,6 +395,7 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
     DebugLink* debug = mothership->backend->debugLink;
 
     #if ORCHESTRATOR_DEBUG
+    bool firstSpin = true;
     bool spinningSlowly = false;
     #endif
 
@@ -412,8 +422,9 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
             if (!spinningSlowly)
             {
                 spinningSlowly = true;
-                mothership->debug_post(485, 2, "Debug Input",
-                                       "Debug Input Broker");
+                if (!firstSpin) mothership->debug_post(485, 2, "Debug Input",
+                                                       "Debug Input Broker");
+                else firstSpin = false;
             }
             #endif
 
