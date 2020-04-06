@@ -105,6 +105,10 @@
 421(I) : "Debug byte received from thread '%s' with content '%s'."
 422(E) : "Mothership: Error decoding MPI message with key '0x%s': Expected a vector of uint32_t values in field %s. Ignoring message."
 
+477(I) : "Mothership: Calling backend->loadDataViaCore with arguments dataPath=%s, meshX=0x%s, meshY=0x%s, coreId=0x%s."
+478(I) : "Mothership: Calling backend->loadInstrsOntoCore with arguments codePath=%s, meshX=0x%s, meshY=0x%s, coreId=0x%s."
+479(I) : "Mothership: Calling backend->goOne with arguments meshX=0x%s, meshY=0x%s, coreId=0x%s."
+480(I) : "Mothership: Calling backend->startOne with arguments meshX=0x%s, meshY=0x%s, coreId=0x%s, threadCount=%s."
 481(I) : "Mothership: Consuming %s packet with pin address %s."
 482(I) : "Mothership: On draining the Backend Input Queue of packets, the Backend Input Broker Thread has sent queued a Q::BEND,Q:SUPR message for application '%s' containing %s packets.
 483(I) : "Mothership: On draining the Backend Input Queue of packets, the Backend Input Broker Thread has sent queued a Q::BEND,Q:CNC message containing %s packets.

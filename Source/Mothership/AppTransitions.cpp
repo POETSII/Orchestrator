@@ -43,8 +43,14 @@ void Mothership::initialise_application(AppInfo* app)
          coreIt++)
     {
         backend->fromAddr(coreIt->first, &meshX, &meshY, &coreId, &threadId);
+        debug_post(478, 4, coreIt->second.codePath.c_str(),
+                   hex2str(meshX).c_str(), hex2str(meshY).c_str(),
+                   hex2str(coreId).c_str());
         backend->loadInstrsOntoCore(coreIt->second.codePath.c_str(),
                                    meshX, meshY, coreId);
+        debug_post(477, 4, coreIt->second.dataPath.c_str(),
+                   hex2str(meshX).c_str(), hex2str(meshY).c_str(),
+                   hex2str(coreId).c_str());
         backend->loadDataViaCore(coreIt->second.dataPath.c_str(),
                                  meshX, meshY, coreId);
     }
@@ -61,15 +67,32 @@ void Mothership::initialise_application(AppInfo* app)
                               &threadId);
 
             if (!mode)  /* 2 */
+            {
+                debug_post(
+                    480, 4, hex2str(meshX).c_str(), hex2str(meshY).c_str(),
+                    hex2str(coreId).c_str(),
+                    uint2str(coreIt->second.threadsExpected.size()).c_str());
+                /* Note that startOne can hang for the Tinsel backend if the
+                 * number of threads expected is greater than the number of
+                 * threads that the core will start - this is because startOne
+                 * waits for an acknowledgement message from the core that
+                 * varies as a function of the number of threads. If you find
+                 * the above 480 being the last message you see from the MPI
+                 * CNC Resolver thread (for example), this is most likely your
+                 * issue. */
                 backend->startOne(meshX, meshY, coreId,
                                   coreIt->second.threadsExpected.size());
+            }
             else  /* 3 */
+            {
+                debug_post(479, 3, hex2str(meshX).c_str(),
+                           hex2str(meshY).c_str(), hex2str(coreId).c_str());
                 backend->goOne(meshX, meshY, coreId);
+            }
         }
 
         mode = !mode;
-    }
-    while (mode);
+    } while (mode);
 
     /* Good stuff. Now the cores will spin up and send BARRIER messages to the
      * Mothership. */
