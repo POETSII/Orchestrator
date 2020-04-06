@@ -578,12 +578,15 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
             /* coreAddr */
             payload->coreAddr = core->get_hardware_address()->as_uint();
 
-            /* threadsExpected */
+            /* threadsExpected - only push_back threads that have something
+             * placed upon them. Again, we assume that all devices placed
+             * within a core share the same application. */
             for (threadIt = core->P_threadm.begin();
                  threadIt != core->P_threadm.end(); threadIt++)
             {
-                payload->threadsExpected.push_back(
-                    threadIt->second->get_hardware_address()->as_uint());
+                if (!(threadIt->second->P_devicel.empty()))
+                    payload->threadsExpected.push_back(
+                        threadIt->second->get_hardware_address()->as_uint());
             }
         }
 
