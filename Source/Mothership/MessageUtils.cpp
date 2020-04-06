@@ -51,24 +51,22 @@ bool Mothership::decode_addresses_message(PMsg_p* message,
                                           std::vector<uint32_t>* addresses,
                                           unsigned index)
 {
-    int countBuffer;
-    std::vector<uint32_t>* addressesBuffer;
+    std::vector<uint32_t> addressesBuffer;
+    std::vector<uint32_t>::iterator addressIt;
 
     addresses->clear();
 
-    addressesBuffer = message->Get<std::vector<uint32_t> >(index, countBuffer);
-    if (addressesBuffer == PNULL)
+    message->Get<uint32_t>(index, addressesBuffer);
+    if (addressesBuffer.empty())
     {
         Post(422, hex2str(message->Key()), uint2str(index));
         return false;
     }
 
     /* Copy the addresses from the buffer to the input argument. */
-    for (std::vector<uint32_t>::iterator packetIt=addressesBuffer->begin();
-         packetIt!=addressesBuffer->end(); packetIt++)
-    {
-        addresses->push_back(*packetIt);
-    }
+    for (addressIt = addressesBuffer.begin();
+         addressIt != addressesBuffer.end(); addressIt++)
+        addresses->push_back(*addressIt);
 
     return true;
 }
@@ -76,26 +74,21 @@ bool Mothership::decode_addresses_message(PMsg_p* message,
 bool Mothership::decode_addressed_packets_message(PMsg_p* message,
     std::vector<std::pair<uint32_t, P_Pkt_t> >* packets, unsigned index)
 {
-    int countBuffer;
-    std::vector<std::pair<uint32_t, P_Pkt_t> >* packetsBuffer;
+    std::vector<std::pair<uint32_t, P_Pkt_t> > packetsBuffer;
     std::vector<std::pair<uint32_t, P_Pkt_t> >::iterator packetIt;
 
     packets->clear();
 
-    packetsBuffer = message->Get<std::vector<std::pair<uint32_t, P_Pkt_t> > >
-        (index, countBuffer);
-    if (packetsBuffer == PNULL)
+    message->Get<std::pair<uint32_t, P_Pkt_t> >(index, packetsBuffer);
+    if (packetsBuffer.empty())
     {
         Post(416, hex2str(message->Key()), uint2str(index));
         return false;
     }
 
     /* Copy the packets from the buffer to the input argument. */
-    for (packetIt = packetsBuffer->begin(); packetIt != packetsBuffer->end();
-         packetIt++)
-    {
-        packets->push_back(*packetIt);
-    }
+    for (packetIt = packetsBuffer.begin(); packetIt != packetsBuffer.end();
+         packetIt++) packets->push_back(*packetIt);
 
     return true;
 }
@@ -122,24 +115,21 @@ bool Mothership::decode_packets_message(PMsg_p* message,
                                         std::vector<P_Pkt_t>* packets,
                                         unsigned index)
 {
-    int countBuffer;
-    std::vector<P_Pkt_t>* packetsBuffer;
+    std::vector<P_Pkt_t> packetsBuffer;
+    std::vector<P_Pkt_t>::iterator packetIt;
 
     packets->clear();
 
-    packetsBuffer = message->Get<std::vector<P_Pkt_t> >(index, countBuffer);
-    if (packetsBuffer == PNULL)
+    message->Get<P_Pkt_t>(index, packetsBuffer);
+    if (packetsBuffer.empty())
     {
         Post(406, hex2str(message->Key()), uint2str(index));
         return false;
     }
 
     /* Copy the packets from the buffer to the input argument. */
-    for (std::vector<P_Pkt_t>::iterator packetIt=packetsBuffer->begin();
-         packetIt!=packetsBuffer->end(); packetIt++)
-    {
-        packets->push_back(*packetIt);
-    }
+    for (packetIt = packetsBuffer.begin(); packetIt != packetsBuffer.end();
+         packetIt++) packets->push_back(*packetIt);
 
     return true;
 }

@@ -700,7 +700,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
             distMessage.Put(1, &(payloadIt->codePath));
             distMessage.Put(2, &(payloadIt->dataPath));
             distMessage.Put<unsigned>(3, &(payloadIt->coreAddr));
-            distMessage.Put<std::vector<unsigned> >
+            distMessage.Put<unsigned>
                 (4, &(payloadIt->threadsExpected));
             distMessage.Send();
 
