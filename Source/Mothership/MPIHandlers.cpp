@@ -150,9 +150,9 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
     std::string threadNames = "";
     for (threadAddrIt = threadsExpected.begin();
          threadAddrIt != threadsExpected.end(); threadAddrIt++)
-        threadNames.append(dformat("%x ", *threadAddrIt));
+        threadNames.append(dformat("0x%x ", *threadAddrIt));
     debug_post(491, 3, "Q::APP,Q::DIST", hex2str(message->Key()).c_str(),
-               dformat("appName=%s, codePath=%s, dataPath=%s, coreAddr=%x, "
+               dformat("appName=%s, codePath=%s, dataPath=%s, coreAddr=0x%x, "
                        "threadsExpected=%s",
                        appName.c_str(), codePath.c_str(), dataPath.c_str(),
                        coreAddr, threadNames.c_str()).c_str());
