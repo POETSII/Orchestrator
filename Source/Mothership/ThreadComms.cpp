@@ -102,28 +102,33 @@ JOIN_THREAD_DEFINITION(DebugInputBroker, debug_input_broker)
  * writes message with it, and returns true. Otherwise, returns false. */
 bool ThreadComms::pop_MPI_cnc_queue(PMsg_p* message)
 {
-    if (MPICncQueue.empty()) return false;
+    bool returnValue = false;
     pthread_mutex_lock(&mutex_MPI_cnc_queue);
-    *message = MPICncQueue.front();
-    MPICncQueue.pop();
+    if (!MPICncQueue.empty())
+    {
+        returnValue = true;
+        *message = MPICncQueue.front();
+        MPICncQueue.pop();
+    }
     pthread_mutex_unlock(&mutex_MPI_cnc_queue);
-    return true;
+    return returnValue;
 }
 
 /* If there are messages in the queue, grabs all messages from MPICncQueue,
  * writes them to messages, and returns true. Otherwise, returns false. */
 bool ThreadComms::pop_MPI_cnc_queue(std::vector<PMsg_p>* messages)
 {
-    if (MPICncQueue.empty()) return false;
-    pthread_mutex_lock(&mutex_MPI_cnc_queue);
+    bool returnValue = false;
     messages->clear();
+    pthread_mutex_lock(&mutex_MPI_cnc_queue);
     while (!MPICncQueue.empty())
     {
+        returnValue = true;
         messages->push_back(MPICncQueue.front());
         MPICncQueue.pop();
     }
     pthread_mutex_unlock(&mutex_MPI_cnc_queue);
-    return true;
+    return returnValue;
 }
 
 /* Takes message and places it into the queue. */
@@ -153,28 +158,33 @@ void ThreadComms::push_MPI_cnc_queue(std::vector<PMsg_p>* messages)
  * writes message with it, and returns true. Otherwise, returns false. */
 bool ThreadComms::pop_MPI_app_queue(PMsg_p* message)
 {
-    if (MPIAppQueue.empty()) return false;
+    bool returnValue = false;
     pthread_mutex_lock(&mutex_MPI_app_queue);
-    *message = MPIAppQueue.front();
-    MPIAppQueue.pop();
+    if (!MPIAppQueue.empty())
+    {
+        returnValue = true;
+        *message = MPIAppQueue.front();
+        MPIAppQueue.pop();
+    }
     pthread_mutex_unlock(&mutex_MPI_app_queue);
-    return true;
+    return returnValue;
 }
 
 /* If there are messages in the queue, grabs all messages from MPIAppQueue,
  * writes them to messages, and returns true. Otherwise, returns false. */
 bool ThreadComms::pop_MPI_app_queue(std::vector<PMsg_p>* messages)
 {
-    if (MPIAppQueue.empty()) return false;
-    pthread_mutex_lock(&mutex_MPI_app_queue);
+    bool returnValue = false;
     messages->clear();
+    pthread_mutex_lock(&mutex_MPI_app_queue);
     while (!MPIAppQueue.empty())
     {
+        returnValue = true;
         messages->push_back(MPIAppQueue.front());
         MPIAppQueue.pop();
     }
     pthread_mutex_unlock(&mutex_MPI_app_queue);
-    return true;
+    return returnValue;
 }
 
 /* Takes message and places it into the queue. */
@@ -205,12 +215,16 @@ void ThreadComms::push_MPI_app_queue(std::vector<PMsg_p>* messages)
  * returns false. */
 bool ThreadComms::pop_backend_out_queue(std::pair<uint32_t, P_Pkt_t>* packet)
 {
-    if (BackendOutputQueue.empty()) return false;
+    bool returnValue = false;
     pthread_mutex_lock(&mutex_backend_output_queue);
-    *packet = BackendOutputQueue.front();
-    BackendOutputQueue.pop();
+    if (!BackendOutputQueue.empty())
+    {
+        returnValue = true;
+        *packet = BackendOutputQueue.front();
+        BackendOutputQueue.pop();
+    }
     pthread_mutex_unlock(&mutex_backend_output_queue);
-    return true;
+    return returnValue;
 }
 
 /* If there are packets in the queue, grabs all packets from
@@ -219,16 +233,17 @@ bool ThreadComms::pop_backend_out_queue(std::pair<uint32_t, P_Pkt_t>* packet)
 bool ThreadComms::pop_backend_out_queue(
     std::vector<std::pair<uint32_t, P_Pkt_t> >* packets)
 {
-    if (BackendOutputQueue.empty()) return false;
-    pthread_mutex_lock(&mutex_backend_output_queue);
+    bool returnValue = false;
     packets->clear();
+    pthread_mutex_lock(&mutex_backend_output_queue);
     while (!BackendOutputQueue.empty())
     {
+        returnValue = true;
         packets->push_back(BackendOutputQueue.front());
         BackendOutputQueue.pop();
     }
     pthread_mutex_unlock(&mutex_backend_output_queue);
-    return true;
+    return returnValue;
 }
 
 /* Takes packet and places it into the queue. */
@@ -271,14 +286,15 @@ bool ThreadComms::pop_backend_in_queue(P_Pkt_t* packet)
  * returns false. */
 bool ThreadComms::pop_backend_in_queue(std::vector<P_Pkt_t>* packets)
 {
-    if (BackendInputQueue.empty()) return false;
+    bool returnValue = false;
     packets->clear();
     while (!BackendInputQueue.empty())
     {
+        returnValue = true;
         packets->push_back(BackendInputQueue.front());
         BackendInputQueue.pop();
     }
-    return true;
+    return returnValue;
 }
 
 /* Takes packet and places it into the queue. */
@@ -315,14 +331,15 @@ bool ThreadComms::pop_debug_in_queue(P_Debug_Pkt_t* packet)
  * writes them to packets, and returns true. Otherwise, returns false. */
 bool ThreadComms::pop_debug_in_queue(std::vector<P_Debug_Pkt_t>* packets)
 {
-    if (DebugInputQueue.empty()) return false;
+    bool returnValue = false;
     packets->clear();
     while (!DebugInputQueue.empty())
     {
+        returnValue = true;
         packets->push_back(DebugInputQueue.front());
         DebugInputQueue.pop();
     }
-    return true;
+    return returnValue;
 }
 
 /* Takes packet and places it into the queue. */
