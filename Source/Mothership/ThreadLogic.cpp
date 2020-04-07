@@ -74,7 +74,7 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
             else if (key == PMsg_p::KEY(Q::DUMP))
                 mothership->handle_msg_dump(&*messageIt);
             else
-                mothership->Post(407, "MPICncResolver", uint2str(key));
+                mothership->Post(407, "MPICncResolver", hex2str(key));
         }
 
         /* We're done with the extracted messages - throw them away. */
@@ -138,7 +138,7 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
             else if (key == PMsg_p::KEY(Q::PKTS))
                 mothership->handle_msg_pkts(&*messageIt);
             else
-                mothership->Post(407, "MPIAppResolver", uint2str(key));
+                mothership->Post(407, "MPIAppResolver", hex2str(key));
         }
 
         /* We're done with the extracted messages - throw them away. */
