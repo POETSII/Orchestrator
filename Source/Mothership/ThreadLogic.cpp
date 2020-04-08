@@ -252,7 +252,10 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
          * therein. */
         else
         {
-            mothership->threading.pop_backend_in_queue(&packets);
+            /* Shortcut - if there's nothing to do. */
+            if (!(mothership->threading.pop_backend_in_queue(&packets)))
+                continue;
+
             for (packetIt = packets.begin(); packetIt != packets.end();
                  packetIt++)
             {
@@ -312,10 +315,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                  * should not be sent packets when the isMothership bit in the
                  * software address is unset. Ignore the packet, but warn the
                  * operator. */
-                else
-                {
-                    mothership->Post(417, hex2str(packetIt->header.swAddr));
-                }
+                else mothership->Post(417, hex2str(packetIt->header.swAddr));
             }
 
             /* After draining our queue, push all of the CNC packets we've
