@@ -39,6 +39,7 @@ void Mothership::initialise_application(AppInfo* app)
 
     /* 1: For each core, call backend->loadInstrsOntoCore and
      * loadDataViaCore. */
+    pthread_mutex_lock(&(threading.mutex_backend_api));
     for (coreIt = app->coreInfos.begin(); coreIt != app->coreInfos.end();
          coreIt++)
     {
@@ -96,6 +97,7 @@ void Mothership::initialise_application(AppInfo* app)
 
     /* Good stuff. Now the cores will spin up and send BARRIER messages to the
      * Mothership. */
+    pthread_mutex_unlock(&(threading.mutex_backend_api));
 }
 
 /* Starts an application, by queueing BARRIER packets to each thread to be

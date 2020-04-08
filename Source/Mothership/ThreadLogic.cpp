@@ -198,9 +198,11 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
             if (numberOfFlitsForThisPacket == 0) ++numberOfFlitsForThisPacket;
 
             /* Send the packet (with that number of flits) */
+            pthread_mutex_lock(&(mothership->threading.mutex_backend_api));
             mothership->backend->send(packetIt->first,
                                       numberOfFlitsForThisPacket,
                                       &(packetIt->second), true);
+            pthread_mutex_unlock(&(mothership->threading.mutex_backend_api));
 
         }
     }
@@ -221,6 +223,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
     void* receiveBuffer;
     char* dynamicBuffer;  /* For cleanup */
     uint8_t packetAppNumber;
+    bool canRecv;
 
     /* Staging CNC packets, and packets to the supervisor, to be sent. */
     std::string appName;
@@ -237,9 +240,24 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
     {
         /* Attempt to receive packets from the backend and push them into the
          * backend-input queue. */
-        if (mothership->backend->canRecv())
+        pthread_mutex_lock(&(mothership->threading.mutex_backend_api));
+        canRecv = mothership->backend->canRecv();
+        if (canRecv)
         {
             mothership->backend->recv(receiveBuffer);
+            pthread_mutex_unlock(&(mothership->threading.mutex_backend_api));
+
+            /* Dump the packet in a hacky way.
+            P_Pkt_t* convenience = static_cast<P_Pkt_t*>(receiveBuffer);
+            printf("=== We got a packet! swAddr: %u, pinAddr: %u, payload: ",
+                   convenience->header.swAddr,
+                   convenience->header.pinAddr);
+            for (unsigned payloadIndex = 0;
+                 payloadIndex < P_PKT_MAX_SIZE-sizeof(P_Pkt_Hdr_t);
+                 payloadIndex++)
+                printf("%u ", convenience->payload[payloadIndex]);
+            printf("\n"); */
+
             mothership->threading.push_backend_in_queue(
                 *(static_cast<P_Pkt_t*>(receiveBuffer)));
 
@@ -252,6 +270,8 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
          * therein. */
         else
         {
+            pthread_mutex_unlock(&(mothership->threading.mutex_backend_api));
+
             /* Shortcut - if there's nothing to do. */
             if (!(mothership->threading.pop_backend_in_queue(&packets)))
                 continue;

@@ -9,6 +9,7 @@ ThreadComms::ThreadComms(Mothership* mothership):
     pthread_mutex_init(&mutex_MPI_cnc_queue, PNULL);
     pthread_mutex_init(&mutex_MPI_app_queue, PNULL);
     pthread_mutex_init(&mutex_backend_output_queue, PNULL);
+    pthread_mutex_init(&mutex_backend_api, PNULL);
 }
 
 ThreadComms::~ThreadComms()
@@ -17,6 +18,7 @@ ThreadComms::~ThreadComms()
     pthread_mutex_destroy(&mutex_MPI_cnc_queue);
     pthread_mutex_destroy(&mutex_MPI_app_queue);
     pthread_mutex_destroy(&mutex_backend_output_queue);
+    pthread_mutex_destroy(&mutex_backend_api);
 }
 
 /* Starts all of the threads. Returns when one of the following is true:

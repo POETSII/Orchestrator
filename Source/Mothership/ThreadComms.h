@@ -85,11 +85,22 @@ public:
     void push_debug_in_queue(P_Debug_Pkt_t);
     void push_debug_in_queue(std::vector<P_Debug_Pkt_t>*);
 
+    /* Note that the backend (hostlink) is not thread safe. For example,
+     * startOne uses the Tinsel messaging system, so it's possible for the MPI
+     * Cnc Resolver thread to start a core, and for the acknowledgement to be
+     * picked up by Backend Input Broker, leaving MPI Cnc Resolver hanging
+     * waiting for a message that it will never pick up.
+     *
+     * All backend methods (aside from address conversion methods and DebugLink
+     * methods) must be performed while "holding" this mutex. In future, the
+     * 'generic-backend' class will wrap this behaviour. */
+    pthread_mutex_t mutex_backend_api;
+
 private:
     Mothership* mothership;
     bool quit;
 
-    /* Mutexes */
+    /* Queuing Mutexes */
     pthread_mutex_t mutex_MPI_cnc_queue;
     pthread_mutex_t mutex_MPI_app_queue;
     pthread_mutex_t mutex_backend_output_queue;
