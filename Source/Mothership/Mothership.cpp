@@ -67,7 +67,10 @@ void Mothership::load_backend()
      * one-Mothership-over-many-boxes case, but do we even want to support that
      * once we're multi-box? (It was sarcasm - we don't). */
     debug_print("Mothership: Loading Tinsel backend...\n");
+    pthread_mutex_lock(&(threading.mutex_backend_api));
+    if (backend != PNULL) delete backend;
     backend = new HostLink();
+    pthread_mutex_unlock(&(threading.mutex_backend_api));
     debug_print("Mothership: Tinsel backend loaded.\n");
 }
 
