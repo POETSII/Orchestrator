@@ -369,7 +369,7 @@ unsigned Mothership::handle_msg_bend_cnc(PMsg_p* message)
     }
 
     debug_post(491, 3, "Q::BEND,Q::CNC", hex2str(message->Key()).c_str(),
-               "Various packets.");
+               dformat("%lu packet(s).", packets.size()).c_str());
 
     /* For each packet, get its opcode, and call the appropriate packet
      * handling method, Posting if we don't recognise it. */
@@ -396,7 +396,8 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
 {
     int rc;
 
-    /* Get the application from the message. */
+    /* Get the application from the message. Note that we don't get the packets
+     * here because the supervisor SO reads the message (not the packets). */
     std::string appName;
     if (!decode_string_message(message, &appName))
     {
