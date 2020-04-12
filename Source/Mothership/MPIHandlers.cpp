@@ -202,7 +202,7 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
         acknowledgement.Put<std::string>(0, &(appInfo->name));
         acknowledgement.Tgt(pPmap[RootCIdx()]->U.Root);
         acknowledgement.Key(Q::MSHP, Q::ACK, Q::DEFD);
-        queue_mpi_message(acknowledgement);
+        queue_mpi_message(&acknowledgement);
     }
 
     /* Check for further state transitions. */
@@ -421,7 +421,7 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
     /* Invoke the supervisor, send the message if instructed to do so, and
      * propagate errors. */
     rc = superdb.call_supervisor(appName, message, &outputMessage);
-    if (rc > 0) queue_mpi_message(outputMessage);
+    if (rc > 0) queue_mpi_message(&outputMessage);
     else if (rc < 0) Post(415, appName);
     return 0;
 }

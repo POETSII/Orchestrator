@@ -117,7 +117,7 @@ void Mothership::run_application(AppInfo* app)
     acknowledgement.Key(Q::MSHP, Q::ACK, Q::RUN);
     acknowledgement.Put<std::string>(0, &(app->name));
     acknowledgement.Tgt(pPmap[RootCIdx()]->U.Root);
-    queue_mpi_message(acknowledgement);
+    queue_mpi_message(&acknowledgement);
 }
 
 /* Stops an application, by queueing STOP packets to each thread to be

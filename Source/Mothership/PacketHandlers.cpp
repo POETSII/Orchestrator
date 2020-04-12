@@ -138,7 +138,7 @@ void Mothership::handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop)
         appInfo->state = STOPPED;
         acknowledgement.Key(Q::MSHP, Q::ACK, Q::STOP);
     }
-    queue_mpi_message(acknowledgement);
+    queue_mpi_message(&acknowledgement);
 
     /* Check for further state transitions. */
     if (appInfo->should_we_recall()) recall_application(appInfo);
@@ -166,5 +166,5 @@ void Mothership::handle_pkt_kill(P_Pkt_t* packet)
     message.comm = Comms[0];
     message.Key(Q::EXIT);
     message.Tgt(Urank);  /* Send to ourselves */
-    queue_mpi_message(message);
+    queue_mpi_message(&message);
 }

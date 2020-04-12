@@ -386,7 +386,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                     mothership->debug_post(
                         482, 2, appFinder->second.c_str(),
                         uint2str(appIt->second.size()).c_str());
-                    mothership->queue_mpi_message(message);
+                    mothership->queue_mpi_message(&message);
                 }
 
                 /* We've sent them all now, so we're done here. */

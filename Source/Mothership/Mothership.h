@@ -28,7 +28,7 @@ public:
     void dump(std::ofstream*);
     void go();
     void mpi_spin(){MPISpinner();};
-    void queue_mpi_message(PMsg_p message);
+    void queue_mpi_message(PMsg_p* message);
     bool debug_post(int code, unsigned numArgs, ...);
 
     AppDB appdb;

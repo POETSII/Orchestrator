@@ -54,10 +54,13 @@ void Mothership::go()
  *
  * You might reasonably thing this is largely superfluous, but this is here to
  * aid debugging as an elegant hook for all outgoing MPI communications. The
- * compiler (assuming it's not bad) will inline it under optimisation. */
-void Mothership::queue_mpi_message(PMsg_p message)
+ * compiler (assuming it's not bad) will inline it under optimisation.
+ *
+ * The argument is an address to avoid difficulties working with the copy
+ * constructor.  */
+void Mothership::queue_mpi_message(PMsg_p* message)
 {
-    message.Send();
+    message->Send();
 }
 
 /* Loads the compute backend, crashing violently if it does (for now). */
