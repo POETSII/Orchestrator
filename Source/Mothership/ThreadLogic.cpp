@@ -359,8 +359,10 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                      appIt++)
                 {
                     /* Construct a message that holds all of the packets for
-                     * this supervisor. */
+                     * this supervisor. This message will be sent to this (the
+                     * same) process. */
                     PMsg_p message;
+                    message.comm = mothership->Comms[0];
                     message.Key(Q::BEND, Q::SUPR);
                     message.Src(mothership->Urank);
                     message.Tgt(mothership->Urank);
