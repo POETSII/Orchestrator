@@ -1,7 +1,7 @@
 #include "SuperHolder.h"
 
 /* Here we load the shared objects! It is down to the creator to verify the
- * success of the loading process (i.e. by checking (!so), and by calling
+ * success of the loading process (i.e. by checking (error), and by calling
  * dlerror to obtain an error message). */
 
 SuperHolder::SuperHolder(std::string path):

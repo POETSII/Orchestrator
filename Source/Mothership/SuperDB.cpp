@@ -1,5 +1,13 @@
 #include "SuperDB.h"
 
+/* Cleanup. */
+SuperDB::~SuperDB()
+{
+    for (SuperIt superIt = supervisors.begin(); superIt != supervisors.end();
+         superIt++) delete superIt->second;
+    supervisors.clear();
+}
+
 /* Loads a supervisor into the database, returning true on success and false on
  * failure. If there is a failure, errorMessage is written with the contents of
  * the error. */
@@ -18,11 +26,10 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
     }
 
     /* Otherwise, load up. */
-    supervisors.insert(std::pair<std::string, SuperHolder>
-                       (appName, SuperHolder(path)));
+    supervisors[appName] = new SuperHolder(path);
 
     /* Check for errors as per the specification... */
-    if (supervisors.find(appName)->second.error)
+    if (supervisors.find(appName)->second->error)
     {
         *errorMessage = dlerror();
         return false;
@@ -35,21 +42,19 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
 int SuperDB::call_supervisor(std::string appName, PMsg_p* inputMessage,
                              PMsg_p* outputMessage)
 {
-    std::map<std::string, SuperHolder>::iterator superFinder;
-    superFinder = supervisors.find(appName);
+    SuperIt superFinder = supervisors.find(appName);
     if (superFinder == supervisors.end()) return -2;
     /* I know this is hideous, but that's function pointers for you. */
-    return (*(superFinder->second.entryPoint))(inputMessage, outputMessage);
+    return (*(superFinder->second->entryPoint))(inputMessage, outputMessage);
 }
 
 /* Initialises the supervisor for a given application. */
 int SuperDB::initialise_supervisor(std::string appName)
 {
-    std::map<std::string, SuperHolder>::iterator superFinder;
-    superFinder = supervisors.find(appName);
+    SuperIt superFinder = supervisors.find(appName);
     if (superFinder == supervisors.end()) return -2;
     /* I know this is hideous, but that's function pointers for you. */
-    return (*(superFinder->second.initialise))();
+    return (*(superFinder->second->initialise))();
 }
 
 /* Unloads a supervisor from the database, returning true on success and false
@@ -65,6 +70,7 @@ bool SuperDB::unload_supervisor(std::string appName)
     }
 
     /* Otherwise, unload away (via destructor). */
+    delete superIt->second;
     supervisors.erase(superIt);
     return true;
 }
@@ -81,6 +87,6 @@ void SuperDB::dump(std::ofstream* stream)
     for (SuperIt superIt = supervisors.begin(); superIt != supervisors.end();
          superIt++)
     {
-        superIt->second.dump(stream);
+        superIt->second->dump(stream);
     }
 }

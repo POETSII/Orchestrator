@@ -12,12 +12,13 @@
 #include "SuperHolder.h"
 
 /* I'm lazy. */
-typedef std::map<std::string, SuperHolder>::iterator SuperIt;
+typedef std::map<std::string, SuperHolder*>::iterator SuperIt;
 
 class SuperDB
 {
 public:
-    std::map<std::string, SuperHolder> supervisors;
+    ~SuperDB();
+    std::map<std::string, SuperHolder*> supervisors;
     bool load_supervisor(std::string appName, std::string path,
                          std::string* errorMessage);
     int call_supervisor(std::string appName, PMsg_p* inputMessage,
