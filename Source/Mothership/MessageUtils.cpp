@@ -118,6 +118,12 @@ bool Mothership::decode_packets_message(PMsg_p* message,
     std::vector<P_Pkt_t> packetsBuffer;
     std::vector<P_Pkt_t>::iterator packetIt;
 
+    /* Before interacting with the message, we need to "teach" it to recognise
+     * the P_Pkt_t type. See the Msg_p copy constructor for more information -
+     * note that the copy constructor is invoked when the message is staged in
+     * a queue! */
+    message->Put<P_Pkt_t>();
+
     packets->clear();
 
     message->Get<P_Pkt_t>(index, packetsBuffer);

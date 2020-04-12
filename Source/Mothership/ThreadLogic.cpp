@@ -346,7 +346,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                                        uint2str(cncBuffer.size()).c_str());
                 PMsg_p message;
                 message.Key(Q::BEND, Q::CNC);
-                message.Put<std::vector<P_Pkt_t> >(0, &cncBuffer);
+                message.Put<P_Pkt_t>(0, &cncBuffer);
                 mothership->threading.push_MPI_cnc_queue(message);
                 cncBuffer.clear();
             }
@@ -378,7 +378,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                     message.Put<std::string>(0, &(appFinder->second));
 
                     /* Put the packets themselves. */
-                    message.Put<std::vector<P_Pkt_t> >(1, &(appIt->second));
+                    message.Put<P_Pkt_t>(1, &(appIt->second));
 
                     /* Out it goes. */
                     mothership->debug_post(
