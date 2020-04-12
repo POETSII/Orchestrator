@@ -4,13 +4,15 @@
 /* Describes how instrumentation packets are handled by the Mothership. */
 
 #include <map>
+#include <stdlib.h>
 #include <vector>
 
 #include "dfprintf.h"
 #include "InstrumentationException.h"
 #include "poets_pkt.h"
 
-#define DEFAULT_INSTRUMENTATION_DIRECTORY "~/.orchestrator/instrumentation"
+#define DEFAULT_INSTRUMENTATION_DIRECTORY \
+    dformat("%s/.orchestrator/instrumentation", getenv("HOME"))
 
 struct ThreadInstrumentationDatum
 {
