@@ -377,7 +377,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                     }
 
                     /* Put the app name. */
-                    message.Put<std::string>(0, &(appFinder->second));
+                    message.Put(0, &(appFinder->second));
 
                     /* Put the packets themselves. */
                     message.Put<P_Pkt_t>(1, &(appIt->second));
