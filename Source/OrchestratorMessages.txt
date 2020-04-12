@@ -112,7 +112,7 @@
 481(I) : "Mothership: Consuming %s packet with pin address %s."
 482(I) : "Mothership: On draining the Backend Input Queue of packets, the Backend Input Broker Thread has sent queued a Q::BEND,Q:SUPR message for application '%s' containing %s packets.
 483(I) : "Mothership: On draining the Backend Input Queue of packets, the Backend Input Broker Thread has sent queued a Q::BEND,Q:CNC message containing %s packets.
-484(I) : "Mothership: Pushing packet with hardware address %s into the compute fabric."
+484(I) : "Mothership: Pushing packet with hardware address 0x%s into the compute fabric."
 485(I) : "Mothership: The %s queue is empty, so the %s Thread is spinning slowly."
 487(I) : "Mothership: Recalling application '%s'."
 488(I) : "Mothership: Stopping application '%s' (which has been started)."
