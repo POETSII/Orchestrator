@@ -14,18 +14,19 @@ int SupervisorCall(PMsg_p* In, PMsg_p* Out)
     int sentErr = 0;
     char outPktBuf[P_PKT_MAX_SIZE];
 
-    vector<P_Super_Pkt_t> pkts; // packets are packed in Tinsel packet format
+    vector<P_Pkt_t> pkts; // packets are packed in Tinsel packet format
+    In->Put<P_Pkt_t>();
     In->Get(1, pkts);
-    WALKVECTOR(P_Super_Pkt_t, pkts, pkt) // and they're sent blindly
+    WALKVECTOR(P_Pkt_t, pkts, pkt) // and they're sent blindly
     {
-        uint8_t pin = (((pkt->pkt.header.pinAddr) & P_HD_TGTPIN_MASK)
+        uint8_t pin = (((pkt->header.pinAddr) & P_HD_TGTPIN_MASK)
                         >> P_HD_TGTPIN_SHIFT);
         if (pin >= Supervisor::inputs.size())
         {
             return -1;      // invalid pin
         }
         supInputPin* dest = Supervisor::inputs[pin];
-        sentErr += dest->OnReceive(dest->properties, dest->state, &(pkt->pkt), Out, outPktBuf);
+        sentErr += dest->OnReceive(dest->properties, dest->state, &*pkt, Out, outPktBuf);
     }
     return sentErr;
 }

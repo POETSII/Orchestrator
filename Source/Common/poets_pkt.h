@@ -12,7 +12,7 @@
 //------------------------------------------------------------------------------
 // Definitions for instrumentation timing
 //------------------------------------------------------------------------------
-#ifdef TinselClockFreq 
+#ifdef TinselClockFreq
  #define P_DEFAULT_INSTRUMENTATION_INTERVAL     (TinselClockFreq * 1000000)
 #else
  #define P_DEFAULT_INSTRUMENTATION_INTERVAL     240000000    //~1s at 240 MHz
@@ -53,8 +53,8 @@
 //------------------------------------------------------------------------------
 #define P_HW_HWADDR_MASK            0xFFFFFFFF
 #define P_HW_HWADDR_SHIFT           0
-    
-#define P_SW_MOTHERSHIP_MASK        ISMOTHERSHIP_BIT_MASK       
+
+#define P_SW_MOTHERSHIP_MASK        ISMOTHERSHIP_BIT_MASK
 #define P_SW_MOTHERSHIP_SHIFT       ISMOTHERSHIP_SHIFT
 #define P_SW_CNC_MASK               ISCNC_BIT_MASK
 #define P_SW_CNC_SHIFT              ISCNC_SHIFT
@@ -98,14 +98,14 @@ typedef struct poets_packet_header
     uint32_t swAddr;
     uint32_t pinAddr;
     // End Header.
-    
+
     // 64-bits left in the first flit.
 } P_Pkt_Hdr_t;
 
 
 typedef struct poets_packet
 {
-    P_Pkt_Hdr_t header; // a packet always has a header      
+    P_Pkt_Hdr_t header; // a packet always has a header
     uint8_t payload[P_PKT_MAX_SIZE-sizeof(P_Pkt_Hdr_t)]; // and it might have some more data
     // In the default tinsel configuration the first flit has 4 bytes of payload
     // Further flits contain data.
@@ -128,40 +128,30 @@ typedef struct poets_instr_packet_payload
     // First Flit
     uint32_t cIDX;
     uint32_t cycles;
-    
+
     // Second Flit
     uint32_t rxCnt;
     uint32_t rxHanCnt;
     uint32_t txCnt;
     uint32_t supCnt;
-    
+
     // Third Flit
     uint32_t txHanCnt;
     uint32_t idleCnt;
     uint32_t idleHanCnt;
     uint32_t blockCnt;
-    
-#if TinselEnablePerfCount == true   
+
+#if TinselEnablePerfCount == true
     // Fourth Flit
     uint32_t missCount;         // Cache miss count
     uint32_t hitCount;          // Cache hit count
     uint32_t writebackCount;    // Cache writeback count
     uint32_t CPUIdleCount;      // CPU idle-cycle count (lower 32 bits)
-    
+
     // 0-bits free
-#endif 
-    
+#endif
+
 } P_Instr_Pkt_Pyld_t;
-
-
-// This is used within the Supervisor to keep the destination address with the
-// packet to be sent.
-typedef struct poets_supervisor_packet
-{
-    uint32_t hwAddr;    // The destination HW address
-    uint32_t len;       // Number of bytes for the P_Pkt_t
-    P_Pkt_t pkt;        // The POETs fabric message
-} P_Super_Pkt_t;
 
 
 const unsigned int p_pkt_pyld_size = sizeof(P_Pkt_t)-sizeof(P_Pkt_Hdr_t);
@@ -171,7 +161,6 @@ const unsigned int p_logpkt_hdr_size = sizeof(P_Pkt_Hdr_t)+sizeof(uint8_t);
 
 const unsigned int p_instrpkt_pyld_size = sizeof(P_Instr_Pkt_Pyld_t);
 
-inline size_t p_super_pkt_size() {return sizeof(P_Super_Pkt_t);}
 inline size_t p_pkt_size() {return sizeof(P_Pkt_t);}
 inline size_t p_hdr_size() {return sizeof(P_Pkt_Hdr_t);}
 
@@ -181,32 +170,28 @@ typedef P_Pkt_Hdr_t             P_Msg_Hdr_t;
 typedef P_Pkt_t                 P_Msg_t;
 typedef P_Log_Pkt_Pyld_t        P_Log_Msg_Pyld_t;
 typedef P_Instr_Pkt_Pyld_t      P_Instr_Msg_Pyld_t;
-typedef P_Super_Pkt_t           P_Super_Msg_t;
 
 const unsigned int p_msg_pyld_size = p_pkt_pyld_size;
 const unsigned int p_logmsg_pyld_size = p_logpkt_pyld_size;
 const unsigned int p_logmsg_hdr_size = p_logpkt_hdr_size;
 const unsigned int  p_instrmsg_pyld_size = p_instrpkt_pyld_size;
 
-inline size_t p_super_msg_size() {return p_super_pkt_size();}
 inline size_t p_msg_size() {return p_pkt_size();}
-
-
 
 // message buffers (last argument) in the message setters must be volatile because we might wish
 // to write directly to a hardware resource containing the buffer, which in general may be volatile.
-inline unsigned set_pkt_hdr(uint8_t ms, uint8_t cnc, uint8_t task, uint8_t opcode, 
-                    uint32_t dev, uint8_t pin, uint32_t edge, 
+inline unsigned set_pkt_hdr(uint8_t ms, uint8_t cnc, uint8_t task, uint8_t opcode,
+                    uint32_t dev, uint8_t pin, uint32_t edge,
                     uint8_t len, P_Pkt_Hdr_t* hdr)
 {
     if (len > p_pkt_pyld_size) return 1;            // die if the message is too big
-    
+
     hdr->swAddr = ((ms << P_SW_MOTHERSHIP_SHIFT) & P_SW_MOTHERSHIP_MASK);
     hdr->swAddr |= ((cnc << P_SW_CNC_SHIFT) & P_SW_CNC_MASK);
     hdr->swAddr |= ((task << P_SW_TASK_SHIFT) & P_SW_TASK_MASK);
     hdr->swAddr |= ((opcode << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK);
     hdr->swAddr |= ((dev << P_SW_DEVICE_SHIFT) & P_SW_DEVICE_MASK);
-    
+
     hdr->pinAddr = ((pin << P_HD_TGTPIN_SHIFT) & P_HD_TGTPIN_MASK);
     hdr->pinAddr |= ((pin << P_HD_DESTEDGEINDEX_SHIFT) & P_HD_DESTEDGEINDEX_MASK);
 
@@ -214,16 +199,16 @@ inline unsigned set_pkt_hdr(uint8_t ms, uint8_t cnc, uint8_t task, uint8_t opcod
 }
 
 
-inline unsigned pack_pkt(uint8_t ms, uint8_t cnc, uint8_t task, uint8_t opcode, 
-                    uint32_t dev, uint8_t pin, uint32_t edge, 
+inline unsigned pack_pkt(uint8_t ms, uint8_t cnc, uint8_t task, uint8_t opcode,
+                    uint32_t dev, uint8_t pin, uint32_t edge,
                     uint8_t len, void* pyld, P_Pkt_t* pkt)
 {
     if(set_pkt_hdr(ms, cnc, task, opcode, dev, pin, edge, len, &pkt->header))
     {   // pack up the header
         return 1;
-    }        
-    
-    memcpy(pkt->payload, pyld, len);                     // and the payload 
+    }
+
+    memcpy(pkt->payload, pyld, len);                     // and the payload
     return 0;
 }
 
