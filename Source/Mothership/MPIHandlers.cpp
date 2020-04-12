@@ -105,7 +105,7 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
      * nothing else. */
     if(appInfo->state != UNDERDEFINED)
     {
-        Post(402, appName, appInfo->get_state_colloquial());
+        Post(402, appName, appName, appInfo->get_state_colloquial());
         return 0;
     }
 
