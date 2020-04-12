@@ -5,6 +5,7 @@ AppInfo::AppInfo(std::string name, uint32_t distCountExpected):
     name(name),
     distCountExpected(distCountExpected)
 {
+    pendingCommands = 0;
     distCountCurrent = 0;
     state = UNDERDEFINED;
 }
