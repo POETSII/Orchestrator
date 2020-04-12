@@ -172,10 +172,11 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
 
     /* Otherwise, add the information for this core to the application, and
      * increment the distribution message count. */
-    appInfo->distCountCurrent++;
     coreInfo = &(appInfo->coreInfos[coreAddr]);
     coreInfo->codePath = codePath;
     coreInfo->dataPath = dataPath;
+    appdb.coreToApp[coreAddr] = appName;
+    appInfo->distCountCurrent++;
 
     /* For each thread, add it to:
      *
