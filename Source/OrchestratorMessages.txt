@@ -111,7 +111,7 @@
 478(I) : "Mothership: Calling backend->loadInstrsOntoCore with arguments codePath=%s, meshX=0x%s, meshY=0x%s, coreId=0x%s."
 479(I) : "Mothership: Calling backend->goOne with arguments meshX=0x%s, meshY=0x%s, coreId=0x%s."
 480(I) : "Mothership: Calling backend->startOne with arguments meshX=0x%s, meshY=0x%s, coreId=0x%s, threadCount=%s."
-481(I) : "Mothership: Consuming %s packet with pin address %s."
+481(I) : "Mothership: Consuming %s packet with pin address 0x%s."
 482(I) : "Mothership: On draining the Backend Input Queue of packets, the Backend Input Broker Thread has sent queued a Q::BEND,Q:SUPR message for application '%s' containing %s packets.
 483(I) : "Mothership: On draining the Backend Input Queue of packets, the Backend Input Broker Thread has sent queued a Q::BEND,Q:CNC message containing %s packets.
 484(I) : "Mothership: Pushing packet with hardware address 0x%s into the compute fabric."
