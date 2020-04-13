@@ -93,26 +93,8 @@ CMND |RUN  |-    |-    | (0:string)Application name
 CMND |STOP |-    |-    | (0:string)Application name
 BEND |CNC  |-    |-    | (0:P_Pkt_t)Packet
 BEND |SUPR |-    |-    | (0:P_Pkt_t)Packet
-PKTS |-    |-    |-    | (0:vector<P_Pkt_t>)Packets
+PKTS |-    |-    |-    | (0:vector<pair<uint32_t, P_Pkt_t> >)Packets
 DUMP |-    |-    |-    | (0:string)Path to write the dump to
-
-Mothercore
-----------
-CMND |LOAD |-    |-    | (0:string)Task name
-CMND |RUN  |-    |-    | (0:string)Task name
-CMND |STOP |-    |-    | (0:string)Task name
-EXIT |-    |-    |-    | (None)
-NAME |DIST |-    |-    | (0:string)Task name
-                         (1:vector<pair<uint32_t,P_addr_t>>) Core list for Mothership
-NAME |RECL |-    |-    | (0:string)Task name
-NAME |TDIR |-    |-    | (0:string)Task name
-                         (1:string)File directory
-SUPR |-    |-    |-    | (0:vector<P_Msg_t>)Args
-SYST |HARD |-    |-    | (0:vector<string>)Args
-SYST |KILL |-    |-    | (None)
-SYST |SHOW |-    |-    | (None)
-SYST |TOPO |-    |-    | (None)
-TINS |-    |-    |-    | (0:vector<P_Msg_t>) Packet(s) to deliver
 
 */
 
@@ -136,38 +118,32 @@ static const byte PMAP  = 0x08;
 static const byte SYST  = 0x09;
 static const byte RTCL  = 0x0a;
 static const byte INJCT = 0x0b;
-static const byte NAME  = 0x0c;
-static const byte SUPR  = 0x0d;
-static const byte TINS  = 0x0e;
-static const byte CANDC = 0x0f;
-static const byte APP   = 0x10;
-static const byte BEND  = 0x11;
-static const byte PKTS  = 0x12;
-static const byte DUMP  = 0x13;
-static const byte MSHP  = 0x14;
+static const byte CANDC = 0x0c;
+static const byte APP   = 0x0d;
+static const byte BEND  = 0x0e;
+static const byte PKTS  = 0x0f;
+static const byte DUMP  = 0x10;
+static const byte MSHP  = 0x11;
 // Level 1 subkeys
 static const byte PING  = 0x40;
 static const byte POST  = 0x41;
 static const byte FULL  = 0x42;
 static const byte FLOO  = 0x43;
 static const byte FLAG  = 0x44;
-static const byte HARD  = 0x45;
-static const byte KILL  = 0x46;
-static const byte CONN  = 0x47;
-static const byte RUN   = 0x48;
-static const byte LOAD  = 0x49;
-static const byte STOP  = 0x4a;
-static const byte TOPO  = 0x4b;
-static const byte DIST  = 0x4c;
-static const byte RECL  = 0x4d;
-static const byte TDIR  = 0x4e;
-static const byte SHOW  = 0x4f;
-static const byte ACPT  = 0x50;
-static const byte SPEC  = 0x51;
-static const byte SUPD  = 0x52;
-static const byte INIT  = 0x53;
-static const byte CNC   = 0x54;
-static const byte ACK   = 0x55;
+static const byte KILL  = 0x45;
+static const byte CONN  = 0x46;
+static const byte RUN   = 0x47;
+static const byte LOAD  = 0x48;
+static const byte STOP  = 0x49;
+static const byte DIST  = 0x4a;
+static const byte RECL  = 0x4b;
+static const byte ACPT  = 0x4c;
+static const byte SPEC  = 0x4d;
+static const byte SUPD  = 0x4e;
+static const byte INIT  = 0x4f;
+static const byte CNC   = 0x50;
+static const byte ACK   = 0x51;
+static const byte SUPR  = 0x52;
 // temporary use: for MPI testing ------------------------------------------
 static const byte M0    = 0x60;
 static const byte M1    = 0x61;
