@@ -249,13 +249,13 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
 
             /* Dump the packet in a hacky way.
             P_Pkt_t* convenience = static_cast<P_Pkt_t*>(receiveBuffer);
-            printf("=== We got a packet! swAddr: %u, pinAddr: %u, payload: ",
-                   convenience->header.swAddr,
+            printf("=== We got a packet! swAddr: 0x%x, pinAddr: 0x%x, "
+                   "payload: ", convenience->header.swAddr,
                    convenience->header.pinAddr);
             for (unsigned payloadIndex = 0;
                  payloadIndex < P_PKT_MAX_SIZE-sizeof(P_Pkt_Hdr_t);
                  payloadIndex++)
-                printf("%u ", convenience->payload[payloadIndex]);
+                printf("0x%x ", convenience->payload[payloadIndex]);
             printf("\n"); */
 
             mothership->threading.push_backend_in_queue(
