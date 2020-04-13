@@ -103,6 +103,7 @@ void Mothership::initialise_application(AppInfo* app)
 
     /* 4: Initialise the supervisor device on this Mothership for this
      * application, posting on error. */
+    debug_post(476, 1, app->name.c_str());
     if (superdb.initialise_supervisor(app->name) != 0) Post(423, app->name);
 }
 

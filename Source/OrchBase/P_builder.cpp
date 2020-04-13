@@ -453,11 +453,7 @@ unsigned P_builder::GenSupervisor(P_task* task)
     // build supervisor pin handlers.
     sup_pin_handlers << "vector<supInputPin*> Supervisor::inputs;\n";
     sup_pin_handlers << "vector<supOutputPin*> Supervisor::outputs;\n\n";
-    
-    sup_pin_vectors << "std::cout << \"Starting Application Supervisor for "; // Why is this an std::cout and not a logserver?
-    sup_pin_vectors << "application " << task->Name() << "\" << std::endl;\n";
-    
-    
+
     //==========================================================================
     // Assemble output pin variables & handlers.
     //==========================================================================
