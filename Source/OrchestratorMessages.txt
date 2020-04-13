@@ -96,7 +96,7 @@
 412(W) : "Mothership: Unknown application for core '0x%s' in '%s' packet. Ignoring."
 413(W) : "Mothership: Received an unexpected '%s' packet for an application in state '%s'. Ignoring."
 414(W) : "Mothership: Received a command-and-control packet with unknown opcode '0x%s'. Ignoring."
-415(E) : "Mothership: A message for the supervisor for task '%s' contained a packet that could not be handled correctly. One possible cause for this is that the pin field in the packet was set out of bounds."
+415(E) : "Mothership: A message for the supervisor for task '%s' contained a packet that could not be handled correctly. Possible causes: 1) The pin field in the packet was set out of bounds, 2) The Supervisor failed to initialise correctly (either the SupervisorInit is broken or was not called), 3) Mark has done something terrible."
 416(E) : "Mothership: Error decoding MPI message with key '0x%s': Expected a vector of uint32_t-P_Pkt_t pairs in field %s. Ignoring message."
 417(W) : "Mothership: Received a packet from an application in error - the isMothership bit was not set in the software address field for the packet. The software address of this packet is '0x%s'. Ignoring packet."
 418(W) : "Mothership: Received a packet for an external device - external support is not yet implemented. The software address of this packet is '%s'. Ignoring packet."
@@ -104,6 +104,7 @@
 420(W) : "Mothership: Invalid task ID '%s' in packet received from the compute fabric. Ignoring packet."
 421(I) : "Debug byte received from thread '0x%s' with content '%s'."
 422(E) : "Mothership: Error decoding MPI message with key '0x%s': Expected a vector of uint32_t values in field %s. Ignoring message."
+423(E) : "Mothership: Supervisor for application '%s' failed to initialise correctly. Marking task as BROKEN (which will cause other errors)."
 
 477(I) : "Mothership: Calling backend->loadDataViaCore with arguments dataPath=%s, meshX=0x%s, meshY=0x%s, coreId=0x%s."
 478(I) : "Mothership: Calling backend->loadInstrsOntoCore with arguments codePath=%s, meshX=0x%s, meshY=0x%s, coreId=0x%s."

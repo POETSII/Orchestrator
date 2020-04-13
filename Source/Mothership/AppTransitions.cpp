@@ -14,8 +14,10 @@
  *
  *  3. triggers backend-level application execution for each core.
  *
- * Then, if all is well, each thread sends a BARRIER packet (Tinsel message) to
- * the Mothership (which is handled by the BackendInputBroker thread). Note
+ *  4. initialises the supervisor device on this Mothership.
+ *
+ * After 3, if all is well, each thread sends a BARRIER packet (Tinsel message)
+ * to the Mothership (which is handled by the BackendInputBroker thread). Note
  * that steps 2 and 3 are handled in different loops. This is because MFN
  * stated (at some arbitrary point in the past) that starting all of the
  * threads, then kicking them off is safer than kicking off some cores before
@@ -98,6 +100,10 @@ void Mothership::initialise_application(AppInfo* app)
     /* Good stuff. Now the cores will spin up and send BARRIER messages to the
      * Mothership. */
     pthread_mutex_unlock(&(threading.mutex_backend_api));
+
+    /* 4: Initialise the supervisor device on this Mothership for this
+     * application, posting on error. */
+    if (superdb.initialise_supervisor(app->name) != 0) Post(423, app->name);
 }
 
 /* Starts an application, by queueing BARRIER packets to each thread to be
