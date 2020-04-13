@@ -52,7 +52,6 @@ HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp 
                          $(SOURCE_DIR)/Common/HardwareModel/P_link.cpp \
                          $(SOURCE_DIR)/Common/HardwareModel/P_port.cpp \
                          $(SOURCE_DIR)/Common/DumpUtils.cpp \
-                         $(SOURCE_DIR)/OrchBase/Bin.cpp \
                          $(GENERICS_DIR)/NameBase.cpp \
                          $(GENERICS_DIR)/rand.cpp \
                          $(HARDWARE_ADDRESS_SOURCES)

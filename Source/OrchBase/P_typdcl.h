@@ -5,7 +5,6 @@
 #include "NameBase.h"
 #include "P_message.h"
 #include "P_board.h"
-#include "Bin.h"
 class D_graph;
 class P_devtyp;
 class P_task;
@@ -38,7 +37,3 @@ CFrag *             pPropsD;
 //==============================================================================
 
 #endif
-
-
-
-
