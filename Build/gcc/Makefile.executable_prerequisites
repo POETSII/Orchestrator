@@ -249,41 +249,6 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 
-# The old mothership component consists of:
-#
-# - The "main" file (/Source/Mothership/adr/MothershipMain.cpp) and its
-#   dependencies in /Source/Mothership/adr, but not
-#   /Source/Mothership/adr/Supervisor.cpp.
-#
-# - An interface source file from the softswitch, in /Source/Softswitch/src.
-#
-# - The truly common sources.
-#
-# - Some "generics" (/Generics) sources.
-#
-# - A set of base Orchestrator (/Source/OrchBase) sources.
-#
-# Hostlink sources are to be compiled separately.
-ADR_MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/adr/MothershipMain.cpp \
-                     $(SOURCE_DIR)/Mothership/adr/TaskInfo.cpp \
-                     $(SOURCE_DIR)/Mothership/adr/TMoth.cpp \
-                     $(GENERICS_DIR)/dumpchan.cpp \
-                     $(GENERICS_DIR)/rand.cpp \
-                     $(SOURCE_DIR)/OrchBase/Bin.cpp \
-                     $(SOURCE_DIR)/OrchBase/build_defs.cpp \
-                     $(SOURCE_DIR)/OrchBase/CFrag.cpp \
-                     $(SOURCE_DIR)/OrchBase/CMsg_p.cpp \
-                     $(SOURCE_DIR)/OrchBase/D_graph.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_addr.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_device.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_message.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_pin.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_task.cpp \
-                     $(SOURCE_DIR)/Common/Debug.cpp \
-                     $(HARDWARE_DEPLOYER_SOURCES)
-
-ADR_MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
-
 # Convert these lists of sources into a list of objects to define a dependency
 # system for the linker.
 
@@ -315,7 +280,7 @@ $(1)_OBJECTS := $(call orch_sources_to_objects, $($(1)_SOURCES))
 endef
 
 $(foreach object_set,\
-          LAUNCHER ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP ADR_MOTHERSHIP,\
+          LAUNCHER ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP,\
           $(eval $(call OBJECT_TEMPLATE,$(object_set))))
 
 # Define executable prerequisites. RULE_TEMPLATE defines the substitutions made
@@ -328,5 +293,5 @@ $($(1)_EXECUTABLE): $($(1)_OBJECTS)
 endef
 
 $(foreach executable_name,\
-          LAUNCHER ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP ADR_MOTHERSHIP,\
+          LAUNCHER ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP,\
           $(eval $(call RULE_TEMPLATE,$(executable_name))))
