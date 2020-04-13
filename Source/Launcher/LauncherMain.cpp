@@ -260,8 +260,8 @@ int DeployBinaries(std::set<std::string>* hosts,
 
     /* Figure out where the executables all are on this box. We assume that
      * they are in the same directory as the launcher. */
-    DebugPrint("%sIdentifying where the binaries are on this box, from where "
-               "the launcher is...\n", debugHeader);
+    debug_print("%sIdentifying where the binaries are on this box, from where "
+                "the launcher is...\n", debugHeader);
     std::string sourceDir;
     sourceDir = POETS::dirname(POETS::get_executable_path());
 
@@ -273,8 +273,8 @@ int DeployBinaries(std::set<std::string>* hosts,
     }
     else
     {
-        DebugPrint("%sFound the binaries to copy at '%s'.\n", debugHeader,
-                   sourceDir.c_str());
+        debug_print("%sFound the binaries to copy at '%s'.\n", debugHeader,
+                    sourceDir.c_str());
     }
 
     /* Deploy! */
@@ -283,8 +283,8 @@ int DeployBinaries(std::set<std::string>* hosts,
     int sshRc;
     WALKSET(string, (*hosts), host)
     {
-        DebugPrint("%sDeploying to host '%s'...\n",
-                   debugHeader, host->c_str());
+        debug_print("%sDeploying to host '%s'...\n",
+                    debugHeader, host->c_str());
 
         /* Ensure .orchestrator exists. */
         sshRc = SSH::call((*host),
@@ -365,8 +365,8 @@ int DeployBinaries(std::set<std::string>* hosts,
             return 1;
         }
 
-        DebugPrint("%sDeployment to host '%s' complete.\n",
-                   debugHeader, host->c_str());
+        debug_print("%sDeployment to host '%s' complete.\n",
+                    debugHeader, host->c_str());
 
         (*paths)[*host] = cmdstdout;
     }
@@ -451,9 +451,9 @@ int Launch(int argc, char** argv)
     if (hdfPath.empty() && file_exists(defaultHdfPath))
     {
         hdfPath = defaultHdfPath;
-        DebugPrint("%sFound a hardware description file in the default "
-                   "search location (%s). Using that one.\n",
-                   debugHeader, hdfPath.c_str());
+        debug_print("%sFound a hardware description file in the default "
+                    "search location (%s). Using that one.\n",
+                    debugHeader, hdfPath.c_str());
     }
 
     /* Read the input file, if supplied, and get a set of hosts we must launch
@@ -477,20 +477,20 @@ int Launch(int argc, char** argv)
             #if ORCHESTRATOR_DEBUG
             if(!hosts.empty())
             {
-                DebugPrint("%sAfter reading the input file, I found the "
-                           "following hosts:\n", debugHeader);
+                debug_print("%sAfter reading the input file, I found the "
+                            "following hosts:\n", debugHeader);
                 WALKSET(std::string, hosts, hostIterator)
                 {
-                    DebugPrint("%s%s- %s\n", debugHeader, debugIndent,
-                               (*hostIterator).c_str());
+                    debug_print("%s%s- %s\n", debugHeader, debugIndent,
+                                (*hostIterator).c_str());
                 }
-                DebugPrint("%s\n", debugHeader);
+                debug_print("%s\n", debugHeader);
             }
 
             else
             {
-                DebugPrint("%sAfter parsing the input file, I found no "
-                           "hosts.\n", debugHeader);
+                debug_print("%sAfter parsing the input file, I found no "
+                            "hosts.\n", debugHeader);
             }
             #endif
         }
@@ -499,8 +499,8 @@ int Launch(int argc, char** argv)
         else if (!overrideHost.empty())
         {
             hosts.insert(overrideHost);
-            DebugPrint("%sIgnoring input file, and instead using the override "
-                       "passed in as an argument.\n", debugHeader);
+            debug_print("%sIgnoring input file, and instead using the "
+                        "override passed in as an argument.\n", debugHeader);
         }
     }
 
@@ -509,7 +509,7 @@ int Launch(int argc, char** argv)
      *  - no hosts were found from any input file passed in,
      *  - no override host was proposed, and
      *  - we're not running on a POETS box. */
-    DebugPrint("%sPerforming POETS box check...\n", debugHeader);
+    debug_print("%sPerforming POETS box check...\n", debugHeader);
     if (useMotherships && hosts.empty() && !AreWeRunningOnAPoetsBox())
     {
         printf("[WARN] Launcher: Not running on a POETS box, and found no "
@@ -526,13 +526,13 @@ int Launch(int argc, char** argv)
 
     /* Build the MPI command. */
     std::string command;
-    DebugPrint("%sBuilding command...\n", debugHeader);
+    debug_print("%sBuilding command...\n", debugHeader);
     BuildCommand(useMotherships, internalPath, overrideHost, batchPath,
                  hdfPath, hosts, deployedPaths, gdbProcs, valgrindProcs,
                  &command);
 
     /* Run the MPI command, or not. */
-    DebugPrint("%sRunning this command: %s\n", debugHeader, command.c_str());
+    debug_print("%sRunning this command: %s\n", debugHeader, command.c_str());
     if (dryRun)
     {
         #if ORCHESTRATOR_DEBUG
@@ -578,15 +578,15 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
               std::map<std::string, bool>* valgrindProcs)
 {
     /* Print input arguments, if we're in debug mode. */
-    DebugPrint("%sWelcome to the POETS Launcher. Raw arguments:\n",
+    debug_print("%sWelcome to the POETS Launcher. Raw arguments:\n",
                debugHeader);
     #if ORCHESTRATOR_DEBUG
     for (int argIndex=0; argIndex<argc; argIndex++)
     {
-        DebugPrint("%s%sArgument %d: %s\n", debugHeader, debugIndent, argIndex,
-                   argv[argIndex]);
+        debug_print("%s%sArgument %d: %s\n", debugHeader, debugIndent,
+                    argIndex, argv[argIndex]);
     }
-    DebugPrint("%s\n", debugHeader);
+    debug_print("%s\n", debugHeader);
     #endif
 
     /* Argument map. */
@@ -805,47 +805,47 @@ argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str());
 
     /* Print what happened, if anyone is listening. */
     #if ORCHESTRATOR_DEBUG
-    DebugPrint("%sParsed arguments:\n", debugHeader);
+    debug_print("%sParsed arguments:\n", debugHeader);
     if (hdfPath->empty())
     {
-        DebugPrint("%s%sHardware description file path: Not specified.\n",
-                   debugHeader, debugIndent);
+        debug_print("%s%sHardware description file path: Not specified.\n",
+                    debugHeader, debugIndent);
     }
     else
     {
-        DebugPrint("%s%sHardware description file path: %s\n",
-                   debugHeader, debugIndent, hdfPath->c_str());
+        debug_print("%s%sHardware description file path: %s\n",
+                    debugHeader, debugIndent, hdfPath->c_str());
     }
     if (overrideHost->empty())
     {
-        DebugPrint("%s%sOverride host: Not specified.\n",
-                   debugHeader, debugIndent);
+        debug_print("%s%sOverride host: Not specified.\n",
+                    debugHeader, debugIndent);
     }
     else
     {
-        DebugPrint("%s%sOverride host: %s\n", debugHeader, debugIndent,
-                   overrideHost->c_str());
+        debug_print("%s%sOverride host: %s\n", debugHeader, debugIndent,
+                    overrideHost->c_str());
     }
     if (*useMotherships)
     {
-        DebugPrint("%s%sMotherships: enabled\n", debugHeader, debugIndent);
+        debug_print("%s%sMotherships: enabled\n", debugHeader, debugIndent);
     }
     else
     {
-        DebugPrint("%s%sMotherships: disabled\n", debugHeader, debugIndent);
+        debug_print("%s%sMotherships: disabled\n", debugHeader, debugIndent);
     }
     if (*dryRun)
     {
-        DebugPrint("%s%sWe're not actually going to run the command.\n",
-                   debugHeader, debugIndent);
+        debug_print("%s%sWe're not actually going to run the command.\n",
+                    debugHeader, debugIndent);
     }
     else
     {
-        DebugPrint("%s%sWe are going to run the generated command.\n",
-                   debugHeader, debugIndent);
+        debug_print("%s%sWe are going to run the generated command.\n",
+                    debugHeader, debugIndent);
     }
 
-    DebugPrint("%s\n", debugHeader);
+    debug_print("%s\n", debugHeader);
     #endif
 
     return 0;

@@ -9,5 +9,4 @@
 #define ORCHESTRATOR_DEBUG 0
 #endif
 void debug_print(const char*, ...);
-void DebugPrint(const char*, ...);
 #endif
