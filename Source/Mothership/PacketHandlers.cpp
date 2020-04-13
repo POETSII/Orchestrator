@@ -13,7 +13,7 @@
  * InstrumentationWriter::consume_instrumentation_packet) */
 void Mothership::handle_pkt_instr(P_Pkt_t* packet)
 {
-    debug_post(481, 2, "P_CNC_INSTR", hex2str(packet->header.pinAddr).c_str());
+    debug_post(581, 2, "P_CNC_INSTR", hex2str(packet->header.pinAddr).c_str());
     try
     {
         instrumentation.consume_instrumentation_packet(packet);
@@ -21,7 +21,7 @@ void Mothership::handle_pkt_instr(P_Pkt_t* packet)
 
     catch (InstrumentationException &e)
     {
-        Post(409, e.message);
+        Post(509, e.message);
     }
 }
 
@@ -30,9 +30,9 @@ void Mothership::handle_pkt_instr(P_Pkt_t* packet)
 void Mothership::handle_pkt_log(P_Pkt_t* packet)
 {
     std::string message;
-    debug_post(481, 2, "P_CNC_LOG", hex2str(packet->header.pinAddr).c_str());
+    debug_post(581, 2, "P_CNC_LOG", hex2str(packet->header.pinAddr).c_str());
     logging.consume_log_packet(packet, &message);
-    if (!message.empty()) Post(410, message);
+    if (!message.empty()) Post(510, message);
 }
 
 /* Handle a packet as a barrier packet. Such packets are, effectively,
@@ -40,7 +40,7 @@ void Mothership::handle_pkt_log(P_Pkt_t* packet)
  * and are waiting at the softswitch barrier.  */
 void Mothership::handle_pkt_barrier(P_Pkt_t* packet)
 {
-    debug_post(481, 2, "P_CNC_BARRIER", hex2str(packet->header.pinAddr).c_str());
+    debug_post(581, 2, "P_CNC_BARRIER", hex2str(packet->header.pinAddr).c_str());
     handle_pkt_barrier_or_stop(packet, false);
 }
 
@@ -72,7 +72,7 @@ void Mothership::handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop)
     coreAddrFinder = appdb.threadToCoreAddr.find(threadAddr);
     if (coreAddrFinder == appdb.threadToCoreAddr.end())
     {
-        Post(411, hex2str(threadAddr), colloquialMode);
+        Post(511, hex2str(threadAddr), colloquialMode);
         return;
     }
     coreAddr = coreAddrFinder->second;
@@ -81,7 +81,7 @@ void Mothership::handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop)
     appNameFinder = appdb.coreToApp.find(coreAddr);
     if (appNameFinder == appdb.coreToApp.end())
     {
-        Post(412, hex2str(coreAddr), colloquialMode);
+        Post(512, hex2str(coreAddr), colloquialMode);
         return;
     }
     appName = appNameFinder->second;
@@ -95,7 +95,7 @@ void Mothership::handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop)
     if ((!stop and appInfo->state != LOADING) or  /* BARRIER mode */
         (stop and appInfo->state != STOPPING))    /* STOP mode */
     {
-        Post(413, colloquialMode, appInfo->get_state_colloquial());
+        Post(513, colloquialMode, appInfo->get_state_colloquial());
         return;
     }
 
@@ -152,13 +152,13 @@ void Mothership::handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop)
  * command and are shutting down and stopping meaningful compute. */
 void Mothership::handle_pkt_stop(P_Pkt_t* packet)
 {
-    debug_post(481, 2, "P_CNC_STOP", hex2str(packet->header.pinAddr).c_str());
+    debug_post(581, 2, "P_CNC_STOP", hex2str(packet->header.pinAddr).c_str());
     handle_pkt_barrier_or_stop(packet, true);
 }
 
 void Mothership::handle_pkt_kill(P_Pkt_t* packet)
 {
-    debug_post(481, 2, "P_CNC_KILL", hex2str(packet->header.pinAddr).c_str());
+    debug_post(581, 2, "P_CNC_KILL", hex2str(packet->header.pinAddr).c_str());
 
     /* We manage killing the Mothership via MPI - the message is consumed by
      * MPIInputBroker, which tells everything to stop gracefully. */

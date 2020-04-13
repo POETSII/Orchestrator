@@ -38,7 +38,7 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
             if (!spinningSlowly)
             {
                 spinningSlowly = true;
-                if (!firstSpin) mothership->debug_post(485, 2, "MPI Cnc",
+                if (!firstSpin) mothership->debug_post(585, 2, "MPI Cnc",
                                                        "MPI Cnc Resolver");
                 else firstSpin = false;
             }
@@ -74,7 +74,7 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
             else if (key == PMsg_p::KEY(Q::DUMP))
                 mothership->handle_msg_dump(&*messageIt);
             else
-                mothership->Post(407, "MPICncResolver", hex2str(key));
+                mothership->Post(507, "MPICncResolver", hex2str(key));
         }
 
         /* We're done with the extracted messages - throw them away. */
@@ -116,7 +116,7 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
             {
                 spinningSlowly = true;
                 if (!firstSpin)
-                    mothership->debug_post(485, 2, "MPI Application",
+                    mothership->debug_post(585, 2, "MPI Application",
                                            "MPI Application Resolver");
                 else firstSpin = false;
             }
@@ -138,7 +138,7 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
             else if (key == PMsg_p::KEY(Q::PKTS))
                 mothership->handle_msg_pkts(&*messageIt);
             else
-                mothership->Post(407, "MPIAppResolver", hex2str(key));
+                mothership->Post(507, "MPIAppResolver", hex2str(key));
         }
 
         /* We're done with the extracted messages - throw them away. */
@@ -176,7 +176,7 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
             {
                 spinningSlowly = true;
                 if (!firstSpin)
-                    mothership->debug_post(485, 2, "Backend Out",
+                    mothership->debug_post(585, 2, "Backend Out",
                                            "Backend Output Broker");
                 else firstSpin = false;
             }
@@ -191,7 +191,7 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
         /* Otherwise, blocking-send each packet in turn. */
         for (packetIt = packets.begin(); packetIt != packets.end(); packetIt++)
         {
-            mothership->debug_post(484, 1, hex2str(packetIt->first).c_str());
+            mothership->debug_post(584, 1, hex2str(packetIt->first).c_str());
 
             /* Compute number of flits for this packet. */
             numberOfFlitsForThisPacket = p_hdr_size() >> TinselLogBytesPerFlit;
@@ -288,7 +288,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                 {
                     /* NB: But for now, we only warn, because we have no
                        external support. */
-                    mothership->Post(418, hex2str(packetIt->header.swAddr));
+                    mothership->Post(518, hex2str(packetIt->header.swAddr));
                     continue;
                 }
 
@@ -335,14 +335,14 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                  * should not be sent packets when the isMothership bit in the
                  * software address is unset. Ignore the packet, but warn the
                  * operator. */
-                else mothership->Post(417, hex2str(packetIt->header.swAddr));
+                else mothership->Post(517, hex2str(packetIt->header.swAddr));
             }
 
             /* After draining our queue, push all of the CNC packets we've
              * received to the CNC queue as a single message. */
             if (!(cncBuffer.empty()))
             {
-                mothership->debug_post(483, 1,
+                mothership->debug_post(583, 1,
                                        uint2str(cncBuffer.size()).c_str());
                 PMsg_p message;
                 message.Key(Q::BEND, Q::CNC);
@@ -373,7 +373,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                         appIt->first);
                     if (appFinder == mothership->appdb.numberToApp.end())
                     {
-                        mothership->Post(420, hex2str(appIt->first));
+                        mothership->Post(520, hex2str(appIt->first));
                     }
 
                     /* Put the app name. */
@@ -444,7 +444,7 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
             if (!spinningSlowly)
             {
                 spinningSlowly = true;
-                if (!firstSpin) mothership->debug_post(485, 2, "Debug Input",
+                if (!firstSpin) mothership->debug_post(585, 2, "Debug Input",
                                                        "Debug Input Broker");
                 else firstSpin = false;
             }
@@ -464,7 +464,7 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
             for (packetIt = debugPackets.begin();
                  packetIt != debugPackets.end(); packetIt++)
             {
-                mothership->Post(421, hex2str(packetIt->origin),
+                mothership->Post(521, hex2str(packetIt->origin),
                                  hex2str(packetIt->payload));
             }
 

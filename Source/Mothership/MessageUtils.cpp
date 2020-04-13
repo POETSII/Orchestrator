@@ -59,7 +59,7 @@ bool Mothership::decode_addresses_message(PMsg_p* message,
     message->Get<uint32_t>(index, addressesBuffer);
     if (addressesBuffer.empty())
     {
-        Post(422, hex2str(message->Key()), uint2str(index));
+        Post(522, hex2str(message->Key()), uint2str(index));
         return false;
     }
 
@@ -82,7 +82,7 @@ bool Mothership::decode_addressed_packets_message(PMsg_p* message,
     message->Get<std::pair<uint32_t, P_Pkt_t> >(index, packetsBuffer);
     if (packetsBuffer.empty())
     {
-        Post(416, hex2str(message->Key()), uint2str(index));
+        Post(516, hex2str(message->Key()), uint2str(index));
         return false;
     }
 
@@ -104,7 +104,7 @@ bool Mothership::decode_char_message(PMsg_p* message, unsigned char* result,
     if (resultBuffer == PNULL)
     {
         *result = 0;
-        Post(419, hex2str(message->Key()), uint2str(index));
+        Post(519, hex2str(message->Key()), uint2str(index));
         return false;
     }
     *result = *resultBuffer;
@@ -129,7 +129,7 @@ bool Mothership::decode_packets_message(PMsg_p* message,
     message->Get<P_Pkt_t>(index, packetsBuffer);
     if (packetsBuffer.empty())
     {
-        Post(406, hex2str(message->Key()), uint2str(index));
+        Post(506, hex2str(message->Key()), uint2str(index));
         return false;
     }
 
@@ -149,7 +149,7 @@ bool Mothership::decode_string_message(PMsg_p* message, std::string* result,
     message->Get(index, *result);
     if (result->empty())
     {
-        Post(404, hex2str(message->Key()), uint2str(index));
+        Post(504, hex2str(message->Key()), uint2str(index));
         return false;
     }
     return true;
@@ -166,7 +166,7 @@ bool Mothership::decode_unsigned_message(PMsg_p* message, unsigned* result,
     if (resultBuffer == PNULL)
     {
         *result = 0;
-        Post(405, hex2str(message->Key()), uint2str(index));
+        Post(505, hex2str(message->Key()), uint2str(index));
         return false;
     }
     *result = *resultBuffer;

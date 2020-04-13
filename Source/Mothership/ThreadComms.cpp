@@ -41,7 +41,7 @@ void ThreadComms::go()
     {
         /* The conditional block is needed here because we might not yet know
          * where our logserver is. */
-        if (!(mothership->Post(400, e.message)))
+        if (!(mothership->Post(500, e.message)))
         {
             printf("Mothership ERROR: Could not create pthread %s. Exiting.\n",
                    e.message.c_str());
@@ -70,7 +70,7 @@ void ThreadComms::go()
     {
         /* The conditional block is needed here because we might not yet know
          * where our logserver is. */
-        if (!(mothership->Post(401, e.message)))
+        if (!(mothership->Post(501, e.message)))
         {
             printf("Mothership ERROR: Could not join to pthread %s. Exiting.\n",
                    e.message.c_str());
