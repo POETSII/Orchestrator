@@ -26,8 +26,9 @@ class InstrumentationWriter
 public:
     InstrumentationWriter(std::string directory="");
     std::map<uint32_t, ThreadInstrumentationDatum> cumulativeData;
-    bool consume_instrumentation_packet(P_Pkt_t*);
     std::string outDirectory;
+
+    bool consume_instrumentation_packet(P_Pkt_t*);
 
 private:
     void setup_directory();
