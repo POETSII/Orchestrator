@@ -72,7 +72,7 @@ void Mothership::initialise_application(AppInfo* app)
             if (!mode)  /* 2 */
             {
                 debug_post(
-                    480, 4, hex2str(meshX).c_str(), hex2str(meshY).c_str(),
+                    580, 4, hex2str(meshX).c_str(), hex2str(meshY).c_str(),
                     hex2str(coreId).c_str(),
                     uint2str(coreIt->second.threadsExpected.size()).c_str());
                 /* Note that startOne can hang for the Tinsel backend if the
@@ -80,7 +80,7 @@ void Mothership::initialise_application(AppInfo* app)
                  * threads that the core will start - this is because startOne
                  * waits for an acknowledgement message from the core that
                  * varies as a function of the number of threads. If you find
-                 * the above 480 being the last message you see from the MPI
+                 * the above 580 being the last message you see from the MPI
                  * CNC Resolver thread (for example), this is most likely your
                  * issue. */
                 backend->startOne(meshX, meshY, coreId,
