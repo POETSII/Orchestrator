@@ -91,7 +91,7 @@
 507(E) : "Mothership: Thread '%s' received MPI message with key '0x%s', which it did not know how to decode. Ignoring message."
 508(E) : "Mothership: Error opening file '%s' for dumping: %s."
 509(E) : "Instrumentation: %s"
-510(I) : "Log %s"
+510(I) : "Log from thread %s: "
 511(W) : "Mothership: Unknown core for thread '0x%s' in '%s' packet. Ignoring."
 512(W) : "Mothership: Unknown application for core '0x%s' in '%s' packet. Ignoring."
 513(W) : "Mothership: Received an unexpected '%s' packet for an application in state '%s'. Ignoring."

@@ -93,6 +93,6 @@ void LogPacketManager::consume_log_packet(P_Pkt_t* packet, std::string* out)
         data.erase(source);
 
         /* Lob over the fence */
-        *out = dformat("%u: %s", source, message);
+        *out = dformat("0x%x: %s", source, message);
     }
 }
