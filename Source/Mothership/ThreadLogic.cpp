@@ -239,10 +239,11 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
     while (!mothership->threading.is_it_time_to_go())
     {
         /* Attempt to receive packets from the backend and push them into the
-         * backend-input queue. */
+         * backend-input queue. Stop receiving if the queue has too many
+         * packets to fit into an MPI message. */
         pthread_mutex_lock(&(mothership->threading.mutex_backend_api));
         canRecv = mothership->backend->canRecv();
-        if (canRecv)
+        if (canRecv and !mothership->threading.is_backend_in_queue_full())
         {
             mothership->backend->recv(receiveBuffer);
             pthread_mutex_unlock(&(mothership->threading.mutex_backend_api));

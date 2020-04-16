@@ -11,6 +11,8 @@ using namespace std;
 #include "flat.h"
 #include "mpi.h"
 
+#define SNDBUFSIZ 1000000000      // MPI immediate message send buffer size
+
 //==============================================================================
 
 class CommonBase

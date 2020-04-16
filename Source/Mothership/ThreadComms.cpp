@@ -272,6 +272,16 @@ void ThreadComms::push_backend_out_queue(
 
 /* ===== BackendInputQueue ================================================= */
 
+/* Returns true if the number of packets in this queue is too big to fit into
+ * an MPI message given the send buffer size, and false otherwise. */
+bool ThreadComms::is_backend_in_queue_full()
+{
+    /* Be wary - the integer division is intentional. The limit is around 7.5
+     * million packets per message as of 2020-04-16 on Tinsel. */
+    return BackendInputQueue.size() > (SNDBUFSIZ - MPI_BSEND_OVERHEAD) /
+        sizeof(P_Pkt_t);
+}
+
 /* If there are packets in the queue, grabs the next packet from
  * BackendInputQueue, writes packet with it, and returns true. Otherwise,
  * returns false. */

@@ -60,6 +60,8 @@ public:
     inline bool is_it_time_to_go(){return quit;};
 
     /* Queue and mutex manipulation */
+    bool is_backend_in_queue_full();
+
     bool pop_MPI_cnc_queue(PMsg_p*);
     bool pop_MPI_cnc_queue(std::vector<PMsg_p>*);
     void push_MPI_cnc_queue(PMsg_p);
