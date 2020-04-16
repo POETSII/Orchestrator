@@ -3,7 +3,9 @@
 
 /* Describes how instrumentation packets are handled by the Mothership. */
 
+#include <cerrno>
 #include <map>
+#include <stdio.h>
 #include <stdlib.h>
 #include <vector>
 

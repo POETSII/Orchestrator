@@ -2,9 +2,9 @@
 #define _POETS_PKT_H_
 
 #include <cstddef>
-#include <cstdint>
 #include "config.h"           // Tinsel config
 
+#include "OSFixes.hpp"
 #include "poets_hardware.h"
 #include "SoftwareAddressDefs.h"
 
