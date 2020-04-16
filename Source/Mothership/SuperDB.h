@@ -19,11 +19,12 @@ class SuperDB
 public:
     ~SuperDB();
     std::map<std::string, SuperHolder*> supervisors;
-    bool load_supervisor(std::string appName, std::string path,
-                         std::string* errorMessage);
+
     int call_supervisor(std::string appName, PMsg_p* inputMessage,
                         PMsg_p* outputMessage);
     int initialise_supervisor(std::string appName);
+    bool load_supervisor(std::string appName, std::string path,
+                         std::string* errorMessage);
     bool unload_supervisor(std::string appName);
     void dump(std::ofstream*);
 };

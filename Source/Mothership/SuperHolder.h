@@ -15,8 +15,8 @@ public:
     SuperHolder(std::string path);
     ~SuperHolder();
     std::string path;
-    void dump(std::ofstream*);
     bool error;
+    void dump(std::ofstream*);
     int (*entryPoint)(PMsg_p*, PMsg_p*);
     int (*initialise)();
 private:
