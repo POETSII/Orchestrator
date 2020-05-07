@@ -55,6 +55,14 @@ std::string AppInfo::get_state_colloquial()
     return "UNKNOWN";
 }
 
+/* Increments distCountCurrent, then returns true if distCountCurrent <=
+ * distCountExpeted, and false otherwise. */
+bool AppInfo::increment_dist_count_current()
+{
+    distCountCurrent++;
+    return distCountCurrent <= distCountExpected;
+}
+
 /* Returns true if a state transition is possible for this application, and
  * false otherwise. A state transition is possible if the application has been
  * commanded to move to its next state, and it is ready to do so. */

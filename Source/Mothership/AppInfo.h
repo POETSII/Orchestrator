@@ -44,13 +44,13 @@ public:
 
     std::string name;
     uint32_t distCountExpected;
-    uint32_t distCountCurrent;
     AppState state;
     std::map<uint32_t, CoreInfo> coreInfos;
     std::set<uint32_t> coresLoaded;
 
     bool check_update_defined_state();
     std::string get_state_colloquial();
+    bool increment_dist_count_current();
     bool should_we_continue();
     bool should_we_recall();
 
@@ -67,6 +67,7 @@ public:
     void dump(std::ofstream*);
 
 private:
+    uint32_t distCountCurrent;
     uint8_t pendingCommands;
     inline void stage_command(uint8_t bit){pendingCommands |= 1 << bit;};
     inline bool is_command_staged(uint8_t bit)

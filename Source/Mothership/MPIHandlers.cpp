@@ -171,12 +171,18 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
     }
 
     /* Otherwise, add the information for this core to the application, and
-     * increment the distribution message count. */
+     * increment the distribution message count. If the distribution message
+     * count is too high, shout loudly, and break the application. */
     coreInfo = &(appInfo->coreInfos[coreAddr]);
     coreInfo->codePath = codePath;
     coreInfo->dataPath = dataPath;
     appdb.coreToApp[coreAddr] = appName;
-    appInfo->distCountCurrent++;
+    if (!appInfo->increment_dist_count_current())
+    {
+        Post(524, appName, uint2str(appInfo->distCountExpected));
+        appInfo->state = BROKEN;
+        return 0;
+    }
 
     /* For each thread, add it to:
      *
@@ -243,8 +249,14 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
         return 0;
     }
 
-    /* Otherwise, increment the distribution count. */
-    appInfo->distCountCurrent++;
+    /* Otherwise, increment the distribution message count. If the distribution
+     * message count is too high, shout loudly, and break the application. */
+    if (!appInfo->increment_dist_count_current())
+    {
+        Post(524, appName, uint2str(appInfo->distCountExpected));
+        appInfo->state = BROKEN;
+        return 0;
+    }
 
     /* Check for being fully defined (transition from UNDERDEFINED to
      * DEFINED). */

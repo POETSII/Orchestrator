@@ -104,7 +104,8 @@
 520(W) : "Mothership: Invalid task ID '%s' in packet received from the compute fabric. Ignoring packet."
 521(I) : "Debug byte received from thread '0x%s' with content '%s'."
 522(E) : "Mothership: Error decoding MPI message with key '0x%s': Expected a vector of uint32_t values in field %s. Ignoring message."
-523(E) : "Mothership: Supervisor for application '%s' failed to initialise correctly. Marking task as BROKEN (which will cause other errors)."
+523(E) : "Mothership: Supervisor for application '%s' failed to initialise correctly. Marking task as BROKEN (which may cause other errors)."
+524(E) : "Mothership: Application '%s' received more distribution messages than expected (%s). Marking task as BROKEN (which may cause other errors)."
 
 576(I) : "Mothership: Initialising supervisor device for application '%s'."
 577(I) : "Mothership: Calling backend->loadDataViaCore with arguments dataPath=%s, meshX=0x%s, meshY=0x%s, coreId=0x%s."
