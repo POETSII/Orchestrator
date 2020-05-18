@@ -27,7 +27,7 @@ ThreadComms::~ThreadComms()
  *  - MPIInputBroker exited without setting the quit flag (ala SYST,KILL). */
 void ThreadComms::go()
 {
-    debug_print("[MOTHERSHIP] Starting producer consumer threads.\n");
+    DebugPrint("[MOTHERSHIP] Starting producer consumer threads.\n");
     try
     {
         start_mpi_input_broker();
@@ -48,16 +48,16 @@ void ThreadComms::go()
         }
         return;
     }
-    debug_print("[MOTHERSHIP] Threads started successfully. The main thread "
-                "is now waiting to join.\n");
+    DebugPrint("[MOTHERSHIP] Threads started successfully. The main thread is "
+               "now waiting to join.\n");
 
     try
     {
         join_mpi_input_broker();
         if(!is_it_time_to_go())
         {
-            debug_print("Mothership WARNING: The MPI Input Broker thread "
-                        "exited without stopping other threads!\n");
+            DebugPrint("Mothership WARNING: The MPI Input Broker thread "
+                       "exited without stopping other threads!\n");
             return;
         }
         join_mpi_cnc_resolver();

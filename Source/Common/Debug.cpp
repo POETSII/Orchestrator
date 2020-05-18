@@ -7,7 +7,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include "dfprintf.h"
-void debug_print(const char* format, ...)
+void DebugPrint(const char* format, ...)
 {
     va_list printingArguments;
     va_start(printingArguments, format);
@@ -16,5 +16,5 @@ void debug_print(const char* format, ...)
     fflush(stdout);
 }
 #else
-void debug_print(const char*, ...){return;}
+void DebugPrint(const char*, ...){return;}
 #endif

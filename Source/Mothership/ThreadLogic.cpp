@@ -8,8 +8,8 @@ void* ThreadComms::mpi_input_broker(void* mothershipArg)
 {
     Mothership* mothership = (Mothership*)mothershipArg;
     mothership->mpi_spin();
-    debug_print("[MOTHERSHIP] The MPI Input Broker Thread has been told to "
-                "exit, and is doing so.\n");
+    DebugPrint("[MOTHERSHIP] The MPI Input Broker Thread has been told to "
+               "exit, and is doing so.\n");
     return mothership;
 }
 
@@ -81,8 +81,8 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
         messages.clear();
     }
 
-    debug_print("[MOTHERSHIP] The MPI Cnc Resolver Thread has been told to "
-                "exit, and is doing so.\n");
+    DebugPrint("[MOTHERSHIP] The MPI Cnc Resolver Thread has been told to "
+               "exit, and is doing so.\n");
     return mothership;
 }
 
@@ -145,8 +145,8 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
         messages.clear();
     }
 
-    debug_print("[MOTHERSHIP] The MPI Application Resolver Thread has been "
-                "told to exit, and is doing so.\n");
+    DebugPrint("[MOTHERSHIP] The MPI Application Resolver Thread has been "
+               "told to exit, and is doing so.\n");
     return mothership;
 }
 
@@ -207,8 +207,8 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
         }
     }
 
-    debug_print("[MOTHERSHIP] The Backend Output Broker Thread has been told "
-                "to exit, and is doing so.\n");
+    DebugPrint("[MOTHERSHIP] The Backend Output Broker Thread has been told "
+               "to exit, and is doing so.\n");
     return mothership;
 }
 
@@ -397,8 +397,8 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
     }
 
     delete[] dynamicBuffer;
-    debug_print("[MOTHERSHIP] The Backend Input Broker Thread has been told "
-                "to exit, and is doing so.\n");
+    DebugPrint("[MOTHERSHIP] The Backend Input Broker Thread has been told "
+               "to exit, and is doing so.\n");
     return mothership;
 }
 
@@ -473,7 +473,7 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
         }
     }
 
-    debug_print("[MOTHERSHIP] The Debug Input Broker Thread has been told to "
-                "exit, and is doing so.\n");
+    DebugPrint("[MOTHERSHIP] The Debug Input Broker Thread has been told to "
+               "exit, and is doing so.\n");
     return mothership;
 }

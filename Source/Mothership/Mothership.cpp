@@ -24,10 +24,10 @@ Mothership::~Mothership()
     /* Tear down backend. */
     if (backend != PNULL)
     {
-        debug_print("[MOTHERSHIP] Closing down the compute backend...\n");
+        DebugPrint("[MOTHERSHIP] Closing down the compute backend...\n");
         delete backend;
-        debug_print("[MOTHERSHIP] Backend closed.\n");
-        debug_print("[MOTHERSHIP] Disconnecting from MPI (goodbye world).\n");
+        DebugPrint("[MOTHERSHIP] Backend closed.\n");
+        DebugPrint("[MOTHERSHIP] Disconnecting from MPI (goodbye world).\n");
     }
 }
 
@@ -69,12 +69,12 @@ void Mothership::load_backend()
     /* Perhaps some box-graph arguments should be passed to HostLink in the
      * one-Mothership-over-many-boxes case, but do we even want to support that
      * once we're multi-box? (It was sarcasm - we don't). */
-    debug_print("[MOTHERSHIP] Loading Tinsel backend...\n");
+    DebugPrint("[MOTHERSHIP] Loading Tinsel backend...\n");
     pthread_mutex_lock(&(threading.mutex_backend_api));
     if (backend != PNULL) delete backend;
     backend = new HostLink();
     pthread_mutex_unlock(&(threading.mutex_backend_api));
-    debug_print("[MOTHERSHIP] Tinsel backend loaded.\n");
+    DebugPrint("[MOTHERSHIP] Tinsel backend loaded.\n");
 }
 
 /* Posts a debugging message, if debugging is enabled. Returns as with
@@ -116,7 +116,7 @@ bool Mothership::debug_post(int code, unsigned numArgs, ...)
  * documentation for more information on how this is expected to work. */
 void Mothership::setup_mpi_hooks()
 {
-    debug_print("[MOTHERSHIP] Setting up MPI hooks.\n");
+    DebugPrint("[MOTHERSHIP] Setting up MPI hooks.\n");
     FnMapx.push_back(new FnMap_t);
     (*FnMapx[0])[PMsg_p::KEY(Q::EXIT)] = &Mothership::handle_msg_exit;
     (*FnMapx[0])[PMsg_p::KEY(Q::SYST,Q::KILL)] =
