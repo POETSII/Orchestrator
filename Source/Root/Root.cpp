@@ -579,7 +579,7 @@ unsigned Root::OnMshipAck(PMsg_p * Z, unsigned cIdx)
     else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP))
         mshipAcks[mshipApp] = "STOPPED";
     else
-        mshipAcks[mshipApp] = "YOURE-NOT-SUPPOSED-TO-BE-HERE";
+        mshipAcks[mshipApp] = "YOU-ARE-NOT-SUPPOSED-TO-BE-HERE";
     return 0;
 }
 
