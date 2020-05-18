@@ -101,7 +101,7 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
      * an AppDist message). */
     appInfo = appdb.check_create_app(appName, distCount);
 
-    /* If the application is not in the UNDERDEFINED state, post angrily and do
+    /* If the application is not in the UNDERDEFINED state, post bossily and do
      * nothing else. */
     if(appInfo->state != UNDERDEFINED)
     {
