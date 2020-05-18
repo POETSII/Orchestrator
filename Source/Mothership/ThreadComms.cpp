@@ -1,4 +1,4 @@
-#include "Mothership.h"  /* Avoiding include ordering issue */
+#include "Mothership.h"
 
 ThreadComms::ThreadComms(Mothership* mothership):
     mothership(mothership)
