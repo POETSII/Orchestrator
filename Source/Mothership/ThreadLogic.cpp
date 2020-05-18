@@ -43,7 +43,7 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
                 else firstSpin = false;
             }
             #endif
-            sleep(1);
+            sleep(SLOW_SPIN_SLEEP_PERIOD);
             continue;
         }
         #if ORCHESTRATOR_DEBUG
@@ -121,7 +121,7 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
                 else firstSpin = false;
             }
             #endif
-            sleep(1);
+            sleep(SLOW_SPIN_SLEEP_PERIOD);
             continue;
         }
         #if ORCHESTRATOR_DEBUG
@@ -181,7 +181,7 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
                 else firstSpin = false;
             }
             #endif
-            sleep(1);
+            sleep(SLOW_SPIN_SLEEP_PERIOD);
             continue;
         }
         #if ORCHESTRATOR_DEBUG
@@ -451,7 +451,7 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
             }
             #endif
 
-            sleep(1);
+            sleep(SLOW_SPIN_SLEEP_PERIOD);
             continue;
         }
 
