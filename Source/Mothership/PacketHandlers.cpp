@@ -13,7 +13,7 @@
  * InstrumentationWriter::consume_instrumentation_packet) */
 void Mothership::handle_pkt_instr(P_Pkt_t* packet)
 {
-    debug_post(581, 2, "P_CNC_INSTR", hex2str(packet->header.pinAddr).c_str());
+    debug_post(588, 2, "P_CNC_INSTR", hex2str(packet->header.pinAddr).c_str());
     try
     {
         instrumentation.consume_instrumentation_packet(packet);
@@ -30,7 +30,7 @@ void Mothership::handle_pkt_instr(P_Pkt_t* packet)
 void Mothership::handle_pkt_log(P_Pkt_t* packet)
 {
     std::string message;
-    debug_post(581, 2, "P_CNC_LOG", hex2str(packet->header.pinAddr).c_str());
+    debug_post(588, 2, "P_CNC_LOG", hex2str(packet->header.pinAddr).c_str());
     logging.consume_log_packet(packet, &message);
     if (!message.empty()) Post(510, message);
 }
@@ -40,7 +40,7 @@ void Mothership::handle_pkt_log(P_Pkt_t* packet)
  * and are waiting at the softswitch barrier.  */
 void Mothership::handle_pkt_barrier(P_Pkt_t* packet)
 {
-    debug_post(581, 2, "P_CNC_BARRIER", hex2str(packet->header.pinAddr).c_str());
+    debug_post(588, 2, "P_CNC_BARRIER", hex2str(packet->header.pinAddr).c_str());
     handle_pkt_barrier_or_stop(packet, false);
 }
 
@@ -152,13 +152,13 @@ void Mothership::handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop)
  * command and are shutting down and stopping meaningful compute. */
 void Mothership::handle_pkt_stop(P_Pkt_t* packet)
 {
-    debug_post(581, 2, "P_CNC_STOP", hex2str(packet->header.pinAddr).c_str());
+    debug_post(588, 2, "P_CNC_STOP", hex2str(packet->header.pinAddr).c_str());
     handle_pkt_barrier_or_stop(packet, true);
 }
 
 void Mothership::handle_pkt_kill(P_Pkt_t* packet)
 {
-    debug_post(581, 2, "P_CNC_KILL", hex2str(packet->header.pinAddr).c_str());
+    debug_post(588, 2, "P_CNC_KILL", hex2str(packet->header.pinAddr).c_str());
 
     /* We manage killing the Mothership via MPI - the message is consumed by
      * MPIInputBroker, which tells everything to stop gracefully. */

@@ -35,7 +35,7 @@ void Mothership::initialise_application(AppInfo* app)
     /* Modes to reduce code repetition between steps 2 and 3. */
     bool mode;
 
-    debug_post(590, 1, app->name.c_str());
+    debug_post(596, 1, app->name.c_str());
 
     app->state = LOADING;  /* 0: Set the application state to LOADING, duh. */
 
@@ -46,12 +46,12 @@ void Mothership::initialise_application(AppInfo* app)
          coreIt++)
     {
         backend->fromAddr(coreIt->first, &meshX, &meshY, &coreId, &threadId);
-        debug_post(578, 4, coreIt->second.codePath.c_str(),
+        debug_post(585, 4, coreIt->second.codePath.c_str(),
                    hex2str(meshX).c_str(), hex2str(meshY).c_str(),
                    hex2str(coreId).c_str());
         backend->loadInstrsOntoCore(coreIt->second.codePath.c_str(),
                                    meshX, meshY, coreId);
-        debug_post(577, 4, coreIt->second.dataPath.c_str(),
+        debug_post(584, 4, coreIt->second.dataPath.c_str(),
                    hex2str(meshX).c_str(), hex2str(meshY).c_str(),
                    hex2str(coreId).c_str());
         backend->loadDataViaCore(coreIt->second.dataPath.c_str(),
@@ -72,7 +72,7 @@ void Mothership::initialise_application(AppInfo* app)
             if (!mode)  /* 2 */
             {
                 debug_post(
-                    580, 4, hex2str(meshX).c_str(), hex2str(meshY).c_str(),
+                    587, 4, hex2str(meshX).c_str(), hex2str(meshY).c_str(),
                     hex2str(coreId).c_str(),
                     uint2str(coreIt->second.threadsExpected.size()).c_str());
                 /* Note that startOne can hang for the Tinsel backend if the
@@ -80,7 +80,7 @@ void Mothership::initialise_application(AppInfo* app)
                  * threads that the core will start - this is because startOne
                  * waits for an acknowledgement message from the core that
                  * varies as a function of the number of threads. If you find
-                 * the above 580 being the last message you see from the MPI
+                 * the above 587 being the last message you see from the MPI
                  * CNC Resolver thread (for example), this is most likely your
                  * issue. */
                 backend->startOne(meshX, meshY, coreId,
@@ -88,7 +88,7 @@ void Mothership::initialise_application(AppInfo* app)
             }
             else  /* 3 */
             {
-                debug_post(579, 3, hex2str(meshX).c_str(),
+                debug_post(586, 3, hex2str(meshX).c_str(),
                            hex2str(meshY).c_str(), hex2str(coreId).c_str());
                 backend->goOne(meshX, meshY, coreId);
             }
@@ -103,7 +103,7 @@ void Mothership::initialise_application(AppInfo* app)
 
     /* 4: Initialise the supervisor device on this Mothership for this
      * application, posting on error. */
-    debug_post(576, 1, app->name.c_str());
+    debug_post(583, 1, app->name.c_str());
     if (superdb.initialise_supervisor(app->name) != 0) Post(523, app->name);
 }
 
@@ -112,7 +112,7 @@ void Mothership::initialise_application(AppInfo* app)
  * softswitch, commands all of the executors under its command to start. */
 void Mothership::run_application(AppInfo* app)
 {
-    debug_post(589, 1, app->name.c_str());
+    debug_post(595, 1, app->name.c_str());
 
     app->state = RUNNING;
     send_cnc_packet_to_all(app, P_CNC_BARRIER);
@@ -132,7 +132,7 @@ void Mothership::run_application(AppInfo* app)
  * received. */
 void Mothership::stop_application(AppInfo* app)
 {
-    debug_post(588, 1, app->name.c_str());
+    debug_post(594, 1, app->name.c_str());
     app->state = STOPPING;
     send_cnc_packet_to_all(app, P_CNC_STOP);
 }
@@ -189,7 +189,7 @@ void Mothership::send_cnc_packet_to_all(AppInfo* app, uint8_t opcode)
  * as cores and threads associated with it. */
 void Mothership::recall_application(AppInfo* app)
 {
-    debug_post(587, 1, app->name.c_str());
+    debug_post(593, 1, app->name.c_str());
     superdb.unload_supervisor(app->name);
     appdb.recall_app(app);
 }

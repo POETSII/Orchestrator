@@ -38,7 +38,7 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
             if (!spinningSlowly)
             {
                 spinningSlowly = true;
-                if (!firstSpin) mothership->debug_post(585, 2, "MPI Cnc",
+                if (!firstSpin) mothership->debug_post(592, 2, "MPI Cnc",
                                                        "MPI Cnc Resolver");
                 else firstSpin = false;
             }
@@ -116,7 +116,7 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
             {
                 spinningSlowly = true;
                 if (!firstSpin)
-                    mothership->debug_post(585, 2, "MPI Application",
+                    mothership->debug_post(592, 2, "MPI Application",
                                            "MPI Application Resolver");
                 else firstSpin = false;
             }
@@ -176,7 +176,7 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
             {
                 spinningSlowly = true;
                 if (!firstSpin)
-                    mothership->debug_post(585, 2, "Backend Out",
+                    mothership->debug_post(592, 2, "Backend Out",
                                            "Backend Output Broker");
                 else firstSpin = false;
             }
@@ -191,7 +191,7 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
         /* Otherwise, blocking-send each packet in turn. */
         for (packetIt = packets.begin(); packetIt != packets.end(); packetIt++)
         {
-            mothership->debug_post(584, 1, hex2str(packetIt->first).c_str());
+            mothership->debug_post(591, 1, hex2str(packetIt->first).c_str());
 
             /* Compute number of flits for this packet. */
             numberOfFlitsForThisPacket = p_hdr_size() >> TinselLogBytesPerFlit;
@@ -343,7 +343,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
              * received to the CNC queue as a single message. */
             if (!(cncBuffer.empty()))
             {
-                mothership->debug_post(583, 1,
+                mothership->debug_post(590, 1,
                                        uint2str(cncBuffer.size()).c_str());
                 PMsg_p message;
                 message.Key(Q::BEND, Q::CNC);
@@ -385,7 +385,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
 
                     /* Out it goes. */
                     mothership->debug_post(
-                        582, 2, appFinder->second.c_str(),
+                        589, 2, appFinder->second.c_str(),
                         uint2str(appIt->second.size()).c_str());
                     mothership->queue_mpi_message(&message);
                 }
@@ -445,7 +445,7 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
             if (!spinningSlowly)
             {
                 spinningSlowly = true;
-                if (!firstSpin) mothership->debug_post(585, 2, "Debug Input",
+                if (!firstSpin) mothership->debug_post(592, 2, "Debug Input",
                                                        "Debug Input Broker");
                 else firstSpin = false;
             }
