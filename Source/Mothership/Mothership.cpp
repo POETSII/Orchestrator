@@ -47,7 +47,7 @@ void Mothership::go()
 {
     setup_mpi_hooks();
     load_backend();
-    threading.go();
+    threading.go();  /* Blocks until all threads exit. */
 }
 
 /* Sends a message using MPI to the process defined in the message.
