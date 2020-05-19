@@ -160,11 +160,28 @@ void Mothership::handle_pkt_kill(P_Pkt_t* packet)
 {
     debug_post(588, 2, "P_CNC_KILL", hex2str(packet->header.pinAddr).c_str());
 
-    /* We manage killing the Mothership via MPI - the message is consumed by
-     * MPIInputBroker, which tells everything to stop gracefully. */
+    /* We manage stopping the application via MPI - the message is consumed by
+     * MPIInputBroker, which commands the various components of the application
+     * to stop. */
+
+    /* Grab the task ID. */
+    uint8_t packetAppNumber = (packet->header.swAddr & P_SW_TASK_MASK) >>
+        P_SW_TASK_SHIFT;
+
+    /* Grab the task name from the ID, complaining if we can't find it. */
+    std::map<uint8_t, std::string>::iterator appFinder;
+    appFinder = appdb.numberToApp.find(packetAppNumber);
+    if (appFinder == appdb.numberToApp.end())
+    {
+        Post(520, hex2str(packetAppNumber));
+        return;
+    }
+
+    /* Create message (to ourselves) and send it. */
     PMsg_p message;
     message.comm = Comms[0];
-    message.Key(Q::EXIT);
+    message.Key(Q::CMND, Q::STOP);
+    message.Put(0, &(appFinder->second));
     message.Tgt(Urank);  /* Send to ourselves */
     queue_mpi_message(&message);
 }
