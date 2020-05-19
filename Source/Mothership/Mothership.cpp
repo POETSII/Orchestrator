@@ -63,7 +63,8 @@ void Mothership::queue_mpi_message(PMsg_p* message)
     message->Send();
 }
 
-/* Loads the compute backend, crashing violently if it does (for now). */
+/* Loads the compute backend. Crashes violently if the compute backend crashes
+ * violently. */
 void Mothership::load_backend()
 {
     /* Perhaps some box-graph arguments should be passed to HostLink in the
