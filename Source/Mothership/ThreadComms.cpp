@@ -277,9 +277,10 @@ void ThreadComms::push_backend_out_queue(
 bool ThreadComms::is_backend_in_queue_full()
 {
     /* Be wary - the integer division is intentional. The limit is around 8
-     * million packets per message as of 2020-04-16 on Tinsel.
+     * million packets per message as of 2020-04-16 on Tinsel. Alternatively,
+     * the size can be overridden by setting BACKEND_QUEUE_MESSAGE_MAXIMUM.
      *
-     * Note that one can still get an error like:
+     * Note that with both of these options, one can still get an error like:
      *
      * > MPIR_Bsend_isend(311): Insufficient space in Bsend buffer; requested
      * > 673116946; total buffer size is 1000000000
@@ -288,8 +289,12 @@ bool ThreadComms::is_backend_in_queue_full()
      * hasn't received the previous message. Normally production systems would
      * introduce an MPI error handler for this, but we haven't done that
      * because time. */
+#ifndef BACKEND_QUEUE_MESSAGE_MAXIMUM
     return BackendInputQueue.size() > (SNDBUFSIZ - MPI_BSEND_OVERHEAD) /
         sizeof(P_Pkt_t);
+#else
+    return BackendInputQueue.size() > BACKEND_QUEUE_MESSAGE_MAXIMUM ;
+#endif
 }
 
 /* If there are packets in the queue, grabs the next packet from

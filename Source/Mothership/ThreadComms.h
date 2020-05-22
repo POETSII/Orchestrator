@@ -17,6 +17,8 @@ class Mothership;
 #include "poets_pkt.h"
 #include "PMsg_p.hpp"
 
+#define BACKEND_QUEUE_PACKET_MAXIMUM 5000
+
 #define START_THREAD_FN_NAME(THREAD) start_##THREAD
 #define JOIN_THREAD_FN_NAME(THREAD) join_##THREAD
 
