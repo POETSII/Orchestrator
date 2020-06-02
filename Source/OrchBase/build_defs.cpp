@@ -41,4 +41,6 @@ const string BIN_PATH = "bin";
 const string BUILD_PATH = "Build";
 const string COREMAKE_BASE = "make -j$(nproc --ignore=4) all 2>&1 >> make_errs.txt";
 const string COREBIN_BASE = "softswitch_";
+const string COREBIN_DATA_BASE = "softswitch_data_";
+const string COREBIN_CODE_BASE = "softswitch_code_";
 const void* DRAM_BASE = 0; // temporary: this should be set to the actual DRAM bottom address.

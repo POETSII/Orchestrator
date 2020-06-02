@@ -17,7 +17,7 @@ public:
 
       supInputPin(Sup_OnReceive_t, Sup_PinTeardown_t, const void*, void*);
       ~supInputPin();
-  
+
       Sup_OnReceive_t OnReceive;
       Sup_PinTeardown_t PinTeardown;
       const void* properties;
@@ -41,5 +41,3 @@ public:
      static vector<supInputPin*> inputs;
      static vector<supOutputPin*> outputs;
 };
-
-

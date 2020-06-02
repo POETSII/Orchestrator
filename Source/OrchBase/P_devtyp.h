@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include "NameBase.h"
 #include "P_board.h"
-#include "Bin.h"
 class D_graph;
 class P_devtyp;
 class P_typdcl;
@@ -52,7 +51,3 @@ unsigned            idx; // this device type's index in its parent's P_devtypv
 //==============================================================================
 
 #endif
-
-
-
-

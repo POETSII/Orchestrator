@@ -131,10 +131,10 @@ void BuildCommand(bool useMotherships, std::string internalPath,
     /* Clock */
     hydraProcesses.push_back(new std::stringstream);
     orderedHosts.push_back(ourHostname);
+    *(hydraProcesses.back()) << "-n 1 ";
     if (gdbProcs[execClock]) *(hydraProcesses.back()) << execGdb << " ";
     if (valgrindProcs[execClock]) *(hydraProcesses.back()) << execValgrind
                                                            << " ";
-    *(hydraProcesses.back()) << "-n 1 ";
     *(hydraProcesses.back()) << localBinDir << "/" << execClock;
 
     /* Adding motherships... */
@@ -150,14 +150,19 @@ void BuildCommand(bool useMotherships, std::string internalPath,
         }
 
         /* Otherwise, if there are no hosts, spawn a mothership on this box
-         * (we've already checked that it's a POETS box). */
+         * (we've already checked that it's a POETS box). In this case, if
+         * valgrind and/or gdb are requested for the Mothership, invoke them
+         * here.  */
         else if (mothershipHosts.empty())
         {
             hydraProcesses.push_back(new std::stringstream);
             orderedHosts.push_back(ourHostname);
-
-            *(hydraProcesses.back()) << "-n 1 " << localBinDir << "/"
-                                     << execMothership;
+            *(hydraProcesses.back()) << "-n 1 ";
+            if (gdbProcs[execMothership]) *(hydraProcesses.back()) <<
+                                              execGdb << " ";
+            if (valgrindProcs[execMothership]) *(hydraProcesses.back()) <<
+                                                   execValgrind << " ";
+            *(hydraProcesses.back()) << localBinDir << "/" << execMothership;
         }
 
         /* Otherwise, spawn one mothership for each host. */
@@ -446,8 +451,8 @@ int Launch(int argc, char** argv)
     if (hdfPath.empty() && file_exists(defaultHdfPath))
     {
         hdfPath = defaultHdfPath;
-        DebugPrint("%sFound a hardware description file in the default "
-                   "search location (%s). Using that one.\n",
+        DebugPrint("%sFound a hardware description file in the default search "
+                   "location (%s). Using that one.\n",
                    debugHeader, hdfPath.c_str());
     }
 
@@ -494,8 +499,8 @@ int Launch(int argc, char** argv)
         else if (!overrideHost.empty())
         {
             hosts.insert(overrideHost);
-            DebugPrint("%sIgnoring input file, and instead using the override "
-                       "passed in as an argument.\n", debugHeader);
+            DebugPrint("%sIgnoring input file, and instead using the "
+                       "override passed in as an argument.\n", debugHeader);
         }
     }
 
@@ -578,8 +583,8 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
     #if ORCHESTRATOR_DEBUG
     for (int argIndex=0; argIndex<argc; argIndex++)
     {
-        DebugPrint("%s%sArgument %d: %s\n", debugHeader, debugIndent, argIndex,
-                   argv[argIndex]);
+        DebugPrint("%s%sArgument %d: %s\n", debugHeader, debugIndent,
+                   argIndex, argv[argIndex]);
     }
     DebugPrint("%s\n", debugHeader);
     #endif
@@ -624,7 +629,7 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
 "\t/%s = HOST: Override all Mothership hosts, specified from a hardware description file, with HOST. Using this option will only spawn one mothership process (unless /%s is used, in which case no mothership processes are spawned).\n"
 "\n"
 "\t/%s = PATH: Define an LD_LIBRARY_PATH environment variable for all spawned processes. This is useful for defining where shared object files can be found by children.\n"
-"\t/%s: Points valgrind (%s) at one of the processes listed above, except mothership. Combine with /%s at your own risk.\n"
+"\t/%s: Points valgrind (%s) at one of the processes listed above, except motherships spawned via a host list. Combine with /%s at your own risk.\n"
 "\n"
 "If you are still bamboozled, or you're a developer, check out the Orchestrator documentation.\n",
 argv[0],
@@ -819,7 +824,7 @@ argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str());
     else
     {
         DebugPrint("%s%sOverride host: %s\n", debugHeader, debugIndent,
-                   overrideHost->c_str());
+                    overrideHost->c_str());
     }
     if (*useMotherships)
     {

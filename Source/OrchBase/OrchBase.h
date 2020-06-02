@@ -18,6 +18,7 @@ class Dialect1Deployer;
 #include "Environment.h"
 #include "CommonBase.h"
 #include "P_owner.h"
+#include "map2.h"
 using namespace std;
 
 #define TASK_DEPLOY_DIR ".orchestrator/task_binaries"  // Relative to home.
@@ -32,6 +33,7 @@ virtual ~              OrchBase();
 void                   Dump(FILE * = stdout);
 
 // These bodies are in OrchBaseTask.cpp:
+void                   BuildMshipMap();
 void                   ClearDcls();
 void                   ClearDcls(string);
 void                   ClearTasks();
@@ -86,17 +88,26 @@ void                   OwneDump(Cli::Cl_t);
 void                   OwneShow(Cli::Cl_t);
 void                   OwneTask(Cli::Cl_t);
 
-P_engine *             pE;             // Poets engine (hardware model)
-Placement *            pPlace;         // Cross-linker
-P_builder *            pB;             // Object to build the datastructure
-T_gen *                pTG;            // PoL task generator
-map<string,P_task *>   P_taskm;        // Holder for multiple task graphs
-map<string,P_typdcl *> P_typdclm;      // Holder for ALL task type declarations
-string                 taskpath;       // Absolute file path for task commands
-string                 topopath;       // Absolute file path for topo commands
-map<string,P_super *>  P_superm;       // Container of supervisor devices
-map<string,P_owner *>  P_ownerm;       // Task ownership container
-
+P_engine *                    pE;        // Poets engine (hardware model)
+Placement *                   pPlace;    // Cross-linker
+P_builder *                   pB;        // Object to build the datastructure
+T_gen *                       pTG;       // PoL task generator
+map<string,P_task *>          P_taskm;   // Holder for multiple task graphs
+map<string,P_typdcl *>        P_typdclm; // Holder for ALL task type
+                                         // declarations
+string                        taskpath;  // Absolute file path for task
+                                         // commands
+string                        topopath;  // Absolute file path for topo
+                                         // commands
+map<string,P_super *>         P_superm;  // Container of supervisor devices
+map<string,P_owner *>         P_ownerm;  // Task ownership container
+map2<P_box *,
+     pair<unsigned,
+      ProcMap::ProcMap_t *> > P_SCMm2;   // Bimap of boxes to motherships,
+                                         // where the pair holds unique
+                                         // processes by their communicator and
+                                         // procmap entry. Yes, the name is an
+                                         // attempt at facetiousness.
 };
 
 //==============================================================================

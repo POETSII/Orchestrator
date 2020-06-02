@@ -25,7 +25,6 @@ CommonBase::CommonBase(int argc,char ** argv,string d,string src)
 MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&MPI_provided);
 
 AcceptConns = false;
-const int SNDBUFSIZ = 1000000000;      // MPI immediate message send buffer size
 char * SNDBUF = (char *)malloc(SNDBUFSIZ);             // Pull it off the heap
 if (SNDBUF!=0) MPI_Buffer_attach(SNDBUF,SNDBUFSIZ);    // Attach it to MPI
 Msgbufsz = 2 << LOG_MSGBUF_BLK_SZ;
