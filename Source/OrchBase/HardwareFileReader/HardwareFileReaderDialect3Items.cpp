@@ -10,9 +10,10 @@
  *
  * - mailbox: Pointer to the mailbox to populate.
  * - quatity: Number of cores to create (the number of threads will be
-         determined from the UIF parse tree. */
+         determined from the UIF parse tree.
+ * - addrOffset: An offset for the address of each core. */
 bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
-    P_mailbox* mailbox, unsigned coreQuantity)
+    P_mailbox* mailbox, unsigned coreQuantity, unsigned addrOffset)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
 
@@ -29,7 +30,7 @@ bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
      * address component (but still catch if we go out of bounds). */
     P_core* tmpCore;
     AddressComponent coreId;
-    for (coreId = 0; coreId < coreQuantity; coreId++)
+    for (coreId = addrOffset; coreId < coreQuantity + addrOffset; coreId++)
     {
         tmpCore = new P_core(dformat(
                              "C%0*u", how_many_digits(coreQuantity), coreId));
@@ -386,7 +387,7 @@ bool HardwareFileReader::d3_define_board_fields_from_section(
          * ignore the definition here. */
         else if (variable == "type")
 		{
-			
+
 		}
     }
 
@@ -559,6 +560,7 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
     validFields.push_back("core_core_cost");
     validFields.push_back("mailbox_core_cost");
     validFields.push_back("cores");
+    validFields.push_back("core_addr_offset");
 
     /* Holds fields we've already grabbed (for validation purposes). */
     std::map<std::string, bool> fieldsFound;
@@ -572,6 +574,8 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
      * nodes. */
     std::vector<UIF::Node*> valueNodes;
     std::vector<UIF::Node*> variableNodes;
+    unsigned coreAddrOffset = 0;
+    unsigned coreCount = 0;
 
     /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
@@ -634,13 +638,9 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
                 continue;
             }
 
-            /* Create and add that many cores. */
-            if (!d3_create_cores_and_threads_for_mailbox(
-                    mailbox, str2unsigned(valueNodes[0]->str)))
-            {
-                anyErrors = true;
-                continue;
-            }
+            /* Store until all fields have been read (so we can initialise the
+             * cores with an address offset). */
+            coreCount = str2unsigned(valueNodes[0]->str);
         }
 
         else if (variable == "mailbox_core_cost")
@@ -655,6 +655,28 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
             /* Bind */
             mailbox->costMailboxCore = str2float(valueNodes[0]->str);
         }
+
+        else if (variable == "core_addr_offset")
+        {
+            /* Complain if not natural */
+            if (!complain_if_value_not_natural(valueNodes[0]))
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Store until number of cores is defined. Note that setting this
+             * value inappropriately will cause the address to overflow and
+             * chaos to ensue (boss' orders). */
+            coreAddrOffset = str2unsigned(valueNodes[0]->str);
+        }
+    }
+
+    /* Create and add the number of cores defined from the fields above. */
+    if (!d3_create_cores_and_threads_for_mailbox(mailbox, coreCount,
+                                                 coreAddrOffset))
+    {
+        anyErrors = true;
     }
 
     /* Ensure mandatory fields have been defined. */
@@ -1166,7 +1188,7 @@ bool HardwareFileReader::d3_populate_validate_engine_board_and_below(
          * ignore the definition here. */
         else if (variable == "type")
 		{
-			
+
 		}
     }
 
@@ -1625,7 +1647,7 @@ bool HardwareFileReader::d3_populate_validate_engine_box(P_engine* engine)
              * ignore the definition here. */
             else if (variable == "type")
 			{
-				
+
 			}
 
             /* This continue is here to reduce the amount of indentation for

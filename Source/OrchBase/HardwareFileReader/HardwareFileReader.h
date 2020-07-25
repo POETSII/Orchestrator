@@ -148,7 +148,8 @@ private:
     /* Dialect 3 validation and deployment members and methods. */
     void d3_catastrophic_failure(P_engine* engine);
     bool d3_create_cores_and_threads_for_mailbox(P_mailbox* mailbox,
-                                                 unsigned coreQuantity);
+                                                 unsigned coreQuantity,
+                                                 unsigned addrOffset=0);
     bool d3_define_board_fields_from_section(P_board* board,
                                              UIF::Node* sectionNode);
     bool d3_define_box_fields_from_section(P_box* box, UIF::Node* sectionNode);
