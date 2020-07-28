@@ -104,11 +104,7 @@ TEST_CASE("Test each semantically-invalid case in turn", "[Reader]")
         REQUIRE_THROWS_AS(reader->populate_hardware_model(engine),
                           HardwareSemanticException&);
 
-        /* Don't need to delete the engine - the reader is responsible for
-         * doing that on failure. If a bug has been introduced that causes the
-         * reader not to clean up after itself, Valgrind will find it.
-         *
-         * We do need to delete the reader at the end of the loop though. */
+        delete engine;
         delete reader;
     }
 }
