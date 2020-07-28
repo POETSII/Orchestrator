@@ -12,7 +12,7 @@ Placement::Placement(OrchBase * _p):iterator(0),par(_p),pCon(0),pD_graph(0)
 
 Placement::~Placement()
 {
-    if (iterator == 0) delete iterator;
+    if (iterator != 0) delete iterator;
 }
 
 //------------------------------------------------------------------------------
