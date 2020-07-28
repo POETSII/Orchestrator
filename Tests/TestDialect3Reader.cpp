@@ -15,6 +15,7 @@
 std::vector<std::string> semanticallyValidInputs = {
     "8_box.uif",
     "valid_dialect_3_mismatched_name.uif",
+    "valid_dialect_3_one_thread_per_core.uif",
     "valid_dialect_3_some_types_in_sections.uif",
     "valid_dialect_3_types_everywhere.uif",
     "valid_dialect_3.uif"
@@ -29,6 +30,7 @@ std::vector<std::string> semanticallyInvalidInputs = {
     "invalid_dialect_3_empty.uif",
     "invalid_dialect_3_floating_dram.uif",
     "invalid_dialect_3_invalid_character_in_type.uif",
+    "invalid_dialect_3_invalid_variable_key.uif",
     "invalid_dialect_3_missing_board_type.uif",
     "invalid_dialect_3_missing_box_type.uif",
     "invalid_dialect_3_missing_cost.uif",
