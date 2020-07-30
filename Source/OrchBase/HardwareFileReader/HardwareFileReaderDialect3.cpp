@@ -13,7 +13,6 @@
  * - engine: Partially-populated unsafe engine. */
 void HardwareFileReader::d3_catastrophic_failure(P_engine* engine)
 {
-    delete engine;
     std::string allErrors;
     construct_error_output_string(&allErrors);
 
