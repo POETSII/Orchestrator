@@ -142,14 +142,8 @@ if (pE != 0)
                         (*boardIterator)->G.NodeData(mailboxIterator)->P_corem,
                         coreIterator)
                 {
-                    coreIterator->second->clear_binaries();
-
-                    // Walk the threads and remove the device links.
-                    WALKMAP(AddressComponent, P_thread*,
-                            coreIterator->second->P_threadm, threadIterator)
-                    {
-                        threadIterator->second->P_devicel.clear();
-                    }
+                    coreIterator->second->dataBinary.clear();
+                    coreIterator->second->instructionBinary.clear();
                 }
             }
         }
@@ -537,10 +531,13 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
 
             /* Skip this core if either nothing is placed on it, or if the
              * devices placed on it are owned by a different task. Recall that
-             * all devices within a core service the same task, and threads are
-             * loaded in a bucket-filled manner (for now). */
-            if (thread->P_devicel.empty() or
-                thread->P_devicel.front()->par->par != task) continue;
+             * all devices within a core service the same task. */
+            if (pPlacer->threadToDevices.at(thread).empty() or
+                pPlacer->taskToCores.at(task).find(core) !=
+                pPlacer->taskToCores.at(task).end())
+            {
+                continue;
+            }
 
             /* If we couldn't find a Mothership for this box earlier, we panic
              * here, because we can't deploy this task without enough
@@ -576,7 +573,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
             for (threadIt = core->P_threadm.begin();
                  threadIt != core->P_threadm.end(); threadIt++)
             {
-                if (!(threadIt->second->P_devicel.empty()))
+                if (!(pPlacer->threadToDevices.at(threadIt->second).empty()))
                     payload->threadsExpected.push_back(
                         threadIt->second->get_hardware_address()->as_uint());
             }
@@ -834,7 +831,7 @@ void OrchBase::TaskMCmd(Cli::Cl_t Cl, std::string command)
     message.Put(0, &taskName);
 
     /* Get the set of important boxes. */
-    pE->get_boxes_for_task(task, &boxesOfImport);
+    pPlacer->get_boxes_for_task(task, &boxesOfImport);
 
     /* For each box, send to the Mothership on that box. */
     for (boxIt = boxesOfImport.begin(); boxIt != boxesOfImport.end(); boxIt++)

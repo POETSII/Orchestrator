@@ -1090,7 +1090,11 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   // a trivial bit more overhead, perhaps, then passing this as an argument.
   // The *general* method would extract the number of device types from the
   // thread's device list.
-  P_devtyp* devTyp = (*thread->P_devicel.begin())->pP_devtyp;
+  P_device* device = *par->pPlacer->threadToDevices.at(thread).begin();
+  P_devtyp* devTyp = device->pP_devtyp;
+
+  std::list<P_device*>::size_type numberOfDevices =
+      par->pPlacer->threadToDevices.at(thread).size();
 
   unsigned int inTypCnt = devTyp->P_pintypIv.size();       // Grab the number of input pins for the device type
   unsigned int outTypCnt = devTyp->P_pintypOv.size();      // Grab the number of output pins for the device type
@@ -1184,8 +1188,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
    * overflowing may be required.
    */
   uint32_t outputCount = 1;     // Yes, this is intentionally 1 to cope with wrapping.
-  for (list<P_device*>::iterator device = thread->P_devicel.begin();
-        device != thread->P_devicel.end(); device++)
+  for (list<P_device*>::iterator device =
+         par->pPlacer->threadToDevices.at(thread).begin();
+       device != par->pPlacer->threadToDevices.at(thread).end(); device++)
   { // Iterate through all devices counting pins.
     if (outTypCnt)
     {
@@ -1395,9 +1400,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
 
 
   // Iterate through all of the devices
-  for (list<P_device*>::iterator device = thread->P_devicel.begin();
-        device != thread->P_devicel.end();
-        device++)
+  for (list<P_device*>::iterator device =
+         par->pPlacer->threadToDevices.at(thread).begin();
+       device != par->pPlacer->threadToDevices.at(thread).end(); device++)
   {
     //==========================================================================
     // Form the first part of the PDeviceInstance/devInst_t initialiser
@@ -2165,6 +2170,8 @@ unsigned P_builder::CompileBins(P_task * task)
   unsigned int coreNum = 0;  // Just a counter.
 
   // Walk through all cores in the system that are used by this task.
+  P_thread* firstThread;  // The "first" thread in thisCore. "first" is
+                          // arbitrary.
   WALKSET(P_core*, par->pPlacer->taskToCores[task], coreNode)
   {
       // a failure to read the generated binary may not be absolutely fatal;
@@ -2178,10 +2185,11 @@ unsigned P_builder::CompileBins(P_task * task)
 
       if(binary == PNULL)
       {
-        thisCore = coreNode->second;
-        firstThread = thisCore->P_threadm.begin()->second;
-        if (firstThread->P_devicel.size()
-            && (firstThread->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
+        firstThread = (*coreNode)->P_threadm.begin()->second;
+        if (!(par->pPlacer->threadToDevices.at(firstThread).empty())
+            && (par->pPlacer->threadToDevices.at(firstThread).front()->par->par
+                == task)) // only for cores which have something placed on them
+                          // and which belong to the task
         {
           // a failure to read the generated binaries may not be absolutely
           // fatal; this could be retrieved later if there was a transient read
@@ -2191,11 +2199,11 @@ unsigned P_builder::CompileBins(P_task * task)
 
           // Instruction binary
           binaries.push_back(task_dir+BIN_PATH+"/"+COREBIN_CODE_BASE+TO_STRING(coreNum)+".v");
-          thisCore->instructionBinary = binaries.back();
+          (*coreNode)->instructionBinary = binaries.back();
 
           // Data binary
           binaries.push_back(task_dir+BIN_PATH+"/"+COREBIN_DATA_BASE+TO_STRING(coreNum)+".v");
-          thisCore->dataBinary = binaries.back();
+          (*coreNode)->dataBinary = binaries.back();
 
           for (std::vector<std::string>::iterator binaryIt = binaries.begin();
                binaryIt != binaries.end(); binaryIt++)
@@ -2214,7 +2222,8 @@ unsigned P_builder::CompileBins(P_task * task)
       else
       {
           // Add the file pointer to the core.
-          (*coreNode)->instructionBinary->Binary = binary;
+          (*coreNode)->instructionBinary = binName;
+          fclose(binary);
       }
 
       ++coreNum;  // Move onto the next core.
