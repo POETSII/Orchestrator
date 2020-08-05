@@ -3,7 +3,7 @@
 
 #include <config.h>
 
-#define P_MSG_MAX_SIZE (0x1 << TinselLogBytesPerMsg)
+#define P_PKT_MAX_SIZE (0x1 << TinselLogBytesPerMsg)
 #define LOG_BOARDS_PER_BOX (TinselMeshXBitsWithinBox+TinselMeshYBitsWithinBox)
 #define LOG_CORES_PER_BOARD TinselLogCoresPerBoard
 #define LOG_THREADS_PER_CORE TinselLogThreadsPerCore

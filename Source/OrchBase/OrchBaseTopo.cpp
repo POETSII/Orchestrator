@@ -142,6 +142,7 @@ void OrchBase::TopoLoad(Cli::Cl_t Cl)
         reader.populate_hardware_model(pE);
         PlacementReset();
         Post(140, inputFilePath.c_str());
+        BuildMshipMap();
     }
     catch (OrchestratorException& exception)
     {
@@ -186,6 +187,7 @@ void OrchBase::TopoSet1(Cli::Cl_t Cl)
     Post(138, pE->Name());
     deployer.deploy(pE);
     PlacementReset();
+    BuildMshipMap();
 }
 
 //------------------------------------------------------------------------------
@@ -200,6 +202,7 @@ void OrchBase::TopoSet2(Cli::Cl_t Cl)
     Post(138, pE->Name());
     deployer.deploy(pE);
     PlacementReset();
+    BuildMshipMap();
 }
 
 //==============================================================================

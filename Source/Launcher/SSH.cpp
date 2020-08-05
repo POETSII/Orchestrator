@@ -16,7 +16,7 @@
  * - error: string populated with the contents of the standard error, or other
  *   connection errors.
  *
- * Returns the exit code of the called process. */
+ * Returns the exit code of the called process, or -1 (and populates errno). */
 int SSH::call(std::string host, std::string command, std::string* stdout,
               std::string* stderr)
 {
@@ -39,7 +39,8 @@ int SSH::call(std::string host, std::string command, std::string* stdout,
  * - target: Path to the directory to populate on the host, assumed to
  *   exist. Must not have a trailing slash.
  *
- * Returns 0 on success, and 1 on failure. */
+ * Returns 0 on success, 1 on failure, and -1 on system failure (and populates
+ * errno). */
 int SSH::deploy_directory(std::string host, std::string source,
                           std::string target, std::string* stdout,
                           std::string* stderr)

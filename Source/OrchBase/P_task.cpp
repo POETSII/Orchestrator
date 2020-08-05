@@ -10,6 +10,7 @@ P_task::P_task(OrchBase * _p,string _s):par(_p),pSup(0),pD(0),pP_typdcl(0)
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
 linked = false;                        // Not linked yet
+deployed = false;                      // Not deployed yet
 pOwn = 0;                              // No owner yet
 pD = new D_graph(this,"D_graph");
 }

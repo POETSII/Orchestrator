@@ -68,7 +68,6 @@ include $(shell find $(DEPENDENCY_DIR) -name "*.d" ! -name "*.temp.d")
 # objects:
 INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/Common \
-                -I$(SOURCE_DIR)/Common/HardwareModel \
                 -I$(SOURCE_DIR)/OrchBase \
                 -I$(SOURCE_DIR)/OrchBase/HardwareFileReader \
                 -I$(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment \
@@ -76,12 +75,15 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/OrchBase/Placement/Algorithms \
                 -I$(SOURCE_DIR)/OrchBase/Placement/Constraints \
                 -I$(SOURCE_DIR)/OrchBase/Placement/Exceptions \
+                -I$(SOURCE_DIR)/OrchBase/HardwareModel \
                 -I$(SOURCE_DIR)/Launcher \
                 -I$(SOURCE_DIR)/Injector \
                 -I$(SOURCE_DIR)/Parser \
                 -I$(SOURCE_DIR)/Root \
                 -I$(SOURCE_DIR)/NameServer \
+                -I$(SOURCE_DIR)/NameServer/AddressBook \
                 -I$(SOURCE_DIR)/Softswitch/inc \
+                -I$(SOURCE_DIR)/Supervisor \
                 -I$(MPICH_INC_DIR) \
                 -I$(QT_INC_DIR) \
                 -I$(QT_INC_DIR)/QtCore \
@@ -91,11 +93,16 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
 # All flags to be used in compilation. We're not complying with C++98 yet due
 # to the hostlink and some other minor changes, though nobody has studied this
 # comprehensively.
+#
+# Trivial log handler is defined for now - we need to think about this more.
 CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
-           -std=c++11 -Wall -fPIC -pthread -pedantic
+           -std=c++11 -Wall -fPIC -pthread -pedantic -O3 -DTRIVIAL_LOG_HANDLER
+
+# Debugging!
+DEBUGFLAGS = -g3 -Og
 
 # Debug target logic.
-debug: CXXFLAGS += -g3 -DORCHESTRATOR_DEBUG=1
+debug: CXXFLAGS += $(DEBUGFLAGS) -DORCHESTRATOR_DEBUG=1
 debug: all
 
 # Handy aliases for building executables, scripts, and libraries. Order doesn't
@@ -130,7 +137,7 @@ include Makefile.executable_prerequisites
 include Makefile.test_prerequisites
 TEST_SCRIPT_BASENAME = run-tests.sh
 TEST_SCRIPT = $(TEST_EXECUTABLE_DIR)/$(TEST_SCRIPT_BASENAME)
-tests: CXXFLAGS += -g3
+tests: CXXFLAGS += $(DEBUGFLAGS)
 tests: $(ALL_TESTS) $(TEST_SCRIPT)
 
 # Linking targets (to generate executables). See
@@ -255,7 +262,7 @@ $(APPLICATION_STAGING_DIR)/Makefile:
 $(APPLICATION_STAGING_DIR)/Supervisor.cpp $(APPLICATION_STAGING_DIR)/Supervisor.h:
 	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic \
-		"$(abspath $(SOURCE_DIR)/Mothership/Supervisor$(suffix $@))" "$@"
+		"$(abspath $(SOURCE_DIR)/Supervisor/Supervisor$(suffix $@))" "$@"
 
 # Tearing down the environment (for 'clean'), leaving the xml directory for the
 # user. Only tear it down if $(APPLICATION_STAGING_DIR) exists. NB:

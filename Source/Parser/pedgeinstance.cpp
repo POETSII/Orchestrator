@@ -8,6 +8,15 @@
 PEdgeInstance::PEdgeInstance(const QString& name, PIGraphObject *parent) : PConcreteInstance(name, "EdgeI", QVector<int>({STATE}), parent), containing_graph(NULL)
 {
     valid_elements["S"] = STATE;
+    path.src.device=NULL;
+    path.src.pin=NULL;
+    path.dst.device=NULL;
+    path.dst.pin=NULL;
+    path_index.dst_i=INVALID_INDEX;
+    path_index.src_i=INVALID_INDEX;
+    path_index.msg_i=INVALID_INDEX;
+    path_index.ipin_i=INVALID_INDEX;
+    path_index.opin_i=INVALID_INDEX;
 }
 
 void PEdgeInstance::defineObject(QXmlStreamReader* xml_def)
@@ -55,39 +64,40 @@ const PIGraphObject* PEdgeInstance::appendSubObject(QXmlStreamReader* xml_def)
     }
 }
 
-void PEdgeInstance::elaborateEdge(D_graph* graph_rep)
+int PEdgeInstance::elaborateEdge(D_graph* graph_rep)
 {
      if (containing_graph == NULL) // no need to do anything if the edge has already been elaborated
      {
         PIGraphInstance* parent_instance = dynamic_cast<PIGraphInstance*>(parent());
-        if (parent_instance && (parent_instance->graph_type != NULL)) // no parent instance would be a serious elaboration error
-        {
-           // generate or retrieve all the objects required to insert the node into the graph
-           if (path.dst.device == NULL) parsePath(); // build the path if it couldn't be done earlier
-           P_pin* src_pin = new P_pin(graph_rep, path.src.pin->name().toStdString());
-           P_pin* dst_pin = new P_pin(graph_rep, path.dst.pin->name().toStdString());
-           P_message* msg_type = const_cast<PMessageType*>(path.src.pin->msgType())->elaborateMessage();
-           path_index.msg_i = parent_instance->subObjIndex(PIGraphInstance::EDGEINSTS, name());
-           path_index.src_i = parent_instance->subObjIndex(PIGraphInstance::DEVINSTS, path.src.device->name());
-           path_index.dst_i = parent_instance->subObjIndex(PIGraphInstance::DEVINSTS, path.dst.device->name());
-           // set up the pins. Input pins may have properties and state.
-           src_pin->pP_pintyp = const_cast<PIOutputPin*>(path.src.pin)->elaboratePinType();
-           dst_pin->pP_pintyp = const_cast<PIInputPin*>(path.dst.pin)->elaboratePinType();
-           if (properties() != NULL) dst_pin->pPropsI = const_cast<PIDataValue*>(properties())->elaborateDataValue();
-           if (numSubObjects(STATE)) dst_pin->pStateI = static_cast<PIDataValue*>(subObject(STATE, 0))->elaborateDataValue();
-           // pin indices are keys into a multimap, so duplicates are OK.
-           src_pin->idx = path_index.opin_i = src_pin->pP_pintyp->idx;
-           // the destination index needs to capture both the pin number and what will be the local array index for the edge at the pin.
-           // searching the pin lists would be wildly inefficient, so we store a value in the DeviceInstance for each pin giving the
-           // current count of internal edges.
-           P_device* dest_device = path.dst.device->getDevice();
-           dst_pin->idx = path_index.ipin_i = ((dst_pin->pP_pintyp->idx << PIN_POS) | dest_device->ipin_idxs[dst_pin->pP_pintyp->idx]++);
-           //src_pin->idx = path_index.opin_i = 2*path_index.msg_i;
-           //dst_pin->idx = path_index.ipin_i = 2*path_index.msg_i+1;
-           // now we are ready to insert into the graph, updating the internal representation if the insertion succeeds.
-           if (graph_rep->G.InsertArc(path_index.msg_i, path_index.src_i, path_index.dst_i, msg_type, path_index.opin_i, src_pin, path_index.ipin_i, dst_pin)) containing_graph = graph_rep;
-        }
+        if (!parent_instance || (parent_instance->graph_type == NULL)) return 1; // no parent instance would be a serious elaboration error
+        // generate or retrieve all the objects required to insert the node into the graph
+        if (path.dst.device == NULL) parsePath(); // build the path if it couldn't be done earlier
+        // don't elaborate anything if the path build failed
+        if (path.dst.device == NULL || path.src.device == NULL || path.dst.pin == NULL || path.src.pin == NULL) return 3;
+        P_pin* src_pin = new P_pin(graph_rep, path.src.pin->name().toStdString());
+        P_pin* dst_pin = new P_pin(graph_rep, path.dst.pin->name().toStdString());
+        P_message* msg_type = const_cast<PMessageType*>(path.src.pin->msgType())->elaborateMessage();
+        path_index.msg_i = parent_instance->subObjIndex(PIGraphInstance::EDGEINSTS, name());
+        path_index.src_i = parent_instance->subObjIndex(PIGraphInstance::DEVINSTS, path.src.device->name());
+        path_index.dst_i = parent_instance->subObjIndex(PIGraphInstance::DEVINSTS, path.dst.device->name());
+        // set up the pins. Input pins may have properties and state.
+        src_pin->pP_pintyp = const_cast<PIOutputPin*>(path.src.pin)->elaboratePinType();
+        dst_pin->pP_pintyp = const_cast<PIInputPin*>(path.dst.pin)->elaboratePinType();
+        if (properties() != NULL) dst_pin->pPropsI = const_cast<PIDataValue*>(properties())->elaborateDataValue();
+        if (numSubObjects(STATE)) dst_pin->pStateI = static_cast<PIDataValue*>(subObject(STATE, 0))->elaborateDataValue();
+        // pin indices are keys into a multimap, so duplicates are OK.
+        src_pin->idx = path_index.opin_i = src_pin->pP_pintyp->idx;
+        // the destination index needs to capture both the pin number and what will be the local array index for the edge at the pin.
+        // searching the pin lists would be wildly inefficient, so we store a value in the DeviceInstance for each pin giving the
+        // current count of internal edges.
+        P_device* dest_device = path.dst.device->getDevice();
+        dst_pin->idx = path_index.ipin_i = ((dst_pin->pP_pintyp->idx << PIN_POS) | dest_device->ipin_idxs[dst_pin->pP_pintyp->idx]++);
+        //src_pin->idx = path_index.opin_i = 2*path_index.msg_i;
+        //dst_pin->idx = path_index.ipin_i = 2*path_index.msg_i+1;
+        // now we are ready to insert into the graph, updating the internal representation if the insertion succeeds.
+        if (graph_rep->G.InsertArc(path_index.msg_i, path_index.src_i, path_index.dst_i, msg_type, path_index.opin_i, src_pin, path_index.ipin_i, dst_pin)) containing_graph = graph_rep;
      }
+     return 0;
 }
 
 void PEdgeInstance::parsePath()

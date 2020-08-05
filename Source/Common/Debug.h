@@ -8,6 +8,5 @@
 #ifndef ORCHESTRATOR_DEBUG
 #define ORCHESTRATOR_DEBUG 0
 #endif
-
 void DebugPrint(const char*, ...);
 #endif

@@ -35,7 +35,7 @@ namespace Launcher
     const char* execGdb = "/usr/bin/gdb";
     const char* flagsGdb = "--args";
     const char* execValgrind = "/usr/bin/valgrind";
-    const char* flagsValgrind = "--leak-check=full";
+    const char* flagsValgrind = "--leak-check=full --track-origins=yes";
 
     bool AreWeRunningOnAPoetsBox();
     void BuildCommand(bool useMotherships, std::string internalPath,

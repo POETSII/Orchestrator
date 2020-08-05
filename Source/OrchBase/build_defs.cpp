@@ -15,6 +15,8 @@ const string MAKEDIR = "mkdir";
 const string REMOVEDIR = "rm --force --recursive";
 #endif
 
+const unsigned int MAX_RTSBUFFSIZE = 4096;
+const unsigned int MIN_RTSBUFFSIZE = 10;
 const unsigned int MAX_HANDLERS = 1024;
 const unsigned int BYTES_PER_THREAD = 0x1 << (TinselLogBytesPerDRAM - TinselLogThreadsPerDRAM);
 const unsigned int MAX_DEVICES_PER_THREAD = 1024;
@@ -39,4 +41,6 @@ const string BIN_PATH = "bin";
 const string BUILD_PATH = "Build";
 const string COREMAKE_BASE = "make -j$(nproc --ignore=4) all 2>&1 >> make_errs.txt";
 const string COREBIN_BASE = "softswitch_";
+const string COREBIN_DATA_BASE = "softswitch_data_";
+const string COREBIN_CODE_BASE = "softswitch_code_";
 const void* DRAM_BASE = 0; // temporary: this should be set to the actual DRAM bottom address.

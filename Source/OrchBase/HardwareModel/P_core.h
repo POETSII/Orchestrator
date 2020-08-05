@@ -13,7 +13,6 @@
 #include <sstream>
 
 #include "AddressableItem.h"
-#include "Bin.h"
 #include "DumpUtils.h"
 #include "NameBase.h"
 #include "OSFixes.hpp"
@@ -43,11 +42,10 @@ public:
     void contain(AddressComponent addressComponent, P_thread* thread);
 
     /* Instruction and data binaries are loaded onto cores. */
-    Bin* dataBinary;
-    Bin* instructionBinary;
+    std::string dataBinary;
+    std::string instructionBinary;
     unsigned int dataMemory;
     unsigned int instructionMemory;
-    void clear_binaries();
 
     /* Cores are joined by implicit pairs - a pair of cores shares instruction
      * space. */

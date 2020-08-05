@@ -82,6 +82,7 @@ TEST_CASE("Test each invalid dialect example case in turn", "[Reader]")
         REQUIRE_THROWS_AS(reader->populate_hardware_model(engine),
                           HardwareSemanticException&);
 
+        delete engine;
         delete reader;
     }
 }

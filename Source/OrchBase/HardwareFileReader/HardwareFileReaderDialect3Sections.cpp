@@ -495,6 +495,7 @@ bool HardwareFileReader::d3_validate_types_define_cache()
          sectionIterator!=creativeSections.end(); sectionIterator++)
     {
         typeFieldFound = false;
+        typeLine = 0;
         sectionName = (*sectionIterator)->leaf[0]->leaf[0]->str;
 
         /* Has it got a type-defining record? If so, grab the type by iterating

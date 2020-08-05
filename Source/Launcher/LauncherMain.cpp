@@ -134,10 +134,10 @@ void BuildCommand(bool useMotherships, std::string internalPath,
     /* Clock */
     hydraProcesses.push_back(new std::stringstream);
     orderedHosts.push_back(ourHostname);
+    *(hydraProcesses.back()) << "-n 1 ";
     if (gdbProcs[execClock]) *(hydraProcesses.back()) << execGdb << " ";
     if (valgrindProcs[execClock]) *(hydraProcesses.back()) << execValgrind
                                                            << " ";
-    *(hydraProcesses.back()) << "-n 1 ";
     *(hydraProcesses.back()) << localBinDir << "/" << execClock;
 
     /* Adding motherships... */
@@ -153,14 +153,19 @@ void BuildCommand(bool useMotherships, std::string internalPath,
         }
 
         /* Otherwise, if there are no hosts, spawn a mothership on this box
-         * (we've already checked that it's a POETS box). */
+         * (we've already checked that it's a POETS box). In this case, if
+         * valgrind and/or gdb are requested for the Mothership, invoke them
+         * here.  */
         else if (mothershipHosts.empty())
         {
             hydraProcesses.push_back(new std::stringstream);
             orderedHosts.push_back(ourHostname);
-
-            *(hydraProcesses.back()) << "-n 1 " << localBinDir << "/"
-                                     << execMothership;
+            *(hydraProcesses.back()) << "-n 1 ";
+            if (gdbProcs[execMothership]) *(hydraProcesses.back()) <<
+                                              execGdb << " ";
+            if (valgrindProcs[execMothership]) *(hydraProcesses.back()) <<
+                                                   execValgrind << " ";
+            *(hydraProcesses.back()) << localBinDir << "/" << execMothership;
         }
 
         /* Otherwise, spawn one mothership for each host. */
@@ -276,63 +281,97 @@ int DeployBinaries(std::set<std::string>* hosts,
     }
 
     /* Deploy! */
-    std::string stdout;
-    std::string stderr;
+    std::string cmdstdout;
+    std::string cmdstderr;
+    int sshRc;
     WALKSET(string, (*hosts), host)
     {
         DebugPrint("%sDeploying to host '%s'...\n",
                    debugHeader, host->c_str());
 
         /* Ensure .orchestrator exists. */
-        if (SSH::call((*host),
-                      dformat("mkdir --parents \"%s\"\n",
-                              POETS::dirname(deployDir).c_str()),
-                      &stdout, &stderr) > 0)
+        sshRc = SSH::call((*host),
+                          dformat("mkdir --parents \"%s\"\n",
+                                  POETS::dirname(deployDir).c_str()),
+                          &cmdstdout, &cmdstderr);
+        if (sshRc > 0)
         {
-            printf("%sSSH command to host '%s' failed (can you connect to the "
-                   "host by SSH?): %s",
-                   errorHeader, (*host).c_str(), stderr.c_str());
+            fprintf(stderr,
+                    "%sSSH command to host '%s' failed (can you connect to "
+                    "the host by SSH?): %s",
+                    errorHeader, (*host).c_str(), cmdstderr.c_str());
+            return 1;
+        }
+        else if (sshRc == -1)
+        {
+            fprintf(stderr, "%sError calling SSH: %s.\n", errorHeader,
+                    strerror(errno));
             return 1;
         }
 
         /* Remove the target directory, dangerously. */
-        if (SSH::call((*host),
-                      dformat("rm --force --recursive \"%s\"\n", deployDir),
-                      &stdout, &stderr) > 0)
+        sshRc = SSH::call((*host),
+                          dformat("rm --force --recursive \"%s\"\n",
+                                  deployDir),
+                          &cmdstdout, &cmdstderr);
+        if (sshRc > 0)
         {
             /* NB: rm -rf can't fail outside mad edge cases... */
-            printf("%sSSH command to host '%s' failed (can you connect to the "
-                   "host by SSH?): %s",
-                   errorHeader, (*host).c_str(), stderr.c_str());
+            fprintf(stderr,
+                    "%sSSH command to host '%s' failed (can you connect to "
+                    "the host by SSH?): %s",
+                    errorHeader, (*host).c_str(), cmdstderr.c_str());
+            return 1;
+        }
+        else if (sshRc == -1)
+        {
+            fprintf(stderr, "%sError calling SSH: %s.\n", errorHeader,
+                    strerror(errno));
             return 1;
         }
 
         /* Deploy binaries. */
-        if (SSH::deploy_directory((*host), sourceDir, deployDir,
-                                  &stdout, &stderr) > 0)
+        sshRc = SSH::deploy_directory((*host), sourceDir, deployDir,
+                                      &cmdstdout, &cmdstderr);
+        if (sshRc > 0)
         {
-            printf("%sFailed to deploy to host '%s': %s",
-                   errorHeader, (*host).c_str(), stderr.c_str());
+            fprintf(stderr,
+                    "%sFailed to deploy to host '%s': %s",
+                    errorHeader, (*host).c_str(), cmdstderr.c_str());
+            return 1;
+        }
+        else if (sshRc == -1)
+        {
+            fprintf(stderr, "%sError calling SSH: %s.\n", errorHeader,
+                    strerror(errno));
             return 1;
         }
 
         /* Grab the full path of the directory created (we can't compute that
          * here, because user names may vary, etc.) */
-        if (SSH::call((*host),
-                      dformat("realpath \"%s\" | tr --delete '\n'\n",
-                              deployDir),
-                      &stdout, &stderr) > 0)
+        sshRc = SSH::call((*host),
+                          dformat("realpath \"%s\" | tr --delete '\n'\n",
+                                  deployDir),
+                          &cmdstdout, &cmdstderr);
+        if (sshRc > 0)
         {
-            printf("%sSSH command to host '%s' failed (can you connect to the "
-                   "host by SSH?): %s",
-                   errorHeader, (*host).c_str(), stderr.c_str());
+            fprintf(stderr,
+                    "%sSSH command to host '%s' failed (can you connect to "
+                    "the host by SSH?): %s",
+                    errorHeader, (*host).c_str(), cmdstderr.c_str());
+            return 1;
+        }
+        else if (sshRc == -1)
+        {
+            fprintf(stderr, "%sError calling SSH: %s.\n", errorHeader,
+                    strerror(errno));
             return 1;
         }
 
         DebugPrint("%sDeployment to host '%s' complete.\n",
                    debugHeader, host->c_str());
 
-        (*paths)[*host] = stdout;
+        (*paths)[*host] = cmdstdout;
     }
 
     return 0;
@@ -415,8 +454,8 @@ int Launch(int argc, char** argv)
     if (hdfPath.empty() && file_exists(defaultHdfPath))
     {
         hdfPath = defaultHdfPath;
-        DebugPrint("%sFound a hardware description file in the default "
-                   "search location (%s). Using that one.\n",
+        DebugPrint("%sFound a hardware description file in the default search "
+                   "location (%s). Using that one.\n",
                    debugHeader, hdfPath.c_str());
     }
 
@@ -463,8 +502,8 @@ int Launch(int argc, char** argv)
         else if (!overrideHost.empty())
         {
             hosts.insert(overrideHost);
-            DebugPrint("%sIgnoring input file, and instead using the override "
-                       "passed in as an argument.\n", debugHeader);
+            DebugPrint("%sIgnoring input file, and instead using the "
+                       "override passed in as an argument.\n", debugHeader);
         }
     }
 
@@ -547,8 +586,8 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
     #if ORCHESTRATOR_DEBUG
     for (int argIndex=0; argIndex<argc; argIndex++)
     {
-        DebugPrint("%s%sArgument %d: %s\n", debugHeader, debugIndent, argIndex,
-                   argv[argIndex]);
+        DebugPrint("%s%sArgument %d: %s\n", debugHeader, debugIndent,
+                   argIndex, argv[argIndex]);
     }
     DebugPrint("%s\n", debugHeader);
     #endif
@@ -593,7 +632,7 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
 "\t/%s = HOST: Override all Mothership hosts, specified from a hardware description file, with HOST. Using this option will only spawn one mothership process (unless /%s is used, in which case no mothership processes are spawned).\n"
 "\n"
 "\t/%s = PATH: Define an LD_LIBRARY_PATH environment variable for all spawned processes. This is useful for defining where shared object files can be found by children.\n"
-"\t/%s: Points valgrind (%s) at one of the processes listed above, except mothership. Combine with /%s at your own risk.\n"
+"\t/%s: Points valgrind (%s) at one of the processes listed above, except motherships spawned via a host list. Combine with /%s at your own risk.\n"
 "\n"
 "If you are still bamboozled, or you're a developer, check out the Orchestrator documentation.\n",
 argv[0],
@@ -788,7 +827,7 @@ argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str());
     else
     {
         DebugPrint("%s%sOverride host: %s\n", debugHeader, debugIndent,
-                   overrideHost->c_str());
+                    overrideHost->c_str());
     }
     if (*useMotherships)
     {

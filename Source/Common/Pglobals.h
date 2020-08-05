@@ -54,6 +54,10 @@ LOG  |FULL |-    |-    | (1:int)Message id
                          (2:char)Message type
                          (3:string)Full message
 INJCT|REQ  |-    |-    | (1:string)Command string
+MSHP |ACK  |DEFD |-    | (0:string)Application name
+MSHP |ACK  |LOAD |-    | (0:string)Application name
+MSHP |ACK  |RUN  |-    | (0:string)Application name
+MSHP |ACK  |STOP |-    | (0:string)Application name
 
 LogServer
 ---------
@@ -70,23 +74,27 @@ Injector
 INJCT|ACK  |-    |-    | (????)
 INJCT|FLAG |-    |-    | (1:string)Command string
 
-Mothercore
+Mothership
 ----------
-CMND |LOAD |-    |-    | (0:string)Task name
-CMND |RUN  |-    |-    | (0:string)Task name
-CMND |STOP |-    |-    | (0:string)Task name
 EXIT |-    |-    |-    | (None)
-NAME |DIST |-    |-    | (0:string)Task name
-                         (1:vector<pair<uint32_t,P_addr_t>>) Core list for Mothership
-NAME |RECL |-    |-    | (0:string)Task name
-NAME |TDIR |-    |-    | (0:string)Task name
-                         (1:string)File directory
-SUPR |-    |-    |-    | (0:vector<P_Sup_Msg_t>)Args
-SYST |HARD |-    |-    | (0:vector<string>)Args
 SYST |KILL |-    |-    | (None)
-SYST |SHOW |-    |-    | (None)
-SYST |TOPO |-    |-    | (None)
-TINS |-    |-    |-    | (0:vector<P_Msg_t>) Packet(s) to deliver
+APP  |SPEC |-    |-    | (0:string)Application name
+                         (1:uint32_t)Number of expected distribution messages
+APP  |DIST |-    |-    | (0:string)Application name
+                         (1:string)Code path for this core
+                         (2:string)Data path for this core
+                         (3:uint32_t)Core hardware address
+                         (4:uint8_t)Number of expected threads for this core
+APP  |SUPD |-    |-    | (0:string)Application name
+                         (1:string)Shared object path for this Supervisor
+CMND |RECL |-    |-    | (0:string)Application name
+CMND |INIT |-    |-    | (0:string)Application name
+CMND |RUN  |-    |-    | (0:string)Application name
+CMND |STOP |-    |-    | (0:string)Application name
+BEND |CNC  |-    |-    | (0:P_Pkt_t)Packet
+BEND |SUPR |-    |-    | (0:P_Pkt_t)Packet
+PKTS |-    |-    |-    | (0:vector<pair<uint32_t, P_Pkt_t> >)Packets
+DUMP |-    |-    |-    | (0:string)Path to write the dump to
 
 */
 
@@ -110,28 +118,32 @@ static const byte PMAP  = 0x08;
 static const byte SYST  = 0x09;
 static const byte RTCL  = 0x0a;
 static const byte INJCT = 0x0b;
-static const byte NAME  = 0x0c;
-static const byte SUPR  = 0x0d;
-static const byte TINS  = 0x0e;
-static const byte CANDC = 0x0f;
+static const byte CANDC = 0x0c;
+static const byte APP   = 0x0d;
+static const byte BEND  = 0x0e;
+static const byte PKTS  = 0x0f;
+static const byte DUMP  = 0x10;
+static const byte MSHP  = 0x11;
 // Level 1 subkeys
 static const byte PING  = 0x40;
 static const byte POST  = 0x41;
 static const byte FULL  = 0x42;
 static const byte FLOO  = 0x43;
 static const byte FLAG  = 0x44;
-static const byte HARD  = 0x45;
-static const byte KILL  = 0x46;
-static const byte CONN  = 0x47;
-static const byte RUN   = 0x48;
-static const byte LOAD  = 0x49;
-static const byte STOP  = 0x4a;
-static const byte TOPO  = 0x4b;
-static const byte DIST  = 0x4c;
-static const byte RECL  = 0x4d;
-static const byte TDIR  = 0x4e;
-static const byte SHOW  = 0x4f;
-static const byte ACPT  = 0x50;
+static const byte KILL  = 0x45;
+static const byte CONN  = 0x46;
+static const byte RUN   = 0x47;
+static const byte LOAD  = 0x48;
+static const byte STOP  = 0x49;
+static const byte DIST  = 0x4a;
+static const byte RECL  = 0x4b;
+static const byte ACPT  = 0x4c;
+static const byte SPEC  = 0x4d;
+static const byte SUPD  = 0x4e;
+static const byte INIT  = 0x4f;
+static const byte CNC   = 0x50;
+static const byte ACK   = 0x51;
+static const byte SUPR  = 0x52;
 // temporary use: for MPI testing ------------------------------------------
 static const byte M0    = 0x60;
 static const byte M1    = 0x61;
@@ -139,9 +151,9 @@ static const byte MN    = 0x62;
 //--------------------------------------------------------------------------
 // Level 2 subkeys
 static const byte REQ   = 0x80;
-static const byte ACK   = 0x81;
-static const byte FWD   = 0x82;
+static const byte FWD   = 0x81;
 // Level 3 subkeys
+static const byte DEFD  = 0xc0;
 
 // Not a value
 static const byte NAV   = 0xff;
@@ -158,7 +170,7 @@ static const byte ROOT  = 0x00;
 #define csINJECTORproc   "Injector:CommonBase"
 #define csNAMESERVERproc "NameServer:CommonBase"
 #define csMONITORproc    "Monitor:CommonBase"
-#define csMOTHERSHIPproc "TMoth:CommonBase"
+#define csMOTHERSHIPproc "Mothership:CommonBase"
 #define csMPITESTproc    "MPITest:CommonBase"
 
 // tag defined as a directive because MPI libraries are c-based, have no concept

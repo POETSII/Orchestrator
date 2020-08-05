@@ -32,8 +32,8 @@ SOFTWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/SoftwareAddress.cpp \
                            $(GENERICS_DIR)/dumpchan.cpp
 
 # Sources used by executables that need to address hardware.
-HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cpp \
-                           $(SOURCE_DIR)/Common/HardwareModel/HardwareAddressFormat.cpp \
+HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareModel/HardwareAddress.cpp \
+                           $(SOURCE_DIR)/OrchBase/HardwareModel/HardwareAddressFormat.cpp \
                            $(SOURCE_DIR)/Common/DumpUtils.cpp \
                            $(SOURCE_DIR)/OrchBase/P_addr.cpp \
                            $(GENERICS_DIR)/flat.cpp \
@@ -41,18 +41,17 @@ HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cp
                            $(GENERICS_DIR)/dumpchan.cpp
 
 # Sources used by executables that require the hardware model.
-HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/HardwareIterator.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/P_engine.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/P_box.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/P_board.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/P_mailbox.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/P_core.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/P_thread.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/P_link.cpp \
-                         $(SOURCE_DIR)/Common/HardwareModel/P_port.cpp \
+HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareModel/AddressableItem.cpp \
+                         $(SOURCE_DIR)/OrchBase/HardwareModel/HardwareIterator.cpp \
+                         $(SOURCE_DIR)/OrchBase/HardwareModel/P_engine.cpp \
+                         $(SOURCE_DIR)/OrchBase/HardwareModel/P_box.cpp \
+                         $(SOURCE_DIR)/OrchBase/HardwareModel/P_board.cpp \
+                         $(SOURCE_DIR)/OrchBase/HardwareModel/P_mailbox.cpp \
+                         $(SOURCE_DIR)/OrchBase/HardwareModel/P_core.cpp \
+                         $(SOURCE_DIR)/OrchBase/HardwareModel/P_thread.cpp \
+                         $(SOURCE_DIR)/OrchBase/HardwareModel/P_link.cpp \
+                         $(SOURCE_DIR)/OrchBase/HardwareModel/P_port.cpp \
                          $(SOURCE_DIR)/Common/DumpUtils.cpp \
-                         $(SOURCE_DIR)/OrchBase/Bin.cpp \
                          $(GENERICS_DIR)/NameBase.cpp \
                          $(GENERICS_DIR)/rand.cpp \
                          $(HARDWARE_ADDRESS_SOURCES)
@@ -87,6 +86,12 @@ PLACEMENT_SOURCES = $(SOURCE_DIR)/OrchBase/Placement/CostCache.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/SimulatedAnnealing.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/SmartRandom.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Constraints/MaxDevicesPerThread.cpp
+
+# Sources used by the Address Book object.
+ADDRESS_BOOK_SOURCES =  $(SOURCE_DIR)/NameServer/AddressBook/AddressBook_Defs.cpp \
+                        $(SOURCE_DIR)/NameServer/AddressBook/AddressBook_Record.cpp \
+                        $(SOURCE_DIR)/NameServer/AddressBook/AddressBook_Task.cpp \
+                        $(SOURCE_DIR)/NameServer/AddressBook/AddressBook.cpp
 
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
@@ -222,39 +227,33 @@ INJECTOR_SOURCES = $(SOURCE_DIR)/Injector/InjectorMain.cpp \
 
 INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 
-# The mothership component consists of:
+# The Mothership component consists of:
 #
 # - The "main" file (/Source/Mothership/MothershipMain.cpp) and its
-#   dependencies in /Source/Mothership, but not
-#   /Source/Mothership/Supervisor.cpp.
-#
-# - An interface source file from the softswitch, in /Source/Softswitch/src.
+#   dependencies in /Source/Mothership.
 #
 # - The truly common sources.
 #
 # - Some "generics" (/Generics) sources.
 #
-# - A set of base Orchestrator (/Source/OrchBase) sources.
-#
 # Hostlink sources are to be compiled separately.
 MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
-                     $(SOURCE_DIR)/Mothership/TaskInfo.cpp \
-                     $(SOURCE_DIR)/Mothership/TMoth.cpp \
-                     $(SOURCE_DIR)/Softswitch/src/poets_msg.cpp \
-                     $(GENERICS_DIR)/dumpchan.cpp \
-                     $(GENERICS_DIR)/rand.cpp \
-                     $(SOURCE_DIR)/OrchBase/Bin.cpp \
-                     $(SOURCE_DIR)/OrchBase/build_defs.cpp \
-                     $(SOURCE_DIR)/OrchBase/CFrag.cpp \
-                     $(SOURCE_DIR)/OrchBase/CMsg_p.cpp \
-                     $(SOURCE_DIR)/OrchBase/D_graph.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_addr.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_device.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_message.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_pin.cpp \
-                     $(SOURCE_DIR)/OrchBase/P_task.cpp \
+                     $(SOURCE_DIR)/Mothership/Mothership.cpp \
+                     $(SOURCE_DIR)/Mothership/AppDB.cpp \
+                     $(SOURCE_DIR)/Mothership/AppInfo.cpp \
+                     $(SOURCE_DIR)/Mothership/AppTransitions.cpp \
+                     $(SOURCE_DIR)/Mothership/InstrumentationWriter.cpp \
+                     $(SOURCE_DIR)/Mothership/LogPacketManager.cpp \
+                     $(SOURCE_DIR)/Mothership/MessageUtils.cpp \
+                     $(SOURCE_DIR)/Mothership/MPIHandlers.cpp \
+                     $(SOURCE_DIR)/Mothership/PacketHandlers.cpp \
+                     $(SOURCE_DIR)/Mothership/SuperDB.cpp \
+                     $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
+                     $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
+                     $(SOURCE_DIR)/Mothership/ThreadComms.cpp \
+                     $(SOURCE_DIR)/Mothership/ThreadLogic.cpp \
                      $(SOURCE_DIR)/Common/Debug.cpp \
-                     $(HARDWARE_DEPLOYER_SOURCES)
+                     $(GENERICS_DIR)/dfprintf.cpp
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 

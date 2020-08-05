@@ -22,21 +22,22 @@ void * kb_func(void * pPar)
 {
 //printf("\nRoot::kb_func: thread starting\n\n"); fflush(stdout);
 Root* parent = static_cast<Root*>(pPar);
-int len = 0;                           // Characters in buffer
+int len = 0;                                      // Characters in buffer
 for(;;) {
-  if (len==0) Root::Prompt();          // Console prompt
+  if (len==0) Root::Prompt();                     // Console prompt
   fflush(stdout);
   static const unsigned SIZE = 512;
   char buf[SIZE];
-  buf[0] = '\0';                       // Borland bug: notes 21/7/17
+  buf[0] = '\0';                                  // Borland bug: notes 21/7/17
   for(unsigned j=1;j<SIZE;j++) buf[j]='x';
-  fgets(buf,SIZE-1,stdin);             // Pull in keyboard string
-  len=strlen(buf)-1;                   // Ignore trailing newline
-  if (len==0) continue;                // Hard to see how
-  if (buf[len]=='\n')buf[len]='\0';    // Replace trailing newline
+  if (fgets(buf,SIZE-1,stdin) == PNULL) continue; // Pull in keyboard string.
+  len=strlen(buf)-1;                              // Ignore trailing newline
+  if (len==0) continue;                           // Hard to see how
+  if (buf[len]=='\n')buf[len]='\0';               // Replace trailing newline
   PMsg_p Pkt;
-  Pkt.comm = parent->Comms[0];         // comm is always our local one (index 0)
-  Pkt.Put<char>(1,buf,len+2);          // Put it in a packet
+  Pkt.comm = parent->Comms[0];                    // comm is always our local
+                                                  // one (index 0)
+  Pkt.Put<char>(1,buf,len+2);                     // Put it in a packet
   Pkt.Key(Q::KEYB);
 
 //int cnt;                               // cnt now includes trailing '\0'
@@ -44,7 +45,8 @@ for(;;) {
 //printf("len=%d, cnt=%d, obuf=%s\n",len,cnt,obuf);  fflush(stdout);
 
   Pkt.Src(0);
-  Pkt.Send(0);                         // Send to root process main thread
+  Pkt.Send(0);                                    // Send to root process main
+                                                  // thread
 
   // User wants out - kill this thread
   if (strcmp(buf,"exit")==0 or buf[0]==0) break;
@@ -69,6 +71,12 @@ FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
 (*FnMapx[0])[PMsg_p::KEY(Q::TEST         )] = &Root::OnTest;
 (*FnMapx[0])[PMsg_p::KEY(Q::LOG  ,Q::FULL)] = &Root::OnLogP;
 (*FnMapx[0])[PMsg_p::KEY(Q::INJCT,Q::REQ )] = &Root::OnInje;
+
+// Mothership acknowledgements
+(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD)] = &Root::OnMshipAck;
+(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)] = &Root::OnMshipAck;
+(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN )] = &Root::OnMshipAck;
+(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)] = &Root::OnMshipAck;
 
 void * args = this;                    // Spin off a thread to handle keyboard
 pthread_t kb_thread;
@@ -253,6 +261,7 @@ if (!stack.empty()) {
   return 0;
 }
 int p, pL, tpL, lIdx;
+lIdx = 0;
 pL = -1;                               // maybe we have no LogServer?
 PMsg_p Pkt;                            // Burst closedown command to all ranks
 Pkt.Src(Urank);
@@ -549,6 +558,29 @@ printf(" %s: %3d(%c) %s\n",t.c_str(),id,ty,sfull.c_str());
 fflush(stdout);
 Prompt();
 return 0;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned Root::OnMshipAck(PMsg_p * Z, unsigned cIdx)
+// Updates the mothership acknowledgement table. The table is primarily
+// intended as a debugging tool.
+{
+    unsigned key = Z->Key();
+    string appName;
+    Z->Get(0, appName);
+    pair<int, string> mshipApp = make_pair(Z->Src(), appName);
+    if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD))
+        mshipAcks[mshipApp] = "DEFINED";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD))
+        mshipAcks[mshipApp] = "READY";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN))
+        mshipAcks[mshipApp] = "RUNNING";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP))
+        mshipAcks[mshipApp] = "STOPPED";
+    else
+        mshipAcks[mshipApp] = "YOU-ARE-NOT-SUPPOSED-TO-BE-HERE";
+    return 0;
 }
 
 //------------------------------------------------------------------------------

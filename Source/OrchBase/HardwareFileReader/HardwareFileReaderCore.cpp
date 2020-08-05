@@ -113,15 +113,7 @@ void HardwareFileReader::populate_hardware_model(P_engine* engine)
     /* Only dialect 1 and 3 for now (get_dialect errors if the dialect is not 1
      * or 3). */
     unsigned dialect;
-    try
-    {
-        dialect = get_dialect();
-    }
-    catch (HardwareSemanticException &e)
-    {
-        delete engine;
-        throw;
-    }
+    dialect = get_dialect();
 
     if (dialect == 1)
     {
