@@ -272,7 +272,6 @@ unsigned P_builder::GenFiles(P_task* task)
   // the cores is uniquely identified within a board.
   //============================================================================
   P_core* thisCore;  // Core available during iteration.
-  P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
   AddressComponent mailboxCoreId;  // Concatenated mailbox-core address (staging area)
 
   fstream cores_sh((task_dir+GENERATED_PATH+"/cores.sh").c_str(),
@@ -280,10 +279,9 @@ unsigned P_builder::GenFiles(P_task* task)
 
 
   // Walk through all cores in the system that are used by this task.
-  WALKSET(P_core*, par->pPlacer->taskToCores[task], coreNode)
+  WALKSET(P_core*, par->pPlacer->taskToCores.at(task), coreNode)
   {
-      thisCore = *coreNode;                               // Reference to the current core
-      firstThread = thisCore->P_threadm.begin()->second;  // Reference to the first thread on the core
+      thisCore = *coreNode;  // Reference to the current core
 
       mailboxCoreId = thisCore->get_hardware_address()->get_mailbox()   \
 	      << par->pE->addressFormat.coreWordLength;
@@ -303,12 +301,9 @@ unsigned P_builder::GenFiles(P_task* task)
 
 
       //====================================================================
-
-
-      //====================================================================
       // Write core vars.
       //====================================================================
-      if (WriteCoreVars(task_dir, coreNum, thisCore, firstThread, vars_h))
+      if (WriteCoreVars(task_dir, coreNum, *coreNode, vars_h))
       {                     // Writing core vars failed - bail
           vars_h.close();
           cores_sh.close();
@@ -688,19 +683,29 @@ unsigned P_builder::GenSupervisor(P_task* task)
 
 /*------------------------------------------------------------------------------
  * Generate the variables and initialisers for a single core.
- *
- * Conveniently each core currently hosts a single device type, making looking
- * up its vars is easy. This needs to be refactored when this restriction is
- * removed.
  *----------------------------------------------------------------------------*/
 unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
-                                  P_core* thisCore, P_thread* firstThread,
-                                  ofstream& vars_h)
+                                  P_core* core, ofstream& vars_h)
 {
-  P_device* firstDevice = par->pPlacer->threadToDevices[firstThread].front();
-  P_devtyp* c_devtyp = firstDevice->pP_devtyp;  // Pointer to the core's device type
-  std::string devtyp_name = c_devtyp->Name();   // grab a local copy of the devtype name
+  //====================================================================
+  // Get the device type for devices hosted by threads on this core. each
+  // core currently hosts a single device type, making looking up its vars
+  // is easy. This needs to be refactored when this restriction is removed.
+  //
+  // Naturally, we assume that this core has something placed on it.
+  //====================================================================
 
+  P_device* firstDevice;
+  P_devtyp* c_devtyp;
+  WALKMAP(AddressComponent, P_thread*, core->P_threadm, threadIt)
+  {
+    if (!par->pPlacer->threadToDevices.at(threadIt->second).empty())
+    {
+      firstDevice = par->pPlacer->threadToDevices.at(threadIt->second).front();
+    }
+  }
+  c_devtyp = firstDevice->pP_devtyp;
+  std::string devtyp_name = c_devtyp->Name();   // grab a local copy of the devtype name
 
   //============================================================================
   // Create empty files for the per-core variables and handlers
