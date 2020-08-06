@@ -2175,60 +2175,44 @@ unsigned P_builder::CompileBins(P_task * task)
   unsigned int coreNum = 0;  // Just a counter.
 
   // Walk through all cores in the system that are used by this task.
-  P_thread* firstThread;  // The "first" thread in thisCore. "first" is
-                          // arbitrary.
   WALKSET(P_core*, par->pPlacer->taskToCores[task], coreNode)
   {
-      // a failure to read the generated binary may not be absolutely fatal;
-      // this could be retrieved later if there was a transient read error
-      // (e.g. reading over a network connection).
-
-      std::string binName;
-      binName = task_dir+BIN_PATH+"/"+COREBIN_BASE+TO_STRING(coreNum)+".elf";
-
-      FILE* binary = fopen(binName.c_str(),"r");
-
-      if(binary == PNULL)
+      // Check that the ELF has been generated for this core.
+      std::string elfName = task_dir + BIN_PATH + "/" + COREBIN_BASE +
+          TO_STRING(coreNum) + ".elf";
+      FILE* elfBinary = fopen(elfName.c_str(),"r");
+      if(elfBinary != PNULL)
       {
-        firstThread = (*coreNode)->P_threadm.begin()->second;
-        if (!(par->pPlacer->threadToDevices.at(firstThread).empty())
-            && (par->pPlacer->threadToDevices.at(firstThread).front()->par->par
-                == task)) // only for cores which have something placed on them
-                          // and which belong to the task
+        std::vector<std::string> binaries;
+
+        // Instruction binary
+        binaries.push_back(task_dir + BIN_PATH + "/" + COREBIN_CODE_BASE +
+          TO_STRING(coreNum) + ".v");
+        (*coreNode)->instructionBinary = binaries.back();
+
+        // Data binary
+        binaries.push_back(task_dir + BIN_PATH + "/" + COREBIN_DATA_BASE +
+          TO_STRING(coreNum) + ".v");
+        (*coreNode)->dataBinary = binaries.back();
+
+        // Check existence
+        FILE* binary;
+        for (std::vector<std::string>::iterator binaryIt = binaries.begin();
+             binaryIt != binaries.end(); binaryIt++)
         {
-          // a failure to read the generated binaries may not be absolutely
-          // fatal; this could be retrieved later if there was a transient read
-          // error (e.g. reading over a network connection).
-          std::vector<std::string> binaries;
-          FILE* binary;
-
-          // Instruction binary
-          binaries.push_back(task_dir+BIN_PATH+"/"+COREBIN_CODE_BASE+TO_STRING(coreNum)+".v");
-          (*coreNode)->instructionBinary = binaries.back();
-
-          // Data binary
-          binaries.push_back(task_dir+BIN_PATH+"/"+COREBIN_DATA_BASE+TO_STRING(coreNum)+".v");
-          (*coreNode)->dataBinary = binaries.back();
-
-          for (std::vector<std::string>::iterator binaryIt = binaries.begin();
-               binaryIt != binaries.end(); binaryIt++)
-          {
-            binary = fopen(binaryIt->c_str(),"r");
-            // Check that the file opened successfully.
-            if(binary == PNULL)
-                par->Post(806, binaryIt->c_str(),
-                          POETS::getSysErrorString(errno));
-            else fclose(binary);
-          }
-
-          ++coreNum;                // Move onto the next core.
+          binary = fopen(binaryIt->c_str(), "r");
+          if(binary == PNULL) par->Post(806, binaryIt->c_str(),
+                                        POETS::getSysErrorString(errno));
+          else fclose(binary);
         }
+
+        // Being explicit
+        binaries.clear();
       }
+
       else
       {
-          // Add the file pointer to the core.
-          (*coreNode)->instructionBinary = binName;
-          fclose(binary);
+        par->Post(806, elfName.c_str(), POETS::getSysErrorString(errno));
       }
 
       ++coreNum;  // Move onto the next core.
