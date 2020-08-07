@@ -65,8 +65,8 @@ HardwareAddressInt HardwareAddress::get_hardware_address()
  *
  * - target: Software address object to populate.
  * - resetFirst: Whether or not to reset the target software address before
- *               populating it. May have a default definined in the
- *               accompanying header. */
+ *               populating it. May have a default defined in the accompanying
+ *               header. */
 void HardwareAddress::populate_a_software_address(P_addr* target,
                                                   bool resetFirst)
 {
