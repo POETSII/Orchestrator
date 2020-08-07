@@ -72,7 +72,7 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
     hdr->pinAddr = tinselId();          // usurp Pin Addr for the source HW addr
 
     // and then issue the packet indicating this thread's startup is complete.
-    tinselSetLen(p_hdr_size());
+    tinselSetLen((p_hdr_size() - 1) >> TinselLogBytesPerFlit);
     tinselSend(tinselHostId(), send_buf);
     
     // second phase of barrier: wait for the supervisor's response
