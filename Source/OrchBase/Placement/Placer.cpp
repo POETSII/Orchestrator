@@ -1151,7 +1151,7 @@ void Placer::update_software_addresses(P_task* task)
         /* Grab the device, for readability. */
         P_device* device = task->pD->G.NodeData(deviceIterator);
 
-        /* Is the device currently placed? */
+        /* Determine whether or not the device currently placed. */
         found = false;
         deviceFinder = deviceToThread.find(device);
         if (deviceFinder != deviceToThread.end())
@@ -1163,11 +1163,8 @@ void Placer::update_software_addresses(P_task* task)
             }
         }
 
-        /* If it has not been placed, clear the address. */
-        if (!found) device->addr.Reset();
-
-        /* If it has, update it. */
-        else
+        /* If the device has been placed, update it. */
+        if (found)
         {
             /* Get the index of the device within the list associated with the
              * current thread (in order to define the device component of the
@@ -1187,6 +1184,17 @@ void Placer::update_software_addresses(P_task* task)
             threadFinder->first->get_hardware_address()->
                 populate_a_software_address(&(device->addr), false);
         }
+
+        /* If the device has not been placed, and is a supervisor device, set
+         * the device component of the address (a P_builder special case). */
+        else if (!(device->pP_devtyp->pOnRTS))
+        {
+            device->addr.SetDevice(P_device::super_idx);
+        }
+
+        /* If the device has not been placed and is not a supervisor device,
+         * clear the address. */
+        else device->addr.Reset();
     }
 }
 
