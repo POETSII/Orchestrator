@@ -13,7 +13,8 @@ class BucketFilling: public Algorithm
 public:
     BucketFilling(Placer* placer);
     float do_it(P_task* task);
-    void poke_iterators(std::vector<HardwareIterator>* iterators);
+    bool is_core_empty(P_core* core);
+    void poke_iterator(HardwareIterator& hardwareIt);
 };
 
 #endif

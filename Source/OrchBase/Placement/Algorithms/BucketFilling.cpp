@@ -8,29 +8,29 @@ BucketFilling::BucketFilling(Placer* placer):Algorithm(placer)
 /* Places a task onto the engine held by a placer using a naive bucket-filling
  * algorithm.
  *
- * This algorithm is very basic - it does not adhere to constraints (for now),
- * it does not compute fitness (for now), and simply encapsulates the old
- * placement logic. It does not play nice with tasks placed using simulated
- * annealing - as they may populate the non-zeroth thread in a given core,
- * making some of the checks in this method ineffective.
+ * This algorithm is very basic - it does not adhere to many constraints (for
+ * now), it does not compute fitness, and simply encapsulates the old placement
+ * logic. It does not play nice with tasks placed using simulated annealing -
+ * as they may populate the non-zeroth thread in a given core, making some of
+ * the checks in this method ineffective.
  *
- * Returns zero (for now - later will return fitness). */
+ * Returns zero. */
 float BucketFilling::do_it(P_task* task)
 {
     result.startTime = placer->timestamp();
 
     /* Start from the first core pair in the engine that has no devices
-     * associated with it. */
+     * associated with it. This method uses one hardware iterator, and the pair
+     * member of P_core to modulate the core placed on. */
+    HardwareIterator hardwareIt(placer->engine);
+    bool onLowerCore = true;  /* Binding unneccesary, but helps with
+                               * understanding I think. */
 
-    /* These two iterators represent neighbouring cores -
-     * the zeroeth is always one core behind the first. */
-    std::vector<HardwareIterator> hardwareIterators;
-    hardwareIterators.push_back(HardwareIterator(placer->engine));  /* Odd */
-    hardwareIterators.push_back(HardwareIterator(placer->engine));  /* Even */
-    hardwareIterators[1].next_core();
-
-    /* Staging area to hold all devices of a given type in a task. */
-    vector<P_device*> devicesOfType;
+    /* Staging area to hold all devices of a given type in a task. The filling
+     * mechanism places all devices of the first type, followed by all devices
+     * of the second type, and so on until the cows come home, wherever that
+     * is. */
+    std::vector<P_device*> devicesOfType;
 
     /* Maximum number of devices to pack into a thread. */
     unsigned maxDevicesPerThread = \
@@ -42,133 +42,110 @@ float BucketFilling::do_it(P_task* task)
          deviceTypeIterator != task->pP_typdcl->P_devtypv.end();
          deviceTypeIterator++)
     {
-        /* Skip this device type if it is a supervisor device type. */
+        /* Skip this device type if it is a supervisor device type. We don't
+         * place those. */
         if (!(*deviceTypeIterator)->pOnRTS) continue;
 
-        /* Move iterators to the next empty core pair (or don't if this core
-         * pair is empty). */
-        poke_iterators(&hardwareIterators);
+        /* Move the hardware iterator to the first available empty core pair in
+         * the engine. Does not move the iterators if the current core-pair
+         * is empty. */
+        poke_iterator(hardwareIt);
+        onLowerCore = true;
 
-        /* Complain about running out of space if the ahead-iterator has
-         * wrapped. */
-        if (hardwareIterators[1].has_wrapped())
-            throw NoSpaceToPlaceException("[ERROR] Ran out of space placing a "
-                                          "task.");
+        /* If the ahead-iterator has wrapped, we've run out of space. */
+        if (hardwareIt.has_wrapped()) throw NoSpaceToPlaceException(
+            "[ERROR] Ran out of space placing a task.");
 
         /* Walk through each device for this device type. */
         devicesOfType = task->pD->DevicesOfType(*deviceTypeIterator);
         std::vector<P_device*>::iterator deviceIterator;
-        bool coreIncremented = false;
         for (deviceIterator = devicesOfType.begin();
              deviceIterator != devicesOfType.end(); deviceIterator++)
         {
             /* If the current thread is full, try the next thread (until we run
-             * out of threads on this core). */
-            P_thread* thisThread = hardwareIterators[0].get_thread();
+             * out of threads on this core). Note the use of indexing instead
+             * of `at` for the map. */
+            P_thread* thisThread = hardwareIt.get_thread();
             if (placer->threadToDevices[thisThread].size()
                 >= maxDevicesPerThread)
             {
-                hardwareIterators[0].has_core_changed();  /* Reset flag */
-                thisThread = hardwareIterators[0].next_thread();
+                /* Move to the next thread. */
+                hardwareIt.has_core_changed();  /* Reset flag! */
+                thisThread = hardwareIt.next_thread();
 
-                /* Did we move to the next core? */
-                if (hardwareIterators[0].has_core_changed())
+                /* If we moved to a new core using the `next_thread` call... */
+                if (hardwareIt.has_core_changed())
                 {
-                    /* Keep the other iterator moving in lockstep. */
-                    hardwareIterators[1].next_core();
-
-                    /* If we have changed cores, and this is the first time,
-                     * we've done that for this core pair, we'll just keep
-                     * using threads as normal (we're just in the second
-                     * core). However, if this is the second time we've moved,
-                     * we've migrated to a new core pair, so we have to find a
-                     * new empty core pair. */
-                    if (coreIncremented)
+                    /* If we've already moved to the original core's pair... */
+                    if (!onLowerCore)
                     {
-                        poke_iterators(&hardwareIterators);
-                        thisThread = hardwareIterators[0].get_thread();
+                        /* Move to the next empty core pair. */
+                        poke_iterator(hardwareIt);
+                        thisThread = hardwareIt.get_thread();
                     }
-
-                    else coreIncremented = true;
+                    else onLowerCore = false;
                 }
             }
 
-            /* Well, we've found an empty thread at last! */
+            /* Now we've found an appropriate thread for this device. Let's
+             * drop it off... */
             placer->link(thisThread, *deviceIterator);
-        }
-    }
+
+        }  /* End "for each device of this type" */
+    }  /* End "for each device type in this problem" */
 
     result.endTime = placer->timestamp();
     return 0;
 }
 
-/* Sets two hardware iterators to the next empty core pair, throwing if no such
- * core pair exists. Arguments:
- *
- * - iterators: Two HardwareIterators set exactly one core apart from each
- *   other. Elements of this vector are modified in-place. */
-void BucketFilling::poke_iterators(std::vector<HardwareIterator>* iterators)
+/* Returns true if none of the threads in a core hold any devices, and false
+ * otherwise. */
+bool BucketFilling::is_core_empty(P_core* core)
 {
+    /* Iterate over the threads in this core. */
+    std::map<AddressComponent, P_thread*>::iterator threadIt;
+    for (threadIt = core->P_threadm.begin();
+         threadIt != core->P_threadm.end(); threadIt++)
+    {
+        /* If the thread is not empty, we out. */
+        if (!placer->threadToDevices[threadIt->second].empty()) return false;
+    }
+    return true;
+}
+
+/* Sets a hardware iterator to the lower core in the next empty core pair,
+ * throwing if no such core pair exists. If the hardware iterator is in the
+ * upper core of an empty core pair, it is left alone. Arguments:
+ *
+ * - hardwareIt: The hardware iterator, modified in place. */
+void BucketFilling::poke_iterator(HardwareIterator& hardwareIt)
+{
+    /* Reset flag. */
+    hardwareIt.has_wrapped();
+
     /* Iterate until an empty core pair is found. Returning (or throwing) are
      * the only (intended) ways out of this loop. */
-    bool areCoresEmpty = false;
     while (true)
     {
-        /* Check whether or not this core pair is empty. If it is, break (we've
-         * done our job).
-         *
-         * hardwareIt is an iterator over iterators. */
-        areCoresEmpty = true;  /* Innocent until proven guilty. */
-        std::vector<HardwareIterator>::iterator hardwareIt;
-        std::map<AddressComponent, P_thread*>::iterator threadIt;
-        std::map<AddressComponent, P_thread*>* threadMap;
-        for (hardwareIt = iterators->begin();
-             hardwareIt != iterators->end(); hardwareIt++)
-        {
-            /* Saves typing (and might help the readership). threadMap is a
-             * pointer to the threadMap for this core (recall that the above
-             * loop disambiguates between the two HardwareIterators). */
-            threadMap = &(hardwareIt->get_core()->P_threadm);
-
-            /* Iterating over threads in this core. */
-            for (threadIt = threadMap->begin();
-                 threadIt != threadMap->end(); threadIt++)
-            {
-                /* If it's not empty, we exit. */
-                bool isThisThreadEmpty = false;
-                std::map<P_thread*, std::list<P_device*>>::iterator \
-                    devicesFinder;
-                devicesFinder = placer->threadToDevices.find(threadIt->second);
-                if (devicesFinder == placer->threadToDevices.end())
-                {
-                    isThisThreadEmpty = true;
-                }
-                else if (devicesFinder->second.empty())
-                {
-                    isThisThreadEmpty = true;
-                }
-                if (not isThisThreadEmpty)
-                {
-                    areCoresEmpty = false;
-                    break;
-                }
-            }
-
-            /* If the first core is empty, we don't need to check the
-             * second. */
-            if (not areCoresEmpty) break;
-        }
-
-        /* Leave now if the cores are empty. */
-        if (areCoresEmpty) return;
-
         /* If we've gone through the entire structure and no spare core pair
          * has been found, then the engine is already full. */
-        if ((*iterators)[1].has_wrapped())
-            throw NoSpaceToPlaceException("[ERROR] Engine is full.");
+        if (hardwareIt.has_wrapped()) throw NoSpaceToPlaceException(
+            "[ERROR] Engine is full.");
 
-        /* Increment the iterators to the next core. */
-        for (hardwareIt = iterators->begin(); hardwareIt != iterators->end();
-             hardwareIt++) hardwareIt->next_core();
+        /* If the first core is empty, check if the second core is empty. If
+         * the second core is also empty, we're done here. */
+        P_core* core = hardwareIt.get_core();
+        if (is_core_empty(core)) if (is_core_empty(core->pair)) return;
+
+        /* Otherwise, we conclude that this core pair has had some devices
+         * placed on the contained threads. Now, we move the hardware iterator
+         * to the lower core in the next core pair.
+         *
+         * Note that, the above construct is designed to iterate appropriately
+         * regardless of whether the iterator is on a lower- or upper- member
+         * of a core pair. If it is on a lower-member, two `next_core`s are
+         * called. If it is on an upper-member, only one `next_core` is
+         * called. The pair of a pair is the original. */
+        if (hardwareIt.next_core()->pair == core) hardwareIt.next_core();
     }
 }
