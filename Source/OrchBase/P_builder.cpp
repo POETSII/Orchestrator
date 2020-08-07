@@ -695,7 +695,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   // Naturally, we assume that this core has something placed on it.
   //====================================================================
 
-  P_device* firstDevice;
+  P_device* firstDevice = PNULL;
   P_devtyp* c_devtyp;
   WALKMAP(AddressComponent, P_thread*, core->P_threadm, threadIt)
   {
@@ -704,6 +704,15 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
       firstDevice = par->pPlacer->threadToDevices.at(threadIt->second).front();
     }
   }
+
+  // Paranoia. If you can get here, it means there's an inconsistency in the
+  // placer data structure.
+  if (firstDevice == PNULL)
+  {
+    par->Post(820, core->Name());
+    return 1;
+  }
+
   c_devtyp = firstDevice->pP_devtyp;
   std::string devtyp_name = c_devtyp->Name();   // grab a local copy of the devtype name
 
