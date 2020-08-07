@@ -1137,7 +1137,7 @@ void Placer::unplace(P_task* task, bool andConstraints)
 }
 
 /* Updates the software addresses of each device in a task, clearing it if it
- * not currently placed (for example, if the task has been unplaced. */
+ * is not currently placed (for example, if the task has been unplaced. */
 void Placer::update_software_addresses(P_task* task)
 {
     std::map<P_device*, P_thread*>::iterator deviceFinder;
