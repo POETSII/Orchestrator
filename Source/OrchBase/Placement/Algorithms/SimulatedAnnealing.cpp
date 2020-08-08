@@ -331,6 +331,9 @@ float SimulatedAnnealing::do_it(P_task* task)
         iteration++;
     }
 
+    /* Redistribute devices in cores to evenly load threads. */
+    placer->redistribute_devices_in_task(task);
+
     /* Write our result structure, and leave. We don't mind that there is a
      * small difference between the many millions of fitness deltas and the
      * actual fitness - the difference is relatively small, and is due to

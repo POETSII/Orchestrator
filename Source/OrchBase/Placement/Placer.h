@@ -116,6 +116,10 @@ public:
     void define_valid_cores_map(P_task* task,
         std::map<P_devtyp*, std::set<P_core*>>* validCoresForDeviceType);
 
+    /* Redistribution of devices within tasks or cores. */
+    void redistribute_devices_in_task(P_task* task);
+    void redistribute_devices_in_core(P_core* core);
+
     /* Low-level placement operation, to be used only be algorithms */
     void link(P_thread* thread, P_device* device);
 

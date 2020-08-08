@@ -1045,6 +1045,61 @@ void Placer::populate_result_structures(Result* result, P_task* task,
     }
 }
 
+/* Redistribute all devices placed on threads in a core as evenly as possible
+ * across those threads. Remainder devices are placed on threads earlier in the
+ * map.
+ *
+ * Does not check if any threads are overloaded (which is a valid assumption,
+ * given that none of the thread are overloaded before this operation). */
+void Placer::redistribute_devices_in_core(P_core* core)
+{
+    /* Get all devices in the threads in this core. We don't have to unplace
+     * them, because `link` does that. */
+    std::vector<P_device*> devices;
+    std::list<P_device*>* devicesOnThread;
+    std::map<AddressComponent, P_thread*>::iterator threadIt;
+    for (threadIt = core->P_threadm.begin(); threadIt != core->P_threadm.end();
+         threadIt++)
+    {
+        devicesOnThread = &(threadToDevices[threadIt->second]);
+        std::list<P_device*>::iterator deviceIt;
+        for (deviceIt = devicesOnThread->begin();
+             deviceIt != devicesOnThread->end(); deviceIt++)
+        {
+            /* Store */
+            devices.push_back(*deviceIt);
+        }
+    }
+
+    /* Deal one device to each thread in turn, until no devices remain (a bit
+     * like holdem). */
+    threadIt = core->P_threadm.begin();
+    std::vector<P_device*>::iterator deviceIt;
+    for (deviceIt = devices.begin(); deviceIt != devices.end(); deviceIt++)
+    {
+        link(threadIt->second, *deviceIt);
+        threadIt++;
+
+        /* Thread wraparound. */
+        if (threadIt == core->P_threadm.end())
+        {
+            threadIt = core->P_threadm.begin();
+        }
+    }
+}
+
+/* Redistribute all devices placed on threads in a core for each core in a
+ * task. */
+void Placer::redistribute_devices_in_task(P_task* task)
+{
+    std::set<P_core*>* cores = &(taskToCores[task]);
+    std::set<P_core*>::iterator coreIt;
+    for (coreIt = cores->begin(); coreIt != cores->end(); coreIt++)
+    {
+        redistribute_devices_in_core(*coreIt);
+    }
+}
+
 /* Gets the time in ISO-8601=seconds format, and returns a string of it. */
 std::string Placer::timestamp()
 {

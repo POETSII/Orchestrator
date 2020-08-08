@@ -101,6 +101,9 @@ float SmartRandom::do_it(P_task* task)
         }
     }
 
+    /* Redistribute devices in cores to evenly load threads. */
+    placer->redistribute_devices_in_task(task);
+
     result.endTime = placer->timestamp();
     return 0;
 }
