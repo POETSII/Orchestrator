@@ -130,7 +130,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
 {
     // Create RX buffer pointer and get Tinsel Slots
     volatile void *recvBuffer = PNULL;
-    volatile void *sendBuffer = tinselSendSlot(P_PKT_SLOT);     // Send slot
+    volatile void *sendBuffer = tinselSendSlot();       // Send slot
     volatile void *superBuffer = tinselSendSlotExtra(); // Supervisor send slot
 
 #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION    
