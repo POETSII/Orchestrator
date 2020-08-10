@@ -6,11 +6,6 @@
 
 void softswitch_init(ThreadCtxt_t* ThreadContext)
 {
-    // Allocate Tinsel receive slots.
-    for (uint32_t i=P_RXSLOT_START; i < (1<<TinselLogMsgsPerThread); i++)
-    {
-        tinselAlloc(tinselSlot(i)); // allocate receive slots.
-    }
     
 #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION
     // Initialise instrumentation
@@ -58,7 +53,7 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
 {
     // Create RX buffer pointer and get Tinsel Slots
     volatile void *recv_buf = PNULL;
-    volatile void *send_buf = tinselSlot(P_PKT_SLOT);     // Send slot
+    volatile void *send_buf = tinselSendSlotExtra();     // Supervisor Send slot
     
     // first phase of barrier: set up a standard packet to send to the supervisor
     volatile P_Pkt_Hdr_t* hdr = static_cast<volatile P_Pkt_Hdr_t*>(send_buf); // Header
@@ -73,7 +68,7 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
 
     // and then issue the packet indicating this thread's startup is complete.
     tinselSetLen((p_hdr_size() - 1) >> TinselLogBytesPerFlit);
-    tinselSend(tinselHostId(), send_buf);
+    tinselSend(tinselMyBridgeId(), send_buf);
     
     // second phase of barrier: wait for the supervisor's response
     ThreadContext->ctlEnd = 1;
@@ -94,7 +89,7 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
             softswitch_onReceive(ThreadContext, recv_buf);
             ThreadContext->ctlEnd = 0;
         }
-        tinselAlloc(recv_buf);
+        tinselFree(recv_buf);
     }                  
 }
 //------------------------------------------------------------------------------
@@ -109,7 +104,7 @@ inline void receiveInline(ThreadCtxt_t* ThreadContext, volatile void* recvBuffer
 {
     recvBuffer=tinselRecv();
     softswitch_onReceive(ThreadContext, recvBuffer); // decode the receive and handle
-    tinselAlloc(recvBuffer); // return control of the receive buffer to the hardware
+    tinselFree(recvBuffer); // return control of the receive buffer to the hardware
 }
 
 inline void sendInline(ThreadCtxt_t* ThreadContext, volatile void* sendBuffer)
@@ -135,8 +130,8 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
 {
     // Create RX buffer pointer and get Tinsel Slots
     volatile void *recvBuffer = PNULL;
-    volatile void *sendBuffer = tinselSlot(P_PKT_SLOT);     // Send slot
-    volatile void *superBuffer = tinselSlot(P_SUPPKT_SLOT); // Supervisor send slot
+    volatile void *sendBuffer = tinselSendSlot(P_PKT_SLOT);     // Send slot
+    volatile void *superBuffer = tinselSendSlotExtra(); // Supervisor send slot
 
 #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION    
     uint32_t cycles = tinselCycleCount();		// cycle counter is per-core
@@ -236,9 +231,6 @@ void softswitch_finalise(ThreadCtxt_t* ThreadContext)
             ThreadContext->rtsStart = 0;
         }
     }
-    
-    // free mailbox slots
-    for (uint32_t i = 0; i < (1<<TinselLogMsgsPerThread); i++) tinselAlloc(tinselSlot(i));
 }
 //------------------------------------------------------------------------------
 
