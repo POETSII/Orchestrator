@@ -29,7 +29,7 @@ TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
 SOFTWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/SoftwareAddress.cpp \
                            $(SOURCE_DIR)/Common/DumpUtils.cpp \
                            $(GENERICS_DIR)/dfprintf.cpp \
-                           $(GENERICS_DIR)/dumpchan.cpp
+                           $(GENERICS_DIR)/DumpChan.cpp
 
 # Sources used by executables that need to address hardware.
 HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cpp \
@@ -38,7 +38,7 @@ HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/HardwareAddress.cp
                            $(SOURCE_DIR)/OrchBase/P_addr.cpp \
                            $(GENERICS_DIR)/flat.cpp \
                            $(GENERICS_DIR)/dfprintf.cpp \
-                           $(GENERICS_DIR)/dumpchan.cpp
+                           $(GENERICS_DIR)/DumpChan.cpp
 
 # Sources used by executables that require the hardware model.
 HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/Common/HardwareModel/AddressableItem.cpp \
@@ -75,6 +75,9 @@ HARDWARE_FILE_PARSER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileManager/Hardwa
                                $(GENERICS_DIR)/uif.cpp \
                                $(HARDWARE_DEPLOYER_SOURCES)
 
+# Sources for XML processing
+XML_PARSER_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/XMLProcessing/*.cpp)
+
 # The orchestrate execution script uses a template.
 ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
 
@@ -96,17 +99,21 @@ ORCHESTRATE_TEMPLATE = ./Resources/orchestrate_template.sh
 # Add the first three items of this bulleted list:
 ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(SOURCE_DIR)/Root/Root.cpp \
+               $(SOURCE_DIR)/Root/OrchConfig.cpp \
                $(GENERICS_DIR)/Cli.cpp \
                $(GENERICS_DIR)/dfprintf.cpp \
-               $(GENERICS_DIR)/dumpchan.cpp \
-               $(GENERICS_DIR)/filename.cpp \
+               $(GENERICS_DIR)/DumpChan.cpp \
+               $(GENERICS_DIR)/FileName.cpp \
                $(GENERICS_DIR)/lex.cpp \
                $(GENERICS_DIR)/rand.cpp \
+               $(GENERICS_DIR)/xmlP.cpp \
+               $(GENERICS_DIR)/XMLTreeDump.cpp \
                $(SOURCE_DIR)/NameServer/Ns_el.cpp
 
 ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
 ROOT_SOURCES += $(HARDWARE_FILE_PARSER_SOURCES)
 ROOT_SOURCES += $(HARDWARE_ITERATOR_SOURCES)
+ROOT_SOURCES += $(XML_PARSER_SOURCES)
 
 # Add (almost) all of the sources from OrchBase and Parser.
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)
