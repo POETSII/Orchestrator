@@ -262,7 +262,7 @@ void HardwareIterator::Dump(FILE* file)
     DumpUtils::open_breaker(file, prefix);
 
     /* About this object. */
-    NameBase::Dump(file);
+    NameBase::Dump(0,file);
 
     /* Various truths about the internal state. */
     fprintf(file, "Current board memory address:     %#018lx\n",

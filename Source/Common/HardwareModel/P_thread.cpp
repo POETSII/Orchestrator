@@ -8,6 +8,7 @@
  * - name: Name of this thread object (see namebase) */
 P_thread::P_thread(std::string name)
 {
+    parent = PNULL;
     Name(name);
 }
 
@@ -21,7 +22,7 @@ void P_thread::Dump(FILE* file)
     DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
-    NameBase::Dump(file);
+    NameBase::Dump(0,file);
 
     /* About devices, if any. */
     DumpUtils::open_breaker(file, "Devices in this thread");
@@ -29,8 +30,8 @@ void P_thread::Dump(FILE* file)
         fprintf(file, "The device map is empty.\n");
     else
     {
-        WALKLIST(P_device*,P_devicel,iterator)
-            fprintf(file, "%s\n", (*iterator)->FullName().c_str());
+        WALKLIST(DevI_t *,P_devicel,iterator)
+            fprintf(file, "%s\n", (*iterator)->FullName().c_str());		//We expect there to be a merge conflict here 20/08/2020
     }
     DumpUtils::close_breaker(file, "Devices in this thread");
 

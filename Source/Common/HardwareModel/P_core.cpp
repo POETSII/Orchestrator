@@ -8,6 +8,7 @@
  * - name: Name of this core object (see namebase) */
 P_core::P_core(std::string name)
 {
+    parent = PNULL;
     Name(name);
     dataBinary = new Bin();
     instructionBinary = new Bin();
@@ -91,7 +92,7 @@ void P_core::Dump(FILE* file)
     DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
-    NameBase::Dump(file);
+    NameBase::Dump(0,file);
 
     /* Dump information about binaries. */
     if (dataBinary != 0)
@@ -101,7 +102,7 @@ void P_core::Dump(FILE* file)
     else
     {
         fprintf(file, "Data binary:\n");
-        dataBinary->Dump(file);
+        dataBinary->Dump(0,file);
     }
 
     if (instructionBinary != 0)
@@ -111,7 +112,7 @@ void P_core::Dump(FILE* file)
     else
     {
         fprintf(file, "Instruction binary:\n");
-        instructionBinary->Dump(file);
+        instructionBinary->Dump(0,file);
     }
 
     /* About contained items, if any. */

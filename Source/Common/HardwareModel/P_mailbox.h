@@ -34,7 +34,7 @@ public:
 
     /* Mailboxes live in boards; this is the board that this mailbox lives
      * in. */
-    P_board* parent = NULL;
+    P_board* parent;
     void on_being_contained_hook(P_board* container);
 
     /* Mailboxes contain cores, mapped by their hardware address components. */
