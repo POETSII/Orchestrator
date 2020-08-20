@@ -1,28 +1,14 @@
 //------------------------------------------------------------------------------
 
-#include "filename.h"
+#include "FileName.h"
 #include "macros.h"
-
-const string FileName::Xc(1,':');
-// ADR bodgey workaround for discrepancies in file path character. Run-time OS detection would be better.
-#ifdef __BORLANDC__
-const string FileName::Xs(1,'\\');
-#endif
-#ifdef _MSC_VER
-const string FileName::Xs(1,'\\');
-#endif
-#ifdef __GNUC__
-const string FileName::Xs(1,'/');
-#endif
-const string FileName::Xd(1,'.');
-const string FileName::X0;
 
 //==============================================================================
 
 FileName::FileName(string s)
 // Constructor from input string
 {
-Sip = s;                               // Stuff the input data away
+sIP = s;                               // Stuff the input data away
 Parse();                               // Build the output strings
 }
 
@@ -34,29 +20,30 @@ FileName::~FileName()
 
 //------------------------------------------------------------------------------
 
-void FileName::Dump()
+void FileName::Dump(unsigned off,FILE * fp)
 {
-printf("\nFileName dump.....\n");
-printf("Input data                   Sip = %s\n",Sip.c_str());
-printf("Drive substring               S0 = %s\n",S0.c_str());
-printf("Path substring vector         S1 : \n");
-WALKVECTOR(string,S1,i)
-  printf("                                 ||%s||\n",(*i).c_str());
-printf("Extn string                   S2 = %s\n",S2.c_str());
-
-printf("Last element of path removed S1e = %s\n",S1e.c_str());
-
-printf("Output string:   Complete     SC = %s\n",SC.c_str());
-printf("Output string:   Drive        SD = %s\n",SD.c_str());
-printf("Output string:   Path         SP = %s\n",SP.c_str());
-printf("Output string:   Base         SB = %s\n",SB.c_str());
-printf("Output string:   Extension    SE = %s\n",SE.c_str());
-printf("Old size of S1:  oS1siz          = %d\n",oS1siz);
-printf("Problem                          = %s\n",problem?"true":"false");
-
-printf("static const string           Xc = %s\n",Xc.c_str());
-printf("static const string           Xs = %s\n",Xs.c_str());
-printf("static const string           Xd = %s\n",Xd.c_str());
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"%s\nFileName +++++++++++++++++++++++++++++++++++++++++++++++\n",os);
+fprintf(fp,"%sInput data                   sIP = %s\n",os,sIP.c_str());
+fprintf(fp,"%sDrive substring               sD = %s\n",os,sD.c_str());
+fprintf(fp,"%sPath substring vector         sP : \n",os);
+WALKVECTOR(string,sP,i)
+  fprintf(fp,"%s                                 ||%s||\n",os,(*i).c_str());
+fprintf(fp,"%sBase string                   sB = %s\n",os,sB.c_str());
+fprintf(fp,"%sExtn string                   sE = %s\n",os,sE.c_str());
+fprintf(fp,"%sSepn string                   sS = %s\n",os,sS.c_str());
+fprintf(fp,"%sEntire substring vector     sbuf : \n",os);
+WALKVECTOR(string,sbuf,i)
+  fprintf(fp,"%s                                 ||%s||\n",os,(*i).c_str());
+fprintf(fp,"%sDrive string address          aD = %d\n",os,aD);
+fprintf(fp,"%sPath string addresses       aP[] = (%d,%d)\n",os,aP[0],aP[1]);
+fprintf(fp,"%sBase string address           aB = %d\n",os,aB);
+fprintf(fp,"%sExtn string address           aE = %d\n",os,aE);
+fprintf(fp,"%sOutput string:  FNComplete()     = %s\n",os,FNComplete().c_str());
+fprintf(fp,"%sProblem                          = %s\n",os,problem?"true":"false");
+fprintf(fp,"%sDirty                            = %s\n",os,dirty?"true":"false");
+fprintf(fp,"%sFileName -----------------------------------------------\n\n",os);
 }
 
 //------------------------------------------------------------------------------
@@ -72,7 +59,7 @@ return problem;
 string FileName::FNBase()
 // Extract base name
 {
-return problem ? X0 : SB;
+return problem ? string() : sB;
 }
 
 //------------------------------------------------------------------------------
@@ -80,26 +67,39 @@ return problem ? X0 : SB;
 void FileName::FNBase(string s)
 // Set base name
 {
-SB = s;
-Derive2();                             // And the things that depend upon it
-Sip = SC;                              // Recreate the input string
-Parse();                               // Update everything else
+sB = s;
+dirty = true;
 }
 
 //------------------------------------------------------------------------------
 
 string FileName::FNComplete()
-// Extract complete filename
+// Extract complete filename. If there's a problem, we return nothing.
+// However, if the monkey has buggered about with the components since the
+// original string was parsed, they may well have broken it.
+// So a bit of paranoia: we build the output string, then we parse it all over
+// again, and if it's OK, we hand it out.
 {
-return problem ? X0 : SC;
+if (problem) return string();
+string ans;
+if (!sD.empty())        ans = sD+":";  // Drive?
+if (RAmode=='A')        ans += sS;     // Mode = abs, need an initial separator
+WALKVECTOR(string,sP,i) ans += ((*i)+sS);    // Bolt the path togther
+ans += sB;                                   // Base
+if (!sE.empty())        ans += ("."+sE);     // Extension if any
+if (dirty) {                           // If the monkey might have broken it
+  FNComplete(ans);                     // ... reparse it
+  ans = FNComplete();                  // Rebuild it
+}
+return ans;
 }
 
 //------------------------------------------------------------------------------
 
 void FileName::FNComplete(string s)
-// Set complete name
+// Set complete name - effectively reset the internal state and start again.
 {
-Sip = s;                               // New input string
+sIP = s;                               // New input string
 Parse();                               // Update everything
 }
 
@@ -108,7 +108,7 @@ Parse();                               // Update everything
 string FileName::FNDrive()
 // Extract drive letter
 {
-return problem ? X0 : SD;
+return problem ? string() : sD;
 }
 
 //------------------------------------------------------------------------------
@@ -116,11 +116,8 @@ return problem ? X0 : SD;
 void FileName::FNDrive(string s)
 // Set drive
 {
-SD = s;
-if (!s.empty()) SD = string(1,s[0]);   // Make sure it's one character
-Derive2();                             // And the things that depend upon it
-Sip = SC;                              // Recreate the input string
-Parse();                               // Update everything else
+sD = s;
+dirty = true;
 }
 
 //------------------------------------------------------------------------------
@@ -128,7 +125,7 @@ Parse();                               // Update everything else
 string FileName::FNExtn()
 // Extract extension
 {
-return problem ? X0 : SE;
+return problem ? string() : sE;
 }
 
 //------------------------------------------------------------------------------
@@ -136,48 +133,26 @@ return problem ? X0 : SE;
 void FileName::FNExtn(string s)
 // Set extension
 {
-SE = s;
-Derive2();                             // And the things that depend upon it
-Sip = SC;                              // Recreate the input string
-Parse();                               // Update everything else
+sE = s;
+dirty = true;
 }
 
 //------------------------------------------------------------------------------
 
-string FileName::FNPath(vector<string> & s)
-// Extract full path. String vector goes out as reference argument, concatenated
-// path (including drive) as a single string return value
+char FileName::FNMode()
+// Extract relative/absolute mode
 {
-s.clear();
-if (problem) return X0;
-s = S1;                                // Base already torn off
-return SP;
+return RAmode;
 }
 
 //------------------------------------------------------------------------------
 
-void FileName::FNPath(string s,int pos)
-// Modify path string. If 'pos' is off either end, 's' is attached to that end.
-// If it represents a valid position in the string vector, the string is
-// replaced.
-// THERE IS NO MECHANISM FOR INTRODUCING EXTRA LEVELS OF HIERARCHY EXCEPT AT THE
-// TOP AND BOTTOM
-// THERE IS NO MECHANISM FOR REMOVING LEVELS OF HIERARCHY
+void FileName::FNMode(char nm)
+// Set relative/absolute mode
 {
-int siz = int(S1.size());
-
-if (siz==0)  { S1.push_back(s);         goto done;} // Vector initially empty
-if (pos<0)   { S1.insert(S1.begin(),s); goto done;} // Bolt onto LHS
-if (pos>=siz){ S1.push_back(s);         goto done;} // Bolt onto RHS
-S1[pos]=s;                             // Replace existing element
-oS1siz--;                              // Decrement overriden by next line
-
-done:
-oS1siz++;                              // The path vector size goes up
-Derive1();                             // Recreate stuff that depends upon it
-Derive2();
-Sip = SC;                              // Recreate the input string
-Parse();                               // Update everything else
+if ((nm!='A')&&(nm!='R')) return;
+RAmode = nm;
+dirty = true;
 }
 
 //------------------------------------------------------------------------------
@@ -185,110 +160,175 @@ Parse();                               // Update everything else
 string FileName::FNName()
 // Simples...
 {
-return FNBase() + Xd + FNExtn();
+if (problem) return string();
+return FNBase() + string(".") + FNExtn();
+}
+
+//------------------------------------------------------------------------------
+
+vector<string> FileName::FNPath()
+// Extract path string vector
+{
+if (problem) return vector<string>();
+return sP;
+}
+
+//------------------------------------------------------------------------------
+
+void FileName::FNPath(vector<string> s)
+// Set path string vector
+{
+sP = s;
+dirty = true;
+}
+
+//------------------------------------------------------------------------------
+
+string FileName::FNSepn()
+// Extract separator
+{
+return sS;
+}
+
+//------------------------------------------------------------------------------
+
+void FileName::FNSepn(string s)
+// Set separator
+{
+sS = s;
+dirty = true;
+}
+
+//------------------------------------------------------------------------------
+
+void FileName::Force1Linux(string & rs)
+// Take a string; turn all the '\' into '/'
+{
+for(unsigned i=0;i<rs.size();i++) if (rs[i]=='\\') rs[i]='/';
+}
+
+//==============================================================================
+
+// Private methods:
+
+//------------------------------------------------------------------------------
+
+void FileName::EOParse()
+// The Parser proper shoved ALL the input strings into a single string vector
+// (sbuf), and - whenever it could - worked out the addresses in the vector
+// of the various components (which one was drive, base and so on).
+// Here we look at the numeric addresses, and copy the various strings out
+// to their target variables.
+// The addresses are integer offsets into the vector<string>; -1 means not
+// defined.
+{
+if (aB== -1) {                         // No base: it's illegal
+  problem = true;                      // No point in carrying on
+  return;
+}
+if (aD!= -1) {                         // Drive string there?
+  sD = sbuf[aD];                       // Defined the string itself
+  if (aB!=1) {                         // The base isn't the second (1)
+    aP[0]=1;                           // Path must be 1..aB-1
+    aP[1]=aB-1;
+  }
+} else {                               // No drive string defined
+  if (aB!=0) {                         // The base isn't the first (0) thing
+    aP[0]=0;                           // Path must be 0..aB-1
+    aP[1]=aB-1;
+  }
+}
+                                       // Copy the path subset out of the string
+                                       // buffer into the path vector
+if (aP[0]!= -1) for (int i=aP[0];i<=aP[1];i++) sP.push_back(sbuf[i]);
+sB = sbuf[aB];                         // There must be a base string
+if (aE!= -1) sE = sbuf[aE];            // There may be an extension string
 }
 
 //------------------------------------------------------------------------------
 
 void FileName::Parse()
 {
-Lx.SetFile(Sip);                       // Point the lexer at it
+Lx.SetFile(sIP);                       // Point the lexer at it
 Lx.SetMFlag(true);                     // Treat "-" as an alphanumeric
 Lx.SetNFlag(false);                    // Tune lexer to *not* recognise numbers
 Lx.SetDFlag(false);                    // '.' is a separator
 Lx.SetCChar(EOF);                      // No continuation character
-S0.clear();                            // Re-initialise the extracted strings
-S1.clear();                            // Empty the path vector
-S2.clear();
-SE = SB = SP = SD = SC = X0;
-problem = false;                       // So far, so good
+                                       // Re-initialise the extracted strings:
+sD.clear();                            // Drive string
+sP.clear();                            // Path string vector
+sB.clear();                            // Base string
+sE.clear();                            // Extension string
+sS=string("?");                        // Separator
+aD = -1;                               // Address of drive string in buffer
+aB = -1;                               // Address of base string in buffer
+aE = -1;                               // Address of extn string in buffer
+aP[0] = aP[1] = -1;                    // Extent of path string subset in buffer
+sbuf.clear();                          // Done nothing yet
+RAmode = 'R';                          // Default path is relative
+problem = false;                       // All is currently tickety-spong
+dirty = false;                         // The monkey can't have broken it yet
                                        // And away we go...
-enum loctok  {t0=0,t1,t2,t3,t4,t5} toktyp;
+enum loctok  {t0=0,t1,t2,t3,t4,t5,t6} toktyp;
 struct duple {int ns,ac;} next;
-duple table[6][t5+1] =
-// Incident symbol                             // Next
-//    0      1      2      3      4      5     // state
-{{{1, 1},{2, 0},{3, 0},{X, X},{R, 0},{0, X}},  // 0
- {{X, X},{2, 0},{X, X},{5, 0},{R, 0},{0, X}},  // 1
- {{X, X},{X, X},{3, 0},{X, X},{R, 0},{0, X}},  // 2
- {{4, 2},{X, X},{X, X},{X, X},{R, 0},{0, X}},  // 3
- {{X, X},{X, X},{3, 0},{5, 0},{R, 0},{0, X}},  // 4
- {{R, 3},{X, X},{X, X},{X, X},{R, 0},{0, X}}}; // 5
+duple table[7][t6+1] =
+// Incident symbol                                    // Next
+//    0      1      2      3      4      5      6     // state
+{{{1, 1},{X, X},{3,10},{X, X},{X, X},{6, 1},{X, X}},  // 0
+ {{X, X},{2, 3},{3, 7},{5, 4},{R, 8},{X, X},{X, X}},  // 1
+ {{4, 1},{X, X},{3,10},{X, X},{X, X},{4, 1},{X, X}},  // 2
+ {{4, 1},{X, X},{X, X},{X, X},{X, X},{4, 1},{X, X}},  // 3
+ {{X, X},{X, X},{3, 7},{5, 5},{R, 9},{X, X},{X, X}},  // 4
+ {{R, 6},{X, X},{X, X},{X, X},{X, X},{X, X},{X, X}},  // 5
+ {{X, X},{X, X},{3, 7},{X, X},{X, X},{X, X},{X, X}}}; // 6
 
 for(int state=0;;) {
   Lex::tokdat Td;                      // Current lexer token
   Lx.GetTok(Td);                       // Get the next token...
-//  switch (state) {                     // Pre-transition (entry) actions    
+//  switch (state) {                     // Pre-transition (entry) actions
 //  }
                                        // No exceptional cases (EOF in table)
   if (Lx.IsError(Td)) problem = true;
   switch (Td.t) {                      // Map to array index
+    case Lex::Sy_mult : toktyp = t0;  break;  // "*" accepted as a valid string
     case Lex::Sy_col  : toktyp = t1;  break;
     case Lex::Sy_div  :
     case Lex::Sy_back : toktyp = t2;  break;
     case Lex::Sy_dot  : toktyp = t3;  break;
     case Lex::Sy_EOF  : toktyp = t4;  break;
-    case Lex::Sy_mult : toktyp = t0;  break;  // "*" accepted as a valid string
-    default           : toktyp = t5;  break;
+    case Lex::Sy_ddot : toktyp = t5;  break;
+    default           : toktyp = t6;  break;
   }
   if (Lex::IsStr(Td.t)) toktyp = t0;   // Reduction functions
   next = table[state][toktyp];         // Make the transition
   switch (next.ac) {                   // Post-transition (exit) actions
-    case 0  :                         break;
-    case X  : problem = true;         break;
-    case 1  : S0 = Td.s;              break;
-    case 2  : S1.push_back(Td.s);     break;
-    case 3  : S2 = Td.s;              break;
+    case 0  :                         break;   // Null action
+    case X  : problem = true;         break;   // Fallen off syntax graph
+    case 1  : sbuf.push_back(Td.s);   break;   // Save a string
+    case 2  : EOParse();              break;   // Done; assemble output
+    case 3  : aD = 0;                 break;   // Drive string index
+    case 4  : aB = 0;                 break;   // Base string index
+    case 5  : aB = sbuf.size()-1;     break;   // Base string index
+    case 6  : sbuf.push_back(Td.s);            // Save a string
+              aE = sbuf.size()-1;              // It's the extension
+              EOParse();              break;   // Done; assemble output
+    case 7  : sS = Td.s;              break;   // Found a separator ("\" or "/")
+    case 8  : aB = 0;                          // Base string index
+              EOParse();              break;   // Done; assemble output
+    case 9  : aB = sbuf.size()-1;              // Base string index
+              EOParse();              break;   // Done; assemble output
+    case 10 : sS = Td.s;                       // Found a separator ("\" or "/")
+              RAmode = 'A';           break;   // Put into "absolute" mode
     default :                         break;
   }
   switch (state=next.ns) {
-    case X :  goto done;
-    case R :  goto done;
+    case X :  return;                   // Cockup exit
+    case R :  return;                   // Legitimate exit
   }
-  if (problem==true) break;            // May be set elsewhere
+  if (problem==true) return;            // May be set elsewhere
 }
-if (problem==true) return;
-
-done:
-
-oS1siz = (unsigned int)S1.size();
-if (!S1.empty()) {                     // If the path vector isn't empty...
-  S1e = S1.back();                     // ...pull the basename off the end
-  S1.pop_back();
-}
-
-Derive1();                             // Derive the secondary strings 'n' stuff
-Derive2();
-return;
 }
 
 //------------------------------------------------------------------------------
 
-void FileName::Derive1()
-// Derive extension, base and drive
-{
-SE = S2;                               // Extn
-if (oS1siz!=0) SB = S1e;               // Base
-else {
-  if (!S0.empty()) SB = S0;
-  else SB = S2;                        // Even if S2 = empty
-}
-if ((!S0.empty())&&(oS1siz!=0)) SD = string(1,S0[0]);   // Drive, else SD = ""
-}
-
-//------------------------------------------------------------------------------
-
-void FileName::Derive2()
-// Derive path and complete
-{
-SP.clear();                            // Build the path as a single string
-WALKVECTOR(string,S1,i) SP += Xs + *i;
-if (!SD.empty()) SP = SD + Xc + SP;
-
-SC = SB;                               // Complete reconstruction
-if (!SP.empty()) SC = SP + Xs + SC;
-if (!SE.empty()) SC += Xd + SE;
-}
-
-//------------------------------------------------------------------------------
 

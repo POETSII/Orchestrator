@@ -14,7 +14,7 @@ public:
                                 NameBase();
 virtual ~                       NameBase();
 string                          AutoName(string = "_");
-void                            Dump(FILE * = stdout);
+void                            Dump(unsigned = 0,FILE * = stdout);
 static NameBase *               Find(unsigned);
 string                          FullName(unsigned = 1);
 unsigned                        Id();

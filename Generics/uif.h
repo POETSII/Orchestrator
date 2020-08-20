@@ -51,14 +51,15 @@ void               Save(string=s_);    // Pretty print
 static void        Save0(FILE *,Node *,string &);
 void               SCB(bool);          // Section callback - do it
 void SetCCB(void *,void(*)(void *,void *,void *));   // Set command callback
-                  // Final argument should default to 0 but u$oft won't allow it
+                                       // Final argument should default to 0
+                                       // but u$oft won't allow it
 void SetECB(void *,void(*)(void *,void *,int));      // Set error callback
-                  // Last two arguments default to 0
+                                       // Last two arguments default to 0
 void SetOFP(FILE * = stdout);          // Set output file stream
 void SetRCB(void *,void(*)(void *,void *,void *));     // Set record callback
-                  // Last argument defaults to 0
+                                       // Last argument defaults to 0
 void SetSCB(void *,void(*)(void *,void *,bool,void *));// Set section callback
-                  // Last argument defaults to 0
+                                       // Last argument defaults to 0
 void               SetStop(bool);      // Access the 'stop' flag
 bool               t123(vector<Node *> *);
 bool               t456(vector<Node *> *);

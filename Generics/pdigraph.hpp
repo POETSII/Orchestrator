@@ -3,13 +3,11 @@
 
 #include "rand.h"
 #include <map>
-#include <string>
 #include <vector>
 #include <utility>
 using namespace std;
+#include "DumpChan.h"
 
-
-#include "dumpchan.h"
 //==============================================================================
           /*
 class DumpChan

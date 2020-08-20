@@ -332,14 +332,14 @@ GetValu(FndRecd(n),v);
 
 //------------------------------------------------------------------------------
 
-void JNJ::RecdSort(vector<hJNJ> & v)
+void JNJ::RecdSort(vector<hJNJ> &)
 // Sort the record variable names
 {
 }
 
 //------------------------------------------------------------------------------
 
-void JNJ::SectSort(vector<hJNJ> & v)
+void JNJ::SectSort(vector<hJNJ> &)
 // Sort the section names
 {
 }

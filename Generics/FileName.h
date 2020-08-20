@@ -11,49 +11,49 @@ using namespace std;
 
 class FileName {
 public:
-                   FileName(string);
-virtual ~          FileName(void);
-void               Dump();
-bool               Err();              // Is there a problem?
-string             FNBase();           // Extract base name
-void               FNBase(string);     // Set base name
-string             FNComplete();       // Extract complete filename
-void               FNComplete(string); // Set complete name
-string             FNDrive();          // Extract drive letter
-void               FNDrive(string);    // Set drive
-string             FNExtn();           // Extract extension
-void               FNExtn(string);     // Set extension
-string             FNName();           // Name : Base.Extn
-string             FNPath(vector<string> &);  // Extract full path
-void               FNPath(string,int); // Set path
+               FileName(string = string());
+virtual ~      FileName(void);
+void           Dump(unsigned = 0,FILE * = stdout);
+bool           Err();                  // Is there a problem?
+string         FNBase();               // Extract base name
+void           FNBase(string);         // Set base name
+string         FNComplete();           // Extract complete filename
+void           FNComplete(string);     // Set complete name
+string         FNDrive();              // Extract drive letter
+void           FNDrive(string);        // Set drive
+string         FNExtn();               // Extract extension
+void           FNExtn(string);         // Set extension
+char           FNMode();               // Extract relative/absolute mode
+void           FNMode(char);           // Set relative/absolute mode
+string         FNName();               // Extract name : Base.Extn
+vector<string> FNPath();               // Extract full path
+void           FNPath(vector<string>); // Set path
+string         FNSepn();               // Extract separator
+void           FNSepn(string);         // Set separator
+static void    Force1Linux(string &);  // Force the thing into a Linux filename
+
 private:
-void               Parse();            // Create output strings
-void               Derive1();
-void               Derive2();
+void           EOParse();              // Build internal data elements
+void           Parse();                // Parse input string
 
 private:                               // Input strings
-string             Sip;                // Input data
-string             S0;                 // Drive substring
-vector<string>     S1;                 // Vector of path strings
-string             S2;                 // Extn string
-string             S1e;                // Last element of path
+string         sIP;                    // Input data
+string         sD;                     // Drive substring
+vector<string> sP;                     // Vector of path strings
+string         sB;                     // Base string
+string         sE;                     // Extension string
+string         sS;                     // Seperator string
 
-                                       // Output strings
-string             SC;                 // Complete
-string             SD;                 // Drive
-string             SP;                 // Path
-string             SB;                 // Base
-string             SE;                 // Extension
+vector<string> sbuf;                   // Buffer for all strings in filename
+int            aD;                     // Address in buffer of drive string
+int            aP[2];                  // Address in buffer of path subset
+int            aB;                     // Address in buffer of base string
+int            aE;                     // Address in buffer of extension string
+char           RAmode;                 // Relative or absolute path?
+bool           problem;                // It's not a filename
+bool           dirty;                  // Monkey been fiddling? 
+Lex            Lx;                     // The input lexer
 
-unsigned int       oS1siz;             // Size(S1) before we pulled the end off
-bool               problem;            // It's not a filename
-
-Lex                Lx;                 // The input lexer
-
-static const string Xc;
-static const string Xs;
-static const string Xd;
-static const string X0;
 static const int   X = -1;             // Cosmic error table entry
 static const int   R = -2;             // Cosmic return table entry
 

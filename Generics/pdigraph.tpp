@@ -181,8 +181,7 @@ return true;
 
 PDIGRAPH_ void _PDIGRAPH::Dump()
 {
-std::string s(35,'=');
-fprintf(dfp,"Pdigraph topological dump %35s++++++++++++++++++++\n",s.c_str());
+fprintf(dfp,"Pdigraph topological dump ++++++++++++++++++++\n");
 fprintf(dfp,"Node index (%u entries):\n",static_cast<unsigned>(index_n.size()));
 int c1 = 1;
 int c2;
@@ -238,7 +237,7 @@ WALKMAP(AKT,arc,index_a,i) {
   fprintf(dfp,"~");              DoND_CB((*(((*i)._2).to_n))._2.data);
   fprintf(dfp,")\n\n");
 }
-fprintf(dfp,"Pdigraph topological dump %35s--------------------\n",s.c_str());
+fprintf(dfp,"Pdigraph topological dump --------------------\n");
 }
 
 //------------------------------------------------------------------------------
@@ -252,14 +251,15 @@ return (i==index_a.end()) ? (AT *)0 : &((*i)._2.data);
 
 //------------------------------------------------------------------------------
 
-PDIGRAPH_ bool  _PDIGRAPH::FindArcs(const NKT & n_k,const PKT & p_k,
+PDIGRAPH_ bool _PDIGRAPH::FindArcs(const NKT & n_k,const PKT & p_k,
                                    vector<AKT> & vI,vector<AKT> & vO)
 // Given a node and a pin key, return any/all arc keys
 {
-if (FindNode(n_k)==0) return false;    // Node not there
-if (FindPin(n_k,p_k)==0) return false; // Pin not there
 vI.clear();
 vO.clear();
+if (FindNode(n_k)==0) return false;    // Node not there
+if (FindPin(n_k,p_k)==0) return false; // Pin not there
+
                                        // Walk right there...
 pair<TPp_it,TPp_it> pi = index_n[n_k].fano.equal_range(p_k);
 for(typename multimap<PKT,pin>::iterator i=pi.first;i!=pi.second;i++)

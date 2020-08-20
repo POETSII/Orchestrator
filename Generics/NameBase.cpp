@@ -2,6 +2,7 @@
 
 #include "NameBase.h"
 #include "macros.h"
+#include <stdint.h>
 
 unsigned NameBase::uid = 0;
 map<unsigned,NameBase *> NameBase::NBmap;
@@ -37,20 +38,22 @@ return n;
 
 //------------------------------------------------------------------------------
 
-void NameBase::Dump(FILE * fp)
+void NameBase::Dump(unsigned off,FILE * fp)
 {
-fprintf(fp,"NameBase dump+++++++++++++++++++++++++++++++\n");
-fprintf(fp,"this           %#08p\n",this);
-fprintf(fp,"Name           %s\n",name.c_str());
-fprintf(fp,"Id             %10u(%#010x)\n",id,id);
-fprintf(fp,"Parent         %#08p\n",npar);
-fprintf(fp,"Recursion trap %s\n",rtrap ? "Set" : "Unset");
-fprintf(fp,"Unique id      %u\n",uid);
-fprintf(fp,"NameBase id    Name\n");
-if (NBmap.empty()) fprintf(fp," ** No map entries ** \n");
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"%sNameBase dump+++++++++++++++++++++++++++++++++++++++++++++\n",os);
+fprintf(fp,"%sthis           %#018lx\n",os,(uint64_t)this);
+fprintf(fp,"%sName           %s\n",os,name.c_str());
+fprintf(fp,"%sId             %u(%#010x)\n",os,id,id);
+fprintf(fp,"%sParent         %#018lx\n",os,(uint64_t)npar);
+fprintf(fp,"%sRecursion trap %s\n",os,rtrap ? "Set" : "Unset");
+fprintf(fp,"%sUnique id      %u\n",os,uid);
+fprintf(fp,"%sNameBase id    Name\n",os);
+if (NBmap.empty()) fprintf(fp,"%s ** No map entries ** \n",os);
 WALKMAP(unsigned,NameBase *,NBmap,i)
-  fprintf(fp,"%6u : %s\n",(*i).first,(*i).second->FullName(7).c_str());
-fprintf(fp,"NameBase dump-------------------------------\n\n");
+  fprintf(fp,"%s%6u : %s\n",os,(*i).first,(*i).second->FullName(7).c_str());
+fprintf(fp,"%sNameBase dump-------------------------------------------\n\n",os);
 fflush(fp);
 }
 

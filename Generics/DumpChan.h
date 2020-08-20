@@ -2,7 +2,7 @@
 #define __DUMPCHAN__H
 
 #include <stdio.h>
-#include <stdint.h>
+#include "OSFixes.hpp"
 
 //==============================================================================
 
@@ -16,10 +16,11 @@ class DumpChan
 public:
               DumpChan(){}
 virtual ~     DumpChan(){}
-void          Dump(FILE * = stdout);
+void          Dump(unsigned = 0,FILE * = stdout);
 static FILE * dfp;                     // Dumpfile channel
 };
 
 //==============================================================================
 
 #endif
+
