@@ -2,6 +2,7 @@
 #define __DummyH__H
 
 #include "CommonBase.h"
+#include "OSFixes.hpp"
 
 //==============================================================================
 
@@ -10,19 +11,14 @@ class Dummy : public CommonBase
 
 public:
                     Dummy(int,char **,string);
-virtual ~           Dummy();
 
-typedef unsigned    (Dummy::*pMeth)(Msg_p *,unsigned);
-typedef map<unsigned,pMeth> FnMap_t;
+typedef unsigned    (Dummy::*pMeth)(PMsg_p *);
+map<unsigned,pMeth> FnMap;
 
 private:
 #include            "Decode.cpp"
-void                Dump(FILE * = stdout);
+void                Dump(unsigned = 0,FILE * = stdout);
 void                Init(int, char**);
-
-vector<FnMap_t*>    FnMapx;
-
-
 };
 
 //==============================================================================

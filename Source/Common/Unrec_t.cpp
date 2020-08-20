@@ -5,17 +5,11 @@
 
 //==============================================================================
 
-Unrec_t::Unrec_t(unsigned _i,string _d,string _r)
+Unrec_t::Unrec_t(unsigned _i,string _d,string _r):runtime_error("oink")
 {
 i = _i;                                // Error number
 d = _d;                                // Derived parent class/process
 r = _r;                                // Routine wot throws
-}
-
-//------------------------------------------------------------------------------
-
-Unrec_t::~Unrec_t()
-{
 }
 
 //------------------------------------------------------------------------------
@@ -27,6 +21,7 @@ switch(i) {
   case 0  : printf("\nNull exception...???   \n");            break;
   case 1  : printf("\nMessage source process has no rank\n"); break;
   case 2  : printf("\nLogServer process has no rank\n");      break;
+  case 3  : printf("\nException\n");                          break;
   default : printf("\nUnknown exception...???   \n");         break;
 }
 printf("\nProcess %s will probably close cleanly;\n"

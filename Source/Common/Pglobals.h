@@ -98,56 +98,60 @@ class Q {
 
 public:
 // Top level (0) subkeys
-static const byte N000  = 0x00;
-static const byte EXIT  = 0x01;
-static const byte CMND  = 0x02;
-static const byte DEBUG = 0x03;
-static const byte LOG   = 0x04;
-static const byte KEYB  = 0x05;
-static const byte DUMM  = 0x06;
-static const byte TEST  = 0x07;
-static const byte PMAP  = 0x08;
-static const byte SYST  = 0x09;
-static const byte RTCL  = 0x0a;
-static const byte INJCT = 0x0b;
-static const byte NAME  = 0x0c;
-static const byte SUPR  = 0x0d;
-static const byte TINS  = 0x0e;
-static const byte CANDC = 0x0f;
+static const byte N000;
+static const byte EXIT;
+static const byte CMND;
+static const byte DEBUG;
+static const byte LOG;
+static const byte KEYB;
+static const byte DUMM;
+static const byte TEST;
+static const byte PMAP;
+static const byte SYST;
+static const byte RTCL;
+static const byte INJCT;
+static const byte NAME;
+static const byte SUPR;
+static const byte TINS;
+static const byte CANDC;
+static const byte QUERY;
+static const byte APP;
 // Level 1 subkeys
-static const byte PING  = 0x40;
-static const byte POST  = 0x41;
-static const byte FULL  = 0x42;
-static const byte FLOO  = 0x43;
-static const byte FLAG  = 0x44;
-static const byte HARD  = 0x45;
-static const byte KILL  = 0x46;
-static const byte CONN  = 0x47;
-static const byte RUN   = 0x48;
-static const byte LOAD  = 0x49;
-static const byte STOP  = 0x4a;
-static const byte TOPO  = 0x4b;
-static const byte DIST  = 0x4c;
-static const byte RECL  = 0x4d;
-static const byte TDIR  = 0x4e;
-static const byte SHOW  = 0x4f;
-static const byte ACPT  = 0x50;
+static const byte PING;
+static const byte POST;
+static const byte FULL;
+static const byte FLOO;
+static const byte FLAG;
+static const byte HARD;
+static const byte KILL;
+static const byte CONN;
+static const byte RUN;
+static const byte LOAD;
+static const byte STOP;
+static const byte TOPO;
+static const byte DIST;
+static const byte RECL;
+static const byte TDIR;
+static const byte SHOW;
+static const byte ACPT;
+static const byte CLEAR;
+static const byte DUMP;
+static const byte MONI;
 // temporary use: for MPI testing ------------------------------------------
-static const byte M0    = 0x60;
-static const byte M1    = 0x61;
-static const byte MN    = 0x62;
+static const byte M0;
+static const byte M1;
+static const byte MN;
 //--------------------------------------------------------------------------
 // Level 2 subkeys
-static const byte REQ   = 0x80;
-static const byte ACK   = 0x81;
-static const byte FWD   = 0x82;
+static const byte REQ;
+static const byte ACK;
+static const byte FWD;
 // Level 3 subkeys
 
-// Not a value
-static const byte NAV   = 0xff;
-static const int  NAP   = -1;
+static const byte NAV;                 // Not a value
+static const int  NAP;                 // Not a process
 
-static const byte ROOT  = 0x00;
+static const byte ROOT;
 
 // Process names - defined as Cstrings 'cos you can't initialise string() here
 #define csNOTaPROCproc   "Not a process"
@@ -165,38 +169,16 @@ static const byte ROOT  = 0x00;
 // of const, and thus calls to them would whinge with a const-qualified argument
 #define POETS_TAG 0x1234
 
+const static string sline;             // Pretty-print separators
+const static string dline;
+const static string aline;
+const static string eline;
+const static string pline;
+
 };
 
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 //==============================================================================
-          /*
-class Now {
-// This class provides the global real time clock, in the sense that now()
-// provides the MPI time since the whole thing started. It's not that accurate,
-// but it's a start. Perfect is the enemy of good.
-// Default constructor and destructor are provided just for the sake of
-// completeness. There is a single 'base time' so that the returned current time
-// is relative to when the program(s) started. Note it's not accessible to
-// anywhere apart from InitMPI, whose job it is to initialise the clock.
-// IT DOES NOT FOLLOW (DESPITE WHAT MPI SAYS) THAT THE PROCESS CLOCKS ARE LOCKED
-
-// TO DO: the friend should be the InitMPI constructor, but I don't know how
-// to specify this without documentation at the moment
-
-private : Now();
-virtual ~ Now();
-private : static double baseT;
-//friend void InitMPI(int &,int &,int &,char *&);
-friend class InitMPI;
-public : static double now() { return MPI_Wtime() - baseT; }
-};
-
-//= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
-
-double Now::baseT = 0.0;               // Keep the linker happy...
-            */
-//==============================================================================
-
-
+  
 #endif
