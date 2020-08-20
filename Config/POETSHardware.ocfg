@@ -1,0 +1,80 @@
+[header(Coleridge)]                      // Provenance control section
++author            = "Mark Vousden"      // Guess
++dialect           = 3                   // Internal consistency
++datetime          = 20181127165846      // yyyy mm dd hh mm ss
++version           = "0.3.0"             // Format version
++file              = "dialect_3.ptop"    // Name of this file
+
+[packet_address_format]                  // Define internal hardware address component
++mailbox           = (2,2)               // Components can have inner structure
++thread            = 4                   // 4 bits = 0..15 thread ids
++core              = 2                   // = 0..3 core ids
++board             = (2,2)               // = (0..3,0..3)
++box               = 0                   // There is only one box in Coleridge so this
+                                         // address component is valid (=0)
+
+[default_types]                          // If not explicitly specified in topologies
++box_type          = "CommonBox"         // Components all have named types
++board_type        = "CommonBoard"       // (except threads)
++mailbox_type      = "CommonMbox"
++core_type         = "CommonCore"
+
+[engine_box]                             // Define engine-box relationship
+                                         // An enumeration of the boxes in engine:
+Box(boards(B0,B1,B2,B3,B4,B5),hostname(machine_1))
+Crate(boards(Ba,BB,BX),hostname(machine_2))
++external_box_cost = *                   // <!> Missing, used for externals.
++box_box_cost      = 1                   // Unused (there's only one box here!)
+
+[engine_board]                           // Define engine-board relationship
+// Layout:                               // This is topology of boards in engine
+//   0 -- 1
+//   |    |
+//   2 -- 3                              // Board *type* not specified here because
+//   |    |                              // the instance picks up the default type 
+//   4 -- 5                              // (here "CommonBox")
+(0,0):Box(board(B0),addr(0,00)) = Box(board(B1)),Box(board(B2))
+(1,0):Box(board(B1),addr(1,00)) = Box(board(B0)),Box(board(B3))
+(0,1):Box(board(B2),addr(0,01)) = Box(board(B0)),Box(board(B3)),Box(board(B4))
+(1,1):Box(board(B3),addr(1,01)) = Box(board(B1)),Box(board(B2)),Box(board(B5))
+(0,2):Box(board(B4),addr(0,10)) = Box(board(B2)),Box(board(B5))
+(1,2):Box(board(B5),addr(1,10)) = Box(board(B3)),Box(board(B4))
++board_board_cost  = 8                   // <!> Relative to board::mailbox_cost
+
+[box(CommonBox)]                         // Definition of box type "CommonBox"
++box_board_cost    = *                   // <!> Missing
++supervisor_memory = 10240               // Coleridge: 46GB RAM, here reserved 10GB
+
+[board(CommonBoard)]                     // Definition of board type "CommonBoard"
+//   0 -- 1 -- 2 -- 3
+//   |    |    |    |
+//   4 -- 5 -- 6 -- 7
+//   |    |    |    |
+//   8 -- 9 -- A -- B                    // Mailbox *type* not specified here because
+//   |    |    |    |                    // the instance picks up the default type
+//   C -- D -- E -- F                    // (here "CommonMbox")
+(0,0):Mbox0(addr(00,00)) = Mbox1,Mbox4
+(1,0):Mbox1(addr(01,00)) = Mbox0,Mbox2,Mbox5
+(2,0):Mbox2(addr(10,00)) = Mbox1,Mbox3,Mbox6
+(3,0):Mbox3(addr(11,00)) = Mbox2,Mbox7
+(1,3):MboxD(addr(01,11)) = Mbox9,MboxC,MboxE
+(2,3):MboxE(addr(10,11)) = MboxA,MboxD,MboxF
+(3,3):MboxF(addr(11,11)) = MboxB,MboxE
++board_mailbox_cost   = *                // <!> Missing
++supervisor_memory    = 0
++mailbox_mailbox_cost = 1                // <!> Relative to box::board_board_cost
++dram                 = 4096             // MiB, two DDR3 DRAM boards.
+
+[mailbox(CommonMbox)]                    // Definition of "CommonMbox"
++cores                = 4                // Cores on mailbox (default = "CommonCore")
++mailbox_core_cost    = *                // <!> Missing
++core_core_cost       = *                // <!> Missing
+
+[core(CommonCore)]                       // Definition of "CommonCore"
++threads              = 16               // Threads on core - threads are typeless
++instruction_memory   = 8                // KiB
++data_memory          = *                // <!> Missing
++core_thread_cost     = *                // <!> Missing
++thread_thread_cost   = *                // <!> Missing
+
+

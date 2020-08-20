@@ -1,0 +1,72 @@
+  // ORCHESTRATOR CONFIGURATION FILE
+  // NOT user-facing
+  // This is the root of the configuration file hierarchy. It contains the locations 
+  // of all necessary setup files *relative* to the root binary.
+  // Apart from itself, obviously: the location of *this* file is hardwired
+  // into the code (OrchConfig.cpp after the header #includes) as
+  // static const string OrchConfig::WhereAmI = string("../Config/Orchestrator.ocfg");
+
+[Orchestrator_header]
+  // All pretty arbitrary; just copied in and stored
+name        = OrchestratorConfiguration
+author      = "MLV GMB"
+date        = "20/08/20"
+version     = "0.0.1"
+
+[default_paths]
+  // All these may be overridden by the console "path" command
+  // Application (XML) files
+apps        
+  // Hardware description files. Only used on reload; not visible to the launcher
+engine      = 
+  // Placement control; default algorithm + control parameters
+place       =  
+  // Logserver output (sent to LogServer on startup) 
+log         = "../Output/POETS_Logfile.log"
+  // Microlog output 
+ulog        = "../Output/" 
+  // Trace output
+trace       = "     " 
+  // Softswitch binary files for execution 
+binaries    = "      " 
+  // Orchestrator generated source and X-compiled output prior to deployment 
+stage       = "    " 
+  // Batch files
+batch       = 
+  // Deployed supervisor binaries (in the MPI universe)
+supervisors = "    " 
+
+[setup_files]
+  // Note these are resolvable files, not paths
+  // Elaboration messages for the user via the LogServer
+messages    = "../Config/OrchestratorMessages.ocfg"
+  // XMLapplication grammar validation definition
+grammar     = "../Config/V4Grammar2.ocfg"
+  // Hardware definition file
+  // hardware       = "../Config/POETSHardware.ocfg" 
+  // Startup algorithm + control parameters
+  // placement   = "the frumious bandersnatch"
+
+[flags]
+  // Default flags for the cross-compiler
+  // build       = "\oink -plop ++wheeee  !. <?> "
+
+[errors]
+  // Elaboration messages passed out to the author for errors in processing THIS file
+  // They are all classed as "Unrecoverable", not because they are, but because:
+  // If you're not a grown-up you shouldn't be mucking about with it anyway
+  // If you are a grown-up you'll know how to fix it without further help 
+  // And then.... I realised that if there's a syntax error in *this* file the records
+  // below won't get stored anyway, so it's all a bit pointless. 
+  // There is, therefore, no code behind this section. Just treat it as a reference map
+  // of error numbers (that *are* reported) : meanings.
+001(U) : "Section has != 1 names"
+002(U) : "Variable in section [Orchestrator_header] has too many values"
+003(U) : "Variable in section [default_paths] has too many values"
+004(U) : "Variable in section [setup_files] has too many values"
+005(U) : "Variable in section [flags] has too many values"
+006(U) : "Configuration file inaccessible"
+007(U) : "Configuration file corrupt (syntax)"
+
+//---------------------------------------------------------------------------
+
