@@ -8,6 +8,9 @@ Build/gcc/Objects
 Build/gcc/Dependency_lists
 orchestrate.sh
 
+# Ignore .bak extensions created by winmerge
+*.bak
+
 # Default C++ gitignore content, from https://github.com/github/gitignore:
 
 # Prerequisites
