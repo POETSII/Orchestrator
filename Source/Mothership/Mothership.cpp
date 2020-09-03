@@ -71,9 +71,21 @@ void Mothership::load_backend()
      * one-Mothership-over-many-boxes case, but do we even want to support that
      * once we're multi-box? (It was sarcasm - we don't). */
     DebugPrint("[MOTHERSHIP] Loading Tinsel backend...\n");
+    
+    char* str = getenv("HOSTLINK_BOXES_X");
+    int x = str ? atoi(str) : 1;
+    str = getenv("HOSTLINK_BOXES_Y");
+    int y = str ? atoi(str) : 1;
+    HostLinkParams params;
+    params.numBoxesX = x;
+    params.numBoxesY = y;
+    params.useExtraSendSlot = true;
+    
+    
+    
     pthread_mutex_lock(&(threading.mutex_backend_api));
     if (backend != PNULL) delete backend;
-    backend = new HostLink();
+    backend = new HostLink(params);
     pthread_mutex_unlock(&(threading.mutex_backend_api));
     DebugPrint("[MOTHERSHIP] Tinsel backend loaded.\n");
 }
