@@ -72,6 +72,13 @@ void Mothership::load_backend()
      * once we're multi-box? (It was sarcasm - we don't). */
     DebugPrint("[MOTHERSHIP] Loading Tinsel backend...\n");
     
+    /* Tinsel 0.8 requires hostlink to be called with a parameters argument to 
+     * enable the additional send slot (which we need for supervisor messages)
+     * in the tinsel cores. This also means that we need to provide the size of 
+     * the cluster that we are using, which may have been overidden by
+     * environment variables. The below is essentially reporoduced from the 
+     * default Hostlink constructor with the exception of "useExtraSendSlot"
+     * being set to true. */
     char* str = getenv("HOSTLINK_BOXES_X");
     int x = str ? atoi(str) : 1;
     str = getenv("HOSTLINK_BOXES_Y");
@@ -81,11 +88,9 @@ void Mothership::load_backend()
     params.numBoxesY = y;
     params.useExtraSendSlot = true;
     
-    
-    
     pthread_mutex_lock(&(threading.mutex_backend_api));
     if (backend != PNULL) delete backend;
-    backend = new HostLink(params);
+    backend = new HostLink(params); // Call hostlink with the parameters
     pthread_mutex_unlock(&(threading.mutex_backend_api));
     DebugPrint("[MOTHERSHIP] Tinsel backend loaded.\n");
 }
