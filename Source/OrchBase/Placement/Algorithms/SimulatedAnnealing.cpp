@@ -85,7 +85,24 @@ float SimulatedAnnealing::do_it(P_task* task)
      * violated - used during selection. */
     devicesPerThreadSoftMax = placer->constrained_max_devices_per_thread(task);
 
-    /* Iteration loop - we exit when the termination condition is satisfied. */
+    /* Iteration loop - we exit when the termination condition is satisfied.
+     *
+     * Also note that, if there are no normal devices in the task, we don't
+     * anneal (because it will cause selection to fall over). */
+    bool trivialGraph = true;
+    WALKPDIGRAPHNODES(unsigned, P_device*,
+                      unsigned, P_message*,
+                      unsigned, P_pin*, task->pD->G, thisDevice)
+    {
+        /* Are you a normal device? */
+        if ((*thisDevice).second.data->pP_devtyp->pOnRTS)
+        {
+            trivialGraph = false;
+            break;
+        }
+    }
+
+    fprintf(log, "[I] Starting iteration.\n");
     std::vector<Constraint*> brokenHardConstraints;
     std::list<Constraint*> dissatisfiedConstraints;
     std::list<Constraint*> satisfiedConstraints;
@@ -99,8 +116,12 @@ float SimulatedAnnealing::do_it(P_task* task)
                            * and positive represents "after the
                            * transformation" */
 
-    fprintf(log, "[I] Starting iteration.\n");
-    while (!is_finished())
+    if (trivialGraph)
+    {
+        fprintf(log, "[I] ...hang on, there are no normal devices in this "
+                "task! There's nothing to anneal!\n");
+    }
+    else while (!is_finished())
     {
         fprintf(data, "%u,%f\n", iteration, fitness);
         fprintf(log, "[D] Iteration %u...\n", iteration);
@@ -378,7 +399,7 @@ void SimulatedAnnealing::select(P_task* task, P_device** device,
 
     /* Choose a non-supervisor device. Note that this will loop infinitely if
      * there are only supervisor devices in this task (but I'm assuming nobody
-     * is going to do that... */
+     * is going to call this without checking the task first...) */
     do
     {
         unsigned nodeKey;  /* Unused */
