@@ -30,14 +30,15 @@ unsigned OrchBase::CmPlace(Cli* cli)
         if (clauseRoot == "dump") PlacementDump(*clause);
         else if (clauseRoot == "unpl") PlacementUnplace(*clause);
 
-        /* NB: We don't check the clause. If the operator types 'placement /reset =
-         * APPLICATION', we clear everything anyway.
-         *
-         * Also, the clause is irrelevant here. The "true" is because we want
-         * to let the user know that their command has been run.
-         *
-         * Praise the deities of software design. */
-        else if (clauseRoot == "rese") PlacementReset(true);
+        /* NB: If the operator passes an argument this command (e.g. 'placement
+         * /reset = APPLICATION'), we warn the operator that they're doing
+         * something a bit silly. */
+        else if (clauseRoot == "rese")
+        {
+            if (!clause->Pa_v.empty()) Post(215);
+            /* Argument supports shameless code reuse. */
+            else PlacementReset(true);
+        }
 
         /* Are we loading a placement spec? */
         else if (clauseRoot == "load") PlacementLoad(*clause);

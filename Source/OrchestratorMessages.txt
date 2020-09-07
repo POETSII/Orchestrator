@@ -96,6 +96,7 @@
 212(I) : "Starting to dump task '%s' - this might take a while, because the fitness score needs to be computed."
 213(E) : "Unable to create a pthread when building the placement cost cache. pthread_create returned %s. Look at the manual page to decode this problem (from experience, it's always a problem involving exceeing the stack-size limit."
 214(I) : "Attempting to load '%s' to place task '%s'..."
+215(W) : "Unable to reset a portion of the placement system. Did you mean 'unplace'?"
 
 500(F) : "Mothership: Could not create pthread %s. Exiting."
 501(F) : "Mothership: Could not join to pthread %s. Exiting."
