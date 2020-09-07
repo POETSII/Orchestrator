@@ -531,7 +531,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
 
             /* Skip this core if either nothing is placed on it, or if the
              * devices placed on it are owned by a different task. Recall that
-             * all devices within a core service the same task.m
+             * all devices within a core service the same task.
              *
              * Note the deliberate use of indexing instead of `at` for the
              * first predicate. */
