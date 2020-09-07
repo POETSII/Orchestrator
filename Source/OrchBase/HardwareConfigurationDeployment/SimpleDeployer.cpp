@@ -34,7 +34,7 @@ SimpleDeployer::SimpleDeployer()
     costExternalBox = 0;
 
     costBoxBoard = 0;
-    costBoardBoard = 8;
+    costBoardBoard = 8;  /* Informed estimate */
     boxSupervisorMemory = 10240;
 
     mailboxesInBoard.clear();
