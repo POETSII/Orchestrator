@@ -6,7 +6,7 @@
 +dialect=3
 +datetime=20200909162500
 +version="0.5.0"
-+file="invalid_dialect_3_missing_referenced_board_2.uif"
++file="valid_dialect_3_with_hostnames.uif"
 
 // Sums to 16 bits, leading bits are not used.
 [packet_address_format]
@@ -44,8 +44,8 @@
 // +-------------------+
 //      Byron (= By)
 [engine_box]
-By(addr(0),boards(B00,B01,B10,B11,B20,B21,Octopus))
-El(addr(1),boards(B00,B01,B10,B11,B20,B21,Locust))
+By(addr(0),boards(B00,B01,B10,B11,B20,B21),hostname(byron))
+El(addr(1),boards(B00,B01,B10,B11,B20,B21),hostname(eliot))
 +external_box_cost=0
 
 // Note that the Y-component of the board address in hardware comes before the

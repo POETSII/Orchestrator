@@ -13,7 +13,8 @@ std::vector<std::string> badDialectInputs = {
     "invalid_dialect_3_bad_dialect_definition_1.uif",
     "invalid_dialect_3_bad_dialect_definition_2.uif",
     "invalid_dialect_3_bad_dialect_definition_3.uif",
-    "invalid_dialect_3_bad_dialect_definition_4.uif"
+    "invalid_dialect_3_bad_dialect_definition_4.uif",
+    "invalid_dialect_3_name_begins_with_number.uif"
 };
 
 TEST_CASE("Files with a valid syntax do not raise", "[Reader]")

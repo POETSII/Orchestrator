@@ -3,9 +3,9 @@
 [header("1Box")]
 +author="Mark Vousden"
 +dialect=3
-+datetime=201912011005
-+version="0.4.0"
-+file="8_box.uif"
++datetime=20200909162500
++version="0.5.0"
++file="1_box.uif"
 
 // Sums to 16 bits, leading bits are not used.
 [packet_address_format]
@@ -103,6 +103,7 @@ Ay(addr(000),boards(B00,B01,B10,B11,B20,B21),hostname(ayres))
 +cores=4
 +mailbox_core_cost=0
 +core_core_cost=0.001
++pair_cores="true"
 
 [core]
 +threads=16

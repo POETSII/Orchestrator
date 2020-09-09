@@ -5,8 +5,8 @@
 +author="Mark Vousden"
 +dialect=3
 +datetime=20200909134000
-+version="0.4.0"
-+file="8_box.uif"
++version="0.5.0"
++file="valid_dialect_3_weird_names.uif"
 
 // Sums to 16 bits, leading bits are not used.
 [packet_address_format]
@@ -104,6 +104,7 @@ Nae083491(addr(000),boards(Ne33118e5,Ne24e0dd9,N65e09e51,N4ae7479e,Nc47903af,N0f
 +cores=4
 +mailbox_core_cost=0
 +core_core_cost=0.001
++pair_cores="true"
 
 [core]
 +threads=16

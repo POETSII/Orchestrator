@@ -1,12 +1,15 @@
 // A representation of the Byron-Eliot connected pair in Dialect 3. Costs are
 // unknown.
+//
+// The failure here is subtle - we've said to pair cores, but each mailbox has
+// an odd number of cores in it.
 
 [header(ByronEliot)]
 +author="Mark Vousden"
 +dialect=3
 +datetime=20200909162500
 +version="0.5.0"
-+file="invalid_dialect_3_missing_referenced_board_2.uif"
++file="valid_dialect_3.uif"
 
 // Sums to 16 bits, leading bits are not used.
 [packet_address_format]
@@ -44,8 +47,8 @@
 // +-------------------+
 //      Byron (= By)
 [engine_box]
-By(addr(0),boards(B00,B01,B10,B11,B20,B21,Octopus))
-El(addr(1),boards(B00,B01,B10,B11,B20,B21,Locust))
+By(addr(0),boards(B00,B01,B10,B11,B20,B21))
+El(addr(1),boards(B00,B01,B10,B11,B20,B21))
 +external_box_cost=0
 
 // Note that the Y-component of the board address in hardware comes before the
@@ -117,7 +120,7 @@ El(addr(1),boards(B00,B01,B10,B11,B20,B21,Locust))
 +dram=4096  // MiB, two DDR3 DRAM boards.
 
 [mailbox(CommonMbox)]
-+cores=4
++cores=5
 +mailbox_core_cost=0
 +core_core_cost=0
 +pair_cores="true"

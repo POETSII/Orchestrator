@@ -4,9 +4,9 @@
 [header(ByronEliot)]
 +author="Mark Vousden"
 +dialect=3
-+datetime=20190614115500
-+version="0.3.2"
-+file="valid_dialect_3.uif"
++datetime=20200909162500
++version="0.5.0"
++file="valid_dialect_3_some_types_in_sections.uif"
 
 // Sums to 16 bits, leading bits are not used.
 [packet_address_format]
@@ -120,6 +120,7 @@ El(addr(1),boards(B00,B01,B10,B11,B20,B21))
 +cores=4
 +mailbox_core_cost=0
 +core_core_cost=0
++pair_cores="true"
 
 [core]
 +threads=16

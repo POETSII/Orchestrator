@@ -4,8 +4,8 @@
 [header("8Box")]
 +author="Mark Vousden"
 +dialect=3
-+datetime=20190823150800
-+version="0.4.0"
++datetime=20200909162500
++version="0.5.0"
 +file="8_box.uif"
 
 // Sums to 16 bits, leading bits are not used.
@@ -184,6 +184,7 @@ Ib(addr(111),boards(B00,B01,B10,B11,B20,B21),hostname(ibsen))
 +cores=4
 +mailbox_core_cost=0
 +core_core_cost=0
++pair_cores="true"
 
 [core]
 +threads=16

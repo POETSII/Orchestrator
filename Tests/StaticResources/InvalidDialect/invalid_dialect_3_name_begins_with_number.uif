@@ -6,7 +6,7 @@
 +dialect=3
 +datetime=20200909162500
 +version="0.5.0"
-+file="invalid_dialect_3_missing_referenced_board_2.uif"
++file="invalid_dialect_3_name_begins_with_number.uif"
 
 // Sums to 16 bits, leading bits are not used.
 [packet_address_format]
@@ -44,8 +44,8 @@
 // +-------------------+
 //      Byron (= By)
 [engine_box]
-By(addr(0),boards(B00,B01,B10,B11,B20,B21,Octopus))
-El(addr(1),boards(B00,B01,B10,B11,B20,B21,Locust))
+By(addr(0),boards(B00,B01,B10,B11,B20,B21))
+El(addr(1),boards(B00,B01,B10,B11,B20,B21))
 +external_box_cost=0
 
 // Note that the Y-component of the board address in hardware comes before the
@@ -91,15 +91,15 @@ El(addr(1),boards(B00,B01,B10,B11,B20,B21,Locust))
 // |                          |
 // |  |      |      |      |  |
 // |                          |
-// | M00 -- M10 -- M20 -- M30 |
+// | 4M00 -- M10 -- M20 -- M30 |
 // |                          |
 // +--------------------------+
 [board(CommonBoard)]
-(0,0):M00(addr(00,00))=M10,M01
-(1,0):M10(addr(01,00))=M00,M20,M11
+(0,0):4M00(addr(00,00))=M10,M01
+(1,0):M10(addr(01,00))=4M00,M20,M11
 (2,0):M20(addr(10,00))=M10,M30,M21
 (3,0):M30(addr(11,00))=M20,M31
-(0,1):M01(addr(00,01))=M00,M11,M02
+(0,1):M01(addr(00,01))=4M00,M11,M02
 (1,1):M11(addr(01,01))=M10,M01,M21,M12
 (2,1):M21(addr(10,01))=M20,M11,M31,M22
 (3,1):M31(addr(11,01))=M30,M21,M32
