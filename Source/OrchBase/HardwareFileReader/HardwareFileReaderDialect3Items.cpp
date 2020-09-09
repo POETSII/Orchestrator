@@ -73,7 +73,7 @@ bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
             /* Contain */
             try
             {
-                mailbox->contain(coreId, firstCore);
+                mailbox->contain(coreId, core);
             }
             catch (OrchestratorException &e)
             {
@@ -614,9 +614,12 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
     std::vector<UIF::Node*> variableNodes;
 
     /* Hold core count and pairing information until all fields have been
-     * read. */
-    unsigned coreCount;
-    bool pairCores;
+     * read. Note the default initialisation of these two variables will cause
+     * an error when trying to create cores if they are not overwritten - this
+     * is intentional, as it handles the case where either the `cores` or
+     * `pair_cores` fields are defined and are invalid. */
+    unsigned coreCount = 1;
+    bool pairCores = true;
 
     /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
@@ -730,12 +733,8 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
 
         /* Otherwise, if everything is defined properly, create and add
          * cores. */
-        else if (!d3_create_cores_and_threads_for_mailbox(mailbox, coreCount,
-                                                          pairCores))
-        {
-            anyErrors = true;
-            continue;
-        }
+        else if (!d3_create_cores_and_threads_for_mailbox(
+                     mailbox, coreCount, pairCores)) {anyErrors = true;}
     }
 
     /* Restore the old 'record', 'sectionName', and 'variable' members. */

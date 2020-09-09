@@ -13,8 +13,12 @@ std::vector<std::string> badDialectInputs = {
     "invalid_dialect_3_bad_dialect_definition_1.uif",
     "invalid_dialect_3_bad_dialect_definition_2.uif",
     "invalid_dialect_3_bad_dialect_definition_3.uif",
-    "invalid_dialect_3_bad_dialect_definition_4.uif",
-    "invalid_dialect_3_name_begins_with_number.uif"
+    "invalid_dialect_3_bad_dialect_definition_4.uif"
+};
+
+std::vector<std::string> badSyntaxInputs = {
+    "invalid_dialect_3_name_begins_with_number.uif",
+    "syntactically_invalid_test_file.uif"
 };
 
 TEST_CASE("Files with a valid syntax do not raise", "[Reader]")
@@ -23,12 +27,24 @@ TEST_CASE("Files with a valid syntax do not raise", "[Reader]")
     reader.load_file("../Tests/StaticResources/Dialect1/valid_test_file.uif");
 }
 
-TEST_CASE("Files with an invalid syntax raise syntax error", "[Reader]")
+TEST_CASE("Test each invalid syntax example case in turn", "[Reader]")
 {
-    HardwareFileReader reader;
-    REQUIRE_THROWS_AS(reader.load_file(
-        "../Tests/StaticResources/Dialect1/syntactically_invalid_test_file.uif"),
-                      HardwareSyntaxException&);
+    P_engine* engine;
+    HardwareFileReader* reader;
+    std::vector<std::string>::iterator fileName;
+    std::string fullPath;
+
+    /* Create a fresh reader for each test. */
+    for(fileName=badSyntaxInputs.begin();
+        fileName!=badSyntaxInputs.end();
+        fileName++)
+    {
+        reader = new HardwareFileReader();
+        fullPath = "../Tests/StaticResources/InvalidSyntax/" + *fileName;
+        REQUIRE_THROWS_AS(reader->load_file(fullPath.c_str()),
+                          HardwareSyntaxException&);
+        delete reader;
+    }
 }
 
 TEST_CASE("Files that do not exist raise a file-not-found error", "[Reader]")

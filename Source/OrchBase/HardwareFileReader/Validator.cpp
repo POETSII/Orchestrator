@@ -304,7 +304,7 @@ bool Validator::is_multivariable_record(std::vector<UIF::Node*>* variableNodes)
  * - valueNode: The UIF node that holds the value. */
 bool Validator::is_node_value_booleanish(UIF::Node* valueNode)
 {
-    return (valueNode->str == "true" or valueNode->str "false");
+    return (valueNode->str == "true" or valueNode->str == "false");
 }
 
 /* Returns whether the value at a node is a positive floating-point
