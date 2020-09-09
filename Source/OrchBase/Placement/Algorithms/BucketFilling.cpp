@@ -76,13 +76,23 @@ float BucketFilling::do_it(P_task* task)
                 /* If we moved to a new core using the `next_thread` call... */
                 if (hardwareIt.has_core_changed())
                 {
-                    /* If we've already moved to the original core's pair... */
-                    if (!onLowerCore)
+                    /* If this core has no pair, move to the next empty core
+                     * pair. */
+                    if (hardwareIt.get_core()->pair == PNULL)
+                    {
+                        poke_iterator(hardwareIt);
+                        thisThread = hardwareIt.get_thread();
+                    }
+
+                    /* Otherwise, if we've already moved to the original core's
+                     * pair on a previous iteration... */
+                    else if (!onLowerCore)
                     {
                         /* Move to the next empty core pair. */
                         poke_iterator(hardwareIt);
                         thisThread = hardwareIt.get_thread();
                     }
+
                     else onLowerCore = false;
                 }
             }
@@ -132,10 +142,14 @@ void BucketFilling::poke_iterator(HardwareIterator& hardwareIt)
         if (hardwareIt.has_wrapped()) throw NoSpaceToPlaceException(
             "[ERROR] Engine is full.");
 
-        /* If the first core is empty, check if the second core is empty. If
-         * the second core is also empty, we're done here. */
+        /* If the first core is empty, check if the paired core (if it has one)
+         * is empty. If both are empty if they exist, we're done here. */
         P_core* core = hardwareIt.get_core();
-        if (is_core_empty(core)) if (is_core_empty(core->pair)) return;
+        if (is_core_empty(core))
+        {
+            if (core->pair == PNULL) return;
+            if (is_core_empty(core->pair)) return;
+        }
 
         /* Otherwise, we conclude that this core pair has had some devices
          * placed on the contained threads. Now, we move the hardware iterator
@@ -143,9 +157,10 @@ void BucketFilling::poke_iterator(HardwareIterator& hardwareIt)
          *
          * Note that, the above construct is designed to iterate appropriately
          * regardless of whether the iterator is on a lower- or upper- member
-         * of a core pair. If it is on a lower-member, two `next_core`s are
-         * called. If it is on an upper-member, only one `next_core` is
-         * called. The pair of a pair is the original. */
+         * of a core pair, or if the core has no pair. If it is on a
+         * lower-member, two `next_core`s are called. If it is on an
+         * upper-member or if there is no pair, only one `next_core` is
+         * called. The pair of a pair (that exists) is itself. */
         if (hardwareIt.next_core()->pair == core) hardwareIt.next_core();
     }
 }

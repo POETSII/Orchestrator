@@ -286,7 +286,7 @@ float SimulatedAnnealing::do_it(P_task* task)
                 /* Update validCoresForDeviceType, for selection. */
                 std::map<P_devtyp*, std::set<P_core*>>::iterator devtypIt;
                 P_core* firstCore = previousThread->parent;
-                P_core* secondCore = firstCore->pair;
+                P_core* secondCore = firstCore->pair;  /* May be PNULL. */
 
                 /* If we removed the last device from this core pair, make the
                  * core pair available for other device types. First check on
@@ -307,7 +307,7 @@ float SimulatedAnnealing::do_it(P_task* task)
                         }
                     }
 
-                    if (coresEmpty)
+                    if (coresEmpty and secondCore != PNULL)
                     {
                         for (threadIt = secondCore->P_threadm.begin();
                              threadIt != secondCore->P_threadm.end();
@@ -331,7 +331,10 @@ float SimulatedAnnealing::do_it(P_task* task)
                              devtypIt++)
                         {
                             devtypIt->second.insert(firstCore);
-                            devtypIt->second.insert(secondCore);
+                            if (secondCore != PNULL)
+                            {
+                                devtypIt->second.insert(secondCore);
+                            }
                         }
                     }
                 }
@@ -340,7 +343,7 @@ float SimulatedAnnealing::do_it(P_task* task)
                  * device type. Handily, set.erase doesn't moan if no element
                  * matches. */
                 firstCore = selectedThread->parent;
-                secondCore = firstCore->pair;
+                secondCore = firstCore->pair;  /* May be PNULL. */
 
                 for (devtypIt = validCoresForDeviceType.begin();
                      devtypIt != validCoresForDeviceType.end();
@@ -349,7 +352,10 @@ float SimulatedAnnealing::do_it(P_task* task)
                     if (devtypIt->first != selectedDevice->pP_devtyp)
                     {
                         devtypIt->second.erase(firstCore);
-                        devtypIt->second.erase(secondCore);
+                        if (secondCore != PNULL)
+                        {
+                            devtypIt->second.erase(secondCore);
+                        }
                     }
                 }
             }
@@ -358,7 +364,7 @@ float SimulatedAnnealing::do_it(P_task* task)
         /* Transform for swap operation. */
         else
         {
-            // <!>
+            // Not yet implemented <!>
         }
 
         iteration++;

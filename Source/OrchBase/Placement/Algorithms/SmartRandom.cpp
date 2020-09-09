@@ -87,8 +87,9 @@ float SmartRandom::do_it(P_task* task)
             break;
         }
 
-        /* Put the device on the selected thread, and remove the core pair
-         * from the available set of cores for other device types. */
+        /* Put the device on the selected thread, and remove the core (pair, if
+         * appropriate) from the available set of cores for other device
+         * types. */
         placer->link(thread, device);
         for (badCoreIt = validCoresForDeviceType.begin();
              badCoreIt != validCoresForDeviceType.end(); badCoreIt++)
@@ -96,7 +97,7 @@ float SmartRandom::do_it(P_task* task)
             if (badCoreIt->first != deviceType)
             {
                 badCoreIt->second.erase(core);
-                badCoreIt->second.erase(core->pair);
+                if (core->pair != PNULL) badCoreIt->second.erase(core->pair);
             }
         }
     }

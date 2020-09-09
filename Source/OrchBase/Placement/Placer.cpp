@@ -48,8 +48,9 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
     return output;
 }
 
-/* Returns true if all core pairs devices of one (or zero) type mapped to them,
- * and false otherwise. Arguments:
+/* Returns true if all core pairs (or single cores, if that's how the model is
+ * configured) have devices of one (or zero) type mapped to them, and false
+ * otherwise. Arguments:
  *
  * - task: Task to scan for devices.
  *
@@ -93,13 +94,13 @@ bool Placer::are_all_core_pairs_device_locked(P_task* task,
          coreIt++)
     {
         firstCore = coreIt->first;
-        secondCore = firstCore->pair;
+        secondCore = firstCore->pair;  /* May be PNULL. */
 
         std::pair<P_core*, P_core*> corePair =
             std::make_pair(firstCore, secondCore);
         std::set<P_devtyp*>* devTypSet = &((*badCoresToDeviceTypes)[corePair]);
 
-        /* From each thread in that core... */
+        /* From each thread in the first core... */
         for (threadIt = firstCore->P_threadm.begin();
              threadIt != firstCore->P_threadm.end(); threadIt++)
         {
@@ -112,6 +113,25 @@ bool Placer::are_all_core_pairs_device_locked(P_task* task,
             {
                 /* ...get its device type. */
                 devTypSet->insert((*deviceIt)->pP_devtyp);
+            }
+        }
+
+        /* And again for its pair, if the pair exists. */
+        if (secondCore != PNULL)
+        {
+            for (threadIt = secondCore->P_threadm.begin();
+                 threadIt != secondCore->P_threadm.end(); threadIt++)
+            {
+                std::list<P_device*>* devList =
+                    &(threadToDevices[threadIt->second]);
+
+                /* ...from each device mapped to that thread... */
+                for (deviceIt = devList->begin(); deviceIt != devList->end();
+                     deviceIt++)
+                {
+                    /* ...get its device type. */
+                    devTypSet->insert((*deviceIt)->pP_devtyp);
+                }
             }
         }
 
@@ -284,11 +304,21 @@ void Placer::check_integrity(P_task* task, Algorithm* algorithm)
         for (badCoreIt = badCoresToDeviceTypes.begin();
              badCoreIt != badCoresToDeviceTypes.end(); badCoreIt++)
         {
-            /* ...we write a line. */
-            corePrint.append(
-                dformat("\n - '%s' and '%s':",
-                        badCoreIt->first.first->FullName().c_str(),
-                        badCoreIt->first.second->FullName().c_str()));
+            /* ...we write a line. That line differs in format for cores
+             * without a pair. */
+            if (badCoreIt->first.second == PNULL)  /* Not a pair */
+            {
+                corePrint.append(
+                    dformat("\n - '%s':",
+                            badCoreIt->first.first->FullName().c_str()));
+            }
+            else  /* Is a pair */
+            {
+                corePrint.append(
+                    dformat("\n - '%s' and '%s':",
+                            badCoreIt->first.first->FullName().c_str(),
+                            badCoreIt->first.second->FullName().c_str()));
+            }
 
             /* For each device type associated with that core pair... */
             for (devTypIt = badCoreIt->second.begin();
