@@ -115,6 +115,7 @@ void CostCache::build_cache()
 
     /* O(node^3) loop of death. */
     std::vector<FWThreadArg*> threadArgs;
+    std::vector<FWThreadArg*>::iterator argIt;
     outerIt.reset_all_iterators();
     middleIt.reset_all_iterators();
     while (!(outerIt.has_wrapped()))
@@ -157,6 +158,10 @@ void CostCache::build_cache()
                         pthread_join(threads[errThreadIndex], PNULL);
                     }
 
+                    /* Cleanup heaped threadArgs elements. */
+                    for (argIt = threadArgs.begin(); argIt != threadArgs.end();
+                         argIt++) delete *argIt;
+
                     throw PthreadException(uint2str(rc));
                 }
             }
@@ -173,6 +178,8 @@ void CostCache::build_cache()
         }
 
         /* Cleanup */
+        for (argIt = threadArgs.begin(); argIt != threadArgs.end();
+             argIt++) delete *argIt;
         threadArgs.clear();
 
         /* Next iteration */
