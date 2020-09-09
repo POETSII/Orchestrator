@@ -98,6 +98,15 @@ void P_core::Dump(FILE* file)
         fprintf(file, "Instruction binary: %s\n", instructionBinary.c_str());
     }
 
+    if (pair == PNULL)
+    {
+        fprintf(file, "No pair associated with this core.\n");
+    }
+    else
+    {
+        fprintf(file, "Paired core: %s\n", pair->FullName().c_str());
+    }
+
     /* About contained items, if any. */
     DumpUtils::open_breaker(file, "Threads in this core");
     if (P_threadm.empty())
