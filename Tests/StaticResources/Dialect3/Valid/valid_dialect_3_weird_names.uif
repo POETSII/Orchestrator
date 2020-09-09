@@ -1,0 +1,113 @@
+// A representation of a 1-box POETS Engine in Dialect 3, but with weird names
+// all starting with "N".
+
+[header("N6b06b723")]
++author="Mark Vousden"
++dialect=3
++datetime=20200909134000
++version="0.4.0"
++file="8_box.uif"
+
+// Sums to 16 bits, leading bits are not used.
+[packet_address_format]
++box=3  // The box address component is not used.
++board=(3,3)
++mailbox=(2,2)
++core=2
++thread=4
+
+// All items are of the same type.
+[default_types]
++box_type="N235a87cb"
++board_type="Nc5f841ad"
++mailbox_type="Naa1ca279"
+
+// Boards are connected as follows:
+//
+// +-------------------+
+// |                   |
+// | Ne24e0dd9 -- N4ae7479e -- N0f8c6691 |
+// |                   |
+// |  |      |      |  |
+// |                   |
+// | Ne33118e5 -- N65e09e51 -- Nc47903af |
+// |                   |
+// +-------------------+
+//
+[engine_box]
+Nae083491(addr(000),boards(Ne33118e5,Ne24e0dd9,N65e09e51,N4ae7479e,Nc47903af,N0f8c6691),hostname(ayres))
++external_box_cost=0
+
+// Note that the Y-component of the board address in hardware comes before the
+// X-component. The notation for boards here is, for example:
+//
+//  (Xb,Yb):Box(board(BXY),addr(Y,X))
+//
+// where {X,Y} denotes the {horizontal,vertical}-component of the co-ordinate
+// in the board system, and {Xb,Yb} denotes the {horizontal,vertical}-component
+// of the co-ordinate in the engine system.
+[engine_board]
+(0,0):Nae083491(board(Ne33118e5),addr(000,000))=Nae083491(board(N65e09e51)),Nae083491(board(Ne24e0dd9))
+(1,0):Nae083491(board(N65e09e51),addr(000,001))=Nae083491(board(Ne33118e5)),Nae083491(board(Nc47903af)),Nae083491(board(N4ae7479e))
+(2,0):Nae083491(board(Nc47903af),addr(000,010))=Nae083491(board(N65e09e51)),Nae083491(board(N0f8c6691))
+(0,1):Nae083491(board(Ne24e0dd9),addr(001,000))=Nae083491(board(Ne33118e5)),Nae083491(board(N4ae7479e))
+(1,1):Nae083491(board(N4ae7479e),addr(001,001))=Nae083491(board(N65e09e51)),Nae083491(board(Ne24e0dd9)),Nae083491(board(N0f8c6691))
+(2,1):Nae083491(board(N0f8c6691),addr(001,010))=Nae083491(board(Nc47903af)),Nae083491(board(N4ae7479e))
++board_board_cost=8  // Relative to [board].mailbox_mailbox_cost.
+
+[box(N235a87cb)]
++box_board_cost=0
++supervisor_memory=10240
+
+// Mailboxes are connected within a board as follows:
+//
+// +--------------------------+
+// |                          |
+// | Ne6c96de0 -- Na3204bd1 -- Ne6ffc6f9 -- N311fbf56 |
+// |                          |
+// |  |      |      |      |  |
+// |                          |
+// | N44083ce3 -- N05c8505d -- N9445214d -- Nc7282bc8 |
+// |                          |
+// |  |      |      |      |  |
+// |                          |
+// | N6cf49a1d -- N50f26842 -- N902554d7 -- N960701a0 |
+// |                          |
+// |  |      |      |      |  |
+// |                          |
+// | Nb8e3309d -- N2646abd1 -- N9a20300e -- Ndab683f2 |
+// |                          |
+// +--------------------------+
+[board(Nc5f841ad)]
+(0,0):Nb8e3309d(addr(00,00))=N2646abd1,N6cf49a1d
+(1,0):N2646abd1(addr(01,00))=Nb8e3309d,N9a20300e,N50f26842
+(2,0):N9a20300e(addr(10,00))=N2646abd1,Ndab683f2,N902554d7
+(3,0):Ndab683f2(addr(11,00))=N9a20300e,N960701a0
+(0,1):N6cf49a1d(addr(00,01))=Nb8e3309d,N50f26842,N44083ce3
+(1,1):N50f26842(addr(01,01))=N2646abd1,N6cf49a1d,N902554d7,N05c8505d
+(2,1):N902554d7(addr(10,01))=N9a20300e,N50f26842,N960701a0,N9445214d
+(3,1):N960701a0(addr(11,01))=Ndab683f2,N902554d7,Nc7282bc8
+(0,2):N44083ce3(addr(00,10))=N6cf49a1d,N05c8505d,Ne6c96de0
+(1,2):N05c8505d(addr(01,10))=N50f26842,N44083ce3,N9445214d,Na3204bd1
+(2,2):N9445214d(addr(10,10))=N902554d7,N05c8505d,Nc7282bc8,Ne6ffc6f9
+(3,2):Nc7282bc8(addr(11,10))=N960701a0,N9445214d,N311fbf56
+(0,3):Ne6c96de0(addr(00,11))=N44083ce3,Na3204bd1
+(1,3):Na3204bd1(addr(01,11))=N05c8505d,Ne6c96de0,Ne6ffc6f9
+(2,3):Ne6ffc6f9(addr(10,11))=N9445214d,Na3204bd1,N311fbf56
+(3,3):N311fbf56(addr(11,11))=Nc7282bc8,Ne6ffc6f9
++board_mailbox_cost=0
++supervisor_memory=0
++mailbox_mailbox_cost=1 // Relative to box::board_board_cost
++dram=4096  // MiB, two DDR3 DRAM boards.
+
+[mailbox(Naa1ca279)]
++cores=4
++mailbox_core_cost=0
++core_core_cost=0.001
+
+[core]
++threads=16
++instruction_memory=8  // KiB
++data_memory=0
++core_thread_cost=0
++thread_thread_cost=0.0000001

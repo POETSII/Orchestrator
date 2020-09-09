@@ -83,6 +83,7 @@ bool OrchBase::PlacementDoit(Cli::Cl_t clause)
     }
     catch (AlreadyPlacedException&) {Post(203, taskHandle);}
     catch (BadIntegrityException& e) {Post(204, taskHandle, e.message);}
+    catch (CostCacheException& e) {Post(216, taskHandle, e.message);}
     catch (NoEngineException&) {Post(205, taskHandle);}
     catch (NoSpaceToPlaceException&) {Post(206, taskHandle);}
     return true;
@@ -126,6 +127,11 @@ void OrchBase::PlacementDump(Cli::Cl_t clause)
     {
         Post(213, e.message);
     }
+    catch (CostCacheException& e)
+    {
+        Post(217, e.message);
+    }
+
 }
 
 /* Shortcut method to get a task object from its handle. */

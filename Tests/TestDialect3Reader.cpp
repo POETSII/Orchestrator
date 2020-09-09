@@ -13,12 +13,14 @@
 /* C++98 does not have a cross-platform way of listing directories... grumble
  * grumble. */
 std::vector<std::string> semanticallyValidInputs = {
+    "1_box.uif",
     "8_box.uif",
     "valid_dialect_3_mismatched_name.uif",
     "valid_dialect_3_one_thread_per_core.uif",
     "valid_dialect_3_some_types_in_sections.uif",
     "valid_dialect_3_types_everywhere.uif",
-    "valid_dialect_3.uif"
+    "valid_dialect_3.uif",
+    "valid_dialect_3_weird_names.uif"
 };
 
 std::vector<std::string> semanticallyInvalidInputs = {

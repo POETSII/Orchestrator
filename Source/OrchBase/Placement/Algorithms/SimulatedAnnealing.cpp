@@ -39,9 +39,6 @@ float SimulatedAnnealing::do_it(P_task* task)
     FILE* log = fopen(dformat("./simulated_annealing_%s_%s.txt",
                               task->Name().c_str(), time.c_str()).c_str(),
                       "w");
-    FILE* data = fopen(dformat("./simulated_annealing_fitness_graph_%s_%s.csv",
-                               task->Name().c_str(), time.c_str()).c_str(),
-                       "w");
     result.startTime = time;
     fprintf(log, "[I] Placement starting at %s.\n", time.c_str());
 
@@ -51,7 +48,18 @@ float SimulatedAnnealing::do_it(P_task* task)
     {
         fprintf(log, "[I] Hardware cost cache has not been built - building "
                 "it now.\n");
-        placer->cache = new CostCache(placer->engine);
+        try
+        {
+            placer->cache = new CostCache(placer->engine);
+        }
+
+        catch (CostCacheException& e)
+        {
+            fprintf(log, "[E] Unable to generate costcache. Handing control "
+                    "back to the operator.\n");
+            fclose(log);
+            throw e;
+        }
     }
 
     /* Initial placement using smart-random. Note that we rely on this being a
@@ -115,6 +123,10 @@ float SimulatedAnnealing::do_it(P_task* task)
     float fitnessChange;  /* Negative represents "before the transformation",
                            * and positive represents "after the
                            * transformation" */
+
+    FILE* data = fopen(dformat("./simulated_annealing_fitness_graph_%s_%s.csv",
+                               task->Name().c_str(), time.c_str()).c_str(),
+                       "w");
 
     if (trivialGraph)
     {

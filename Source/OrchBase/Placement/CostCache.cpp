@@ -393,6 +393,8 @@ void CostCache::populate_combined_graph(CombinedGraph* graph,
      * connect them together, where the edge weight is the weight of the edge
      * in the engine graph, plus the costBoardMailbox value of the board.
      *
+     * <Name assumption>: Tag for searching purposes.
+     *
      * This is tremendously silly, but again, will be replaced with more
      * intelligent logic when mailbox ports are introduced. It's good enough
      * for now.
@@ -467,11 +469,13 @@ void CostCache::populate_combined_graph(CombinedGraph* graph,
 
                 else
                 {
-                    printf("Couldn't determine relationship between boards "
-                           "'%s' and '%s'. Failing catastrophically.\n",
-                           fromBoard->FullName().c_str(),
-                           toBoard->FullName().c_str());
-                    return;
+                    /* Due to the note at tag <Name assumption>. */
+                    throw CostCacheException(dformat(
+                        "When producing the cost cache for the current "
+                        "engine, the relationship between boards '%s' and "
+                        "'%s' could not be determined.",
+                        fromBoard->FullName().c_str(),
+                        toBoard->FullName().c_str()));
                 }
 
                 /* Join them up if appropriate. */

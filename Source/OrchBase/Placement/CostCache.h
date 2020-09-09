@@ -10,6 +10,7 @@
  *
  * See the placement documentation for further information. */
 
+#include "CostCacheException.h"
 #include "DumpUtils.h"
 #include "HardwareModel.h"
 #include "HardwareIterator.h"
