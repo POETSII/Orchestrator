@@ -9,10 +9,11 @@
  * otherwise. Arguments:
  *
  * - mailbox: Pointer to the mailbox to populate.
- * - quatity: Number of cores to create (the number of threads will be
-         determined from the UIF parse tree. */
+ * - coreQuatity: Number of cores to create (the number of threads will be
+ *       determined from the UIF parse tree.
+ * - pairCores: Whether or not to pair adjacent cores up. */
 bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
-    P_mailbox* mailbox, unsigned coreQuantity)
+    P_mailbox* mailbox, unsigned coreQuantity, bool pairCores)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
 
@@ -26,35 +27,60 @@ bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
     sectionName = "core";
 
     /* Create all of the cores, and add them to the mailbox. Don't validate the
-     * address component (but still catch if we go out of bounds).
-     *
-     * Cores are created in pairs */
-    P_core* firstCore;
-    P_core* secondCore;
-    AddressComponent coreId;
-    for (coreId = 0; coreId < coreQuantity; coreId+=2)
+     * address component (but still catch if we go out of bounds). */
+
+    if (pairCores)  /* Cores are created in pairs */
     {
-        /* Create */
-        firstCore = new P_core(dformat("C%0*u", how_many_digits(coreQuantity),
-                                       coreId));
-        secondCore = new P_core(dformat("C%0*u", how_many_digits(coreQuantity),
-                                        coreId + 1));
-
-        /* Contain */
-        try
+        P_core* firstCore;
+        P_core* secondCore;
+        AddressComponent coreId;
+        for (coreId = 0; coreId < coreQuantity; coreId+=2)
         {
-            mailbox->contain(coreId, firstCore);
-            mailbox->contain(coreId + 1, secondCore);
-        }
-        catch (OrchestratorException &e)
-        {
-            errors.push_back(e.message.c_str());
-            anyErrors = true;
-        }
+            /* Create */
+            firstCore = new P_core(dformat(
+                "C%0*u", how_many_digits(coreQuantity), coreId));
+            secondCore = new P_core(dformat(
+                "C%0*u", how_many_digits(coreQuantity), coreId + 1));
 
-        /* Conjoin */
-        firstCore->pair = secondCore;
-        secondCore->pair = firstCore;
+            /* Contain */
+            try
+            {
+                mailbox->contain(coreId, firstCore);
+                mailbox->contain(coreId + 1, secondCore);
+            }
+            catch (OrchestratorException &e)
+            {
+                errors.push_back(e.message.c_str());
+                anyErrors = true;
+            }
+
+            /* Conjoin */
+            firstCore->pair = secondCore;
+            secondCore->pair = firstCore;
+        }
+    }
+
+    else  /* Cores are not created in pairs */
+    {
+        P_core* core;
+        AddressComponent coreId;
+        for (coreId = 0; coreId < coreQuantity; coreId++)
+        {
+            /* Create */
+            core = new P_core(dformat(
+                "C%0*u", how_many_digits(coreQuantity), coreId));
+
+            /* Contain */
+            try
+            {
+                mailbox->contain(coreId, firstCore);
+            }
+            catch (OrchestratorException &e)
+            {
+                errors.push_back(e.message.c_str());
+                anyErrors = true;
+            }
+        }
     }
 
     /* Valid fields for the core section. All fields are mandatory. */
@@ -572,6 +598,7 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
     validFields.push_back("core_core_cost");
     validFields.push_back("mailbox_core_cost");
     validFields.push_back("cores");
+    validFields.push_back("pair_cores");
 
     /* Holds fields we've already grabbed (for validation purposes). */
     std::map<std::string, bool> fieldsFound;
@@ -585,6 +612,11 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
      * nodes. */
     std::vector<UIF::Node*> valueNodes;
     std::vector<UIF::Node*> variableNodes;
+
+    /* Hold core count and pairing information until all fields have been
+     * read. */
+    unsigned coreCount;
+    bool pairCores;
 
     /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
@@ -647,13 +679,8 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
                 continue;
             }
 
-            /* Create and add that many cores. */
-            if (!d3_create_cores_and_threads_for_mailbox(
-                    mailbox, str2unsigned(valueNodes[0]->str)))
-            {
-                anyErrors = true;
-                continue;
-            }
+            /* Store for later. */
+            coreCount = str2unsigned(valueNodes[0]->str);
         }
 
         else if (variable == "mailbox_core_cost")
@@ -668,12 +695,47 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
             /* Bind */
             mailbox->costMailboxCore = str2float(valueNodes[0]->str);
         }
+
+        else if (variable == "pair_cores")
+        {
+            /* Complain if not a booleanish value. */
+            if (!complain_if_value_not_booleanish(valueNodes[0]))
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Store for later. */
+            pairCores = (valueNodes[0]->str == "true");
+        }
     }
 
     /* Ensure mandatory fields have been defined. */
     if (!complain_if_mandatory_field_not_defined(&validFields, &fieldsFound))
     {
         anyErrors = true;
+    }
+
+    else
+    {
+        /* If cores are to be paired, and there isn't an even number of cores
+         * to create, we complain. */
+        if (coreCount % 2 and pairCores)
+        {
+            anyErrors = true;
+            errors.push_back(dformat(
+                "In section '%s', an odd-number of cores has been defined "
+                "with core pairing logic.", sectionName.c_str()));
+        }
+
+        /* Otherwise, if everything is defined properly, create and add
+         * cores. */
+        else if (!d3_create_cores_and_threads_for_mailbox(mailbox, coreCount,
+                                                          pairCores))
+        {
+            anyErrors = true;
+            continue;
+        }
     }
 
     /* Restore the old 'record', 'sectionName', and 'variable' members. */

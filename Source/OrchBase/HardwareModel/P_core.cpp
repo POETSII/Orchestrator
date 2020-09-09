@@ -6,7 +6,11 @@
 /* Constructs a POETS Core. Arguments:
  *
  * - name: Name of this core object (see namebase) */
-P_core::P_core(std::string name){Name(name);}
+P_core::P_core(std::string name)
+{
+    Name(name);
+    pair = PNULL;
+}
 
 P_core::~P_core(){clear();}
 

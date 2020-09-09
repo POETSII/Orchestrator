@@ -31,6 +31,7 @@ public:
         std::map<std::string, bool>* fieldsFound);
     bool complain_if_variable_not_plus_prefixed(UIF::Node* variableNode);
     bool complain_if_value_not_a_valid_type(UIF::Node* valueNode);
+    bool complain_if_value_not_booleanish(UIF::Node* valueNode);
     bool complain_if_value_not_floating(UIF::Node* valueNode);
     bool complain_if_value_not_natural(UIF::Node* valueNode);
     bool complain_if_values_and_children_not_natural(UIF::Node* valueNode);
@@ -50,6 +51,7 @@ public:
     bool is_multivalue_record(std::vector<UIF::Node*>* valueNodes);
     bool is_multivariable_record(std::vector<UIF::Node*>* variableNodes);
 
+    bool is_node_value_booleanish(UIF::Node* valueNode);
     bool is_node_value_floating(UIF::Node* valueNode);
     bool is_node_value_natural(UIF::Node* valueNode);
     bool is_node_variable_true_in_map(std::map<std::string, bool>* mapToSearch,
