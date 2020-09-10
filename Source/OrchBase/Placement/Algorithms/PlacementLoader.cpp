@@ -56,6 +56,12 @@ void PlacementLoader::load_file()
     std::stringstream recordStream;
     std::ifstream dataStream;
     dataStream.open(filePath);
+    if (!dataStream.is_open())
+    {
+        throw FileOpenException(
+            dformat("File: %s. Message: %s",
+                    filePath, POETS::getSysErrorString(errno).c_str()));
+    }
 
     /* For each line... */
     while(std::getline(dataStream, recordBuffer))
