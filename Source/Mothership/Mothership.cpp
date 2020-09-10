@@ -76,9 +76,10 @@ void Mothership::load_backend()
      * enable the additional send slot (which we need for supervisor messages)
      * in the tinsel cores. This also means that we need to provide the size of 
      * the cluster that we are using, which may have been overidden by
-     * environment variables. The below is essentially reporoduced from the 
+     * environment variables. The below is essentially reproduced from the 
      * default Hostlink constructor with the exception of "useExtraSendSlot"
      * being set to true. */
+    /* This is horrible and we will change it (hostlink) when time allows */ 
     char* str = getenv("HOSTLINK_BOXES_X");
     int x = str ? atoi(str) : 1;
     str = getenv("HOSTLINK_BOXES_Y");
