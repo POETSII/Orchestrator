@@ -527,6 +527,12 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
         commIndex = P_SCMm2[boxIt->second].first;
         mothershipProc = P_SCMm2[boxIt->second].second;
 
+        /* A special "null" value defined for this rank. We have not yet
+         * checked to see if this box has a Mothership mapped to it - we don't
+         * want to error out without first checking that there are no devices
+         * attached to this box. */
+        commRank = std::make_pair<unsigned, int>(0, -1);
+
         /* Iterate over all cores in this box, in an attempt to find devices
          * owned by the task that are mapped to this box. Squashed indentation
          * to make logic easier to follow. */
@@ -590,10 +596,10 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
             }
         }
 
-        /* If we found no devices for this task on this box, skip to the next
-         * box. */
-        if (mothershipPayloads.find(commRank) == mothershipPayloads.end())
-            continue;
+        /* If we found no devices for this task on this box, or if the box
+         * isn't supported by a Mothership, skip to the next box. */
+        if (mothershipPayloads.find(commRank) == mothershipPayloads.end() or
+            commRank == std::make_pair<unsigned, int>(0, -1)) continue;
 
         /* At this point, we are sure that there is a Mothership that can
          * represent this box, and we are also sure that there are devices that
