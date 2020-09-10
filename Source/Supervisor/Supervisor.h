@@ -38,6 +38,6 @@ class Supervisor
 {
 public:
 
-     static vector<supInputPin*> inputs;
-     static vector<supOutputPin*> outputs;
+     static std::vector<supInputPin*> inputs;
+     static std::vector<supOutputPin*> outputs;
 };
