@@ -619,6 +619,12 @@ void Placer::dump(P_task* task)
     dump_node_loading(nodeLoadPath.c_str());
 
     FILE* cacheFile = fopen(cachePath.c_str(), "w");
+    if (cacheFile == PNULL)
+    {
+        throw FileOpenException(
+            dformat("File: %s. Message: %s",
+                    cachePath.c_str(), POETS::getSysErrorString(errno)));
+    }
     cache->Dump(cacheFile);
     fclose(cacheFile);
 }
@@ -627,8 +633,14 @@ void Placer::dump(P_task* task)
 void Placer::dump_costs(P_task* task, const char* path)
 {
     /* File setup. */
-    ofstream out;
+    std::ofstream out;
     out.open(path);
+    if (!out.is_open())
+    {
+        throw FileOpenException(
+            dformat("File: %s. Message: %s",
+                    path, POETS::getSysErrorString(errno).c_str()));
+    }
 
     /* Iterate through each edge in the task. */
     std::map<std::pair<P_device*, P_device*>, float>::iterator edgeIt;
@@ -647,8 +659,14 @@ void Placer::dump_costs(P_task* task, const char* path)
 void Placer::dump_diagnostics(P_task* task, const char* path)
 {
     /* File setup. */
-    ofstream out;
+    std::ofstream out;
     out.open(path);
+    if (!out.is_open())
+    {
+        throw FileOpenException(
+            dformat("File: %s. Message: %s",
+                    path, POETS::getSysErrorString(errno).c_str()));
+    }
 
     /* Get the result object address (Placer::dump checks that the task has
      * already been placed). */
@@ -667,8 +685,14 @@ void Placer::dump_diagnostics(P_task* task, const char* path)
 void Placer::dump_edge_loading(const char* path)
 {
     /* File setup. */
-    ofstream out;
+    std::ofstream out;
     out.open(path);
+    if (!out.is_open())
+    {
+        throw FileOpenException(
+            dformat("File: %s. Message: %s",
+                    path, POETS::getSysErrorString(errno).c_str()));
+    }
 
     std::map<P_mailbox*, std::map<P_mailbox*, unsigned>> edgeLoading;
 
@@ -742,8 +766,14 @@ void Placer::dump_edge_loading(const char* path)
 void Placer::dump_map(P_task* task, const char* path)
 {
     /* File setup. */
-    ofstream out;
+    std::ofstream out;
     out.open(path);
+    if (!out.is_open())
+    {
+        throw FileOpenException(
+            dformat("File: %s. Message: %s",
+                    path, POETS::getSysErrorString(errno).c_str()));
+    }
 
     /* Iterate through each device in the task. */
     WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
@@ -769,8 +799,14 @@ void Placer::dump_map(P_task* task, const char* path)
 void Placer::dump_node_loading(const char* path)
 {
     /* File setup. */
-    ofstream out;
+    std::ofstream out;
     out.open(path);
+    if (!out.is_open())
+    {
+        throw FileOpenException(
+            dformat("File: %s. Message: %s",
+                    path, POETS::getSysErrorString(errno).c_str()));
+    }
 
     std::map<P_core*, unsigned> coreLoading;
     std::map<P_core*, unsigned>::iterator coreIt;

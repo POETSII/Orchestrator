@@ -99,6 +99,8 @@
 215(W) : "Unable to reset a portion of the placement system. Did you mean 'unplace'?"
 216(W) : "Unable to place task '%s' - could not generate a cost cache for this engine, which is required for this placement algorithm. Try a different engine or placement algorithm. Details: %s"
 217(W) : "Could not generate a cost cache for this engine, which is required to dump information about this placement run. Try a different engine or placement algorithm. Details: %s"
+218(W) : "Unable to place task '%s' - failed to open file. %s"
+219(W) : "Unable to dump placement data - failed to open file. %s"
 
 500(F) : "Mothership: Could not create pthread %s. Exiting."
 501(F) : "Mothership: Could not join to pthread %s. Exiting."

@@ -8,6 +8,7 @@
 class HardwareIterator;
 
 #include "BucketFilling.h"
+#include "FileOpenException.h"
 #include "HardwareIterator.h"
 #include "Placer.h"
 

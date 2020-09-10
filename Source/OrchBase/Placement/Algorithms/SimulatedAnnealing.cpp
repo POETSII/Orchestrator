@@ -36,9 +36,13 @@ float SimulatedAnnealing::do_it(P_task* task)
 {
     std::string time = placer->timestamp();
 
-    FILE* log = fopen(dformat("./simulated_annealing_%s_%s.txt",
-                              task->Name().c_str(), time.c_str()).c_str(),
-                      "w");
+    std::string fPath = dformat("simulated_annealing_%s_%s.txt",
+                                task->Name().c_str(), time.c_str());
+    FILE* log = fopen(fPath.c_str(), "w");
+    if (log == PNULL) throw FileOpenException(
+        dformat("File: %s. Message: %s",
+                fPath.c_str(), POETS::getSysErrorString(errno).c_str()));
+
     result.startTime = time;
     fprintf(log, "[I] Placement starting at %s.\n", time.c_str());
 
@@ -124,9 +128,18 @@ float SimulatedAnnealing::do_it(P_task* task)
                            * and positive represents "after the
                            * transformation" */
 
-    FILE* data = fopen(dformat("./simulated_annealing_fitness_graph_%s_%s.csv",
-                               task->Name().c_str(), time.c_str()).c_str(),
-                       "w");
+    fPath = dformat("simulated_annealing_fitness_graph_%s_%s.csv",
+                    task->Name().c_str(), time.c_str());
+    FILE* data = fopen(fPath.c_str(), "w");
+    if (data == PNULL)
+    {
+        int err = errno;
+        fprintf(log, "[E] Failed to open data file. Exiting.");
+        fclose(log);
+        throw FileOpenException(
+            dformat("File: %s. Message: %s",
+                    fPath.c_str(), POETS::getSysErrorString(err).c_str()));
+    }
 
     if (trivialGraph)
     {
