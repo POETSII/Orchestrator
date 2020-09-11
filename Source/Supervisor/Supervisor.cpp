@@ -14,7 +14,7 @@ extern "C"
         int sentErr = 0;
         char outPktBuf[P_PKT_MAX_SIZE];
 
-        vector<P_Pkt_t> pkts; // packets are packed in Tinsel packet format
+        std::vector<P_Pkt_t> pkts; // packets are packed in Tinsel packet format
         In->Put<P_Pkt_t>();
         In->Get(1, pkts);
         WALKVECTOR(P_Pkt_t, pkts, pkt) // and they're sent blindly
@@ -31,9 +31,9 @@ extern "C"
 
     int SupervisorExit()
     {
-        for (vector<supInputPin*>::iterator ipin = Supervisor::inputs.begin();
+        for (std::vector<supInputPin*>::iterator ipin = Supervisor::inputs.begin();
              ipin != Supervisor::inputs.end(); ipin++) delete *ipin;
-        for (vector<supOutputPin*>::iterator opin = Supervisor::outputs.begin();
+        for (std::vector<supOutputPin*>::iterator opin = Supervisor::outputs.begin();
              opin != Supervisor::outputs.end(); opin++) delete *opin;
         return 0;
     }
