@@ -451,8 +451,8 @@ unsigned P_builder::GenSupervisor(P_task* task)
     std::stringstream sup_inPin_state("");
     
     // build supervisor pin handlers.
-    sup_pin_handlers << "vector<supInputPin*> Supervisor::inputs;\n";
-    sup_pin_handlers << "vector<supOutputPin*> Supervisor::outputs;\n\n";
+    sup_pin_handlers << "std::vector<supInputPin*> Supervisor::inputs;\n";
+    sup_pin_handlers << "std::vector<supOutputPin*> Supervisor::outputs;\n\n";
 
     //==========================================================================
     // Assemble output pin variables & handlers.
