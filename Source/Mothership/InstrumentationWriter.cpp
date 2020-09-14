@@ -108,13 +108,14 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
 #endif
         fprintf(file, "RX/s, TX/s, Sup/s\n");
 
-        /* Write a zero-row for GMB's sanity. */
+        /* Write a zero-row for GMB's sanity (the first ThreadID must be 1). */
 #if TinselEnablePerfCount == true
         unsigned columns = 20;
 #else
         unsigned columns = 16;
 #endif
-        for (unsigned column=1; column<columns; column++)
+        fprintf(file, "1, ");
+        for (unsigned column=2; column<columns; column++)
             fprintf(file, "0, ");
         fprintf(file, "0\n");
     }
