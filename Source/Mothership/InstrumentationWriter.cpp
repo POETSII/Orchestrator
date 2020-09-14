@@ -114,7 +114,9 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
 #else
         unsigned columns = 16;
 #endif
-        for (unsigned column=1; column<columns; column++)
+        
+        fprintf(file, "%u, ", source);
+        for (unsigned column=2; column<columns; column++)
             fprintf(file, "0, ");
         fprintf(file, "0\n");
     }
