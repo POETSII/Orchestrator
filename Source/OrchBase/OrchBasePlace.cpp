@@ -40,6 +40,9 @@ unsigned OrchBase::CmPlace(Cli* cli)
             else PlacementReset(true);
         }
 
+        /* Are we defining a constraint on the command line? */
+        else if (clauseRoot == "cons") PlacementConstrain(*clause);
+
         /* Are we loading a placement spec? */
         else if (clauseRoot == "load") PlacementLoad(*clause);
 
@@ -50,6 +53,54 @@ unsigned OrchBase::CmPlace(Cli* cli)
         if (!isClauseValid) Post(25, clause->Cl, "placement");
     }
     return 0;
+}
+
+/* Apply a single hard constraint to the placer, which will be enforced on all
+ * applications placed on the hardware model going forward. */
+void OrchBase::PlacementConstrain(Cli::Cl_t clause)
+{
+    /* Skip (and post) if there is less than one parameter (i.e. constraint
+     * type). */
+    if (clause.Pa_v.size() < 1)
+    {
+        Post(48, clause.Cl, "placement", "1");
+        return;
+    }
+
+    /* Behaviour depends on the constraint type... */
+    if (Cli::StrEq(clause.Pa_v[0].Val, "MaxDevicesPerThread", 20))
+    {
+        /* Skip (and post) if there are not exactly two parameters. The second
+         * parameter is the constraining value. */
+        if (clause.Pa_v.size() != 2)
+        {
+            Post(221, clause.Pa_v[0].Val, "1", clause.Pa_v[1].Val);
+            return;
+        }
+
+        /* Remove existing constraint of this kind, regardless of its value. */
+        std::list<Constraint*>::iterator constraintIt;
+        for (constraintIt = pPlacer->constraints.begin();
+             constraintIt != pPlacer->constraints.end();)
+        {
+            if ((*constraintIt)->category == maxDevicesPerThread and
+                (*constraintIt)->task == PNULL and
+                (*constraintIt)->mandatory)
+            {
+                delete (*constraintIt);
+                constraintIt = pPlacer->constraints.erase(constraintIt);
+            }
+
+            else constraintIt++;
+        }
+
+        /* Otherwise, apply the constraint to the placer. */
+        pPlacer->constraints.push_back(
+            new MaxDevicesPerThread(true, 0, PNULL,
+                                    str2uint(clause.Pa_v[1].Val)));
+        Post(222, clause.Pa_v[1].Val);
+    }
+    else Post(220, clause.Pa_v[0].Val);
 }
 
 /* Returns true if the clause was valid (or some other error happened), and

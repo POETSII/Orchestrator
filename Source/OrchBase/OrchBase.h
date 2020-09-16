@@ -77,6 +77,7 @@ void                   OwneTask(Cli::Cl_t);
 
 // These bodies are in OrchBasePlace.cpp
 unsigned               CmPlace(Cli *);
+void                   PlacementConstrain(Cli::Cl_t);
 bool                   PlacementDoit(Cli::Cl_t);  // Algorithm filter
 void                   PlacementDump(Cli::Cl_t);
 P_task*                PlacementGetTaskByName(std::string);  // Shortcut
