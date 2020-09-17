@@ -58,7 +58,7 @@ float BucketFilling::do_it(P_task* task)
          * from one, to make counting easier w.r.t. maxThreadsPerCore. */
         unsigned threadInCore = 1;
 
-        /* If the ahead-iterator has wrapped, we've run out of space. */
+        /* If the iterator has wrapped, we've run out of space. */
         if (hardwareIt.has_wrapped()) throw NoSpaceToPlaceException(
             "[ERROR] Ran out of space placing a task.");
 
@@ -77,36 +77,34 @@ float BucketFilling::do_it(P_task* task)
             {
                 /* Move to the next thread. */
                 hardwareIt.has_core_changed();  /* Reset flag! */
-                thisThread = hardwareIt.next_thread();
+                hardwareIt.next_thread();
                 threadInCore++;
+                bool didCoreChange = hardwareIt.has_core_changed();
 
-                /* If we moved to a new core using the `next_thread` call, or
-                 * if we've reached the limit on how many threads we can use on
-                 * this core... */
-                if (hardwareIt.has_core_changed() or
-                    threadInCore > maxThreadsPerCore)
+                /* If we did not move to a new core using the `next_thread`
+                 * call, and we've reached the limit on the number of threads
+                 * we can use on this core, we move to the next core. */
+                if (!didCoreChange and threadInCore > maxThreadsPerCore)
+                {
+                    hardwareIt.next_core();
+                    didCoreChange = true;
+                    if (!onLowerCore) onLowerCore = true;
+                }
+
+                /* Sort out core-pairing logic. If we moved to a new core at
+                 * all for this device, */
+                if (didCoreChange)
                 {
                     threadInCore = 1;
 
-                    /* If this core has no pair, move to the next empty core
-                     * pair. */
-                    if (hardwareIt.get_core()->pair == PNULL)
-                    {
-                        poke_iterator(hardwareIt);
-                        thisThread = hardwareIt.get_thread();
-                    }
-
-                    /* Otherwise, if we've already moved to the original core's
-                     * pair on a previous iteration... */
-                    else if (!onLowerCore)
-                    {
-                        /* Move to the next empty core pair. */
-                        poke_iterator(hardwareIt);
-                        thisThread = hardwareIt.get_thread();
-                    }
-
+                    /* If this core has no pair, or we're on the "upper" member
+                     * of the core pair, move to the next empty core pair. */
+                    if (hardwareIt.get_core()->pair == PNULL or
+                        !onLowerCore) poke_iterator(hardwareIt);
                     else onLowerCore = false;
                 }
+
+                thisThread = hardwareIt.get_thread();
             }
 
             /* Now we've found an appropriate thread for this device. Let's
