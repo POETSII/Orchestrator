@@ -24,9 +24,14 @@ float SmartRandom::do_it(P_task* task)
 
     result.startTime = placer->timestamp();
 
-    /* Define the number of devices allowed per thread before constraints are
-     * violated - used during selection. */
-    devicesPerThreadSoftMax = placer->constrained_max_devices_per_thread(task);
+    /* Maximum number of devices to pack into a thread. */
+    unsigned maxDevicesPerThread = \
+        placer->constrained_max_devices_per_thread(task);
+
+    /* Maximum number of threads to use in each core. This constraint is
+     * handled by limiting the range of thread selection. */
+    unsigned maxThreadsPerCore = \
+        placer->constrained_max_threads_per_core(task);
 
     /* Know where we can put things. */
     placer->define_valid_cores_map(task, &validCoresForDeviceType);
@@ -59,13 +64,25 @@ float SmartRandom::do_it(P_task* task)
             core = *coreIt;
 
             /* Find the first thread on that core that has space. */
+            unsigned threadInCore = 1; /* Count of the thread within the
+                                        * core. NB: Not the index! We start
+                                        * from one, to make counting easier
+                                        * w.r.t. maxThreadsPerCore. */
             std::map<AddressComponent, P_thread*>::iterator threadIt;
+            std::map<AddressComponent, P_thread*>::iterator exitCondition;
+            exitCondition = core->P_threadm.begin();
             threadIt = core->P_threadm.begin();
-            while (threadIt != core->P_threadm.end())
+            while (threadIt != exitCondition)
             {
                 if (placer->threadToDevices[threadIt->second].size() <
-                    devicesPerThreadSoftMax) break;
+                    maxDevicesPerThread) break;
                 threadIt++;
+
+                /* If we've gone through too many threads, leave the loop and
+                 * enter the next one, which removes the core from the list and
+                 * makes us choose another core. */
+                threadInCore++;
+                if (threadInCore > maxThreadsPerCore) threadIt = exitCondition;
             }
 
             /* If we couldn't find a thread on that core that has space, remove
