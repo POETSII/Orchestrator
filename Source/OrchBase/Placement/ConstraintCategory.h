@@ -7,5 +7,6 @@
  * See the placement documentation for further information. */
 
 enum constraintCategory {maxDevicesPerThread,
+                         maxThreadsPerCore,
                          fixDevice};
 #endif

@@ -85,7 +85,8 @@ PLACEMENT_SOURCES = $(SOURCE_DIR)/OrchBase/Placement/CostCache.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/PlacementLoader.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/SimulatedAnnealing.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/SmartRandom.cpp \
-                    $(SOURCE_DIR)/OrchBase/Placement/Constraints/MaxDevicesPerThread.cpp
+                    $(SOURCE_DIR)/OrchBase/Placement/Constraints/MaxDevicesPerThread.cpp \
+                    $(SOURCE_DIR)/OrchBase/Placement/Constraints/MaxThreadsPerCore.cpp
 
 # Sources used by the Address Book object.
 ADDRESS_BOOK_SOURCES =  $(SOURCE_DIR)/NameServer/AddressBook/AddressBook_Defs.cpp \
