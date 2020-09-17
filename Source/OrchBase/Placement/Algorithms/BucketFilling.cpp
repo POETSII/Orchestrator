@@ -8,11 +8,9 @@ BucketFilling::BucketFilling(Placer* placer):Algorithm(placer)
 /* Places a task onto the engine held by a placer using a naive bucket-filling
  * algorithm.
  *
- * This algorithm is very basic - it does not adhere to many constraints (for
- * now), it does not compute fitness, and simply encapsulates the old placement
- * logic. It does not play nice with tasks placed using simulated annealing -
- * as they may populate the non-zeroth thread in a given core, making some of
- * the checks in this method ineffective.
+ * This algorithm is very basic - adherence to constraints are hardcoded where
+ * appropriate, it does not compute fitness, and simply encapsulates the old
+ * placement logic.
  *
  * Returns zero. */
 float BucketFilling::do_it(P_task* task)
