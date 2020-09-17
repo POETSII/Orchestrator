@@ -104,6 +104,7 @@
 220(W) : "Unknown constraint type '%s'. Consult the placement documentation for a comprehensive list of constraint types."
 221(W) : "Constraint '%s' requires exactly %s parameter(s), but %s parameter(s) were passed."
 222(I) : "Constraining the maximum number of placed devices per thread in the hardware model to %s."
+223(I) : "Constraining the maximum number of threads used for placement on each core in the hardware model to %s."
 
 500(F) : "Mothership: Could not create pthread %s. Exiting."
 501(F) : "Mothership: Could not join to pthread %s. Exiting."

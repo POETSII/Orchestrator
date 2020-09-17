@@ -100,6 +100,40 @@ void OrchBase::PlacementConstrain(Cli::Cl_t clause)
                                     str2uint(clause.Pa_v[1].Val)));
         Post(222, clause.Pa_v[1].Val);
     }
+
+    else if (Cli::StrEq(clause.Pa_v[0].Val, "MaxThreadsPerCore", 20))
+    {
+        /* Skip (and post) if there are not exactly two parameters. The second
+         * parameter is the constraining value. */
+        if (clause.Pa_v.size() != 2)
+        {
+            Post(221, clause.Pa_v[0].Val, "1", clause.Pa_v[1].Val);
+            return;
+        }
+
+        /* Remove existing constraint of this kind, regardless of its value. */
+        std::list<Constraint*>::iterator constraintIt;
+        for (constraintIt = pPlacer->constraints.begin();
+             constraintIt != pPlacer->constraints.end();)
+        {
+            if ((*constraintIt)->category == maxThreadsPerCore and
+                (*constraintIt)->task == PNULL and
+                (*constraintIt)->mandatory)
+            {
+                delete (*constraintIt);
+                constraintIt = pPlacer->constraints.erase(constraintIt);
+            }
+
+            else constraintIt++;
+        }
+
+        /* Otherwise, apply the constraint to the placer. */
+        pPlacer->constraints.push_back(
+            new MaxThreadsPerCore(true, 0, PNULL,
+                                  str2uint(clause.Pa_v[1].Val)));
+        Post(223, clause.Pa_v[1].Val);
+    }
+
     else Post(220, clause.Pa_v[0].Val);
 }
 
