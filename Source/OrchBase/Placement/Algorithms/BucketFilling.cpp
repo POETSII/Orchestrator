@@ -34,6 +34,10 @@ float BucketFilling::do_it(P_task* task)
     unsigned maxDevicesPerThread = \
         placer->constrained_max_devices_per_thread(task);
 
+    /* Maximum number of threads to use in each core. */
+    unsigned maxThreadsPerCore = \
+        placer->constrained_max_threads_per_core(task);
+
     /* Walk through each device type in the task. */
     std::vector<P_devtyp*>::iterator deviceTypeIterator;
     for (deviceTypeIterator = task->pP_typdcl->P_devtypv.begin();
@@ -49,6 +53,10 @@ float BucketFilling::do_it(P_task* task)
          * is empty. */
         poke_iterator(hardwareIt);
         onLowerCore = true;
+
+        /* Count of the thread within the core. NB: Not the index! We start
+         * from one, to make counting easier w.r.t. maxThreadsPerCore. */
+        unsigned threadInCore = 1;
 
         /* If the ahead-iterator has wrapped, we've run out of space. */
         if (hardwareIt.has_wrapped()) throw NoSpaceToPlaceException(
@@ -70,10 +78,16 @@ float BucketFilling::do_it(P_task* task)
                 /* Move to the next thread. */
                 hardwareIt.has_core_changed();  /* Reset flag! */
                 thisThread = hardwareIt.next_thread();
+                threadInCore++;
 
-                /* If we moved to a new core using the `next_thread` call... */
-                if (hardwareIt.has_core_changed())
+                /* If we moved to a new core using the `next_thread` call, or
+                 * if we've reached the limit on how many threads we can use on
+                 * this core... */
+                if (hardwareIt.has_core_changed() or
+                    threadInCore > maxThreadsPerCore)
                 {
+                    threadInCore = 1;
+
                     /* If this core has no pair, move to the next empty core
                      * pair. */
                     if (hardwareIt.get_core()->pair == PNULL)

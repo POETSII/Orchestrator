@@ -503,7 +503,7 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
 /* Returns the maximum number of threads that can be used on a core, such that
  * no maxThreadsPerCore constraints are violated that apply either globally, or
  * to a given task. */
-unsigned Placer::constrained_threads_per_core(P_task* task)
+unsigned Placer::constrained_max_threads_per_core(P_task* task)
 {
     unsigned maximumSoFar = UINT_MAX;
 

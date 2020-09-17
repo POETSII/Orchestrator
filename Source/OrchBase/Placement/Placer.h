@@ -132,7 +132,7 @@ public:
 
     /* Constraint query */
     unsigned constrained_max_devices_per_thread(P_task* task);
-    unsigned constrained_threads_per_core(P_task* task);
+    unsigned constrained_max_threads_per_core(P_task* task);
 
     /* Updates software addresses for placed devices. */
     void update_software_addresses(P_task* task);
