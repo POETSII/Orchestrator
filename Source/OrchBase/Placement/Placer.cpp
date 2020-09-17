@@ -500,6 +500,39 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
     return maximumSoFar;
 }
 
+/* Returns the maximum number of threads that can be used on a core, such that
+ * no maxThreadsPerCore constraints are violated that apply either globally, or
+ * to a given task. */
+unsigned Placer::constrained_threads_per_core(P_task* task)
+{
+    unsigned maximumSoFar = UINT_MAX;
+
+    /* Iterate through each constraint. */
+    std::list<Constraint*>::iterator constraintIterator;
+    for (constraintIterator = constraints.begin();
+         constraintIterator != constraints.end();
+         constraintIterator++)
+    {
+        Constraint* constraint = *constraintIterator;
+
+        /* Only care about "maxThreadsPerCore" constraints. */
+        if (constraint->category == maxThreadsPerCore)
+        {
+            /* Only care about constraints that are global, or that match our
+             * task. */
+            if (constraint->task == task or constraint->task == PNULL)
+            {
+                /* Accept the strictest. */
+                unsigned thisMaximum = \
+                    dynamic_cast<MaxThreadsPerCore*>(constraint)->maximum;
+                if (thisMaximum < maximumSoFar) maximumSoFar = thisMaximum;
+            }
+        }
+    }
+    return maximumSoFar;
+}
+
+
 /* Populates a map with information about which devices can be placed
  * where. Useful for algorithms. */
 void Placer::define_valid_cores_map(P_task* task,
