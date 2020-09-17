@@ -1,8 +1,11 @@
 #include "SimulatedAnnealing.h"
 
-SimulatedAnnealing::SimulatedAnnealing(Placer* placer):Algorithm(placer)
+SimulatedAnnealing::SimulatedAnnealing(Placer* placer, bool disorder):
+    Algorithm(placer),
+    disorder(disorder)
 {
-    result.method = "sa";
+    if (disorder) result.method = "sa";
+    else result.method = "gc";
     iteration = 0;
 }
 
@@ -22,10 +25,14 @@ float SimulatedAnnealing::acceptance_probability(float fitnessBefore,
 
 /* Computes the disorder value as a function of the iteration number, between
  * half (at iteration=0) and zero (lim iteration ->inf). Decrease must be
- * monotonic. For now, it's a simple exponential decay. */
+ * monotonic. For now, it's a simple exponential decay.
+ *
+ * In the case of simulated annealing that only accepts better
+ * configurations, disorder is always zero. */
 float SimulatedAnnealing::compute_disorder()
 {
-    return 0.5 * exp(DISORDER_DECAY * iteration);
+    if (disorder) return 0.5 * exp(DISORDER_DECAY * iteration);
+    else return 0;
 }
 
 /* Places a task onto the engine held by a placer using a simulated annealing
@@ -36,7 +43,11 @@ float SimulatedAnnealing::do_it(P_task* task)
 {
     std::string time = placer->timestamp();
 
-    std::string fPath = dformat("simulated_annealing_%s_%s.txt",
+    std::string algorithmName;
+    if (disorder) algorithmName = "simulated_annealing";
+    else algorithmName = "gradientless_climber";
+
+    std::string fPath = dformat("%s_%s_%s.txt", algorithmName.c_str(),
                                 task->Name().c_str(), time.c_str());
     FILE* log = fopen(fPath.c_str(), "w");
     if (log == PNULL) throw FileOpenException(
@@ -132,7 +143,7 @@ float SimulatedAnnealing::do_it(P_task* task)
                            * and positive represents "after the
                            * transformation" */
 
-    fPath = dformat("simulated_annealing_fitness_graph_%s_%s.csv",
+    fPath = dformat("%s_fitness_graph_%s_%s.csv", algorithmName.c_str(),
                     task->Name().c_str(), time.c_str());
     FILE* data = fopen(fPath.c_str(), "w");
     if (data == PNULL)

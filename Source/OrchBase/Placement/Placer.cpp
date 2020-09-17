@@ -25,7 +25,9 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
 {
     Algorithm* output = PNULL;
     if (colloquialDescription.substr(0, 2) == "sa")
-        output = new SimulatedAnnealing(this);
+        output = new SimulatedAnnealing(this, true);  /* With disorder. */
+    if (colloquialDescription.substr(0, 2) == "gc")
+        output = new SimulatedAnnealing(this, false);  /* Without disorder. */
     if (colloquialDescription == "buck") output = new BucketFilling(this);
     if (colloquialDescription == "link") output = new BucketFilling(this);
     if (colloquialDescription == "rand") output = new SmartRandom(this);
