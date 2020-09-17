@@ -3,7 +3,7 @@
 <PROJECT>
   <MACROS>
     <VERSION value="BCB.06.00"/>
-    <PROJECT value="..\bin\Injector1.exe"/>
+    <PROJECT value="..\..\bin\Injector1.exe"/>
     <OBJFILES value="InjectorMain.obj Unrec_t.obj CommonBase.obj Injector.obj ProcMap.obj 
       flat.obj Msg_p.obj PMsg_p.obj Environment.obj Cli.obj lex.obj Pglobals.obj"/>
     <RESFILES value="Injector1.res"/>
@@ -20,7 +20,7 @@
       vclie.bpi xmlrtl.bpi inet.bpi inetdbbde.bpi inetdbxpress.bpi inetdb.bpi 
       nmfast.bpi bcbie.bpi soaprtl.bpi dclocx.bpi dbexpress.bpi dbxcds.bpi 
       indy.bpi bcb2kaxserver.bpi"/>
-    <PATHCPP value=".;..\Source\Injector;..\Source\Common;..\Source\Common;..\Source\Injector;..\Source\Common;..\Generics;..\Generics;..\Source\Common;..\Source\Common;..\Generics;..\Generics;..\Source\Common"/>
+    <PATHCPP value=".;..\..\Source\Injector;..\..\Source\Common;..\..\Source\Common;..\..\Source\Injector;..\..\Source\Common;..\..\Generics;..\..\Generics;..\..\Source\Common;..\..\Source\Common;..\..\Generics;..\..\Generics;..\..\Source\Common"/>
     <PATHPAS value=".;"/>
     <PATHRC value=".;"/>
     <PATHASM value=".;"/>
@@ -30,17 +30,17 @@
     <USERDEFINES value="MSMPI_NO_DEPRECATE_20;_DEBUG;MSMPI_NO_SAL"/>
     <SYSDEFINES value="NO_STRICT;_NO_VCL;USEPACKAGES"/>
     <MAINSOURCE value="Injector1.bpf"/>
-    <INCLUDEPATH value="..\Source\Common;..\Source\Injector;..\Generics;C:\Apps\pThreads\Pre-built.2\include;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl;C:\MPI\Microsoft\Include"/>
-    <LIBPATH value="..\Generics;..\Source\Common;..\Source\Injector;$(BCB)\lib\obj;$(BCB)\lib"/>
+    <INCLUDEPATH value="..\..\Source\Common;..\..\Source\Injector;..\..\Generics;C:\Apps\pThreads\Pre-built.2\include;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl;C:\MPI\Microsoft\Include"/>
+    <LIBPATH value="..\..\Generics;..\..\Source\Common;..\..\Source\Injector;$(BCB)\lib\obj;$(BCB)\lib"/>
     <WARNINGS value="-w-par"/>
     <OTHERFILES value=""/>
   </MACROS>
   <OPTIONS>
     <CFLAG1 value="-vGc -vGt -vGd -Od -Vx -Ve -X- -r- -a8 -b- -k -y -v -vi- -tWC -tWM- -c"/>
-    <PFLAGS value="-N2..\Borland -N0..\Borland -$Y+ -$W -$O- -$A8 -v -JPHNE -M"/>
+    <PFLAGS value="-N2..\..\Borland -N0..\..\Borland -$Y+ -$W -$O- -$A8 -v -JPHNE -M"/>
     <RFLAGS value=""/>
     <AFLAGS value="/mx /w2 /zi"/>
-    <LFLAGS value="-I..\Borland -D&quot;&quot; -ap -Tpe -x -Gn -v"/>
+    <LFLAGS value="-I..\..\Borland -D&quot;&quot; -ap -Tpe -x -Gn -v"/>
     <OTHERFILES value=""/>
   </OPTIONS>
   <LINKER>
@@ -52,18 +52,18 @@
   <FILELIST>
       <FILE FILENAME="Injector1.res" FORMNAME="" UNITNAME="Injector1.res" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="Injector1.bpf" FORMNAME="" UNITNAME="Injector1" CONTAINERID="BPF" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Injector\InjectorMain.cpp" FORMNAME="" UNITNAME="InjectorMain" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\Unrec_t.cpp" FORMNAME="" UNITNAME="Unrec_t" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\CommonBase.cpp" FORMNAME="" UNITNAME="CommonBase" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Injector\Injector.cpp" FORMNAME="" UNITNAME="Injector" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\ProcMap.cpp" FORMNAME="" UNITNAME="ProcMap" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Generics\flat.cpp" FORMNAME="" UNITNAME="flat" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Generics\Msg_p.cpp" FORMNAME="" UNITNAME="Msg_p" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\PMsg_p.cpp" FORMNAME="" UNITNAME="PMsg_p" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\Environment.cpp" FORMNAME="" UNITNAME="Environment" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Generics\Cli.cpp" FORMNAME="" UNITNAME="Cli" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Generics\lex.cpp" FORMNAME="" UNITNAME="lex" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\Pglobals.cpp" FORMNAME="" UNITNAME="Pglobals" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Injector\InjectorMain.cpp" FORMNAME="" UNITNAME="InjectorMain" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Unrec_t.cpp" FORMNAME="" UNITNAME="Unrec_t" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\CommonBase.cpp" FORMNAME="" UNITNAME="CommonBase" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Injector\Injector.cpp" FORMNAME="" UNITNAME="Injector" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\ProcMap.cpp" FORMNAME="" UNITNAME="ProcMap" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\flat.cpp" FORMNAME="" UNITNAME="flat" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\Msg_p.cpp" FORMNAME="" UNITNAME="Msg_p" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\PMsg_p.cpp" FORMNAME="" UNITNAME="PMsg_p" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Environment.cpp" FORMNAME="" UNITNAME="Environment" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\Cli.cpp" FORMNAME="" UNITNAME="Cli" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\lex.cpp" FORMNAME="" UNITNAME="lex" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Pglobals.cpp" FORMNAME="" UNITNAME="Pglobals" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="C:\MPI\Microsoft\Lib\x86\msmpi_omf.lib" FORMNAME="" UNITNAME="msmpi_omf.lib" CONTAINERID="LibTool" DESIGNCLASS="" LOCALCOMMAND=""/>
   </FILELIST>
   <BUILDTOOLS>
@@ -102,19 +102,19 @@ d:\cbuilder\Bin\dclite60.bpl=Borland Integrated Translation Environment
 
 [HistoryLists\hlIncludePath]
 Count=7
-Item0=..\Source\Common;..\Source\Injector;..\Generics;C:\Apps\pThreads\Pre-built.2\include;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl;C:\MPI\Microsoft\Include
-Item1=..\Source\Common;..\Source\Injector;..\Generics;C:\Apps\pThreads\Pre-built.2\include;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
-Item2=..\Source\Common;..\Source\Injector;..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
-Item3=..\Source\Common;..\Source\Injector;..\Source\Common;..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
-Item4=..\Source\Injector;..\Source\Common;..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
-Item5=..\Source\Injector;..\Source\Common;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
-Item6=..\Source\Injector;$(BCB)\include;$(BCB)\include\vcl
+Item0=..\..\Source\Common;..\..\Source\Injector;..\..\Generics;C:\Apps\pThreads\Pre-built.2\include;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl;C:\MPI\Microsoft\Include
+Item1=..\..\Source\Common;..\..\Source\Injector;..\..\Generics;C:\Apps\pThreads\Pre-built.2\include;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item2=..\..\Source\Common;..\..\Source\Injector;..\..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item3=..\..\Source\Common;..\..\Source\Injector;..\..\Source\Common;..\..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item4=..\..\Source\Injector;..\..\Source\Common;..\..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item5=..\..\Source\Injector;..\..\Source\Common;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item6=..\..\Source\Injector;$(BCB)\include;$(BCB)\include\vcl
 
 [HistoryLists\hlLibraryPath]
 Count=3
-Item0=..\Generics;..\Source\Common;..\Source\Injector;$(BCB)\lib\obj;$(BCB)\lib
-Item1=..\Source\Common;..\Source\Injector;$(BCB)\lib\obj;$(BCB)\lib
-Item2=..\Source\Injector;$(BCB)\lib\obj;$(BCB)\lib
+Item0=..\..\Generics;..\..\Source\Common;..\..\Source\Injector;$(BCB)\lib\obj;$(BCB)\lib
+Item1=..\..\Source\Common;..\..\Source\Injector;$(BCB)\lib\obj;$(BCB)\lib
+Item2=..\..\Source\Injector;$(BCB)\lib\obj;$(BCB)\lib
 
 [HistoryLists\hlDebugSourcePath]
 Count=1
@@ -130,13 +130,13 @@ Item4=_DEBUG
 
 [HistoryLists\hlIntOutputDir]
 Count=1
-Item0=..\Borland
+Item0=..\..\Borland
 
 [HistoryLists\hlFinalOutputDir]
 Count=3
-Item0=..\bin
-Item1=..\Borland\
-Item2=..\Borland
+Item0=..\..\bin
+Item1=..\..\Borland\
+Item2=..\..\Borland
 
 [Debugging]
 DebugSourceDirs=$(BCB)\source\vcl

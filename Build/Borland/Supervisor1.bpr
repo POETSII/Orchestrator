@@ -3,7 +3,7 @@
 <PROJECT>
   <MACROS>
     <VERSION value="BCB.06.00"/>
-    <PROJECT value="..\Borland\Supervisor1.exe"/>
+    <PROJECT value="..\..\Borland\Supervisor1.exe"/>
     <OBJFILES value="SupervisorMain.obj Supervisor.obj P_addr.obj Unrec_t.obj CommonBase.obj 
       flat.obj PMsg_p.obj ProcMap.obj Msg_p.obj SBase.obj NameBase.obj 
       Environment.obj Pglobals.obj Entity.obj NsChunk.obj"/>
@@ -19,7 +19,7 @@
       vclie.bpi xmlrtl.bpi inet.bpi inetdbbde.bpi inetdbxpress.bpi inetdb.bpi 
       nmfast.bpi bcbie.bpi soaprtl.bpi dclocx.bpi dbexpress.bpi dbxcds.bpi 
       indy.bpi bcb2kaxserver.bpi"/>
-    <PATHCPP value=".;..\Source\Supervisor;..\Source\Supervisor;..\Source\OrchBase;..\Source\Common;..\Source\Common;..\Generics;..\Source\Common;..\Source\Common;..\Generics;..\Source\NameServer;..\Source\Common;..\Source\Common;..\Source\Common;..\Source\NameServer;..\Source\NameServer"/>
+    <PATHCPP value=".;..\..\Source\Supervisor;..\..\Source\Supervisor;..\..\Source\OrchBase;..\..\Source\Common;..\..\Source\Common;..\..\Generics;..\..\Source\Common;..\..\Source\Common;..\..\Generics;..\..\Source\NameServer;..\..\Source\Common;..\..\Source\Common;..\..\Source\Common;..\..\Source\NameServer;..\..\Source\NameServer"/>
     <PATHPAS value=".;"/>
     <PATHRC value=".;"/>
     <PATHASM value=".;"/>
@@ -29,19 +29,19 @@
     <USERDEFINES value="_DEBUG;MSMPI_NO_DEPRECATE_20"/>
     <SYSDEFINES value="NO_STRICT;_NO_VCL;USEPACKAGES"/>
     <MAINSOURCE value="Supervisor1.bpf"/>
-    <INCLUDEPATH value="..\Source\Common;..\Source\OrchBase;..\Source\NameServer;..\Source\Supervisor;..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl"/>
-    <LIBPATH value="..\Generics;..\Source\Common;..\Source\OrchBase;..\Source\NameServer;..\Source\Supervisor;$(BCB)\lib\obj;$(BCB)\lib"/>
+    <INCLUDEPATH value="..\..\Source\Common;..\..\Source\OrchBase;..\..\Source\NameServer;..\..\Source\Supervisor;..\..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl"/>
+    <LIBPATH value="..\..\Generics;..\..\Source\Common;..\..\Source\OrchBase;..\..\Source\NameServer;..\..\Source\Supervisor;$(BCB)\lib\obj;$(BCB)\lib"/>
     <WARNINGS value="-w-par"/>
     <OTHERFILES value=""/>
   </MACROS>
   <OPTIONS>
     <CFLAG1 value="-vGc -vGt -vGd -Od -Vx -Ve -X- -r- -a8 -b- -k -y -v -vi- -tWC -tWM- -c"/>
-    <PFLAGS value="-N2..\Borland 
-      -N0..\Borland -$YD -$W -$O- -$A8 -v 
+    <PFLAGS value="-N2..\..\Borland 
+      -N0..\..\Borland -$YD -$W -$O- -$A8 -v 
       -JPHNE -M"/>
     <RFLAGS value=""/>
     <AFLAGS value="/mx /w2 /zi"/>
-    <LFLAGS value="-I..\Borland -D&quot;&quot; -ap -Tpe -x -Gn -v"/>
+    <LFLAGS value="-I..\..\Borland -D&quot;&quot; -ap -Tpe -x -Gn -v"/>
     <OTHERFILES value=""/>
   </OPTIONS>
   <LINKER>
@@ -53,22 +53,22 @@
   <FILELIST>
       <FILE FILENAME="Supervisor1.res" FORMNAME="" UNITNAME="Supervisor1.res" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="Supervisor1.bpf" FORMNAME="" UNITNAME="Supervisor1" CONTAINERID="BPF" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Supervisor\SupervisorMain.cpp" FORMNAME="" UNITNAME="SupervisorMain" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Supervisor\Supervisor.cpp" FORMNAME="" UNITNAME="Supervisor" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Supervisor\SupervisorMain.cpp" FORMNAME="" UNITNAME="SupervisorMain" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Supervisor\Supervisor.cpp" FORMNAME="" UNITNAME="Supervisor" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="C:\MPI\Microsoft\Lib\x86\msmpi_omf.lib" FORMNAME="" UNITNAME="msmpi_omf.lib" CONTAINERID="LibTool" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\OrchBase\P_addr.cpp" FORMNAME="" UNITNAME="P_addr" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\Unrec_t.cpp" FORMNAME="" UNITNAME="Unrec_t" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\CommonBase.cpp" FORMNAME="" UNITNAME="CommonBase" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Generics\flat.cpp" FORMNAME="" UNITNAME="flat" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\PMsg_p.cpp" FORMNAME="" UNITNAME="PMsg_p.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\ProcMap.cpp" FORMNAME="" UNITNAME="ProcMap.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Generics\Msg_p.cpp" FORMNAME="" UNITNAME="Msg_p" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\NameServer\SBase.cpp" FORMNAME="" UNITNAME="SBase" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\NameBase.cpp" FORMNAME="" UNITNAME="NameBase" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\Environment.cpp" FORMNAME="" UNITNAME="Environment" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\Pglobals.cpp" FORMNAME="" UNITNAME="Pglobals" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\NameServer\Entity.cpp" FORMNAME="" UNITNAME="Entity.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\NameServer\NsChunk.cpp" FORMNAME="" UNITNAME="NsChunk.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\OrchBase\P_addr.cpp" FORMNAME="" UNITNAME="P_addr" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Unrec_t.cpp" FORMNAME="" UNITNAME="Unrec_t" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\CommonBase.cpp" FORMNAME="" UNITNAME="CommonBase" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\flat.cpp" FORMNAME="" UNITNAME="flat" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\PMsg_p.cpp" FORMNAME="" UNITNAME="PMsg_p.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\ProcMap.cpp" FORMNAME="" UNITNAME="ProcMap.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\Msg_p.cpp" FORMNAME="" UNITNAME="Msg_p" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\NameServer\SBase.cpp" FORMNAME="" UNITNAME="SBase" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\NameBase.cpp" FORMNAME="" UNITNAME="NameBase" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Environment.cpp" FORMNAME="" UNITNAME="Environment" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Pglobals.cpp" FORMNAME="" UNITNAME="Pglobals" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\NameServer\Entity.cpp" FORMNAME="" UNITNAME="Entity.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\NameServer\NsChunk.cpp" FORMNAME="" UNITNAME="NsChunk.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
   </FILELIST>
   <BUILDTOOLS>
   </BUILDTOOLS>
@@ -103,17 +103,17 @@ Comments=
 
 [HistoryLists\hlIncludePath]
 Count=6
-Item0=..\Source\Common;..\Source\OrchBase;..\Source\NameServer;..\Source\Supervisor;..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
-Item1=..\Source\Common;..\Source\OrchBase;..\Source\NameServer;..\Source\Supervisor;..\Source\Common;..\Source\NameServer;..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
-Item2=..\Source\Supervisor;..\Source\Common;..\Source\NameServer;..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
-Item3=..\Source\Supervisor;..\Source\Common;..\Source\NameServer;..\Generics;$(BCB)\include;$(BCB)\include\vcl
-Item4=..\Source\Supervisor;..\Source\Common;..\Generics;$(BCB)\include;$(BCB)\include\vcl
-Item5=..\Source\Supervisor;$(BCB)\include;$(BCB)\include\vcl
+Item0=..\..\Source\Common;..\..\Source\OrchBase;..\..\Source\NameServer;..\..\Source\Supervisor;..\..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item1=..\..\Source\Common;..\..\Source\OrchBase;..\..\Source\NameServer;..\..\Source\Supervisor;..\..\Source\Common;..\..\Source\NameServer;..\..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item2=..\..\Source\Supervisor;..\..\Source\Common;..\..\Source\NameServer;..\..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item3=..\..\Source\Supervisor;..\..\Source\Common;..\..\Source\NameServer;..\..\Generics;$(BCB)\include;$(BCB)\include\vcl
+Item4=..\..\Source\Supervisor;..\..\Source\Common;..\..\Generics;$(BCB)\include;$(BCB)\include\vcl
+Item5=..\..\Source\Supervisor;$(BCB)\include;$(BCB)\include\vcl
 
 [HistoryLists\hlLibraryPath]
 Count=2
-Item0=..\Generics;..\Source\Common;..\Source\OrchBase;..\Source\NameServer;..\Source\Supervisor;$(BCB)\lib\obj;$(BCB)\lib
-Item1=..\Source\Supervisor;$(BCB)\lib\obj;$(BCB)\lib
+Item0=..\..\Generics;..\..\Source\Common;..\..\Source\OrchBase;..\..\Source\NameServer;..\..\Source\Supervisor;$(BCB)\lib\obj;$(BCB)\lib
+Item1=..\..\Source\Supervisor;$(BCB)\lib\obj;$(BCB)\lib
 
 [HistoryLists\hlDebugSourcePath]
 Count=1
@@ -126,12 +126,12 @@ Item1=_DEBUG
 
 [HistoryLists\hlIntOutputDir]
 Count=1
-Item0=..\Borland
+Item0=..\..\Borland
 
 [HistoryLists\hlFinalOutputDir]
 Count=2
-Item0=..\Borland\
-Item1=..\Borland
+Item0=..\..\Borland\
+Item1=..\..\Borland
 
 [Debugging]
 DebugSourceDirs=$(BCB)\source\vcl

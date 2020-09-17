@@ -3,7 +3,7 @@
 <PROJECT>
   <MACROS>
     <VERSION value="BCB.06.00"/>
-    <PROJECT value="..\Borland\UserO1.exe"/>
+    <PROJECT value="..\..\Borland\UserO1.exe"/>
     <OBJFILES value="UserOMain.obj UserO.obj flat.obj Msg_p.obj CommonBase.obj Environment.obj 
       PMsg_p.obj ProcMap.obj Unrec_t.obj Pglobals.obj"/>
     <RESFILES value="UserO1.res"/>
@@ -18,7 +18,7 @@
       vclie.bpi xmlrtl.bpi inet.bpi inetdbbde.bpi inetdbxpress.bpi inetdb.bpi 
       nmfast.bpi bcbie.bpi soaprtl.bpi dclocx.bpi dbexpress.bpi dbxcds.bpi 
       indy.bpi bcb2kaxserver.bpi"/>
-    <PATHCPP value=".;..\Source\UserIO;..\Source\UserIO;..\Generics;..\Generics;..\Source\Common;..\Source\Common;..\Source\Common;..\Source\Common;..\Source\Common;..\Source\Common"/>
+    <PATHCPP value=".;..\..\Source\UserIO;..\..\Source\UserIO;..\..\Generics;..\..\Generics;..\..\Source\Common;..\..\Source\Common;..\..\Source\Common;..\..\Source\Common;..\..\Source\Common;..\..\Source\Common"/>
     <PATHPAS value=".;"/>
     <PATHRC value=".;"/>
     <PATHASM value=".;"/>
@@ -28,19 +28,19 @@
     <USERDEFINES value="_DEBUG;MSMPI_NO_DEPRECATE_20"/>
     <SYSDEFINES value="NO_STRICT;_NO_VCL;USEPACKAGES"/>
     <MAINSOURCE value="UserO1.bpf"/>
-    <INCLUDEPATH value="..\Source\UserIO;..\Source\Common;..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl"/>
-    <LIBPATH value="..\Source\Common;..\Generics;..\Source\UserIO;$(BCB)\lib\obj;$(BCB)\lib"/>
+    <INCLUDEPATH value="..\..\Source\UserIO;..\..\Source\Common;..\..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl"/>
+    <LIBPATH value="..\..\Source\Common;..\..\Generics;..\..\Source\UserIO;$(BCB)\lib\obj;$(BCB)\lib"/>
     <WARNINGS value="-w-par"/>
     <OTHERFILES value=""/>
   </MACROS>
   <OPTIONS>
     <CFLAG1 value="-vGc -vGt -vGd -Od -Vx -Ve -X- -r- -a8 -b- -k -y -v -vi- -tWC -tWM- -c"/>
-    <PFLAGS value="-N2..\Borland 
-      -N0..\Borland -$YD -$W -$O- -$A8 -v 
+    <PFLAGS value="-N2..\..\Borland 
+      -N0..\..\Borland -$YD -$W -$O- -$A8 -v 
       -JPHNE -M"/>
     <RFLAGS value=""/>
     <AFLAGS value="/mx /w2 /zi"/>
-    <LFLAGS value="-I..\Borland -D&quot;&quot; -ap -Tpe -x -Gn -v"/>
+    <LFLAGS value="-I..\..\Borland -D&quot;&quot; -ap -Tpe -x -Gn -v"/>
     <OTHERFILES value=""/>
   </OPTIONS>
   <LINKER>
@@ -52,17 +52,17 @@
   <FILELIST>
       <FILE FILENAME="UserO1.res" FORMNAME="" UNITNAME="UserO1.res" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="UserO1.bpf" FORMNAME="" UNITNAME="UserO1" CONTAINERID="BPF" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\UserIO\UserOMain.cpp" FORMNAME="" UNITNAME="UserOMain" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\UserIO\UserO.cpp" FORMNAME="" UNITNAME="UserO" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\UserIO\UserOMain.cpp" FORMNAME="" UNITNAME="UserOMain" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\UserIO\UserO.cpp" FORMNAME="" UNITNAME="UserO" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
       <FILE FILENAME="C:\MPI\Microsoft\Lib\x86\msmpi_omf.lib" FORMNAME="" UNITNAME="msmpi_omf.lib" CONTAINERID="LibTool" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Generics\flat.cpp" FORMNAME="" UNITNAME="flat.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Generics\Msg_p.cpp" FORMNAME="" UNITNAME="Msg_p.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\CommonBase.cpp" FORMNAME="" UNITNAME="CommonBase.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\Environment.cpp" FORMNAME="" UNITNAME="Environment.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\PMsg_p.cpp" FORMNAME="" UNITNAME="PMsg_p.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\ProcMap.cpp" FORMNAME="" UNITNAME="ProcMap.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\Unrec_t.cpp" FORMNAME="" UNITNAME="Unrec_t.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
-      <FILE FILENAME="..\Source\Common\Pglobals.cpp" FORMNAME="" UNITNAME="Pglobals" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\flat.cpp" FORMNAME="" UNITNAME="flat.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\Msg_p.cpp" FORMNAME="" UNITNAME="Msg_p.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\CommonBase.cpp" FORMNAME="" UNITNAME="CommonBase.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Environment.cpp" FORMNAME="" UNITNAME="Environment.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\PMsg_p.cpp" FORMNAME="" UNITNAME="PMsg_p.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\ProcMap.cpp" FORMNAME="" UNITNAME="ProcMap.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Unrec_t.cpp" FORMNAME="" UNITNAME="Unrec_t.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Pglobals.cpp" FORMNAME="" UNITNAME="Pglobals" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
   </FILELIST>
   <BUILDTOOLS>
   </BUILDTOOLS>
@@ -97,12 +97,12 @@ Comments=
 
 [HistoryLists\hlIncludePath]
 Count=2
-Item0=..\Source\UserIO;..\Source\Common;..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
-Item1=..\Source\Common;..\Generics;..\Source\UserIO;$(BCB)\include;$(BCB)\include\vcl
+Item0=..\..\Source\UserIO;..\..\Source\Common;..\..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item1=..\..\Source\Common;..\..\Generics;..\..\Source\UserIO;$(BCB)\include;$(BCB)\include\vcl
 
 [HistoryLists\hlLibraryPath]
 Count=1
-Item0=..\Source\Common;..\Generics;..\Source\UserIO;$(BCB)\lib\obj;$(BCB)\lib
+Item0=..\..\Source\Common;..\..\Generics;..\..\Source\UserIO;$(BCB)\lib\obj;$(BCB)\lib
 
 [HistoryLists\hlDebugSourcePath]
 Count=1
@@ -115,11 +115,11 @@ Item1=_DEBUG
 
 [HistoryLists\hlIntOutputDir]
 Count=1
-Item0=..\Borland
+Item0=..\..\Borland
 
 [HistoryLists\hlFinalOutputDir]
 Count=1
-Item0=..\Borland
+Item0=..\..\Borland
 
 [Debugging]
 DebugSourceDirs=$(BCB)\source\vcl
