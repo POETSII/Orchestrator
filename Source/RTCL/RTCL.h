@@ -3,6 +3,7 @@
 
 #include "CommonBase.h"
 #include "PMsg_p.hpp"
+#include "OSFixes.hpp"
 
 //==============================================================================
 
@@ -13,17 +14,14 @@ public:
                     RTCL(int,char **,string);
 virtual ~           RTCL();
 
-typedef unsigned    (RTCL::*pMeth)(PMsg_p *,unsigned); 
-typedef map<unsigned,pMeth> FnMap_t;
- 
+typedef unsigned    (RTCL::*pMeth)(PMsg_p *);
+map<unsigned,pMeth> FnMap;
+
 private:
-
 #include            "Decode.cpp"
-void                Dump(FILE * = stdout);
-unsigned            OnExit(PMsg_p *,unsigned);
-unsigned            OnRTCL(PMsg_p *,unsigned);
-
-vector<FnMap_t*>       FnMapx;
+void                Dump(unsigned = 0,FILE * = stdout);
+unsigned            OnExit(PMsg_p *);
+unsigned            OnRTCL(PMsg_p *);
 
 public:
 struct comms_t {
