@@ -25,7 +25,7 @@ struct P_addr_t
                    P_addr_t();
                    P_addr_t(unsigned,unsigned,unsigned,unsigned,unsigned,
                             unsigned);
-void               Dump(FILE * = stdout);
+void               Dump(unsigned = 0,FILE * = stdout);
 unsigned           A_box;              // Box address
 unsigned           A_board;            // Board address
 unsigned           A_mailbox;          // And so on....
@@ -44,7 +44,7 @@ public:
                           unsigned);
 virtual ~          P_addr();
 
-void               Dump(FILE * = stdout);
+void               Dump(unsigned = 0,FILE * = stdout);
 
 int                GetBoard   (unsigned & a){ a=A_board;   return A_boardV;  }
 int                GetBox     (unsigned & a){ a=A_box;     return A_boxV;    }

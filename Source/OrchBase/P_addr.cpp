@@ -24,16 +24,18 @@ A_device  = de;
 
 //------------------------------------------------------------------------------
 
-void P_addr_t::Dump(FILE * fp)
+void P_addr_t::Dump(unsigned off,FILE * fp)
 {
-fprintf(fp,"P_addr_t++++++++\n");
-fprintf(fp,"A_box     = %4u\n",A_box);
-fprintf(fp,"A_board   = %4u\n",A_board);
-fprintf(fp,"A_mailbox = %4u\n",A_mailbox);
-fprintf(fp,"A_core    = %4u\n",A_core);
-fprintf(fp,"A_thread  = %4u\n",A_thread);
-fprintf(fp,"A_device  = %4u\n",A_device);
-fprintf(fp,"P_addr_t--------\n");
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"%sP_addr_t +++++++++++++++++++++++++++++++++++++++++++++++++\n",os);
+fprintf(fp,"%sA_box       = %4u\n",os,A_box);
+fprintf(fp,"%sA_board     = %4u\n",os,A_board);
+fprintf(fp,"%sA_mailbox   = %4u\n",os,A_mailbox);
+fprintf(fp,"%sA_core      = %4u\n",os,A_core);
+fprintf(fp,"%sA_thread    = %4u\n",os,A_thread);
+fprintf(fp,"%sA_device    = %4u\n",os,A_device);
+fprintf(fp,"%sP_addr_t -------------------------------------------------\n",os);
 fflush(fp);
 }
 
@@ -72,20 +74,21 @@ P_addr::~P_addr()
 
 //------------------------------------------------------------------------------
 
-void P_addr::Dump(FILE * fp)
+void P_addr::Dump(unsigned off,FILE * fp)
 {
-string s("");
-fprintf(fp,"P_addr  %35s+++++++++++++++++++++++++++++++++++++\n",s.c_str());
-fprintf(fp,"A_boxV     = %4d\n",A_boxV);
-fprintf(fp,"A_boardV   = %4d\n",A_boardV);
-fprintf(fp,"A_mailboxV = %4d\n",A_coreV);
-fprintf(fp,"A_coreV    = %4d\n",A_coreV);
-fprintf(fp,"A_threadV  = %4d\n",A_threadV);
-fprintf(fp,"A_deviceV  = %4d\n",A_deviceV);
-P_addr_t::Dump(fp);
-fprintf(fp,"OK       = %c\n",OK()?'T':'F');
-fprintf(fp,"Str      = ||%s||\n",Str().c_str());
-fprintf(fp,"P_addr  %35s-------------------------------------\n",s.c_str());
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"%sP_addr +++++++++++++++++++++++++++++++++++++++++++++++++++\n",os);
+fprintf(fp,"%sA_boxV       = %4d\n",os,A_boxV);
+fprintf(fp,"%sA_boardV     = %4d\n",os,A_boardV);
+fprintf(fp,"%sA_mailboxV   = %4d\n",os,A_coreV);
+fprintf(fp,"%sA_coreV      = %4d\n",os,A_coreV);
+fprintf(fp,"%sA_threadV    = %4d\n",os,A_threadV);
+fprintf(fp,"%sA_deviceV    = %4d\n",os,A_deviceV);
+P_addr_t::Dump(off+2,fp);
+fprintf(fp,"%sOK           = %c\n",os,OK()?'T':'F');
+fprintf(fp,"%sStr          = ||%s||\n",os,Str().c_str());
+fprintf(fp,"%sP_addr -------------------------------------------------\n\n",os);
 fflush(fp);
 }
 

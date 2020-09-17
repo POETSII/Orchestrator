@@ -1,0 +1,137 @@
+//------------------------------------------------------------------------------
+
+#include "CmLoad.h"
+#include "OrchBase.h"
+#include "OrchConfig.h"
+#include "FileName.h"
+#include "Apps_t.h"
+#include "DS_XML.h"
+#include "Root.h"
+#include "XValid.h"
+#include "Pglobals.h"
+
+//==============================================================================
+/* This handles the "load" command. The only slight weirdness - see
+documentation - is the XML Validator and builder. The class (CMLoad) gets heaved
+into existance by the constructor of OrchBase, but the configuration file is
+not read until the Root constructor is executed, so we can't load the validator
+here because we don't know where the grammar definition file is. So we
+load-on-demand when the user tries to execute "load" for the first time.
+We do the same for the XML database builder, not because we have to, but
+because of the intrinsic elegance of code symmetry.
+*/
+
+//------------------------------------------------------------------------------
+
+CmLoad::CmLoad(OrchBase * p):par(p)
+{
+pXV     = 0;                           // We have no validation file
+pXB     = 0;                           // Datastructure builder
+}
+
+//------------------------------------------------------------------------------
+
+CmLoad::~CmLoad()
+{
+if (pXV!=0) delete pXV;
+if (pXB!=0) delete pXB;
+}
+
+//------------------------------------------------------------------------------
+
+void CmLoad::Cm_App(Cli::Cl_t cl)
+// Load an xml application from a file into the Orchestrator database
+{
+string op = cl.GetO();                 // Optional operator
+string fn = cl.GetP();                 // Not optional filename
+if (fn.empty()) {                      // Filename not supplied?
+  par->Post(250,cl.Cl);
+  return;
+}
+                                       // Append pathname?
+if (op==string("+")) fn = par->pCmPath->pathApps + fn;
+if (!file_readable(fn.c_str())) {      // Can we read it?
+  par->Post(112,fn);                   // Apparently not.....
+  return;
+}
+                                      // Application file there already?
+if (Apps_t::FindFile(fn)!=0) {
+  par->Post(242,fn);
+  return;
+}
+                                       // OK, good to go. fn==full i/p filename
+par->Post(235,fn);
+unsigned g_ecnt,c_ecnt,ecnt;
+long t0 = mTimer();                    // ... start wallclock
+pXV->Validate(fn);
+//pXV->Dump();
+pXV->ErrCnt(g_ecnt,c_ecnt);            // XML validator error counters
+ecnt = g_ecnt + c_ecnt;                // Total errors = grammar + client
+if (ecnt!=0) par->Post(201,"validation",uint2str(ecnt),long2str(mTimer(t0)));
+else {
+  pXB->PBuild(pXV->ClRoot());
+  par->Post(65,long2str(mTimer(t0)));
+}
+
+}
+
+//------------------------------------------------------------------------------
+
+void CmLoad::Dump(unsigned off,FILE * fp)
+{
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"%sCmLoad +++++++++++++++++++++++++++++++++++++++++++++++++++\n",os);
+if (par==0) fprintf(fp,"%sOrchBase parent not defined\n",os);
+else fprintf(fp,"%sOrchbase parent : %s\n",os,par->FullName().c_str());
+fprintf(fp,"%sCmLoad -------------------------------------------------\n\n",os);
+fflush(fp);
+}
+
+//------------------------------------------------------------------------------
+
+void CmLoad::Show(FILE * fp)
+// Pretty-printer for loader, which is (currently) effectively the XML parser,
+// because the object has no other internal state.
+// THIS MAY CHANGE WHEN MLV/GMB START LOADING OTHER STUFF
+{
+fprintf(fp,"\n%s\n",Q::pline.c_str());
+fprintf(fp,"\nLoader subsystem status at %s on %s\n\n",GetTime(),GetDate());
+                                       // XML parser may not yet exist
+if (pXV==0) pXV = new XValid(dynamic_cast<Root *>(par)->pOC->Grammar(),par->fd);
+pXV->ShowV(fp);
+                                       // Database builder also.....
+if (pXB==0) pXB = new DS_XML(par);
+pXB->Show(fp);
+fprintf(fp,"\n%s\n",Q::sline.c_str());
+}
+
+//------------------------------------------------------------------------------
+
+unsigned CmLoad::operator()(Cli * pC)
+// Handle "load" command from the monkey.
+{
+//printf("CmPath_t operator() splitter for ....\n");
+//fflush(stdout);
+                                       // Just the once
+if (pXV==0) pXV = new XValid(dynamic_cast<Root *>(par)->pOC->Grammar(),par->fd);
+if (pXB==0) pXB = new DS_XML(par);
+if (pC==0) return 0;                   // Paranoia
+WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
+  string sCl = (*i).Cl;                // Pull out clause name
+  string sCo = pC->Co;                 // Pull out command name
+  string sPa = (*i).GetP();            // Pull out simple parameter name
+  if (sCl=="app" ) { Cm_App(*i);                  continue;  }
+  if (sCl=="bcon") { par->Post(247,sCo,sCl,sPa);  continue;  }
+  if (sCl=="cons") { par->Post(247,sCo,sCl,sPa);  continue;  }
+  if (sCl=="engi") { par->Post(247,sCo,sCl,sPa);  continue;  }
+  if (sCl=="plac") { par->Post(247,sCo,sCl,sPa);  continue;  }
+  if (sCl=="pola") { par->Post(247,sCo,sCl,sPa);  continue;  }
+  if (sCl=="pole") { par->Post(247,sCo,sCl,sPa);  continue;  }
+  par->Post(25,sCl,"load");           // Unrecognised clause
+}
+return 0;                              // Legitimate command exit
+}
+
+//==============================================================================
+

@@ -6,14 +6,14 @@
 
 //==============================================================================
 
-P_super::P_super():P_device()
+P_super::P_super():DevI_t()
 {
 
 }
 
 //------------------------------------------------------------------------------
 
-P_super::P_super(string s):P_device(0,s)
+P_super::P_super(string s):DevI_t(0,s)
 {
 
 }
@@ -129,13 +129,16 @@ void P_super::Detach()
 
 //------------------------------------------------------------------------------
 
-void P_super::Dump(FILE * fp)
+void P_super::Dump(unsigned off,FILE * fp)
 {
-fprintf(fp,"P_super+++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"Supervisor attached to :\n");
-WALKVECTOR(P_board*, P_boardv, i) fprintf(fp,"%s\n",(*i)->FullName().c_str());
-P_device::Dump(fp);
-fprintf(fp,"P_super---------------------------------\n");
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"\n%sP_super+++++++++++++++++++++++++++++++++\n",os);
+fprintf(fp,"%sSupervisor attached to :\n",os);
+WALKVECTOR(P_board*, P_boardv, i)
+  fprintf(fp,"%s%s\n",os,(*i)->FullName().c_str());
+DevI_t::Dump(off+2,fp);
+fprintf(fp,"%sP_super---------------------------------\n\n",os);
 fflush(fp);
 }
 

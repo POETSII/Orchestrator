@@ -15,7 +15,7 @@ virtual ~           Constraints();
 
 map<string, unsigned> Constraintm;
 
-void                Dump(FILE * = stdout);
+void                Dump(unsigned = 0,FILE * = stdout);
 
 };
 

@@ -12,7 +12,7 @@ public:
                     Bin(FILE * = 0);
 virtual ~           Bin();
 
-void                Dump(FILE * = stdout);
+void                Dump(unsigned = 0,FILE * = stdout);
 FILE*               Binary;
 
 };

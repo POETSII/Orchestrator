@@ -23,12 +23,14 @@ void Placement::DoLink()
 
 //------------------------------------------------------------------------------
 
-void Placement::Dump(FILE * fp)
+void Placement::Dump(unsigned off,FILE * fp)
 {
-fprintf(fp,"Placement+++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"Me,Parent      %#018lx,%#018lx\n",
-        (uint64_t) this, (uint64_t) par);
-fprintf(fp,"Placement-----------------------------------\n");
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"\n%sPlacement+++++++++++++++++++++++++++++++++++\n",os);
+fprintf(fp,"%sMe,Parent      %#018lx,%#018lx\n",
+            os,(uint64_t) this, (uint64_t) par);
+fprintf(fp,"%sPlacement-----------------------------------\n\n",os);
 fflush(fp);
 }
 
@@ -42,7 +44,7 @@ void Placement::Init()
 
 //------------------------------------------------------------------------------
 
-bool Placement::Place(P_task * pT)
+bool Placement::Place(Apps_t * pT)
 // Place a task.
 {
 P_thread* pTh = iterator->get_thread();
@@ -142,7 +144,7 @@ return false;
 
 //------------------------------------------------------------------------------
 
-void Placement::Xlink(P_device * pDe,P_thread * pTh)
+void Placement::Xlink(DevI_t * pDe,P_thread * pTh)
 // Actually link a real device to a real thread
 {
 printf("XLinking device %s with id %d to thread %s\n",
