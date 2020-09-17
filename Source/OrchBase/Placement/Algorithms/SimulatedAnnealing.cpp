@@ -97,6 +97,10 @@ float SimulatedAnnealing::do_it(P_task* task)
      * violated - used during selection. */
     devicesPerThreadSoftMax = placer->constrained_max_devices_per_thread(task);
 
+    /* Define the number of threads used per core before constraints are
+     * violated - used during selection. */
+    threadsPerCoreSoftMax = placer->constrained_max_threads_per_core(task);
+
     /* Iteration loop - we exit when the termination condition is satisfied.
      *
      * Also note that, if there are no normal devices in the task, we don't
@@ -453,10 +457,12 @@ void SimulatedAnnealing::select(P_task* task, P_device** device,
     std::advance(coreIterator, rand() % bigScaryMapIterator->second.size());
     core = *coreIterator;
 
-    /* Choose a thread on that core. */
+    /* Choose a thread on that core. The choice may be constrained. */
+    unsigned threadLimit = std::min(unsigned(core->P_threadm.size()),
+                                    threadsPerCoreSoftMax);
     std::map<AddressComponent, P_thread*>::iterator threadIterator;
     threadIterator = core->P_threadm.begin();
-    std::advance(threadIterator, rand() % core->P_threadm.size());
+    std::advance(threadIterator, rand() % threadLimit);
     *thread = threadIterator->second;
 
     /* <!> NB: Disabling swap operations for now, to make debugging simpler. */

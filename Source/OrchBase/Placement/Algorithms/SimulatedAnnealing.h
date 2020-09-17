@@ -30,6 +30,7 @@ public:
     /* Driven by the placer, shouldn't change (so we precompute it for
      * speed). */
     unsigned devicesPerThreadSoftMax;
+    unsigned threadsPerCoreSoftMax;
 
     SimulatedAnnealing(Placer* placer);
     float acceptance_probability(float fitnessBefore, float fitnessAfter);
