@@ -118,7 +118,7 @@ void OrchBase::ClearTasks()
 // The code is different to the clear-individual-tasks because it's faster
 {
 
-// Walk the hardware, killing all the links into the task structures
+// Walk the hardware, killing all binaries and supervisor links.
 if (pE != 0)
 {
     // Walk the boxes and remove the supervisor links therein.
@@ -142,20 +142,16 @@ if (pE != 0)
                         (*boardIterator)->G.NodeData(mailboxIterator)->P_corem,
                         coreIterator)
                 {
-                    coreIterator->second->dataBinary = "";
-                    coreIterator->second->instructionBinary = "";
-
-                    // Walk the threads and remove the device links.
-                    WALKMAP(AddressComponent, P_thread*,
-                            coreIterator->second->P_threadm, threadIterator)
-                    {
-                        threadIterator->second->P_devicel.clear();
-                    }
+                    coreIterator->second->dataBinary.clear();
+                    coreIterator->second->instructionBinary.clear();
                 }
             }
         }
     }
 }
+
+// Clear placement data
+PlacementReset();
 
 // Kill the supervisors
 WALKMAP(string,P_super *,P_superm,i) delete (*i).second;
@@ -208,22 +204,12 @@ if (p==0) {                            // Paranoia
   Post(904,st);
   return;
 }
-                                       // OK, the task pointer is valid....
-if (p->pD!=0) WALKPDIGRAPHNODES
-  (unsigned,P_device *,unsigned,P_message *,unsigned,P_pin *,p->pD->G,i) {
-  if (i==p->pD->G.NodeEnd()) break;
-  P_device * pd = p->pD->G.NodeData(i);// Device
-                                       // Now disconnect from the hardware
-  P_thread * pt = pd->pP_thread;       // Corresponding thread (if any)
-  if (pt!=0)                           // If there's a thread.....
-    WALKLIST(P_device *,pt->P_devicel,it)      // Look for the backlink...
-      if ((*it)==pd)
-      {
-         pt->P_devicel.erase(it);      // ..and remove it
-         break;
-      }
-}
-                                       // Now disconnect from the declare block
+// OK, the task pointer is valid....
+
+// Remove placement information for this task.
+pPlacer->unplace(p);
+
+// Now disconnect from the declare block
 P_typdcl * pdcl = p->pP_typdcl;        // This is the declare block
 if (pdcl!=0)
 {
@@ -551,10 +537,16 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
 
             /* Skip this core if either nothing is placed on it, or if the
              * devices placed on it are owned by a different task. Recall that
-             * all devices within a core service the same task, and threads are
-             * loaded in a bucket-filled manner (for now). */
-            if (thread->P_devicel.empty() or
-                thread->P_devicel.front()->par->par != task) continue;
+             * all devices within a core service the same task.
+             *
+             * Note the deliberate use of indexing instead of `at` for the
+             * first predicate. */
+            if (pPlacer->threadToDevices[thread].empty() or
+                pPlacer->taskToCores.at(task).find(core) ==
+                pPlacer->taskToCores.at(task).end())
+            {
+                continue;
+            }
 
             /* If we couldn't find a Mothership for this box earlier, we panic
              * here, because we can't deploy this task without enough
@@ -590,7 +582,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
             for (threadIt = core->P_threadm.begin();
                  threadIt != core->P_threadm.end(); threadIt++)
             {
-                if (!(threadIt->second->P_devicel.empty()))
+                if (!(pPlacer->threadToDevices.at(threadIt->second).empty()))
                     payload->threadsExpected.push_back(
                         threadIt->second->get_hardware_address()->as_uint());
             }
@@ -848,7 +840,7 @@ void OrchBase::TaskMCmd(Cli::Cl_t Cl, std::string command)
     message.Put(0, &taskName);
 
     /* Get the set of important boxes. */
-    pE->get_boxes_for_task(task, &boxesOfImport);
+    pPlacer->get_boxes_for_task(task, &boxesOfImport);
 
     /* For each box, send to the Mothership on that box. */
     for (boxIt = boxesOfImport.begin(); boxIt != boxesOfImport.end(); boxIt++)

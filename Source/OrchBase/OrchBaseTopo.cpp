@@ -28,6 +28,7 @@ void OrchBase::ClearTopo()
     }
     delete pE;
     pE = 0;
+    PlacementReset();
 }
 
 //------------------------------------------------------------------------------
@@ -90,13 +91,7 @@ WALKVECTOR(Cli::Pa_t,Cl.Pa_v,i) {      // Loop through parameters
 void OrchBase::TopoCons(Cli::Cl_t Cl)
 // Apply constraints
 {
-if (Cl.Pa_v.size()<2) {               // Command make sense?
-    Post(48,Cl.Cl,"topology","2");
-    return;
-}
-string constraint = Cl.Pa_v[0].Val;     // Unpack constraint name
-if (!pPlace->pCon) pPlace->pCon = new Constraints();
-pPlace->pCon->Constraintm[constraint] = str2uint(Cl.Pa_v[1].Val);
+    Post(136);
 }
 
 //------------------------------------------------------------------------------
@@ -145,8 +140,8 @@ void OrchBase::TopoLoad(Cli::Cl_t Cl)
     {
         reader.load_file(inputFilePath.c_str());
         reader.populate_hardware_model(pE);
+        PlacementReset();
         Post(140, inputFilePath.c_str());
-        pPlace->Init();
         BuildMshipMap();
     }
     catch (OrchestratorException& exception)
@@ -191,7 +186,7 @@ void OrchBase::TopoSet1(Cli::Cl_t Cl)
     SimpleDeployer deployer;
     Post(138, pE->Name());
     deployer.deploy(pE);
-    pPlace->Init();
+    PlacementReset();
     BuildMshipMap();
 }
 
@@ -206,7 +201,7 @@ void OrchBase::TopoSet2(Cli::Cl_t Cl)
     MultiSimpleDeployer deployer(2);
     Post(138, pE->Name());
     deployer.deploy(pE);
-    pPlace->Init();
+    PlacementReset();
     BuildMshipMap();
 }
 

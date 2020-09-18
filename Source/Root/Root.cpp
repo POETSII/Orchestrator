@@ -615,8 +615,9 @@ if (scmnd[0]=='*') {                   // Special case - EOF marker
 if (strcmp(scmnd.c_str(),"call")==0) return CmCall(pC);
 if (strcmp(scmnd.c_str(),"exit")==0) return CmExit(pC);
 if (strcmp(scmnd.c_str(),"inje")==0) return CmInje(pC);
-if (strcmp(scmnd.c_str(),"link")==0) return CmLink(pC);
+if (strcmp(scmnd.c_str(),"link")==0) return CmPlace(pC); // Synonym
 if (strcmp(scmnd.c_str(),"owne")==0) return CmOwne(pC);
+if (strcmp(scmnd.c_str(),"plac")==0) return CmPlace(pC);
 if (strcmp(scmnd.c_str(),"rtcl")==0) return CmRTCL(pC);
 if (strcmp(scmnd.c_str(),"syst")==0) return CmSyst(pC);
 if (strcmp(scmnd.c_str(),"task")==0) return CmTask(pC);

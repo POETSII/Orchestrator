@@ -26,7 +26,6 @@ vector<string>     NSGetinpt();
 vector<string>     NSGetoupn();
 vector<string>     NSGetoupt();
 void               Par(D_graph * _p);
-void               Unlink();
 
 P_addr             addr;
 D_graph *          par;
@@ -65,7 +64,3 @@ static const unsigned super_idx=UINT_MAX; // supervisor is always max index.
 //==============================================================================
 
 #endif
-
-
-
-

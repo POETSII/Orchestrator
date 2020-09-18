@@ -46,6 +46,7 @@ MPI(addr(0),boards(B00),hostname(gmbmpicluster))
 +mailbox_core_cost=0
 +core_core_cost=0
 +core_addr_offset=1
++pair_cores="true"
 
 [core]
 +threads=1

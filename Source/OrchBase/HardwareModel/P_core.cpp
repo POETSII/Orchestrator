@@ -6,7 +6,11 @@
 /* Constructs a POETS Core. Arguments:
  *
  * - name: Name of this core object (see namebase) */
-P_core::P_core(std::string name){Name(name);}
+P_core::P_core(std::string name)
+{
+    Name(name);
+    pair = PNULL;
+}
 
 P_core::~P_core(){clear();}
 
@@ -96,6 +100,15 @@ void P_core::Dump(FILE* file)
     else
     {
         fprintf(file, "Instruction binary: %s\n", instructionBinary.c_str());
+    }
+
+    if (pair == PNULL)
+    {
+        fprintf(file, "No pair associated with this core.\n");
+    }
+    else
+    {
+        fprintf(file, "Paired core: %s\n", pair->FullName().c_str());
     }
 
     /* About contained items, if any. */
