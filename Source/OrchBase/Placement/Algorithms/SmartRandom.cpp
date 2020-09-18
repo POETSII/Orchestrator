@@ -70,7 +70,7 @@ float SmartRandom::do_it(P_task* task)
                                         * w.r.t. maxThreadsPerCore. */
             std::map<AddressComponent, P_thread*>::iterator threadIt;
             std::map<AddressComponent, P_thread*>::iterator exitCondition;
-            exitCondition = core->P_threadm.begin();
+            exitCondition = core->P_threadm.end();
             threadIt = core->P_threadm.begin();
             while (threadIt != exitCondition)
             {
