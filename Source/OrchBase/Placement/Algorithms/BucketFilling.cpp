@@ -100,7 +100,11 @@ float BucketFilling::do_it(P_task* task)
                     /* If this core has no pair, or we're on the "upper" member
                      * of the core pair, move to the next empty core pair. */
                     if (hardwareIt.get_core()->pair == PNULL or
-                        !onLowerCore) poke_iterator(hardwareIt);
+                        !onLowerCore)
+                    {
+                        poke_iterator(hardwareIt);
+                        onLowerCore = true;
+                    }
                     else onLowerCore = false;
                 }
 
