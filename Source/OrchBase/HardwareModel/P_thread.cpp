@@ -24,17 +24,6 @@ void P_thread::Dump(FILE* file)
     /* About this object and its parent, if any. */
     NameBase::Dump(0,file);
 
-    /* About devices, if any. */
-    DumpUtils::open_breaker(file, "Devices in this thread");
-    if (P_devicel.empty())
-        fprintf(file, "The device map is empty.\n");
-    else
-    {
-        WALKLIST(DevI_t *,P_devicel,iterator)
-            fprintf(file, "%s\n", (*iterator)->FullName().c_str());		//We expect there to be a merge conflict here 20/08/2020
-    }
-    DumpUtils::close_breaker(file, "Devices in this thread");
-
     /* Close breaker and flush the dump. */
     DumpUtils::close_breaker(file, prefix);
     fflush(file);

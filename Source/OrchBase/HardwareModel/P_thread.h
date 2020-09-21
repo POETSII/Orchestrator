@@ -32,12 +32,6 @@ public:
     P_core* parent;
     void on_being_contained_hook(P_core* container);
 
-    /* Not part of the hardware, this list acts as an interface between the
-     * hardware model and the placement implementation; POETS devices (which
-     * are part of the task graph) get mapped onto threads. Multiple devices
-     * are services by a single thread. */
-    std::list<DevI_t*> P_devicel;
-
     unsigned int dataMemoryAddress;
     unsigned int instructionMemoryAddress;
 

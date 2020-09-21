@@ -71,6 +71,10 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/OrchBase \
                 -I$(SOURCE_DIR)/OrchBase/HardwareFileReader \
                 -I$(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment \
+                -I$(SOURCE_DIR)/OrchBase/Placement \
+                -I$(SOURCE_DIR)/OrchBase/Placement/Algorithms \
+                -I$(SOURCE_DIR)/OrchBase/Placement/Constraints \
+                -I$(SOURCE_DIR)/OrchBase/Placement/Exceptions \
                 -I$(SOURCE_DIR)/OrchBase/HardwareModel \
                 -I$(SOURCE_DIR)/Launcher \
                 -I$(SOURCE_DIR)/OrchBase/XMLProcessing \

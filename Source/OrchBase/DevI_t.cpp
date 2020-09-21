@@ -96,25 +96,10 @@ return pP;
 }
 
 //------------------------------------------------------------------------------
-          
+
 void DevI_t::Par(GraphI_t * _p)
 {
 par = _p;
 }
 
-//------------------------------------------------------------------------------
-
-void DevI_t::Unlink()
-// Unlink this device from the topology database
-{
-                                       // Thread list
-list<DevI_t *> * pL = &(pP_thread->P_devicel);
-                                       // Zero the topology->graph link
-WALKLIST(DevI_t *,(*pL),i) if ((*i)==this) (*i)=0;
-pP_thread = 0;                         // Disconnect device from thread
-}
-
 //==============================================================================
-
-
-

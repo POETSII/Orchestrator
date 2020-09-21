@@ -1,7 +1,6 @@
 #ifndef __OrchBaseH__H
 #define __OrchBaseH__H
 
-class Placement;
 class P_task;
 class P_builder;
 class T_gen;
@@ -11,9 +10,9 @@ class Dialect1Deployer;
 
 #include <stdio.h>
 #include "GraphI_t.h"
+#include "Placer.h"
 #include "HardwareModel.h"
 #include "HardwareFileReader.h"
-#include "Placement.h"
 #include "Cli.h"
 #include "Environment.h"
 #include "CommonBase.h"
@@ -49,11 +48,16 @@ virtual ~              OrchBase();
 void                   Dump(unsigned = 0,FILE * = stdout);
 
 P_engine *             pE;             // Poets engine (hardware model)
-Placement *            pPlace;         // Cross-linker
+Placer *               pPlacer;        // Cross-linker
 P_builder *            pB;             // Object to build the datastructure
 T_gen *                pTG;            // PoL task generator
 Trace                  Tr;             // Debug trace subsystem
 FILE *                 fd;             // Output file stream for details
+
+// Bimap of boxes to motherships, where the pair holds unique processes by
+// their communicator and procmap entry. Yes, the name is an attempt at
+// facetiousness.
+map2<P_box *, pair<unsigned, ProcMap::ProcMap_t *> > P_SCMm2;
 
 CmBuil *               pCmBuil;
 CmCall *               pCmCall;
@@ -79,7 +83,6 @@ string                 taskpath;       // Absolute file path for task commands
 string                 topopath;       // Absolute file path for topo commands
 map<string,P_super *>  P_superm;       // Container of supervisor devices
 map<string,P_owner *>  P_ownerm;       // Task ownership container
-
 };
 
 //==============================================================================

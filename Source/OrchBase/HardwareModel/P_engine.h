@@ -15,7 +15,6 @@
 
 #include "DumpUtils.h"
 #include "HardwareAddress.h"
-#include "HardwareIterator.h"
 #include "NameBase.h"
 #include "OrchBase.h"
 #include "OwnershipException.h"
@@ -59,10 +58,6 @@ public:
     void contain(AddressComponent addressComponent, P_board* board);
     void connect(AddressComponent start, AddressComponent end, float weight,
                  bool oneWay=false);
-
-    /* Convenient way to get all boxes mapped with a given task in the
-     * engine. */
-    void get_boxes_for_task(P_task* task, std::set<P_box*>* boxes);
 
     /* Engines may be created from a configuration file. If so, some portion of
      * their metadata will be set. */
