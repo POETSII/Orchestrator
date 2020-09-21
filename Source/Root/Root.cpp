@@ -136,7 +136,7 @@ unsigned Root::CmExit(Cli * pC)
 {
 
                                        // Coming from batch?
-if (!stack.empty()) {
+if (!pCmCall->stack.empty()) {
   Post(35);
   return 0;
 }
