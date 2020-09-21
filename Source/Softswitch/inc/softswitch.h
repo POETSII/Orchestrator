@@ -1,5 +1,5 @@
 #ifndef _SOFTSWITCH_H_
-#define _SOFTSWITCH_H_ 
+#define _SOFTSWITCH_H_
 
 #include "poets_pkt.h"
 
@@ -33,7 +33,7 @@ void softswitch_trivial_log_handler(const char* &logStr);
 
 #ifdef TRIVIAL_LOG_HANDLER
 // Call a truly trivial log handler.
-template<typename... F> inline void handler_log(int level, const char * pkt, F... args) 
+template<typename... F> inline void handler_log(int level, const char * pkt, F... args)
 {
     if(level >= P_LOG_LEVEL) softswitch_trivial_log_handler(pkt);
 };
@@ -42,7 +42,7 @@ inline void assert(int expression) {return;};
 
 #else
 // Placeholder that does nothing.
-template<typename... F> inline void handler_log(int level, const char * pkt, F... args) 
+template<typename... F> inline void handler_log(int level, const char * pkt, F... args)
 {
     return;
 };

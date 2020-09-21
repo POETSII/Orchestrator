@@ -50,7 +50,7 @@ WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i) {
 }
 WALKSET(PinI_t *,DelSet,i) delete *i;  // Kill the "to be deleted" set
                                        // Lose any metadata
-WALKVECTOR(Meta_t *,Meta_v,i) delete *i;  
+WALKVECTOR(Meta_t *,Meta_v,i) delete *i;
 }
 
 //------------------------------------------------------------------------------
@@ -250,6 +250,3 @@ WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i) {
 }
 
 //==============================================================================
-
-
-

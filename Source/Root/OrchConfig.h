@@ -19,7 +19,7 @@ void                     Dump(FILE * fp = stdout) { Show(fp); }
 unsigned                 ErrCnt()                 { return ecnt;  }
 vector<pair<int,int> > & ExposeErr()              { return err_v; }
 string                   File()                   { return file;  }
-void                     Force2Linux();    
+void                     Force2Linux();
 void                     IncErr(UIF::Node *,int);
 void                     Init();
 void                     Show(FILE * = stdout);

@@ -112,7 +112,7 @@ typedef struct PInputPin
     uint32_t                 numSrcs;   // Number of sources
     inEdge_t*                sources;   // Pointer to array of input edges
 } inPin_t;
-  
+
 typedef struct PDeviceInstance
 {
     PThreadContext*     thread;          // Back pointer to the ThreadContext
@@ -139,7 +139,7 @@ typedef struct PThreadContext
     uint32_t            rtsEnd;          // index of the last pending RTS
     uint32_t            idleStart;       // index of where to start OnIdle from
     uint32_t            ctlEnd;
-    
+
     // Instrumentation
     uint32_t            lastCycles;         // cached last cycle count
     uint32_t            pendCycles;         // Is there an instrumentation update pending? 2=yes, 1=claimed, 0=no
@@ -152,14 +152,14 @@ typedef struct PThreadContext
     uint32_t            idleHandlerCount;   // Number of OnIdle handlers called.
     uint32_t            blockCount;         // Number of times we have been blocked by being unable to send
     uint32_t            cycleIdx;           // Update index
-    
-#if TinselEnablePerfCount == true   
+
+#if TinselEnablePerfCount == true
     // Optional Tinsel Instrumentation
     uint32_t            lastmissCount;         // Cache miss count
     uint32_t            lasthitCount;          // Cache hit count
     uint32_t            lastwritebackCount;    // Cache writeback count
     uint32_t            lastCPUIdleCount;      // CPU idle-cycle count (lower 32 bits)
-#endif 
+#endif
 } ThreadCtxt_t;
 
 
@@ -181,7 +181,7 @@ bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt);
 uint32_t softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device);
 
 
-// utility functions to manage ready-to-send queue 
+// utility functions to manage ready-to-send queue
 inline bool softswitch_IsRTSReady(ThreadCtxt_t* ThreadContext) {return (ThreadContext->rtsStart != ThreadContext->rtsEnd);};
 
 // workaround bodge for some unfinished business in the XML handler fragments. Should be fixed in the XML.

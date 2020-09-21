@@ -106,7 +106,7 @@ SECEXPOS := %.o
 TARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_%.elf,$(wildcard $(GENINC)/vars_*.h))
 VCTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_code_%.v,$(wildcard $(GENINC)/vars_*.h))
 VDTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_data_%.v,$(wildcard $(GENINC)/vars_*.h))
-# targets for thread-local variables 
+# targets for thread-local variables
 THREADVARS := $(patsubst $(GENSRC)/%.cpp,%.o,$(wildcard $(GENSRC)/vars_*_*.cpp))
 
 .PHONY: all clean printvars supervisor

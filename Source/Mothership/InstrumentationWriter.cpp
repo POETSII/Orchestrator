@@ -114,7 +114,7 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
 #else
         unsigned columns = 16;
 #endif
-        
+
         fprintf(file, "%u, ", source);  // First column must be the thread ID
         for (unsigned column=2; column<columns; column++)   // The rest get 0'ed
             fprintf(file, "0, ");

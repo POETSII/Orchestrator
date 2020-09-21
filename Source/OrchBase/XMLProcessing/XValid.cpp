@@ -352,7 +352,7 @@ if (Validee!=0) Validee->ShowV(fp);
 }
 
 //------------------------------------------------------------------------------
-              
+
 void XValid::Validate(string s)
 // Way in WITHOUT overwriting the output channel
 // The client input to the validator. We assume that the grammar definition is

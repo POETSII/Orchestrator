@@ -14,7 +14,7 @@ Stencil_t::Stencil_t()
 //
 {
                                        // Pointer from client stencil
-pn = 0;                                // to definition node      
+pn = 0;                                // to definition node
 }
 
 //------------------------------------------------------------------------------

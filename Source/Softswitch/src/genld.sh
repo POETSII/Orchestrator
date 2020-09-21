@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Load config parameters
-while read -r EXPORT; do  
+while read -r EXPORT; do
     eval $EXPORT;
 done <<< `python ${TINSEL_ROOT}/config.py envs`
 

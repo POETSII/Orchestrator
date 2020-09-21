@@ -37,7 +37,7 @@ pathUlog.clear();
 }
 
 //------------------------------------------------------------------------------
-     
+
 bool CmPath::Cm_Path(bool OK,string & rpath,string newval, string oldval)
 // If OK, rpath is set to newval, return FALSE
 // Except if.... newval == "~", in which case rpath = oldval, return FALSE
