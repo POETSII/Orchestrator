@@ -36,7 +36,7 @@ Mothership::~Mothership()
  * there's no portable way to interface the two). See the dump handler. */
 void Mothership::dump(std::ofstream* stream)
 {
-    *stream << "Mothership (" << POETS::get_hostname() << ") dump:\n";
+    *stream << "Mothership (" << OSFixes::get_hostname() << ") dump:\n";
     appdb.dump(stream);
     superdb.dump(stream);
 }

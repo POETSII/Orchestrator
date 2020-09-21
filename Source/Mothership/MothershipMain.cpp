@@ -28,7 +28,7 @@ int main(int argc, char** argv)
     }
 
     printf("%s (%s) Main closing down\n", csMOTHERSHIPproc,
-           POETS::get_hostname().c_str());
+           OSFixes::get_hostname().c_str());
 
     return 0;
 }

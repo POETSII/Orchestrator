@@ -645,7 +645,7 @@ void OrchBase::TaskDeploy(Cli::Cl_t Cl)
                 else
                 {
                     Post(167, command->c_str(),
-                         POETS::getSysErrorString(errno).c_str());
+                         OSFixes::getSysErrorString(errno).c_str());
                 }
                 return;
             }

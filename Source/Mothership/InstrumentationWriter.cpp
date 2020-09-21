@@ -46,7 +46,7 @@ void InstrumentationWriter::setup_directory()
                     "'%s' ran unsuccessfully with message '%s'. "
                     "Instrumentation data may not be recorded correctly.",
                     commandIt->c_str(),
-                    POETS::getSysErrorString(errno).c_str()));
+                    OSFixes::getSysErrorString(errno).c_str()));
             }
         }
     }
@@ -74,7 +74,7 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
         if (fileFailureTriggered) return false;
         throw InstrumentationException(dformat(
             "Unable to open instrumentation file at '%s'. Error: '%s'.",
-            fileTarget.c_str(), POETS::getSysErrorString(errno).c_str()));
+            fileTarget.c_str(), OSFixes::getSysErrorString(errno).c_str()));
     }
 
     /* Extract instrumentation data from the packet. */

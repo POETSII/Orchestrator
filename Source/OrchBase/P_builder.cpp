@@ -204,13 +204,13 @@ unsigned P_builder::GenFiles(P_task* task)
   //TODO: make this safer. Currently the remove users an "rm -rf" without any safety.  
   if(system((REMOVEDIR+" "+task_dir).c_str())) // Check that the directory deleted
   {                                  // if it didn't, tell logserver and exit
-    par->Post(817, task_dir, POETS::getSysErrorString(errno));
+    par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
     return 1;
   }
   
   if(system((MAKEDIR+" "+ task_dir).c_str()))// Check that the directory created
   {                                 // if it didn't, tell logserver and exit
-    par->Post(818, (task_dir), POETS::getSysErrorString(errno));
+    par->Post(818, (task_dir), OSFixes::getSysErrorString(errno));
     return 1;
   }
   //============================================================================
@@ -226,21 +226,21 @@ unsigned P_builder::GenFiles(P_task* task)
   std::string mkdirGenPath(task_dir + GENERATED_PATH);
   if(system((MAKEDIR + " " + mkdirGenPath).c_str()))
   {
-    par->Post(818, mkdirGenPath, POETS::getSysErrorString(errno));
+    par->Post(818, mkdirGenPath, OSFixes::getSysErrorString(errno));
     return 1;
   }
   
   std::string mkdirGenHPath(task_dir + GENERATED_H_PATH);
   if(system((MAKEDIR + " " + mkdirGenHPath).c_str()))
   {
-    par->Post(818, mkdirGenHPath, POETS::getSysErrorString(errno));
+    par->Post(818, mkdirGenHPath, OSFixes::getSysErrorString(errno));
     return 1;
   }
   
   std::string mkdirGenCPath(task_dir + GENERATED_CPP_PATH);
   if(system((MAKEDIR + " " + mkdirGenCPath).c_str()))
   {
-    par->Post(818, mkdirGenCPath, POETS::getSysErrorString(errno));
+    par->Post(818, mkdirGenCPath, OSFixes::getSysErrorString(errno));
     return 1;
   }
   //============================================================================
@@ -396,7 +396,7 @@ unsigned P_builder::GenSupervisor(P_task* task)
   cpCmd << task_dir << "/" << GENERATED_PATH;                   // Destination
   if(system(cpCmd.str().c_str()))
   {
-    par->Post(807, (task_dir+GENERATED_PATH), POETS::getSysErrorString(errno));
+    par->Post(807, (task_dir+GENERATED_PATH), OSFixes::getSysErrorString(errno));
     return 1;
   }
   //============================================================================
@@ -418,7 +418,7 @@ unsigned P_builder::GenSupervisor(P_task* task)
 
     if(supervisor_h.fail()) // Check that the file opened
     {                       // if it didn't, tell logserver and exit
-      par->Post(816, supervisor_hFName.str(), POETS::getSysErrorString(errno));
+      par->Post(816, supervisor_hFName.str(), OSFixes::getSysErrorString(errno));
       return 1;
     }
     
@@ -428,7 +428,7 @@ unsigned P_builder::GenSupervisor(P_task* task)
                                  fstream::app);  // Supervisor code, open in append
     if(supervisor_cpp.fail()) // Check that the file opened
     {                         // if it didn't, tell logserver, close .h and exit
-      par->Post(816, supervisor_cFName.str(), POETS::getSysErrorString(errno));
+      par->Post(816, supervisor_cFName.str(), OSFixes::getSysErrorString(errno));
       supervisor_h.close();
       return 1;
     }
@@ -729,7 +729,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::ofstream vars_cpp(vars_cppFName.str().c_str());  // variables source
   if(vars_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
-    par->Post(816, vars_cppFName.str(), POETS::getSysErrorString(errno));
+    par->Post(816, vars_cppFName.str(), OSFixes::getSysErrorString(errno));
     return 1;
   }
   
@@ -739,7 +739,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::ofstream handlers_h(handlers_hFName.str().c_str());  // handlers header
   if(handlers_h.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
-    par->Post(816, handlers_hFName.str(), POETS::getSysErrorString(errno));
+    par->Post(816, handlers_hFName.str(), OSFixes::getSysErrorString(errno));
     vars_cpp.close();
     return 1;
   }
@@ -750,7 +750,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   std::ofstream handlers_cpp(handlers_cppFName.str().c_str());  // handlers source
   if(handlers_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
-    par->Post(816, handlers_cppFName.str(), POETS::getSysErrorString(errno));
+    par->Post(816, handlers_cppFName.str(), OSFixes::getSysErrorString(errno));
     vars_cpp.close();
     handlers_h.close();
     return 1;
@@ -1130,7 +1130,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   std::ofstream vars_cpp(vars_cppFName.str().c_str());  // variables source
   if(vars_cpp.fail()) // Check that the file opened
   {                       // if it didn't, tell logserver and exit
-    par->Post(816, vars_cppFName.str(), POETS::getSysErrorString(errno));
+    par->Post(816, vars_cppFName.str(), OSFixes::getSysErrorString(errno));
     return 1;
   }
   //============================================================================
@@ -2091,35 +2091,35 @@ unsigned P_builder::CompileBins(P_task * task)
   std::string mkdirCommonPath(task_dir + COMMON_PATH);
   if(system((MAKEDIR + " " + mkdirCommonPath).c_str()))
   {
-    par->Post(818, mkdirCommonPath, POETS::getSysErrorString(errno));
+    par->Post(818, mkdirCommonPath, OSFixes::getSysErrorString(errno));
     return 1;
   }
   
   std::string mkdirTinselPath(task_dir + TINSEL_PATH);      // Tinsel path
   if(system((MAKEDIR + " " + mkdirTinselPath).c_str()))
   {
-    par->Post(818, mkdirTinselPath, POETS::getSysErrorString(errno));
+    par->Post(818, mkdirTinselPath, OSFixes::getSysErrorString(errno));
     return 1;
   }
   
   std::string mkdirOrchPath(task_dir + ORCH_PATH);          // Orchestrator path
   if(system((MAKEDIR + " " + mkdirOrchPath).c_str()))
   {
-    par->Post(818, mkdirOrchPath, POETS::getSysErrorString(errno));
+    par->Post(818, mkdirOrchPath, OSFixes::getSysErrorString(errno));
     return 1;
   }
   
   std::string mkdirBinPath(task_dir + BIN_PATH);           // Binary path
   if(system((MAKEDIR + " " + mkdirBinPath).c_str()))
   {
-    par->Post(818, mkdirBinPath, POETS::getSysErrorString(errno));
+    par->Post(818, mkdirBinPath, OSFixes::getSysErrorString(errno));
     return 1;
   }
   
   std::string mkdirBuildPath(task_dir + BUILD_PATH);       // Build path
   if(system((MAKEDIR + " " + mkdirBuildPath).c_str()))
   {
-    par->Post(818, mkdirBuildPath, POETS::getSysErrorString(errno));
+    par->Post(818, mkdirBuildPath, OSFixes::getSysErrorString(errno));
     return 1;
   }
   //============================================================================
@@ -2136,7 +2136,7 @@ unsigned P_builder::CompileBins(P_task * task)
   cpDest = task_dir + COMMON_PATH;
   if(system((cpCmd + " " + cpSrc + " " + cpDest).c_str()))
   {
-    par->Post(807, cpDest, POETS::getSysErrorString(errno));
+    par->Post(807, cpDest, OSFixes::getSysErrorString(errno));
     return 1;
   }
   
@@ -2144,7 +2144,7 @@ unsigned P_builder::CompileBins(P_task * task)
   cpDest = task_dir + TINSEL_PATH;
   if(system((cpCmd + " " + cpSrc + " " + cpDest).c_str()))
   {
-    par->Post(807, cpDest, POETS::getSysErrorString(errno));
+    par->Post(807, cpDest, OSFixes::getSysErrorString(errno));
     return 1;
   }
   
@@ -2152,7 +2152,7 @@ unsigned P_builder::CompileBins(P_task * task)
   cpDest = task_dir + ORCH_PATH;
   if(system((cpCmd + " " + cpSrc + " " + cpDest).c_str()))
   {
-    par->Post(807, cpDest, POETS::getSysErrorString(errno));
+    par->Post(807, cpDest, OSFixes::getSysErrorString(errno));
     return 1;
   }
   
@@ -2160,7 +2160,7 @@ unsigned P_builder::CompileBins(P_task * task)
   cpDest = task_dir + BUILD_PATH;                 // last one as we reuse cpDest
   if(system((SYS_COPY + " " + cpSrc + " " + cpDest).c_str()))
   {
-    par->Post(807, cpDest, POETS::getSysErrorString(errno));
+    par->Post(807, cpDest, OSFixes::getSysErrorString(errno));
     return 1;
   }
   //============================================================================
@@ -2220,7 +2220,7 @@ unsigned P_builder::CompileBins(P_task * task)
             // Check that the file opened successfully.
             if(binary == PNULL)
                 par->Post(806, binaryIt->c_str(),
-                          POETS::getSysErrorString(errno));
+                          OSFixes::getSysErrorString(errno));
             else fclose(binary);
           }
             
@@ -2240,7 +2240,7 @@ unsigned P_builder::CompileBins(P_task * task)
   binary = fopen(binaryPath.c_str(),"r");
   // Check that the file opened successfully.
   if(binary == PNULL)
-      par->Post(806, binaryPath, POETS::getSysErrorString(errno));
+      par->Post(806, binaryPath, OSFixes::getSysErrorString(errno));
   else fclose(binary);
   //============================================================================
   return 0;

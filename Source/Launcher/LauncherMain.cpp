@@ -80,7 +80,7 @@ void BuildCommand(bool useMotherships, std::string internalPath,
     std::vector<std::string> orderedHosts;
 
     /* We'll need our hostname. */
-    std::string ourHostname = POETS::get_hostname();
+    std::string ourHostname = OSFixes::get_hostname();
 
     /* Boilerplate */
     commandStream << "mpiexec.hydra";
@@ -95,7 +95,7 @@ void BuildCommand(bool useMotherships, std::string internalPath,
     if (ORCHESTRATOR_DEBUG) commandStream << " -l";
 
     /* Standard-issue processes (sorry). */
-    std::string localBinDir = POETS::dirname(POETS::get_executable_path());
+    std::string localBinDir = OSFixes::dirname(OSFixes::get_executable_path());
     hydraProcesses.push_back(new std::stringstream);
 
     /* Root */
@@ -266,7 +266,7 @@ int DeployBinaries(std::set<std::string>* hosts,
     DebugPrint("%sIdentifying where the binaries are on this box, from where "
                "the launcher is...\n", debugHeader);
     std::string sourceDir;
-    sourceDir = POETS::dirname(POETS::get_executable_path());
+    sourceDir = OSFixes::dirname(OSFixes::get_executable_path());
 
     if (sourceDir.empty())
     {
@@ -292,7 +292,7 @@ int DeployBinaries(std::set<std::string>* hosts,
         /* Ensure .orchestrator exists. */
         sshRc = SSH::call((*host),
                           dformat("mkdir --parents \"%s\"\n",
-                                  POETS::dirname(deployDir).c_str()),
+                                  OSFixes::dirname(deployDir).c_str()),
                           &cmdstdout, &cmdstderr);
         if (sshRc > 0)
         {

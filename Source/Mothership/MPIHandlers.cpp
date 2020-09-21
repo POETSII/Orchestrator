@@ -478,7 +478,7 @@ unsigned Mothership::handle_msg_dump(PMsg_p* message)
     outS.open(dumpPath.c_str(), std::ofstream::out | std::ofstream::trunc);
     if (outS.fail())
     {
-        Post(508, dumpPath, POETS::getSysErrorString(errno));
+        Post(508, dumpPath, OSFixes::getSysErrorString(errno));
         return 0;
     }
     dump(&outS);
@@ -488,7 +488,7 @@ unsigned Mothership::handle_msg_dump(PMsg_p* message)
     outF = fopen(dumpPath.c_str(), "a");
     if (outF == PNULL)
     {
-        Post(508, dumpPath, POETS::getSysErrorString(errno));
+        Post(508, dumpPath, OSFixes::getSysErrorString(errno));
         return 0;
     }
     Dump(outF);
