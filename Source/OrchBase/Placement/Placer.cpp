@@ -442,7 +442,7 @@ float Placer::compute_fitness(GraphI_t* gi)
 
         /* Does the first device's gi match the gi passed to this function
          * as argument? */
-        if ((*threadIt->second.begin())->par->par == gi)
+        if ((*threadIt->second.begin())->par == gi)
         {
             /* If so, we count it. */
             fitness += threadIt->second.size() * threadIt->second.size() *
