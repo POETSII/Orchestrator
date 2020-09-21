@@ -9,7 +9,6 @@
 #include "P_device.h"
 #include "P_pintyp.h"
 #include "P_pin.h"
-#include "poets_pkt.h"
 #include <sstream>
 #include <algorithm>
 #include <set>
@@ -168,7 +167,6 @@ void P_builder::Preplace(P_task* task)
       MultiSimpleDeployer deployer(numBoxes);
       par->Post(138,par->pE->Name());
       deployer.deploy(par->pE);
-      par->pPlace->Init();
     }
     if (!par->pPlace->Place(task)) task->LinkFlag(); // then preplace on the real or virtual board.
   }
@@ -268,92 +266,84 @@ unsigned P_builder::GenFiles(P_task* task)
   // handlers_<CORENUM>.h
   // handlers_<CORENUM>.cpp
   //
-  // Build a core map visible to the make script (as a shell script). Each of
-  // the cores is uniquely identified within a board.
+  // build a core map visible to the make script (as a shell script)
   //============================================================================
   P_core* thisCore;  // Core available during iteration.
   P_thread* firstThread;  // The "first" thread in thisCore. "first" is arbitrary, because cores are stored in a map.
-  AddressComponent mailboxCoreId;  // Concatenated mailbox-core address (staging area)
   
   fstream cores_sh((task_dir+GENERATED_PATH+"/cores.sh").c_str(),
                     fstream::in | fstream::out | fstream::trunc);      // Open the cores shell script       
-  
-  // Walk through all of the boxes in the system
-  WALKMAP(AddressComponent, P_box*, par->pE->P_boxm, boxNode)
+                    
+  // Walk through all of the boards in the graph
+  WALKPDIGRAPHNODES(AddressComponent,P_board*,unsigned,P_link*,
+                      unsigned,P_port*,par->pE->G,boardNode)
   {
-    // Walk through all of the boards in a box
-    WALKVECTOR(P_board*,boxNode->second->P_boardv,boardNode)
-    {  
-      // Walk through all of the mailboxes on the board.
-      WALKPDIGRAPHNODES(AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,
-                          P_port*,(*boardNode)->G,mailboxNode)
-      {
+    
+    // Walk through all of the mailboxes on the board.
+    WALKPDIGRAPHNODES(AddressComponent,P_mailbox*,unsigned,P_link*,unsigned,
+                        P_port*,par->pE->G.NodeData(boardNode)->G,mailboxNode)
+    {
+      
+      // Walk through all of the cores on the mailbox
+      WALKMAP(AddressComponent,P_core*,
+              par->pE->G.NodeData(boardNode)->G.NodeData(mailboxNode)->P_corem,
+              coreNode)
+      {  
+        thisCore = coreNode->second;                        // Reference to the current core
+        firstThread = thisCore->P_threadm.begin()->second;  // Reference to the first thread on the core
         
-        // Walk through all of the cores on the mailbox
-        WALKMAP(AddressComponent,P_core*,
-                (*boardNode)->G.NodeData(mailboxNode)->P_corem,
-                coreNode)
-        {  
-          thisCore = coreNode->second;                        // Reference to the current core
-          firstThread = thisCore->P_threadm.begin()->second;  // Reference to the first thread on the core
+        if (firstThread->P_devicel.size()                           // only for cores with something placed 
+            && (firstThread->P_devicel.front()->par->par == task))  // and that belong to the task
+        {
+          cores_sh << "cores[" << coreNum << "]=";
+          cores_sh << thisCore->get_hardware_address()->get_core() << "\n";
+          // these consist of the declarations and definitions of variables and the handler functions.
           
-          if (firstThread->P_devicel.size()                           // only for cores with something placed 
-              && (firstThread->P_devicel.front()->par->par == task))  // and that belong to the task
-          {
-            mailboxCoreId = thisCore->get_hardware_address()->get_mailbox() \
-	      << par->pE->addressFormat.coreWordLength;
-            mailboxCoreId += thisCore->get_hardware_address()->get_core();
+          //====================================================================
+          // Create empty files for the per-core variables declarations
+          //====================================================================
+          std::stringstream vars_hFName;
+          vars_hFName << task_dir << GENERATED_H_PATH;
+          vars_hFName << "/vars_" << coreNum << ".h";
+          std::ofstream vars_h(vars_hFName.str().c_str());  // variables header
 
-            cores_sh << "cores[" << coreNum << "]=";
-            cores_sh << mailboxCoreId << "\n";
-            // these consist of the declarations and definitions of variables and the handler functions.
-            
-            //====================================================================
-            // Create empty files for the per-core variables declarations
-            //====================================================================
-            std::stringstream vars_hFName;
-            vars_hFName << task_dir << GENERATED_H_PATH;
-            vars_hFName << "/vars_" << coreNum << ".h";
-            std::ofstream vars_h(vars_hFName.str().c_str());  // variables header
-            
-            
-            //====================================================================
-            
-            
-            //====================================================================
-            // Write core vars.
-            //====================================================================
-            if (WriteCoreVars(task_dir, coreNum, thisCore, firstThread, vars_h))
-            {                     // Writing core vars failed - bail
-              vars_h.close();
-              cores_sh.close();
-              return 1;
-            }
-            //====================================================================
-            
-            
-            //====================================================================
-            // Generate thread variables
-            //====================================================================
-            WALKMAP(AddressComponent,P_thread*,thisCore->P_threadm,threadIterator)
+
+          //====================================================================
+          
+          
+          //====================================================================
+          // Write core vars.
+          //====================================================================
+          if (WriteCoreVars(task_dir, coreNum, thisCore, firstThread, vars_h))
+          {                     // Writing core vars failed - bail
+            vars_h.close();
+            cores_sh.close();
+            return 1;
+          }
+          //====================================================================
+          
+          
+          //====================================================================
+          // Generate thread variables
+          //====================================================================
+          WALKMAP(AddressComponent,P_thread*,thisCore->P_threadm,threadIterator)
+          {
+            if (threadIterator->second->P_devicel.size())
             {
-              if (threadIterator->second->P_devicel.size())
-              {
-                if(WriteThreadVars(task_dir, coreNum, threadIterator->first,
-                                  threadIterator->second, vars_h))
-                {                     // Writing thread vars failed - bail
-                  vars_h.close();
-                  cores_sh.close();
-                  return 1;
-                }
+              if(WriteThreadVars(task_dir, coreNum, threadIterator->first,
+                                threadIterator->second, vars_h))
+              {                     // Writing thread vars failed - bail
+                vars_h.close();
+                cores_sh.close();
+                return 1;
               }
             }
-            //====================================================================
-            
-            
-            vars_h.close();       // close the core's declarations
-            ++coreNum;            // move on to the next core.
           }
+          //====================================================================
+          
+          
+          vars_h.close();       // close the core's declarations
+          ++coreNum;            // move on to the next core.
         }
       }
     }
@@ -442,7 +432,7 @@ unsigned P_builder::GenSupervisor(P_task* task)
     
     
     P_devtyp* supervisor_type = task->pSup->pP_devtyp;
-    set<P_message*> sup_pkts; // set used to retain only unique message types used by supervisors
+    set<P_message*> sup_msgs; // set used to retain only unique message types used by supervisors
     
     std::stringstream sup_inPin_typedefs("");
     std::stringstream sup_pin_handlers("");
@@ -453,13 +443,17 @@ unsigned P_builder::GenSupervisor(P_task* task)
     // build supervisor pin handlers.
     sup_pin_handlers << "vector<supInputPin*> Supervisor::inputs;\n";
     sup_pin_handlers << "vector<supOutputPin*> Supervisor::outputs;\n\n";
-
+    
+    sup_pin_vectors << "std::cout << \"Starting Application Supervisor for "; // Why is this an std::cout and not a logserver?
+    sup_pin_vectors << "application " << task->Name() << "\" << std::endl;\n";
+    
+    
     //==========================================================================
     // Assemble output pin variables & handlers.
     //==========================================================================
     WALKVECTOR(P_pintyp*, supervisor_type->P_pintypIv, sI_pin)
     {
-      sup_pkts.insert((*sI_pin)->pMsg);
+      sup_msgs.insert((*sI_pin)->pMsg);
       
       //========================================================================
       // Add the declaration for the pin's receive handler
@@ -467,8 +461,8 @@ unsigned P_builder::GenSupervisor(P_task* task)
       string sIpin_name = (*sI_pin)->Name();
       sup_pin_handlers << "unsigned super_InPin_" << sIpin_name;
       sup_pin_handlers << "_Recv_handler (const void* pinProps, ";
-      sup_pin_handlers << "void* pinState, const P_Pkt_t* inMsg, ";
-      sup_pin_handlers << "PMsg_p* outMsg, void* pktBuf)\n";
+      sup_pin_handlers << "void* pinState, const P_Sup_Msg_t* inMsg, ";
+      sup_pin_handlers << "PMsg_p* outMsg, void* msgBuf)\n";
       //========================================================================
       
       sup_pin_handlers << "{\n";
@@ -484,10 +478,9 @@ unsigned P_builder::GenSupervisor(P_task* task)
         sup_inPin_typedefs << " super_InPin_" << sIpin_name << "_props_t;\n\n";
         
         sup_pin_handlers << "   const super_InPin_" << sIpin_name;
-        sup_pin_handlers << "_props_t* sEdgeProperties OS_ATTRIBUTE_UNUSED= ";
+        sup_pin_handlers << "_props_t* sEdgeProperties = ";
         sup_pin_handlers << "static_cast<const super_InPin_";
         sup_pin_handlers << sIpin_name << "_props_t*>(pinProps);\n";
-        sup_pin_handlers << "OS_PRAGMA_UNUSED(sEdgeProperties)\n";
         
         sup_inPin_props <<  "new const super_InPin_" << sIpin_name;
         sup_inPin_props << "_props_t " << (*sI_pin)->pPropsI->c_src;
@@ -507,10 +500,9 @@ unsigned P_builder::GenSupervisor(P_task* task)
         sup_inPin_typedefs << " super_InPin_" << sIpin_name << "_state_t;\n\n";
         
         sup_pin_handlers << "   super_InPin_" << sIpin_name;
-        sup_pin_handlers << "_state_t* sEdgeState OS_ATTRIBUTE_UNUSED= ";
+        sup_pin_handlers << "_state_t* sEdgeState = ";
         sup_pin_handlers << "static_cast<super_InPin_";
         sup_pin_handlers << sIpin_name << "_state_t*>(pinState);\n";
-        sup_pin_handlers<< "OS_PRAGMA_UNUSED(sEdgeState)\n";
         
         sup_inPin_state << "new super_InPin_" << sIpin_name;
         sup_inPin_state << "_state_t " << (*sI_pin)->pStateI->c_src;
@@ -520,11 +512,11 @@ unsigned P_builder::GenSupervisor(P_task* task)
       
       if ((*sI_pin)->pMsg->pPropsD)
       {
-        sup_pin_handlers << "   const s_pkt_" << (*sI_pin)->pMsg->Name();
+        sup_pin_handlers << "   const s_msg_" << (*sI_pin)->pMsg->Name();
         sup_pin_handlers << "_pyld_t* message = ";
-        sup_pin_handlers << "static_cast<const s_pkt_";
+        sup_pin_handlers << "static_cast<const s_msg_";
         sup_pin_handlers << (*sI_pin)->pMsg->Name() << "_pyld_t*>";
-        sup_pin_handlers << "(static_cast<const void*>(inMsg->payload));\n";
+        sup_pin_handlers << "(static_cast<const void*>(inMsg->data));\n";
       }
       
       
@@ -534,38 +526,10 @@ unsigned P_builder::GenSupervisor(P_task* task)
       sup_pin_handlers << "   return 0;\n";
       sup_pin_handlers << "}\n\n";
       
-      
-      //========================================================================
-      // Add the pin's teardown code - this deletes the properties and state if 
-      // they exist. Called by the destructor for supInputPin in Supervisor.cpp
-      //========================================================================
-      sup_pin_handlers << "unsigned super_InPin_" << sIpin_name;
-      sup_pin_handlers << "_PinTeardown (const void* pinProps, ";
-      sup_pin_handlers << "void* pinState)\n";
-      sup_pin_handlers << "{\n";
-      
-      if ((*sI_pin)->pPropsD)
-      {
-        sup_pin_handlers << "    delete static_cast<const super_InPin_";
-        sup_pin_handlers << sIpin_name << "_props_t*>(pinProps);\n";        
-      }
-      
-      if ((*sI_pin)->pStateD)
-      {
-        sup_pin_handlers << "    delete static_cast<super_InPin_";
-        sup_pin_handlers << sIpin_name << "_state_t*>(pinState);\n";
-      }
-      
-      sup_pin_handlers << "    return 0;\n";
-      sup_pin_handlers << "}\n\n";
-      //========================================================================
-      
-      
       // this will create a new pin object - how should this be deleted on exit since it's held in a static class member?
       sup_pin_vectors << "Supervisor::inputs.push_back";
       sup_pin_vectors << "(new supInputPin(";
       sup_pin_vectors << "&super_InPin_" << sIpin_name << "_Recv_handler,";
-      sup_pin_vectors << "&super_InPin_" << sIpin_name << "_PinTeardown,";
       sup_pin_vectors << sup_inPin_props.str() << ",";
       sup_pin_vectors << sup_inPin_state.str();
       sup_pin_vectors << "));\n";
@@ -579,18 +543,17 @@ unsigned P_builder::GenSupervisor(P_task* task)
     //==========================================================================
     WALKVECTOR(P_pintyp*, supervisor_type->P_pintypOv, sO_pin)
     {
-        sup_pkts.insert((*sO_pin)->pMsg);
+        sup_msgs.insert((*sO_pin)->pMsg);
         string sOpin_name = (*sO_pin)->Name();
         sup_pin_handlers << "unsigned super_OutPin_" << sOpin_name;
         sup_pin_handlers << "_Send_handler";
-        sup_pin_handlers << "(PMsg_p* outMsg, void* pktBuf, unsigned superMsg)";
+        sup_pin_handlers << "(PMsg_p* outMsg, void* msgBuf, unsigned superMsg)";
         sup_pin_handlers << "\n{\n";
-        sup_pin_handlers << "   int s_c = 0;\n";
-        sup_pin_handlers << "   /*\n";  //TEMPORARY FUDGE: until we resolve supervisor outputs.
-        sup_pin_handlers << "   P_Pkt_t* s_pkt;\n";
-        sup_pin_handlers << "   P_Pkt_Hdr_t s_pkt_hdr;\n";
-        sup_pin_handlers << "   if (!(s_pkt = outMsg->Get<P_Pkt_t>(0, s_c))) return -1;\n";
-        sup_pin_handlers << "   s_pkt_hdr = s_pkt->header;\n";
+        sup_pin_handlers << "   int s_c;\n";
+        sup_pin_handlers << "   P_Sup_Msg_t* s_msg;\n";
+        sup_pin_handlers << "   P_Sup_Hdr_t s_msg_hdr;\n";
+        sup_pin_handlers << "   if (!(s_msg = outMsg->Get<P_Sup_Msg_t>(0, s_c))) return -1;\n";
+        sup_pin_handlers << "   s_msg_hdr = s_msg->header;\n";
         if ((*sO_pin)->pMsg->pPropsD) // message has some sort of payload
         {
            /* rather awkward code for payload extraction. a PMsg, unfortunately, has an interface that expects you
@@ -603,54 +566,47 @@ unsigned P_builder::GenSupervisor(P_task* task)
             * creating a new data item, inserting it into the PMsg, deleting the allocation, then referring to the contained
             * object in the PMsg if everything is to be well-behaved.
            */
-           sup_pin_handlers << "   s_pkt_" << (*sO_pin)->pMsg->Name();
+           sup_pin_handlers << "   s_msg_" << (*sO_pin)->pMsg->Name();
            sup_pin_handlers << "_pyld_t* outPyld;\n";
            
-           sup_pin_handlers << "   if (superMsg) outPyld = static_cast<s_pkt_";
+           sup_pin_handlers << "   if (superMsg) outPyld = static_cast<s_msg_";
            sup_pin_handlers << (*sO_pin)->pMsg->Name();
-           sup_pin_handlers << "_pyld_t*>(static_cast<void*>(s_pkt->data);\n";
+           sup_pin_handlers << "_pyld_t*>(static_cast<void*>(s_msg->data);\n";
            
            sup_pin_handlers << "   else\n";
            sup_pin_handlers << "   {\n";
-           sup_pin_handlers << "      P_Pkt_t* pkt = new P_Pkt_t();\n";
-           sup_pin_handlers << "      outMsg->Put<P_Pkt_t>(0, pkt, 1);\n";
-           sup_pin_handlers << "      delete pkt;\n";
-           sup_pin_handlers << "      if (!(pkt = outMsg->Get<P_Pkt_t>(0, s_c))) return -1;\n";
+           sup_pin_handlers << "      P_Msg_t* msg = new P_Msg_t();\n";
+           sup_pin_handlers << "      outMsg->Put<P_Sup_Msg_t>(0, msg, 1);\n";
+           sup_pin_handlers << "      delete msg;\n";
+           sup_pin_handlers << "      if (!(msg = outMsg->Get<P_Msg_t>(0, s_c))) return -1;\n";
            
-           sup_pin_handlers << "      outPyld = static_cast<s_pkt_";
+           sup_pin_handlers << "      outPyld = static_cast<s_msg_";
            sup_pin_handlers << (*sO_pin)->pMsg->Name();
-           sup_pin_handlers << "_pyld_t*>(static_cast<void*>(pkt->data));\n";
+           sup_pin_handlers << "_pyld_t*>(static_cast<void*>(msg->data));\n";
            sup_pin_handlers << "   }\n";
         }
-        sup_pin_handlers << "   */\n";  //TEMPORARY FUDGE: until we resolve supervisor outputs.
         
         sup_pin_handlers << (*sO_pin)->pHandl->c_src.c_str() << "\n";
-        
-        sup_pin_handlers << "   /*\n";  //TEMPORARY FUDGE: until we resolve supervisor outputs.
-        
         // last part sets up to send the messages (which is automatically handled upon exit from the SupervisorCall).
         sup_pin_handlers << "   if (!superMsg)\n";
         sup_pin_handlers << "   {\n";
-        sup_pin_handlers << "   P_Pkt_t* sendMsg;\n";
-        sup_pin_handlers << "   if (!(sendMsg = outMsg->Get<P_Pkt_t>(0, s_c)))";
+        sup_pin_handlers << "   P_Msg_t* sendMsg;\n";
+        sup_pin_handlers << "   if (!(sendMsg = outMsg->Get<P_Msg_t>(0, s_c)))";
         sup_pin_handlers << " return -1;\n";
         
-        sup_pin_handlers << "   P_Pkt_Hdr_t* outHdr = &sendMsg->header;\n";
+        sup_pin_handlers << "   P_Msg_Hdr_t* outHdr = &sendMsg->header;\n";
         sup_pin_handlers << "   outHdr->destDeviceAddr =";
-        sup_pin_handlers << " s_pkt_hdr.sourceDeviceAddr;\n";
+        sup_pin_handlers << " s_msg_hdr.sourceDeviceAddr;\n";
         sup_pin_handlers << "   outHdr->messageLenBytes = p_hdr_size();\n";
         
         if ((*sO_pin)->pMsg->pPropsD)
         {
-          sup_pin_handlers << "   outHdr->messageLenBytes += sizeof(s_pkt_";
+          sup_pin_handlers << "   outHdr->messageLenBytes += sizeof(s_msg_";
           sup_pin_handlers << (*sO_pin)->pMsg->Name() << "_pyld_t);\n";
         }
         
         sup_pin_handlers << "   }\n";
         // return number of messages to send if no error.
-        
-        sup_pin_handlers << "   */\n";  //TEMPORARY FUDGE: until we resolve supervisor outputs.
-        
         sup_pin_handlers << "   return s_c;\n";
         sup_pin_handlers << "}\n\n";
         
@@ -667,13 +623,13 @@ unsigned P_builder::GenSupervisor(P_task* task)
     supervisor_h << "#define _APPLICATION_SUPERVISOR_ 1\n\n";
     
     // supervisor message types. Note that for all objects with properties and state, both these values are optional so we need to check for their existence.
-    WALKSET(P_message*, sup_pkts, s_pkt)
+    WALKSET(P_message*, sup_msgs, s_msg)
     {
-      if ((*s_pkt)->pPropsD) 
+      if ((*s_msg)->pPropsD) 
       {
         supervisor_h << "typedef ";
-        supervisor_h << string((*s_pkt)->pPropsD->c_src).erase((*s_pkt)->pPropsD->c_src.length()-2).c_str();
-        supervisor_h << " s_pkt_" <<(*s_pkt)->Name() << "_pyld_t;\n\n";
+        supervisor_h << string((*s_msg)->pPropsD->c_src).erase((*s_msg)->pPropsD->c_src.length()-2).c_str();
+        supervisor_h << " s_msg_" <<(*s_msg)->Name() << "_pyld_t;\n\n";
       }
     }
     
@@ -821,15 +777,15 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   //============================================================================
   // Write the message typedefs..
   //============================================================================
-  for (vector<P_message*>::iterator pkt = c_devtyp->par->P_messagev.begin();
-        pkt != c_devtyp->par->P_messagev.end();
-        pkt++)
+  for (vector<P_message*>::iterator msg = c_devtyp->par->P_messagev.begin();
+        msg != c_devtyp->par->P_messagev.end();
+        msg++)
   {    
-    if ((*pkt)->pPropsD) 
+    if ((*msg)->pPropsD) 
     {
       vars_h << "typedef ";
-      vars_h << string((*pkt)->pPropsD->c_src).erase((*pkt)->pPropsD->c_src.length()-2).c_str();
-      vars_h << " pkt_" <<(*pkt)->Name() << "_pyld_t;\n";
+      vars_h << string((*msg)->pPropsD->c_src).erase((*msg)->pPropsD->c_src.length()-2).c_str();
+      vars_h << " msg_" <<(*msg)->Name() << "_pyld_t;\n";
     }
   }
   vars_h << "\n";
@@ -852,8 +808,6 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   // Form the common handler preamble (deviceProperties & deviceState)
   //============================================================================
   stringstream handlerPreamble("");
-  stringstream handlerPreambleS("");        // "normal" state
-  stringstream handlerPreambleCS("");       // Const-protected state
   handlerPreamble << "{\n";
   
   if (c_devtyp->par->pPropsD)
@@ -862,12 +816,12 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     handlerPreamble << "OS_ATTRIBUTE_UNUSED= ";
     handlerPreamble << "static_cast<const global_props_t*>";
     handlerPreamble << "(graphProps);\n";
-    handlerPreamble << "   OS_PRAGMA_UNUSED(graphProperties)\n";
+    handlerPreamble << "OS_PRAGMA_UNUSED(graphProperties)\n";
   }
   handlerPreamble << "   PDeviceInstance* deviceInstance ";
   handlerPreamble << "OS_ATTRIBUTE_UNUSED= ";
   handlerPreamble << "static_cast<PDeviceInstance*>(device);\n";
-  handlerPreamble << "   OS_PRAGMA_UNUSED(deviceInstance)\n";
+  handlerPreamble << "OS_PRAGMA_UNUSED(deviceInstance)\n";
   
   // deviceProperties (with unused variable handling)
   if (c_devtyp->pPropsD)
@@ -882,7 +836,7 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     handlerPreamble << "static_cast<const devtyp_";
     handlerPreamble << devtyp_name;
     handlerPreamble << "_props_t*>(deviceInstance->properties);\n";
-    handlerPreamble << "   OS_PRAGMA_UNUSED(deviceProperties)\n";
+    handlerPreamble << "OS_PRAGMA_UNUSED(deviceProperties)\n";
   }
   
   // deviceState (with unused variable handling)
@@ -892,23 +846,13 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     vars_h << string(c_devtyp->pStateD->c_src).erase(c_devtyp->pStateD->c_src.length()-2).c_str();
     vars_h << " devtyp_" << devtyp_name << "_state_t;\n\n";
     
-    // Const-protected state
-    handlerPreambleCS << "   const devtyp_" << devtyp_name;
-    handlerPreambleCS << "_state_t* deviceState ";
-    handlerPreambleCS << "OS_ATTRIBUTE_UNUSED= ";
-    handlerPreambleCS << "static_cast<devtyp_";
-    handlerPreambleCS << devtyp_name;
-    handlerPreambleCS << "_state_t*>(deviceInstance->state);\n";
-    handlerPreambleCS << "   OS_PRAGMA_UNUSED(deviceState)\n";
-    
-    // "normal" state
-    handlerPreambleS << "   devtyp_" << devtyp_name;
-    handlerPreambleS << "_state_t* deviceState ";
-    handlerPreambleS << "OS_ATTRIBUTE_UNUSED= ";
-    handlerPreambleS << "static_cast<devtyp_";
-    handlerPreambleS << devtyp_name;
-    handlerPreambleS << "_state_t*>(deviceInstance->state);\n";
-    handlerPreambleS << "   OS_PRAGMA_UNUSED(deviceState)\n";
+    handlerPreamble << "   devtyp_" << devtyp_name;
+    handlerPreamble << "_state_t* deviceState ";
+    handlerPreamble << "OS_ATTRIBUTE_UNUSED= ";
+    handlerPreamble << "static_cast<devtyp_";
+    handlerPreamble << devtyp_name;
+    handlerPreamble << "_state_t*>(deviceInstance->state);\n";
+    handlerPreamble << "OS_PRAGMA_UNUSED(deviceState)\n";
   }
   handlers_cpp << "\n";
   //============================================================================
@@ -920,13 +864,14 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   // ReadyToSend 
   handlers_h << "uint32_t devtyp_" << devtyp_name;
   handlers_h << "_RTS_handler (const void* graphProps, ";
-  handlers_h << "void* device, uint32_t* readyToSend);\n";
+  handlers_h << "void* device, uint32_t* readyToSend, ";
+  handlers_h << "void** msg_buf);\n";
   
   handlers_cpp << "uint32_t devtyp_" << devtyp_name;
   handlers_cpp << "_RTS_handler (const void* graphProps, ";
-  handlers_cpp << "void* device, uint32_t* readyToSend)\n";
+  handlers_cpp << "void* device, uint32_t* readyToSend, ";
+  handlers_cpp << "void** msg_buf)\n";
   handlers_cpp << handlerPreamble.str();
-  handlers_cpp << handlerPreambleCS.str();
   handlers_cpp << c_devtyp->pOnRTS->c_src << "\n";
   handlers_cpp << "   return *readyToSend;\n"; // we assume here the return value is intended to be an RTS bitmap.
   handlers_cpp << "}\n\n";
@@ -939,13 +884,11 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   handlers_cpp << "uint32_t devtyp_" << devtyp_name;
   handlers_cpp << "_OnIdle_handler (const void* graphProps, ";
   handlers_cpp << "void* device)\n";
-  handlers_cpp << handlerPreamble.str();
-  handlers_cpp << handlerPreambleS.str() << "\n";
+  handlers_cpp << handlerPreamble.str() << "\n";
   
   if (c_devtyp->pOnIdle) // insert the OnIdle handler if there is one
   {
-    handlers_cpp << c_devtyp->pOnIdle->c_src << "\n";
-    handlers_cpp << "    return 1;\n";  // Default return 1
+    handlers_cpp << c_devtyp->pOnIdle->c_src << "\n"; 
   }
   else handlers_cpp << "   return 0;\n"; // or a stub if not
   handlers_cpp << "}\n\n";
@@ -953,12 +896,11 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
   // OnCtl - stub until this can be resolved with DBT
   handlers_h << "uint32_t devtyp_" << devtyp_name;
   handlers_h << "_OnCtl_handler (const void* graphProps, ";
-  handlers_h << "void* device, const uint8_t opcode, const void* pkt);\n\n";
+  handlers_h << "void* device, const void* msg);\n\n";
   
   handlers_cpp << "uint32_t devtyp_" << devtyp_name;
   handlers_cpp << "_OnCtl_handler (const void* graphProps, ";
-  handlers_cpp << "void* device, const uint8_t opcode, const void* pkt)";
-  handlers_cpp << " {return 0;}\n\n";
+  handlers_cpp << "void* device, const void* msg) {return 0;}\n\n";
   //============================================================================
   
   
@@ -974,14 +916,13 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     handlers_h << "uint32_t devtyp_" << devtyp_name;
     handlers_h << "_InPin_" << Ipin_name;
     handlers_h << "_Recv_handler (const void* graphProps, ";
-    handlers_h << "void* device, void* edge, const void* pkt);\n";
+    handlers_h << "void* device, void* edge, const void* msg);\n";
     
     handlers_cpp << "uint32_t devtyp_" << devtyp_name;
     handlers_cpp << "_InPin_" << Ipin_name;
     handlers_cpp << "_Recv_handler (const void* graphProps, ";
-    handlers_cpp << "void* device, void* edge, const void* pkt)\n";
-    handlers_cpp << handlerPreamble.str();
-    handlers_cpp << handlerPreambleS.str();
+    handlers_cpp << "void* device, void* edge, const void* msg)\n";
+    handlers_cpp << handlerPreamble.str().c_str();
     handlers_cpp << "   inEdge_t* edgeInstance ";
     handlers_cpp << "OS_ATTRIBUTE_UNUSED= ";
     handlers_cpp << "static_cast<inEdge_t*>(edge);\n";
@@ -1023,10 +964,10 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     
     if ((*I_pin)->pMsg->pPropsD) 
     {
-      handlers_cpp << "   const pkt_" << (*I_pin)->pMsg->Name();
+      handlers_cpp << "   const msg_" << (*I_pin)->pMsg->Name();
       handlers_cpp << "_pyld_t* message = ";
-      handlers_cpp << "static_cast<const pkt_" << (*I_pin)->pMsg->Name();
-      handlers_cpp << "_pyld_t*>(pkt);\n";
+      handlers_cpp << "static_cast<const msg_" << (*I_pin)->pMsg->Name();
+      handlers_cpp << "_pyld_t*>(msg);\n";
     }
     
     handlers_cpp << (*I_pin)->pHandl->c_src << "\n";
@@ -1059,21 +1000,20 @@ unsigned P_builder::WriteCoreVars(std::string& task_dir, unsigned coreNum,
     handlers_h << "uint32_t devtyp_" << devtyp_name;
     handlers_h << "_OutPin_" << Opin_name;
     handlers_h << "_Send_handler (const void* graphProps, ";
-    handlers_h << "void* device, void* pkt);\n";
+    handlers_h << "void* device, void* msg, uint32_t buffered);\n";
     
     handlers_cpp << "uint32_t devtyp_" << devtyp_name;
     handlers_cpp << "_OutPin_" << Opin_name;
     handlers_cpp << "_Send_handler (const void* graphProps, ";
-    handlers_cpp << "void* device, void* pkt)\n";
+    handlers_cpp << "void* device, void* msg, uint32_t buffered)\n";
     
     handlers_cpp << handlerPreamble.str();
-    handlers_cpp << handlerPreambleS.str();
     
     if ((*O_pin)->pMsg->pPropsD)
     {
-      handlers_cpp << "   pkt_" << (*O_pin)->pMsg->Name();
-      handlers_cpp << "_pyld_t* message = static_cast<pkt_";
-      handlers_cpp <<  (*O_pin)->pMsg->Name() << "_pyld_t*>(pkt);\n";
+      handlers_cpp << "   msg_" << (*O_pin)->pMsg->Name();
+      handlers_cpp << "_pyld_t* message = static_cast<msg_";
+      handlers_cpp <<  (*O_pin)->pMsg->Name() << "_pyld_t*>(msg);\n";
     }
     handlers_cpp << (*O_pin)->pHandl->c_src << "\n";
     
@@ -1110,12 +1050,6 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   // thread's device list.
   P_devtyp* devTyp = (*thread->P_devicel.begin())->pP_devtyp;
   
-  unsigned int inTypCnt = devTyp->P_pintypIv.size();       // Grab the number of input pins for the device type
-  unsigned int outTypCnt = devTyp->P_pintypOv.size();      // Grab the number of output pins for the device type
-  
-  vector<unsigned int>inPinArcs;    //Vector used for finding how many connections a pin has. TODO: fix the type
-  vector<unsigned int>outPinArcs;   //Vector used for finding how many connections a pin has. TODO: fix the type
-  
   // we could choose to create separate .h files for each thread giving the externs but it seems simpler
   // and arguably more flexible to put all the external declarations in a single .h
   // The actual data definitions go one file per thread so we can load the resultant data files individually.
@@ -1139,16 +1073,16 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   //============================================================================
   // Build the input pin map. Need counts to put in the device type table.
   //============================================================================
-  set<P_message*> dev_in_pkt_types;
-  set<P_message*> dev_out_pkt_types;
+  set<P_message*> dev_in_msg_types;
+  set<P_message*> dev_out_msg_types;
   vector<P_pintyp*>::iterator pin;
   for (pin = devTyp->P_pintypIv.begin(); pin != devTyp->P_pintypIv.end(); pin++) 
   {
-    dev_in_pkt_types.insert((*pin)->pMsg);
+    dev_in_msg_types.insert((*pin)->pMsg);
   }
   for (pin = devTyp->P_pintypOv.begin(); pin != devTyp->P_pintypOv.end(); pin++)
   {
-    dev_out_pkt_types.insert((*pin)->pMsg);
+    dev_out_msg_types.insert((*pin)->pMsg);
   }
   //============================================================================
   
@@ -1175,82 +1109,29 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   vars_cpp << "ThreadCtxt_t Thread_" << thread_num << "_Context ";              // Set the ThreadContext name
   vars_cpp << "__attribute__ ((section (\".thr" << thread_num << "_base\"))) "; // Set the target memory area
   vars_cpp << "= {";
+  vars_cpp << "&Thread_" << thread_num << "_Context,";              // VirtualAddr
   vars_cpp << "1,";                                                 // numDevTyps        
   vars_cpp << "Thread_" << thread_num << "_DeviceTypes,";           // devTyps
   vars_cpp << thread->P_devicel.size() <<  ",";                     // numDevInsts
   vars_cpp << "Thread_" << thread_num << "_Devices,";               // devInsts
   vars_cpp << ((devTyp->par->pPropsD)?"&GraphProperties,":"PNULL,");// properties
+
+  vars_cpp << "PNULL,";                                             // RTSHead              // TODO: Remove
+  vars_cpp << "PNULL,";                                             // RTSTail              // TODO: Remove
+  vars_cpp << "0,";                                                 // nextOnIdle           // TODO: Remove
+  vars_cpp << "1,";                                                 // receiveHasPriority   // TODO: Remove
+  vars_cpp << "0";                                                  // ctlEnd               // TODO: Remove
+  vars_cpp << "};\n";
   
-  
-  
-  /* Work out the required size for rtsBuffSize: The size of the RTS buffer is
-   * dependant on the number of connected output pins hosted on the Softswitch.
-   * The size is set to 1 + <number of connected pins>, as long as this is less
-   * than MAX_RTSBUFFSIZE, so that each connected pin can have a pending send. 
-   *
-   * The additional slot is required to ensure that the crude, simple wrapping 
-   * mechanism for the circular buffer does not set rtsEnd to be the same as 
-   * rtsStart when adding to the buffer. If this occurs, softswitch_IsRTSReady()
-   * will always return false (as it simply checks that rtsStart != rtsEnd) and
-   * no further application-generated packets will be sent by the softswitch (as
-   * softswitch_onRTS will only alter rtsEnd if it adds an entry to the buffer, 
-   * which it wont do in this case as all pins will already be marked as send 
-   * pending).
-   * 
-   * If the buffer size is constrained to MAX_RTSBUFFSIZE, a warning is
-   * generated - if this occurs frequently, more graceful handling of rtsBuf
-   * overflowing may be required.
-   */
-  uint32_t outputCount = 1;     // Yes, this is intentionally 1 to cope with wrapping.
-  for (list<P_device*>::iterator device = thread->P_devicel.begin(); 
-        device != thread->P_devicel.end(); device++)
-  { // Iterate through all devices counting pins.
-    if (outTypCnt)
-    {
-      for (vector<P_pintyp*>::iterator pin = devTyp->P_pintypOv.begin();
-            pin != devTyp->P_pintypOv.end(); pin++)
-      {
-        // Check that we have connections.
-        if((*device)->par->G.FindArcs((*device)->idx,
-            (*pin)->idx,inPinArcs,outPinArcs))
-        {
-          outputCount++;    // If we do, add an rtsBuffSlot for the pin.
-        }
-      }
-    }
-  }  
-  if (outputCount > MAX_RTSBUFFSIZE)
-  { // If we have too many pins for one buffer entry per ping, set to max &warn.
-    // This may need a check adding to the Softswitch to stop buffer overflow.
-    outputCount = MAX_RTSBUFFSIZE;
-    par->Post(819,int2str(thread_num),int2str(coreNum),int2str(MAX_RTSBUFFSIZE),
-              int2str(MAX_RTSBUFFSIZE));
-  }
-  else if (outputCount < MIN_RTSBUFFSIZE)
-  {
-    outputCount = MIN_RTSBUFFSIZE;
-  }
-  vars_cpp << outputCount << ",";                                   // rtsBuffSize
-  
+  /* Replacement for the above for the "new" softswitch
+  vars_cpp << ",";                              // rtsBuffSize              //TODO:
   vars_cpp << "PNULL,";                                             // rtsBuf
   vars_cpp << "0,";                                                 // rtsStart
   vars_cpp << "0,";                                                 // rtsEnd
   vars_cpp << "0,";                                                 // idleStart
-  vars_cpp << "0,";                                                 // ctlEnd
-  
-  // Instrumentation
-  vars_cpp << "0,";                                 // lastCycles
-  vars_cpp << "0,";                                 // pendCycles
-  vars_cpp << "0,";                                 // txCount
-  vars_cpp << "0,";                                 // superCount
-  vars_cpp << "0,";                                 // rxCount
-  vars_cpp << "0,";                                 // txHandlerCount
-  vars_cpp << "0,";                                 // rxHandlerCount
-  vars_cpp << "0,";                                 // idleCount
-  vars_cpp << "0,";                                 // idleHandlerCount
-  vars_cpp << "0,";                                 // blockCount
-  vars_cpp << "0";                                  // cycleIdx
+  vars_cpp << "0";                                                  // ctlEnd
   vars_cpp << "};\n";
+  */
   //============================================================================
   
   
@@ -1259,7 +1140,8 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   std::stringstream outpinlist("");
   std::stringstream initialiser("");
   
-  
+  unsigned int inTypCnt = devTyp->P_pintypIv.size();       // Grab the number of input pin types to save derefs
+  unsigned int outTypCnt = devTyp->P_pintypOv.size();      // Grab the number of output pin types to save derefs
   
   
   //============================================================================
@@ -1298,8 +1180,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   
   
   //============================================================================
-  // Form the initialiser(s) for the input pins array if we have input pins.
-  // PInputType/in_pintyp_t struct
+  // Form the initialiser(s) for the input pins array. PInputType/in_pintyp_t struct
   //============================================================================
   vars_h << "//------------------------------ Pin Type Tables ";
   vars_h << "-------------------------------\n";
@@ -1322,10 +1203,10 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
       initialiser << "&" << dTypInPin << (*ipin)->Name() << "_Recv_handler,";   // Recv_handler
       
       if ((*ipin)->pMsg->pPropsD) 
-        initialiser << "sizeof(pkt_" << (*ipin)->pMsg->Name() << "_pyld_t),";   // sz_pkt
+        initialiser << "sizeof(msg_" << (*ipin)->pMsg->Name() << "_pyld_t),";   // sz_msg
       else initialiser << "0,";
       
-      initialiser << (*ipin)->pMsg->MsgType << ",";                             // pktType
+      initialiser << (*ipin)->pMsg->MsgType << ",";                             // msgType
       
       if ((*ipin)->pPropsD)                                                     // sz_props
        initialiser << "sizeof(" << dTypInPin << (*ipin)->Name() << "_props_t),";
@@ -1347,8 +1228,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   
   
   //============================================================================
-  // Form the initialiser(s) for the output pins array if we have output pins.
-  // POutputType/in_pouttyp_t struct
+  // Form the initialiser(s) for the output pins array. POutputType/in_pouttyp_t struct
   //============================================================================
   if (outTypCnt)
   {
@@ -1367,9 +1247,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
       initialiser << "{";
       initialiser << "&" << dTypInPin << (*opin)->Name() << "_Send_handler,";   // Send_Handler
       if ((*opin)->pMsg->pPropsD)
-        initialiser << "sizeof(pkt_" << (*opin)->pMsg->Name() << "_pyld_t),";   // sz_pkt
+        initialiser << "sizeof(msg_" << (*opin)->pMsg->Name() << "_pyld_t),";   // sz_msg
       else initialiser << "0,";
-      initialiser << (*opin)->pMsg->MsgType << "},";                            // pktType
+      initialiser << (*opin)->pMsg->MsgType << "},";                            // msgType
     }
     initialiser.seekp(-1,ios_base::cur);   // Rewind one place to remove the stray ","
     initialiser << "}";                    // properly terminate the initialiser
@@ -1406,13 +1286,14 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
   std::stringstream inPinPropsInitialiser("");// device type input pin properties (devtyp_XXX_InPin_YYY_props_t) initialiser
   std::stringstream inPinStateInitialiser("");// device type input pin properties (devtyp_XXX_InPin_YYY_state_t) initialiser
   
+  vector<unsigned int>inPinArcs;                //TODO: fix the type
+  vector<unsigned int>outPinArcs;               //TODO: fix the type
+  
   
   devPropsInitialiser << "{";   // Add the first { to the device properties array initialiser
   devStateInitialiser << "{";   // Add the first { to the device state array initialiser
   devInstInitialiser << "{";    // Add the first { to the device instance array initialiser
   
-  
-  // Iterate through all of the devices
   for (list<P_device*>::iterator device = thread->P_devicel.begin(); 
         device != thread->P_devicel.end(); 
         device++)
@@ -1464,14 +1345,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
         inPinStateInitialiser << "{";
         
         pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it next_pin = (*device)->par->G.index_n[(*device)->idx].fani.upper_bound(pin_num << PIN_POS | 0xFFFFFFFF >> (32-PIN_POS));
-        // ADR 10 December 2019: A hack here to get the names of edge properties and state arrays the same in initialiser: the
-        // variable definition in a section below creates a name dependent upon a condition in next pin which we won't have
-        // here unless we decrement the iterator, but we want to retain an identical iterator for the generation of
-        // the definition itself. This awkward approach simply creates an identical iterator and uses it as is
-        pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it next_init_pin = next_pin;
-        bool pinHasConnections = (next_pin != (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS)); // pin has connections? 
-        if (pinHasConnections) --next_pin; 
-        for (pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it p_edge = (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS); p_edge != next_init_pin; p_edge++)
+        for (pdigraph<unsigned int, P_device*, unsigned int, P_message*, unsigned int, P_pin*>::TPp_it p_edge = (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS); p_edge != next_pin; p_edge++)
         {
           //====================================================================
           // Form the first bit of an initialiser for PInputEdge/inEdge_t array member
@@ -1483,18 +1357,16 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           edgeInitialiser << (*device)->idx << ",";                             // tgt
           edgeInitialiser << p_edge->second.iArc->second.fr_n->first << ",";    // src
           //====================================================================
-	  
+          
           // if the pin has properties,
-          if (pinHasConnections && p_edge->second.data->pP_pintyp->pPropsD)
+          if (p_edge->second.data->pP_pintyp->PinPropsSize)
           {     // set them up in the edge list
             //==================================================================
             // Form some more of the PInputEdge/inEdge_t initialiser
             //==================================================================
-
-            edgeInitialiser << "&Thread_" << thread_num;
-            edgeInitialiser << "_Device_" << (*device)->Name();
-            edgeInitialiser << "_Pin_" << next_pin->second.data->pP_pintyp->Name();
-            edgeInitialiser << "_InEdgeProps[";
+            edgeInitialiser << "&Device_" << (*device)->Name();
+            edgeInitialiser << "_InEdge_" << (p_edge->first >> PIN_POS);
+            edgeInitialiser << "_Properties[";
             edgeInitialiser << (p_edge->first & (0xFFFFFFFF >> (32-PIN_POS)));
             edgeInitialiser << "],";                                            // properties
             //==================================================================
@@ -1526,15 +1398,14 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           }
           
           // if the pin has state,
-          if (pinHasConnections && p_edge->second.data->pP_pintyp->pStateD)
+          if (p_edge->second.data->pP_pintyp->PinStateSize)
           {
             //==================================================================
             // Form the last bit of this PInputEdge/inEdge_t initialiser
             //==================================================================
-            edgeInitialiser << "&Thread_" << thread_num;
-            edgeInitialiser << "_Device_" << (*device)->Name();
-            edgeInitialiser << "_Pin_" << next_pin->second.data->pP_pintyp->Name();
-            edgeInitialiser << "_InEdgeStates["; 
+            edgeInitialiser << "&Device_" << (*device)->Name(); 
+            edgeInitialiser << "_InEdge_" << (p_edge->first >> PIN_POS); 
+            edgeInitialiser << "_State["; 
             edgeInitialiser << (p_edge->first & (0xFFFFFFFF >> (32-PIN_POS))); 
             edgeInitialiser << "]";                                             // state
             edgeInitialiser << "},";
@@ -1569,9 +1440,10 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
         }
         
         
-        if (pinHasConnections)
+        if (next_pin != (*device)->par->G.index_n[(*device)->idx].fani.lower_bound(pin_num << PIN_POS)) // pin has connections?
         {
           // create input edge data structures
+          --next_pin;
           
           
           //====================================================================
@@ -1605,7 +1477,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
                  
                  
           // with associated properties if they exist
-          if (next_pin->second.data->pP_pintyp->pPropsD)
+          if (next_pin->second.data->pP_pintyp->PinPropsSize)
           {
             //==================================================================
             // Add the input pin properties array declaration to vars h
@@ -1641,7 +1513,7 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           
           
           // and associated state (again, if it exists)
-          if (next_pin->second.data->pP_pintyp->pStateD)
+          if (next_pin->second.data->pP_pintyp->PinStateSize)
           {
             vars_h << "extern devtyp_" << devTyp->Name();
             vars_h << "_InPin_" << next_pin->second.data->pP_pintyp->Name();
@@ -1762,6 +1634,10 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
         
         pinInitialiser << "&Thread_" << thread_num;
         pinInitialiser << "_DevTyp_0_OutputPins[" << (*pin)->idx << "],";   // pinType
+        
+        pinInitialiser << "{},";                                            // msg_q_buf[P_MSG_Q_MAXCOUNT]  // TODO: Remove
+        pinInitialiser << "PNULL,";                                         // msg_q_head                   // TODO: Remove
+        pinInitialiser << "PNULL,";                                         // msg_q_tail.                  // TODO: Remove
         //======================================================================
         
         
@@ -1775,8 +1651,8 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           //====================================================================
           pinInitialiser << "0,";                                           // numTgts
           pinInitialiser << "PNULL,";                                       // targets
-          pinInitialiser << "0,";                                           // idxTgts
-          pinInitialiser << "0";                                            // sendPending
+          pinInitialiser << "PNULL,";                                       // RTSPinPrev                   // TODO: Remove
+          pinInitialiser << "PNULL";                                        // RTSPinNext                   // TODO: Remove
           pinInitialiser << "},";  
           //====================================================================
         }
@@ -1790,9 +1666,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
           pinInitialiser << "Thread_" << thread_num;
           pinInitialiser << "_Device_" << (*device)->Name();
           pinInitialiser << "_OutPin_" << (*pin)->Name() << "_Tgts,";       // targets
-
-          pinInitialiser << "0,";                                           // idxTgts
-          pinInitialiser << "0";                                            // sendPending
+          
+          pinInitialiser << "PNULL,";                                       // RTSPinPrev                   // TODO: Remove
+          pinInitialiser << "PNULL";                                        // RTSPinNext                   // TODO: Remove
           pinInitialiser << "},";
           //====================================================================
           
@@ -1821,56 +1697,11 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
             // as for the case of inputs, the target device should be replaced by GetHardwareAddress(...)
             unsigned int tgt_idx = ((*device)->par->G.index_a.find(*tgt)->second.to_p)->first;
             P_addr tgt_addr = ((*device)->par->G.index_a.find(*tgt)->second.to_n)->second.data->addr;
-            
-            
-            //------------------------------------------------------------------
-            // Assemble the Hardware address. TODO: use the HW Model
-            //------------------------------------------------------------------
-            uint32_t tgt_hwaddr = tgt_addr.A_box << (TinselLogCoresPerMailbox
-                                                    + TinselLogMailboxesPerBoard
-                                                    + TinselMeshXBits
-                                                    + TinselMeshYBits);
-            tgt_hwaddr |= tgt_addr.A_board << (TinselLogThreadsPerCore
-                                              + TinselLogCoresPerMailbox
-                                              + TinselLogMailboxesPerBoard);
-            tgt_hwaddr |= tgt_addr.A_mailbox << (TinselLogThreadsPerCore 
-                                                + TinselLogCoresPerMailbox);
-            tgt_hwaddr |= tgt_addr.A_core << (TinselLogThreadsPerCore);
-            tgt_hwaddr |= tgt_addr.A_thread;
-            //------------------------------------------------------------------
-            
-            
-            //------------------------------------------------------------------
-            // Assemble the Software address. TODO: use the SW Address class
-            //------------------------------------------------------------------
-            uint32_t tgt_swaddr;
-            
-            if(((tgt_hwaddr << LOG_DEVICES_PER_THREAD) | tgt_addr.A_device) 
-                  == DEST_BROADCAST) // Quick and dirty hack to detect Super pkt
-            {
-                tgt_swaddr = 0;
-                tgt_swaddr |= P_SW_MOTHERSHIP_MASK;
-                tgt_swaddr |= P_SW_CNC_MASK;
-            }
-            else
-            {
-                tgt_swaddr = ((tgt_addr.A_device << P_SW_DEVICE_SHIFT) 
-                            & P_SW_DEVICE_MASK);
-            }
-            //------------------------------------------------------------------
-            
-            
-            //------------------------------------------------------------------
-            // Assemble the Pin Address. TODO: rationalise this.
-            //------------------------------------------------------------------
-            uint32_t tgt_pinaddr;
-            
-            tgt_pinaddr = (tgt_idx >> PIN_POS) & P_HD_TGTPIN_MASK; // Get the Pin Index
-            tgt_pinaddr |= (((tgt_idx & (0xFFFFFFFF >> (32-PIN_POS)))
-                                << P_HD_DESTEDGEINDEX_SHIFT)
-                                & P_HD_DESTEDGEINDEX_MASK);
-            
-            //------------------------------------------------------------------
+            unsigned tgt_hwaddr = tgt_addr.A_box << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore + TinselLogCoresPerMailbox + TinselLogMailboxesPerBoard + TinselMeshXBits + TinselMeshYBits);
+            tgt_hwaddr |= tgt_addr.A_board << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore + TinselLogCoresPerMailbox + TinselLogMailboxesPerBoard);
+            tgt_hwaddr |= tgt_addr.A_mailbox << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore + TinselLogCoresPerMailbox);
+            tgt_hwaddr |= tgt_addr.A_core << (LOG_DEVICES_PER_THREAD + TinselLogThreadsPerCore);
+            tgt_hwaddr |= tgt_addr.A_thread << (LOG_DEVICES_PER_THREAD);
             
             //==================================================================
             // Form an initialiser for the POutputEdge/outEdge_t array member.
@@ -1879,10 +1710,9 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
             
             // first field is intentionally null as it is populated at runtime.
             edgeInitialiser << "PNULL,";                                  // pin
-            
-            edgeInitialiser << tgt_hwaddr << ",";   // hwAddr
-            edgeInitialiser << tgt_swaddr << ",";   // swAddr
-            edgeInitialiser << tgt_pinaddr;         // pinAddr
+            edgeInitialiser << (tgt_addr.A_device | tgt_hwaddr) << ",";   // tgt
+            edgeInitialiser << (tgt_idx >> PIN_POS) << ",";               // tgtPin
+            edgeInitialiser << (tgt_idx & (0xFFFFFFFF >> (32-PIN_POS)));  // tgtEdge
             edgeInitialiser << "},";
             //==================================================================
           }
@@ -2000,6 +1830,11 @@ unsigned P_builder::WriteThreadVars(string& task_dir, unsigned coreNum,
     //==========================================================================
     // Form the last bit of this PDeviceInstance/devInst_t initialiser with defaults
     //==========================================================================
+    devInstInitialiser << "PNULL,";                                         // RTSPrev                   // TODO: Remove
+    devInstInitialiser << "PNULL,";                                         // RTSNext                   // TODO: Remove
+    devInstInitialiser << "PNULL,";                                         // RTSPinHead                // TODO: Remove
+    devInstInitialiser << "PNULL,";                                         // RTSPinTail                // TODO: Remove
+    devInstInitialiser << "0";                                              // currTgt                   // TODO: Remove
     devInstInitialiser << "},";
     //==========================================================================
     
@@ -2178,7 +2013,7 @@ unsigned P_builder::CompileBins(P_task * task)
   
   
   //============================================================================
-  // Check that the backend-compute binaries were made, and link them to each core.
+  // Check that the binaries were made and add file pointers to each core.
   //============================================================================
   unsigned int coreNum = 0;
   P_core* thisCore;  // Core available during iteration.
@@ -2199,29 +2034,22 @@ unsigned P_builder::CompileBins(P_task * task)
         if (firstThread->P_devicel.size() 
             && (firstThread->P_devicel.front()->par->par == task)) // only for cores which have something placed on them and which belong to the task
         {
-          // a failure to read the generated binaries may not be absolutely
-          // fatal; this could be retrieved later if there was a transient read
-          // error (e.g. reading over a network connection).
-          std::vector<std::string> binaries;
-          FILE* binary;
-
-          // Instruction binary
-          binaries.push_back(task_dir+BIN_PATH+"/"+COREBIN_CODE_BASE+TO_STRING(coreNum)+".v");
-          thisCore->instructionBinary = binaries.back();
-
-          // Data binary
-          binaries.push_back(task_dir+BIN_PATH+"/"+COREBIN_DATA_BASE+TO_STRING(coreNum)+".v");
-          thisCore->dataBinary = binaries.back();
-
-          for (std::vector<std::string>::iterator binaryIt = binaries.begin();
-               binaryIt != binaries.end(); binaryIt++)
-          {
-            binary = fopen(binaryIt->c_str(),"r");
-            // Check that the file opened successfully.
-            if(binary == PNULL)
-                par->Post(806, binaryIt->c_str(),
-                          POETS::getSysErrorString(errno));
-            else fclose(binary);
+          // a failure to read the generated binary may not be absolutely fatal;
+          // this could be retrieved later if there was a transient read error 
+          // (e.g. reading over a network connection).
+          
+          std::string binName;
+          binName = task_dir+BIN_PATH+"/"+COREBIN_BASE+TO_STRING(coreNum)+".elf";
+          
+          FILE* binary = fopen(binName.c_str(),"r");
+          
+          if(binary == PNULL)
+          {     // Check that the file opened successfully. 
+            par->Post(806, binName, POETS::getSysErrorString(errno));  
+          }
+          else
+          {     // Add the file pointer to the core. 
+            thisCore->instructionBinary->Binary = binary;
           }
             
           ++coreNum;                // Move onto the next core.
@@ -2229,19 +2057,6 @@ unsigned P_builder::CompileBins(P_task * task)
       }
     }
   }
-
-  //============================================================================
-  // Check that the supervisor binary was made.
-  //============================================================================
-  FILE* binary;
-  std::string binaryPath;
-  binaryPath = task_dir+BIN_PATH+"/libSupervisor.so";
-  task->pSup->binPath = binaryPath;
-  binary = fopen(binaryPath.c_str(),"r");
-  // Check that the file opened successfully.
-  if(binary == PNULL)
-      par->Post(806, binaryPath, POETS::getSysErrorString(errno));
-  else fclose(binary);
   //============================================================================
   return 0;
 }

@@ -10,16 +10,12 @@
 #include <string>
 #include <stdint.h>
 
-#include "OSFixes.hpp"
-
-#include <string>
 using namespace std;
 
 //==============================================================================
 
 typedef unsigned char byte;
 const string CommonBase::S00 = string();
-const char* CommonBase::MPISvc = "POETS_MPI_Master";
 
 //==============================================================================
 
@@ -43,7 +39,6 @@ FnMap[Msg_p::KEY(Q::SYST,Q::PING,Q::REQ )] = &CommonBase::OnSystPingReq;
 FnMap[Msg_p::KEY(Q::SYST,Q::RUN         )] = &CommonBase::OnSystRun;
 FnMap[Msg_p::KEY(Q::TEST,Q::FLOO        )] = &CommonBase::OnTestFloo;
 Prologue(argc,argv);                   // Start MPI, build process map.....
-
 }
 
 //------------------------------------------------------------------------------
@@ -141,7 +136,6 @@ return 1;                              // Return != 0 means close spinner
 
 void CommonBase::OnIdle()
 {
-
 }
 
 //------------------------------------------------------------------------------

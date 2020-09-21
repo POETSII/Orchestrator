@@ -35,6 +35,7 @@ MPISpinner();                          // Spin on MPI messages; exit only on DIE
 
 LogServer::~LogServer()
 {
+//printf("********* LogServer rank %d destructor\n",Urank); fflush(stdout);
 fprintf(logfp,"\n");
 char c;
 c='I'; fprintf(logfp,"%4u (%c)nformation   messages\n",Mcount[c],c);

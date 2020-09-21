@@ -11,7 +11,6 @@
 #include "flat.h"
 #include <new>
 
-#include "OSFixes.hpp"
 //==============================================================================
 
 const char * Root::prompt = "POETS>";
@@ -23,7 +22,7 @@ void * kb_func(void * pPar)
 // and send it to the main thread in this process, where it gets picked up by
 // the MPI spinner.
 {
-Root* parent = static_cast<Root*>(pPar);
+//printf("\nRoot::kb_func: thread starting\n\n"); fflush(stdout);
 int len = 0;                           // Characters in buffer
 for(;;) {                              // Superloop
   if (len==0) Root::Prompt();          // Console prompt
@@ -31,19 +30,14 @@ for(;;) {                              // Superloop
   char buf[SIZE];
   buf[0] = '\0';                       // Borland bug: notes 21/7/17
   for(unsigned j=1;j<SIZE;j++) buf[j]='x';
-  if (fgets(buf,SIZE-1,stdin) == PNULL) continue; // Pull in keyboard string.
+  fgets(buf,SIZE-1,stdin);             // Pull in keyboard string
   len=strlen(buf)-1;                   // Ignore trailing newline
   if (len==0) continue;                // Hard to see how
   if (buf[len]=='\n')buf[len]='\0';    // Replace trailing newline
   PMsg_p Pkt;
   Pkt.Put<char>(1,buf,len+2);          // Put it in a packet
   Pkt.Key(Q::KEYB);
-
-//int cnt;                               // cnt now includes trailing '\0'
-//char * obuf = Pkt.Get<char>(1,cnt);
-//printf("len=%d, cnt=%d, obuf=%s\n",len,cnt,obuf);  fflush(stdout);
-
-  Pkt.Src(0);
+  Pkt.Src(0);                          // From root process....
   Pkt.Send(0);                         // Send to root process main thread
                                        // User wants out - kill this thread
   if (strcmp(buf,"exit")==0) break;    // "exit" typed

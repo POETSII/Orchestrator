@@ -140,14 +140,13 @@ void OrchBase::TopoLoad(Cli::Cl_t Cl)
     pE->Npar(this);
     std::string inputFilePath = Cl.Pa_v[0].Val;
 
-    HardwareFileReader reader;
+    HardwareFileParser parser;
     try
     {
-        reader.load_file(inputFilePath.c_str());
-        reader.populate_hardware_model(pE);
+        parser.load_file(inputFilePath.c_str());
+        parser.populate_hardware_model(pE);
         Post(140, inputFilePath.c_str());
         pPlace->Init();
-        BuildMshipMap();
     }
     catch (OrchestratorException& exception)
     {
@@ -192,7 +191,6 @@ void OrchBase::TopoSet1(Cli::Cl_t Cl)
     Post(138, pE->Name());
     deployer.deploy(pE);
     pPlace->Init();
-    BuildMshipMap();
 }
 
 //------------------------------------------------------------------------------
@@ -207,7 +205,6 @@ void OrchBase::TopoSet2(Cli::Cl_t Cl)
     Post(138, pE->Name());
     deployer.deploy(pE);
     pPlace->Init();
-    BuildMshipMap();
 }
 
 //==============================================================================

@@ -162,7 +162,7 @@ static const byte ROOT;
 #define csINJECTORproc   "Injector:CommonBase"
 #define csNAMESERVERproc "NameServer:CommonBase"
 #define csMONITORproc    "Monitor:CommonBase"
-#define csMOTHERSHIPproc "Mothership:CommonBase"
+#define csMOTHERSHIPproc "TMoth:CommonBase"
 #define csMPITESTproc    "MPITest:CommonBase"
 
 // tag defined as a directive because MPI libraries are c-based, have no concept

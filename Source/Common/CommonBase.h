@@ -11,10 +11,6 @@ using namespace std;
 #include "mpi.h"
 #include "OSFixes.hpp"
 
-#ifndef SNDBUFSIZ
-#define SNDBUFSIZ 1000000000  // MPI immediate message send buffer size
-#endif
-
 //==============================================================================
 
 class CommonBase

@@ -161,13 +161,6 @@ for(unsigned i=0;i<lim*4;i++) {
 
 //------------------------------------------------------------------------------
 
-/* MLV commented this out on 2020-03-31 because he couldn't find any
- * documentation on it (so he couldn't understand what it was supposed to do),
- * and because it broke compilation when removing the now-unneccesary `Bin`
- * class. */
-void OrchBase::LinkNser(Cli::Cl_t Cl){return;}
-
-/*
 void OrchBase::LinkNser(Cli::Cl_t Cl)
 // Command from monkey to upload a linked task to the nameserver
 {
@@ -240,7 +233,7 @@ else
    ns.Send();
 }
 }
-*/
+
 //------------------------------------------------------------------------------
 
 void OrchBase::LinkPath(Cli::Cl_t Cl)

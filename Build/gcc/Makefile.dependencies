@@ -1,29 +1,17 @@
 # This Makefile defines the software dependencies required to build the
 # Orchestrator.
 #
-# As a user, if you are on a Tinsel-POETS box, you do not have to change this
-# file. If you're not, and you're using the "orchestrator_dependencies"
-# tarball, you'll need to change ORCHESTRATOR_DEPENDENCIES_DIR to point to
-# where you have extracted to. On Tinsel-POETS boxes, it should be:
+# As a user, you will need to change the contents of this file to match your
+# installation. If you are using the distributed "orchestrator_dependencies"
+# tarball, you'll only need to change ORCHESTRATOR_DEPENDENCIES_DIR to point to
+# where you have extracted it to.
+#
+# In Mark's case, it looks like this:
 ORCHESTRATOR_DEPENDENCIES_DIR ?= /local/orchestrator-common/orchestrator_dependencies_6
 
-# You'll also need to ensure you've checked out this repository with the Tinsel
-# submodule, and that you've built the hostlink. Otherwise, you will need to
-# configure the following to match your setup...
-
-# Path to the root directory of the Orchestrator (not to be confused with the
-# root process of the Orchestrator).
-ROOT_DIR = ../..
-
-# Tinsel, search in this order, using secondary if none found.
-TINSEL_DEFAULT_PRIMARY = "/local/tinsel"
-TINSEL_DEFAULT_SECONDARY = "$(ROOT_DIR)/Tinsel"
-TINSEL_DIR = $(shell test -d "$(TINSEL_DEFAULT_PRIMARY)" && \
-               echo "$(TINSEL_DEFAULT_PRIMARY)" || \
-               echo "$(TINSEL_DEFAULT_SECONDARY)")
-TINSEL_INC_DIR = $(TINSEL_DIR)/include
-TINSEL_LIB_DIR = $(TINSEL_DIR)/lib
-TINSEL_HOSTLINK_DIR = $(TINSEL_DIR)/hostlink
+# If you're using the "orchestrator_dependencies" tarball, you shouldn't need
+# to do anything more. If you aren't, you'll need to configure the following to
+# match your setup however...
 
 # MPI (mpich here)
 MPICH_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/mpich
@@ -39,9 +27,15 @@ QT_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/Qt5.6.3/5.6.3/gcc_64
 QT_LIB_DIR = $(QT_DIR)/lib
 QT_INC_DIR = $(QT_DIR)/include
 
+# Tinsel (must be out of date, for now)
+TINSEL_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/tinsel
+TINSEL_INC_DIR = $(TINSEL_DIR)/include
+TINSEL_LIB_DIR = $(TINSEL_DIR)/lib
+TINSEL_HOSTLINK_DIR = $(TINSEL_DIR)/hostlink
+
 # GCC, not used for building the Orchestrator, but necessary for the
 # Mothership. Immediate-set, because it's used by the shell.
-GCC_LIB_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/gcc-7.3.0/lib64:/usr/lib64
+GCC_LIB_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/gcc-7.3.0/lib64
 
 # libcr
 CR_LIB_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/libcr

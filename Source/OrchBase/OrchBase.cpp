@@ -9,6 +9,7 @@
 #include "P_task.h"
 #include "P_typdcl.h"
 #include "P_devtyp.h"
+#include "CMsg_p.h"
 #include "T_gen.h"
 #include "SimpleDeployer.h"
 #include "Dialect1Deployer.h"
