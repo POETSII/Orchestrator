@@ -52,7 +52,7 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
     FILE* log = fopen(fPath.c_str(), "w");
     if (log == PNULL) throw FileOpenException(
         dformat("File: %s. Message: %s",
-                fPath.c_str(), POETS::getSysErrorString(errno).c_str()));
+                fPath.c_str(), OSFixes::getSysErrorString(errno).c_str()));
 
     result.startTime = time;
     fprintf(log, "[I] Placement starting at %s.\n", time.c_str());
@@ -153,7 +153,7 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
         fclose(log);
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    fPath.c_str(), POETS::getSysErrorString(err).c_str()));
+                    fPath.c_str(), OSFixes::getSysErrorString(err).c_str()));
     }
 
     if (trivialGraph)

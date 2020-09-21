@@ -60,7 +60,7 @@ void PlacementLoader::load_file()
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    filePath, POETS::getSysErrorString(errno).c_str()));
+                    filePath, OSFixes::getSysErrorString(errno).c_str()));
     }
 
     /* For each line... */

@@ -651,7 +651,7 @@ void Placer::dump(GraphI_t* gi)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    cachePath.c_str(), POETS::getSysErrorString(errno)));
+                    cachePath.c_str(), OSFixes::getSysErrorString(errno)));
     }
     cache->Dump(cacheFile);
     fclose(cacheFile);
@@ -667,7 +667,7 @@ void Placer::dump_costs(GraphI_t* gi, const char* path)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    path, POETS::getSysErrorString(errno).c_str()));
+                    path, OSFixes::getSysErrorString(errno).c_str()));
     }
 
     /* Iterate through each edge in the gi. */
@@ -693,7 +693,7 @@ void Placer::dump_diagnostics(GraphI_t* gi, const char* path)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    path, POETS::getSysErrorString(errno).c_str()));
+                    path, OSFixes::getSysErrorString(errno).c_str()));
     }
 
     /* Get the result object address (Placer::dump checks that the gi has
@@ -719,7 +719,7 @@ void Placer::dump_edge_loading(const char* path)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    path, POETS::getSysErrorString(errno).c_str()));
+                    path, OSFixes::getSysErrorString(errno).c_str()));
     }
 
     std::map<P_mailbox*, std::map<P_mailbox*, unsigned>> edgeLoading;
@@ -800,7 +800,7 @@ void Placer::dump_map(GraphI_t* gi, const char* path)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    path, POETS::getSysErrorString(errno).c_str()));
+                    path, OSFixes::getSysErrorString(errno).c_str()));
     }
 
     /* Iterate through each device in the gi. */
@@ -833,7 +833,7 @@ void Placer::dump_node_loading(const char* path)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    path, POETS::getSysErrorString(errno).c_str()));
+                    path, OSFixes::getSysErrorString(errno).c_str()));
     }
 
     std::map<P_core*, unsigned> coreLoading;

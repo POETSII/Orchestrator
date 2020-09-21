@@ -17,4 +17,5 @@ for FILE in $FILES; do
     sed -i "s|TaskFinder|GraphFinder|g" -i "$FILE"
     sed -i "s|placedTasks|placedGraphs|g" -i "$FILE"
     sed -i "s|Task|Graph instance|g" -i "$FILE"
+    sed -i "s|POETS::|OSFixes::|g" -i "$FILE"
 done
