@@ -8,6 +8,8 @@
 #include "Pglobals.h"
 #include "Cli.h"
 
+#include "OSFixes.hpp"
+
 //------------------------------------------------------------------------------
 
 void * rtcl_func(void * args)
@@ -92,7 +94,7 @@ WALKMAP(unsigned,pMeth,FnMap,i)
                         OSFixes::getAddrAsUint((*i).second));
 }
 fprintf(fp,"%sCommunication pool:\n",os);
-fprintf(fp,"%spthis   : %p\n",os,comms.pthis);
+fprintf(fp,"%spthis   : %p\n",os,static_cast<void*>(comms.pthis));
 fprintf(fp,"%stick    : %e\n",os,comms.tick);
 fprintf(fp,"%sl_stop  : %c\n",os,comms.l_stop ? 'T' : 'F');
 fprintf(fp,"%st_stop  : %e\n",os,comms.t_stop);

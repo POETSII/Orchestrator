@@ -12,7 +12,7 @@ class Dialect1Deployer;
 #include <stdio.h>
 #include "GraphI_t.h"
 #include "HardwareModel.h"
-#include "HardwareFileParser.h"
+#include "HardwareFileReader.h"
 #include "Placement.h"
 #include "Cli.h"
 #include "Environment.h"
@@ -36,6 +36,7 @@ class Dialect1Deployer;
 #include "CmUnpl.h"
 #include "CmUntl.h"
 
+#define TASK_DEPLOY_DIR ".orchestrator/task_binaries"  // Relative to home.
 using namespace std;
 
 //==============================================================================

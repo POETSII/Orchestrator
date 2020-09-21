@@ -21,12 +21,15 @@ TEST_SCRIPT_RESOURCE = ./Resources/run-tests.sh
 # Each test file must have its dependencies enumerated separately. The names of
 # these variables match the tests that they generate. The test .cpp file is
 # included when the dependencies are generated.
+TestDialect1Reader_SOURCES = $(HARDWARE_FILE_READER_SOURCES)
+TestDialect3Reader_SOURCES = $(HARDWARE_FILE_READER_SOURCES)
 TestHardwareAddressAndFormat_SOURCES = $(HARDWARE_ADDRESS_SOURCES)
-TestHardwareFileParser_SOURCES = $(HARDWARE_FILE_PARSER_SOURCES)
-TestHardwareIterator_SOURCES = $(HARDWARE_ITERATOR_SOURCES)
+TestHardwareFileReader_SOURCES = $(HARDWARE_FILE_READER_SOURCES)
+TestHardwareIterator_SOURCES = $(HARDWARE_MODEL_SOURCES)
 TestHardwareModel_SOURCES = $(HARDWARE_MODEL_SOURCES)
 TestSimpleDeployment_SOURCES = $(HARDWARE_DEPLOYER_SOURCES)
 TestSoftwareAddress_SOURCES = $(SOFTWARE_ADDRESS_SOURCES)
+TestAddressBook_SOURCES = $(ADDRESS_BOOK_SOURCES)
 
 # Define test rules. TEST_RULE_TEMPLATE defines the substitutions made in the
 # foreach loop below.

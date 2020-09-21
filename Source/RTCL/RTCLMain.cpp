@@ -24,7 +24,7 @@ catch(...) {
   printf("\n\n%s Main unhandled exception...???   \n\n",csRTCLproc);
   fflush(stdout);
 }
-printf("%s main() closing down\n",csRTCLproc);
+printf("%s Main closing down\n",csRTCLproc);
 fflush(stdout);
 delete pRTCL;
 return 0;

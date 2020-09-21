@@ -1,0 +1,4 @@
+[submodule "Tinsel"]
+	path = Tinsel
+	url = https://github.com/poetsii/tinsel
+	branch = master

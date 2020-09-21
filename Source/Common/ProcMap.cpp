@@ -4,6 +4,8 @@
 #include "CommonBase.h"
 #include "Pglobals.h"
 
+#include "OSFixes.hpp"
+
 //==============================================================================
 
 ProcMap::ProcMap(CommonBase * p)

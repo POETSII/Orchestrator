@@ -16,6 +16,7 @@ methods). The more complex ones go to dedicated classes (Cm****_t)
 #include "OrchBase.h"
 #include "OrchConfig.h"
 #include "PMsg_p.hpp"
+#include "RootArgs.h"
 #include "Cli.h"
 #include "Injector.h"
 #include <string>
@@ -63,7 +64,4 @@ OrchConfig *                pOC;
 //==============================================================================
 
 #endif
-
-
-
 

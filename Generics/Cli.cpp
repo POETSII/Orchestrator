@@ -224,7 +224,6 @@ for(int L=1;;L++) {                    // One line at a time....
   if (!exp) LCli.push_back(C);         // No expansion required
   else {                               // Expansion required
     vector<Cli> Vex = C.Expand();
-//    for(unsigned i=0;i<Vex.size();i++) LCli.push_back(Vex[Vex.size()-i-1]);
     for(unsigned i=0;i<Vex.size();i++) LCli.push_back(Vex[i]);
  }
 }
