@@ -91,7 +91,7 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
 # to the hostlink and some other minor changes, though nobody has studied this
 # comprehensively.
 CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
-           -std=c++11 -Wall -fPIC -pthread -pedantic -O3 -DTRIVIAL_LOG_HANDLER
+           -std=c++98 -Wall -fPIC -pthread -pedantic -O3 -DTRIVIAL_LOG_HANDLER
 
 # Debugging!
 DEBUGFLAGS = -g3 -Og
