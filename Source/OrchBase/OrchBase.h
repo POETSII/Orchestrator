@@ -75,8 +75,6 @@ CmUnpl *               pCmUnpl;
 CmUntl *               pCmUntl;
 
 // Legacy members retained for a (hopefully) smoother transition
-map<string,P_task *>   P_taskm;        // Holder for multiple task graphs
-map<string,P_typdcl *> P_typdclm;      // Holder for ALL task type declarations
 string                 taskpath;       // Absolute file path for task commands
 string                 topopath;       // Absolute file path for topo commands
 map<string,P_super *>  P_superm;       // Container of supervisor devices
