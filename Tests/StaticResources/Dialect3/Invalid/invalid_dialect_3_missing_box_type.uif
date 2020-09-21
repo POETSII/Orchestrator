@@ -4,8 +4,8 @@
 [header(ByronEliot)]
 +author="Mark Vousden"
 +dialect=3
-+datetime=20190614115500
-+version="0.3.2"
++datetime=20200909162500
++version="0.5.0"
 +file="invalid_dialect_3_missing_box_type.uif"
 
 // Sums to 16 bits, leading bits are not used.
@@ -119,6 +119,7 @@ El(addr(1),boards(B00,B01,B10,B11,B20,B21))
 +cores=4
 +mailbox_core_cost=0
 +core_core_cost=0
++pair_cores="true"
 
 [core]
 +threads=16

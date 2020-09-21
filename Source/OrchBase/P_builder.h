@@ -42,7 +42,7 @@ unsigned GenFiles(P_task*);
 unsigned CompileBins(P_task*);
 
 unsigned GenSupervisor(P_task*);
-unsigned WriteCoreVars(std::string&, unsigned, P_core*, P_thread* , ofstream&);
+unsigned WriteCoreVars(std::string&, unsigned, P_core*, ofstream&);
 unsigned WriteThreadVars(std::string&, unsigned, unsigned, P_thread*, ofstream&);
 
 #endif

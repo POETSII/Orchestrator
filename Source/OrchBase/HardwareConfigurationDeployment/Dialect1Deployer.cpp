@@ -418,12 +418,22 @@ void Dialect1Deployer::connect_mailboxes_from_mailboxmap_in_board(
  * argument. */
 void Dialect1Deployer::create_cores_in_mailbox(P_mailbox* mailbox)
 {
-    P_core* temporaryCore;
+    P_core* firstCore;
+    P_core* secondCore;
 
-    for(AddressComponent coreIndex = 0; coreIndex<coresInMailbox; coreIndex++)
+    /* Each iteration of this loop creates a pair of cores. */
+    for(AddressComponent coreIndex = 0; coreIndex<coresInMailbox;
+        coreIndex+=2)
     {
-        temporaryCore = create_core(dformat("Core%06d", coreIndex));
-        mailbox->contain(coreIndex, temporaryCore);
+        firstCore = create_core(dformat("Core%06d", coreIndex));
+        mailbox->contain(coreIndex, firstCore);
+
+        secondCore = create_core(dformat("Core%06d", coreIndex + 1));
+        mailbox->contain(coreIndex + 1, secondCore);
+
+        /* Connect them together. */
+        firstCore->pair = secondCore;
+        secondCore->pair = firstCore;
     }
 }
 

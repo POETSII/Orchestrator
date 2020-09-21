@@ -4,7 +4,6 @@
 #include "OrchBase.h"
 #include "P_builder.h"
 #include "filename.h"
-#include "Constraints.h"
 #include "P_core.h"
 #include "P_task.h"
 #include "P_typdcl.h"
@@ -23,8 +22,8 @@
 
 #include "OrchBaseTask.cpp"            // Handlers for "task" commands
 #include "OrchBaseTopo.cpp"            // Handlers for "topo" commands
-#include "OrchBaseLink.cpp"            // Handlers for "link" commands
 #include "OrchBaseOwner.cpp"           // Handlers for "owner" commands
+#include "OrchBasePlace.cpp"           // Guess
 
 //==============================================================================
 
@@ -32,9 +31,9 @@ OrchBase::OrchBase(int argc,char * argv[],string d,string sfile) :
   CommonBase(argc,argv,d,sfile)
 {
 pE        = 0;
+pPlacer   = 0;
 pB        = new P_builder(argc, argv, this);       // Object to build the datastructure
 pTG       = new T_gen(this);           // PoL task generator
-pPlace    = new Placement(this);       // Xlink controller
 Name("O_");                            // NameBase root name
 taskpath  = string(" ");
 }
@@ -43,9 +42,9 @@ taskpath  = string(" ");
 
 OrchBase::~OrchBase()
 {
-if (pE!=0)        delete pE;           // Kill the P-node graph
+if (pE!=0)        delete pE;           // Destroy the engine
+if (pPlacer!=0)   delete pPlacer;      // Destroy the placer
 if (pB!=0)        delete pB;           // Object to build the datastructure
-if (pPlace!=0)    delete pPlace;       // Cross link controller
 if (pTG!=0)       delete pTG;          // PoL generator
 
 // ADR supervisors do not need to be deleted here as they will be removed
@@ -70,8 +69,6 @@ fprintf(fp,"Task path %s\n",taskpath.c_str());
 fprintf(fp,"HARDWARE++++++++++++++++++++++++++++++++++++\n");
 if (pE==0) fprintf(fp,"No hardware topology loaded\n");
 else pE->Dump(fp);
-if (pPlace==0) fprintf(fp,"No placement object to be found?\n");
-else pPlace->Dump(fp);
 fprintf(fp,"HARDWARE------------------------------------\n");
 fprintf(fp,"SOFTWARE++++++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"SUPERVISORS+++++++++++++++++++++++++++++++++\n");

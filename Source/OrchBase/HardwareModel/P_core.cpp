@@ -8,10 +8,8 @@
  * - name: Name of this core object (see namebase) */
 P_core::P_core(std::string name)
 {
-    parent = PNULL;
     Name(name);
-    dataBinary = new Bin();
-    instructionBinary = new Bin();
+    pair = PNULL;
 }
 
 P_core::~P_core(){clear();}
@@ -113,6 +111,15 @@ void P_core::Dump(FILE* file)
     {
         fprintf(file, "Instruction binary:\n");
         instructionBinary->Dump(0,file);
+    }
+
+    if (pair == PNULL)
+    {
+        fprintf(file, "No pair associated with this core.\n");
+    }
+    else
+    {
+        fprintf(file, "Paired core: %s\n", pair->FullName().c_str());
     }
 
     /* About contained items, if any. */
