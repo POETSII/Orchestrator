@@ -5,7 +5,7 @@ BucketFilling::BucketFilling(Placer* placer):Algorithm(placer)
     result.method = "buck";
 }
 
-/* Places a task onto the engine held by a placer using a naive bucket-filling
+/* Places a gi onto the engine held by a placer using a naive bucket-filling
  * algorithm.
  *
  * This algorithm is very basic - adherence to constraints are hardcoded where
@@ -13,7 +13,7 @@ BucketFilling::BucketFilling(Placer* placer):Algorithm(placer)
  * placement logic.
  *
  * Returns zero. */
-float BucketFilling::do_it(P_task* task)
+float BucketFilling::do_it(GraphI_t* gi)
 {
     result.startTime = placer->timestamp();
 
@@ -24,24 +24,24 @@ float BucketFilling::do_it(P_task* task)
     bool onLowerCore = true;  /* Binding unneccesary, but helps with
                                * understanding I think. */
 
-    /* Staging area to hold all devices of a given type in a task. The filling
+    /* Staging area to hold all devices of a given type in a gi. The filling
      * mechanism places all devices of the first type, followed by all devices
      * of the second type, and so on until the cows come home, wherever that
      * is. */
-    std::vector<P_device*> devicesOfType;
+    std::vector<DevI_t*> devicesOfType;
 
     /* Maximum number of devices to pack into a thread. */
     unsigned maxDevicesPerThread = \
-        placer->constrained_max_devices_per_thread(task);
+        placer->constrained_max_devices_per_thread(gi);
 
     /* Maximum number of threads to use in each core. */
     unsigned maxThreadsPerCore = \
-        placer->constrained_max_threads_per_core(task);
+        placer->constrained_max_threads_per_core(gi);
 
-    /* Walk through each device type in the task. */
-    std::vector<P_devtyp*>::iterator deviceTypeIterator;
-    for (deviceTypeIterator = task->pP_typdcl->P_devtypv.begin();
-         deviceTypeIterator != task->pP_typdcl->P_devtypv.end();
+    /* Walk through each device type in the gi. */
+    std::vector<DevT_t*>::iterator deviceTypeIterator;
+    for (deviceTypeIterator = gi->pT->DevT_v.begin();
+         deviceTypeIterator != gi->pT->DevT_v.end();
          deviceTypeIterator++)
     {
         /* Skip this device type if it is a supervisor device type. We don't
@@ -60,11 +60,11 @@ float BucketFilling::do_it(P_task* task)
 
         /* If the iterator has wrapped, we've run out of space. */
         if (hardwareIt.has_wrapped()) throw NoSpaceToPlaceException(
-            "[ERROR] Ran out of space placing a task.");
+            "[ERROR] Ran out of space placing a gi.");
 
         /* Walk through each device for this device type. */
-        devicesOfType = task->pD->DevicesOfType(*deviceTypeIterator);
-        std::vector<P_device*>::iterator deviceIterator;
+        devicesOfType = gi->DevicesOfType(*deviceTypeIterator);
+        std::vector<DevI_t*>::iterator deviceIterator;
         for (deviceIterator = devicesOfType.begin();
              deviceIterator != devicesOfType.end(); deviceIterator++)
         {

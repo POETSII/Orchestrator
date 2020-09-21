@@ -10,22 +10,22 @@ PlacementLoader::PlacementLoader(Placer* placer,
     load_file();
 }
 
-float PlacementLoader::do_it(P_task* task)
+float PlacementLoader::do_it(GraphI_t* gi)
 {
-    P_device* device;
+    DevI_t* device;
     std::string threadName;
     HardwareIterator* hwIt;
 
     /* Go over each device in turn */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
+    WALKPDIGRAPHNODES(unsigned, DevI_t*, unsigned, EdgeI_t*, unsigned,
+                      PinI_t*, gi->G, deviceIterator)
     {
         hwIt = new HardwareIterator(placer->engine);
 
-        device = task->pD->G.NodeData(deviceIterator);
+        device = gi->G.NodeData(deviceIterator);
 
         /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pP_devtyp->pOnRTS)) continue;
+        if (!(device->pT->pOnRTS)) continue;
 
         /* Get the thread name. */
         threadName = dataFromFile[device->FullName()];

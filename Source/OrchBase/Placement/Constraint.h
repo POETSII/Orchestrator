@@ -1,7 +1,7 @@
 #ifndef __ORCHESTRATOR_SOURCE_ORCHBASE_PLACEMENT_CONSTRAINT_H
 #define __ORCHESTRATOR_SOURCE_ORCHBASE_PLACEMENT_CONSTRAINT_H
 
-/* Describes a constraint imposed on the placement system, at either the task
+/* Describes a constraint imposed on the placement system, at either the gi
  * level or the engine level.
  *
  * See the placement documentation for further information. */
@@ -12,26 +12,26 @@
 
 #include <vector>
 
-class P_device;
-class P_task;
+class DevI_t;
+class GraphI_t;
 class Placer;
 
 class Constraint: public NameBase, public DumpChan
 {
 public:
     Constraint(constraintCategory category, bool mandatory, float penalty,
-               P_task* task):
+               GraphI_t* gi):
         category(category),
         mandatory(mandatory),
         penalty(penalty),
-        task(task)
+        gi(gi)
     {}
     virtual ~Constraint() = default;
 
     const constraintCategory category;
     bool mandatory;
     float penalty;
-    P_task* task;
+    GraphI_t* gi;
 
     virtual void Dump(FILE* = stdout) = 0;
 
@@ -39,7 +39,7 @@ public:
     bool satisfied;  /* For delta computation. */
     virtual bool is_satisfied(Placer* placer) = 0;
     virtual bool is_satisfied_delta(Placer* placer,
-                                    std::vector<P_device*> devices) = 0;
+                                    std::vector<DevI_t*> devices) = 0;
 };
 
 #endif

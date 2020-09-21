@@ -9,7 +9,7 @@
 #include <algorithm>  /* How ironic (used for std::max). */
 #include <set>
 
-class P_task;
+class GraphI_t;
 class Placer;
 
 #include "Result.h"
@@ -19,7 +19,7 @@ class Algorithm
 public:
     Algorithm(Placer* placer):placer(placer){}
     virtual ~Algorithm() = default;
-    virtual float do_it(P_task*) = 0;
+    virtual float do_it(GraphI_t*) = 0;
 
     Placer* placer;
     Result result;

@@ -5,7 +5,7 @@ SmartRandom::SmartRandom(Placer* placer):Algorithm(placer)
     result.method = "rand";
 }
 
-/* Places a task onto the engine held by a placer using a random placer.
+/* Places a gi onto the engine held by a placer using a random placer.
  *
  * This placer will probably fall over if you have equal numbers of devices of
  * multiple types, because this placer does not reserve cores for certain
@@ -14,34 +14,34 @@ SmartRandom::SmartRandom(Placer* placer):Algorithm(placer)
  * types on them).
  *
  * Returns zero. */
-float SmartRandom::do_it(P_task* task)
+float SmartRandom::do_it(GraphI_t* gi)
 {
-    P_device* device;
+    DevI_t* device;
     P_core* core;
     P_thread* thread;
-    P_devtyp* deviceType;
-    std::map<P_devtyp*, std::set<P_core*>>::iterator validCoreIt, badCoreIt;
+    DevT_t* deviceType;
+    std::map<DevT_t*, std::set<P_core*>>::iterator validCoreIt, badCoreIt;
 
     result.startTime = placer->timestamp();
 
     /* Maximum number of devices to pack into a thread. */
     unsigned maxDevicesPerThread = \
-        placer->constrained_max_devices_per_thread(task);
+        placer->constrained_max_devices_per_thread(gi);
 
     /* Maximum number of threads to use in each core. This constraint is
      * handled by limiting the range of thread selection. */
     unsigned maxThreadsPerCore = \
-        placer->constrained_max_threads_per_core(task);
+        placer->constrained_max_threads_per_core(gi);
 
     /* Know where we can put things. */
-    placer->define_valid_cores_map(task, &validCoresForDeviceType);
+    placer->define_valid_cores_map(gi, &validCoresForDeviceType);
 
     /* Go over each device in turn */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
+    WALKPDIGRAPHNODES(unsigned, DevI_t*, unsigned, EdgeI_t*, unsigned,
+                      PinI_t*, gi->G, deviceIterator)
     {
-        device = task->pD->G.NodeData(deviceIterator);
-        deviceType = device->pP_devtyp;
+        device = gi->G.NodeData(deviceIterator);
+        deviceType = device->pT;
 
         /* Ignore if it's a supervisor device (we don't map those). */
         if (!(deviceType->pOnRTS)) continue;
@@ -120,7 +120,7 @@ float SmartRandom::do_it(P_task* task)
     }
 
     /* Redistribute devices in cores to evenly load threads. */
-    placer->redistribute_devices_in_task(task);
+    placer->redistribute_devices_in_gi(gi);
 
     result.endTime = placer->timestamp();
     return 0;
