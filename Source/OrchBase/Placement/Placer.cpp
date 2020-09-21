@@ -1340,10 +1340,7 @@ void Placer::update_software_addresses(GraphI_t* gi)
 
         /* If the device has not been placed, and is a supervisor device, set
          * the device component of the address (a P_builder special case). */
-        else if (device->devTyp == 'S')
-        {
-            device->addr.SetDevice(P_builder::super_idx);
-        }
+        else if (device->devTyp == 'S') device->addr.SetAsSuperDevice();
 
         /* If the device has not been placed and is not a supervisor device,
          * clear the address. */

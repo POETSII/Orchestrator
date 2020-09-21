@@ -63,6 +63,7 @@ void               SetMailbox(unsigned a){ A_mailbox = a; A_mailboxV = 0; }
 void               SetCore   (unsigned a){ A_core    = a; A_coreV    = 0; }
 void               SetDevice (unsigned a){ A_device  = a; A_deviceV  = 0; }
 void               SetThread (unsigned a){ A_thread  = a; A_threadV  = 0; }
+void               SetAsSuperDevice();
 string             Str();
 P_addr             operator|(P_addr &);
 P_addr             operator|=(P_addr &);
