@@ -11,9 +11,6 @@ orchestrate.sh
 # Ignore .bak extensions created by winmerge
 *.bak
 
-# Ignore .orig extensions made by Meld
-*.orig
-
 # Default C++ gitignore content, from https://github.com/github/gitignore:
 
 # Prerequisites
