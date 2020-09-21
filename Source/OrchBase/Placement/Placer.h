@@ -10,6 +10,7 @@
  *
  * See the placement documentation for further information. */
 
+#include <climits>
 #include <ctime>
 #include <fstream>
 #include <list>
