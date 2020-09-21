@@ -1017,7 +1017,7 @@ float Placer::place(GraphI_t* gi, Algorithm* algorithm)
     update_software_addresses(gi);
 
     /* Tell the gi it's been placed. */
-    gi->LinkFlag();
+    gi->placed = true;
 
     return score;
 }
@@ -1284,6 +1284,9 @@ void Placer::unplace(GraphI_t* gi, bool andConstraints)
     {
         giEdgeCosts.erase(edgeCostsFinder);
     }
+
+    /* Inform the gi that it's no longer placed. */
+    gi->placed = false;
 }
 
 /* Updates the software addresses of each device in a gi, clearing it if it
