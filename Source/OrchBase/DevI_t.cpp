@@ -3,14 +3,13 @@
 #include "DevI_t.h"
 #include "GraphI_t.h"
 #include "DevT_t.h"
-#include "P_thread.h"
 #include "CFrag.h"
 #include "PinI_t.h"
 #include "Meta_t.h"
 
 //==============================================================================
 
-DevI_t::DevI_t(GraphI_t * G, string name):par(G),pP_thread(0),pT(0)
+DevI_t::DevI_t(GraphI_t * G, string name):par(G),pT(0)
 {
 Name(name);
 Npar(G);
@@ -41,8 +40,6 @@ addr.Dump(off+2,fp);
 fprintf(fp,"%sDevice instance type      %c\n",os,devTyp);
 fprintf(fp,"%sDevice type link          %#018lx\n",os,(uint64_t)pT);
 if (pT!=0) fprintf(fp,"%s...%s\n",os,pT->FullName().c_str());
-fprintf(fp,"%sThread cross-link         %#018lx\n",os,(uint64_t)pP_thread);
-if (pP_thread!=0) fprintf(fp,"%s...%s\n",os,pP_thread->FullName().c_str());
 fprintf(fp,"%sGraph device key          %u\n",os,Key);
 fprintf(fp,"%sMetadata vector has %lu entries:\n",os,Meta_v.size());
 WALKVECTOR(Meta_t *,Meta_v,i) (*i)->Dump(off+2,fp);

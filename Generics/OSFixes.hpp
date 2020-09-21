@@ -236,7 +236,7 @@ namespace OSFixes
      * successful, and returns an empty string otherwise. */
     inline std::string get_executable_path()
     {
-  #ifdef __BORLANDC__        
+  #ifdef __BORLANDC__
         char path[MAXIMUM_PATH_LENGTH];        /* No initialiser to placate
                                                 * Borland/C++98. */
   #else
@@ -273,7 +273,7 @@ namespace OSFixes
 
 
 /* =============================================================================
- * Template method to get a pointer 
+ * Template method to get a pointer
  * ===========================================================================*/
 namespace OSFixes
 {
@@ -288,9 +288,9 @@ namespace OSFixes
         return reinterpret_cast<uint64_t>(*(reinterpret_cast<void**>(&tgtPtr)));
     }*/
 
-    // Borland and GCC disagree on which template definitions are ambiguous and 
+    // Borland and GCC disagree on which template definitions are ambiguous and
     // which are necessary.
-    
+
     template <typename ptr>
     uint64_t getAddrAsUint(ptr *tgtPtr)
     {

@@ -53,7 +53,7 @@ int s,len,err;
   sin.sin_family=AF_INET;
   bcopy(hp->h_addr,(char*)&sin.sin_addr,hp->h_length);
   sin.sin_port=htons(SERVER_PORT);
-  
+
   /*
   	open as active
   */
@@ -62,7 +62,7 @@ int s,len,err;
     close(s);
     return -1;
   }
-  
+
   /*
   	connect socket to address
   */
@@ -80,7 +80,7 @@ int s,len,err;
   struct pollfd  pfd = {s,POLLOUT,0};
   while(sockOK && fgets(buf,sizeof(buf),stdin)){
     buf[MAX_LINE-1]='\0';
-    len=strlen(buf)+1;	
+    len=strlen(buf)+1;
     poll(&pfd,1,5000);
     if(pfd.revents & POLLOUT){
       err = send(s,buf,len,0);
@@ -101,7 +101,7 @@ int s,len,err;
   printf("server closing client socket - pipe broken it seems\n");
   close(s);
   return 0;
-}    	
-	  		
-	
-  
+}
+
+
+

@@ -2,13 +2,13 @@
 #define __DevI_tH__H
 
 #include <stdio.h>
+#include "flat.h"
 #include "NameBase.h"
 #include "P_addr.h"
 #include "DefRef.h"
 #include "DumpChan.h"
 class Meta_t;
 class GraphI_t;
-class P_thread;
 class DevT_t;
 class CFrag;
 class PinI_t;

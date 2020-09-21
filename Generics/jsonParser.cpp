@@ -42,7 +42,7 @@ delete root;
 jsonParser::node * jsonParser::AddNode()
 {
 node * n = new node();
-par->node_v.push_back(n); 
+par->node_v.push_back(n);
 n->par = par;
 return n;
 }
@@ -261,7 +261,7 @@ out: return;
 }
 
 //------------------------------------------------------------------------------
-         
+
 xmlParser::calpha_t xmlParser::Calpha()
 {
                                        // And away we go...

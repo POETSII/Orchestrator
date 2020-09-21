@@ -51,7 +51,7 @@ fprintf(fp,"%sId             %10u(%#010x)\n",os,id,id);
 fprintf(fp,"%sParent         %" PTR_FMT "\n",os,reinterpret_cast<uint64_t>(npar));
 fprintf(fp,"%sRecursion trap %s\n",os,rtrap ? "Set" : "Unset");
 fprintf(fp,"%sUnique id      %u\n",os,uid);
-fprintf(fp,"%sNameBase id    Name\n,os");
+fprintf(fp,"%sNameBase id    Name\n",os);
 if (NBmap.empty()) fprintf(fp,"%s ** No map entries ** \n",os);
 WALKMAP(unsigned,NameBase *,NBmap,i)
   fprintf(fp,"%s%6u : %s\n",os,(*i).first,(*i).second->FullName(7).c_str());
@@ -162,7 +162,3 @@ return ++uid;
 }
 
 //==============================================================================
-
-
-
-

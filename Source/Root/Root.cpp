@@ -23,7 +23,6 @@ void * kb_func(void * pPar)
 // and send it to the main thread in this process, where it gets picked up by
 // the MPI spinner.
 {
-Root* parent = static_cast<Root*>(pPar);
 int len = 0;                           // Characters in buffer
 for(;;) {                              // Superloop
   if (len==0) Root::Prompt();          // Console prompt

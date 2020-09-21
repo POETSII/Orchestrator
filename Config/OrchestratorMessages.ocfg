@@ -50,7 +50,7 @@
 094(I) : "Removing entry with key %s from UserO::OwnerMap"
 095(I) : "UserO::OwnerMap cleared"
 096(I) : "UserO::OwnerMap pretty-printed to %s"
-097(E) : "Unknown USER message (%s|%s) landed on UserO" 
+097(E) : "Unknown USER message (%s|%s) landed on UserO"
 
 101(S) : "Decoder in %s (PID %s) has dropped a packet from %s(rank %s) to %s(rank %s) with key 0x%s"
 102(I) : "Task graph default file path is ||%s||"
@@ -136,7 +136,7 @@
 248(I) : "Application %s...."
 249(I) : "... typelink succeeded (%s warnings) in %s msecs"
 250(W) : "Clause %s must have one parameter"
-251(W) : "... integrity check on %s generated %s(%s) errors(warnings) in %s msecs" 
+251(W) : "... integrity check on %s generated %s(%s) errors(warnings) in %s msecs"
 252(I) : "Starting integrity check on application %s"
 253(I) : "System wide integrity check took %s ms"
 
@@ -162,7 +162,7 @@
 
 // Unrecoverables
 901(U) : "%s: %s corrupt ?"
-902(U) : "OrchBase::ClearTasks(tt=%s)" 
+902(U) : "OrchBase::ClearTasks(tt=%s)"
 903(U) : "OrchBase::ClearDcls: Null pointer to %s in P_typdclm"
 904(U) : "OrchBase::ClearDcls: Null pointer to %s in P_taskm"
 905(U) : "T_Gen::Build: Null pointer argument"
@@ -183,7 +183,7 @@
 920(U) : "A_builder::Load: Null task pointer presented for load"
 921(U) : "A_builder::Load: Cannot open load log file."
 922(U) : "A_builder::Load: Cannot open description file %s. It was there a moment ago."
-925(U) : "OpsGrph_t::Xlink: Can't find application %s" 
+925(U) : "OpsGrph_t::Xlink: Can't find application %s"
 926(U) : "DS_builder::BuildApp: Context stack not empty"
 927(U) : "DS_builder::BuildApp: Context stack not empty"
 928(U) : "DS_builder::Mlink: App name %s from file %s has disappeared"

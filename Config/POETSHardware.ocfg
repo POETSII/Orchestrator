@@ -31,7 +31,7 @@ Crate(boards(Ba,BB,BX),hostname(machine_2))
 //   0 -- 1
 //   |    |
 //   2 -- 3                              // Board *type* not specified here because
-//   |    |                              // the instance picks up the default type 
+//   |    |                              // the instance picks up the default type
 //   4 -- 5                              // (here "CommonBox")
 (0,0):Box(board(B0),addr(0,00)) = Box(board(B1)),Box(board(B2))
 (1,0):Box(board(B1),addr(1,00)) = Box(board(B0)),Box(board(B3))

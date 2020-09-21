@@ -1,4 +1,6 @@
 #include "BucketFilling.h"
+#include "GraphT_t.h"
+#include "DevT_t.h"
 
 BucketFilling::BucketFilling(Placer* placer):Algorithm(placer)
 {
@@ -63,7 +65,7 @@ float BucketFilling::do_it(GraphI_t* gi)
             "[ERROR] Ran out of space placing a gi.");
 
         /* Walk through each device for this device type. */
-        devicesOfType = gi->DevicesOfType(*deviceTypeIterator);
+        gi->DevicesOfType(*deviceTypeIterator, devicesOfType);
         std::vector<DevI_t*>::iterator deviceIterator;
         for (deviceIterator = devicesOfType.begin();
              deviceIterator != devicesOfType.end(); deviceIterator++)

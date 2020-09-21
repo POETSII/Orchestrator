@@ -22,6 +22,7 @@ class GraphI_t : public NameBase, public DefRef
 public:
                      GraphI_t(Apps_t *,string);
 virtual ~            GraphI_t();
+void                 DevicesOfType(DevT_t *,vector<DevI_t *>&);
 void                 Dump(unsigned =0,FILE * = stdout);
 DevI_t *             GetDevice(string &);
 bool                 TLink() { return pT!=0; }

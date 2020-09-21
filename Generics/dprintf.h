@@ -61,7 +61,7 @@ The result supports the following "C" format codes:
    h    - short or unsigned short
    l    - long or unsigned long
    L    - long double
-   
+
  conversions:
    d, i - short/int/long as decimal
    u    - short/int/long as unsigned decimal

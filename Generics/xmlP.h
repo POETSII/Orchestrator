@@ -39,7 +39,7 @@ calpha_t     Calpha();
 void         Dump(unsigned = 0,FILE * = stdout);
 void         Element();
 string       GetString(Lex::Sytype);
-bool         Json(int &); 
+bool         Json(int &);
 
 vector<calpha_t>             elename;  // Element name stack
 vector<pair<string,string> > attr;

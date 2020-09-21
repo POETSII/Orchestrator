@@ -16,7 +16,7 @@
 //==============================================================================
 
 GraphI_t::GraphI_t(Apps_t * _p,string _s):
-    placed(false),par(_p),pT(0),pPropsI(0)
+    par(_p),placed(false),pT(0),pPropsI(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
@@ -51,6 +51,19 @@ WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i) {
 WALKSET(PinI_t *,DelSet,i) delete *i;  // Kill the "to be deleted" set
                                        // Lose any metadata
 WALKVECTOR(Meta_t *,Meta_v,i) delete *i;
+}
+
+//------------------------------------------------------------------------------
+
+void GraphI_t::DevicesOfType(DevT_t * type,vector<DevI_t *>& output)
+// Populate `output` with all devices in this graph instance that have a device
+// type matching `type`.
+{
+WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i)
+  if (i!=G.NodeEnd()) {
+    DevI_t * pD = G.NodeData(i);
+    if (pD->pT==type) output.push_back(pD);
+  }
 }
 
 //------------------------------------------------------------------------------
