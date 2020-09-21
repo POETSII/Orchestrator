@@ -24,8 +24,8 @@ float PlacementLoader::do_it(GraphI_t* gi)
 
         device = gi->G.NodeData(deviceIterator);
 
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pT->pOnRTS)) continue;
+        /* Ignore if it's not a normal device (we don't map those). */
+        if (device->devTyp != 'D') continue;
 
         /* Get the thread name. */
         threadName = dataFromFile[device->FullName()];

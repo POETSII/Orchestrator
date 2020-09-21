@@ -157,8 +157,8 @@ bool Placer::are_all_devices_mapped(GraphI_t* gi,
     {
         DevI_t* device = gi->G.NodeData(deviceIterator);
 
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pT->pOnRTS)) continue;
+        /* Ignore if it's not a normal device (we don't map those). */
+        if (device->devTyp != 'D') continue;
 
         /* If it's mapped, we move on. If not, we add it to unmapped. */
         std::map<DevI_t*, P_thread*>::iterator deviceFinder;
@@ -550,8 +550,8 @@ void Placer::define_valid_cores_map(GraphI_t* gi,
     {
         DevI_t* device = gi->G.NodeData(deviceIterator);
 
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pT->pOnRTS)) continue;
+        /* Ignore if it's not a normal device (we don't map those). */
+        if (device->devTyp != 'D') continue;
 
         /* Skip if an entry in the map already exists for a device of this
          * type */
@@ -746,8 +746,8 @@ void Placer::dump_edge_loading(const char* path)
              * so. */
             fromDevice = edgeIt->first.first;
             toDevice = edgeIt->first.second;
-            if (!(fromDevice->pT->pOnRTS)) continue;
-            if (!(toDevice->pT->pOnRTS)) continue;
+            if (fromDevice->devTyp != 'D') continue;
+            if (toDevice->devTyp != 'D') continue;
 
             /* Grab the mailboxes. */
             fromMailbox = deviceToThread[fromDevice]->parent->parent;
@@ -1052,8 +1052,8 @@ void Placer::populate_device_to_graph_key_map(GraphI_t* gi)
 void Placer::populate_edge_weight(GraphI_t* gi, DevI_t* from, DevI_t* to)
 {
     /* Skip this edge if one of the devices is a supervisor device. */
-    if (!(from)->pT->pOnRTS) return;
-    if (!(to)->pT->pOnRTS) return;
+    if (from->devTyp != 'D') return;
+    if (to->devTyp != 'D') return;
 
     /* Store the weight. */
     float weight = cache->compute_cost(deviceToThread[from],
@@ -1340,7 +1340,7 @@ void Placer::update_software_addresses(GraphI_t* gi)
 
         /* If the device has not been placed, and is a supervisor device, set
          * the device component of the address (a P_builder special case). */
-        else if (!(device->pT->pOnRTS))
+        else if (device->devTyp == 'S')
         {
             device->addr.SetDevice(P_builder::super_idx);
         }
@@ -1366,8 +1366,8 @@ void Placer::update_gi_to_cores_map(GraphI_t* gi)
         /* Grab the device, for readability. */
         DevI_t* device = gi->G.NodeData(deviceIterator);
 
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pT->pOnRTS)) continue;
+        /* Ignore if it's not a normal device (we don't map those). */
+        if (device->devTyp != 'D') continue;
 
         /* Assume the device is placed - grab the core it's placed on. */
         coreSet->insert(deviceToThread[device]->parent);

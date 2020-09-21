@@ -43,8 +43,8 @@ float SmartRandom::do_it(GraphI_t* gi)
         device = gi->G.NodeData(deviceIterator);
         deviceType = device->pT;
 
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(deviceType->pOnRTS)) continue;
+        /* Ignore if it's not a normal device (we don't map those). */
+        if (deviceType->devTyp != 'D') continue;
 
         /* Keep choosing cores from the valid core map until we find one with
          * space. */

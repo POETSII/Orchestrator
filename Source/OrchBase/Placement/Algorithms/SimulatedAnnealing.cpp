@@ -122,7 +122,7 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
                       unsigned, PinI_t*, gi->G, thisDevice)
     {
         /* Are you a normal device? */
-        if ((*thisDevice).second.data->pT->pOnRTS)
+        if ((*thisDevice).second.data->devTyp == 'D')
         {
             trivialGraph = false;
             break;
@@ -443,14 +443,15 @@ void SimulatedAnnealing::select(GraphI_t* gi, DevI_t** device,
     *thread = PNULL;
     *swapDevice = PNULL;
 
-    /* Choose a non-supervisor device. Note that this will loop infinitely if
-     * there are only supervisor devices in this gi (but I'm assuming nobody
-     * is going to call this without checking the gi first...) */
+    /* Choose a normal device (i.e. not a supervisor or external). Note that
+     * this will loop infinitely if there are only supervisor devices in this
+     * gi (but I'm assuming nobody is going to call this without checking the
+     * gi first...) */
     do
     {
         unsigned nodeKey;  /* Unused */
         gi->G.RandomNode(nodeKey, *device);
-    } while (!((*device)->pT->pOnRTS));
+    } while ((*device)->devTyp != 'D');
 
     /* Choose a (valid) core. If there are no valid cores, set thread to NULL
      * and leave. */

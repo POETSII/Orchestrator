@@ -44,9 +44,9 @@ float BucketFilling::do_it(GraphI_t* gi)
          deviceTypeIterator != gi->pT->DevT_v.end();
          deviceTypeIterator++)
     {
-        /* Skip this device type if it is a supervisor device type. We don't
+        /* Skip this device type if it is not a normal device type. We don't
          * place those. */
-        if (!(*deviceTypeIterator)->pOnRTS) continue;
+        if ((*deviceTypeIterator)->devTyp != 'D') continue;
 
         /* Move the hardware iterator to the first available empty core pair in
          * the engine. Does not move the iterators if the current core-pair
