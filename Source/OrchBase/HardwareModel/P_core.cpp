@@ -25,15 +25,6 @@ void P_core::clear()
         delete iterator->second;
     }
     P_threadm.clear();
-
-    clear_binaries();
-}
-
-/* Clears the dynamically-allocated binaries. */
-void P_core::clear_binaries()
-{
-    if (dataBinary != 0) delete dataBinary;
-    if (instructionBinary != 0) delete instructionBinary;
 }
 
 /* Donates an uncontained thread to this core. Arguments:
@@ -93,24 +84,22 @@ void P_core::Dump(FILE* file)
     NameBase::Dump(0,file);
 
     /* Dump information about binaries. */
-    if (dataBinary != 0)
+    if (dataBinary.empty())
     {
         fprintf(file, "No data binary assigned to this core.\n");
     }
     else
     {
-        fprintf(file, "Data binary:\n");
-        dataBinary->Dump(0,file);
+        fprintf(file, "Data binary: %s\n", dataBinary.c_str());
     }
 
-    if (instructionBinary != 0)
+    if (instructionBinary.empty())
     {
         fprintf(file, "No instruction binary assigned to this core.\n");
     }
     else
     {
-        fprintf(file, "Instruction binary:\n");
-        instructionBinary->Dump(0,file);
+        fprintf(file, "Instruction binary: %s\n", instructionBinary.c_str());
     }
 
     if (pair == PNULL)
