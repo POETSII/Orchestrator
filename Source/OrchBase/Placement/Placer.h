@@ -38,13 +38,12 @@ struct Result;
 #include "NoGIToDumpException.h"
 
 /* And everything else. */
+#include "Apps_t.h"
 #include "CostCache.h"
 #include "DumpUtils.h"
+#include "GraphI_t.h"
 #include "HardwareModel.h"
 #include "OSFixes.hpp"
-#include "DevI_t.h"
-#include "DevT_t.h"
-#include "GraphI_t.h"
 
 #define THREAD_LOADING_SCALING_FACTOR 0.01
 

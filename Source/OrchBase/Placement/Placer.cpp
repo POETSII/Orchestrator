@@ -1,5 +1,6 @@
 /* Defines placer (see the accompanying header for further information). */
 
+#include "DevT_t.h"
 #include "Placer.h"
 
 Placer::Placer(){engine = PNULL;}
