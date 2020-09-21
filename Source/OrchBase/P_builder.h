@@ -30,6 +30,8 @@ void                Load(const string&);
 
 OrchBase *            par;
 
+static const unsigned super_idx = UINT_MAX; // supervisor is always max index.
+
 #ifndef __BORLANDC__
 
 QCoreApplication      app;          // Order swapped to suppress initialisation warning

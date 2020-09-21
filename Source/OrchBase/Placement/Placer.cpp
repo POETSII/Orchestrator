@@ -1342,7 +1342,7 @@ void Placer::update_software_addresses(GraphI_t* gi)
          * the device component of the address (a P_builder special case). */
         else if (!(device->pT->pOnRTS))
         {
-            device->addr.SetDevice(DevI_t::super_idx);
+            device->addr.SetDevice(P_builder::super_idx);
         }
 
         /* If the device has not been placed and is not a supervisor device,
