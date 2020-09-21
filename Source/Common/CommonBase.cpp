@@ -19,7 +19,6 @@ using namespace std;
 
 typedef unsigned char byte;
 const string CommonBase::S00 = string();
-const char* CommonBase::MPISvc = "POETS_MPI_Master";
 
 //==============================================================================
 
