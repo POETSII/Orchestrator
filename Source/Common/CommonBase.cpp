@@ -24,10 +24,7 @@ const string CommonBase::S00 = string();
 
 CommonBase::CommonBase(int argc,char ** argv,string d,string src)
 {
-//MPI_Init(&argc,&argv);               // Start up MPI
 MPI_Init_thread(&argc,&argv,MPI_THREAD_MULTIPLE,&MPI_provided);
-
-const int SNDBUFSIZ = 1000000000;      // MPI immediate message send buffer size
 char * SNDBUF = (char *)malloc(SNDBUFSIZ);             // Pull it off the heap
 if (SNDBUF!=0) MPI_Buffer_attach(SNDBUF,SNDBUFSIZ);    // Attach it to MPI
 pPmap = new ProcMap(this);
