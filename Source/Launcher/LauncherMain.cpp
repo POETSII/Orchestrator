@@ -651,11 +651,13 @@ argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str());
     for(int i=1; i<argc; concatenatedArgs += argv[i++]);
 
     /* Decode, and check for errors. */
+    int line, column;
     Cli cli(concatenatedArgs);
-    if (cli.problem.prob)
+    cli.Err(line, column);
+    if (line >= 0)
     {
         printf("%sCommand line error at about input character %d\n",
-               errorHeader, cli.problem.col);
+               errorHeader, column);
         return 1;
     }
 
