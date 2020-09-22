@@ -27,7 +27,6 @@ P_builder::~P_builder(){}
 void P_builder::Build(P_task * pT)
 // Generates the application binaries - virtually mapped to a single board.
 {
-  if (!pT) pT = par->P_taskm.begin()->second; // default to the first task
   par->Post(801,pT->Name(),pT->filename);
   if (GenFiles(pT)) return;    // Try to generate source files. Bail if we fail.
   CompileBins(pT);
