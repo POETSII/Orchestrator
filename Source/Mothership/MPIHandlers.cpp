@@ -14,18 +14,18 @@
 
 #include "Mothership.h"
 
-unsigned Mothership::handle_msg_exit(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_exit(PMsg_p* message)
 {
     debug_post(598, 2, "Q::EXIT", "Exiting gracefully.");
     threading.set_quit();
 
     /* CommonBase's OnExit (does some MPI teardown). The returncode is read by
      * Decode, and causes MPISpinner to end. */
-    OnExit(message, commIndex);
+    OnExit(message);
     return 1;
 }
 
-unsigned Mothership::handle_msg_syst_kill(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_syst_kill(PMsg_p* message)
 {
     /* ThreadComms notices that we haven't set_quit, so it doesn't wait for the
      * other threads to finish before leaving. */
@@ -33,11 +33,11 @@ unsigned Mothership::handle_msg_syst_kill(PMsg_p* message, unsigned commIndex)
 
     /* CommonBase's OnExit (does some MPI teardown). The returncode is read by
      * Decode, and causes MPISpinner to end. */
-    OnExit(message, commIndex);
+    OnExit(message);
     return 1;
 }
 
-unsigned Mothership::handle_msg_app(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_app(PMsg_p* message)
 {
     #if ORCHESTRATOR_DEBUG
     std::string key = "Unknown";
@@ -50,7 +50,7 @@ unsigned Mothership::handle_msg_app(PMsg_p* message, unsigned commIndex)
     return 0;
 }
 
-unsigned Mothership::handle_msg_cnc(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_cnc(PMsg_p* message)
 {
     #if ORCHESTRATOR_DEBUG
     std::string key = "Unknown";
@@ -203,10 +203,9 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
     if (appInfo->check_update_defined_state())
     {
         PMsg_p acknowledgement;
-        acknowledgement.comm = Comms[RootCIdx()];
         acknowledgement.Src(Urank);
         acknowledgement.Put<std::string>(0, &(appInfo->name));
-        acknowledgement.Tgt(pPmap[RootCIdx()]->U.Root);
+        acknowledgement.Tgt(pPmap->U.Root);
         acknowledgement.Key(Q::MSHP, Q::ACK, Q::DEFD);
         queue_mpi_message(&acknowledgement);
     }
@@ -426,7 +425,7 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
      * message is always going to be a "packets" message (it's just a device
      * after all, sending information to another device in the compute
      * fabric). */
-    PMsg_p outputMessage(message->comm);
+    PMsg_p outputMessage;
     outputMessage.Src(message->Tgt());
     outputMessage.Key(Q::PKTS);
 

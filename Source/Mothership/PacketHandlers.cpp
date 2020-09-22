@@ -124,10 +124,9 @@ void Mothership::handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop)
     /* Otherwise, all threads on all cores have responded. Mark the application
      * as READY (or STOPPED) and report back to Root. */
     PMsg_p acknowledgement;
-    acknowledgement.comm = Comms[RootCIdx()];
     acknowledgement.Src(Urank);
     acknowledgement.Put<std::string>(0, &(appInfo->name));
-    acknowledgement.Tgt(pPmap[RootCIdx()]->U.Root);
+    acknowledgement.Tgt(pPmap->U.Root);
     if (!stop)
     {
         appInfo->state = READY;
@@ -179,7 +178,6 @@ void Mothership::handle_pkt_kill(P_Pkt_t* packet)
 
     /* Create message (to ourselves) and send it. */
     PMsg_p message;
-    message.comm = Comms[0];
     message.Key(Q::CMND, Q::STOP);
     message.Put(0, &(appFinder->second));
     message.Tgt(Urank);  /* Send to ourselves */

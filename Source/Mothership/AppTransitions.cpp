@@ -119,11 +119,10 @@ void Mothership::run_application(AppInfo* app)
 
     /* Send "acknowledgement" message to root. */
     PMsg_p acknowledgement;
-    acknowledgement.comm = Comms[RootCIdx()];
     acknowledgement.Src(Urank);
     acknowledgement.Key(Q::MSHP, Q::ACK, Q::RUN);
     acknowledgement.Put<std::string>(0, &(app->name));
-    acknowledgement.Tgt(pPmap[RootCIdx()]->U.Root);
+    acknowledgement.Tgt(pPmap->U.Root);
     queue_mpi_message(&acknowledgement);
 }
 

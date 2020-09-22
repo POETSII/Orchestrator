@@ -18,9 +18,6 @@ Mothership::Mothership(int argc, char** argv):
 
 Mothership::~Mothership()
 {
-    /* Tear down MPI function map. */
-    WALKVECTOR(FnMap_t*, FnMapx, F) delete *F;
-
     /* Tear down backend. */
     if (backend != PNULL)
     {
@@ -118,19 +115,17 @@ bool Mothership::debug_post(int code, unsigned numArgs, ...)
 void Mothership::setup_mpi_hooks()
 {
     DebugPrint("[MOTHERSHIP] Setting up MPI hooks.\n");
-    FnMapx.push_back(new FnMap_t);
-    (*FnMapx[0])[PMsg_p::KEY(Q::EXIT)] = &Mothership::handle_msg_exit;
-    (*FnMapx[0])[PMsg_p::KEY(Q::SYST,Q::KILL)] =
-        &Mothership::handle_msg_syst_kill;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SPEC)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::DIST)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SUPD)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RECL)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::INIT)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RUN)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::STOP)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::CNC)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::SUPR)] = &Mothership::handle_msg_app;
-    (*FnMapx[0])[PMsg_p::KEY(Q::PKTS)] = &Mothership::handle_msg_app;
-    (*FnMapx[0])[PMsg_p::KEY(Q::DUMP)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::EXIT)] = &Mothership::handle_msg_exit;
+    FnMap[PMsg_p::KEY(Q::SYST,Q::KILL)] = &Mothership::handle_msg_syst_kill;
+    FnMap[PMsg_p::KEY(Q::APP,Q::SPEC)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::APP,Q::DIST)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::APP,Q::SUPD)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::CMND,Q::RECL)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::CMND,Q::INIT)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::CMND,Q::RUN)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::CMND,Q::STOP)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::BEND,Q::CNC)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::BEND,Q::SUPR)] = &Mothership::handle_msg_app;
+    FnMap[PMsg_p::KEY(Q::PKTS)] = &Mothership::handle_msg_app;
+    FnMap[PMsg_p::KEY(Q::DUMP)] = &Mothership::handle_msg_cnc;
 }

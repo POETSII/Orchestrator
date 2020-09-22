@@ -71,9 +71,8 @@ public:
     void handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop=false);
 
     /* More stuff needed for CommonBase to work. */
-    typedef unsigned (Mothership::*pMeth)(PMsg_p*, unsigned);
-    typedef std::map<unsigned, pMeth> FnMap_t;
-    std::vector<FnMap_t*> FnMapx;
+    typedef unsigned (Mothership::*pMeth)(PMsg_p*);
+    std::map<unsigned, pMeth> FnMap;
 #include "Decode.cpp"
 
 private:
@@ -84,10 +83,10 @@ private:
     void send_cnc_packet_to_all(AppInfo* app, uint8_t opcode);
 
     /* Methods for handling MPI messages via MPIInputBroker */
-    unsigned handle_msg_exit(PMsg_p* message, unsigned commIndex);
-    unsigned handle_msg_syst_kill(PMsg_p* message, unsigned commIndex);
-    unsigned handle_msg_app(PMsg_p* message, unsigned commIndex);
-    unsigned handle_msg_cnc(PMsg_p* message, unsigned commIndex);
+    unsigned handle_msg_exit(PMsg_p* message);
+    unsigned handle_msg_syst_kill(PMsg_p* message);
+    unsigned handle_msg_app(PMsg_p* message);
+    unsigned handle_msg_cnc(PMsg_p* message);
 
     /* Methods for safely decoding MPI messages with certain field
      * configurations. */
