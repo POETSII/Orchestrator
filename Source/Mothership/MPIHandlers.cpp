@@ -491,7 +491,7 @@ unsigned Mothership::handle_msg_dump(PMsg_p* message)
         Post(508, dumpPath, OSFixes::getSysErrorString(errno));
         return 0;
     }
-    Dump(outF);
+    Dump(0, outF);
     fclose(outF);
     return 0;
 }
