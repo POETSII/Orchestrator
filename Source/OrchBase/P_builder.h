@@ -10,10 +10,12 @@
 #include "build_defs.h"
 using namespace std;
 
+/*
 #ifndef __BORLANDC__
 #include "i_graph.h"
 #include <QtCore>
 #endif
+*/
 
 //==============================================================================
 
@@ -23,29 +25,23 @@ public:
                     P_builder(int, char**, OrchBase *);
 virtual ~           P_builder();
 
-void                Build(P_task * = 0);
-void                Clear(P_task * = 0);
+void                Build(GraphI_t * = 0);
+void                Clear(GraphI_t * = 0);
 void                Dump(FILE * = stdout);
 void                Load(const string&);
 
 OrchBase *            par;
 
-#ifndef __BORLANDC__
-
-QCoreApplication      app;          // Order swapped to suppress initialisation warning
-map<string, I_Graph*> defs;
-
 private:
 
-void Preplace(P_task*);
-unsigned GenFiles(P_task*);
-unsigned CompileBins(P_task*);
+void Preplace(GraphI_t*);
+unsigned GenFiles(GraphI_t*);
+unsigned CompileBins(GraphI_t*);
 
-unsigned GenSupervisor(P_task*);
+unsigned GenSupervisor(GraphI_t*);
 unsigned WriteCoreVars(std::string&, unsigned, P_core*, ofstream&);
 unsigned WriteThreadVars(std::string&, unsigned, unsigned, P_thread*, ofstream&);
 
-#endif
 };
 
 //==============================================================================

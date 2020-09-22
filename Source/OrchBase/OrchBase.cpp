@@ -3,15 +3,8 @@
 #include "Pglobals.h"
 #include "OrchBase.h"
 #include "P_builder.h"
-#include "filename.h"
+#include "FileName.h"
 #include "P_core.h"
-#include "P_task.h"
-#include "P_typdcl.h"
-#include "P_devtyp.h"
-#include "T_gen.h"
-#include "SimpleDeployer.h"
-#include "Dialect1Deployer.h"
-#include "MultiSimpleDeployer.h"
 #include "Ns_el.h"
 #include "P_super.h"
 
@@ -20,10 +13,12 @@
 // bloody boring. The translation unit is *this* file + all its includes.
 // The below are NOT translation units in their own right.
 
+/* Not anymore!
 #include "OrchBaseTask.cpp"            // Handlers for "task" commands
 #include "OrchBaseTopo.cpp"            // Handlers for "topo" commands
 #include "OrchBaseOwner.cpp"           // Handlers for "owner" commands
 #include "OrchBasePlace.cpp"           // Guess
+*/
 
 //==============================================================================
 
@@ -33,7 +28,6 @@ OrchBase::OrchBase(int argc,char * argv[],string d,string sfile) :
 pE        = 0;
 pPlacer   = 0;
 pB        = new P_builder(argc, argv, this);       // Object to build the datastructure
-pTG       = new T_gen(this);           // PoL task generator
 Name("O_");                            // NameBase root name
 taskpath  = string(" ");
 }
@@ -45,44 +39,24 @@ OrchBase::~OrchBase()
 if (pE!=0)        delete pE;           // Destroy the engine
 if (pPlacer!=0)   delete pPlacer;      // Destroy the placer
 if (pB!=0)        delete pB;           // Object to build the datastructure
-if (pTG!=0)       delete pTG;          // PoL generator
-
-// ADR supervisors do not need to be deleted here as they will be removed
-// in the task graphs.
-                                       // Supervisors
-//WALKMAP(string,P_super *,P_superm,i) delete (*i).second;
-                                       // Task map contents
-WALKMAP(string,P_task *,P_taskm,i) delete (*i).second;
-                                       // Type declare map contents
-WALKMAP(string,P_typdcl *,P_typdclm,i) delete (*i).second;
-                                       // Owners
-WALKMAP(string,P_owner *,P_ownerm,i) delete (*i).second;
 }
 
 //------------------------------------------------------------------------------
 
-void OrchBase::Dump(FILE * fp)
+void OrchBase::Dump(unsigned off,FILE * fp)
 {
-fprintf(fp,"OrchBase dump+++++++++++++++++++++++++++++++\n");  fflush(fp);
-fprintf(fp,"NameBase %s\n",FullName().c_str());
-fprintf(fp,"Task path %s\n",taskpath.c_str());
-fprintf(fp,"HARDWARE++++++++++++++++++++++++++++++++++++\n");
-if (pE==0) fprintf(fp,"No hardware topology loaded\n");
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"%sOrchBase dump+++++++++++++++++++++++++++++++\n",os);
+fprintf(fp,"%sNameBase %s\n",os,FullName().c_str());
+fprintf(fp,"%sTask path %s\n",os,taskpath.c_str());
+fprintf(fp,"%sHARDWARE++++++++++++++++++++++++++++++++++++\n",os);
+if (pE==0) fprintf(fp,"%sNo hardware topology loaded\n",os);
 else pE->Dump(fp);
-fprintf(fp,"HARDWARE------------------------------------\n");
-fprintf(fp,"SOFTWARE++++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"SUPERVISORS+++++++++++++++++++++++++++++++++\n");
-WALKMAP(string,P_super *,P_superm,i) (*i).second->Dump(fp);
-fprintf(fp,"SUPERVISORS---------------------------------\n");
-fprintf(fp,"TASK MAP++++++++++++++++++++++++++++++++++++\n");
-WALKMAP(string,P_task *,P_taskm,i) (*i).second->Dump(fp);
-fprintf(fp,"TASK MAP------------------------------------\n");
-fprintf(fp,"TYPE DECLARES+++++++++++++++++++++++++++++++\n");
-WALKMAP(string,P_typdcl *,P_typdclm,i) (*i).second->Dump(fp);
-fprintf(fp,"TYPE DECLARES-------------------------------\n");
-fprintf(fp,"SOFTWARE------------------------------------\n");
-NameBase::Dump(fp);
-fprintf(fp,"OrchBase dump-------------------------------\n");  fflush(fp);
+fprintf(fp,"%sHARDWARE------------------------------------\n",os);
+NameBase::Dump(off,fp);
+fprintf(fp,"%sOrchBase dump-------------------------------\n",os);
+fflush(fp);
 }
 
 //==============================================================================

@@ -1,10 +1,7 @@
 #ifndef __OrchBaseH__H
 #define __OrchBaseH__H
 
-class P_task;
 class P_builder;
-class T_gen;
-class P_owner;
 class P_super;
 class Dialect1Deployer;
 
@@ -50,7 +47,6 @@ void                   Dump(unsigned = 0,FILE * = stdout);
 P_engine *             pE;             // Poets engine (hardware model)
 Placer *               pPlacer;        // Cross-linker
 P_builder *            pB;             // Object to build the datastructure
-T_gen *                pTG;            // PoL task generator
 Trace                  Tr;             // Debug trace subsystem
 FILE *                 fd;             // Output file stream for details
 
@@ -82,7 +78,6 @@ CmUntl *               pCmUntl;
 string                 taskpath;       // Absolute file path for task commands
 string                 topopath;       // Absolute file path for topo commands
 map<string,P_super *>  P_superm;       // Container of supervisor devices
-map<string,P_owner *>  P_ownerm;       // Task ownership container
 };
 
 //==============================================================================
