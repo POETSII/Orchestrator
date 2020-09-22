@@ -34,7 +34,7 @@ Ssource = src;                         // Derived class source file name
 // Load event handler map
 FnMap[Msg_p::KEY(Q::EXIT                )] = &CommonBase::OnExit;
 FnMap[Msg_p::KEY(Q::PMAP                )] = &CommonBase::OnPmap;
-FnMap[Msg_p::KEY(Q::SYST,Q::PING,Q::ACK )] = &CommonBase::OnSystPingAck;
+FnMap[Msg_p::KEY(Q::SYST,Q::PING,Q::ACKt)] = &CommonBase::OnSystPingAck;
 FnMap[Msg_p::KEY(Q::SYST,Q::PING,Q::REQ )] = &CommonBase::OnSystPingReq;
 FnMap[Msg_p::KEY(Q::SYST,Q::RUN         )] = &CommonBase::OnSystRun;
 FnMap[Msg_p::KEY(Q::TEST,Q::FLOO        )] = &CommonBase::OnTestFloo;
@@ -179,7 +179,7 @@ unsigned * pu;
 int cnt;
 double ZT0,ZT1;                        // MPI times
 PMsg_p Pkt(*Z);                        // Build response on top of incomer
-Pkt.L(2,Q::ACK);                       // Sending it back....
+Pkt.L(2,Q::ACKt);                      // Sending it back....
 ZT0 = Z->Ztime(0);                     // Copy MPI wallclock times over
 ZT1 = Z->Ztime(1);
 Pkt.Put<double>(0,&ZT0);

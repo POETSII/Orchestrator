@@ -26,7 +26,7 @@ PMAP |-    |-    |-    | (1:int)urank
                          (11:int)Thread_type
 SYST |CONN |-    |-    | (0:string)Service name
 SYST |ACPT |-    |-    |
-SYST |PING |ACK  |-    | (0:double)Request send MPI time
+SYST |PING |ACKt |-    | (0:double)Request send MPI time
                          (1:double)Request arrival MPI time
                          (1:string)Target (foldback) class
                          (2:string)Request OS date from source
@@ -54,6 +54,10 @@ LOG  |FULL |-    |-    | (1:int)Message id
                          (2:char)Message type
                          (3:string)Full message
 INJCT|REQ  |-    |-    | (1:string)Command string
+MSHP |ACK  |DEFD |-    | (0:string)Application name
+MSHP |ACK  |LOAD |-    | (0:string)Application name
+MSHP |ACK  |RUN  |-    | (0:string)Application name
+MSHP |ACK  |STOP |-    | (0:string)Application name
 
 LogServer
 ---------
@@ -70,23 +74,27 @@ Injector
 INJCT|ACK  |-    |-    | (????)
 INJCT|FLAG |-    |-    | (1:string)Command string
 
-Mothercore
+Mothership
 ----------
-CMND |LOAD |-    |-    | (0:string)Task name
-CMND |RUN  |-    |-    | (0:string)Task name
-CMND |STOP |-    |-    | (0:string)Task name
 EXIT |-    |-    |-    | (None)
-NAME |DIST |-    |-    | (0:string)Task name
-                         (1:vector<pair<uint32_t,P_addr_t>>) Core list for Mothership
-NAME |RECL |-    |-    | (0:string)Task name
-NAME |TDIR |-    |-    | (0:string)Task name
-                         (1:string)File directory
-SUPR |-    |-    |-    | (0:vector<P_Sup_Msg_t>)Args
-SYST |HARD |-    |-    | (0:vector<string>)Args
 SYST |KILL |-    |-    | (None)
-SYST |SHOW |-    |-    | (None)
-SYST |TOPO |-    |-    | (None)
-TINS |-    |-    |-    | (0:vector<P_Msg_t>) Packet(s) to deliver
+APP  |SPEC |-    |-    | (0:string)Application name
+                         (1:uint32_t)Number of expected distribution messages
+APP  |DIST |-    |-    | (0:string)Application name
+                         (1:string)Code path for this core
+                         (2:string)Data path for this core
+                         (3:uint32_t)Core hardware address
+                         (4:uint8_t)Number of expected threads for this core
+APP  |SUPD |-    |-    | (0:string)Application name
+                         (1:string)Shared object path for this Supervisor
+CMND |RECL |-    |-    | (0:string)Application name
+CMND |INIT |-    |-    | (0:string)Application name
+CMND |RUN  |-    |-    | (0:string)Application name
+CMND |STOP |-    |-    | (0:string)Application name
+BEND |CNC  |-    |-    | (0:P_Pkt_t)Packet
+BEND |SUPR |-    |-    | (0:P_Pkt_t)Packet
+PKTS |-    |-    |-    | (0:vector<pair<uint32_t, P_Pkt_t> >)Packets
+DUMP |-    |-    |-    | (0:string)Path to write the dump to
 
 */
 
@@ -110,12 +118,12 @@ static const byte PMAP;
 static const byte SYST;
 static const byte RTCL;
 static const byte INJCT;
-static const byte NAME;
-static const byte SUPR;
-static const byte TINS;
 static const byte CANDC;
-static const byte QUERY;
 static const byte APP;
+static const byte BEND;
+static const byte PKTS;
+static const byte DUMP;
+static const byte MSHP;
 // Level 1 subkeys
 static const byte PING;
 static const byte POST;
@@ -128,15 +136,17 @@ static const byte CONN;
 static const byte RUN;
 static const byte LOAD;
 static const byte STOP;
-static const byte TOPO;
 static const byte DIST;
 static const byte RECL;
 static const byte TDIR;
 static const byte SHOW;
 static const byte ACPT;
-static const byte CLEAR;
-static const byte DUMP;
-static const byte MONI;
+static const byte SPEC;
+static const byte SUPD;
+static const byte INIT;
+static const byte CNC;
+static const byte ACK;
+static const byte SUPR;
 // temporary use: for MPI testing ------------------------------------------
 static const byte M0;
 static const byte M1;
@@ -144,7 +154,7 @@ static const byte MN;
 //--------------------------------------------------------------------------
 // Level 2 subkeys
 static const byte REQ;
-static const byte ACK;
+static const byte ACKt;
 static const byte FWD;
 // Level 3 subkeys
 
@@ -180,5 +190,5 @@ const static string pline;
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
 //==============================================================================
-  
+
 #endif
