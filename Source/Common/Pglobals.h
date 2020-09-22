@@ -156,6 +156,7 @@ static const byte MN;
 static const byte REQ;
 static const byte ACKt;
 static const byte FWD;
+static const byte DEFD;
 // Level 3 subkeys
 
 static const byte NAV;                 // Not a value

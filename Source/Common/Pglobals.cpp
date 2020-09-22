@@ -50,6 +50,7 @@ const byte Q::MN      = 0x62;
 const byte Q::REQ     = 0x80;
 const byte Q::ACK     = 0x81;
 const byte Q::FWD     = 0x82;
+const byte Q::DEFD    = 0x83;
 // Level 3 subkeys
 
 const byte Q::NAV     = 0xff;          // Not a value
