@@ -29,6 +29,26 @@ pE        = 0;
 pPlacer   = 0;
 pB        = new P_builder(this);       // Object to build the datastructure
 Name("O_");                            // NameBase root name
+
+// Command handlers
+pCmBuil = new CmBuil(this);
+pCmCall = new CmCall(this);
+pCmDump = new CmDump(this);
+pCmExec = new CmExec(this);
+pCmInje = new CmInje(this);
+pCmLoad = new CmLoad(this);
+pCmName = new CmName(this);
+pCmPath = new CmPath(this);
+pCmPlac = new CmPlac(this);
+pCmRTCL = new CmRTCL(this);
+pCmShow = new CmShow(this);
+pCmSyst = new CmSyst(this);
+pCmTest = new CmTest(this);
+pCmTlin = new CmTlin(this);
+pCmUnlo = new CmUnlo(this);
+pCmUnpl = new CmUnpl(this);
+pCmUntl = new CmUntl(this);
+
 taskpath  = string(" ");
 }
 
