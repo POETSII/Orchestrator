@@ -17,17 +17,11 @@
 
 //==============================================================================
 
-P_builder::P_builder(int argc, char** argv, OrchBase * _p):par(_p),app(argc, argv),defs()
-{
-
-}
+P_builder::P_builder(OrchBase * _p):par(_p){}
 
 //------------------------------------------------------------------------------
 
-P_builder::~P_builder()
-{
-  for (map<string, I_Graph*>::iterator d = defs.begin(); d != defs.end(); d++) delete d->second;   // get rid of Qt objects
-}
+P_builder::~P_builder(){}
 
 //------------------------------------------------------------------------------
 

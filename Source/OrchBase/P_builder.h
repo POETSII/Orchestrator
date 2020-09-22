@@ -22,7 +22,7 @@ using namespace std;
 class P_builder
 {
 public:
-                    P_builder(int, char**, OrchBase *);
+                    P_builder(OrchBase *);
 virtual ~           P_builder();
 
 void                Build(GraphI_t * = 0);

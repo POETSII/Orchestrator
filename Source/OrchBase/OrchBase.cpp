@@ -27,7 +27,7 @@ OrchBase::OrchBase(int argc,char * argv[],string d,string sfile) :
 {
 pE        = 0;
 pPlacer   = 0;
-pB        = new P_builder(argc, argv, this);       // Object to build the datastructure
+pB        = new P_builder(this);       // Object to build the datastructure
 Name("O_");                            // NameBase root name
 taskpath  = string(" ");
 }
