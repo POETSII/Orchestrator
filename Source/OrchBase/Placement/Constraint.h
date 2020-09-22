@@ -1,8 +1,8 @@
 #ifndef __ORCHESTRATOR_SOURCE_ORCHBASE_PLACEMENT_CONSTRAINT_H
 #define __ORCHESTRATOR_SOURCE_ORCHBASE_PLACEMENT_CONSTRAINT_H
 
-/* Describes a constraint imposed on the placement system, at either the gi
- * level or the engine level.
+/* Describes a constraint imposed on the placement system, at either the
+ * application graph instance level, or the engine level.
  *
  * See the placement documentation for further information. */
 
