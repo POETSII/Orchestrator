@@ -29,7 +29,7 @@ TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
 SOFTWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/SoftwareAddress.cpp \
                            $(SOURCE_DIR)/Common/DumpUtils.cpp \
                            $(GENERICS_DIR)/dfprintf.cpp \
-                           $(GENERICS_DIR)/dumpchan.cpp
+                           $(GENERICS_DIR)/DumpChan.cpp
 
 # Sources used by executables that need to address hardware.
 HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareModel/HardwareAddress.cpp \

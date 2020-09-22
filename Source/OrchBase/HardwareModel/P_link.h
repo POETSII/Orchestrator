@@ -10,10 +10,9 @@
 #include "DumpUtils.h"
 #include "NameBase.h"
 #include "pdigraph.hpp"
-#include "DefRef.h"
 class    Meta_t;
 
-class P_link : public NameBase, public DefRef, public DumpChan
+class P_link : public NameBase, public DumpChan
 {
 public:
                     P_link(string);
