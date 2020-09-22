@@ -11,6 +11,7 @@ public :
               PMsg_p();
               PMsg_p(byte *,int);
               PMsg_p(PMsg_p &);
+              PMsg_p(const PMsg_p & r);
 virtual ~     PMsg_p(void);
 void          Bcast();
 void          Send();
@@ -20,4 +21,3 @@ void          Send(int);
 //==============================================================================
 
 #endif
-
