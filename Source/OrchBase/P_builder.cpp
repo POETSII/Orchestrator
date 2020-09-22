@@ -15,56 +15,6 @@
 #include <set>
 #include <iostream>
 
-#ifdef __BORLANDC__
-
-//==============================================================================
-
-P_builder::P_builder(int argc, char** argv, OrchBase * _p):par(_p) //, def(NULL), app(argc, argv)
-{
-//def = new I_Graph(par, &app);
-}
-
-//------------------------------------------------------------------------------
-
-P_builder::~P_builder()
-{
-// if (def != 0) delete def;   // get rid of Qt objects
-}
-
-//------------------------------------------------------------------------------
-
-void P_builder::Build(P_task * pT)
-// Generates the application binaries - virtually mapped to a single board.
-{
-if (!pT) pT = par->P_taskm.begin()->second;
-par->Post(801,pT->Name(),pT->filename);
-//Preplace(pT, par->pVB);
-//GenFiles(par->pVB);
-//MakeFiles(par->pVB);
-//CompileBins(par->pVB);
-}
-
-//------------------------------------------------------------------------------
-
-void P_builder::Dump(FILE * fp)
-{
-fprintf(fp,"P_builder+++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"Parent         %#08p\n",par);
-if (par!=0) fprintf(fp,"...%s\n",par->FullName().c_str());
-
-fprintf(fp,"P_builder-----------------------------------\n");
-fflush(fp);
-}
-
-//------------------------------------------------------------------------------
-
-void P_builder::Load(const string& name, const string& filename)
-{
-//def->translate(QString::fromStdString(filename), QString::fromStdString(name), par);
-}
-
-//------------------------------------------------------------------------------
-#else
 //==============================================================================
 
 P_builder::P_builder(int argc, char** argv, OrchBase * _p):par(_p),app(argc, argv),defs()
@@ -133,50 +83,6 @@ void P_builder::Load(const string& filename)
   defs[filename] = new I_Graph(QString::fromStdString(filename), par, &app);    // no: then do it here.
   if (defs[filename]->translate(QString::fromStdString(filename), par) != I_Graph::SUCCESS) par->Post(808,filename);
 }
-
-//------------------------------------------------------------------------------
-
-void P_builder::Preplace(P_task* task)
-{
-  // this first naive preplace will sort everything out according to device type.
-  if (!task->linked)
-  {
-    if (par->pE == 0) // no topology?
-    {
-      // we will set up a virtual topology. Compute how many virtual boxes would
-      // be needed.
-      unsigned numCores = 0;
-      for (vector<P_devtyp*>::iterator dev_typ = task->pP_typdcl->P_devtypv.begin(); dev_typ != task->pP_typdcl->P_devtypv.end(); dev_typ++)
-      {
-        unsigned int deviceMem = (*dev_typ)->MemPerDevice();
-        if (deviceMem > BYTES_PER_THREAD)
-        {
-          par->Post(810, (*dev_typ)->Name(), int2str(deviceMem), int2str(BYTES_PER_THREAD));
-          return;
-        }
-        // chunk through devices in blocks equal to the thread size
-        unsigned int devicesPerThread = min(BYTES_PER_THREAD/deviceMem, MAX_DEVICES_PER_THREAD);
-        unsigned int numDevices = task->pD->DevicesOfType(*dev_typ).size();
-        numCores += numDevices/(devicesPerThread*THREADS_PER_CORE);
-        if (numDevices%(devicesPerThread*THREADS_PER_CORE)) ++numCores;
-      }
-      unsigned numBoxes = numCores/(CORES_PER_BOARD*BOARDS_PER_BOX); // number of boxes
-      if (numCores%(CORES_PER_BOARD*BOARDS_PER_BOX)) ++numBoxes;     // one more if needed
-      // Initialise the topology as an N-box Simple system.
-      par->pE = new P_engine("VirtualSystem");
-      par->pE->parent = par;
-      MultiSimpleDeployer deployer(numBoxes);
-      par->Post(138,par->pE->Name());
-      deployer.deploy(par->pE);
-      par->PlacementReset();
-    }
-    if (!par->pPlacer->place(task, "buck")) task->LinkFlag(); // then preplace on the real or virtual board.
-  }
-  // if we need to we could aggregate some threads here to achieve maximum packing by merging partially-full threads.
-}
-
-//------------------------------------------------------------------------------
-
 
 /*------------------------------------------------------------------------------
  * Method to generate the required softswitch source files.

@@ -34,7 +34,6 @@ OrchBase *            par;
 
 private:
 
-void Preplace(GraphI_t*);
 unsigned GenFiles(GraphI_t*);
 unsigned CompileBins(GraphI_t*);
 
