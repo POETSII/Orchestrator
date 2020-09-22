@@ -1,9 +1,9 @@
 #ifndef __ORCHESTRATOR_SOURCE_ORCHBASE_PLACEMENT_PLACER_H
 #define __ORCHESTRATOR_SOURCE_ORCHBASE_PLACEMENT_PLACER_H
 
-/* Describes the encapsulated placement logic, which maps a POETS application
- * (loaded from an XML, presumably) to the POETS hardware stack (specifically,
- * a POETS Engine).
+/* Describes the encapsulated placement logic, which maps a POETS graph
+ * instance (loaded from an XML, presumably) to the POETS hardware stack
+ * (specifically, a POETS Engine).
  *
  * The Placer is a self-contained description of how devices (DevI_t) are
  * placed onto threads (P_thread).
@@ -68,25 +68,24 @@ public:
     std::map<GraphI_t*, std::map<std::pair<DevI_t*, DevI_t*>, float>> \
         giEdgeCosts;
 
-    /* Information on gis that have been placed. */
+    /* Information on graph instances that have been placed. */
     std::map<GraphI_t*, Algorithm*> placedGraphs;
 
-    /* Since each core pair must hold only devices of one type, and since a
-     * device type is bound to a certain gi, it is often useful to identify
-     * the cores (and threads) that contain devices owned by a certain gi. */
+    /* Since each core pair must hold only devices of one type from one graph
+     * instance, it is often useful to identify the cores (and threads) that
+     * contain devices owned by a certain graph instance. */
     std::map<GraphI_t*, std::set<P_core*>> giToCores;
 
-    /* The reverse of the node map in a gi graph - given a device, what is
-     * the key in the graph? */
+    /* The reverse of the node map in a graph instance - given a device, what
+     * is the key in the graph? */
     std::map<DevI_t*, unsigned> deviceToGraphKey;
 
-    /* Check integrity of a placed gi. */
+    /* Check integrity of a placed graph instance. */
     void check_integrity(GraphI_t* gi, Algorithm* algorithm);
     bool are_all_core_pairs_device_locked(GraphI_t* gi,
         std::map<std::pair<P_core*, P_core*>,
                  std::set<DevT_t*>>* badCoresToDeviceTypes);
-    bool are_all_devices_mapped(GraphI_t* gi,
-                                std::vector<DevI_t*>* unmapped);
+    bool are_all_devices_mapped(GraphI_t* gi, std::vector<DevI_t*>* unmapped);
     bool are_all_hard_constraints_satisfied(GraphI_t* gi,
         std::vector<Constraint*>* broken,
         std::vector<DevI_t*> devices = std::vector<DevI_t*>());
@@ -104,8 +103,8 @@ public:
      * we're doing something fundamentally different here. */
     void dump(GraphI_t* gi);
 
-    /* Convenient way to get all boxes mapped with a given gi in the
-     * engine. */
+    /* Convenient way to get all boxes mapped with a given graph instance in
+     * the engine. */
     void get_boxes_for_gi(GraphI_t* gi, std::set<P_box*>* boxes);
 
     /* Convenient way to get all edges (as device-device pairs) that involve a
@@ -117,7 +116,7 @@ public:
     void define_valid_cores_map(GraphI_t* gi,
         std::map<DevT_t*, std::set<P_core*>>* validCoresForDeviceType);
 
-    /* Redistribution of devices within gis or cores. */
+    /* Redistribution of devices within a graph instance at the core level. */
     void redistribute_devices_in_gi(GraphI_t* gi);
     void redistribute_devices_in_core(P_core* core);
 
