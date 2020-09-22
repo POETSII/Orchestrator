@@ -29,7 +29,6 @@ void P_builder::Build(P_task * pT)
 {
   if (!pT) pT = par->P_taskm.begin()->second; // default to the first task
   par->Post(801,pT->Name(),pT->filename);
-  Preplace(pT);                               // Map to the system if necessary
   if (GenFiles(pT)) return;    // Try to generate source files. Bail if we fail.
   CompileBins(pT);
 }
