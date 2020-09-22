@@ -4,16 +4,12 @@
 #include "HardwareModel.h"
 #include "MultiSimpleDeployer.h"
 #include "P_builder.h"
-#include "P_task.h"
-#include "P_devtyp.h"
-#include "P_device.h"
-#include "P_pintyp.h"
-#include "P_pin.h"
 #include "poets_pkt.h"
-#include <sstream>
+
 #include <algorithm>
-#include <set>
 #include <iostream>
+#include <set>
+#include <sstream>
 
 //==============================================================================
 
@@ -2144,4 +2140,3 @@ unsigned P_builder::CompileBins(P_task * task)
 }
 
 //==============================================================================
-#endif
