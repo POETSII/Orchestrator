@@ -46,6 +46,7 @@ void                        OnIdle();
 unsigned                    OnInje(PMsg_p *);
 unsigned                    OnKeyb(PMsg_p *);
 unsigned                    OnLogP(PMsg_p *);
+unsigned                    OnMshipAck(PMsg_p *);
 unsigned                    OnPmap(PMsg_p *);
 unsigned                    OnTest(PMsg_p *);
 unsigned                    ProcCmnd(Cli *);
@@ -53,15 +54,15 @@ static void                 Prompt(FILE * = stdout);
 void                        WriteUheader(Cli *);
 
 public:
-static const char *         prompt;
+map<pair<int, string>, string> mshipAcks;
+static const char *            prompt;
 struct injData_t {
-  unsigned                  flag;
-} injData;
+  unsigned flag;
+}                              injData;
 
-OrchConfig *                pOC;
+OrchConfig *                   pOC;
 };
 
 //==============================================================================
 
 #endif
-

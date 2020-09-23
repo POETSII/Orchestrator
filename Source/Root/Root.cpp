@@ -66,6 +66,13 @@ FnMap[PMsg_p::KEY(Q::TEST         )] = &Root::OnTest;
 FnMap[PMsg_p::KEY(Q::LOG  ,Q::FULL)] = &Root::OnLogP;
 FnMap[PMsg_p::KEY(Q::INJCT,Q::REQ )] = &Root::OnInje;
 FnMap[PMsg_p::KEY(Q::PMAP         )] = &Root::OnPmap;
+
+// Mothership acknowledgements
+FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD)] = &Root::OnMshipAck;
+FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)] = &Root::OnMshipAck;
+FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN )] = &Root::OnMshipAck;
+FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)] = &Root::OnMshipAck;
+
 void * args = this;                    // Spin off a thread to handle keyboard
 pthread_t kb_thread;
 if(pthread_create(&kb_thread,NULL,kb_func,args))
@@ -328,6 +335,30 @@ Post(23,buf);                          // Copy to logfile
 unsigned ret = ProcCmnd(&Pc);          // Try and make sense of it
 Prompt();                              // Console prompt
 return ret;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned Root::OnMshipAck(PMsg_p * Z)
+// Updates the mothership acknowledgement table. The table is primarily
+// intended as a debugging tool, but will be invaluable for orchestrating POETS
+// jobs over multiple boxes.
+{
+    unsigned key = Z->Key();
+    string appName;
+    Z->Get(0, appName);
+    pair<int, string> mshipApp = make_pair(Z->Src(), appName);
+    if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD))
+        mshipAcks[mshipApp] = "DEFINED";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD))
+        mshipAcks[mshipApp] = "READY";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN))
+        mshipAcks[mshipApp] = "RUNNING";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP))
+        mshipAcks[mshipApp] = "STOPPED";
+    else
+        mshipAcks[mshipApp] = "YOU-ARE-NOT-SUPPOSED-TO-BE-HERE";
+    return 0;
 }
 
 //------------------------------------------------------------------------------
