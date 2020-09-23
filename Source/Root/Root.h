@@ -56,6 +56,7 @@ void                        WriteUheader(Cli *);
 public:
 map<pair<int, string>, string> mshipAcks;
 static const char *            prompt;
+static bool                    promptOn;
 struct injData_t {
   unsigned flag;
 }                              injData;

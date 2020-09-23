@@ -15,6 +15,7 @@
 //==============================================================================
 
 const char * Root::prompt = "POETS>";
+bool         Root::promptOn = true;
 
 //------------------------------------------------------------------------------
 
@@ -50,6 +51,7 @@ for(;;) {                              // Superloop
   if (buf[0]==char(4)) break;          // ctrl-d in u$oft-land
 }
 // Tell the user we're leaving immediately.
+Root::promptOn = false;
 printf("Exiting...\n");
 pthread_exit(NULL);                    // Kill the keyboard thread
 return NULL;
@@ -75,7 +77,8 @@ FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)] = &Root::OnMshipAck;
 FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN )] = &Root::OnMshipAck;
 FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)] = &Root::OnMshipAck;
 
-void * args = this;                    // Spin off a thread to handle keyboard
+// Spin off a thread to handle keyboard
+void * args = this;
 pthread_t kb_thread;
 if(pthread_create(&kb_thread,NULL,kb_func,args))
   fprintf(stdout,"Error creating kb_thread\n");
@@ -475,7 +478,7 @@ return code;
 
 void Root::Prompt(FILE * fp)
 {
-if (fp!=stdout) return;
+if (fp!=stdout or !Root::promptOn) return;
 fprintf(fp,"%s",Root::prompt);     // Console prompt
 fflush(fp);
 }
