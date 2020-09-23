@@ -9,6 +9,8 @@
 #include "Root.h"
 #include "XValid.h"
 #include "Pglobals.h"
+#include "SimpleDeployer.h"
+#include "MultiSimpleDeployer.h"
 
 //==============================================================================
 /* This handles the "load" command. The only slight weirdness - see
@@ -77,6 +79,95 @@ else {
 
 //------------------------------------------------------------------------------
 
+void CmLoad::Cm_Engine(Cli::Cl_t cl)
+{
+    std::string op = cl.GetO(0);
+    std::string parameter = cl.GetP(0);
+
+    /* Whatever happens, we're clearing the topology. */
+    par->ClearTopo();
+
+    /* If no argument is passed to this command, the topology is cleared and
+     * nothing else happens. */
+    if (parameter.empty()) return;
+
+    /* Otherwise, identify the engine to load according to the following
+     * rules:
+     *
+     * - If there is no operator, use the parameter as a file path.
+     *
+     * - If the operator is a "+", use the parameter as a file name, and
+     *   prepend that name with a previously-loaded engine path.
+     *
+     * - If the operator is a "?", load a prebaked "special" configuration.
+     */
+
+    if (op == std::string("?"))
+    {
+        if (parameter == "1-box-prototype")
+        {
+            par->pE = new P_engine("Simple [1 box]");
+            par->pE->parent = par;
+            par->pE->Npar(par);
+            SimpleDeployer deployer;
+            par->Post(138, par->pE->Name());
+            deployer.deploy(par->pE);
+        }
+
+        else if (parameter == "2-box-prototype")
+        {
+            par->pE = new P_engine("Simple [2 boxes]");
+            par->pE->parent = par;
+            par->pE->Npar(par);
+            MultiSimpleDeployer deployer(2);
+            par->Post(138, par->pE->Name());
+            deployer.deploy(par->pE);
+        }
+
+        else
+        {
+            par->Post(178, parameter);
+            return;
+        }
+
+        par->PlacementReset();
+        par->BuildMshipMap();
+    }
+
+    else
+    {
+        std::string filePath;
+        if (op == std::string("+"))
+        {
+            filePath = par->pCmPath->pathEngi + parameter;
+        }
+        else filePath = parameter;
+
+        /* Let there be engine. */
+        par->pE = new P_engine("");
+        par->pE->parent = par;
+        par->pE->Npar(par);
+
+        HardwareFileReader reader;
+        try
+        {
+            reader.load_file(filePath.c_str());
+            reader.populate_hardware_model(par->pE);
+            par->PlacementReset();
+            par->Post(140, filePath.c_str());
+            par->BuildMshipMap();
+        }
+        catch (OrchestratorException& exception)
+        {
+            par->Post(141, filePath.c_str(),
+                      ("\n" + exception.message).c_str());
+            par->ClearTopo();
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+
 void CmLoad::Dump(unsigned off,FILE * fp)
 {
 string s(off,' ');
@@ -124,7 +215,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="app" ) { Cm_App(*i);                  continue;  }
   if (sCl=="bcon") { par->Post(247,sCo,sCl,sPa);  continue;  }
   if (sCl=="cons") { par->Post(247,sCo,sCl,sPa);  continue;  }
-  if (sCl=="engi") { par->Post(247,sCo,sCl,sPa);  continue;  }
+  if (sCl=="engi") { Cm_Engine(*i);               continue;  }
   if (sCl=="plac") { par->Post(247,sCo,sCl,sPa);  continue;  }
   if (sCl=="pola") { par->Post(247,sCo,sCl,sPa);  continue;  }
   if (sCl=="pole") { par->Post(247,sCo,sCl,sPa);  continue;  }
@@ -134,4 +225,3 @@ return 0;                              // Legitimate command exit
 }
 
 //==============================================================================
-

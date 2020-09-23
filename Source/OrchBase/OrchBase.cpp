@@ -63,6 +63,75 @@ if (pB!=0)        delete pB;           // Object to build the datastructure
 
 //------------------------------------------------------------------------------
 
+/* Constructs the bimap of mothership processes to boxes in the engine
+ * (OrchBase.P_SCMm2). */
+void OrchBase::BuildMshipMap()
+{
+    std::vector<ProcMap::ProcMap_t>::iterator procIt;
+    std::map<AddressComponent, P_box*>::iterator boxIt;
+    bool foundAMothershipForThisBox;
+
+    /* Start from the first process. */
+    procIt = pPmap->vPmap.begin();
+
+    /* Iterate over each box in the hardware model. */
+    for (boxIt = pE->P_boxm.begin(); boxIt != pE->P_boxm.end(); boxIt++)
+    {
+        /* Find the next available Mothership. We need the rank in order to
+         * store entries in the 'mothershipPayloads' map. */
+        foundAMothershipForThisBox = false;
+
+        /* Find the next available Mothership. */
+        while (procIt != pPmap->vPmap.end() and
+               procIt->P_class != csMOTHERSHIPproc) procIt++;
+
+        /* If we found one, store it. */
+        if (procIt != pPmap->vPmap.end())
+        {
+            P_SCMm2.Add(boxIt->second, &*procIt);
+            foundAMothershipForThisBox = true;
+            procIt++;
+        }
+
+        /* If we didn't find a Mothership for this box, map the box to PNULL
+         * and warn loudly. */
+        if (!foundAMothershipForThisBox)
+        {
+            P_SCMm2.Add(boxIt->second, PNULL);
+            Post(168, boxIt->second->Name().c_str());
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void OrchBase::ClearTopo()
+{
+    if (pE == 0) return;
+    if (pE->FullName().empty())
+    {
+        Post(134, "with no name");
+    }
+    else
+    {
+        Post(134, pE->FullName());
+    }
+    delete pE;
+    pE = 0;
+    PlacementReset();
+}
+
+//------------------------------------------------------------------------------
+
+void OrchBase::PlacementReset(bool post)
+{
+    if (pPlacer == 0) delete pPlacer;
+    if (pE != 0) pPlacer = new Placer(pE);
+    if (post) Post(308);
+}
+
+//------------------------------------------------------------------------------
+
 void OrchBase::Dump(unsigned off,FILE * fp)
 {
 string s(off,' ');

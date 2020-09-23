@@ -19,6 +19,40 @@ CmDump::~CmDump()
 
 //------------------------------------------------------------------------------
 
+void CmDump::Cm_Engine(Cli::Cl_t cl)
+{
+    /* Can't dump an engine if there's no engine to dump, yo. */
+    if (par->pE == PNULL)
+    {
+        par->Post(139);
+        return;
+    }
+
+    /* Figure out the dump path, if any. */
+    std::string op = cl.GetO(0);
+    std::string parameter = cl.GetP(0);
+    std::string filePath;
+    if (op == std::string("+"))
+    {
+        filePath = par->pCmPath->pathEngi + parameter;
+    }
+    else filePath = parameter;
+
+    if (filePath.empty()) par->pE->Dump();
+    else
+    {
+        FILE * fp = fopen(filePath.c_str(), "w");
+        if (fp == PNULL) par->Post(132, filePath);
+        else
+        {
+            par->pE->Dump(fp);
+            fclose(fp);
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+
 void CmDump::Dump(unsigned off,FILE * fp)
 {
 string s(off,' ');
@@ -55,7 +89,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="apps") { Apps_t::DumpAll(f);          continue; }
   if (sCl=="batc") { par->Post(247,sCo,sCl,sPa);  continue; }
   if (sCl=="bina") { par->Post(247,sCo,sCl,sPa);  continue; }
-  if (sCl=="engi") { par->Post(247,sCo,sCl,sPa);  continue; }
+  if (sCl=="engi") { Cm_Engine(*i);                continue; }
   if (sCl=="name") { par->Post(247,sCo,sCl,sPa);  continue; }
   if (sCl=="path") { par->Post(247,sCo,sCl,sPa);  continue; }
   if (sCl=="plac") { par->Post(247,sCo,sCl,sPa);  continue; }
@@ -66,4 +100,3 @@ return 0;                              // Legitimate command exit
 }
 
 //==============================================================================
-

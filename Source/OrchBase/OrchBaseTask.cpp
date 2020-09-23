@@ -11,57 +11,6 @@ struct DistPayload
     std::vector<AddressComponent> threadsExpected;
 };
 
-/* Constructs the bimap of mothership processes to boxes in the engine
- * (OrchBase.P_SCMm2). */
-void OrchBase::BuildMshipMap()
-{
-    unsigned commIndex;
-    std::vector<ProcMap::ProcMap_t>::iterator procIt;
-    std::map<AddressComponent, P_box*>::iterator boxIt;
-    bool foundAMothershipForThisBox;
-
-    /* Start from the first process on the first communicator. */
-    commIndex = 0;
-    procIt = pPmap[commIndex]->vPmap.begin();
-
-    /* Iterate over each box in the hardware model. */
-    for (boxIt = pE->P_boxm.begin(); boxIt != pE->P_boxm.end(); boxIt++)
-    {
-        /* Find the next available Mothership across all communicators. We need
-         * the rank in order to store entries in the 'mothershipPayloads'
-         * map. */
-        foundAMothershipForThisBox = false;
-        while (commIndex < Comms.size())
-        {
-            /* Find the next available Mothership in this communicator. */
-            while (procIt != pPmap[commIndex]->vPmap.end() and
-                   procIt->P_class != csMOTHERSHIPproc) procIt++;
-
-            /* If we found one, leave the loop (usual case). Otherwise, search
-             * the next communicator.*/
-            if (procIt != pPmap[commIndex]->vPmap.end())
-            {
-                P_SCMm2.Add(boxIt->second,
-                            std::make_pair(Comms[commIndex], &*procIt));
-                foundAMothershipForThisBox = true;
-                procIt++;
-                break;
-            }
-            else commIndex++;
-        }
-
-        /* If we didn't find a Mothership for this box, map the box to 0, NULL
-         * and warn loudly. */
-        if (!foundAMothershipForThisBox)
-        {
-            P_SCMm2.Add(boxIt->second,
-                        std::make_pair<unsigned, ProcMap::ProcMap_t*>
-                        (0, PNULL));
-            Post(168, boxIt->second->Name().c_str());
-        }
-    }
-}
-
 //------------------------------------------------------------------------------
 
 void OrchBase::ClearDcls()

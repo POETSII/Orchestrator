@@ -262,13 +262,6 @@ void OrchBase::PlacementLoad(Cli::Cl_t clause)
     return;
 }
 
-void OrchBase::PlacementReset(bool post)
-{
-    if (pPlacer == 0) delete pPlacer;
-    if (pE != 0) pPlacer = new Placer(pE);
-    if (post) Post(308);
-}
-
 void OrchBase::PlacementUnplace(Cli::Cl_t clause)
 {
     /* Skip (and post) if there is not exactly one parameter (i.e. task). */

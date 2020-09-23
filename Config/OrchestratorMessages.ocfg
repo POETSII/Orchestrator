@@ -74,6 +74,9 @@
 136(I) : "Whatever you asked for, it's not working yet"
 137(I) : "Topology default file path is ||%s||"
 138(I) : "Creating topology ||%s||"
+139(W) : "No topology is loaded."
+140(I) : "Topology loaded from file ||%s||."
+141(E) : "Errors encountered loading hardware input file at ||%s||:%s"
 151(W) : "Attempt to xlink task %s when no topology exists"
 152(W) : "Attempt to xlink non-existent task %s"
 153(W) : "Attempt to xlink task %s - it's already linked"
@@ -102,6 +105,7 @@
 175(E) : "NameServer: Search for %s %s unsuccessful"
 176(E) : "NameServer: Search for %s %s by address unsuccessful"
 177(I) : "Attribute fishing is not yet supported"
+178(W) : "Unknown baked-in engine '%s'. Try '1-box-prototype' or '2-box-prototype'."
 
 201(E) : "... failed %s with %s errors in %s msecs"
 202(I) : "Task: %s file: %s returns %s errors."

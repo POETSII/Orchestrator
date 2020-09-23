@@ -3,7 +3,6 @@
 
 class P_builder;
 class P_super;
-class Dialect1Deployer;
 
 #include <stdio.h>
 #include "GraphI_t.h"
@@ -44,6 +43,10 @@ public:
 virtual ~              OrchBase();
 void                   Dump(unsigned = 0,FILE * = stdout);
 
+void                   BuildMshipMap();
+void                   ClearTopo();
+void                   PlacementReset(bool post=false);
+
 P_engine *             pE;             // Poets engine (hardware model)
 Placer *               pPlacer;        // Cross-linker
 P_builder *            pB;             // Object to build the datastructure
@@ -51,9 +54,8 @@ Trace                  Tr;             // Debug trace subsystem
 FILE *                 fd;             // Output file stream for details
 
 // Bimap of boxes to motherships, where the pair holds unique processes by
-// their communicator and procmap entry. Yes, the name is an attempt at
-// facetiousness.
-map2<P_box *, pair<unsigned, ProcMap::ProcMap_t *> > P_SCMm2;
+// their procmap entry. Yes, the name is an attempt at facetiousness.
+map2<P_box *, ProcMap::ProcMap_t *> P_SCMm2;
 
 CmBuil *               pCmBuil;
 CmCall *               pCmCall;

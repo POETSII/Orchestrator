@@ -21,6 +21,7 @@ public :
 virtual ~     CmLoad();
 
 void          Cm_App(Cli::Cl_t);
+void          Cm_Engine(Cli::Cl_t);
 void          Dump(unsigned = 0,FILE * = stdout);
 void          Show(FILE *);
 unsigned      operator()(Cli *);

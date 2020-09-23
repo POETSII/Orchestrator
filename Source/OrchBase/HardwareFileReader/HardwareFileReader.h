@@ -70,6 +70,8 @@
 #include <string.h>
 #include <vector>
 
+class Dialect1Deployer;
+
 #include "Dialect1Deployer.h"
 #include "HardwareAddressFormat.h"
 #include "HardwareAddress.h"
