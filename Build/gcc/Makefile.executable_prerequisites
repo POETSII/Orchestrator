@@ -157,7 +157,8 @@ ROOT_SOURCES += $(PLACEMENT_SOURCES)
 
 # Add (almost) all of the sources from OrchBase and Parser.
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)
-ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/Parser/*.cpp)
+ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/AppStructures/*.cpp)
+ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/Handlers/*.cpp)
 
 # These four files are not translation units, so they cannot be compiled into
 # objects and are included by OrchBase.cpp (this was done to reduce the size of
