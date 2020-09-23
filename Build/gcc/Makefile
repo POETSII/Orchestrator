@@ -9,9 +9,9 @@ SHELL = /bin/bash
 # Smart directory creation.
 MKDIR = mkdir --parents
 
-# Software dependencies (MPI, Qt, etc.) are largely hardcoded, because I'm too
-# short on time to write an autoconf wrapper or some other dependency
-# management system.
+# Software dependencies (e.g. MPI) are largely hardcoded, because I'm too short
+# on time to write an autoconf wrapper or some other dependency management
+# system.
 #
 # If you are a user, you should modify the Makefile.dependencies file in this
 # directory to correctly path to the dependencies required to build the
@@ -86,8 +86,6 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/Softswitch/inc \
                 -I$(SOURCE_DIR)/Supervisor \
                 -I$(MPICH_INC_DIR) \
-                -I$(QT_INC_DIR) \
-                -I$(QT_INC_DIR)/QtCore \
                 -I$(TINSEL_INC_DIR) \
                 -I$(TINSEL_HOSTLINK_DIR)
 
@@ -144,17 +142,15 @@ tests: $(ALL_TESTS) $(TEST_SCRIPT)
 $(LAUNCHER_EXECUTABLE) $(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) \
 $(LOGSERVER_EXECUTABLE) $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
-	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
-        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
+	$(CXX) -pthread -L$(MPICH_LIB_DIR) -L/usr/lib \
         -o $@ $^ \
-        -lQt5Core -lmpi -lpthread
+        -lmpi -lpthread
 
 $(ALL_TESTS):
 	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
-	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
-        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
+	$(CXX) -pthread -L$(MPICH_LIB_DIR) -L/usr/lib \
         -o $@ $^ \
-        -lQt5Core -lmpi -lpthread
+        -lmpi -lpthread
 
 $(TEST_SCRIPT): $(TEST_SCRIPT_RESOURCE)
 	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
@@ -162,11 +158,9 @@ $(TEST_SCRIPT): $(TEST_SCRIPT_RESOURCE)
 
 $(MOTHERSHIP_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
-	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
-        -Wl,-export-dynamic \
-        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
+	$(CXX) -pthread -Wl,-export-dynamic -L$(MPICH_LIB_DIR) -L/usr/lib \
         -o $@ $^ $(TINSEL_HOSTLINK_DIR)/*.o \
-        -lQt5Core -lmpi -lpthread -ldl
+        -lmpi -lpthread -ldl
 
 # Object generation. Note: The move command installs the assembled dependency
 # file (see *Note 1*). The touch updates the timestamp on the target (to avoid
@@ -197,7 +191,6 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 	declare -A SUBSTITUTIONS=(\
         ["MPICH_DIR"]="$(realpath $(MPICH_DIR))" \
 		["MPICH_LIB_DIR"]="$(realpath $(MPICH_LIB_DIR))" \
-		["QT_LIB_DIR"]="$(realpath $(QT_LIB_DIR))" \
 		["GCC_LIB_DIR"]="$(realpath $(GCC_LIB_DIR))" \
 		["CR_LIB_DIR"]="$(realpath $(CR_LIB_DIR))" \
 		["RISCV_DIR"]="$(realpath $(RISCV_DIR))" \
