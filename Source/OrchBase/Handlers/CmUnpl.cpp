@@ -46,11 +46,10 @@ unsigned CmUnpl::operator()(Cli * pC)
 if (pC==0) return 0;                   // Paranoia
 WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   string sCl = (*i).Cl;                // Pull out clause name
-  if (sCl=="app" ) { par->Post(247,pC->Co,sCl,(*i).GetP()); continue; }
+  if (sCl=="app" ) { par->pCmPlac->PlacementUnplace(*i); continue; } // Cheating
   par->Post(25,sCl,"unplace");           // Unrecognised clause
 }
 return 0;                              // Legitimate command exit
 }
 
 //==============================================================================
-
