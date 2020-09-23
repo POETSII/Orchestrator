@@ -8,6 +8,7 @@
  * - name: Name of this core object (see namebase) */
 P_core::P_core(std::string name)
 {
+    parent = PNULL;
     Name(name);
     pair = PNULL;
 }

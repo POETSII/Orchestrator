@@ -25,8 +25,8 @@
 OrchBase::OrchBase(int argc,char * argv[],string d,string sfile) :
   CommonBase(argc,argv,d,sfile)
 {
-pE        = 0;
-pPlacer   = 0;
+pE        = PNULL;
+pPlacer   = PNULL;
 pB        = new P_builder(this);       // Object to build the datastructure
 Name("O_");                            // NameBase root name
 
@@ -56,9 +56,9 @@ taskpath  = string(" ");
 
 OrchBase::~OrchBase()
 {
-if (pE!=0)        delete pE;           // Destroy the engine
-if (pPlacer!=0)   delete pPlacer;      // Destroy the placer
-if (pB!=0)        delete pB;           // Object to build the datastructure
+if (pE != PNULL) delete pE;           // Destroy the engine
+if (pPlacer != PNULL) delete pPlacer; // Destroy the placer
+if (pB != PNULL) delete pB;           // Object to build the datastructure
 }
 
 //------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ void OrchBase::BuildMshipMap()
 
 void OrchBase::ClearTopo()
 {
-    if (pE == 0) return;
+    if (pE == PNULL) return;
     if (pE->FullName().empty())
     {
         Post(134, "with no name");
