@@ -8,12 +8,12 @@ unsigned OrchBase::CmPlace(Cli* cli)
      * loaded, so we catch that early. */
     if (pE == 0)
     {
-        Post(200);
+        Post(300);
         return 0;
     }
     if (pE->is_empty())
     {
-        Post(200);
+        Post(300);
         return 0;
     }
 
@@ -35,7 +35,7 @@ unsigned OrchBase::CmPlace(Cli* cli)
          * something a bit silly. */
         else if (clauseRoot == "rese")
         {
-            if (!clause->Pa_v.empty()) Post(215);
+            if (!clause->Pa_v.empty()) Post(315);
             /* Argument supports shameless code reuse. */
             else PlacementReset(true);
         }
@@ -74,7 +74,7 @@ void OrchBase::PlacementConstrain(Cli::Cl_t clause)
          * parameter is the constraining value. */
         if (clause.Pa_v.size() != 2)
         {
-            Post(221, clause.Pa_v[0].Val, "1", clause.Pa_v[1].Val);
+            Post(321, clause.Pa_v[0].Val, "1", clause.Pa_v[1].Val);
             return;
         }
 
@@ -98,7 +98,7 @@ void OrchBase::PlacementConstrain(Cli::Cl_t clause)
         pPlacer->constraints.push_back(
             new MaxDevicesPerThread(true, 0, PNULL,
                                     str2uint(clause.Pa_v[1].Val)));
-        Post(222, clause.Pa_v[1].Val);
+        Post(322, clause.Pa_v[1].Val);
     }
 
     else if (Cli::StrEq(clause.Pa_v[0].Val, "MaxThreadsPerCore", 20))
@@ -107,7 +107,7 @@ void OrchBase::PlacementConstrain(Cli::Cl_t clause)
          * parameter is the constraining value. */
         if (clause.Pa_v.size() != 2)
         {
-            Post(221, clause.Pa_v[0].Val, "1", clause.Pa_v[1].Val);
+            Post(321, clause.Pa_v[0].Val, "1", clause.Pa_v[1].Val);
             return;
         }
 
@@ -131,10 +131,10 @@ void OrchBase::PlacementConstrain(Cli::Cl_t clause)
         pPlacer->constraints.push_back(
             new MaxThreadsPerCore(true, 0, PNULL,
                                   str2uint(clause.Pa_v[1].Val)));
-        Post(223, clause.Pa_v[1].Val);
+        Post(323, clause.Pa_v[1].Val);
     }
 
-    else Post(220, clause.Pa_v[0].Val);
+    else Post(320, clause.Pa_v[0].Val);
 }
 
 /* Returns true if the clause was valid (or some other error happened), and
@@ -156,9 +156,9 @@ bool OrchBase::PlacementDoit(Cli::Cl_t clause)
     /* Have a pop. */
     try
     {
-        Post(209, taskHandle, clause.Cl);
+        Post(309, taskHandle, clause.Cl);
         pPlacer->place(task, clause.Cl);
-        Post(202, taskHandle);
+        Post(302, taskHandle);
     }
     catch (InvalidAlgorithmDescriptorException&)
     {
@@ -166,12 +166,12 @@ bool OrchBase::PlacementDoit(Cli::Cl_t clause)
                         * we need to be consistent with other Orchestrator
                         * commands. */
     }
-    catch (AlreadyPlacedException&) {Post(203, taskHandle);}
-    catch (BadIntegrityException& e) {Post(204, taskHandle, e.message);}
-    catch (CostCacheException& e) {Post(216, taskHandle, e.message);}
-    catch (FileOpenException& e) {Post(218, taskHandle, e.message);}
-    catch (NoEngineException&) {Post(205, taskHandle);}
-    catch (NoSpaceToPlaceException&) {Post(206, taskHandle);}
+    catch (AlreadyPlacedException&) {Post(303, taskHandle);}
+    catch (BadIntegrityException& e) {Post(304, taskHandle, e.message);}
+    catch (CostCacheException& e) {Post(316, taskHandle, e.message);}
+    catch (FileOpenException& e) {Post(318, taskHandle, e.message);}
+    catch (NoEngineException&) {Post(305, taskHandle);}
+    catch (NoSpaceToPlaceException&) {Post(306, taskHandle);}
     return true;
 }
 
@@ -194,24 +194,24 @@ void OrchBase::PlacementDump(Cli::Cl_t clause)
     tasksIt = pPlacer->placedTasks.find(task);
     if (tasksIt == pPlacer->placedTasks.end())
     {
-        Post(211, taskHandle);
+        Post(311, taskHandle);
         return;
     }
 
     /* If the task has a placement score of zero, warn the user that the dump
      * will take a while, because we need to calculate that to make the dump
      * meaningful. */
-    if (tasksIt->second->result.score == 0) Post(212, taskHandle);
+    if (tasksIt->second->result.score == 0) Post(312, taskHandle);
 
     /* Have a pop. */
     try
     {
         pPlacer->dump(task);
-        Post(210, taskHandle);
+        Post(310, taskHandle);
     }
-    catch (PthreadException& e) {Post(213, e.message);}
-    catch (CostCacheException& e) {Post(217, e.message);}
-    catch (FileOpenException& e) {Post(219, e.message);}
+    catch (PthreadException& e) {Post(313, e.message);}
+    catch (CostCacheException& e) {Post(317, e.message);}
+    catch (FileOpenException& e) {Post(319, e.message);}
 }
 
 /* Shortcut method to get a task object from its handle. */
@@ -221,7 +221,7 @@ P_task* OrchBase::PlacementGetTaskByName(std::string taskHandle)
         P_taskm.find(taskHandle);
     if (taskFinder == P_taskm.end())
     {
-        Post(201, taskHandle);
+        Post(301, taskHandle);
         return PNULL;
     }
     else
@@ -251,14 +251,14 @@ void OrchBase::PlacementLoad(Cli::Cl_t clause)
     /* Have a pop. */
     try
     {
-        Post(214, path, taskHandle);
+        Post(314, path, taskHandle);
         pPlacer->place_load(task, path);
-        Post(202, taskHandle);
+        Post(302, taskHandle);
     }
-    catch (AlreadyPlacedException&) {Post(203, taskHandle);}
-    catch (BadIntegrityException& e) {Post(204, taskHandle, e.message);}
-    catch (NoEngineException&) {Post(205, taskHandle);}
-    catch (NoSpaceToPlaceException&) {Post(206, taskHandle);}
+    catch (AlreadyPlacedException&) {Post(303, taskHandle);}
+    catch (BadIntegrityException& e) {Post(304, taskHandle, e.message);}
+    catch (NoEngineException&) {Post(305, taskHandle);}
+    catch (NoSpaceToPlaceException&) {Post(306, taskHandle);}
     return;
 }
 
@@ -266,7 +266,7 @@ void OrchBase::PlacementReset(bool post)
 {
     if (pPlacer == 0) delete pPlacer;
     if (pE != 0) pPlacer = new Placer(pE);
-    if (post) Post(208);
+    if (post) Post(308);
 }
 
 void OrchBase::PlacementUnplace(Cli::Cl_t clause)
@@ -287,5 +287,5 @@ void OrchBase::PlacementUnplace(Cli::Cl_t clause)
      * whine if the task exists and has not been placed. It's an idempotent
      * method that ensures the task has no presence in the placer. */
     pPlacer->unplace(task);
-    Post(207, taskHandle);
+    Post(307, taskHandle);
 }
