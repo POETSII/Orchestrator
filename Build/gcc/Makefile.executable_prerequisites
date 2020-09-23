@@ -16,11 +16,13 @@
 #
 # These common sources also require some sources from /Generics.
 TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
+                       $(SOURCE_DIR)/Common/Debug.cpp \
                        $(SOURCE_DIR)/Common/Environment.cpp \
                        $(SOURCE_DIR)/Common/Pglobals.cpp \
                        $(SOURCE_DIR)/Common/PMsg_p.cpp \
                        $(SOURCE_DIR)/Common/ProcMap.cpp \
                        $(SOURCE_DIR)/Common/Unrec_t.cpp \
+                       $(GENERICS_DIR)/dfprintf.cpp \
                        $(GENERICS_DIR)/flat.cpp \
                        $(GENERICS_DIR)/Msg_p.cpp \
                        $(GENERICS_DIR)/NameBase.cpp
@@ -139,7 +141,6 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(SOURCE_DIR)/Root/Root.cpp \
                $(SOURCE_DIR)/Root/OrchConfig.cpp \
                $(GENERICS_DIR)/Cli.cpp \
-               $(GENERICS_DIR)/dfprintf.cpp \
                $(GENERICS_DIR)/DumpChan.cpp \
                $(GENERICS_DIR)/FileName.cpp \
                $(GENERICS_DIR)/lex.cpp \
@@ -190,7 +191,6 @@ DUMMY_SOURCES += $(TRULY_COMMON_SOURCES)
 #
 LOGSERVER_SOURCES = $(SOURCE_DIR)/LogServer/LogServerMain.cpp \
                     $(SOURCE_DIR)/LogServer/LogServer.cpp \
-                    $(GENERICS_DIR)/dfprintf.cpp \
                     $(GENERICS_DIR)/jnj.cpp \
                     $(GENERICS_DIR)/lex.cpp \
                     $(GENERICS_DIR)/uif.cpp
@@ -213,7 +213,6 @@ LOGSERVER_MESSAGE_FILE_ORIGIN = $(SOURCE_DIR)/OrchestratorMessages.txt
 RTCL_SOURCES = $(SOURCE_DIR)/RTCL/RTCLMain.cpp \
                $(SOURCE_DIR)/RTCL/RTCL.cpp \
                $(GENERICS_DIR)/Cli.cpp \
-               $(GENERICS_DIR)/dfprintf.cpp \
                $(GENERICS_DIR)/lex.cpp
 
 RTCL_SOURCES += $(TRULY_COMMON_SOURCES)
@@ -230,7 +229,6 @@ RTCL_SOURCES += $(TRULY_COMMON_SOURCES)
 INJECTOR_SOURCES = $(SOURCE_DIR)/Injector/InjectorMain.cpp \
                    $(SOURCE_DIR)/Injector/Injector.cpp \
                    $(GENERICS_DIR)/Cli.cpp \
-                   $(GENERICS_DIR)/dfprintf.cpp \
                    $(GENERICS_DIR)/lex.cpp
 
 INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
@@ -262,8 +260,6 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
                      $(SOURCE_DIR)/Mothership/ThreadComms.cpp \
                      $(SOURCE_DIR)/Mothership/ThreadLogic.cpp \
-                     $(SOURCE_DIR)/Common/Debug.cpp \
-                     $(GENERICS_DIR)/dfprintf.cpp
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 

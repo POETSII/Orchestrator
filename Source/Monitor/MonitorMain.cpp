@@ -1,5 +1,6 @@
 //------------------------------------------------------------------------------
 
+#include "Debug.h"
 #include "Monitor.h"
 #include "Unrec_t.h"
 #include "Pglobals.h"
@@ -24,8 +25,7 @@ catch(...) {
   printf("\n\n%s Main unhandled exception...???   \n\n",csMONITORproc);
   fflush(stdout);
 }
-printf("%s Main closing down\n",csMONITORproc);
-fflush(stdout);
+DebugPrint("%s Main closing down.\n",csMONITORproc);
 delete pMonitor;
 return 0;
 }

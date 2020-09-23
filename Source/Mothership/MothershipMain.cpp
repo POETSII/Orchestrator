@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "Debug.h"
 #include "Mothership.h"
 #include "OSFixes.hpp"
 #include "Unrec_t.h"
@@ -27,8 +28,10 @@ int main(int argc, char** argv)
         fprintf(stderr, "MOTHERSHIP UNHANDLED EXCEPTION!\n");
     }
 
-    printf("%s (%s) Main closing down\n", csMOTHERSHIPproc,
+    #ifdef ORCHESTRATOR_DEBUG
+    printf("%s (%s) Main closing down.\n", csMOTHERSHIPproc,
            OSFixes::get_hostname().c_str());
+    #endif
 
     return 0;
 }

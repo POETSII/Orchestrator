@@ -1,5 +1,6 @@
 //------------------------------------------------------------------------------
 
+#include "Debug.h"
 #include "Injector.h"
 #include "Unrec_t.h"
 #include "Pglobals.h"
@@ -24,11 +25,9 @@ catch(...) {
   printf("\n\n%s Main unhandled exception...???   \n\n",csINJECTORproc);
   fflush(stdout);
 }
-printf("%s main() closing down\n",csINJECTORproc);
-fflush(stdout);
+DebugPrint("%s Main closing down.\n",csINJECTORproc);
 delete pInjector;
 return 0;
 }
 
 //------------------------------------------------------------------------------
- 

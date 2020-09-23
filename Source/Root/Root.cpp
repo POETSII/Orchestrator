@@ -327,9 +327,11 @@ if (l>=0) {                            // Handle any syntax errors locally
   string el = string(strlen(prompt),' ');
   el += string(c-1,' ') + "^^^";
   printf("%s\nCommand line syntax error - line ignored by POETS\n",el.c_str());
+  /* This really requires more thought... errors, stdout, stderr, piping...
+   * I found this because I compiled under gcc 9.3.0, which raises a warning.
   printf("...trying OS command shell:\n\n");
   system(buf);
-  printf("\n");
+  printf("\n"); */
   Prompt();                            // Console prompt
   return 0;                            // Bail with "not closedown" value
 }

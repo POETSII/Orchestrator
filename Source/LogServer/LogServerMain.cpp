@@ -1,5 +1,6 @@
 //------------------------------------------------------------------------------
 
+#include "Debug.h"
 #include "LogServer.h"
 #include "Unrec_t.h"
 #include "Pglobals.h"
@@ -24,11 +25,9 @@ catch(...) {
   printf("\n\n%s Main unhandled exception...???   \n\n",csLOGSERVERproc);
   fflush(stdout);
 }
-printf("%s Main closing down\n",csLOGSERVERproc);
-fflush(stdout);
+DebugPrint("%s Main closing down.\n",csLOGSERVERproc);
 delete pLogServer;
 return 0;
 }
 
 //------------------------------------------------------------------------------
- 

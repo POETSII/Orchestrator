@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
 
 #include <stdio.h>
+#include "Debug.h"
 #include "RTCL.h"
 #include "Unrec_t.h"
 #include "Pglobals.h"
@@ -24,11 +25,9 @@ catch(...) {
   printf("\n\n%s Main unhandled exception...???   \n\n",csRTCLproc);
   fflush(stdout);
 }
-printf("%s Main closing down\n",csRTCLproc);
-fflush(stdout);
+DebugPrint("%s Main closing down.\n",csRTCLproc);
 delete pRTCL;
 return 0;
 }
 
 //------------------------------------------------------------------------------
-

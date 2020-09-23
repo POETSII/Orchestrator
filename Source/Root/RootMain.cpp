@@ -1,5 +1,6 @@
 //------------------------------------------------------------------------------
 
+#include "Debug.h"
 #include "Root.h"
 #include "Environment.h"
 #include "Unrec_t.h"
@@ -51,10 +52,8 @@ catch(...) {
 }
 
 delete pRoot;
-printf("%s Main closing down...\n",csROOTproc);
-fflush(stdout);
+DebugPrint("%s Main closing down.\n",csROOTproc);
 return 0;
-
 }
 
 //------------------------------------------------------------------------------

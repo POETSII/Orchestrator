@@ -7,7 +7,7 @@
 021(I) : "Ping %s from %s(rank %s) to %s(rank %s) took %s wallclock secs"
 022(I) : ""
 023(I) : "%s"
-024(W) : "Command line ||%s|| unintelligible...trying OS command shell:"
+024(W) : "Command line ||%s|| unintelligible..."
 025(E) : "Unknown clause (%s) in %s command"
 026(I) : "Date: %s Time: %s"
 027(I) : "Ping launch attempt %s"
