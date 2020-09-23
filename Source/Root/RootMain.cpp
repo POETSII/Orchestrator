@@ -51,10 +51,8 @@ catch(...) {
 }
 
 delete pRoot;
-printf("%s Main closing down\n"
-       "Hit a key to leave POETS Orchestrator...\n",csROOTproc);
+printf("%s Main closing down...\n",csROOTproc);
 fflush(stdout);
-getchar();
 return 0;
 
 }
