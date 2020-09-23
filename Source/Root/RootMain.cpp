@@ -12,6 +12,12 @@ using namespace std;
 
 int main(int argc, char * argv[])
 {
+#ifdef ORCHESTRATOR_DEBUG
+printf("Attach debugger (Root process %d (%#0x)), hit <return>.....\n",
+       GetPID(),GetPID());
+fflush(stdout);
+getchar();
+#else
 Cli cl(argc,argv);                     // Interpret any command line
 int l,c;
 cl.Err(l,c);
@@ -22,9 +28,11 @@ if (l<0) {                             // No errors?
              GetPID(),GetPID());
       fflush(stdout);
       getchar();
+      break;
     }
   }
 }
+#endif
 Root * pRoot = 0;
 try {
   pRoot = new Root(argc,argv,string(csROOTproc));
@@ -52,4 +60,3 @@ return 0;
 }
 
 //------------------------------------------------------------------------------
-
