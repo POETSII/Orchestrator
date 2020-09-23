@@ -72,6 +72,60 @@ if(pthread_create(&kb_thread,NULL,kb_func,args))
   fprintf(stdout,"Error creating kb_thread\n");
 fflush(stdout);
 
+/* Handle input arguments - grab the hdfPath and/or batchPath. */
+std::string rawArgs;
+std::string hdfPath;
+std::string batchPath;
+for (int i=1; i<argc; i++)
+{
+  rawArgs += argv[i];
+  rawArgs += " ";
+}
+
+Cli cli(rawArgs);
+int row, column;
+cli.Err(row, column);
+if (row != -1)
+{
+  printf("Command-line error near character '%d'. Ignoring non-debug "
+         "commandline arguments.\n", cli.problem.col);
+}
+else
+{
+  WALKVECTOR(Cli::Cl_t, cli.Cl_v, i)
+  {
+    std::string key = i->Cl;
+    if (key=="batch") batchPath = i->GetP(0);
+    if (key=="hdf") hdfPath = i->GetP(0);
+  }
+}
+
+/* Queue batch message, if one was given to us. We do this by staging a Cli
+ * entry using the batch system (see Root::OnIdle). */
+if (!batchPath.empty())
+{
+  pCmCall->Equeue.push_front(Cli(dformat(
+    "call /file = \"%s\"", batchPath.c_str())));
+}
+
+/* Pass hardware description file to topology generation, if one was given to
+ * us. We do this by staging a Cli entry using the batch system (see
+ * Root::OnIdle).
+ *
+ * The reason we do this (as opposed to simply calling TopoLoad) is because we
+ * haven't built the process map yet - as a consequence, we do not know the
+ * rank of the LogServer processes, and so can't Post in the event of an error.
+ * By staging the Cli entry onto the front of the batch queue, we can be sure
+ * that MPISpinner will drain the input buffer before running our
+ * command. Since that input buffer will contain messages that will register
+ * all processes into our pPmap, we know we will have the logserver rank,
+ * making Post work correctly. */
+if (!hdfPath.empty())
+{
+  pCmCall->Equeue.push_front(Cli(dformat(
+    "load /engine = \"%s\"", hdfPath.c_str())));
+}
+
 MPISpinner();                          // Spin on *all* messages; exit on DIE
 }
 
