@@ -21,6 +21,22 @@ CmShow::~CmShow()
 
 //------------------------------------------------------------------------------
 
+void CmShow::Cm_Engine(FILE* fp)
+{
+    if (par->pE == PNULL) fprintf(fp, "No engine (hardware model) loaded.\n");
+    else fprintf(fp,
+                 "Engine '%s' loaded:\n"
+                 "Author: %s\n"
+                 "Version: %s\n"
+                 "From file (may be built-in): %s\n",
+                 par->pE->Name().c_str(),
+                 par->pE->author.c_str(),
+                 par->pE->version.c_str(),
+                 par->pE->fileOrigin.c_str());
+}
+
+//------------------------------------------------------------------------------
+
 void CmShow::Dump(FILE * fp)
 {
 fprintf(fp,"CmShow+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
@@ -46,7 +62,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="apps") { Apps_t::Show(f);             continue;  }
   if (sCl=="batc") { par->pCmCall->Show(f);       continue;  }
   if (sCl=="bina") { par->Post(247,sCo,sCl,sPa);  continue;  }
-  if (sCl=="engi") { par->Post(247,sCo,sCl,sPa);  continue;  }
+  if (sCl=="engi") { Cm_Engine(f);                continue;  }
   if (sCl=="name") { par->Post(247,sCo,sCl,sPa);  continue;  }
   if (sCl=="pars") { par->pCmLoad->Show(f);       continue;  }
   if (sCl=="path") { par->pCmPath->Show(f);       continue;  }
@@ -63,4 +79,3 @@ return 0;                              // Legitimate command exit
 }
 
 //==============================================================================
-

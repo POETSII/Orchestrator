@@ -16,6 +16,8 @@ public:
               CmShow(OrchBase *);
 virtual ~     CmShow();
 
+void          Cm_Engine(FILE*);
+
 void          Dump(FILE * = stdout);
 unsigned      operator()(Cli *);
 
