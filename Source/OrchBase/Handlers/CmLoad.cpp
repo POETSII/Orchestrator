@@ -104,7 +104,7 @@ void CmLoad::Cm_Engine(Cli::Cl_t cl)
 
     if (op == std::string("?"))
     {
-        if (parameter == "1-box-prototype")
+        if (parameter == "1_box_prototype")
         {
             par->pE = new P_engine("Simple [1 box]");
             par->pE->parent = par;
@@ -114,7 +114,7 @@ void CmLoad::Cm_Engine(Cli::Cl_t cl)
             deployer.deploy(par->pE);
         }
 
-        else if (parameter == "2-box-prototype")
+        else if (parameter == "2_box_prototype")
         {
             par->pE = new P_engine("Simple [2 boxes]");
             par->pE->parent = par;
