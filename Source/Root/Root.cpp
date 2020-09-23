@@ -49,6 +49,8 @@ for(;;) {                              // Superloop
   if (buf[0]==char(0)) break;          // ctrl-d in linux-land
   if (buf[0]==char(4)) break;          // ctrl-d in u$oft-land
 }
+// Tell the user we're leaving immediately.
+printf("Exiting...\n");
 pthread_exit(NULL);                    // Kill the keyboard thread
 return NULL;
 }
