@@ -213,7 +213,7 @@ char buf[SIZE];
 for(int L=1;;L++) {                    // One line at a time....
   char * ps = fgets(buf,SIZE-1,fp);    // Pull in the data; ends with "\n\0"
   if (ps==0) break;                    // EOF?
-                                       // Lose the '\n'  
+                                       // Lose the '\n'
   for (unsigned i=0;i<SIZE;i++) if (ps[i]=='\n') ps[i]='\0';
   Cli C(ps);                           // Build a single Cli object
   if (C.problem.lin>=0) {              // Line translation not OK:
@@ -287,6 +287,20 @@ WALKVECTOR(Cl_t,Cl_v,i) {              // Do the same for the clause vector
 
 //= = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = = =
 
+string Cli::Pa_t::Concatenate()
+// Returns concatenated copy of elements in the parameter vector.
+{
+string cat = "";
+WALKVECTOR(string,Va_v,i)
+{
+if(i!=Va_v.begin()) cat+="::";
+cat+=*i;
+}
+return cat;
+}
+
+//------------------------------------------------------------------------------
+
 void Cli::Pa_t::Dump(FILE * fp,unsigned p)
 {
 fprintf(fp,"    Pa_v[%u] = ||%s||--||",p,Op.c_str());
@@ -336,4 +350,3 @@ return Get<Cli::Pa_t>(Pa_v,i,Cli::Pa_t("",s)).second.Va_v;
 }
 
 //==============================================================================
-

@@ -262,15 +262,7 @@ int OrchBase::GetGraphIs(Cli::Cl_t clause, std::set<GraphI_t*>& graphs)
         else
         {
             graphs.clear();
-            std::string weirdParam = "";
-            std::vector<std::string>::iterator chunk;
-            for (chunk = paramIt->Va_v.begin(); chunk != paramIt->Va_v.end();
-                 chunk++)
-            {
-                if (chunk != paramIt->Va_v.begin()) weirdParam += "::";
-                weirdParam += *chunk;
-            }
-            Post(176, weirdParam);
+            Post(176, paramIt->Concatenate());
             return 1;
         }
     }

@@ -49,6 +49,7 @@ string             Co;                 // Command
 struct Pa_t {                          // Parameter holder
   Pa_t(){}
   Pa_t(string _O,string _V):Op(_O) { Va_v.push_back(_V); }
+  string           Concatenate();      // Returns concatenated copy
   void             Dump(FILE * = stdout,unsigned=0);
   string           Op;                 // Parameter operator
   vector<string>   Va_v;               // Parameter name vector
