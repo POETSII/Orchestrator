@@ -166,6 +166,7 @@
 321(W) : "Constraint '%s' requires exactly %s parameter(s), but %s parameter(s) were passed."
 322(I) : "Constraining the maximum number of placed devices per thread in the hardware model to %s."
 323(I) : "Constraining the maximum number of threads used for placement on each core in the hardware model to %s."
+324(W) : "Graph instance '%s' has not been type-linked. Not %s."
 
 500(F) : "Mothership: Could not create pthread %s. Exiting."
 501(F) : "Mothership: Could not join to pthread %s. Exiting."

@@ -163,8 +163,18 @@ bool CmPlac::PlacementDoIt(Cli::Cl_t clause)
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs) == 1) return true;
 
-    /* Have a pop. */
+    /* Check they're all typelinked before proceeding. */
     std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        if ((*graphIt)->pT == PNULL)
+        {
+            par->Post(324, (*graphIt)->Name(), "placing");
+            return true;
+        }
+    }
+
+    /* Have a pop. */
     try
     {
         for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
@@ -253,6 +263,12 @@ void CmPlac::PlacementLoad(Cli::Cl_t clause)
     /* Get the graph instance. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs, 1) == 1) return;
+
+    /* Check it's typelinked before proceeding. */
+    if ((*graphs.begin())->pT == PNULL)
+    {
+        par->Post(324, (*graphs.begin())->Name(), "loading");
+    }
 
     /* Get the file path. */
     std::string path = clause.Pa_v[1].Concatenate();
