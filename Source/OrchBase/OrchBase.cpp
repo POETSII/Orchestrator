@@ -123,6 +123,164 @@ void OrchBase::ClearTopo()
 
 //------------------------------------------------------------------------------
 
+/* Collects all of the graph instances requested from a "Cli" command.
+ *
+ * This method iterates through all parameters in a command. Three forms of
+ * parameters are considered:
+ *
+ * 1. "*": Fetch all graph instances from all tasks.
+ *
+ * 2. "<ALPHANUMERIC_APPNAME>": Fetch all graph instances associated with the
+ *    application with name `<ALPHANUMERIC_APPNAME>`.
+ *
+ * 3. "<ALPHANUMERIC_APPNAME>::<ALPHANUMERIC_GRAPHINAME>": Fetches the graph
+ *    instance named `<ALPHANUMERIC_GRAPHINAME>` that is owned by the
+ *    application named `<ALPHANUMERIC_APPNAME>`.
+ *
+ * This method "errors" if:
+ *
+ * - Syntax (1) is used, and there are no graph instances.
+ *
+ * - Syntax (2) is used, and there is no application with that name.
+ *
+ * - Syntax (2) is used and the application exists, but that application has no
+ *   graph instances.
+ *
+ * - Syntax (3) is used and the specified graph instance does not exist.
+ *
+ * - No parameters are passed in.
+ *
+ * - A parameter has a double-or-more "::" syntax (e.g. A::B::C).
+ *
+ * On error, this method fails fast - it posts, clears `graphs`, and bails.
+ *
+ * Operators are ignored (as per the documentation) when finding applications
+ * and graphs in this way.
+ *
+ * Returns 0 if all is well, and 1 on error. */
+int OrchBase::GetGraphIs(Cli::Cl_t clause, std::set<GraphI_t*>& graphs)
+{
+    graphs.clear();
+
+    /* Error if no parameters are passed in. */
+    if (clause.Pa_v.empty())
+    {
+        Post(171, clause.Cl);
+        return 1;
+    }
+
+    /* We'll be needing some iterators... */
+    std::vector<Cli::Pa_t>::iterator paramIt;
+    std::map<std::string, Apps_t*>::iterator appIt;
+    std::vector<GraphI_t*>::iterator graphIt;
+
+    /* Iterate over all parameters. */
+    for (paramIt = clause.Pa_v.begin(); paramIt != clause.Pa_v.end();
+         paramIt++)
+    {
+        /* Is this even possible? */
+        if (paramIt->Va_v.empty()) continue;
+
+        /* Syntax (1). */
+        if (paramIt->Va_v.size() == 1 and paramIt->Va_v[0] == "*")
+        {
+            /* For each application... */
+            for (appIt = Apps_t::Apps_m.begin();
+                 appIt != Apps_t::Apps_m.end(); appIt++)
+            {
+                /* For each graph instance... */
+                for (graphIt = appIt->second->GraphI_v.begin();
+                     graphIt != appIt->second->GraphI_v.end(); graphIt++)
+                {
+                    /* Store */
+                    graphs.insert(*graphIt);
+                }
+            }
+
+            /* No graph instances? It means we haven't added any. Error out. */
+            if (graphs.empty())
+            {
+                Post(172);
+                return 1;
+            }
+        }
+
+        /* Syntax (2/3). */
+        else if (paramIt->Va_v.size() == 1 or paramIt->Va_v.size() == 2)
+        {
+            /* Find the application. */
+            Apps_t* application = Apps_t::FindApp(paramIt->Va_v[0]);
+
+            /* Couldn't find it? Error out. */
+            if (application == 0)
+            {
+                graphs.clear();
+                Post(173, paramIt->Va_v[0]);
+                return 1;
+            }
+
+            /* Found it, but it has no graph instances? Error out. */
+            if (application->GraphI_v.empty())
+            {
+                graphs.clear();
+                Post(174, paramIt->Va_v[0]);
+                return 1;
+            }
+
+            /* Syntax (2). */
+            if (paramIt->Va_v.size() == 1)
+            {
+                /* For each graph instance... */
+                for (graphIt = appIt->second->GraphI_v.begin();
+                     graphIt != appIt->second->GraphI_v.end(); graphIt++)
+                {
+                    /* Store */
+                    graphs.insert(*graphIt);
+                }
+            }
+
+            /* Syntax (3). */
+            else
+            {
+                /* Find the graph instance. */
+                GraphI_t* graph = application->FindGrph(paramIt->Va_v[1]);
+
+                /* Couldn't find it? Error out. */
+                if (graph == 0)
+                {
+                    graphs.clear();
+                    Post(175, paramIt->Va_v[0], paramIt->Va_v[1]);
+                    return 1;
+                }
+
+                /* Otherwise, store. */
+                graphs.insert(graph);
+            }
+        }
+
+        /* Strange syntax. */
+        else
+        {
+            graphs.clear();
+            std::string weirdParam = "";
+            std::vector<std::string>::iterator chunk;
+            for (chunk = paramIt->Va_v.begin(); chunk != paramIt->Va_v.end();
+                 chunk++)
+            {
+                if (chunk != paramIt->Va_v.begin()) weirdParam += "::";
+                weirdParam += *chunk;
+            }
+            Post(176, weirdParam);
+            return 1;
+        }
+    }
+
+    /* All is well. */
+    return 0;
+}
+
+//------------------------------------------------------------------------------
+
 void OrchBase::PlacementReset(bool post)
 {
     if (pPlacer == 0) delete pPlacer;

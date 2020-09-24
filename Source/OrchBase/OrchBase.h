@@ -45,6 +45,7 @@ void                   Dump(unsigned = 0,FILE * = stdout);
 
 void                   BuildMshipMap();
 void                   ClearTopo();
+int                    GetGraphIs(Cli::Cl_t, std::set<GraphI_t*>&);
 void                   PlacementReset(bool post=false);
 
 P_engine *             pE;             // Poets engine (hardware model)

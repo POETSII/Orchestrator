@@ -98,6 +98,12 @@
 168(W) : "Unable to map a Mothership process to box '%s' - cannot deploy applications that have devices placed on this box."
 169(W) : "Attempt to issue '%s' command for task '%s', but it has not been deployed."
 170(W) : "Unknown baked-in engine '%s'. Try '1-box-prototype' or '2-box-prototype'."
+171(W) : "Command clause '%s' has no parameters. Not operating on any applications."
+172(W) : "No application graph instances have been loaded. Not operating on any applications."
+173(W) : "Unable to find application '%s'. Not operating on any applications."
+174(W) : "Application '%s' has no graph instances. Not operating on any applications."
+175(W) : "Application '%s' has no graph instance named '%s'. Not operating on any applications."
+176(W) : "Encountered unusual application parameter '%s'. Not operating on any applications."
 
 201(E) : "... failed %s with %s errors in %s msecs"
 202(I) : "Task: %s file: %s returns %s errors."
