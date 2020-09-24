@@ -264,14 +264,14 @@ void CmPlac::PlacementLoad(Cli::Cl_t clause)
         par->pPlacer->place_load((*graphs.begin()), path);
         par->Post(302, (*graphs.begin())->Name());
     }
-    catch (AlreadyPlacedException&){par->Post(303,
-                                              (*graphs.begin())->Name());}
-    catch (BadIntegrityException& e) {par->Post(304,
-                                                (*graphs.begin())->Name(),
-                                                e.message);}
-    catch (NoEngineException&) {par->Post(305, (*graphs.begin())->Name());}
-    catch (NoSpaceToPlaceException&) {par->Post(306,
-                                                (*graphs.begin())->Name());}
+    catch (AlreadyPlacedException&)
+        {par->Post(303, (*graphs.begin())->Name());}
+    catch (BadIntegrityException& e)
+        {par->Post(304, (*graphs.begin())->Name(), e.message);}
+    catch (NoEngineException&)
+        {par->Post(305, (*graphs.begin())->Name());}
+    catch (NoSpaceToPlaceException&)
+        {par->Post(306, (*graphs.begin())->Name());}
     return;
 }
 
