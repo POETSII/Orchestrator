@@ -5,9 +5,10 @@
 #include "OrchBase.h"
 
 CmPlac::CmPlac(OrchBase * p):par(p){par->fd = stdout;}
+CmPlac::~CmPlac(){}
 
 /* Everything goes through here. always returns zero. */
-unsigned CmPlac::operator()(Cli* pC)
+unsigned CmPlac::operator()(Cli* cli)
 {
     /* Simply put, no placement tasks make any sense if there's no engine
      * loaded, so we catch that early. */
@@ -42,7 +43,7 @@ unsigned CmPlac::operator()(Cli* pC)
         {
             if (!clause->Pa_v.empty()) par->Post(315);
             /* Argument supports shameless code reuse. */
-            else PlacementReset(true);
+            else par->PlacementReset(true);
         }
 
         /* Are we defining a constraint on the command line? */
@@ -52,7 +53,7 @@ unsigned CmPlac::operator()(Cli* pC)
         else if (clauseRoot == "load") PlacementLoad(*clause);
 
         /* If nothing is appropriate, assume it's a placement algorithm. */
-        else isClauseValid = PlacementDoit(*clause);
+        else isClauseValid = PlacementDoIt(*clause);
 
         /* If it isn't a placement algorithm, we whinge. */
         if (!isClauseValid) par->Post(25, clause->Cl, "placement");
@@ -83,13 +84,14 @@ void CmPlac::PlacementConstrain(Cli::Cl_t clause)
     }
 
     /* Behaviour depends on the constraint type... */
-    if (Cli::StrEq(clause.Pa_v[0].Val, "MaxDevicesPerThread", 20))
+    if (Cli::StrEq(clause.Pa_v[0].Concatenate(), "MaxDevicesPerThread", 20))
     {
         /* Skip (and post) if there are not exactly two parameters. The second
          * parameter is the constraining value. */
         if (clause.Pa_v.size() != 2)
         {
-            par->Post(321, clause.Pa_v[0].Val, "1", clause.Pa_v[1].Val);
+            par->Post(321, clause.Pa_v[0].Concatenate(), "1",
+                      clause.Pa_v[1].Concatenate());
             return;
         }
 
@@ -99,7 +101,7 @@ void CmPlac::PlacementConstrain(Cli::Cl_t clause)
              constraintIt != par->pPlacer->constraints.end();)
         {
             if ((*constraintIt)->category == maxDevicesPerThread and
-                (*constraintIt)->task == PNULL and
+                (*constraintIt)->gi == PNULL and
                 (*constraintIt)->mandatory)
             {
                 delete (*constraintIt);
@@ -112,17 +114,18 @@ void CmPlac::PlacementConstrain(Cli::Cl_t clause)
         /* Otherwise, apply the constraint to the placer. */
         par->pPlacer->constraints.push_back(
             new MaxDevicesPerThread(true, 0, PNULL,
-                                    str2uint(clause.Pa_v[1].Val)));
-        par->Post(322, clause.Pa_v[1].Val);
+                                    str2uint(clause.Pa_v[1].Concatenate())));
+        par->Post(322, clause.Pa_v[1].Concatenate());
     }
 
-    else if (Cli::StrEq(clause.Pa_v[0].Val, "MaxThreadsPerCore", 20))
+    else if (Cli::StrEq(clause.Pa_v[0].Concatenate(), "MaxThreadsPerCore", 20))
     {
         /* Skip (and post) if there are not exactly two parameters. The second
          * parameter is the constraining value. */
         if (clause.Pa_v.size() != 2)
         {
-            par->Post(321, clause.Pa_v[0].Val, "1", clause.Pa_v[1].Val);
+            par->Post(321, clause.Pa_v[0].Concatenate(), "1",
+                      clause.Pa_v[1].Concatenate());
             return;
         }
 
@@ -132,7 +135,7 @@ void CmPlac::PlacementConstrain(Cli::Cl_t clause)
              constraintIt != par->pPlacer->constraints.end();)
         {
             if ((*constraintIt)->category == maxThreadsPerCore and
-                (*constraintIt)->task == PNULL and
+                (*constraintIt)->gi == PNULL and
                 (*constraintIt)->mandatory)
             {
                 delete (*constraintIt);
@@ -145,157 +148,148 @@ void CmPlac::PlacementConstrain(Cli::Cl_t clause)
         /* Otherwise, apply the constraint to the placer. */
         par->pPlacer->constraints.push_back(
             new MaxThreadsPerCore(true, 0, PNULL,
-                                  str2uint(clause.Pa_v[1].Val)));
-        par->Post(323, clause.Pa_v[1].Val);
+                                  str2uint(clause.Pa_v[1].Concatenate())));
+        par->Post(323, clause.Pa_v[1].Concatenate());
     }
 
-    else par->Post(320, clause.Pa_v[0].Val);
+    else par->Post(320, clause.Pa_v[0].Concatenate());
 }
 
 /* Returns true if the clause was valid (or some other error happened), and
  * false otherwise. */
-bool CmPlac::PlacementDoit(Cli::Cl_t clause)
+bool CmPlac::PlacementDoIt(Cli::Cl_t clause)
 {
-    /* Skip (and post) if there is not exactly one parameter (i.e. task). */
-    if (clause.Pa_v.size() != 1)
-    {
-        par->Post(47, clause.Cl, "placement", "1");
-        return true;
-    }
-
-    /* Get (what we assume to be) the task handle, and the task. */
-    std::string taskHandle = clause.Pa_v[0].Val;
-    P_task* task = PlacementGetTaskByName(taskHandle);
-    if (task == PNULL) return true;
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return true;
 
     /* Have a pop. */
+    std::set<GraphI_t*>::iterator graphIt;
     try
     {
-        par->Post(309, taskHandle, clause.Cl);
-        par->pPlacer->place(task, clause.Cl);
-        par->Post(302, taskHandle);
+        for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+        {
+            par->Post(309, (*graphIt)->Name(), clause.Cl);
+            par->pPlacer->place(*graphIt, clause.Cl);
+            par->Post(302, (*graphIt)->Name());
+        }
     }
     catch (InvalidAlgorithmDescriptorException&)
     {
-        return false;  /* Let CmPlace handle it - it's an invalid clause, and
+        return false;  /* Let CmPlac() handle it - it's an invalid clause, and
                         * we need to be consistent with other Orchestrator
                         * commands. */
     }
-    catch (AlreadyPlacedException&) {par->Post(303, taskHandle);}
-    catch (BadIntegrityException& e) {par->Post(304, taskHandle, e.message);}
-    catch (CostCacheException& e) {par->Post(316, taskHandle, e.message);}
-    catch (FileOpenException& e) {par->Post(318, taskHandle, e.message);}
-    catch (NoEngineException&) {par->Post(305, taskHandle);}
-    catch (NoSpaceToPlaceException&) {par->Post(306, taskHandle);}
+    catch (AlreadyPlacedException&) {par->Post(303, (*graphIt)->Name());}
+    catch (BadIntegrityException& e) {par->Post(304, (*graphIt)->Name(),
+                                                e.message);}
+    catch (CostCacheException& e) {par->Post(316, (*graphIt)->Name(),
+                                             e.message);}
+    catch (FileOpenException& e) {par->Post(318, (*graphIt)->Name(),
+                                            e.message);}
+    catch (NoEngineException&) {par->Post(305, (*graphIt)->Name());}
+    catch (NoSpaceToPlaceException&) {par->Post(306, (*graphIt)->Name());}
     return true;
 }
 
 void CmPlac::PlacementDump(Cli::Cl_t clause)
 {
-    /* Skip (and post) if there is not exactly one parameter (i.e. task). */
-    if (clause.Pa_v.size() != 1)
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+
+    /* Don't do anything if any of the graphs have not been placed (by
+     * address). */
+    std::map<GraphI_t*, Algorithm*>::iterator graphFinder;
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
-        par->Post(47, clause.Cl, "placement", "1");
-        return;
+        graphFinder = par->pPlacer->placedGraphs.find(*graphIt);
+        if (graphFinder == par->pPlacer->placedGraphs.end())
+        {
+            par->Post(311, (*graphIt)->Name());
+            return;
+        }
     }
 
-    /* Get (what we assume to be) the task handle, and the task. */
-    std::string taskHandle = clause.Pa_v[0].Val;
-    P_task* task = PlacementGetTaskByName(taskHandle);
-    if (task == PNULL) return;
-
-    /* Don't do anything if the task has not been placed (by address). */
-    std::map<P_task*, Algorithm*>::iterator tasksIt;
-    tasksIt = par->pPlacer->placedTasks.find(task);
-    if (tasksIt == par->pPlacer->placedTasks.end())
+    /* If one or more graphs have a placement score of zero, warn the user that
+     * the dump will take a while, because we need to calculate that to make
+     * the dump meaningful. */
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
-        par->Post(311, taskHandle);
-        return;
+        graphFinder = par->pPlacer->placedGraphs.find(*graphIt);
+        if (graphFinder->second->result.score == 0)
+        {
+            par->Post(312, graphFinder->first->Name());  /* Only the first */
+        }
+        break;
     }
-
-    /* If the task has a placement score of zero, warn the user that the dump
-     * will take a while, because we need to calculate that to make the dump
-     * meaningful. */
-    if (tasksIt->second->result.score == 0) par->Post(312, taskHandle);
 
     /* Have a pop. */
     try
     {
-        par->pPlacer->dump(task);
-        par->Post(310, taskHandle);
+        for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+        {
+            par->pPlacer->dump(*graphIt);
+            par->Post(310, (*graphIt)->Name());
+        }
     }
     catch (PthreadException& e) {par->Post(313, e.message);}
     catch (CostCacheException& e) {par->Post(317, e.message);}
     catch (FileOpenException& e) {par->Post(319, e.message);}
 }
 
-/* Shortcut method to get a task object from its handle. */
-P_task* CmPlac::PlacementGetTaskByName(std::string taskHandle)
-{
-    std::map<std::string, P_task*>::iterator taskFinder = \
-        P_taskm.find(taskHandle);
-    if (taskFinder == P_taskm.end())
-    {
-        par->Post(301, taskHandle);
-        return PNULL;
-    }
-    else
-    {
-        return taskFinder->second;
-    }
-}
-
 /* Load a placement map. Will fall over violently if the file is invalid. */
 void CmPlac::PlacementLoad(Cli::Cl_t clause)
 {
-    /* Skip (and post) if there are not exactly two parameters (i.e. task and
-     * file). */
+    /* Skip (and post) if there are not exactly two parameters (graph instance
+     * and file). */
     if (clause.Pa_v.size() != 2)
     {
         par->Post(47, clause.Cl, "placement", "2");
         return;
     }
 
-    /* Get (what we assume to be) the task handle, and the task. */
-    std::string taskHandle = clause.Pa_v[0].Val;
-    P_task* task = PlacementGetTaskByName(taskHandle);
-    if (task == PNULL) return;
+    /* Get the graph instance. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs, 1) == 1) return;
 
-    std::string path = clause.Pa_v[1].Val;
+    /* Get the file path. */
+    std::string path = clause.Pa_v[1].Concatenate();
 
     /* Have a pop. */
     try
     {
-        par->Post(314, path, taskHandle);
-        par->pPlacer->place_load(task, path);
-        par->Post(302, taskHandle);
+        par->Post(314, path, (*graphs.begin())->Name());
+        par->pPlacer->place_load((*graphs.begin()), path);
+        par->Post(302, (*graphs.begin())->Name());
     }
-    catch (AlreadyPlacedException&) {par->Post(303, taskHandle);}
-    catch (BadIntegrityException& e) {par->Post(304, taskHandle, e.message);}
-    catch (NoEngineException&) {par->Post(305, taskHandle);}
-    catch (NoSpaceToPlaceException&) {par->Post(306, taskHandle);}
+    catch (AlreadyPlacedException&){par->Post(303,
+                                              (*graphs.begin())->Name());}
+    catch (BadIntegrityException& e) {par->Post(304,
+                                                (*graphs.begin())->Name(),
+                                                e.message);}
+    catch (NoEngineException&) {par->Post(305, (*graphs.begin())->Name());}
+    catch (NoSpaceToPlaceException&) {par->Post(306,
+                                                (*graphs.begin())->Name());}
     return;
 }
 
 void CmPlac::PlacementUnplace(Cli::Cl_t clause)
 {
-    /* Skip (and post) if there is not exactly one parameter (i.e. task). */
-    if (clause.Pa_v.size() != 1)
-    {
-        par->Post(47, clause.Cl, "placement", "1");
-        return;
-    }
-
-    /* Get (what we assume to be) the task handle, and the task. */
-    std::string taskHandle = clause.Pa_v[0].Val;
-    P_task* task = PlacementGetTaskByName(taskHandle);
-    if (task == PNULL) return;
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
 
     /* Note that unplace doesn't whine if the task doesn't exist, and doesn't
      * whine if the task exists and has not been placed. It's an idempotent
      * method that ensures the task has no presence in the placer. */
-    par->pPlacer->unplace(task);
-    par->Post(307, taskHandle);
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        par->pPlacer->unplace(*graphIt);
+        par->Post(307, (*graphIt)->Name());
+    }
 }
 
 /* Synopsis of placement information. */
@@ -303,9 +297,9 @@ void CmPlac::Show(FILE* fp)
 {
     fprintf(fp,
             "\nPlacement subsystem attributes and state:\n"
-            "Number of graphs placed: %lu\n",
-            "Number of devices placed: %lu\n",
-            "Number of threads used for placement: %lu\n",
+            "Number of graphs placed: %lu\n"
+            "Number of devices placed: %lu\n"
+            "Number of threads used for placement: %lu\n"
             "Number of explicit constraints defined: %lu\n",
             par->pPlacer->placedGraphs.size(),
             par->pPlacer->deviceToThread.size(),

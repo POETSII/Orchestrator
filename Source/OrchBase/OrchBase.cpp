@@ -157,8 +157,11 @@ void OrchBase::ClearTopo()
  * Operators are ignored (as per the documentation) when finding applications
  * and graphs in this way.
  *
+ * Optionally, the `skip`th parameter in the clause may be skipped.
+ *
  * Returns 0 if all is well, and 1 on error. */
-int OrchBase::GetGraphIs(Cli::Cl_t clause, std::set<GraphI_t*>& graphs)
+int OrchBase::GetGraphIs(Cli::Cl_t clause, std::set<GraphI_t*>& graphs,
+                         int skip)
 {
     graphs.clear();
 
@@ -170,6 +173,7 @@ int OrchBase::GetGraphIs(Cli::Cl_t clause, std::set<GraphI_t*>& graphs)
     }
 
     /* We'll be needing some iterators... */
+    int paramIndex = 0;
     std::vector<Cli::Pa_t>::iterator paramIt;
     std::map<std::string, Apps_t*>::iterator appIt;
     std::vector<GraphI_t*>::iterator graphIt;
@@ -178,6 +182,10 @@ int OrchBase::GetGraphIs(Cli::Cl_t clause, std::set<GraphI_t*>& graphs)
     for (paramIt = clause.Pa_v.begin(); paramIt != clause.Pa_v.end();
          paramIt++)
     {
+        /* Skip condition. */
+        if (paramIndex == skip) continue;
+        else paramIndex++;
+
         /* Is this even possible? */
         if (paramIt->Va_v.empty()) continue;
 
