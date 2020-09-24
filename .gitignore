@@ -6,6 +6,7 @@ bin/*
 test_bin/*
 Build/gcc/Objects
 Build/gcc/Dependency_lists
+Output/
 orchestrate.sh
 
 # Ignore .bak extensions created by winmerge
