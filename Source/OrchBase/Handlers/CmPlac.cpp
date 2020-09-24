@@ -12,7 +12,7 @@ unsigned CmPlac::operator()(Cli* cli)
 {
     /* Simply put, no placement tasks make any sense if there's no engine
      * loaded, so we catch that early. */
-    if (par->pE == 0)
+    if (par->pE == PNULL)
     {
         par->Post(300);
         return 0;
