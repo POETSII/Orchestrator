@@ -462,6 +462,7 @@ if (scmnd=="dump") code=(*pCmDump)(pC);// Dump
 if (scmnd=="exit") code=CmExit (pC);   // Exit
 if (scmnd=="load") code=(*pCmLoad)(pC);// Load
 if (scmnd=="path") code=(*pCmPath)(pC);// Path
+if (scmnd=="plac") code=(*pCmPlac)(pC);// Place
 if (scmnd=="retu") code=CmRetu(pC);    // Return
 if (scmnd=="show") code=(*pCmShow)(pC);// Show
 if (scmnd=="syst") code=(*pCmSyst)(pC);// System
