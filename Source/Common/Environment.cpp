@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
 
 #include <stdio.h>
+#include <cstdlib>
 #include "Environment.h"
 // Should this preprocessor fork be in OSFixes.hpp?
 // Yes, TODO:
@@ -78,7 +79,7 @@ return 0;
 }
 
 //------------------------------------------------------------------------------
-     
+
 string GetUser()
 {
 char * pU = 0;
@@ -100,4 +101,3 @@ return string("Unknown_User");
 }
 
 //------------------------------------------------------------------------------
-

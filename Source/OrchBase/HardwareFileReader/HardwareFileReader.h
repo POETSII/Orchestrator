@@ -187,7 +187,7 @@ private:
      * is, and the value is another map whose value is the "type" of the
      * section, and whose value id the UIF node that corresponds to that
      * section. */
-    std::map<std::string, std::map<std::string, UIF::Node*>> typedSections;
+    std::map<std::string, std::map<std::string, UIF::Node*> > typedSections;
 
     /* Holds, for a (former) section, the type-specific section that defines
      * how items created in the former section behave. The key is the section
@@ -241,8 +241,8 @@ private:
 
     /* Holds a default mailbox-mailbox cost, if defined. Relevant only for the
      * current board. */
-    float defaultMailboxMailboxCost = 0;
-    bool isDefaultMailboxCostDefined = false;
+    float defaultMailboxMailboxCost;
+    bool isDefaultMailboxCostDefined;
 
     /* Holds boards that have been declared to exist within a box in
      * [engine_box], but which have not (yet) been created from parsing

@@ -55,7 +55,7 @@ void PlacementLoader::load_file()
     std::string recordBuffer, device, thread;
     std::stringstream recordStream;
     std::ifstream dataStream;
-    dataStream.open(filePath);
+    dataStream.open(filePath.c_str());
     if (!dataStream.is_open())
     {
         throw FileOpenException(

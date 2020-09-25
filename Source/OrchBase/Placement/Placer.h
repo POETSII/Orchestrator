@@ -59,13 +59,13 @@ public:
 
     /* Placement information for the entire system is held in these maps. */
     std::map<DevI_t*, P_thread*> deviceToThread;
-    std::map<P_thread*, std::list<DevI_t*>> threadToDevices;
+    std::map<P_thread*, std::list<DevI_t*> > threadToDevices;
 
     /* Constraint management. */
     std::list<Constraint*> constraints;
 
     /* Edge costs. */
-    std::map<GraphI_t*, std::map<std::pair<DevI_t*, DevI_t*>, float>> \
+    std::map<GraphI_t*, std::map<std::pair<DevI_t*, DevI_t*>, float> > \
         giEdgeCosts;
 
     /* Information on graph instances that have been placed. */
@@ -74,7 +74,7 @@ public:
     /* Since each core pair must hold only devices of one type from one graph
      * instance, it is often useful to identify the cores (and threads) that
      * contain devices owned by a certain graph instance. */
-    std::map<GraphI_t*, std::set<P_core*>> giToCores;
+    std::map<GraphI_t*, std::set<P_core*> > giToCores;
 
     /* The reverse of the node map in a graph instance - given a device, what
      * is the key in the graph? */
@@ -88,7 +88,7 @@ public:
     void check_integrity(GraphI_t* gi, Algorithm* algorithm);
     bool are_all_core_pairs_device_locked(GraphI_t* gi,
         std::map<std::pair<P_core*, P_core*>,
-                 std::set<DevT_t*>>* badCoresToDeviceTypes);
+                 std::set<DevT_t*> >* badCoresToDeviceTypes);
     bool are_all_devices_mapped(GraphI_t* gi, std::vector<DevI_t*>* unmapped);
     bool are_all_hard_constraints_satisfied(GraphI_t* gi,
         std::vector<Constraint*>* broken,
@@ -114,11 +114,11 @@ public:
     /* Convenient way to get all edges (as device-device pairs) that involve a
      * given device. */
     void get_edges_for_device(GraphI_t* gi, DevI_t* device,
-        std::vector<std::pair<DevI_t*, DevI_t*>>* devicePairs);
+        std::vector<std::pair<DevI_t*, DevI_t*> >* devicePairs);
 
     /* Convenient way to get core occupation. */
     void define_valid_cores_map(GraphI_t* gi,
-        std::map<DevT_t*, std::set<P_core*>>* validCoresForDeviceType);
+        std::map<DevT_t*, std::set<P_core*> >* validCoresForDeviceType);
 
     /* Redistribution of devices within a graph instance at the core level. */
     void redistribute_devices_in_gi(GraphI_t* gi);

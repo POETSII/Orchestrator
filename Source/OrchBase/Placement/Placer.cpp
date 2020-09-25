@@ -53,15 +53,15 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
  *   more than one element in length. Cleared before being populated. */
 bool Placer::are_all_core_pairs_device_locked(GraphI_t* gi,
     std::map<std::pair<P_core*, P_core*>,
-             std::set<DevT_t*>>* badCoresToDeviceTypes)
+             std::set<DevT_t*> >* badCoresToDeviceTypes)
 {
     /* Sanity. */
     badCoresToDeviceTypes->clear();
 
     /* Build a map of cores to devices, by iterating through all placed
      * threads. */
-    std::map<P_core*, std::set<DevI_t*>> coreToDevices;
-    std::map<P_thread*, std::list<DevI_t*>>::iterator threadDevsIt;
+    std::map<P_core*, std::set<DevI_t*> > coreToDevices;
+    std::map<P_thread*, std::list<DevI_t*> >::iterator threadDevsIt;
     std::list<DevI_t*>::iterator deviceIt;
 
     for (threadDevsIt = threadToDevices.begin();
@@ -79,7 +79,7 @@ bool Placer::are_all_core_pairs_device_locked(GraphI_t* gi,
      * of that set is less than two, remove it. (This means we effectively
      * check each pair twice, but this beats the time required to search for
      * the corresponding pair as the number of cores grows.) */
-    std::map<P_core*, std::set<DevI_t*>>::iterator coreIt;
+    std::map<P_core*, std::set<DevI_t*> >::iterator coreIt;
     std::map<AddressComponent, P_thread*>::iterator threadIt;
     P_core* firstCore;
     P_core* secondCore;
@@ -288,13 +288,13 @@ void Placer::check_integrity(GraphI_t* gi, Algorithm* algorithm)
 
     /* Step 3: Check device types. */
     std::map<std::pair<P_core*, P_core*>,
-             std::set<DevT_t*>> badCoresToDeviceTypes;
+             std::set<DevT_t*> > badCoresToDeviceTypes;
     if (!are_all_core_pairs_device_locked(gi, &badCoresToDeviceTypes))
     {
         /* Prepare a nice printout of core pairs with multiple device types. */
         std::string corePrint;
         std::map<std::pair<P_core*, P_core*>,
-                 std::set<DevT_t*>>::iterator badCoreIt;
+                 std::set<DevT_t*> >::iterator badCoreIt;
         std::set<DevT_t*>::iterator devTypIt;
 
         /* For each entry in the map... */
@@ -359,12 +359,12 @@ void Placer::check_integrity(GraphI_t* gi, Algorithm* algorithm)
 float Placer::compute_fitness(GraphI_t* gi, DevI_t* device)
 {
     /* Grab the device pair from each edge. */
-    std::vector<std::pair<DevI_t*, DevI_t*>> devicePairs;
+    std::vector<std::pair<DevI_t*, DevI_t*> > devicePairs;
     get_edges_for_device(gi, device, &devicePairs);
 
     /* Reduce! */
     float fitness = 0;
-    std::vector<std::pair<DevI_t*, DevI_t*>>::iterator devicePairIt;
+    std::vector<std::pair<DevI_t*, DevI_t*> >::iterator devicePairIt;
     for (devicePairIt = devicePairs.begin(); devicePairIt != devicePairs.end();
          devicePairIt++) fitness += giEdgeCosts[gi][*devicePairIt];
 
@@ -433,7 +433,7 @@ float Placer::compute_fitness(GraphI_t* gi)
      * benefit of "sprading the load" is traded off fairly with the edge
      * weights, which want the application to be as tightly packed as
      * possible. */
-    std::map<P_thread*, std::list<DevI_t*>>::iterator threadIt;
+    std::map<P_thread*, std::list<DevI_t*> >::iterator threadIt;
     for (threadIt = threadToDevices.begin(); threadIt != threadToDevices.end();
          threadIt++)
     {
@@ -539,7 +539,7 @@ unsigned Placer::constrained_max_threads_per_core(GraphI_t* gi)
 /* Populates a map with information about which devices can be placed
  * where. Useful for algorithms. */
 void Placer::define_valid_cores_map(GraphI_t* gi,
-        std::map<DevT_t*, std::set<P_core*>>* validCoresForDeviceType)
+        std::map<DevT_t*, std::set<P_core*> >* validCoresForDeviceType)
 {
     /* Firstly, populate the map with an entry for each core and each device
      * type in this application graph instance. NB: It would be handy if the
@@ -557,7 +557,7 @@ void Placer::define_valid_cores_map(GraphI_t* gi,
         /* Skip if an entry in the map already exists for a device of this
          * type */
         DevT_t* deviceType = device->pT;
-        std::map<DevT_t*, std::set<P_core*>>::iterator devTypFinder;
+        std::map<DevT_t*, std::set<P_core*> >::iterator devTypFinder;
         devTypFinder = validCoresForDeviceType->find(deviceType);
         if (devTypFinder == validCoresForDeviceType->end())
         {
@@ -579,7 +579,7 @@ void Placer::define_valid_cores_map(GraphI_t* gi,
      * other application graph instances! We don't want to interact with them
      * at all...) */
     std::map<DevI_t*, P_thread*>::iterator deviceIterator;
-    std::map<DevT_t*, std::set<P_core*>>::iterator bigScaryMapIterator;
+    std::map<DevT_t*, std::set<P_core*> >::iterator bigScaryMapIterator;
     for (deviceIterator = deviceToThread.begin();
          deviceIterator != deviceToThread.end(); deviceIterator++)
     {
@@ -728,7 +728,7 @@ void Placer::dump_edge_loading(const char* path)
                     path, OSFixes::getSysErrorString(errno).c_str()));
     }
 
-    std::map<P_mailbox*, std::map<P_mailbox*, unsigned>> edgeLoading;
+    std::map<P_mailbox*, std::map<P_mailbox*, unsigned> > edgeLoading;
 
     /* Iterate over each application graph instance. */
     DevI_t* fromDevice;
@@ -779,7 +779,8 @@ void Placer::dump_edge_loading(const char* path)
     }
 
     /* Writeout. */
-    std::map<P_mailbox*, std::map<P_mailbox*, unsigned>>::iterator edgeOuterIt;
+    std::map<P_mailbox*, std::map<P_mailbox*, unsigned> >::iterator \
+        edgeOuterIt;
     std::map<P_mailbox*, unsigned>::iterator edgeInnerIt;
     for (edgeOuterIt = edgeLoading.begin(); edgeOuterIt != edgeLoading.end();
          edgeOuterIt++)
@@ -898,7 +899,7 @@ void Placer::get_boxes_for_gi(GraphI_t* gi, std::set<P_box*>* boxes)
 /* Grabs all of the device pairs for each edge in the application graph that
  * involves the given device. */
 void Placer::get_edges_for_device(GraphI_t* gi, DevI_t* device,
-    std::vector<std::pair<DevI_t*, DevI_t*>>* devicePairs)
+    std::vector<std::pair<DevI_t*, DevI_t*> >* devicePairs)
 {
     devicePairs->clear();
 
@@ -1078,11 +1079,11 @@ void Placer::populate_edge_weight(GraphI_t* gi, DevI_t* from, DevI_t* to)
 void Placer::populate_edge_weights(GraphI_t* gi, DevI_t* device)
 {
     /* Grab the device pair from each edge. */
-    std::vector<std::pair<DevI_t*, DevI_t*>> devicePairs;
+    std::vector<std::pair<DevI_t*, DevI_t*> > devicePairs;
     get_edges_for_device(gi, device, &devicePairs);
 
     /* Populate */
-    std::vector<std::pair<DevI_t*, DevI_t*>>::iterator devicePairIt;
+    std::vector<std::pair<DevI_t*, DevI_t*> >::iterator devicePairIt;
     for (devicePairIt = devicePairs.begin(); devicePairIt != devicePairs.end();
          devicePairIt++)
     {
@@ -1281,7 +1282,7 @@ void Placer::unplace(GraphI_t* gi, bool andConstraints)
     }
 
     /* Clear the appropriate entry in giToCores. */
-    std::map<GraphI_t*, std::set<P_core*>>::iterator giToCoresFinder;
+    std::map<GraphI_t*, std::set<P_core*> >::iterator giToCoresFinder;
     giToCoresFinder = giToCores.find(gi);
     if (giToCoresFinder != giToCores.end())
     {
@@ -1290,7 +1291,7 @@ void Placer::unplace(GraphI_t* gi, bool andConstraints)
 
     /* Clear the appropriate entry in giEdgeCosts. */
     std::map<GraphI_t*, std::map<std::pair<DevI_t*, DevI_t*>,
-                               float>>::iterator edgeCostsFinder;
+                               float> >::iterator edgeCostsFinder;
     edgeCostsFinder = giEdgeCosts.find(gi);
     if (edgeCostsFinder != giEdgeCosts.end())
     {
@@ -1307,7 +1308,7 @@ void Placer::unplace(GraphI_t* gi, bool andConstraints)
 void Placer::update_software_addresses(GraphI_t* gi)
 {
     std::map<DevI_t*, P_thread*>::iterator deviceFinder;
-    std::map<P_thread*, std::list<DevI_t*>>::iterator threadFinder;
+    std::map<P_thread*, std::list<DevI_t*> >::iterator threadFinder;
     bool found;  /* Is this device currently placed? */
 
     /* Iterate through each device in the application graph instance. */

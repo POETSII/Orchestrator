@@ -42,7 +42,7 @@ bool HardwareFileReader::d3_get_address_from_item_definition(
         fullBinary.append((*lLeafIterator)->str);
     }
 
-    *address = std::stoi(fullBinary.c_str(), 0, 2);
+    *address = str2bin(fullBinary);
     return true;
 }
 

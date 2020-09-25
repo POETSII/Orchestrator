@@ -28,7 +28,7 @@ public:
 
     /* Holds, for each device type, which cores are valid for placement of
      * devices of that type. */
-    std::map<DevT_t*, std::set<P_core*>> validCoresForDeviceType;
+    std::map<DevT_t*, std::set<P_core*> > validCoresForDeviceType;
 
     /* Driven by the placer, shouldn't change (so we precompute it for
      * speed). */

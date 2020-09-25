@@ -14,7 +14,7 @@ MaxDevicesPerThread::MaxDevicesPerThread(
  * "maximum" devices, and false otherwise. */
 bool MaxDevicesPerThread::is_satisfied(Placer* placer)
 {
-    std::map<P_thread*, std::list<DevI_t*>>::iterator it;
+    std::map<P_thread*, std::list<DevI_t*> >::iterator it;
     for (it = placer->threadToDevices.begin();
          it != placer->threadToDevices.end(); it++)
     {

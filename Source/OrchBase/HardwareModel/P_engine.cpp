@@ -251,7 +251,7 @@ void P_engine::Dump(FILE* file)
     }
     if (datetime > 0)
     {
-        fprintf(file, "Configuration datetime (YYYYMMDDHHmmss): %lld\n",
+        fprintf(file, "Configuration datetime (YYYYMMDDHHmmss): %ld\n",
                 datetime);
     }
     if (!version.empty())

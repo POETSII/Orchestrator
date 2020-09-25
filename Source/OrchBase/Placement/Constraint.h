@@ -26,7 +26,7 @@ public:
         penalty(penalty),
         gi(gi)
     {}
-    virtual ~Constraint() = default;
+    virtual ~Constraint(){}
 
     const constraintCategory category;
     bool mandatory;

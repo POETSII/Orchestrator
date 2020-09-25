@@ -37,7 +37,7 @@ return cmp_noc(s1,string(s2));
 }
 
 //------------------------------------------------------------------------------
- 
+
 uint32 GET4(uchar * p1)
 // The input is a pointer to some position in a byte array. (Which is assumed to
 // exist at least three bytes into the future). This byte and the subsequent
@@ -310,7 +310,7 @@ return &buf[0];
 }
 */
 //.GetDate......................................................................
-              
+
 long Time2long(const string & str)
 // Bit of a bodge - it turns a time string into a long integer of 10ms's's's.
 // It gets unhappy if the string is in the wrong format.
@@ -448,7 +448,7 @@ return U[domain];                      // Either way...
 //long unsigned int a = i++;
 //return a;
 }
-  
+
 //------------------------------------------------------------------------------
 
 string bool2str(bool b)
@@ -629,6 +629,19 @@ unsigned str2hex(const string & str)
 unsigned ans = 0;
 sscanf(str.c_str(),"%x",&ans);
 return ans;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned str2bin(string & str)
+{
+unsigned out=0;
+unsigned pow=0;
+for(string::reverse_iterator rit=str.rbegin();rit!=str.rend(); rit++) {
+  if(*rit=='1') out+=1<<pow;
+  pow++;
+}
+return out;
 }
 
 //------------------------------------------------------------------------------

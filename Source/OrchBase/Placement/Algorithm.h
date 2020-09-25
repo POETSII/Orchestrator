@@ -19,7 +19,7 @@ class Algorithm
 {
 public:
     Algorithm(Placer* placer):placer(placer){}
-    virtual ~Algorithm() = default;
+    virtual ~Algorithm(){}
     virtual float do_it(GraphI_t*) = 0;
 
     Placer* placer;

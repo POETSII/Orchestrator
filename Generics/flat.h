@@ -116,6 +116,7 @@ unsigned     str2uint(const string &,unsigned=0);
 lint         str2long(const string &);
 bool         str2bool(const string &);
 unsigned     str2hex(const string &);
+unsigned     str2bin(string &);
 //int          sV2uV(vector<string> &,vector<unsigned> &);
 string          GetStr(FILE *);
 void            PutStr(FILE *,string);

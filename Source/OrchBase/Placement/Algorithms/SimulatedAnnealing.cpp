@@ -314,7 +314,7 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
                 }
 
                 /* Update validCoresForDeviceType, for selection. */
-                std::map<DevT_t*, std::set<P_core*>>::iterator devtypIt;
+                std::map<DevT_t*, std::set<P_core*> >::iterator devtypIt;
                 P_core* firstCore = previousThread->parent;
                 P_core* secondCore = firstCore->pair;  /* May be PNULL. */
 
@@ -459,7 +459,7 @@ void SimulatedAnnealing::select(GraphI_t* gi, DevI_t** device,
      * and leave. */
     P_core* core;
     DevT_t* deviceType = (*device)->pT;
-    std::map<DevT_t*, std::set<P_core*>>::iterator bigScaryMapIterator;
+    std::map<DevT_t*, std::set<P_core*> >::iterator bigScaryMapIterator;
     bigScaryMapIterator = validCoresForDeviceType.find(deviceType);
     if (bigScaryMapIterator->second.empty()) return;
 

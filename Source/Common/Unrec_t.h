@@ -11,6 +11,7 @@ class Unrec_t : public runtime_error
 {
 public:
           Unrec_t(unsigned,string,string);
+          ~Unrec_t() throw() {};
 void      Post();
 
 private:
@@ -21,5 +22,5 @@ string    r;                           // Throwing routine
 };
 
 //==============================================================================
-   
+
 #endif

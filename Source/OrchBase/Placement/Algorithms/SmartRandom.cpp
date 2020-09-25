@@ -20,7 +20,7 @@ float SmartRandom::do_it(GraphI_t* gi)
     P_core* core;
     P_thread* thread;
     DevT_t* deviceType;
-    std::map<DevT_t*, std::set<P_core*>>::iterator validCoreIt, badCoreIt;
+    std::map<DevT_t*, std::set<P_core*> >::iterator validCoreIt, badCoreIt;
 
     result.startTime = placer->timestamp();
 

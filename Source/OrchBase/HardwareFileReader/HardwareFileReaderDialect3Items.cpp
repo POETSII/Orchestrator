@@ -903,8 +903,10 @@ bool HardwareFileReader::d3_populate_validate_board_with_mailboxes(
         board->contain(address, mailbox);
 
         /* Track the mailbox by name. */
-        mailboxInfoFromName[mailboxName] =
-            MailboxInfo{record->pos, mailbox};
+        MailboxInfo mbinfo;
+        mbinfo.lineNumber = record->pos;
+        mbinfo.memoryAddress = mailbox;
+        mailboxInfoFromName[mailboxName] = mbinfo;
 
         /* Stage the edges from this record. Values (i.e. LHS of the '=' token)
          * each represent the name of a mailbox, optionally with a cost, which
@@ -1022,8 +1024,12 @@ bool HardwareFileReader::d3_populate_validate_board_with_mailboxes(
                 }
 
                 /* Okay, actually add it now. */
+                EdgeInfo edinfo;
+                edinfo.weight = thisEdgeCost;
+                edinfo.isReverseDefined = false;
+                edinfo.lineNumber = record->pos;
                 mailboxEdges[std::make_pair(mailboxName, edgeMailboxName)] = \
-                    EdgeInfo{thisEdgeCost, false, record->pos};
+                    edinfo;
             }
         }  /* That's all the edges. */
 
@@ -1333,8 +1339,10 @@ bool HardwareFileReader::d3_populate_validate_engine_board_and_below(
         engine->contain(address, board);
 
         /* Track the board by name. */
-        boardInfoFromName[boardName] =
-            BoardInfo{record->pos, board};
+        BoardInfo bdinfo;
+        bdinfo.lineNumber = record->pos;
+        bdinfo.memoryAddress = board;
+        boardInfoFromName[boardName] = bdinfo;
 
         /* Stage the edges from this record. Values (i.e. LHS of the '=' token)
          * each represent the name of a board, optionally with a cost, which
@@ -1469,8 +1477,12 @@ bool HardwareFileReader::d3_populate_validate_engine_board_and_below(
                 }
 
                 /* Okay, actually add it now. */
+                EdgeInfo edinfo;
+                edinfo.weight = thisEdgeCost;
+                edinfo.isReverseDefined = false;
+                edinfo.lineNumber = record->pos;
                 boardEdges[std::make_pair(boardName, edgeBoardName)] = \
-                    EdgeInfo{thisEdgeCost, false, record->pos};
+                    edinfo;
             }
         }  /* That's all the edges. */
 

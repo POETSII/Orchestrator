@@ -7,6 +7,8 @@
 /* Constructs the file reader. */
 HardwareFileReader::HardwareFileReader():JNJ(),isFileLoaded(false)
 {
+    defaultMailboxMailboxCost = 0;
+    isDefaultMailboxCostDefined = false;
     set_uif_error_callback();
 }
 
@@ -14,6 +16,8 @@ HardwareFileReader::HardwareFileReader():JNJ(),isFileLoaded(false)
 HardwareFileReader::HardwareFileReader(const char* filePath, P_engine* engine)
     :JNJ(),isFileLoaded(false)
 {
+    defaultMailboxMailboxCost = 0;
+    isDefaultMailboxCostDefined = false;
     set_uif_error_callback();
     load_file(filePath);
     populate_hardware_model(engine);
