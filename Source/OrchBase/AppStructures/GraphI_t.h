@@ -32,6 +32,8 @@ void                 UnTLink();
 
 Apps_t *             par;              // Object parent
 bool                 placed;           // Is this placed?
+bool                 built;            // Have the binaries been built?
+bool                 deployed;         // Have the binaries been deployed?
                                        // The device graph itself
 pdigraph<unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *> G;
 string               tyId;             // Name of type in type tree

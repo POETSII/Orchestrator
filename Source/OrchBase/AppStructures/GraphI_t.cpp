@@ -16,7 +16,7 @@
 //==============================================================================
 
 GraphI_t::GraphI_t(Apps_t * _p,string _s):
-    par(_p),placed(false),pT(0),pPropsI(0)
+    par(_p),placed(false),built(false),deployed(false),pT(0),pPropsI(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent

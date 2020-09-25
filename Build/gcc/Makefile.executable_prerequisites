@@ -160,15 +160,6 @@ ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/AppStructures/*.cpp)
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/Handlers/*.cpp)
 
-# These four files are not translation units, so they cannot be compiled into
-# objects and are included by OrchBase.cpp (this was done to reduce the size of
-# the file). Since we're collecting OrchBase sources using a wildcard, we must
-# explicitly exclude these four items from the source list.
-ROOT_SOURCE_EXCEPTIONS = $(addprefix $(SOURCE_DIR)/OrchBase/, \
-    OrchBaseTask.cpp OrchBaseTopo.cpp OrchBaseOwner.cpp OrchBasePlace.cpp)
-ROOT_SOURCES := $(filter-out $(ROOT_SOURCE_EXCEPTIONS), \
-                             $(ROOT_SOURCES))
-
 # The dummy component consists of:
 #
 # - The "main" file (/Source/Dummy/DummyMain.cpp) and its dependencies in
