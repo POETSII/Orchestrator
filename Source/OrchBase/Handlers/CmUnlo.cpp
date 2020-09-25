@@ -74,7 +74,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   string sCl = (*i).Cl;                // Pull out clause name
   if (sCl=="app" ) { Cm_App(*i);                            continue; }
   if (sCl=="cons") { par->Post(247,pC->Co,sCl,(*i).GetP()); continue; }
-  if (sCl=="engi") { par->Post(247,pC->Co,sCl,(*i).GetP()); continue; }
+  if (sCl=="engi") { par->ClearTopo();                      continue; }
   if (sCl=="grap") { par->Post(247,pC->Co,sCl,(*i).GetP()); continue; }
   if (sCl=="plac") { par->Post(247,pC->Co,sCl,(*i).GetP()); continue; }
   if (sCl=="pola") { par->Post(247,pC->Co,sCl,(*i).GetP()); continue; }
@@ -85,4 +85,3 @@ return 0;                              // Legitimate command exit
 }
 
 //==============================================================================
-
