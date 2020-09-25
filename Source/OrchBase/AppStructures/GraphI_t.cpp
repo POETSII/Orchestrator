@@ -16,7 +16,7 @@
 //==============================================================================
 
 GraphI_t::GraphI_t(Apps_t * _p,string _s):
-    par(_p),placed(false),built(false),deployed(false),pT(0),pPropsI(0)
+    par(_p),placed(false),built(false),deployed(false),pT(0),pPropsI(0),pSup(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
@@ -51,6 +51,8 @@ WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i) {
 WALKSET(PinI_t *,DelSet,i) delete *i;  // Kill the "to be deleted" set
                                        // Lose any metadata
 WALKVECTOR(Meta_t *,Meta_v,i) delete *i;
+
+if (pSup != PNULL) delete pSup;
 }
 
 //------------------------------------------------------------------------------
