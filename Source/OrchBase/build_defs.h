@@ -3,6 +3,7 @@
 
 #include <string>
 #include "tinsel-config.h"
+#include "OSFixes.hpp"
 
 extern const std::string SYS_COPY;
 extern const std::string RECURSIVE_CPY;
@@ -19,7 +20,7 @@ extern const unsigned int LOG_DEVICES_PER_THREAD;
 extern const unsigned int THREADS_PER_CORE;
 extern const unsigned int CORES_PER_BOARD;
 extern const unsigned int BOARDS_PER_BOX;
-extern const unsigned long long MEM_PER_BOARD;
+extern const uint64_t MEM_PER_BOARD;
 extern const unsigned int PIN_POS;
 extern const bool         SHARED_INSTR_MEM;
 extern const std::string STATIC_SRC_PATH;
