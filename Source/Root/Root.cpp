@@ -497,7 +497,7 @@ else fprintf(fd,"batch file %s line %d\n",
                 pCmCall->stack.back().c_str(),pC->problem.lin);
 fprintf(fd,"%s\n\n",Q::eline.c_str());
 fflush(fd);
-Post(20,pCmPath->lastfile);
+Post(20,pC->Orig,pCmPath->lastfile);
 }
 
 //==============================================================================

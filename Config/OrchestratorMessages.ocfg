@@ -3,7 +3,7 @@
 
 001(I) : "%s"
 002(I) : "%s %s"
-020(I) : "Command microlog in %s..."
+020(I) : "The microlog for the command '%s' will be written to '%s'."
 021(I) : "Ping %s from %s(rank %s) to %s(rank %s) took %s wallclock secs"
 022(I) : ""
 023(I) : "%s"
