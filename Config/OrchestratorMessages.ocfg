@@ -144,7 +144,7 @@
 
 300(W) : "Unable to invoke the placement system - no hardware model has been loaded."
 301(W) : "Unable to identify graph instance '%s' (the first parameter should be of the form 'APPNAME::GRAPHINSTANCENAME')."
-302(I) : "Graph Instance '%s' placed successfully."
+302(I) : "Graph instance '%s' placed successfully."
 303(W) : "Unable to place graph instance '%s' - a graph instance with that name has already been placed. If you are trying to re-place it, instead unplace this graph instance first."
 304(W) : "Unable to place graph instance '%s' - we tried, but an integrity check failed. You should shout at MLV (or whoever wrote the algorithm you're trying to use). In the short term, consider resetting the placer, and trying a different algorithm. Details: %s"
 305(W) : "Unable to place graph instance '%s' - no engine has been loaded. You should not have been able to reach this error message (200 should have been used instead). Please let MLV know you've broken his logic (and give yourself a pat on the back)."
