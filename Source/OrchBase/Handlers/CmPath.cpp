@@ -258,6 +258,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   }
   if (sCl=="plac") {
     if (Cm_Path(OK,pathPlac,sPa,pR->pOC->Place())) par->Post(239,sCl);
+    if (par->pPlacer != PNULL) par->pPlacer->outFilePath = pathPlac;
     continue;
   }
   if (sCl=="rese") {
@@ -286,4 +287,3 @@ return 0;                              // Legitimate command exit
 }
 
 //==============================================================================
-

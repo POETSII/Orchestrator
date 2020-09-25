@@ -47,8 +47,9 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
     if (disorder) algorithmName = "simulated_annealing";
     else algorithmName = "gradientless_climber";
 
-    std::string fPath = dformat("%s_%s_%s.txt", algorithmName.c_str(),
-                                gi->Name().c_str(), time.c_str());
+    std::string fPath = dformat("%s%s_%s_%s.txt", placer->outFilePath.c_str(),
+                                algorithmName.c_str(), gi->Name().c_str(),
+                                time.c_str());
     FILE* log = fopen(fPath.c_str(), "w");
     if (log == PNULL) throw FileOpenException(
         dformat("File: %s. Message: %s",
@@ -143,7 +144,8 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
                            * and positive represents "after the
                            * transformation" */
 
-    fPath = dformat("%s_fitness_graph_%s_%s.csv", algorithmName.c_str(),
+    fPath = dformat("%s%s_fitness_graph_%s_%s.csv",
+                    placer->outFilePath.c_str(), algorithmName.c_str(),
                     gi->Name().c_str(), time.c_str());
     FILE* data = fopen(fPath.c_str(), "w");
     if (data == PNULL)

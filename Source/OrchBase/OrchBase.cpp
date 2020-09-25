@@ -283,8 +283,9 @@ int OrchBase::GetGraphIs(Cli::Cl_t clause, std::set<GraphI_t*>& graphs,
 
 void OrchBase::PlacementReset(bool post)
 {
-    if (pPlacer == 0) delete pPlacer;
-    if (pE != 0) pPlacer = new Placer(pE);
+    if (pPlacer == PNULL) delete pPlacer;
+    if (pE != PNULL) pPlacer = new Placer(pE);
+    pPlacer->outFilePath = pCmPath->pathPlac;
     if (post) Post(308);
 }
 

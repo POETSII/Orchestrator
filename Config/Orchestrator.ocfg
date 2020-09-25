@@ -10,8 +10,8 @@
 // All pretty arbitrary; just copied in and stored
 name        = OrchestratorConfiguration
 author      = "MLV and GMB"
-date        = "2020-09-24"
-version     = "0.0.2"
+date        = "2020-09-25"
+version     = "0.0.3"
 
 // All these may be overridden by the console "path" command
 [default_paths]
@@ -24,8 +24,8 @@ engine = "/local/orchestrator-common/"
 log = "../Output/POETS.log"
 // Microlog output (directory)
 ulog = "../Output/Microlog/"
-// Placement control; default algorithm + control parameters
-// place = ""
+// Placement control and output
+place = "../Output/Placement/"
 // Trace output
 // trace = ""
 // Softswitch binary files for execution

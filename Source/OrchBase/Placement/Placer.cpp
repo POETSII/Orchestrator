@@ -3,8 +3,7 @@
 #include "DevT_t.h"
 #include "Placer.h"
 
-Placer::Placer(){engine = PNULL;}
-
+Placer::Placer():engine(PNULL),cache(PNULL),outFilePath(""){}
 Placer::Placer(P_engine* engine):engine(engine),cache(PNULL){}
 
 Placer::~Placer()
@@ -630,18 +629,21 @@ void Placer::dump(GraphI_t* gi)
     std::string timeBuf = timestamp();
 
     /* Figure out paths. */
-    std::string costPath = dformat("placement_gi_edges_%s_%s.csv",
-                                   gi->Name().c_str(), timeBuf.c_str());
-    std::string diagPath = dformat("placement_diagnostics_%s_%s.txt",
-                                   gi->Name().c_str(), timeBuf.c_str());
-    std::string mapPath = dformat("placement_gi_to_hardware_%s_%s.csv",
-                                  gi->Name().c_str(), timeBuf.c_str());
-    std::string cachePath = dformat("placement_edge_cache_%s.txt",
-                                    timeBuf.c_str());
-    std::string nodeLoadPath = dformat("placement_node_loading_%s.csv",
-                                       timeBuf.c_str());
-    std::string edgeLoadPath = dformat("placement_edge_loading_%s.csv",
-                                       timeBuf.c_str());
+    std::string costPath = dformat("%splacement_gi_edges_%s_%s.csv",
+                                   outFilePath.c_str(), gi->Name().c_str(),
+                                   timeBuf.c_str());
+    std::string diagPath = dformat("%splacement_diagnostics_%s_%s.txt",
+                                   outFilePath.c_str(), gi->Name().c_str(),
+                                   timeBuf.c_str());
+    std::string mapPath = dformat("%splacement_gi_to_hardware_%s_%s.csv",
+                                  outFilePath.c_str(), gi->Name().c_str(),
+                                  timeBuf.c_str());
+    std::string cachePath = dformat("%splacement_edge_cache_%s.txt",
+                                    outFilePath.c_str(), timeBuf.c_str());
+    std::string nodeLoadPath = dformat("%splacement_node_loading_%s.csv",
+                                       outFilePath.c_str(), timeBuf.c_str());
+    std::string edgeLoadPath = dformat("%splacement_edge_loading_%s.csv",
+                                       outFilePath.c_str(), timeBuf.c_str());
 
     /* Call subordinate dumping methods. */
     dump_costs(gi, costPath.c_str());

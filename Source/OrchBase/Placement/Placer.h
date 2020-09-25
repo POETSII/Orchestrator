@@ -80,6 +80,10 @@ public:
      * is the key in the graph? */
     std::map<DevI_t*, unsigned> deviceToGraphKey;
 
+    /* Path to write output files to (e.g. dumps, results). At its best with a
+     * trailing slash (yay C++98) */
+    std::string outFilePath;
+
     /* Check integrity of a placed graph instance. */
     void check_integrity(GraphI_t* gi, Algorithm* algorithm);
     bool are_all_core_pairs_device_locked(GraphI_t* gi,
