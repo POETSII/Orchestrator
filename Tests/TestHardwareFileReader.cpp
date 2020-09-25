@@ -7,20 +7,6 @@
 #include "HardwareFileReader.h"
 #include "HardwareModel.h"
 
-/* C++98 does not have a cross-platform way of listing directories... grumble
- * grumble. */
-std::vector<std::string> badDialectInputs = {
-    "invalid_dialect_3_bad_dialect_definition_1.uif",
-    "invalid_dialect_3_bad_dialect_definition_2.uif",
-    "invalid_dialect_3_bad_dialect_definition_3.uif",
-    "invalid_dialect_3_bad_dialect_definition_4.uif"
-};
-
-std::vector<std::string> badSyntaxInputs = {
-    "invalid_dialect_3_name_begins_with_number.uif",
-    "syntactically_invalid_test_file.uif"
-};
-
 TEST_CASE("Files with a valid syntax do not raise", "[Reader]")
 {
     HardwareFileReader reader;
@@ -29,6 +15,12 @@ TEST_CASE("Files with a valid syntax do not raise", "[Reader]")
 
 TEST_CASE("Test each invalid syntax example case in turn", "[Reader]")
 {
+    /* C++98 does not have a cross-platform way of listing
+     * directories... grumble grumble. */
+    std::vector<std::string> badSyntaxInputs;
+    badSyntaxInputs.push_back("invalid_dialect_3_name_begins_with_number.uif");
+    badSyntaxInputs.push_back("syntactically_invalid_test_file.uif");
+
     P_engine* engine;
     HardwareFileReader* reader;
     std::vector<std::string>::iterator fileName;
@@ -81,6 +73,14 @@ TEST_CASE("Attempting to populate before loaded a file raises", "[Reader]")
 
 TEST_CASE("Test each invalid dialect example case in turn", "[Reader]")
 {
+    /* C++98 does not have a cross-platform way of listing
+     * directories... grumble grumble. */
+    std::vector<std::string> badDialectInputs;
+    badDialectInputs.push_back("invalid_dialect_3_bad_dialect_definition_1.uif");
+    badDialectInputs.push_back("invalid_dialect_3_bad_dialect_definition_2.uif");
+    badDialectInputs.push_back("invalid_dialect_3_bad_dialect_definition_3.uif");
+    badDialectInputs.push_back("invalid_dialect_3_bad_dialect_definition_4.uif");
+
     P_engine* engine;
     HardwareFileReader* reader;
     std::vector<std::string>::iterator fileName;
