@@ -66,7 +66,6 @@ par->Post(235,fn);
 unsigned g_ecnt,c_ecnt,ecnt;
 long t0 = mTimer();                    // ... start wallclock
 pXV->Validate(fn);
-//pXV->Dump();
 pXV->ErrCnt(g_ecnt,c_ecnt);            // XML validator error counters
 ecnt = g_ecnt + c_ecnt;                // Total errors = grammar + client
 if (ecnt!=0) par->Post(201,"validation",uint2str(ecnt),long2str(mTimer(t0)));
@@ -206,6 +205,7 @@ unsigned CmLoad::operator()(Cli * pC)
 //fflush(stdout);
                                        // Just the once
 if (pXV==0) pXV = new XValid(dynamic_cast<Root *>(par)->pOC->Grammar(),par->fd);
+else pXV->SetOChan(par->fd);
 if (pXB==0) pXB = new DS_XML(par);
 if (pC==0) return 0;                   // Paranoia
 WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list

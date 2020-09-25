@@ -185,7 +185,6 @@ cfp     = 0;                           // Client file input stream
 t0      = mTimer();                    // Start wallclock timer
 c_ecnt  = 0;                           // So far, so good: no client errors
 g_ecnt  = 0;                           // No grammar errors
-//fo      = ochan;                       // Output stream for validation tree
 Validee = 0;                           // No file to validate yet
 Validor.Name(s);                       // Filename of validation grammar
 SetOChan(ochan);                       // Set output stream
