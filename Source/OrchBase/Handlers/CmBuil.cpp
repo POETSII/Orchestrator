@@ -269,10 +269,11 @@ int CmBuil::DeployGraph(GraphI_t* gi)
          * binaries to appropriate locations for the Mothership to find
          * them. To do this, we naively copy all binaries to all Motherships
          * for now. */
-        target = dformat("/home/%s/%s/%s", mothershipProc->P_user.c_str(),
-                         TASK_DEPLOY_DIR, graphName.c_str());
-        sourceBinaries = dformat("%s/%s/*", (taskpath + graphName).c_str(),
-                                 BIN_PATH.c_str());
+        target = dformat("%s/%s/%s", getenv("HOME"),
+                         par->pCmPath->pathMshp.c_str(), graphName.c_str());
+        sourceBinaries = dformat("%s/%s/*",
+                                 par->pCmPath->pathBina.c_str(),
+                                 graphName.c_str());
 
         /* Identify whether or not this Mothership is running on the same
          * machine as Root, to determine how we deploy binaries. Store the

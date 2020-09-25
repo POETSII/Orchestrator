@@ -34,6 +34,7 @@ pathStag.clear();
 pathSupe.clear();
 pathTrac.clear();
 pathUlog.clear();
+pathMshp.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -193,6 +194,7 @@ pathStag = pR->pOC->Stage();
 pathSupe = pR->pOC->Supervisors();
 pathTrac = pR->pOC->Trace();
 pathUlog = pR->pOC->Ulog();
+pathMshp = pR->pOC->RemoteMshp();
 }
 
 //------------------------------------------------------------------------------
@@ -200,16 +202,17 @@ pathUlog = pR->pOC->Ulog();
 void CmPath::Show(FILE * fp)
 {
 fprintf(fp,"\nUser-defined filepath details:\n");
-fprintf(fp,"Applications       : %s\n",pathApps.empty()?"---":pathApps.c_str());
-fprintf(fp,"Batch files        : %s\n",pathBatc.empty()?"---":pathBatc.c_str());
-fprintf(fp,"Final binaries     : %s\n",pathBina.empty()?"---":pathBina.c_str());
-fprintf(fp,"Engine definitions : %s\n",pathEngi.empty()?"---":pathEngi.c_str());
-fprintf(fp,"Log files          : %s\n",pathLog .empty()?"---":pathLog .c_str());
-fprintf(fp,"Placement control  : %s\n",pathPlac.empty()?"---":pathPlac.c_str());
-fprintf(fp,"Binary stageing    : %s\n",pathStag.empty()?"---":pathStag.c_str());
-fprintf(fp,"Supervisor binaries: %s\n",pathSupe.empty()?"---":pathSupe.c_str());
-fprintf(fp,"Trace files        : %s\n",pathTrac.empty()?"---":pathTrac.c_str());
-fprintf(fp,"MicroLog files     : %s\n",pathUlog.empty()?"---":pathUlog.c_str());
+fprintf(fp,"Applications           : %s\n",pathApps.empty()?"---":pathApps.c_str());
+fprintf(fp,"Batch files            : %s\n",pathBatc.empty()?"---":pathBatc.c_str());
+fprintf(fp,"Final binaries         : %s\n",pathBina.empty()?"---":pathBina.c_str());
+fprintf(fp,"Engine definitions     : %s\n",pathEngi.empty()?"---":pathEngi.c_str());
+fprintf(fp,"Log files              : %s\n",pathLog .empty()?"---":pathLog .c_str());
+fprintf(fp,"Placement control      : %s\n",pathPlac.empty()?"---":pathPlac.c_str());
+fprintf(fp,"Binary stageing        : %s\n",pathStag.empty()?"---":pathStag.c_str());
+fprintf(fp,"Supervisor binaries    : %s\n",pathSupe.empty()?"---":pathSupe.c_str());
+fprintf(fp,"Trace files            : %s\n",pathTrac.empty()?"---":pathTrac.c_str());
+fprintf(fp,"MicroLog files         : %s\n",pathUlog.empty()?"---":pathUlog.c_str());
+fprintf(fp,"Remote mothership files: %s\n",pathUlog.empty()?"---":pathMshp.c_str());
 fprintf(fp,"\n");
 fflush(fp);
 }
@@ -279,6 +282,10 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   }
   if (sCl=="ulog") {
     if (Cm_Path(OK,pathUlog,sPa,pR->pOC->Ulog())) par->Post(239,sCl);
+    continue;
+  }
+  if (sCl=="mshp") {
+    if (Cm_Path(OK,pathMshp,sPa,pR->pOC->RemoteMshp())) par->Post(239,sCl);
     continue;
   }
   par->Post(25,sCl,"path");            // Unrecognised clause

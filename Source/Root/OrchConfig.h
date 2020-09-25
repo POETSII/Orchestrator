@@ -38,6 +38,7 @@ string                   Messages()    { return setup_files.messages;          }
 string                   Name()        { return Orchestrator_header.name;      }
 string                   Place()       { return default_paths.place;           }
 string                   Placement()   { return setup_files.placement;         }
+string                   RemoteMshp()  { return default_paths.remote_mship;    }
 string                   Trace()       { return default_paths.trace;           }
 string                   Stage()       { return default_paths.stage;           }
 string                   Supervisors() { return default_paths.supervisors;     }
@@ -69,6 +70,7 @@ struct default_paths_t {               // Default file paths
   string stage;
   string batch;
   string supervisors;
+  string remote_mship;
 } default_paths;
 
 struct setup_files_t {

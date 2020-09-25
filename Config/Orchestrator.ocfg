@@ -11,7 +11,7 @@
 name        = OrchestratorConfiguration
 author      = "MLV and GMB"
 date        = "2020-09-25"
-version     = "0.0.3"
+version     = "0.0.4"
 
 // All these may be overridden by the console "path" command
 [default_paths]
@@ -26,10 +26,12 @@ log = "../Output/POETS.log"
 ulog = "../Output/Microlog/"
 // Placement control and output
 place = "../Output/Placement/"
+// Location for files transferred to Motherships. Relative to home.
+remote_mship = ".orchestrator/app_binaries/"
+// Softswitch binary files for execution
+binaries = "../Output/Binaries/"
 // Trace output
 // trace = ""
-// Softswitch binary files for execution
-// binaries = ""
 // Orchestrator generated source and X-compiled output prior to deployment
 // stage = ""
 // Batch files

@@ -34,6 +34,7 @@ string        pathBatc;
 string        pathBina;
 string        pathEngi;
 string        pathLog;
+string        pathMshp;
 string        pathPlac;
 string        pathStag;
 string        pathSupe;
