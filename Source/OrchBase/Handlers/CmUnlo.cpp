@@ -25,9 +25,19 @@ void CmUnlo::Cm_App(Cli::Cl_t cl)
                                        // Walk the parameters
 for(unsigned i=0;i<cl.Pa_v.size();i++) {
   string as = cl.GetP(i);              // Application to go
-  if (as[0]=='*') Apps_t::DelAll();    // Special case - all of them
-  if (Apps_t::FindApp(as)==0) par->Post(64,as);
-  else Apps_t::DelApp(as);             // Nope - just the one
+  if (as[0]=='*')                      // Special case - all of them
+  {
+    Apps_t::DelAll();
+    par->PlacementReset();             // Quicker than unplacing one at a time
+  }
+  Apps_t* app = Apps_t::FindApp(as);
+  if (app==0) par->Post(64,as);
+  else                                 // Nope - just the one
+  {
+    // Unplace all graph instances for that app.
+    WALKVECTOR(GraphI_t*,app->GraphI_v,gi) par->pPlacer->unplace(*gi);
+    Apps_t::DelApp(as);
+  }
 }
 
 }
