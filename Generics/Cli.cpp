@@ -213,8 +213,11 @@ char buf[SIZE];
 for(int L=1;;L++) {                    // One line at a time....
   char * ps = fgets(buf,SIZE-1,fp);    // Pull in the data; ends with "\n\0"
   if (ps==0) break;                    // EOF?
-                                       // Lose the '\n'
-  for (unsigned i=0;i<SIZE;i++) if (ps[i]=='\n') ps[i]='\0';
+                                       // Lose the '\n', sometimes.
+  for (unsigned i=0;i<SIZE;i++) {
+      if (ps[i]=='\n') ps[i]='\0';
+      if (ps[i]=='\0') break;
+  }
   Cli C(ps);                           // Build a single Cli object
   if (C.problem.lin>=0) {              // Line translation not OK:
     C.problem.lin = L;                 // Overwrite error line with file line
@@ -225,7 +228,7 @@ for(int L=1;;L++) {                    // One line at a time....
   else {                               // Expansion required
     vector<Cli> Vex = C.Expand();
     for(unsigned i=0;i<Vex.size();i++) LCli.push_back(Vex[i]);
- }
+  }
 }
 fclose(fp);
 return LCli;
