@@ -139,7 +139,7 @@ void OrchBase::ClearTopo()
         Post(134, pE->FullName());
     }
     delete pE;
-    pE = 0;
+    pE = PNULL;
     PlacementReset();
 }
 
@@ -305,9 +305,16 @@ int OrchBase::GetGraphIs(Cli::Cl_t clause, std::set<GraphI_t*>& graphs,
 
 void OrchBase::PlacementReset(bool post)
 {
-    if (pPlacer == PNULL) delete pPlacer;
-    if (pE != PNULL) pPlacer = new Placer(pE);
-    pPlacer->outFilePath = pCmPath->pathPlac;
+    if (pPlacer != PNULL)
+    {
+        delete pPlacer;
+        pPlacer = PNULL;
+    }
+    if (pE != PNULL)
+    {
+        pPlacer = new Placer(pE);
+        pPlacer->outFilePath = pCmPath->pathPlac;
+    }
     if (post) Post(308);
 }
 
