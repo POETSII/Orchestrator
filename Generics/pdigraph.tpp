@@ -596,16 +596,18 @@ return true;
 
 PDIGRAPH_ unsigned _PDIGRAPH::SizeInPins(const NKT & key_n)
 {
-if (index_n.find(key_n)==index_n.end()) return 0;
-return index_n[key_n].fani.size();
+TPn_it s=index_n.find(key_n);
+if (s==index_n.end()) return 0;
+return s->second.fani.size();
 }
 
 //------------------------------------------------------------------------------
 
 PDIGRAPH_ unsigned  _PDIGRAPH::SizeOutPins(const NKT & key_n)
 {
-if (index_n.find(key_n)==index_n.end()) return 0;
-return index_n[key_n].fano.size();
+TPn_it s=index_n.find(key_n);
+if (s==index_n.end()) return 0;
+return s->second.fano.size();
 }
 
 //------------------------------------------------------------------------------
