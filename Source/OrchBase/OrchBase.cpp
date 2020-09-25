@@ -78,6 +78,9 @@ if (pCmTlin != PNULL) delete pCmTlin;
 if (pCmUnlo != PNULL) delete pCmUnlo;
 if (pCmUnpl != PNULL) delete pCmUnpl;
 if (pCmUntl != PNULL) delete pCmUntl;
+
+// Applications
+Apps_t::DelAll();
 }
 
 //------------------------------------------------------------------------------
