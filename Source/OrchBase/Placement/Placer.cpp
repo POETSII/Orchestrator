@@ -1213,7 +1213,8 @@ std::string Placer::timestamp()
     time_t timeNtv;  /* "Native" */
     time(&timeNtv);
     char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
-    strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
+    strftime(timeBuf, sizeof timeBuf,
+             "%Y-%m-%dT%H-%M-%S", localtime(&timeNtv));
     return timeBuf;
 }
 
