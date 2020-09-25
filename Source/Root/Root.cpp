@@ -139,6 +139,7 @@ if (!hdfPath.empty())
 }
 
 MPISpinner();                          // Spin on *all* messages; exit on DIE
+pthread_join(kb_thread, NULL);
 }
 
 //------------------------------------------------------------------------------
