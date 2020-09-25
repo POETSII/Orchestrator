@@ -59,6 +59,25 @@ OrchBase::~OrchBase()
 if (pE != PNULL) delete pE;           // Destroy the engine
 if (pPlacer != PNULL) delete pPlacer; // Destroy the placer
 if (pB != PNULL) delete pB;           // Object to build the datastructure
+
+// Command handlers
+if (pCmBuil != PNULL) delete pCmBuil;
+if (pCmCall != PNULL) delete pCmCall;
+if (pCmDump != PNULL) delete pCmDump;
+if (pCmExec != PNULL) delete pCmExec;
+if (pCmInje != PNULL) delete pCmInje;
+if (pCmLoad != PNULL) delete pCmLoad;
+if (pCmName != PNULL) delete pCmName;
+if (pCmPath != PNULL) delete pCmPath;
+if (pCmPlac != PNULL) delete pCmPlac;
+if (pCmRTCL != PNULL) delete pCmRTCL;
+if (pCmShow != PNULL) delete pCmShow;
+if (pCmSyst != PNULL) delete pCmSyst;
+if (pCmTest != PNULL) delete pCmTest;
+if (pCmTlin != PNULL) delete pCmTlin;
+if (pCmUnlo != PNULL) delete pCmUnlo;
+if (pCmUnpl != PNULL) delete pCmUnpl;
+if (pCmUntl != PNULL) delete pCmUntl;
 }
 
 //------------------------------------------------------------------------------
