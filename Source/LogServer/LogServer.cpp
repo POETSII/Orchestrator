@@ -68,12 +68,12 @@ string LogServer::Assemble(int id,vector<string> & rvargs)
 // can't find the "%s", although the spec says it's an unsigned.
 // Fix: just test to see if text.find(...) returns > text.size() .....
 {
-string text = Msgs[id].Ms;             // Copy of message descriptor
-string D2 = "..";                      // Let us substitute:
+string text = Msgs.find(id)->second.Ms; // Copy of message descriptor
+string D2 = "..";                       // Let us substitute:
 WALKVECTOR(string,rvargs,i)
   if (text.find("%s")>text.size()) text += D2 + *i;
   else text.replace(text.find("%s"),2,*i);
-return text;                           // Simples.
+return text;                            // Simples.
 }
 
 //------------------------------------------------------------------------------
@@ -123,7 +123,6 @@ void LogServer::LoadMessages(string smessage)
 {
 if (!Msgs.empty()) return;             // It's static; maybe another instance
                                        // has loaded it?
-
 JNJ P;                                 // Parser for message file
 P.Add(smessage);                       // Do it
 if (P.ErrCnt()!=0) {                   // Find out if the message file loaded OK
@@ -148,7 +147,7 @@ while (recd!=0) {                      // Walk the records in the section
     if (!types.empty()) t=types[0]->str[0];
     string s;                          // Message string
     if(!varis.empty()) s = varis[0]->str;
-    Msgs[m] = M(t,s);                  // Shove it into the map
+    Msgs.insert(pair<int,M>(m,M(t,s)));// Shove it into the map
   }
   recd = P.LocRecd(sect,recd);
 }
@@ -190,7 +189,7 @@ InitFile();                            // Stuff the boilerplate into the logfile
 string Mloc;                           // Elaboration file
 Z->Get(0,Mloc);                        // Unload from message
 LoadMessages(Mloc);                    // Load message template
-   
+
 return 0;
 }
 
@@ -206,7 +205,9 @@ int id = -1;
 if (pid!=0) id = *pid;                 // Corrupt message (-1) OK here
 vector<string> vstr;                   // Unpack string vector
 Z->GetX(1,vstr);
-char typ = Msgs[id].typ;               // Unpack message type
+char typ;
+if (id==-1) typ = '?';
+else typ = Msgs.find(id)->second.typ;  // Unpack message type
 string sfull = Assemble(id,vstr);
 PMsg_p Z2;                             // Build the full message
 Z2.Key(Q::LOG,Q::FULL,Q::N000,Q::N000);
@@ -222,4 +223,3 @@ return 0;
 }
 
 //==============================================================================
-
