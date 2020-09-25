@@ -471,10 +471,10 @@ return true;
 
 PDIGRAPH_ bool _PDIGRAPH::InsertNode(const NKT & key_n,const NT & data_n)
 {
-                                       // Is it already in the map?
+                                                   // Is it already in the map?
 if (index_n.find(key_n)!=index_n.end()) return false;
-index_n[key_n] = node(data_n);         // Nope - shove it in
-N_dirty = true;                        // Node map has changed
+index_n.insert(pair<NKT,node>(key_n,node(data_n)));// Nope - shove it in
+N_dirty = true;                                    // Node map has changed
 return true;
 }
 
@@ -575,7 +575,7 @@ PDIGRAPH_ bool _PDIGRAPH::RemoveNode(const NKT & key_n)
 // The pins will go automatically with the node.
 // We can't just walk the fani/fano multimaps and kill stuff, because we'll
 // be incrementing a map iterator for something we've just deleted, so we have
-// to copy the iterators into a local vector and kill the whole lot in a 
+// to copy the iterators into a local vector and kill the whole lot in a
 // seperate pass
 {
 TPn_it n = index_n.find(key_n);        // Find it
@@ -660,4 +660,3 @@ WALKMAP(NKT,node,index_n,i) if (f!=0) {
 }
 
 //------------------------------------------------------------------------------
-

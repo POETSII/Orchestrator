@@ -145,13 +145,13 @@ public: // Routines to do with dumping, pretty printing and walking in general
 
 #define WALKPDIGRAPHINPINS(NKT,NT,AKT,AT,PKT,PT,g,iNode,i) \
   for(multimap<NKT,pdigraph<NKT,NT,AKT,AT,PKT,PT>::pin>::iterator \
-      i=g.index_n[iNode].fani.begin(); \
-      i!=g.index_n[iNode].fani.end();i++)
+      i=g.index_n.find(iNode)->second.fani.begin();                  \
+      i!=g.index_n.find(iNode)->second.fani.end();i++)
 
 #define WALKPDIGRAPHOUTPINS(NKT,NT,AKT,AT,PKT,PT,g,iNode,i) \
   for(multimap<NKT,pdigraph<NKT,NT,AKT,AT,PKT,PT>::pin>::iterator \
-      i=g.index_n[iNode].fano.begin(); \
-      i!=g.index_n[iNode].fano.end();i++)
+      i=g.index_n.find(iNode)->second.fano.begin();                   \
+      i!=g.index_n.find(iNode)->second.fano.end();i++)
 
 #define PIN(i) (*i).second.data
 
@@ -261,4 +261,3 @@ void             RConfig();            // Set up the random access structure
 #undef _1
 #undef _2
 #endif
-
