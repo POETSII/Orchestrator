@@ -19,7 +19,7 @@ class ThreadComms;
 #include "SuperDB.h"
 #include "ThreadComms.h"
 
-#define SLOW_SPIN_SLEEP_PERIOD 1
+#define SLOW_SPIN_SLEEP_PERIOD 10  /* Milliseconds */
 
 class Mothership: public CommonBase
 {

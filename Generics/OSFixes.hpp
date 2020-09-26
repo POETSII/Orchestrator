@@ -103,6 +103,30 @@
  }
 #endif
 
+/* =============================================================================
+ * Cross-platform sleep (as in suspend-execution, not simply a delay). Due to
+ * the precision on your hardware platform, your mileage may vary. Designed for
+ * a pre-C++98 world.
+ * ===========================================================================*/
+#ifdef _WIN32
+#include <windows.h>
+#elif __unix
+#include <time.h>
+#endif
+namespace OSFixes
+{
+    inline void sleep(int milliseconds)
+    {
+        #ifdef _WIN32
+        Sleep(milliseconds);
+        #elif __unix
+        timespec time;
+        time.tv_sec = milliseconds / 1000;
+        time.tv_nsec = milliseconds % 1000 * 1000000;
+        nanosleep(&time, PNULL);
+        #endif
+    }
+}
 
 /* =============================================================================
  * Quick and dirty cross-platform method to get error string from error code.
