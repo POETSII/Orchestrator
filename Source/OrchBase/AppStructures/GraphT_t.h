@@ -48,7 +48,3 @@ static const string dMsgName;          // Default message name
 //==============================================================================
 
 #endif
-
-
-
-
