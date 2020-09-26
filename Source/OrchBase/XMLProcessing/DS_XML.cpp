@@ -81,8 +81,7 @@ pAP->filename = pn->par->ename;        // Filename is root element name
 pAP->fl = par->fd;                     // Output channel
 
 WALKVECTOR(xnode *,pn->vnode,i) {
-  (*i)->col = DS_map[(*i)->ename];
-  switch ((*i)->col) {
+  switch (DS_map[(*i)->ename]) {
     case cGraphType     : { GraphT_t * pGT = _GraphT_t(pAP,*i);
                             pAP->GraphT_v.push_back(pGT);
                             break; }
@@ -158,8 +157,7 @@ void DS_XML::_DevI_ts(GraphI_t * pGI,xnode * pn)
 // XML::DeviceInstances
 {
 WALKVECTOR(xnode *,pn->vnode,i) {
-  (*i)->col = DS_map[(*i)->ename];
-  switch ((*i)->col) {
+  switch (DS_map[(*i)->ename]) {
     case cDevI : _DevI_t(pGI,*i);                  break;
     case cExtI : _ExtI_t(pGI,*i);                  break;
     default    : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
@@ -176,8 +174,7 @@ string dname = pn->FindAttr("id");
 DevT_t * pD = new DevT_t(pGT,dname);
 pD->Def(pn->lin);
 WALKVECTOR(xnode *,pn->vnode,i) {
-  (*i)->col = DS_map[(*i)->ename];
-  switch ((*i)->col) {
+  switch (DS_map[(*i)->ename]) {
     case cProperties       : pD->pPropsD = _CFrag(*i);               break;
     case cState            : pD->pStateD = _CFrag(*i);               break;
     case cSharedCode       : pD->pShCd   = _CFrag(*i);               break;
@@ -261,8 +258,7 @@ void DS_XML::_EdgeI_ts(GraphI_t * pGI,xnode * pn)
 // XML::EdgeInstances
 {
 WALKVECTOR(xnode *,pn->vnode,i) {
-  (*i)->col = DS_map[(*i)->ename];
-  switch ((*i)->col) {
+  switch (DS_map[(*i)->ename]) {
     case cEdgeI : _EdgeI_t(pGI,*i);                break;
     default     : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
   }
@@ -348,8 +344,7 @@ string mname = pn->FindAttr("id");
 MsgT_t * pM = new MsgT_t(pGT,mname);
 pM->Def(pn->lin);
 WALKVECTOR(xnode *,pn->vnode,i) {
-  (*i)->col = DS_map[(*i)->ename];
-  switch ((*i)->col) {
+  switch (DS_map[(*i)->ename]) {
     case cCDATA : pM->pPropsD = _CFrag(*i); break;
     default     : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
   }
@@ -363,8 +358,7 @@ void DS_XML::_MsgT_ts(GraphT_t * pGT,xnode * pn)
 // XML::MessageTypes
 {
 WALKVECTOR(xnode *,pn->vnode,i) {
-  (*i)->col = DS_map[(*i)->ename];
-  switch ((*i)->col) {
+  switch (DS_map[(*i)->ename]) {
     case cMessageType : pGT->MsgT_v.push_back(_MsgT_t(pGT,*i)); break;
     default           : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
   }
@@ -381,8 +375,7 @@ PinT_t * pP  = new PinT_t(pD,pname);
 pP->Def(pn->lin);
 pP->tyId     = pn->FindAttr("messageTypeId");
 WALKVECTOR(xnode *,pn->vnode,i) {
-  (*i)->col = DS_map[(*i)->ename];
-  switch ((*i)->col) {
+  switch (DS_map[(*i)->ename]) {
     case cOnSend     : pP->pHandl  = _CFrag(*i);             break;
     case cOnReceive  : pP->pHandl  = _CFrag(*i);             break;
     case cProperties : pP->pPropsD = _CFrag(*i);             break;
@@ -443,8 +436,8 @@ void DS_XML::PBuild(xnode * pn)
 {
 //pn->col = DS_map["xml"];     // Subvert .col field for xml node type
 WALKVECTOR(xnode *,pn->vnode,i) {   // Walk the children
-  (*i)->col = DS_map[(*i)->ename];
-  if ((*i)->col!=cGraphs) par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
+  if (DS_map[(*i)->ename]!=cGraphs)
+      par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
   else _Apps_t(*i);
 }
 
@@ -459,15 +452,3 @@ fprintf(fp,"The datastructure-from-XML object has no "
 }
 
 //==============================================================================
-
-
-
-
-
-
-
-
-
-
-
-
