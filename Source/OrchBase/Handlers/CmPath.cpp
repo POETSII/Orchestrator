@@ -146,18 +146,34 @@ FILE * CmPath::GetLolfp()
 // Generate (and open) a filename just for the upcoming. We don't yet know what
 // it is, so all we can do is generate a generic name and timestamp it
 {
-string T(GetTime());
-for(unsigned i=0;i<T.size();i++) if (T[i]==':')T[i]='_';   // Lose the :
-for(unsigned i=0;i<T.size();i++) if (T[i]=='.')T[i]='_';   // Lose the .
-T = pathUlog + "POETS_" + T + ".plog"; // Build the filename
-FILE * fp = fopen(T.c_str(),"w");      // Try to open it
-if (fp==0) {                           // The path might not exist?
-  OuMode = Ou_Stdo;                    // Cockup
-  par->Post(246,T);
+// Slow time
+time_t timeNtv;
+time(&timeNtv);
+char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
+strftime(timeBuf,sizeof timeBuf,"%Y-%m-%dT%H-%M-%S",localtime(&timeNtv));
+string T = pathUlog + "Microlog_" + string(timeBuf);
+FILE * fp = 0;
+unsigned inc = 0;
+string tT;
+// Find file that doesn't exist (to avoid clobbering other logs.
+while (fp==0) {
+  tT=T+"p"+uint2str(inc)+".plog";
+  if ((fp = fopen(tT.c_str(),"r"))) {
+    inc++;
+    fclose(fp);
+    fp=0;
+    if (inc>1000) break;           // Don't get stuck forever.
+  }
+  else break;
+}
+// Try to open it (mode change). The path might not exist? (inc>1000)
+if (!(fp = fopen(tT.c_str(),"w"))) {
+  OuMode = Ou_Stdo;                // Cockup
+  par->Post(246,tT);
   return stdout;
 }
-lastfile = T;                          // Save last file generated
-return fp;                             // It's all good to go
+lastfile = tT;                     // Save last file generated
+return fp;                         // It's all good to go
 }
 
 //------------------------------------------------------------------------------
