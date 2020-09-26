@@ -53,6 +53,36 @@ void CmDump::Cm_Engine(Cli::Cl_t cl)
 
 //------------------------------------------------------------------------------
 
+/* Dumps information about all placed tasks. Does not dump any information
+ * about constraints for unplaced tasks. Doesn't dump to a single file -
+ * instead dumps to the placement output path (perfection is the enemy of
+ * progress eh ADB). */
+void CmDump::Cm_Placer(Cli::Cl_t cl)
+{
+    /* Warn the operator if they've passed in parameters (that's not how this
+     * one works...)  */
+    if (!cl.GetP(0).empty()) par->Post(180, par->pCmPath->pathPlac);
+
+    /* Warn the operator if nothing is placed (thus there is nothing to
+     * dump). */
+    if (par->pPlacer->placedGraphs.empty())
+    {
+        par->Post(181);
+        return;
+    }
+
+    /* And we're off! */
+    std::map<GraphI_t*, Algorithm*>::iterator graphIt;
+    for (graphIt = par->pPlacer->placedGraphs.begin();
+         graphIt != par->pPlacer->placedGraphs.end(); graphIt++)
+    {
+        par->pPlacer->dump(graphIt->first);
+    }
+    par->Post(182, par->pCmPath->pathPlac);
+}
+
+//------------------------------------------------------------------------------
+
 void CmDump::Dump(unsigned off,FILE * fp)
 {
 string s(off,' ');
@@ -89,10 +119,10 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="apps") { Apps_t::DumpAll(f);          continue; }
   if (sCl=="batc") { par->Post(247,sCo,sCl,sPa);  continue; }
   if (sCl=="bina") { par->Post(247,sCo,sCl,sPa);  continue; }
-  if (sCl=="engi") { Cm_Engine(*i);                continue; }
+  if (sCl=="engi") { Cm_Engine(*i);               continue; }
   if (sCl=="name") { par->Post(247,sCo,sCl,sPa);  continue; }
   if (sCl=="path") { par->Post(247,sCo,sCl,sPa);  continue; }
-  if (sCl=="plac") { par->Post(247,sCo,sCl,sPa);  continue; }
+  if (sCl=="plac") { Cm_Placer(*i);               continue; }
   if (sCl=="syst") { par->Post(247,sCo,sCl,sPa);  continue; }
   par->Post(25,sCl,"dump");            // Unrecognised clause
 }

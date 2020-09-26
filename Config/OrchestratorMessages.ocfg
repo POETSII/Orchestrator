@@ -107,6 +107,9 @@
 177(E) : "System command '%s' ran unsuccessfully. Aborting deployment."
 178(E) : "Not enough mothership processes exist to deploy task %s. Is a mothership running?"
 179(E) : "System command '%s' ran unsuccessfully with message '%s'. Aborting deployment."
+180(W) : "Ignoring clauses in 'dump /plac' command - dumping all files to '%s'."
+181(W) : "No application graph instances have been placed. Not dumping anything."
+182(I) : "Placement information dumped to '%s'."
 
 201(E) : "... failed %s with %s errors in %s msecs"
 202(I) : "Task: %s file: %s returns %s errors."

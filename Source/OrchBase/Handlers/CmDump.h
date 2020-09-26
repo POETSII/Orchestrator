@@ -17,6 +17,7 @@ public:
 virtual ~     CmDump();
 
 void          Cm_Engine(Cli::Cl_t);
+void          Cm_Placer(Cli::Cl_t);
 
 void          Dump(unsigned = 0,FILE * = stdout);
 void          Show(FILE * = stdout);
