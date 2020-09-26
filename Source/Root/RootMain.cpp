@@ -44,9 +44,6 @@ catch(bad_alloc &) {
 catch(Unrec_t & u) {
   u.Post();
 }
-catch(string & s) {
-  printf("\n\n%s Main string exception...%s   \n\n",csROOTproc,s.c_str());
-}
 catch(...) {
   printf("\n\n%s Main unhandled exception...???   \n\n",csROOTproc);
 }
