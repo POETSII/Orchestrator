@@ -2,7 +2,7 @@
 #define __BUILD_DEFS_H__
 
 #include <string>
-#include "tinsel-config.h"
+#include "config.h"
 #include "OSFixes.hpp"
 
 extern const std::string SYS_COPY;
