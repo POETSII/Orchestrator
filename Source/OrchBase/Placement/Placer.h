@@ -45,6 +45,7 @@ struct Result;
 #include "GraphI_t.h"
 #include "HardwareModel.h"
 #include "OSFixes.hpp"
+#include "UniqueDevT.h"
 
 #define THREAD_LOADING_SCALING_FACTOR 0.01
 
@@ -88,7 +89,7 @@ public:
     void check_integrity(GraphI_t* gi, Algorithm* algorithm);
     bool are_all_core_pairs_device_locked(GraphI_t* gi,
         std::map<std::pair<P_core*, P_core*>,
-                 std::set<DevT_t*> >* badCoresToDeviceTypes);
+                 std::set<UniqueDevT> >* badCoresToDeviceTypes);
     bool are_all_devices_mapped(GraphI_t* gi, std::vector<DevI_t*>* unmapped);
     bool are_all_hard_constraints_satisfied(GraphI_t* gi,
         std::vector<Constraint*>* broken,
@@ -118,7 +119,7 @@ public:
 
     /* Convenient way to get core occupation. */
     void define_valid_cores_map(GraphI_t* gi,
-        std::map<DevT_t*, std::set<P_core*> >* validCoresForDeviceType);
+        std::map<UniqueDevT, std::set<P_core*> >* validCoresForDeviceType);
 
     /* Redistribution of devices within a graph instance at the core level. */
     void redistribute_devices_in_gi(GraphI_t* gi);

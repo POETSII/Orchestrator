@@ -12,7 +12,7 @@ class SmartRandom: public Algorithm
 public:
     /* Holds, for each device type, which cores are valid for placement of
      * devices of that type. */
-    std::map<DevT_t*, std::set<P_core*> > validCoresForDeviceType;
+    std::map<UniqueDevT, std::set<P_core*> > validCoresForDeviceType;
 
     SmartRandom(Placer* placer);
     float do_it(GraphI_t* gi);

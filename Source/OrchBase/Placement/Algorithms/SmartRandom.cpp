@@ -19,8 +19,8 @@ float SmartRandom::do_it(GraphI_t* gi)
     DevI_t* device;
     P_core* core;
     P_thread* thread;
-    DevT_t* deviceType;
-    std::map<DevT_t*, std::set<P_core*> >::iterator validCoreIt, badCoreIt;
+    UniqueDevT deviceType;
+    std::map<UniqueDevT, std::set<P_core*> >::iterator validCoreIt, badCoreIt;
 
     result.startTime = placer->timestamp();
 
@@ -41,10 +41,11 @@ float SmartRandom::do_it(GraphI_t* gi)
                       PinI_t*, gi->G, deviceIterator)
     {
         device = gi->G.NodeData(deviceIterator);
-        deviceType = device->pT;
+        deviceType.gi = gi;
+        deviceType.pT = device->pT;
 
         /* Ignore if it's not a normal device (we don't map those). */
-        if (deviceType->devTyp != 'D') continue;
+        if (deviceType.pT->devTyp != 'D') continue;
 
         /* Keep choosing cores from the valid core map until we find one with
          * space. */

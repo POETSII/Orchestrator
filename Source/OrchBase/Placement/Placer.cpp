@@ -53,7 +53,7 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
  *   more than one element in length. Cleared before being populated. */
 bool Placer::are_all_core_pairs_device_locked(GraphI_t* gi,
     std::map<std::pair<P_core*, P_core*>,
-             std::set<DevT_t*> >* badCoresToDeviceTypes)
+             std::set<UniqueDevT> >* badCoresToDeviceTypes)
 {
     /* Sanity. */
     badCoresToDeviceTypes->clear();
@@ -93,7 +93,7 @@ bool Placer::are_all_core_pairs_device_locked(GraphI_t* gi,
 
         std::pair<P_core*, P_core*> corePair =
             std::make_pair(firstCore, secondCore);
-        std::set<DevT_t*>* devTypSet = &((*badCoresToDeviceTypes)[corePair]);
+        std::set<UniqueDevT>* devTypSet = &((*badCoresToDeviceTypes)[corePair]);
 
         /* From each thread in the first core... */
         for (threadIt = firstCore->P_threadm.begin();
@@ -107,7 +107,10 @@ bool Placer::are_all_core_pairs_device_locked(GraphI_t* gi,
                  deviceIt++)
             {
                 /* ...get its device type. */
-                devTypSet->insert((*deviceIt)->pT);
+                UniqueDevT tmpTyp;
+                tmpTyp.gi = gi;
+                tmpTyp.pT = (*deviceIt)->pT;
+                devTypSet->insert(tmpTyp);
             }
         }
 
@@ -125,7 +128,10 @@ bool Placer::are_all_core_pairs_device_locked(GraphI_t* gi,
                      deviceIt++)
                 {
                     /* ...get its device type. */
-                    devTypSet->insert((*deviceIt)->pT);
+                    UniqueDevT tmpTyp;
+                    tmpTyp.gi = gi;
+                    tmpTyp.pT = (*deviceIt)->pT;
+                    devTypSet->insert(tmpTyp);
                 }
             }
         }
@@ -288,14 +294,14 @@ void Placer::check_integrity(GraphI_t* gi, Algorithm* algorithm)
 
     /* Step 3: Check device types. */
     std::map<std::pair<P_core*, P_core*>,
-             std::set<DevT_t*> > badCoresToDeviceTypes;
+             std::set<UniqueDevT> > badCoresToDeviceTypes;
     if (!are_all_core_pairs_device_locked(gi, &badCoresToDeviceTypes))
     {
         /* Prepare a nice printout of core pairs with multiple device types. */
         std::string corePrint;
         std::map<std::pair<P_core*, P_core*>,
-                 std::set<DevT_t*> >::iterator badCoreIt;
-        std::set<DevT_t*>::iterator devTypIt;
+                 std::set<UniqueDevT> >::iterator badCoreIt;
+        std::set<UniqueDevT>::iterator devTypIt;
 
         /* For each entry in the map... */
         for (badCoreIt = badCoresToDeviceTypes.begin();
@@ -328,7 +334,7 @@ void Placer::check_integrity(GraphI_t* gi, Algorithm* algorithm)
                     corePrint.append(",");
                 }
                 corePrint.append(dformat(" '%s'",
-                                         (*devTypIt)->Name().c_str()));
+                                         (*devTypIt).pT->Name().c_str()));
             }
         }
 
@@ -539,7 +545,7 @@ unsigned Placer::constrained_max_threads_per_core(GraphI_t* gi)
 /* Populates a map with information about which devices can be placed
  * where. Useful for algorithms. */
 void Placer::define_valid_cores_map(GraphI_t* gi,
-        std::map<DevT_t*, std::set<P_core*> >* validCoresForDeviceType)
+        std::map<UniqueDevT, std::set<P_core*> >* validCoresForDeviceType)
 {
     /* Firstly, populate the map with an entry for each core and each device
      * type in this application graph instance. NB: It would be handy if the
@@ -556,8 +562,10 @@ void Placer::define_valid_cores_map(GraphI_t* gi,
 
         /* Skip if an entry in the map already exists for a device of this
          * type */
-        DevT_t* deviceType = device->pT;
-        std::map<DevT_t*, std::set<P_core*> >::iterator devTypFinder;
+        UniqueDevT deviceType;
+        deviceType.gi = gi;
+        deviceType.pT = device->pT;
+        std::map<UniqueDevT, std::set<P_core*> >::iterator devTypFinder;
         devTypFinder = validCoresForDeviceType->find(deviceType);
         if (devTypFinder == validCoresForDeviceType->end())
         {
@@ -579,11 +587,13 @@ void Placer::define_valid_cores_map(GraphI_t* gi,
      * other application graph instances! We don't want to interact with them
      * at all...) */
     std::map<DevI_t*, P_thread*>::iterator deviceIterator;
-    std::map<DevT_t*, std::set<P_core*> >::iterator bigScaryMapIterator;
+    std::map<UniqueDevT, std::set<P_core*> >::iterator bigScaryMapIterator;
     for (deviceIterator = deviceToThread.begin();
          deviceIterator != deviceToThread.end(); deviceIterator++)
     {
-        DevT_t* deviceType = deviceIterator->first->pT;
+        UniqueDevT deviceType;
+        deviceType.gi = deviceIterator->first->par;
+        deviceType.pT = deviceIterator->first->pT;
 
         /* Remove the placed core from each device type entry... */
         for (bigScaryMapIterator = validCoresForDeviceType->begin();

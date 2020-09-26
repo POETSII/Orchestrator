@@ -12,8 +12,8 @@
 class GraphI_t;
 class Placer;
 
-#include "DevT_t.h"
 #include "Result.h"
+#include "UniqueDevT.h"
 
 class Algorithm
 {
