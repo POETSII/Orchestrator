@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- V4 Grammar definition file, 2020-04-18, Gospel according to Mark. -->
+<!-- V4 Grammar definition file, 2020-09-29. -->
 <Graphs Graphs="[1],[1]xmlns,[0..1]formatMinorVersion,[1]appname">
   <GraphType GraphType="[1],[1]id">
     <Properties Properties="[0..1]"><CDATA CDATA="[1]"/></Properties>
@@ -40,6 +40,8 @@
         <MetaData MetaData="[]"/>
       </ExternalType>
       <SupervisorType SupervisorType="[0..1],[1]id,[0..1](SupervisorInPin,SupervisorOutPin)">
+        <Properties Properties="[0..1]"><CDATA CDATA="[1]"/></Properties>
+        <State State="[0..1]"><CDATA CDATA="[1]"/></State>
         <Code Code="[0..1]"><CDATA CDATA="[1]"/></Code>
         <SupervisorOutPin SupervisorOutPin="[0..1],[1]id,[1]messageTypeId">
           <OnSend OnSend="[1]"><CDATA CDATA="[1]"/></OnSend>
@@ -47,6 +49,15 @@
         <SupervisorInPin SupervisorInPin="[0..1],[1]id,[1]messageTypeId">
           <OnReceive OnReceive="[1]"><CDATA CDATA="[1]"/></OnReceive>
         </SupervisorInPin>
+        <InputPin InputPin="[],[1](name,messageTypeId)">
+          <Properties Properties="[0..1]"><CDATA CDATA="[1]"/></Properties>
+          <State State="[0..1]"><CDATA CDATA="[1]"/></State>
+          <OnReceive OnReceive="[1]"><CDATA CDATA="[1]"/></OnReceive>
+        </InputPin>
+        <OutputPin OutputPin="[],[1](name,messageTypeId)">
+          <OnSend OnSend="[1]"><CDATA CDATA="[1]"/></OnSend>
+        </OutputPin>
+        <OnInit OnInit="[0..1]"><CDATA CDATA="[1]"/></OnInit>
         <OnSupervisorIdle OnSupervisorIdle="[0..1]"><CDATA CDATA="[1]"/></OnSupervisorIdle>
         <OnRTCL OnRTCL="[..1]"><CDATA CDATA="[1]"/></OnRTCL>
         <OnStop OnStop="[..1]"><CDATA CDATA="[1]"/></OnStop>
