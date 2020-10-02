@@ -71,7 +71,7 @@ ecnt = g_ecnt + c_ecnt;                // Total errors = grammar + client
 if (ecnt!=0) par->Post(201,"validation",uint2str(ecnt),long2str(mTimer(t0)));
 else {
   pXB->PBuild(pXV->ClRoot());
-  par->Post(65,long2str(mTimer(t0)));
+  par->Post(65,fn,long2str(mTimer(t0)));
 }
 
 }

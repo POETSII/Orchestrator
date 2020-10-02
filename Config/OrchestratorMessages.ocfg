@@ -41,7 +41,7 @@
 062(W) : "Command needs %s parameters - ignored"
 063(S) : "%s"
 064(W) : "Application %s is not present in the database"
-065(I) : "...took %s ms"
+065(I) : "Application file %s loaded in %s ms."
 
 090(I) : "TEST|MSG received by UserO, payload component %s is %s"
 091(W) : "TEST|MSG received by UserO, addressed to unknown owner (%s)"

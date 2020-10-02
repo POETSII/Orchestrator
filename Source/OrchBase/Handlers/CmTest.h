@@ -16,6 +16,8 @@ public:
               CmTest(OrchBase *);
 virtual ~     CmTest();
 
+void          Cm_Echo(Cli::Cl_t);
+
 void          Dump(FILE * = stdout);
 void          Show(FILE * = stdout);
 unsigned      operator()(Cli *);

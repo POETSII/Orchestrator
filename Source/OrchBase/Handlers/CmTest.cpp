@@ -18,6 +18,29 @@ CmTest::~CmTest()
 
 //------------------------------------------------------------------------------
 
+void CmTest::Cm_Echo(Cli::Cl_t cl)
+{
+    /* Combine parameters. */
+    std::string args;
+    std::vector<Cli::Pa_t>::iterator arg;
+    for (arg = cl.Pa_v.begin(); arg != cl.Pa_v.end(); arg++)
+    {
+        if (arg != cl.Pa_v.begin()) args += " ";
+        args += arg->Concatenate();
+    }
+
+    /* Post */
+    par->Post(1, args);
+
+    /* Write to microlog, if possible. */
+    FILE* ulog = fopen(par->pCmPath->lastfile.c_str(), "a");
+    if (ulog == PNULL) return;
+    fprintf(ulog, "%s\n", args.c_str());
+    fclose(ulog);
+}
+
+//------------------------------------------------------------------------------
+
 void CmTest::Dump(FILE * fp)
 {
 fprintf(fp,"CmTest+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
@@ -46,11 +69,7 @@ unsigned CmTest::operator()(Cli * pC)
 if (pC==0) return 0;                   // Paranoia
 WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   string sCl = (*i).Cl;                // Pull out clause name
-//  if (strcmp(scl.c_str(),"app" )==0) { par->Post(247,pC->Co,scl,(*i).GetP());continue;}
-//  if (strcmp(scl.c_str(),"depl")==0) { par->Post(247,pC->Co,scl,(*i).GetP());continue;}
-//  if (strcmp(scl.c_str(),"init")==0) { par->Post(247,pC->Co,scl,(*i).GetP());continue;}
-//  if (strcmp(scl.c_str(),"run" )==0) { par->Post(247,pC->Co,scl,(*i).GetP());continue;}
-//  if (strcmp(scl.c_str(),"stop")==0) { par->Post(247,pC->Co,scl,(*i).GetP());continue;}
+  if (strcmp(sCl.c_str(),"echo")==0) {Cm_Echo(*i); continue;}
   par->Post(25,sCl,"test");           // Unrecognised clause
 }
 return 0;                              // Legitimate command exit
