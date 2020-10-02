@@ -13,7 +13,7 @@ using namespace std;
 
 int main(int argc, char * argv[])
 {
-#ifdef ORCHESTRATOR_DEBUG
+#if ORCHESTRATOR_DEBUG
 printf("Attach debugger (Root process %d (%#0x)), hit <return>.....\n",
        GetPID(),GetPID());
 fflush(stdout);
