@@ -29,6 +29,9 @@ void CmTest::Cm_Echo(Cli::Cl_t cl)
         args += arg->Concatenate();
     }
 
+    /* Leave if trivial. */
+    if (args.empty()) return;
+
     /* Post */
     par->Post(1, args);
 
