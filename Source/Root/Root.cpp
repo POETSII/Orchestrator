@@ -467,6 +467,7 @@ if (scmnd=="plac") code=(*pCmPlac)(pC);// Place
 if (scmnd=="retu") code=CmRetu(pC);    // Return
 if (scmnd=="show") code=(*pCmShow)(pC);// Show
 if (scmnd=="syst") code=(*pCmSyst)(pC);// System
+if (scmnd=="test") code=(*pCmTest)(pC);// Test
 if (scmnd=="tlin") code=(*pCmTlin)(pC);// Tlink
 if (scmnd=="unlo") code=(*pCmUnlo)(pC);// Unload
 if (scmnd.at(0)==char(0)) code=CmExit(pC); // Ctrl-D behaviour in linux-land
