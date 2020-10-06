@@ -37,10 +37,11 @@ void CmBuil::Cm_Deploy(Cli::Cl_t clause)
     /* Get the application graph instances */
     par->GetGraphIs(clause, graphs);
 
-    /* Ensure that all graph instances are placed before proceeding. */
+    /* Ensure that all graph instances are built before proceeding. */
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
-        if (!(*graphIt)->built)
+#warning "CmBuil::Cm_Deploy: No logic defined for checking whether an application has been build. Deploy-check does not interact with the Composer."
+        if (true) //if (!(*graphIt)->built)
         {
             par->Post(107, (*graphIt)->Name());
             return;
