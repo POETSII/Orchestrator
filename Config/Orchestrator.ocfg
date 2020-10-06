@@ -16,7 +16,7 @@ version     = "0.0.5"
 // All these may be overridden by the console "path" command
 [default_paths]
 // Application (XML) files (directory)
-apps = "../application_staging/xml/"
+apps = "../"
 // Hardware description files. Only used on reload; not visible to the
 // launcher (directory)
 engine = "/local/orchestrator-common/"

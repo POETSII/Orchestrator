@@ -38,9 +38,6 @@ EXECUTABLE_DIR := $(ROOT_DIR)/bin
 # Test binaries are built to here:
 TEST_EXECUTABLE_DIR := $(ROOT_DIR)/test_bin
 
-# The application staging environment is built here:
-APPLICATION_STAGING_DIR := $(ROOT_DIR)/application_staging
-
 # A note on dependency handling: we couple gcc's various -M flags with Make's
 # ability to import dependency files to manage build dependencies. For more
 # information,
@@ -115,8 +112,7 @@ RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
 
-all: orchestrate launcher root dummy logserver rtcl injector mothership \
-     application_staging_environment
+all: orchestrate launcher root dummy logserver rtcl injector mothership
 launcher: $(LAUNCHER_EXECUTABLE)
 orchestrate: $(ORCHESTRATE_SCRIPT)
 root: $(ROOT_EXECUTABLE)
@@ -207,62 +203,6 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 	rm "$(ORCHESTRATE_TMP)"
 	rmdir "$(dir $(ORCHESTRATE_TMP))"
 
-# Building the staging environment for XML applications to be used in the
-# Orchestrator. Users will place their XML applications in the xml directory
-# within the structure created by this process.
-application_staging_environment: $(APPLICATION_STAGING_DIR)/xml \
-$(APPLICATION_STAGING_DIR)/Orchestrator/Source \
-$(APPLICATION_STAGING_DIR)/Orchestrator/Generics \
-$(APPLICATION_STAGING_DIR)/Orchestrator/Source/Common \
-$(APPLICATION_STAGING_DIR)/Softswitch \
-$(APPLICATION_STAGING_DIR)/Tinsel \
-$(APPLICATION_STAGING_DIR)/Makefile \
-$(APPLICATION_STAGING_DIR)/Supervisor.cpp \
-$(APPLICATION_STAGING_DIR)/Supervisor.h
-
-$(APPLICATION_STAGING_DIR)/Orchestrator/Source \
-$(APPLICATION_STAGING_DIR)/xml:
-	$(MKDIR) "$@"
-
-$(APPLICATION_STAGING_DIR)/Orchestrator/Generics:
-	$(MKDIR) "$(dir $@)"
-	ln --force --symbolic "$(abspath $(GENERICS_DIR))" "$@"
-
-$(APPLICATION_STAGING_DIR)/Orchestrator/Source/Common:
-	$(MKDIR) "$(dir $@)"
-	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Common)" "$@"
-
-$(APPLICATION_STAGING_DIR)/Softswitch:
-	$(MKDIR) "$(dir $@)"
-	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch)" "$@"
-
-$(APPLICATION_STAGING_DIR)/Tinsel:
-	$(MKDIR) "$(dir $@)"
-	ln --force --symbolic "$(abspath $(TINSEL_DIR))" "$@"
-
-$(APPLICATION_STAGING_DIR)/Makefile:
-	$(MKDIR) "$(dir $@)"
-	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch/Makefile)" "$@"
-
-$(APPLICATION_STAGING_DIR)/Supervisor.cpp $(APPLICATION_STAGING_DIR)/Supervisor.h:
-	$(MKDIR) "$(dir $@)"
-	ln --force --symbolic \
-		"$(abspath $(SOURCE_DIR)/Supervisor/Supervisor$(suffix $@))" "$@"
-
-# Tearing down the environment (for 'clean'), leaving the xml directory for the
-# user. Only tear it down if $(APPLICATION_STAGING_DIR) exists. NB:
-#
-#  - Single quotes needed for the regex predicate, because the path is
-#    relative. Consequently, the "." from "../../" should not be interpreted as
-#    a character.
-application_staging_environment_teardown:
-	if [ -d "$(APPLICATION_STAGING_DIR)" ]; then \
-		find "$(APPLICATION_STAGING_DIR)" \
-			! -regex '$(APPLICATION_STAGING_DIR)/xml.*' \
-			! -wholename "$(APPLICATION_STAGING_DIR)" \
-			-exec rm --force --recursive {} +; \
-	fi
-
 # Dependency files have no build instructions (Make must not fall over if the
 # dependency file is not there), because they are created from the compilation
 # process. However, the directory structure for dependency files must be
@@ -270,7 +210,7 @@ application_staging_environment_teardown:
 $(DEPENDENCY_DIR)/%.d:
 	@$(MKDIR) $$(dirname $@)
 
-clean: application_staging_environment_teardown
+clean:
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
 	$(ORCHESTRATE_SCRIPT) $(TEST_EXECUTABLE_DIR)
 
@@ -279,8 +219,7 @@ clean: application_staging_environment_teardown
 
 # Non-builtin targets that do not explicitly represent files that are created.
 .PHONY: all clean debug tests orchestrate root dummy logserver rtcl injector \
-    mothership application_staging_environment \
-    application_staging_environment_teardown
+    mothership
 
 # The "all" target should be the default.
 .DEFAULT_GOAL := all
