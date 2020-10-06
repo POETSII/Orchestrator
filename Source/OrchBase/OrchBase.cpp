@@ -2,23 +2,10 @@
 
 #include "Pglobals.h"
 #include "OrchBase.h"
-#include "P_builder.h"
 #include "FileName.h"
 #include "P_core.h"
 #include "Ns_el.h"
 #include "P_super.h"
-
-//==============================================================================
-// This class is chopped up into multiple .cpp files, because it's so
-// bloody boring. The translation unit is *this* file + all its includes.
-// The below are NOT translation units in their own right.
-
-/* Not anymore!
-#include "OrchBaseTask.cpp"            // Handlers for "task" commands
-#include "OrchBaseTopo.cpp"            // Handlers for "topo" commands
-#include "OrchBaseOwner.cpp"           // Handlers for "owner" commands
-#include "OrchBasePlace.cpp"           // Guess
-*/
 
 //==============================================================================
 
