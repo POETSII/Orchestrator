@@ -10,8 +10,8 @@
 // All pretty arbitrary; just copied in and stored
 name        = OrchestratorConfiguration
 author      = "MLV and GMB"
-date        = "2020-09-25"
-version     = "0.0.4"
+date        = "2020-10-06"
+version     = "0.0.5"
 
 // All these may be overridden by the console "path" command
 [default_paths]
@@ -28,12 +28,12 @@ ulog = "../Output/Microlog/"
 place = "../Output/Placement/"
 // Location for files transferred to Motherships. Relative to home.
 remote_mship = ".orchestrator/app_binaries/"
-// Softswitch binary files for execution
-binaries = "../Output/Binaries/"
+// Staged source files and binaries for applications
+stage = "../Output/Composer/"
+// Application binary files for execution
+// binaries = ""
 // Trace output
 // trace = ""
-// Orchestrator generated source and X-compiled output prior to deployment
-// stage = ""
 // Batch files
 // batch = ""
 // Deployed supervisor binaries (in the MPI universe)

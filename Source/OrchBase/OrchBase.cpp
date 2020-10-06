@@ -144,7 +144,7 @@ void OrchBase::ComposerReset(bool post)
     if (pPlacer != PNULL)
     {
         pComposer = new Composer(pPlacer);
-        pComposer->setOutputPath(pCmPath->pathBina);
+        pComposer->setOutputPath(pCmPath->pathStag);
     }
     if (post) Post(800);
 }

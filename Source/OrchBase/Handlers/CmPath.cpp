@@ -286,6 +286,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   }
   if (sCl=="stag") {
     if (Cm_Path(OK,pathStag,sPa,pR->pOC->Stage())) par->Post(239,sCl);
+    if (par->pComposer != PNULL) par->pComposer->setOutputPath(pathStag);
     continue;
   }
   if (sCl=="supe") {
