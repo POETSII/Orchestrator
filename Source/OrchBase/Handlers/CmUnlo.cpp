@@ -29,6 +29,7 @@ for(unsigned i=0;i<cl.Pa_v.size();i++) {
   {
     Apps_t::DelAll();
     par->PlacementReset();             // Quicker than unplacing one at a time
+    par->ComposerReset();
     return;
   }
   Apps_t* app = Apps_t::FindApp(as);

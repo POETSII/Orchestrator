@@ -130,6 +130,7 @@ void CmLoad::Cm_Engine(Cli::Cl_t cl)
         }
 
         par->PlacementReset();
+        par->ComposerReset();
         par->BuildMshipMap();
     }
 
@@ -153,6 +154,7 @@ void CmLoad::Cm_Engine(Cli::Cl_t cl)
             reader.load_file(filePath.c_str());
             reader.populate_hardware_model(par->pE);
             par->PlacementReset();
+            par->ComposerReset();
             par->Post(140, filePath.c_str());
             par->BuildMshipMap();
         }

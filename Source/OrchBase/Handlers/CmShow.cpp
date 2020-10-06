@@ -61,7 +61,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   FILE * f = par->fd;                  // Save some typing
   if (sCl=="apps") { Apps_t::Show(f);             continue;  }
   if (sCl=="batc") { par->pCmCall->Show(f);       continue;  }
-  if (sCl=="bina") { par->Post(247,sCo,sCl,sPa);  continue;  }
+  if (sCl=="comp") { par->pCmComp->Show(f);       continue;  }
   if (sCl=="engi") { Cm_Engine(f);                continue;  }
   if (sCl=="name") { par->Post(247,sCo,sCl,sPa);  continue;  }
   if (sCl=="pars") { par->pCmLoad->Show(f);       continue;  }

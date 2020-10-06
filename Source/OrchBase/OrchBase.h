@@ -10,11 +10,14 @@ class P_super;
 #include "HardwareModel.h"
 #include "HardwareFileReader.h"
 #include "Cli.h"
+#include "Composer.h"
 #include "Environment.h"
 #include "CommonBase.h"
 #include "Trace.h"
+
 #include "CmBuil.h"
 #include "CmCall.h"
+#include "CmComp.h"
 #include "CmDump.h"
 #include "CmExec.h"
 #include "CmInje.h"
@@ -45,13 +48,14 @@ void                   Dump(unsigned = 0,FILE * = stdout);
 
 void                   BuildMshipMap();
 void                   ClearTopo();
+void                   ComposerReset(bool post=false);
 int                    GetGraphIs(Cli::Cl_t, std::set<GraphI_t*>&,
                                   int skip=-1);
 void                   PlacementReset(bool post=false);
 
 P_engine *             pE;             // Poets engine (hardware model)
 Placer *               pPlacer;        // Cross-linker
-P_builder *            pB;             // Object to build the datastructure
+Composer *             pComposer;      // Object to compose binaries
 Trace                  Tr;             // Debug trace subsystem
 FILE *                 fd;             // Output file stream for details
 
@@ -61,6 +65,7 @@ map2<P_box *, ProcMap::ProcMap_t *> P_SCMm2;
 
 CmBuil *               pCmBuil;
 CmCall *               pCmCall;
+CmComp *               pCmComp;
 CmDump *               pCmDump;
 CmExec *               pCmExec;
 //CmExit

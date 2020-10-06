@@ -418,7 +418,6 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   string sCl = (*i).Cl;                // Pull out clause string
   string sCo = pC->Co;                 // Pull out command string
   string sPa = (*i).GetP();            // Pull out (simple) parameter
-  if (sCl=="app" ) { par->Post(247,sCo,sCl,sPa); continue; }
   if (sCl=="depl") { Cm_Deploy(*i);              continue; }
   if (sCl=="init" or sCl=="run" or sCl=="stop" or sCl=="recl")
                    { Cm_Do(*i, sCl);             continue; }

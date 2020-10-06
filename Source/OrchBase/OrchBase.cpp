@@ -14,12 +14,13 @@ OrchBase::OrchBase(int argc,char * argv[],string d,string sfile) :
 {
 pE        = PNULL;
 pPlacer   = PNULL;
-pB        = new P_builder(this);       // Object to build the datastructure
+pComposer = PNULL;
 Name("O_");                            // NameBase root name
 
 // Command handlers
 pCmBuil = new CmBuil(this);
 pCmCall = new CmCall(this);
+pCmComp = new CmComp(this);
 pCmDump = new CmDump(this);
 pCmExec = new CmExec(this);
 pCmInje = new CmInje(this);
@@ -43,13 +44,14 @@ taskpath  = string(" ");
 
 OrchBase::~OrchBase()
 {
-if (pE != PNULL) delete pE;           // Destroy the engine
-if (pPlacer != PNULL) delete pPlacer; // Destroy the placer
-if (pB != PNULL) delete pB;           // Object to build the datastructure
+if (pE != PNULL) delete pE;               // Destroy the engine
+if (pPlacer != PNULL) delete pPlacer;     // Destroy the placer
+if (pComposer != PNULL) delete pComposer; // Destroy the composer
 
 // Command handlers
 if (pCmBuil != PNULL) delete pCmBuil;
 if (pCmCall != PNULL) delete pCmCall;
+if (pCmComp != PNULL) delete pCmComp;
 if (pCmDump != PNULL) delete pCmDump;
 if (pCmExec != PNULL) delete pCmExec;
 if (pCmInje != PNULL) delete pCmInje;
@@ -128,6 +130,23 @@ void OrchBase::ClearTopo()
     delete pE;
     pE = PNULL;
     PlacementReset();
+}
+
+//------------------------------------------------------------------------------
+
+void OrchBase::ComposerReset(bool post)
+{
+    if (pComposer != PNULL)
+    {
+        delete pComposer;
+        pComposer = PNULL;
+    }
+    if (pPlacer != PNULL)
+    {
+        pComposer = new Composer(pPlacer);
+        pComposer->setOutputPath(pCmPath->pathBina);
+    }
+    if (post) Post(800);
 }
 
 //------------------------------------------------------------------------------
@@ -292,6 +311,11 @@ int OrchBase::GetGraphIs(Cli::Cl_t clause, std::set<GraphI_t*>& graphs,
 
 void OrchBase::PlacementReset(bool post)
 {
+    if (pComposer != PNULL)
+    {
+        delete pComposer;
+        pComposer = PNULL;
+    }
     if (pPlacer != PNULL)
     {
         delete pPlacer;

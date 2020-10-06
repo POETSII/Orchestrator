@@ -459,6 +459,7 @@ const unsigned INVALIDCODE=999;        // Yukky yukky yuk yuk
 unsigned code = INVALIDCODE;
 if (scmnd=="buil") code=(*pCmBuil)(pC);// Build
 if (scmnd=="call") code=(*pCmCall)(pC);// Call
+if (scmnd=="comp") code=(*pCmComp)(pC);// Compose
 if (scmnd=="dump") code=(*pCmDump)(pC);// Dump
 if (scmnd=="exit") code=CmExit (pC);   // Exit
 if (scmnd=="load") code=(*pCmLoad)(pC);// Load
