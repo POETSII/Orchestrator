@@ -4,14 +4,14 @@
 //==============================================================================
 /*
 This class does all the heavy lifting associated with translating the type-
-agnostic symbol tree spat out by the XMLparser/validator into the strongly typed
+agnostic symbil tree spat out by the XMLparser/validator into the strongly typed
 POETS data structure. The high level design idea is that if we ever want another
 route in (a binary format, for example), we simply write another DS_XXXX class.
 The way in is via PBuild, which walks the XML node tree, recognising the POETS
 node type from the element name and looking up an enumerated type from DS_map.
 (DS_ here stands for data structure __, if you hadn't already worked that out)
 The *assumes* the validator has done its job, but - trust but verify - each
-builder routine is effectively a switch with a default clause that calls an
+builder routie is effectively a switch with a default clause that calls an
 Unrecoverable error.
 Apart from the low-level XML elements (devices and paths) there are very few
 comments, because - I think - it's all pretty obvious......
@@ -59,6 +59,7 @@ void          _MsgT_ts(GraphT_t *,xnode *);
 PinT_t *      _PinT_t(DevT_t *,xnode *);
 SupT_t *      _SupT_t(GraphT_t *,xnode *);
 void          Dump(unsigned = 0,FILE * = stdout);
+void          ErrCnt(unsigned &,unsigned &);
 void          PBuild(xnode *);
 void          Show(FILE *);
 
@@ -70,8 +71,11 @@ enum Xtyp {c0 = 0,cCDATA,cCode,cDeviceType,cDeviceTypes,cExternalType,
                 cOutputPin,cProperties,cReadyToSend,cSharedCode,cState,
                 cSupervisorInPin,cSupervisorOutPin,cSupervisorType,cXML,cXXXX};
 map<string,Xtyp> DS_map;
-OrchBase *    par;
+OrchBase *    par;                     // Note parent is NOT CmLoad
 long          t0;                      // Wallclock time
+unsigned      ecnt;                    // Local error counter
+unsigned      wcnt;                    // Local warning counter
+FILE *        fd;                      // Output stream
 
 };
 

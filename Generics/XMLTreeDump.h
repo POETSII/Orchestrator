@@ -3,7 +3,6 @@
 
 #include "xmlP.h"
 #include <vector>
-#include "OSFixes.hpp"
 using namespace std;
 
 //==============================================================================
@@ -54,7 +53,7 @@ struct node {                          // Generic XML tree node
   string FindAttr(string);             // Locate named attribute
   node * FindChild(string);            // Locate named child
   string FullName();
-  static string Prettify(string);      // Copy, truncate and decorate
+  static string Prettify(string,unsigned = 30);  // Copy, truncate and decorate
   int &  rTyp() { return col; }
                                        // Pretty-printer and string generator
   void   Show(FILE * = stdout,string = string());

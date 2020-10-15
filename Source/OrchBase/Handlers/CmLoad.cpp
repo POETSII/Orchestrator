@@ -63,7 +63,7 @@ if (Apps_t::FindFile(fn)!=0) {
 }
                                        // OK, good to go. fn==full i/p filename
 par->Post(235,fn);
-unsigned g_ecnt,c_ecnt,ecnt;
+unsigned g_ecnt,c_ecnt,ecnt,wcnt;
 long t0 = mTimer();                    // ... start wallclock
 pXV->Validate(fn);
 pXV->ErrCnt(g_ecnt,c_ecnt);            // XML validator error counters
@@ -71,7 +71,12 @@ ecnt = g_ecnt + c_ecnt;                // Total errors = grammar + client
 if (ecnt!=0) par->Post(201,"validation",uint2str(ecnt),long2str(mTimer(t0)));
 else {
   pXB->PBuild(pXV->ClRoot());
-  par->Post(65,fn,long2str(mTimer(t0)));
+  pXB->ErrCnt(ecnt,wcnt);              // There should be no errors from here...
+  if (ecnt!=0) par->Post(996,uint2str(ecnt));
+  if (wcnt!=0) par->Post(204,fn,uint2str(wcnt),long2str(mTimer(t0)));
+  fprintf(par->fd,"\nBuild reports %u errors, %u warnings\n\n",ecnt,wcnt);
+  fflush(par->fd);
+  par->Post(65,long2str(mTimer(t0)));
 }
 
 }

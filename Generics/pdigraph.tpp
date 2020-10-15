@@ -251,6 +251,24 @@ return (i==index_a.end()) ? (AT *)0 : &((*i)._2.data);
 
 //------------------------------------------------------------------------------
 
+PDIGRAPH_ bool _PDIGRAPH::FindArcPins(const AKT & a_k,
+                                      PKT & p_fr_k,PT & p_fr_d,
+                                      PKT & p_to_k,PT & p_to_d)
+// Routine to return the key and data of the arc keyed to a_k.
+// Recall you can't search on the pin key, because they're not unique.
+{
+TPa_it a_it = ArcKey2It(a_k);          // Arc key -> iterator
+if (a_it==index_a.end()) return false; // Arc not there
+
+p_fr_k = PinKey ((*a_it)._2.fr_p);     // Inpin key
+p_fr_d = PinData((*a_it)._2.fr_p);     // Inpin data
+p_to_k = PinKey ((*a_it)._2.to_p);     // Outpin key
+p_to_d = PinData((*a_it)._2.to_p);     // Outpin data
+return true;
+}
+
+//------------------------------------------------------------------------------
+
 PDIGRAPH_ bool _PDIGRAPH::FindArcs(const NKT & n_k,const PKT & p_k,
                                    vector<AKT> & vI,vector<AKT> & vO)
 // Given a node and a pin key, return any/all arc keys
@@ -393,12 +411,38 @@ return (PT *)0;                        // Nope
 
 PDIGRAPH_ bool _PDIGRAPH::FindPins(const AKT & a_k,PKT & p_fr_k,PKT & p_to_k)
 // Given the arc key, overwrite references to the two pin keys
+// This method is of questionable utility, because the pin keys are not unique.
 {
 TPa_it a_it = ArcKey2It(a_k);          // Arc key -> iterator
 if (a_it==index_a.end()) return false; // Arc not there
 
 p_fr_k = PinKey((*a_it)._2.fr_p);      // (Inpins)
 p_to_k = PinKey((*a_it)._2.to_p);      // (Outpins)
+return true;
+}
+
+//------------------------------------------------------------------------------
+
+PDIGRAPH_ bool _PDIGRAPH::FindPins(const NKT & n_k, const PKT & p_k,
+                                   vector<PT> & vIP,vector<PT> & vOP)
+// A more useful version of the above. Given a node key and a pin key, return
+// the SET of pin data that has that pin key. PIN KEYS ARE NOT UNIQUE
+{
+vIP.clear();
+vOP.clear();
+if (FindNode(n_k)==0) return false;    // Is it there?
+TPp_it LB_i,UB_i;                      // Upper and lower pin iterators
+
+LB_i = index_n[n_k].fani.lower_bound(p_k);    // ...input pins
+UB_i = index_n[n_k].fani.upper_bound(p_k);
+for(TN multimap<PKT,pin>::iterator i=LB_i;i!=UB_i;i++)
+  vIP.push_back((*i)._2.data);
+
+LB_i = index_n[n_k].fano.lower_bound(p_k);    // ...output pins
+UB_i = index_n[n_k].fano.upper_bound(p_k);
+for(TN multimap<PKT,pin>::iterator i=LB_i;i!=UB_i;i++)
+  vOP.push_back((*i)._2.data);
+
 return true;
 }
 

@@ -37,10 +37,13 @@ fprintf(fp,"\n%sPinT_t++++++++++++++++++++++++++++++++++++++++++++++++++\n",os);
 fprintf(fp,"%sNameBase       %s\n",os,FullName().c_str());
 fprintf(fp,"%sMe,Parent      %#018lx,%#018lx\n",
            os,(uint64_t)this,(uint64_t)par);
+fprintf(fp,"%sPin properties:\n",os);
 if(pPropsD!=0) pPropsD->Dump(off+2,fp);
 else           fprintf(fp,"%sNo pin property definition\n",os);
+fprintf(fp,"%sPin state:\n",os);
 if(pStateD!=0) pStateD->Dump(off+2,fp);
 else           fprintf(fp,"%sNo pin state definition\n",os);
+fprintf(fp,"%sPin handler (OnRecv for i/p, OnSend for o/p):\n",os);
 if(pHandl!=0)  pHandl->Dump(off+2,fp);
 else           fprintf(fp,"%sNo pin event handler\n",os);
 fprintf(fp,"%sPin packet type name %s\n",os,tyId.c_str());

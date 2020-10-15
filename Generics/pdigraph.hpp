@@ -49,6 +49,7 @@ bool         DrivingNodes(const NKT &,vector<PKT> &,vector<AKT> &,
 void         Dump();
 void         DumpChan(FILE * fp = stdout)  { dfp = fp;              }
 AT *         FindArc(const AKT &);
+bool         FindArcPins(const AKT &,PKT &,PT &,PKT &,PT &);
 bool         FindArcs(const NKT &,const PKT &,vector<AKT> &,vector<AKT> &);
 bool         FindArcs(const NKT &,vector<AKT> &,vector<AKT> &);
 NT *         FindNode(const NKT &);
@@ -58,6 +59,7 @@ bool         FindNodes(const NKT &,vector<PKT> &,vector<AKT> &,
                        vector<PKT> &,vector<NKT> &);
 PT *         FindPin(const NKT &,const PKT &);
 bool         FindPins(const AKT &,PKT &,PKT &);
+bool         FindPins(const NKT &,const PKT &,vector<PT> &,vector<PT> &);
 bool         FindPins(const NKT &,vector<PKT> &,vector<PKT> &);
 bool         FlipArc(const AKT &);
 bool         InsertArc(const AKT &,const NKT &,const NKT &,const AT & =AT(),

@@ -52,6 +52,7 @@ WALKSET(PinI_t *,DelSet,i) delete *i;  // Kill the "to be deleted" set
                                        // Lose any metadata
 WALKVECTOR(Meta_t *,Meta_v,i) delete *i;
 
+if (pPropsI!=0) delete pPropsI;
 if (pSup != PNULL) delete pSup;
 }
 
@@ -103,7 +104,7 @@ fprintf(fp,"%sTarget type tree from file %s\n",os,tyId.c_str());
 fprintf(fp,"%sMonkey mutable type tree   %s\n",os,tyId2.c_str());
 fprintf(fp,"%sType cross-link :  %#018lx\n",os,(uint64_t)pT);
 if (pT!=0) fprintf(fp,"%s... -> %s\n",os,pT->FullName().c_str());
-fprintf(fp,"%sPropertiets initialiser %#018lx\n",os,(uint64_t)pPropsI);
+fprintf(fp,"%sProperties initialiser %#018lx\n",os,(uint64_t)pPropsI);
 if (pPropsI!=0) pPropsI->Dump(off+2,fp);
 fprintf(fp,"%sDevice name : key map has %lu entries :\n",os,Dmap.size());
 WALKMAP(string,unsigned,Dmap,i)
