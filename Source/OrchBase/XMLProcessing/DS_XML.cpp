@@ -23,7 +23,10 @@
 
 DS_XML::DS_XML(OrchBase * _par)
 {
-par = _par;
+par  = _par;                           // Parent: OrchBase NOT CmLoad
+ecnt = 0;                              // Local error counter
+wcnt = 0;                              // Local warning counter
+fd   = par->fd;                        // Output stream
                                        // Set up name:enumerated type map
 DS_map["CDATA"]            = cCDATA;
 DS_map["Code"]             = cCode;
@@ -78,10 +81,11 @@ string aname = pn->FindAttr("appname");// Get the app name
 Apps_t * pAP = new Apps_t(par,aname);  // Uniquely knits itself into skyhook
 pAP->Def(pn->lin);                     // Defined on line...
 pAP->filename = pn->par->ename;        // Filename is root element name
-pAP->fl = par->fd;                     // Output channel
+pAP->fl = fd;                          // Output channel
 
 WALKVECTOR(xnode *,pn->vnode,i) {
-  switch (DS_map[(*i)->ename]) {
+  (*i)->col = DS_map[(*i)->ename];
+  switch ((*i)->col) {
     case cGraphType     : { GraphT_t * pGT = _GraphT_t(pAP,*i);
                             pAP->GraphT_v.push_back(pGT);
                             break; }
@@ -96,9 +100,20 @@ WALKVECTOR(xnode *,pn->vnode,i) {
 //------------------------------------------------------------------------------
 
 CFrag * DS_XML::_CFrag(xnode * pn)
-// XML everything that resolves to a fragment of C
+// XML everything that resolves to a fragment of C.
+// Here's where we decorate the C with comments that allow the user to connect
+// the cross-compiler output with the source XML.
+// The cfrag itself is not held in cfrag - far too simple - it's in a child node
+// called CDATA.
 {
-return new CFrag(pn->cfrag);
+string Cstr;
+xnode * pC = pn->FindChild("CDATA");   // Go fetch CDATA
+if (pC!=0) Cstr = pC->cfrag;           // It may legitimately not be there
+                                       // Empty? then bleat
+if (Cstr.empty()) Cstr = "// CFrag " + pn->FullName() + " empty\n";
+                                       // Decorate with line number
+Cstr = "// Line " + int2str(pn->lin) + "\n" + Cstr;
+return new CFrag(Cstr);
 }
 
 //------------------------------------------------------------------------------
@@ -122,9 +137,9 @@ if (i != pGI->Dmap.end()) {            // Yes
   unsigned k = (*i).second;            // Get the key
   DevI_t * pD = *(pGI->G.FindNode(k)); // Get the device
   if (pD->Def()!=0) {                  // Already defined?
-    fprintf(par->fd,"Device %s on line %u already defined on line %u\n",
-                     dname.c_str(),pn->lin,pD->Def());     // Cockup. Bail.
-    fflush(par->fd);
+    fprintf(fd,"(%3u,-) W%3u: Device %s already defined on line %u\n",
+               pn->lin,++wcnt,dname.c_str(),pD->Def());     // Cockup. Bail.
+    fflush(fd);
     return pD;
   }
                                        // Already there, but not defined
@@ -157,7 +172,8 @@ void DS_XML::_DevI_ts(GraphI_t * pGI,xnode * pn)
 // XML::DeviceInstances
 {
 WALKVECTOR(xnode *,pn->vnode,i) {
-  switch (DS_map[(*i)->ename]) {
+  (*i)->col = DS_map[(*i)->ename];
+  switch ((*i)->col) {
     case cDevI : _DevI_t(pGI,*i);                  break;
     case cExtI : _ExtI_t(pGI,*i);                  break;
     default    : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
@@ -174,14 +190,18 @@ string dname = pn->FindAttr("id");
 DevT_t * pD = new DevT_t(pGT,dname);
 pD->Def(pn->lin);
 WALKVECTOR(xnode *,pn->vnode,i) {
-  switch (DS_map[(*i)->ename]) {
+  PinT_t * pP;
+  (*i)->col = DS_map[(*i)->ename];
+  switch ((*i)->col) {
     case cProperties       : pD->pPropsD = _CFrag(*i);               break;
     case cState            : pD->pStateD = _CFrag(*i);               break;
     case cSharedCode       : pD->pShCd   = _CFrag(*i);               break;
     case cSupervisorOutPin : pD->pPinTSO = _PinT_t(pD,*i);           break;
     case cSupervisorInPin  : pD->pPinTSI = _PinT_t(pD,*i);           break;
-    case cInputPin         : pD->PinTI_v.push_back(_PinT_t(pD,*i));  break;
-    case cOutputPin        : pD->PinTO_v.push_back(_PinT_t(pD,*i));  break;
+    case cInputPin         : pP = _PinT_t(pD,*i);
+                             if (pP!=0) {pD->PinTI_v.push_back(pP);} break;
+    case cOutputPin        : pP = _PinT_t(pD,*i);
+                             if (pP!=0) {pD->PinTO_v.push_back(pP);} break;
     case cReadyToSend      : pD->pOnRTS  = _CFrag(*i);               break;
     case cOnInit           : pD->pOnInit = _CFrag(*i);               break;
     case cOnHardwareIdle   : pD->pOnHWId = _CFrag(*i);               break;
@@ -258,7 +278,8 @@ void DS_XML::_EdgeI_ts(GraphI_t * pGI,xnode * pn)
 // XML::EdgeInstances
 {
 WALKVECTOR(xnode *,pn->vnode,i) {
-  switch (DS_map[(*i)->ename]) {
+  (*i)->col = DS_map[(*i)->ename];
+  switch ((*i)->col) {
     case cEdgeI : _EdgeI_t(pGI,*i);                break;
     default     : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
   }
@@ -343,12 +364,7 @@ MsgT_t * DS_XML::_MsgT_t(GraphT_t * pGT,xnode * pn)
 string mname = pn->FindAttr("id");
 MsgT_t * pM = new MsgT_t(pGT,mname);
 pM->Def(pn->lin);
-WALKVECTOR(xnode *,pn->vnode,i) {
-  switch (DS_map[(*i)->ename]) {
-    case cCDATA : pM->pPropsD = _CFrag(*i); break;
-    default     : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
-  }
-}
+pM->pPropsD = _CFrag(pn);
 return pM;
 }
 
@@ -358,7 +374,8 @@ void DS_XML::_MsgT_ts(GraphT_t * pGT,xnode * pn)
 // XML::MessageTypes
 {
 WALKVECTOR(xnode *,pn->vnode,i) {
-  switch (DS_map[(*i)->ename]) {
+  (*i)->col = DS_map[(*i)->ename];
+  switch ((*i)->col) {
     case cMessageType : pGT->MsgT_v.push_back(_MsgT_t(pGT,*i)); break;
     default           : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
   }
@@ -371,11 +388,22 @@ PinT_t * DS_XML::_PinT_t(DevT_t * pD,xnode * pn)
 // XML::PinType
 {
 string pname = pn->FindAttr("name");
-PinT_t * pP  = new PinT_t(pD,pname);
-pP->Def(pn->lin);
+unsigned line = pn->lin;               // Go get file location
+PinT_t * pP;
+pP  = pD->Loc_pintyp(pname,'I');       // Search input list for prior definition
+if (pP==0) pP = pD->Loc_pintyp(pname,'O'); // Output list?
+if (pP!=0) {                           // Already defined?
+  fprintf(fd,"(%3u,-) W%3u: Pin type %s already exists - ignored\n",
+          line,++wcnt,pname.c_str());
+  fflush(fd);
+  return 0;
+}
+pP  = new PinT_t(pD,pname);            // Good to go - create new one
+pP->Def(line);                         // Define it
 pP->tyId     = pn->FindAttr("messageTypeId");
 WALKVECTOR(xnode *,pn->vnode,i) {
-  switch (DS_map[(*i)->ename]) {
+  (*i)->col = DS_map[(*i)->ename];
+  switch ((*i)->col) {
     case cOnSend     : pP->pHandl  = _CFrag(*i);             break;
     case cOnReceive  : pP->pHandl  = _CFrag(*i);             break;
     case cProperties : pP->pPropsD = _CFrag(*i);             break;
@@ -431,13 +459,22 @@ fflush(fp);
 
 //------------------------------------------------------------------------------
 
+void DS_XML::ErrCnt(unsigned & re,unsigned & rw)
+// Return error and warning counts
+{
+re = ecnt;
+rw = wcnt;
+}
+
+//------------------------------------------------------------------------------
+
 void DS_XML::PBuild(xnode * pn)
 // Expecting to be handed a xml node; build whatever Graphs may be defined
 {
-//pn->col = DS_map["xml"];     // Subvert .col field for xml node type
-WALKVECTOR(xnode *,pn->vnode,i) {   // Walk the children
-  if (DS_map[(*i)->ename]!=cGraphs)
-      par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
+ecnt = wcnt = 0;                       // Reset diagnostic counters
+WALKVECTOR(xnode *,pn->vnode,i) {      // Walk the children
+  (*i)->col = DS_map[(*i)->ename];
+  if ((*i)->col!=cGraphs) par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
   else _Apps_t(*i);
 }
 

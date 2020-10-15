@@ -253,9 +253,9 @@ return par->FullName() + "." + ename;
 
 //------------------------------------------------------------------------------
 
-string xmlTreeDump::node::Prettify(string s)
+string xmlTreeDump::node::Prettify(string s,unsigned len)
 {
-s.resize(30,'.');
+s.resize(len,'.');
 for (unsigned i=0;i<s.size();i++)
 if (s[i]=='\n') s.replace(i,1,"<c/r>");
 return s;
@@ -337,4 +337,3 @@ return ;
 }
 
 //==============================================================================
-
