@@ -906,6 +906,37 @@ void Placer::get_boxes_for_gi(GraphI_t* gi, std::set<P_box*>* boxes)
     }
 }
 
+/* Grabs all of the cores that are contained in the box passed as argument, and
+ * that have devices placed upon them from a given graph instance. Arguments:
+ *
+ * - gi: Application graph instance to filter on.
+ * - box: Box in the hardware model to filter on.
+ * - cores: Set to populate with cores (cleared before use). */
+void Placer::get_cores_for_gi_in_box(GraphI_t* gi, P_box* box,
+                                     std::set<P_core*>& cores)
+{
+    cores.clear();
+
+    /* Start by getting all of the cores used by a graph instance. If none,
+     * return quickly. */
+    std::set<P_core*>* coresInApp;
+    std::map<GraphI_t*, std::set<P_core*> >::iterator coresFinder;
+    coresFinder = giToCores.find(gi);
+    if (coresFinder == giToCores.end()) return;
+    else coresInApp = &(coresFinder->second);
+
+    /* For each core in the resulting search, add it to the output set if it's
+     * box is the same as the box passed as argument. */
+    for (std::set<P_core*>::iterator coreIt = coresInApp->begin();
+         coreIt != coresInApp->end(); coreIt++)
+    {
+        /* Sorry */
+        if ((*coreIt)->parent->parent->parent == box) cores.insert(*coreIt);
+    }
+
+    return;
+}
+
 /* Grabs all of the device pairs for each edge in the application graph that
  * involves the given device. */
 void Placer::get_edges_for_device(GraphI_t* gi, DevI_t* device,

@@ -112,6 +112,11 @@ public:
      * the engine. */
     void get_boxes_for_gi(GraphI_t* gi, std::set<P_box*>* boxes);
 
+    /* Convenient way to get all cores mapped within a given graph instance
+     * that exist on a certain box. */
+    void get_cores_for_gi_in_box(GraphI_t* gi, P_box* box,
+                                 std::set<P_core*>& cores);
+
     /* Convenient way to get all edges (as device-device pairs) that involve a
      * given device. */
     void get_edges_for_device(GraphI_t* gi, DevI_t* device,
