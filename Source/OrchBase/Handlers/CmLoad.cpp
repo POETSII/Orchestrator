@@ -76,7 +76,7 @@ else {
   if (wcnt!=0) par->Post(204,fn,uint2str(wcnt),long2str(mTimer(t0)));
   fprintf(par->fd,"\nBuild reports %u errors, %u warnings\n\n",ecnt,wcnt);
   fflush(par->fd);
-  par->Post(65,long2str(mTimer(t0)));
+  par->Post(65,fn,long2str(mTimer(t0)));
 }
 
 }
