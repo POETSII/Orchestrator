@@ -9,18 +9,6 @@
 #include "P_super.h"
 
 //==============================================================================
-// This class is chopped up into multiple .cpp files, because it's so
-// bloody boring. The translation unit is *this* file + all its includes.
-// The below are NOT translation units in their own right.
-
-/* Not anymore!
-#include "OrchBaseTask.cpp"            // Handlers for "task" commands
-#include "OrchBaseTopo.cpp"            // Handlers for "topo" commands
-#include "OrchBaseOwner.cpp"           // Handlers for "owner" commands
-#include "OrchBasePlace.cpp"           // Guess
-*/
-
-//==============================================================================
 
 OrchBase::OrchBase(int argc,char * argv[],string d,string sfile) :
   CommonBase(argc,argv,d,sfile)
