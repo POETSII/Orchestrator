@@ -13,17 +13,21 @@ class P_super;
 #include "Environment.h"
 #include "CommonBase.h"
 #include "Trace.h"
-#include "CmBuil.h"
 #include "CmCall.h"
+#include "CmDepl.h"
 #include "CmDump.h"
 #include "CmExec.h"
+#include "CmInit.h"
 #include "CmInje.h"
 #include "CmLoad.h"
 #include "CmName.h"
 #include "CmPath.h"
 #include "CmPlac.h"
+#include "CmReca.h"
 #include "CmRTCL.h"
+#include "CmRun.h"
 #include "CmShow.h"
+#include "CmStop.h"
 #include "CmSyst.h"
 #include "CmTest.h"
 #include "CmTlin.h"
@@ -47,6 +51,7 @@ void                   BuildMshipMap();
 void                   ClearTopo();
 int                    GetGraphIs(Cli::Cl_t, std::set<GraphI_t*>&,
                                   int skip=-1);
+void                   MshipCommand(Cli::Cl_t clause, std::string command);
 void                   PlacementReset(bool post=false);
 
 P_engine *             pE;             // Poets engine (hardware model)
@@ -59,18 +64,21 @@ FILE *                 fd;             // Output file stream for details
 // their procmap entry. Yes, the name is an attempt at facetiousness.
 map2<P_box *, ProcMap::ProcMap_t *> P_SCMm2;
 
-CmBuil *               pCmBuil;
 CmCall *               pCmCall;
+CmDepl *               pCmDepl;
 CmDump *               pCmDump;
 CmExec *               pCmExec;
-//CmExit
+CmInit *               pCmInit;
 CmInje *               pCmInje;
 CmLoad *               pCmLoad;
 CmName *               pCmName;
 CmPath *               pCmPath;
 CmPlac *               pCmPlac;
+CmReca  *              pCmReca;
 CmRTCL *               pCmRTCL;
+CmRun  *               pCmRun;
 CmShow *               pCmShow;
+CmStop  *              pCmStop;
 CmSyst *               pCmSyst;
 CmTest *               pCmTest;
 CmTlin *               pCmTlin;

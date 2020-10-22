@@ -457,15 +457,19 @@ if ((pCmPath->OuMode==CmPath::Ou_Lolf)||(pCmPath->OuMode==CmPath::Ou_Ofgf))
   WriteUheader(pC);
 const unsigned INVALIDCODE=999;        // Yukky yukky yuk yuk
 unsigned code = INVALIDCODE;
-if (scmnd=="buil") code=(*pCmBuil)(pC);// Build
 if (scmnd=="call") code=(*pCmCall)(pC);// Call
+if (scmnd=="depl") code=(*pCmDepl)(pC);// Deploy
 if (scmnd=="dump") code=(*pCmDump)(pC);// Dump
-if (scmnd=="exit") code=CmExit (pC);   // Exit
+if (scmnd=="exit") code=CmExit(pC);    // Exit
+if (scmnd=="init") code=(*pCmInit)(pC);// Initialise
 if (scmnd=="load") code=(*pCmLoad)(pC);// Load
 if (scmnd=="path") code=(*pCmPath)(pC);// Path
 if (scmnd=="plac") code=(*pCmPlac)(pC);// Place
+if (scmnd=="reca") code=(*pCmReca)(pC);// Recall
 if (scmnd=="retu") code=CmRetu(pC);    // Return
+if (scmnd=="run")  code=(*pCmRun)(pC); // Run
 if (scmnd=="show") code=(*pCmShow)(pC);// Show
+if (scmnd=="stop") code=(*pCmStop)(pC);// Stop
 if (scmnd=="syst") code=(*pCmSyst)(pC);// System
 if (scmnd=="test") code=(*pCmTest)(pC);// Test
 if (scmnd=="tlin") code=(*pCmTlin)(pC);// Tlink

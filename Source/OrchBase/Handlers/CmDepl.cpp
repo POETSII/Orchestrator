@@ -1,19 +1,19 @@
 //------------------------------------------------------------------------------
 
-#include "CmBuil.h"
+#include "CmDepl.h"
 #include "OrchBase.h"
 #include "Pglobals.h"
 
 //==============================================================================
 
-CmBuil::CmBuil(OrchBase * p):par(p)
+CmDepl::CmDepl(OrchBase * p):par(p)
 {
 par->fd = stdout;
 }
 
 //------------------------------------------------------------------------------
 
-CmBuil::~CmBuil()
+CmDepl::~CmDepl()
 {
 }
 
@@ -29,7 +29,7 @@ struct DistPayload
 
 //------------------------------------------------------------------------------
 
-void CmBuil::Cm_Deploy(Cli::Cl_t clause)
+void CmDepl::Cm_App(Cli::Cl_t clause)
 {
     std::set<GraphI_t*> graphs;
     std::set<GraphI_t*>::iterator graphIt;
@@ -56,62 +56,6 @@ void CmBuil::Cm_Deploy(Cli::Cl_t clause)
 
 //------------------------------------------------------------------------------
 
-void CmBuil::Cm_Do(Cli::Cl_t clause, std::string command)
-{
-    std::set<GraphI_t*> graphs;
-    std::set<GraphI_t*>::iterator graphIt;
-
-    /* Get the application graph instances */
-    par->GetGraphIs(clause, graphs);
-
-    /* Ensure that all graph instances are deployed before proceeding. */
-    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
-    {
-        if (!(*graphIt)->deployed)
-        {
-            par->Post(169, (*graphIt)->Name());
-            return;
-        }
-    }
-
-    /* Iterate through each graph instance in turn. */
-    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
-    {
-        PMsg_p message;
-        std::string graphName = (*graphIt)->Name();
-
-        /* Boxes that are relevant for the application being commanded. */
-        std::set<P_box*> boxesOfImport;
-        std::set<P_box*>::iterator boxIt;
-
-        /* Set up the message given the input arguments (catching an invalid
-         * command input from somewhere). */
-        if (command == "recl")
-        {
-            message.Key(Q::CMND, Q::RECL);
-            (*graphIt)->deployed = false;
-        }
-        else if (command == "init") message.Key(Q::CMND, Q::INIT);
-        else if (command == "run") message.Key(Q::CMND,Q::RUN);
-        else if (command == "stop") message.Key(Q::CMND,Q::STOP);
-        message.Src(par->Urank);
-        message.Put(0, &graphName);
-
-        /* Get the set of important boxes. */
-        par->pPlacer->get_boxes_for_gi(*graphIt, &boxesOfImport);
-
-        /* For each box, send to the Mothership on that box. */
-        for (boxIt = boxesOfImport.begin(); boxIt != boxesOfImport.end();
-             boxIt++)
-        {
-            message.Tgt(par->P_SCMm2[*boxIt]->P_rank);
-            message.Send();
-        }
-    }
-}
-
-//------------------------------------------------------------------------------
-
 /* Deploys a built graph instance to Motherships.
  *
  * This involves two stages:
@@ -122,7 +66,7 @@ void CmBuil::Cm_Do(Cli::Cl_t clause, std::string command)
  *  - Sending messages (MPI) to each relevant Mothership process describing the
  *    application (see the Mothership documentation).
  */
-int CmBuil::DeployGraph(GraphI_t* gi)
+int CmDepl::DeployGraph(GraphI_t* gi)
 {
     /* Finding the machine name of Root. */
     std::vector<ProcMap::ProcMap_t>::iterator rootFinder;
@@ -385,43 +329,29 @@ int CmBuil::DeployGraph(GraphI_t* gi)
 
 //------------------------------------------------------------------------------
 
-void CmBuil::Dump(unsigned off,FILE * fp)
+void CmDepl::Dump(unsigned off,FILE * fp)
 {
 string s(off,' ');
 const char * os = s.c_str();
-fprintf(fp,"%sCmBuil +++++++++++++++++++++++++++++++++++++++++++++++++++\n",os);
+fprintf(fp,"%sCmDepl +++++++++++++++++++++++++++++++++++++++++++++++++++\n",os);
 if (par==0) fprintf(fp,"%sOrchBase parent not defined\n",os);
 else fprintf(fp,"%sOrchbase parent : %s\n",os,par->FullName().c_str());
-fprintf(fp,"%sCmBuil -------------------------------------------------\n\n",os);
+fprintf(fp,"%sCmDepl -------------------------------------------------\n\n",os);
 fflush(fp);
 }
 
 //------------------------------------------------------------------------------
 
-void CmBuil::Show(FILE * fp)
+unsigned CmDepl::operator()(Cli * pC)
+// Handle "depl(oy)" command from the monkey.
 {
-fprintf(fp,"\nBuilder attributes and state:\n");
-fprintf(fp,"\n");
-fflush(fp);
-}
-
-//------------------------------------------------------------------------------
-
-unsigned CmBuil::operator()(Cli * pC)
-// Handle "buil(d)" command from the monkey.
-{
-//printf("CmPath_t operator() splitter for ....\n");
-//fflush(stdout);
 if (pC==0) return 0;                   // Paranoia
 WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   string sCl = (*i).Cl;                // Pull out clause string
   string sCo = pC->Co;                 // Pull out command string
   string sPa = (*i).GetP();            // Pull out (simple) parameter
-  if (sCl=="app" ) { par->Post(247,sCo,sCl,sPa); continue; }
-  if (sCl=="depl") { Cm_Deploy(*i);              continue; }
-  if (sCl=="init" or sCl=="run" or sCl=="stop" or sCl=="recl")
-                   { Cm_Do(*i, sCl);             continue; }
-  par->Post(25,sCl,"build");           // Unrecognised clause
+  if (sCl=="app" ) { Cm_App(*i); continue; }
+  par->Post(25,sCl,"deploy");          // Unrecognised clause
 }
 return 0;                              // Legitimate command exit
 }

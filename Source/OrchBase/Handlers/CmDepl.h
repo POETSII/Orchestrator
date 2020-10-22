@@ -1,9 +1,8 @@
-#ifndef __CmBuilH__H
-#define __CmBuilH__H
+#ifndef __CmDeplH__H
+#define __CmDeplH__H
 
 //==============================================================================
-/* Build command handler
-*/
+/* Deploy command handler */
 //==============================================================================
 
 #include <stdio.h>
@@ -11,17 +10,15 @@
 #include "GraphI_t.h"
 class OrchBase;
 
-class CmBuil
+class CmDepl
 {
 public:
-              CmBuil(OrchBase *);
-virtual ~     CmBuil();
+              CmDepl(OrchBase *);
+virtual ~     CmDepl();
 
-void          Cm_Deploy(Cli::Cl_t);
-void          Cm_Do(Cli::Cl_t, string);
+void          Cm_App(Cli::Cl_t);
 int           DeployGraph(GraphI_t *);
 void          Dump(unsigned = 0, FILE * = stdout);
-void          Show(FILE * = stdout);
 unsigned      operator()(Cli *);
 
 OrchBase *    par;

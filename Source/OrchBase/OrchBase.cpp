@@ -1,6 +1,5 @@
 //------------------------------------------------------------------------------
 
-#include "Pglobals.h"
 #include "OrchBase.h"
 #include "P_builder.h"
 #include "FileName.h"
@@ -19,17 +18,21 @@ pB        = new P_builder(this);       // Object to build the datastructure
 Name("O_");                            // NameBase root name
 
 // Command handlers
-pCmBuil = new CmBuil(this);
 pCmCall = new CmCall(this);
+pCmDepl = new CmDepl(this);
 pCmDump = new CmDump(this);
 pCmExec = new CmExec(this);
+pCmInit = new CmInit(this);
 pCmInje = new CmInje(this);
 pCmLoad = new CmLoad(this);
 pCmName = new CmName(this);
 pCmPath = new CmPath(this);
 pCmPlac = new CmPlac(this);
+pCmReca = new CmReca(this);
 pCmRTCL = new CmRTCL(this);
+pCmRun  = new CmRun(this);
 pCmShow = new CmShow(this);
+pCmStop = new CmStop(this);
 pCmSyst = new CmSyst(this);
 pCmTest = new CmTest(this);
 pCmTlin = new CmTlin(this);
@@ -49,17 +52,21 @@ if (pPlacer != PNULL) delete pPlacer; // Destroy the placer
 if (pB != PNULL) delete pB;           // Object to build the datastructure
 
 // Command handlers
-if (pCmBuil != PNULL) delete pCmBuil;
 if (pCmCall != PNULL) delete pCmCall;
+if (pCmDepl != PNULL) delete pCmDepl;
 if (pCmDump != PNULL) delete pCmDump;
 if (pCmExec != PNULL) delete pCmExec;
+if (pCmInit != PNULL) delete pCmInit;
 if (pCmInje != PNULL) delete pCmInje;
 if (pCmLoad != PNULL) delete pCmLoad;
 if (pCmName != PNULL) delete pCmName;
 if (pCmPath != PNULL) delete pCmPath;
 if (pCmPlac != PNULL) delete pCmPlac;
+if (pCmReca != PNULL) delete pCmReca;
 if (pCmRTCL != PNULL) delete pCmRTCL;
+if (pCmRun  != PNULL) delete pCmRun;
 if (pCmShow != PNULL) delete pCmShow;
+if (pCmStop != PNULL) delete pCmStop;
 if (pCmSyst != PNULL) delete pCmSyst;
 if (pCmTest != PNULL) delete pCmTest;
 if (pCmTlin != PNULL) delete pCmTlin;
@@ -69,48 +76,6 @@ if (pCmUntl != PNULL) delete pCmUntl;
 
 // Applications
 Apps_t::DelAll();
-}
-
-//------------------------------------------------------------------------------
-
-/* Constructs the bimap of mothership processes to boxes in the engine
- * (OrchBase.P_SCMm2). */
-void OrchBase::BuildMshipMap()
-{
-    std::vector<ProcMap::ProcMap_t>::iterator procIt;
-    std::map<AddressComponent, P_box*>::iterator boxIt;
-    bool foundAMothershipForThisBox;
-
-    /* Start from the first process. */
-    procIt = pPmap->vPmap.begin();
-
-    /* Iterate over each box in the hardware model. */
-    for (boxIt = pE->P_boxm.begin(); boxIt != pE->P_boxm.end(); boxIt++)
-    {
-        /* Find the next available Mothership. We need the rank in order to
-         * store entries in the 'mothershipPayloads' map. */
-        foundAMothershipForThisBox = false;
-
-        /* Find the next available Mothership. */
-        while (procIt != pPmap->vPmap.end() and
-               procIt->P_class != csMOTHERSHIPproc) procIt++;
-
-        /* If we found one, store it. */
-        if (procIt != pPmap->vPmap.end())
-        {
-            P_SCMm2.Add(boxIt->second, &*procIt);
-            foundAMothershipForThisBox = true;
-            procIt++;
-        }
-
-        /* If we didn't find a Mothership for this box, map the box to PNULL
-         * and warn loudly. */
-        if (!foundAMothershipForThisBox)
-        {
-            P_SCMm2.Add(boxIt->second, PNULL);
-            Post(168, boxIt->second->Name().c_str());
-        }
-    }
 }
 
 //------------------------------------------------------------------------------
