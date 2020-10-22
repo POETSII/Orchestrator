@@ -150,7 +150,7 @@ FILE * CmPath::GetLolfp()
 time_t timeNtv;
 time(&timeNtv);
 char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
-strftime(timeBuf,sizeof timeBuf,"%Y-%m-%dT%H-%M-%S",localtime(&timeNtv));
+strftime(timeBuf,sizeof timeBuf,"%Y_%m_%dT%H_%M_%S",localtime(&timeNtv));
 string T = pathUlog + "Microlog_" + string(timeBuf);
 FILE * fp = 0;
 unsigned inc = 0;
