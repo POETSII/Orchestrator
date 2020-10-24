@@ -1,7 +1,7 @@
 #ifndef __OrchBaseH__H
 #define __OrchBaseH__H
 
-class P_builder;
+class Composer;
 class P_super;
 
 #include <stdio.h>

@@ -13,7 +13,7 @@
         <Properties Properties="[0..1]"><CDATA CDATA="[1]"/></Properties>
         <State State="[0..1]"><CDATA CDATA="[1]"/></State>
         <SharedCode SharedCode="[0..1]"><CDATA CDATA="[1]"/></SharedCode>
-        <SupervisorOutPin SupervisorOutPin="[0..1]">
+        <SupervisorOutPin SupervisorOutPin="[0..1],[1]messageTypeId">
           <OnSend OnSend="[1]"><CDATA CDATA="[1]"/></OnSend>
         </SupervisorOutPin>
         <SupervisorInPin SupervisorInPin="[0..1]">

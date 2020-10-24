@@ -140,6 +140,8 @@ namespace OSFixes
  * Example Usage:
  *  std::cout << getSysErrorString(errno) << std::endl;
  * ===========================================================================*/
+#include <cerrno>
+
 namespace OSFixes
 {
     inline std::string getSysErrorString(int errNum)

@@ -23,6 +23,8 @@ static void          PinKey_cb(unsigned const &);
 
 GraphI_t *           par;              // Parent graph instance
 PinT_t *             pT;               // Type cross-link
+
+//TODO: remove these
 CFrag *              pPropsI;          // Properties
 CFrag *              pStateI;          // State
 vector<unsigned>     Key_v;            // Vector of graph pin keys for multi-

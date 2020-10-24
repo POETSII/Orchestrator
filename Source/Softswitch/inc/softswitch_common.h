@@ -97,8 +97,8 @@ typedef struct POutputPin
 typedef struct PInputEdge
 {
     const PInputPin*  pin;              // Back pointer to pin the pin instance
-    uint32_t          tgt;              // Destination device hwAddr (for convenience)
-    uint32_t          src;              // Source device hwAddr (for convenience)
+  //uint32_t          tgt;              // Destination device hwAddr (for convenience)
+  //uint32_t          src;              // Source device hwAddr (for convenience)
     const void*       properties;       // Pointer to the edge properties
     void*             state;            // Pointer to the edge state
 } inEdge_t;

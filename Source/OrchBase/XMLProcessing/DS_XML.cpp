@@ -199,9 +199,13 @@ WALKVECTOR(xnode *,pn->vnode,i) {
     case cSupervisorOutPin : pD->pPinTSO = _PinT_t(pD,*i);           break;
     case cSupervisorInPin  : pD->pPinTSI = _PinT_t(pD,*i);           break;
     case cInputPin         : pP = _PinT_t(pD,*i);
-                             if (pP!=0) {pD->PinTI_v.push_back(pP);} break;
+                             if (pP!=0) {   pD->PinTI_v.push_back(pP);
+                                            pP->Idx = (pD->PinTO_v.size()-1);
+                                                                   } break;
     case cOutputPin        : pP = _PinT_t(pD,*i);
-                             if (pP!=0) {pD->PinTO_v.push_back(pP);} break;
+                             if (pP!=0) {   pD->PinTO_v.push_back(pP);
+                                            pP->Idx = (pD->PinTO_v.size()-1);
+                                                                   } break;
     case cReadyToSend      : pD->pOnRTS  = _CFrag(*i);               break;
     case cOnInit           : pD->pOnInit = _CFrag(*i);               break;
     case cOnHardwareIdle   : pD->pOnHWId = _CFrag(*i);               break;
@@ -267,6 +271,7 @@ EdgeI_t * pE = new EdgeI_t(pGI,string());
 pE->Def(lin);
 pE->Ref(lin);
 pE->Key = kE;                          // Store the key inside its data
+pE->Idx = (pPto->Key_v.size() - 1);    // Index of edge in the to pin's Key_v
                                        // Insert into instance graph
 pGI->G.InsertArc(kE,pDto->Key,pDfr->Key,pE,
                  pPto->Key_v.back(),pPto,pPfr->Key_v.back(),pPfr);

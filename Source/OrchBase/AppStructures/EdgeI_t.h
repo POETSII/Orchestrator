@@ -26,8 +26,11 @@ void               Par(GraphI_t * _p) { par = _p; }
 P_addr             addr;
 GraphI_t *         par;
 unsigned           Key;                // Graph key
+size_t             Idx;                // Index of this edge in PinI_t->key_v
 vector<Meta_t *>   Meta_v;             // MetaData vector
 
+CFrag *            pPropsI;            // Properties
+CFrag *            pStateI;            // State
 };
 
 //==============================================================================

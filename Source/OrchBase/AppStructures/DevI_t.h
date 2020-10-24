@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include "flat.h"
 #include "NameBase.h"
-#include "P_addr.h"
+#include "SoftwareAddress.h"
 #include "DefRef.h"
 #include "DumpChan.h"
 class Meta_t;
@@ -27,13 +27,16 @@ PinI_t *             GetPin(string &);
 void                 Par(GraphI_t * _p);
 
 GraphI_t *           par;
-P_addr               addr;
+SoftwareAddress      addr;
 char                 devTyp;
 string               tyId;             // Name of type in type tree
 DevT_t *             pT;
 unsigned             Key;              // Graph key
 vector<Meta_t *>     Meta_v;           // MetaData vector
 map<string,PinI_t *> Pmap;             // Pin-by-name map
+
+CFrag *              pPropsI;          // Properties
+CFrag *              pStateI;          // State
 };
 
 //==============================================================================
