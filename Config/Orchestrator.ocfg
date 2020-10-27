@@ -35,7 +35,7 @@ stage = "../Output/Composer/"
 // Trace output
 // trace = ""
 // Batch files
-// batch = ""
+// batch = "../Batch/"
 // Deployed supervisor binaries (in the MPI universe)
 // supervisors = ""
 
