@@ -113,10 +113,10 @@ void SoftwareAddress::set_device(DeviceComponent value)
 /* Write debug and diagnostic information using dumpchan. Arguments:
  *
  * - file: File to dump to. */
-void SoftwareAddress::Dump(FILE* file)
+void SoftwareAddress::Dump(unsigned off,FILE* file)
 {
-    std::string prefix = dformat("Software address at %#018lx",
-                                 (uint64_t) this);
+    std::string prefix = dformat("%d Software address at %#018lx",
+                                 off, (uint64_t) this);
     DumpUtils::open_breaker(file, prefix);
 
     /* The raw address. */
