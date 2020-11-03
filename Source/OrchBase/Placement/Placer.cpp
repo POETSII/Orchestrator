@@ -1381,23 +1381,29 @@ void Placer::update_software_addresses(GraphI_t* gi)
              * device. */            
             device->addr.set_ismothership(0);
             device->addr.set_iscnc(0);
-            device->addr.set_task(0);
-            device->addr.set_opcode(0);
             device->addr.set_device(std::distance(first, found));
-
-            /* Define the other components of the address object in the
-             * device. */
-            threadFinder->first->get_hardware_address()->
-                populate_a_software_address(&(device->addr), false);
         }
 
         /* If the device has not been placed, and is a supervisor device, set
          * the device component of the address (a P_builder special case). */
-        else if (device->devTyp == 'S') device->addr.SetAsSuperDevice();
+        else if (device->devTyp == 'S')
+        {
+            device->addr.set_ismothership(1);
+            device->addr.set_iscnc(1);
+            device->addr.set_device(0);
+        }
 
         /* If the device has not been placed and is not a supervisor device,
          * clear the address. */
-        else device->addr.Reset();
+        else
+        {
+            device->addr.set_ismothership(0);
+            device->addr.set_iscnc(0);
+            device->addr.set_device(0);
+        }
+        
+        device->addr.set_opcode(0);
+        device->addr.set_task(0);
     }
 }
 
