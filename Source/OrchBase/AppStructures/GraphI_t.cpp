@@ -62,6 +62,7 @@ void GraphI_t::DevicesOfType(DevT_t * type,vector<DevI_t *>& output)
 // Populate `output` with all devices in this graph instance that have a device
 // type matching `type`.
 {
+output.clear();
 WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i)
   if (i!=G.NodeEnd()) {
     DevI_t * pD = G.NodeData(i);
