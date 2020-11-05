@@ -1,13 +1,11 @@
 #include "Composer.h"
 
-
-
 /******************************************************************************
  * ComposerGraphI_t constructors & destructor
  *****************************************************************************/
 ComposerGraphI_t::ComposerGraphI_t()
 {
-    outputDir = "./Composer";
+    outputDir = "Composer";
     generated = false;
     compiled = false;
 }
@@ -15,15 +13,7 @@ ComposerGraphI_t::ComposerGraphI_t()
 ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphI)
 {
     graphI = graphI;
-    outputDir = "./" + graphI->Name();
-    generated = false;
-    compiled = false;
-}
-
-ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphI, std::string pathRoot)
-{
-    graphI = graphI;
-    outputDir = pathRoot + "/" + graphI->Name();
+    outputDir = graphI->Name();
     generated = false;
     compiled = false;
 }
@@ -40,20 +30,30 @@ ComposerGraphI_t::~ComposerGraphI_t()
     }
 }
 
+//Safely clear the DevT strings Map
+void ComposerGraphI_t::clearDevTStrsMap()
+{
+    WALKMAP(DevT_t*, devTypStrings_t*, devTStrsMap, devTStrs)
+    {
+        delete devTStrs->second;
+        devTStrsMap.erase(devTStrs);
+    }
+}
+
 
 /******************************************************************************
  * Composer constructors 
  *****************************************************************************/
 Composer::Composer()
 {
-    outputDir = "./";   
+    outputPath = "./";   
     supervisorSendPinName = "SupervisorSend";
 }
 
 Composer::Composer(Placer* plc)
 {
     placer = plc;
-    outputDir = "./";   
+    outputPath = "./";   
     supervisorSendPinName = "SupervisorSend";
 }
 
@@ -74,7 +74,14 @@ Composer::~Composer()
  *****************************************************************************/
 void Composer::setOutputPath(std::string path)
 {
-    outputDir = path;
+    outputPath = path;
+    
+    // Make sure we end in / for consistency
+    if(*outputPath.rbegin() != '/' || *outputPath.rbegin() != '\\')
+    {
+        outputPath += "/";
+    }
+
     //TODO: invalidate any generated but not compiled 
 }
 
@@ -138,6 +145,7 @@ int Composer::generate(GraphI_t* graphI)
     
     
     //Form Device Type strings for all DevTs in the GraphT
+    builderGraphI->clearDevTStrsMap();      // sanity clear
     WALKVECTOR(DevT_t*,graphI->pT->DevT_v,devT)
     {
         formDevTStrings(builderGraphI, (*devT));
@@ -162,12 +170,11 @@ int Composer::generate(GraphI_t* graphI)
     pkt_h.close();
     
     
-    //TODO: Generate Supervisor, inc Dev> Super map
+    //Generate Supervisor, inc Dev> Super map
+    generateSupervisor(builderGraphI);
     
     
     
-    
-    //TODO: Assemble the source files
     P_core* pCore;                      // Core available during iteration.
     devTypStrings_t* dTStrs;
     DevT_t* devT;
@@ -249,6 +256,7 @@ int Composer::generate(GraphI_t* graphI)
         
     }
     
+    builderGraphI->generated = true;
 
     return 0;
 }
@@ -273,7 +281,380 @@ int Composer::compile(GraphI_t* graphI)
     return 0;
 }
 
+/******************************************************************************
+ * Stubs for now        TODO
+ *****************************************************************************/
+void Composer::decompose(GraphI_t* graphI)
+{
+    
+}
 
+
+void Composer::clean(GraphI_t* graphI)
+{   // Tidy up a specific build for a graphI. This invokes make clean
+    
+}
+
+void Composer::reset()
+{
+    
+}
+
+
+/******************************************************************************
+ * Prepare directories for source code generation and compilation
+ *****************************************************************************/
+int prepareDirectories(ComposerGraphI_t* builderGraphI)
+{
+    //TODO: a lot of this system() calling needs to be made more cross-platform, and should probably be moved to OSFixes.hpp.
+    //TODO: fix the path specifiers for system() calls throughout as they are currently inconsistent on what has a "/" at the end.
+    //TODO: make the system() path specifiers cross-platform - these will fall over on Windows.
+
+    //==========================================================================
+    // Remove the task directory and recreate it to clean any previous build.
+    //==========================================================================
+    //TODO: make this safer. Currently the remove users an "rm -rf" without any safety.
+    std::string taskDir(outputPath + builderGraphI->outputDir); 
+    if(system((REMOVEDIR+" "+taskDir).c_str())) // Check that the directory deleted
+    {                                  // if it didn't, tell logserver and exit
+        //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
+        return 1;
+    }
+
+    if(system((MAKEDIR+" "+ taskDir).c_str()))// Check that the directory created
+    {                                 // if it didn't, tell logserver and exit
+        //par->Post(818, (task_dir), OSFixes::getSysErrorString(errno));
+        return 1;
+    }
+    
+    
+    //==========================================================================
+    // Create the directory for the generated code and the src and inc dirs
+    // below it. If any of these fail, tell the logserver and bail.
+    //==========================================================================
+    std::string mkdirGenPath(taskDir + "/" + GENERATED_PATH);
+    if(system((MAKEDIR + " " + mkdirGenPath).c_str()))
+    {
+        //par->Post(818, mkdirGenPath, OSFixes::getSysErrorString(errno));
+        return 1;
+    }
+    
+    std::string mkdirGenHPath(taskDir + "/" + GENERATED_H_PATH);
+    if(system((MAKEDIR + " " + mkdirGenHPath).c_str()))
+    {
+        //par->Post(818, mkdirGenHPath, OSFixes::getSysErrorString(errno));
+        return 1;
+    }
+    
+    std::string mkdirGenCPath(taskDir + "/" + GENERATED_CPP_PATH);
+    if(system((MAKEDIR + " " + mkdirGenCPath).c_str()))
+    {
+        //par->Post(818, mkdirGenCPath, OSFixes::getSysErrorString(errno));
+        return 1;
+    }
+    
+    
+    
+    // Copy static source
+    
+    //============================================================================
+    // Copy the default supervisor code into the right place.
+    // This is used by the default supervisor without modification.
+    //============================================================================
+    std::stringstream cpCmd;
+    cpCmd << SYS_COPY << " ";
+    cpCmd << taskDir << STATIC_SRC_PATH << "Supervisor.* "; // Source
+    cpCmd << taskDir << "/" << GENERATED_PATH;                   // Destination
+    if(system(cpCmd.str().c_str()))
+    {
+        //par->Post(807, (task_dir+GENERATED_PATH), OSFixes::getSysErrorString(errno));
+        return 1;
+    }
+    
+    return 0;
+}
+
+/******************************************************************************
+ * Generate the source code for the Supervisor(s).
+ *
+ * One supervisor is required for each BOX. For now, this is single box
+ *****************************************************************************/
+int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
+{
+    std::string taskDir = builderGraphI->outputDir;
+    GraphI_t* graphI = builderGraphI->graphI;
+    
+    //Create the graph instance-specific ones
+    std::ofstream supervisor_cpp, supervisor_h;
+    
+    
+    // Create the Supervisor header
+    std::stringstream supervisor_hFName;
+    supervisor_hFName << outputPath << taskDir << "/" << GENERATED_PATH;
+    supervisor_hFName << "/supervisor_generated.h";
+    
+    supervisor_h.open(supervisor_hFName.str().c_str());
+    if(supervisor_h.fail()) // Check that the file opened
+    {                 // if it didn't, tell logserver and exit
+        //TODO: Barf
+        //par->Post(816, vars_hFName.str(), OSFixes::getSysErrorString(errno));
+        return -1;
+    }
+    
+    
+    // Create the Supervisor source
+    std::stringstream supervisor_cppFName;
+    supervisor_cppFName << outputPath << taskDir << "/" << GENERATED_PATH;
+    supervisor_cppFName << "/supervisor_generated.cpp";
+    
+    supervisor_cpp.open(supervisor_cppFName.str().c_str());
+    if(supervisor_cpp.fail()) // Check that the file opened
+    {                 // if it didn't, tell logserver and exit
+        //TODO: Barf
+        //par->Post(816, vars_hFName.str(), OSFixes::getSysErrorString(errno));
+        return -1;
+    }
+    
+    
+    supervisor_h << "#ifndef __SupervisorGeneratedH__H\n";
+    supervisor_h << "#define __SupervisorH__H\n";
+    
+    supervisor_cpp << "#include \"supervisor_generated.h\"\n";
+    supervisor_cpp << "#include \"supervisor.h\"\n\n";
+    
+    
+    // Write the static member initialisors (Supervisor::init and the Device Vector)
+    supervisor_cpp << "bool Supervisor::__SupervisorInit = false;\n";
+    
+    // As part of this, we need to generate an edge index for each device on
+    // this supervisor. For now, that is all devices so we (ab)use Digraph.
+    // TODO: change for multi supervisor.
+    int devIdx = 0; // Faster than using std::distance
+    builderGraphI->supevisorDevTVect.clear();       // Sanity clear
+    builderGraphI->devTSuperIdxMap.clear();         // sanity clear
+    
+    supervisor_cpp << "const Supervisor::DeviceVector = {\n\t";
+    WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,graphI->G,i)
+    {
+        DevI_t* devI = graphI->G.NodeData(i);
+        
+        builderGraphI->supevisorDevTVect.push_back(devI);
+        builderGraphI->devTSuperIdxMap.insert(devTSuperIdxMap_t::value_type(devI,devIdx));
+        
+        // Get the Thread for the HW addr
+        std::map<DevI_t*, P_thread*>::iterator threadSrch;
+        threadSrch = placer->deviceToThread.find(devI);
+        if (threadSrch == placer->deviceToThread.end()) 
+        {   // Something has gone terribly terribly wrong
+            //TODO: Barf
+        }
+        P_thread* thread = threadSrch->second;
+        
+    // Write the initialiser directly: {HwAddr, SwAddr, Name}
+        if(devIdx%100) supervisor_cpp << "\n\t";     // Add some line splitting
+        supervisor_cpp << "{" << thread->get_hardware_address()->as_uint();
+        supervisor_cpp << "," << devI->addr.as_uint();
+        supervisor_cpp << ",\"" << devI->Name() <<"\"";
+        supervisor_cpp << "},";
+        
+        devIdx++;
+    }
+    supervisor_cpp.seekp(-1,ios_base::cur); // Rewind one place to remove the stray ","
+    supervisor_cpp << "\n};";               // properly terminate the initialiser
+    
+    
+    
+    
+    
+    // Default Supervisor handler strings
+    std::string supervisorOnInitHandler = "";
+    std::string supervisorOnStopHandler = "";
+    std::string supervisorOnImplicitHandler = "return -1;";
+    std::string supervisorOnPktHandler = "return -1;";
+    std::string supervisorOnCtlHandler = "return 0;";
+    std::string supervisorOnIdleHandler = "return 0;";
+    std::string supervisorOnRTCLHandler = "return 0;";
+    
+    
+    // Default Properteis, state and message struct content
+    std::string supervisorPropertiesBody = "\tbool dummy;";
+    std::string supervisorStateBody = "\tbool dummy;";
+    std::string supervisorRecvMsgBody = "\tuint8_t pyld[56];";
+    
+    if(graphI->pT->pSup)    // If we have a non-default Supervisor, build it.
+    {        
+        SupT_t* supType = graphI->pT->pSup;
+        
+        supervisor_h << "#define _APPLICATION_SUPERVISOR_ 1\n\n";
+        supervisor_h << "#include \"GlobalProperties.h\"\n";
+        supervisor_h << "#include \"MessageFormats.h\"\n\n";
+        
+        
+        // Global properties initialiser
+        writeGlobalPropsI(graphI, supervisor_cpp);
+        
+        // Global shared code - written directly
+        if(supType->par->pShCd)
+        {
+            supervisor_cpp << supType->par->pShCd->C_src();
+        }
+        
+        // Code section - written directly
+        if(supType->pShCd)
+        {
+            supervisor_cpp << supType->pShCd->C_src();
+        }
+        
+        // Init Handler
+        if(supType->pOnInit)
+        {
+            supervisorOnInitHandler = supType->pOnInit->C_src();
+        }
+        
+        // OnStop handler
+        if(supType->pOnStop)
+        {
+            supervisorOnStopHandler = supType->pOnStop->C_src();
+        }
+        
+        // Implicit receive handler
+        if(supType->pPinTSI)
+        {
+            // Get the body of the Supervisor message
+            supervisorRecvMsgBody = supType->pPinTSI->pMsg->pPropsD->C_src();
+            
+            supervisorOnImplicitHandler = supType->pPinTSI->pHandl->C_src();
+        }
+        
+        // General receive handler
+        if(supType->pOnPkt)
+        {
+            //TODO
+        }
+        
+        // MPI RX handler, essentially stub for now
+        if(supType->pOnCTL)
+        {
+            supervisorOnCtlHandler = supType->pOnCTL->C_src();
+        }
+        
+        // OnSupervisorIdle
+        if(supType->pOnDeId)
+        {
+            supervisorOnIdleHandler = supType->pOnDeId->C_src();
+        }
+        
+        // OnRTCL
+        if(supType->pOnRTCL)
+        {
+            supervisorOnRTCLHandler = supType->pOnRTCL->C_src();
+        }
+        
+    }
+    
+    // Write out the handlers and structs we just formed
+    
+    // Supervisor Properties
+    supervisor_h << "typedef struct SupervisorProperties_t\n{\n";
+    supervisor_h << supervisorPropertiesBody;
+    supervisor_h << "\n} SupervisorProperties_t;\n\n";
+    
+    //State
+    supervisor_h << "typedef struct SupervisorState_t\n{\n";
+    supervisor_h << supervisorStateBody;
+    supervisor_h << "\n} SupervisorState_t;\n\n";
+    
+    //Implicit Message Type
+    supervisor_h << "typedef struct SupervisorImplicitRecvMessage_t\n{\n";
+    supervisor_h << supervisorRecvMsgBody;
+    supervisor_h << "\n} SupervisorImplicitRecvMessage_t;\n\n";
+    
+    // Init Handler
+    supervisor_cpp << "int Supervisor::OnInit()\n{\n";
+    supervisor_cpp << "\tif(__SupervisorInit) return -1;\n";
+    supervisor_cpp << "\t__SupervisorProperties = new SupervisorProperties_t;\n";
+    supervisor_cpp << "\t__SupervisorState = new SupervisorState_t;\n";
+    supervisor_cpp << supervisorOnInitHandler;
+    supervisor_cpp << "\t__SupervisorInit = true;\n";
+    supervisor_cpp << "\treturn 0;\n";
+    supervisor_cpp << "}\n\n";
+    
+    // Stop handler
+    supervisor_cpp << "int Supervisor::OnStop()\n{\n";
+    supervisor_cpp << supervisorOnStopHandler;
+    supervisor_cpp << "\tdelete __SupervisorProperties;\n";
+    supervisor_cpp << "\tdelete __SupervisorState;\n";
+    supervisor_cpp << "\treturn 0;\n";
+    supervisor_cpp << "}\n\n";
+    
+    // OnImplicit
+    supervisor_cpp << "int Supervisor::OnImplicit(P_Pkt_t* inMsg){";
+    
+    supervisor_cpp << "\t const SupervisorProperties_t* SupervisorProperties";
+    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorProperties;\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorProperties)\n";
+    
+    supervisor_cpp << "\t SupervisorState_t* SupervisorState";
+    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorState;\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorState)\n";
+    
+    supervisor_cpp << "\t const SupervisorImplicitMessage_t* message";
+    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
+    supervisor_cpp << "static_cast<const SupervisorImplicitMessage_t*>(";
+    supervisor_cpp << "static_cast<const void*>(inMsg->payload));\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n";
+    
+    supervisor_cpp << supervisorOnImplicitHandler;
+    supervisor_cpp << "\nreturn 0;\n";
+    supervisor_cpp << "};";
+    
+    
+    // OnPkt
+    supervisor_cpp << "int Supervisor::OnPkt(P_Pkt_t* inMsg){";
+    
+    supervisor_cpp << "\t const SupervisorProperties_t* SupervisorProperties";
+    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorProperties;\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorProperties)\n";
+    
+    supervisor_cpp << "\t SupervisorState_t* SupervisorState";
+    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorState;\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorState)\n";
+    
+    supervisor_cpp << "\t const SupervisorImplicitMessage_t* message";
+    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
+    supervisor_cpp << "static_cast<const SupervisorImplicitMessage_t*>(";
+    supervisor_cpp << "static_cast<const void*>(inMsg->payload));\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n";
+    
+    supervisor_cpp << supervisorOnPktHandler;
+    supervisor_cpp << "\nreturn 0;\n";
+    supervisor_cpp << "};";
+    
+    // OnCTL
+    supervisor_cpp << "int Supervisor::OnCtl(){";
+    supervisor_cpp << supervisorOnCtlHandler;
+    supervisor_cpp << "};";
+    
+    // OnIdle
+    supervisor_cpp << "int Supervisor::OnIdle(){";
+    supervisor_cpp << supervisorOnIdleHandler;
+    supervisor_cpp << "};";
+    
+    //OnRTCL
+    supervisor_cpp << "int Supervisor::OnRTCL(){";
+    supervisor_cpp << supervisorOnRTCLHandler;
+    supervisor_cpp << "};";
+    
+    
+    // Close Supervisor files.
+    supervisor_cpp << "\n";
+    supervisor_cpp.close();
+    
+    supervisor_h << "\n#endif\n";
+    supervisor_h.close();
+    
+    return 0;
+}
 
 
 /******************************************************************************
@@ -829,7 +1210,7 @@ int Composer::createCoreFiles(P_core* pCore,
     
     // Create the vars header
     std::stringstream vars_hFName;
-    vars_hFName << taskDir << GENERATED_H_PATH;
+    vars_hFName << outputPath << taskDir << "/" << GENERATED_H_PATH;
     vars_hFName << "/vars_" << coreAddr << ".h";
     
     vars_h.open(vars_hFName.str().c_str());
@@ -844,7 +1225,7 @@ int Composer::createCoreFiles(P_core* pCore,
     
     // Create the vars source
     std::stringstream vars_cppFName;
-    vars_cppFName << taskDir << GENERATED_CPP_PATH;
+    vars_cppFName << outputPath << taskDir << "/" << GENERATED_CPP_PATH;
     vars_cppFName << "/vars_" << coreAddr << ".cpp";
     
     vars_cpp.open(vars_cppFName.str().c_str());
@@ -859,7 +1240,7 @@ int Composer::createCoreFiles(P_core* pCore,
     
     // Create the vars header
     std::stringstream handlers_hFName;
-    handlers_hFName << taskDir << GENERATED_H_PATH;
+    handlers_hFName << outputPath << taskDir << "/" << GENERATED_H_PATH;
     handlers_hFName << "/handlers_" << coreAddr << ".h";
     
     handlers_h.open(handlers_hFName.str().c_str());
@@ -876,7 +1257,7 @@ int Composer::createCoreFiles(P_core* pCore,
     
     // Create the vars source
     std::stringstream handlers_cppFName;
-    handlers_cppFName << taskDir << GENERATED_CPP_PATH;
+    handlers_cppFName << outputPath << taskDir << "/" << GENERATED_CPP_PATH;
     handlers_cppFName << "/handlers_" << coreAddr << ".cpp";
     
     handlers_cpp.open(handlers_cppFName.str().c_str());
@@ -985,7 +1366,7 @@ int Composer::createThreadFile(P_thread* pThread, std::string& taskDir,
     
     // Create the vars source
     std::stringstream tvars_cppFName;
-    tvars_cppFName << taskDir << GENERATED_CPP_PATH;
+    tvars_cppFName << outputPath << taskDir << "/" << GENERATED_CPP_PATH;
     tvars_cppFName << "/vars_" << coreAddr;
     tvars_cppFName << "_" << threadAddr << ".cpp";
     
@@ -2119,14 +2500,6 @@ void Composer::writeDevIOutputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
         // Write the initialisers to the vars.cpp
         vars_cpp << outEdgeTI.rdbuf();
     }
+    
 }
-
-
-
-
-
-
-
-
-
 

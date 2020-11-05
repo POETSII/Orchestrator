@@ -1385,7 +1385,7 @@ void Placer::update_software_addresses(GraphI_t* gi)
         }
 
         /* If the device has not been placed, and is a supervisor device, set
-         * the device component of the address (a P_builder special case). */
+         * the Mothership and CNC component of the address. */
         else if (device->devTyp == 'S')
         {
             device->addr.set_ismothership(1);
