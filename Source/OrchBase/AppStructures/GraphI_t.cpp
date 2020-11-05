@@ -247,8 +247,11 @@ pT = 0;                                // Reset GraphInstance->Type tree pointer
 
 WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i) {
   DevI_t * pD = G.NodeData(i);         // Device address
-  pD->pT->clRef1(pD->Def());
-  pD->pT = 0;                          // Device instance type
+  if (pD->pT != 0)
+  {
+    pD->pT->clRef1(pD->Def());
+    pD->pT = 0;                        // Device instance type
+  }
                                        // Input pin type
   WALKPDIGRAPHINPINS(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,
                      G,G.NodeKey(i),j) {
