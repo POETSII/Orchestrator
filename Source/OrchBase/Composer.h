@@ -47,6 +47,8 @@ typedef std::map<PinT_t*, unsigned>                 pinTIdxMap_t;
 typedef std::map<DevT_t*, devTypStrings_t*>         devTStrsMap_t;
 typedef std::map<GraphI_t*, ComposerGraphI_t*>      ComposerGraphIMap_t;
 
+typedef std::map<DevI_t*, uint32_t>                 devTSuperIdxMap_t;
+
 
 typedef struct devTypStrings_t
 {
@@ -67,9 +69,12 @@ typedef struct ComposerGraphI_t
     GraphI_t* graphI;
     std::set<P_core*>* cores;    // Cores used by the GraphInstance
     
-    devTStrsMap_t devTStrsMap;
-    
-    //pinTIdxMap_t pinTIdxMap; 
+    // Maps/vector filled during generation. These are only valid if "generated"
+    devTStrsMap_t devTStrsMap;              // Common strings for each DeVT
+    std::vector<DevI_t*> supevisorDevTVect; // Supervisor Edge Index handling. 
+    devTSuperIdxMap_t   devTSuperIdxMap;    // Supervisor Edge Index handling. 
+    // TODO: This is inherently single-supervisor for now and needs modifying to
+    // have one vector per supervisor.
     
     std::string outputDir;
     
@@ -81,8 +86,9 @@ typedef struct ComposerGraphI_t
     // Constructors/Destructors
     ComposerGraphI_t();
     ComposerGraphI_t(GraphI_t*);
-    ComposerGraphI_t(GraphI_t*, std::string);
     ~ComposerGraphI_t();
+    
+    void clearDevTStrsMap();
 } ComposerGraphI_t;
 
 
@@ -119,7 +125,7 @@ void        setPlacer(Placer*);
 private:
     
 Placer*     placer;
-std::string outputDir;    
+std::string outputPath;    
 std::string supervisorSendPinName;
     
 
@@ -129,7 +135,7 @@ ComposerGraphIMap_t graphIMap; // Map has an entry for each Graph Instance.
 int prepareDirectories(std::string&);
 
 
-
+int generateSupervisor(ComposerGraphI_t*);
 
 void writeGlobalSharedCode(GraphI_t*, std::ofstream&);
 void writeGlobalPropsD(GraphI_t*, std::ofstream&);
@@ -161,7 +167,6 @@ void writeCoreHandlerFoot(unsigned, std::ofstream&, std::ofstream&);
 
 
 int createThreadFile(P_thread*, std::string&, std::ofstream&);
-
 
 unsigned writeThreadVars(P_thread*, ofstream&, ofstream&);
 void writeThreadVarsCommon(AddressComponent, AddressComponent, 
@@ -196,9 +201,6 @@ void writeDevIOutputPinDefs(GraphI_t*, DevT_t*, AddressComponent, std::string&,
 void writeDevIOutputPinEdgeDefs(GraphI_t*, PinI_t*, std::string&, 
                                 std::vector<unsigned>&,
                                 std::ofstream&, std::ofstream&);
-
-
-
 
 
 void writeDevTSharedCode(DevT_t*, std::ofstream&);

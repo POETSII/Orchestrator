@@ -455,6 +455,8 @@ pS->Def(pn->lin);
 WALKVECTOR(xnode *,pn->vnode,i) {
   (*i)->rTyp() = DS_map[(*i)->ename];
   switch ((*i)->rTyp()) {
+    case cProperties       : pS->pPropsD = _CFrag(*i);                break;
+    case cState            : pS->pStateD = _CFrag(*i);                break;
     case cCode             : pS->pShCd    = _CFrag(*i);               break;
     case cSupervisorOutPin : pS->pPinTSO = _PinT_t(pS,*i);            break;
     case cSupervisorInPin  : pS->pPinTSI = _PinT_t(pS,*i);            break;
@@ -462,6 +464,7 @@ WALKVECTOR(xnode *,pn->vnode,i) {
     case cOnRTCL           : pS->pOnRTCL  = _CFrag(*i);               break;
     case cOnStop           : pS->pOnStop  = _CFrag(*i);               break;
     case cOnCTL            : pS->pOnCTL   = _CFrag(*i);               break;
+    case cOnInit           : pS->pOnInit = _CFrag(*i);                break;
     case cMetaData         : pS->Meta_v.push_back(_Meta(*i));         break;
     default                : par->Post(998,__FILE__,int2str(__LINE__),
                                        (*i)->ename);
