@@ -228,6 +228,7 @@
 802(W) : "Graph instance '%s' has not been placed. Not %s."
 803(I) : "%sing graph instance '%s'..."
 804(I) : "Graph instance '%s' %s successfully."
+805(W) : "No hardware model is loaded - unable to %s any graph instances in the composer."
 
 // Unrecoverables
 901(U) : "%s: %s corrupt ?"

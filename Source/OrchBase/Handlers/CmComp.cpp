@@ -20,6 +20,13 @@ CmComp::~CmComp()
 
 void CmComp::Cm_App(Cli::Cl_t clause)
 {
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "compose");
+        return;
+    }
+
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs) == 1) return;
@@ -50,6 +57,13 @@ void CmComp::Cm_App(Cli::Cl_t clause)
 
 void CmComp::Cm_Generate(Cli::Cl_t clause)
 {
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "generate");
+        return;
+    }
+
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs) == 1) return;
@@ -80,6 +94,13 @@ void CmComp::Cm_Generate(Cli::Cl_t clause)
 
 void CmComp::Cm_Compile(Cli::Cl_t clause)
 {
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "compile");
+        return;
+    }
+
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs) == 1) return;
@@ -111,6 +132,13 @@ void CmComp::Cm_Compile(Cli::Cl_t clause)
 
 void CmComp::Cm_Clean(Cli::Cl_t clause)
 {
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "clean");
+        return;
+    }
+
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs) == 1) return;
