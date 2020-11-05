@@ -1,5 +1,31 @@
 #include "Composer.h"
 
+
+// Temporary consts (were in build_defs).
+//TODO: reconcile
+const string GENERATED_PATH = "Generated";
+const string GENERATED_H_PATH = GENERATED_PATH+"/inc";
+const string GENERATED_CPP_PATH = GENERATED_PATH+"/src";
+
+
+#if (defined __BORLANDC__ || defined _MSC_VER)
+const string SYS_COPY = "copy";
+const string MAKEDIR = "md";
+const string RECURSIVE_CPY = "";
+const string REMOVEDIR = "rd /S /Q";
+#elif (defined __GNUC__)
+const string SYS_COPY = "cp";
+const string RECURSIVE_CPY = "-r";
+const string PERMISSION_CPY = "-p";
+const string MAKEDIR = "mkdir";
+const string REMOVEDIR = "rm --force --recursive";
+#endif
+
+const unsigned int MAX_RTSBUFFSIZE = 4096;
+const unsigned int MIN_RTSBUFFSIZE = 10;
+
+
+
 /******************************************************************************
  * ComposerGraphI_t constructors & destructor
  *****************************************************************************/
@@ -131,6 +157,14 @@ int Composer::generate(GraphI_t* graphI)
     if(builderGraphI->generated)
     {   // Already generated, nothing to do
         return 0;
+    }
+    
+    
+    // Prepare the directories
+    if(prepareDirectories(builderGraphI))
+    {
+        //Directory prepare failed. TODO: BARF
+        return -1;
     }
     
     // Get the list of cores
@@ -304,7 +338,7 @@ void Composer::reset()
 /******************************************************************************
  * Prepare directories for source code generation and compilation
  *****************************************************************************/
-int prepareDirectories(ComposerGraphI_t* builderGraphI)
+int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
 {
     //TODO: a lot of this system() calling needs to be made more cross-platform, and should probably be moved to OSFixes.hpp.
     //TODO: fix the path specifiers for system() calls throughout as they are currently inconsistent on what has a "/" at the end.
@@ -353,18 +387,51 @@ int prepareDirectories(ComposerGraphI_t* builderGraphI)
         return 1;
     }
     
+    std::string mkdirSoftswitchPath(taskDir + "/Softswitch");
+    if(system((MAKEDIR + " " + mkdirSoftswitchPath).c_str()))
+    {
+        //par->Post(818, mkdirSoftswitchPath, OSFixes::getSysErrorString(errno));
+        return 1;
+    }
+    
+    std::string mkdirBuildPath(taskDir + "/Build");
+    if(system((MAKEDIR + " " + mkdirBuildPath).c_str()))
+    {
+        //par->Post(818, mkdirBuildPath, OSFixes::getSysErrorString(errno));
+        return 1;
+    }
     
     
+    //==========================================================================
     // Copy static source
+    //==========================================================================
     
-    //============================================================================
     // Copy the default supervisor code into the right place.
-    // This is used by the default supervisor without modification.
-    //============================================================================
     std::stringstream cpCmd;
+    
     cpCmd << SYS_COPY << " ";
-    cpCmd << taskDir << STATIC_SRC_PATH << "Supervisor.* "; // Source
-    cpCmd << taskDir << "/" << GENERATED_PATH;                   // Destination
+    cpCmd << outputPath << "Supervisor.* ";                     // Source
+    cpCmd << taskDir << "/" << GENERATED_PATH;                  // Destination
+    if(system(cpCmd.str().c_str()))
+    {
+        //par->Post(807, (task_dir+GENERATED_PATH), OSFixes::getSysErrorString(errno));
+        return 1;
+    }
+    
+    // Copy Softswitch code
+    cpCmd.str(SYS_COPY+" "+RECURSIVE_CPY+" "+PERMISSION_CPY);
+    cpCmd << outputPath << "Softswitch/* ";
+    cpCmd << taskDir  << "Softswitch";
+    if(system(cpCmd.str().c_str()))
+    {
+        //par->Post(807, (task_dir+GENERATED_PATH), OSFixes::getSysErrorString(errno));
+        return 1;
+    }
+    
+    // Copy Makefile
+    cpCmd.str(SYS_COPY+" ");
+    cpCmd << outputPath << "Softswitch/Makefile ";
+    cpCmd << taskDir << "/Build";
     if(system(cpCmd.str().c_str()))
     {
         //par->Post(807, (task_dir+GENERATED_PATH), OSFixes::getSysErrorString(errno));

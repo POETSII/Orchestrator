@@ -25,17 +25,6 @@
 #include "EdgeI_t.h"
 
 
-// Temporary consts (were in build_defs).
-//TODO: reconcile
-const string GENERATED_PATH = "Generated";
-const string GENERATED_H_PATH = GENERATED_PATH+"/inc";
-const string GENERATED_CPP_PATH = GENERATED_PATH+"/src";
-
-const unsigned int MAX_RTSBUFFSIZE = 4096;
-const unsigned int MIN_RTSBUFFSIZE = 10;
-const unsigned int MAX_HANDLERS = 1024;
-
-
 //class P_core;
 
 struct ComposerGraphI_t;
@@ -132,8 +121,7 @@ std::string supervisorSendPinName;
 ComposerGraphIMap_t graphIMap; // Map has an entry for each Graph Instance.
 
 
-int prepareDirectories(std::string&);
-
+int prepareDirectories(ComposerGraphI_t*);
 
 int generateSupervisor(ComposerGraphI_t*);
 
