@@ -10,6 +10,8 @@ MsgT_t::MsgT_t(GraphT_t * _p,string _s):par(_p),pPropsD(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
+
+pPropsD = 0;
 }
 
 //------------------------------------------------------------------------------

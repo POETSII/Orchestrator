@@ -11,6 +11,8 @@ EdgeI_t::EdgeI_t(GraphI_t * G, string name): par(G)
 Name(name);
 Npar(G);
 Key = 0;
+pPropsI = 0;
+pStateI = 0;
 }
 
 //------------------------------------------------------------------------------

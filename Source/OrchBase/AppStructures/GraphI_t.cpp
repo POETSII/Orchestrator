@@ -27,6 +27,8 @@ G.SetND_CB(DevI_t::DevDat_cb);
 G.SetNK_CB(DevI_t::DevKey_cb);
 G.SetAD_CB(EdgeI_t::EdgDat_cb);
 G.SetAK_CB(EdgeI_t::EdgKey_cb);
+
+pPropsI = 0;
 }
 
 //------------------------------------------------------------------------------
