@@ -80,6 +80,7 @@
 
 #define P_CNC_MAX_USER              0xEF
 
+#define P_CNC_IMPL                  0xFA
 #define P_CNC_INSTR                 0xFB
 #define P_CNC_LOG                   0xFC
 #define P_CNC_BARRIER               0xFD
