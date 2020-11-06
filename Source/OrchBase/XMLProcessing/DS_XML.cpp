@@ -202,7 +202,7 @@ WALKVECTOR(xnode *,pn->vnode,i) {
     case cSupervisorInPin  : pD->pPinTSI = _PinT_t(pD,*i);           break;
     case cInputPin         : pP = _PinT_t(pD,*i);
                              if (pP!=0) {   pD->PinTI_v.push_back(pP);
-                                            pP->Idx = (pD->PinTO_v.size()-1);
+                                            pP->Idx = (pD->PinTI_v.size()-1);
                                                                    } break;
     case cOutputPin        : pP = _PinT_t(pD,*i);
                              if (pP!=0) {   pD->PinTO_v.push_back(pP);
@@ -285,8 +285,8 @@ WALKVECTOR(xnode *,pn->vnode,i) {
   }
 }
 
-pGI->G.InsertArc(kE,pDto->Key,pDfr->Key,pE,
-                 pPto->Key_v.back(),pPto,pPfr->Key_v.back(),pPfr);
+pGI->G.InsertArc(kE,pDfr->Key,pDto->Key,pE,
+                 pPfr->Key_v.back(),pPfr,pPto->Key_v.back(),pPto);
 }
 
 //------------------------------------------------------------------------------
