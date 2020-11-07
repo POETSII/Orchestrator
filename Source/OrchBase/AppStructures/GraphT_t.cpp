@@ -14,7 +14,7 @@
 
 //==============================================================================
 
-const string GraphT_t::dMsgName = string("]default[");
+const string GraphT_t::dMsgName = string("__default");
 
 //==============================================================================
 
@@ -115,7 +115,7 @@ void GraphT_t::MsgDefault()
 MsgT_t * pM = new MsgT_t(this,dMsgName);
 static const string defs = string(
 "// Auto-generated default POETS packet format\n"
-"uint8_t char[56] payload;\n"
+"uint8_t[56] payload;\n"
 );
 pM->pPropsD = new CFrag(defs);
 MsgT_v.push_back(pM);

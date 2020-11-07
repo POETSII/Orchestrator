@@ -154,8 +154,6 @@ pD->tyId = pn->FindAttr("type");       // Device type
 WALKVECTOR(xnode *,pn->vnode,i) {      // There should be only one (type of)....
   (*i)->rTyp() = DS_map[(*i)->ename];
   switch ((*i)->rTyp()) {
-    case cProperties     : pD->pPropsI = _CFrag(*i);             break;
-    case cState          : pD->pStateI = _CFrag(*i);             break;
     case cMetaData       : pD->Meta_v.push_back(_Meta(*i));      break;
     default              : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
   }
@@ -275,15 +273,6 @@ pE->Ref(lin);
 pE->Key = kE;                          // Store the key inside its data
 pE->Idx = (pPto->Key_v.size() - 1);    // Index of edge in the to pin's Key_v
                                        // Insert into instance graph
-                                       
-WALKVECTOR(xnode *,pn->vnode,i) {
-  (*i)->rTyp() = DS_map[(*i)->ename];
-  switch ((*i)->rTyp()) {                                       
-    case cProperties     : pE->pPropsI = _CFrag(*i);             break;
-    case cState          : pE->pStateI = _CFrag(*i);             break;
-    default              : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
-  }
-}
 
 pGI->G.InsertArc(kE,pDfr->Key,pDto->Key,pE,
                  pPfr->Key_v.back(),pPfr,pPto->Key_v.back(),pPto);
