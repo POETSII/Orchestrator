@@ -22,6 +22,9 @@ void SuperDB::idle_rotation()
 
         /* Call idle method for this supervisor. */
         idle_supervisor(superIt->first);
+
+        /* Unlock the mutex we've claimed. */
+        pthread_mutex_unlock(&(superIt->second->lock));
     }
 }
 
