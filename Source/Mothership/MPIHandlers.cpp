@@ -421,6 +421,16 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
     debug_post(597, 3, "Q::BEND,Q::SUPR", hex2str(message->Key()).c_str(),
                dformat("appName=%s", appName.c_str()).c_str());
 
+    /* If the application is not running, we complain in debug. This may be
+     * behaviour for a well-behaved application, as a normal device may send
+     * packets to its supervisor before it receives the 'stop' packet from its
+     * Mothership. */
+    if(appdb.check_create_app(appName, distCount)->state != RUNNING)
+    {
+        debug_post(582, appName);
+        return 0;
+    }
+
     /* Set up a message for the supervisor entry point to modify. This output
      * message is always going to be a "packets" message (it's just a device
      * after all, sending information to another device in the compute

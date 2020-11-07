@@ -201,6 +201,7 @@
 523(E) : "Mothership: Supervisor for application '%s' failed to initialise correctly. Marking application as BROKEN (which may cause other errors)."
 524(E) : "Mothership: Application '%s' received more distribution messages than expected (%s). Marking application as BROKEN (which may cause other errors)."
 
+582(I) : "Mothership: Received a message containing packets for a supervisor device for application '%s' that is not running (it may be in the process of stopping). Ignoring these packets."
 583(I) : "Mothership: Initialising supervisor device for application '%s'."
 584(I) : "Mothership: Calling backend->loadDataViaCore with arguments dataPath=%s, meshX=0x%s, meshY=0x%s, coreId=0x%s."
 585(I) : "Mothership: Calling backend->loadInstrsOntoCore with arguments codePath=%s, meshX=0x%s, meshY=0x%s, coreId=0x%s."
