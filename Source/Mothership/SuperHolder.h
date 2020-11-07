@@ -4,6 +4,7 @@
 /* Defines the SuperHolder object, which holds loaded supervisors. */
 
 #include <dlfcn.h>
+#include <pthread.h>
 #include <string>
 #include <fstream>
 
@@ -16,6 +17,7 @@ public:
     ~SuperHolder();
     std::string path;
     bool error;
+    pthread_mutex_t lock;
     bool are_all_hooks_loaded();
     void dump(std::ofstream*);
     int (*call)(PMsg_p*, PMsg_p*);

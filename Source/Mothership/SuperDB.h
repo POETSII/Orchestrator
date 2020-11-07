@@ -27,7 +27,10 @@ typedef std::map<std::string, SuperHolder*>::iterator SuperIt;
 int SuperDB::HANDLE_SUPERVISOR_FN_NAME(HANDLER_NAME)(std::string appName) \
 { \
     FIND_SUPERVISOR \
-    return (*(superFinder->second->HANDLER_NAME))(); \
+    pthread_mutex_lock(&(superFinder->second->lock), PNULL); \
+    int rc = (*(superFinder->second->HANDLER_NAME))(); \
+    pthread_mutex_unlock(&(superFinder->second->lock), PNULL); \
+    return rc; \
 }
 
 /* For supervisor handlers that have message-input and message-output
@@ -39,8 +42,11 @@ int SuperDB::HANDLE_SUPERVISOR_FN_NAME(HANDLER_NAME) \
     (std::string appName, PMsg_p* inputMessage, PMsg_p* outputMessage) \
 { \
     FIND_SUPERVISOR \
-    return (*(superFinder->second->HANDLER_NAME))(inputMessage, \
-                                                  outputMessage); \
+    pthread_mutex_lock(&(superFinder->second->lock), PNULL); \
+    int rc = (*(superFinder->second->HANDLER_NAME))(inputMessage, \
+                                                    outputMessage); \
+    pthread_mutex_unlock(&(superFinder->second->lock), PNULL); \
+    return rc; \
 }
 
 class SuperDB

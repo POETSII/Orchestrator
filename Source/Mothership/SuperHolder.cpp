@@ -3,10 +3,10 @@
 /* Here we load the shared objects! It is down to the creator to verify the
  * success of the loading process (i.e. by checking (error), and by calling
  * dlerror to obtain an error message). */
-
 SuperHolder::SuperHolder(std::string path):
     path(path)
 {
+    pthread_mutex_init(&lock, PNULL);
     error = false;
     so = dlopen(path.c_str(), RTLD_NOW);
 
@@ -31,7 +31,11 @@ SuperHolder::SuperHolder(std::string path):
 }
 
 /* And here we close them. */
-SuperHolder::~SuperHolder(){dlclose(so);}
+SuperHolder::~SuperHolder()
+{
+    dlclose(so);
+    pthread_mutex_destroy(&lock);
+}
 
 /* Convenience method returning whether or not all of the hooks have been
  * loaded. Even the default supervisor must define all of the hook functions

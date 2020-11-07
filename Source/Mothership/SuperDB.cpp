@@ -50,9 +50,13 @@ bool SuperDB::unload_supervisor(std::string appName)
         return false;
     }
 
-    /* Otherwise, unload away (via destructor). */
-    delete superIt->second;
-    supervisors.erase(superIt);
+    /* Otherwise, unload away (via destructor), but let it finish what it's
+     * doing. */
+    pthread_mutex_lock(&(superFinder->second->lock), PNULL);
+    SuperHolder* toDestroy = superIt->second;
+    supervisors.erase(superIt); /* If it can't be found, it can't be locked */
+    pthread_mutex_unlock(&(superFinder->second->lock), PNULL);
+    delete toDestroy;
     return true;
 }
 
