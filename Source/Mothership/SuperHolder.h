@@ -16,9 +16,14 @@ public:
     ~SuperHolder();
     std::string path;
     bool error;
+    bool are_all_hooks_loaded();
     void dump(std::ofstream*);
-    int (*entryPoint)(PMsg_p*, PMsg_p*);
-    int (*initialise)();
+    int (*call)(PMsg_p*, PMsg_p*);
+    int (*exit)();
+    int (*idle)();
+    int (*init)();
+    int (*implicitCall)(PMsg_p*, PMsg_p*);
+
 private:
     void* so;
 };

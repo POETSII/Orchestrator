@@ -45,7 +45,7 @@ int SuperDB::call_supervisor(std::string appName, PMsg_p* inputMessage,
     SuperIt superFinder = supervisors.find(appName);
     if (superFinder == supervisors.end()) return -2;
     /* I know this is hideous, but that's function pointers for you. */
-    return (*(superFinder->second->entryPoint))(inputMessage, outputMessage);
+    return (*(superFinder->second->call))(inputMessage, outputMessage);
 }
 
 /* Initialises the supervisor for a given application. */
@@ -54,7 +54,7 @@ int SuperDB::initialise_supervisor(std::string appName)
     SuperIt superFinder = supervisors.find(appName);
     if (superFinder == supervisors.end()) return -2;
     /* I know this is hideous, but that's function pointers for you. */
-    return (*(superFinder->second->initialise))();
+    return (*(superFinder->second->init))();
 }
 
 /* Unloads a supervisor from the database, returning true on success and false
