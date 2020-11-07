@@ -38,25 +38,6 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
     return true;
 }
 
-/* Calls the supervisor for a given application using its entry point. */
-int SuperDB::call_supervisor(std::string appName, PMsg_p* inputMessage,
-                             PMsg_p* outputMessage)
-{
-    SuperIt superFinder = supervisors.find(appName);
-    if (superFinder == supervisors.end()) return -2;
-    /* I know this is hideous, but that's function pointers for you. */
-    return (*(superFinder->second->call))(inputMessage, outputMessage);
-}
-
-/* Initialises the supervisor for a given application. */
-int SuperDB::initialise_supervisor(std::string appName)
-{
-    SuperIt superFinder = supervisors.find(appName);
-    if (superFinder == supervisors.end()) return -2;
-    /* I know this is hideous, but that's function pointers for you. */
-    return (*(superFinder->second->init))();
-}
-
 /* Unloads a supervisor from the database, returning true on success and false
  * if no such supervisor exists. */
 bool SuperDB::unload_supervisor(std::string appName)
@@ -74,6 +55,13 @@ bool SuperDB::unload_supervisor(std::string appName)
     supervisors.erase(superIt);
     return true;
 }
+
+/* Code repetition ahoy! (methods for calling supervisor handlers) */
+#HANDLE_SUPERVISOR_FN(init)
+#HANDLE_SUPERVISOR_FN(exit)
+#HANDLE_SUPERVISOR_FN(idle)
+#HANDLE_SUPERVISOR_CALL_FN(call)
+#HANDLE_SUPERVISOR_CALL_FN(implicitCall)
 
 /* Prints a diagnostic line for each supervisor. The argument is the stream to
  * dump to. */
