@@ -110,6 +110,10 @@ bool Mothership::debug_post(int code, unsigned numArgs, ...)
     #endif
 }
 
+/* Defines OnIdle behaviour for the Mothership (ala CommonBase) - this
+ * currently just calls the idle handler for loaded supervisors in a loop. */
+void Mothership::OnIdle(){superdb.idle_rotation();}
+
 /* Sets up the function map for MPI communications. See the CommonBase
  * documentation for more information on how this is expected to work. */
 void Mothership::setup_mpi_hooks()
