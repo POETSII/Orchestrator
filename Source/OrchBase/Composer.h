@@ -36,7 +36,7 @@ typedef std::map<PinT_t*, unsigned>                 pinTIdxMap_t;
 typedef std::map<DevT_t*, devTypStrings_t*>         devTStrsMap_t;
 typedef std::map<GraphI_t*, ComposerGraphI_t*>      ComposerGraphIMap_t;
 
-typedef std::map<DevI_t*, uint32_t>                 devTSuperIdxMap_t;
+typedef std::map<DevI_t*, uint32_t>                 devISuperIdxMap_t;
 
 
 typedef struct devTypStrings_t
@@ -61,7 +61,7 @@ typedef struct ComposerGraphI_t
     // Maps/vector filled during generation. These are only valid if "generated"
     devTStrsMap_t devTStrsMap;              // Common strings for each DeVT
     std::vector<DevI_t*> supevisorDevTVect; // Supervisor Edge Index handling. 
-    devTSuperIdxMap_t   devTSuperIdxMap;    // Supervisor Edge Index handling. 
+    devISuperIdxMap_t   devISuperIdxMap;    // Supervisor Edge Index handling. 
     // TODO: This is inherently single-supervisor for now and needs modifying to
     // have one vector per supervisor.
     
@@ -156,7 +156,7 @@ void writeCoreHandlerFoot(unsigned, std::ofstream&, std::ofstream&);
 
 int createThreadFile(P_thread*, std::string&, std::ofstream&);
 
-unsigned writeThreadVars(P_thread*, ofstream&, ofstream&);
+unsigned writeThreadVars(ComposerGraphI_t*, P_thread*, ofstream&, ofstream&);
 void writeThreadVarsCommon(AddressComponent, AddressComponent, 
                             std::ofstream&, std::ofstream&);
 void writeThreadContextInitialiser(P_thread*, DevT_t*,
@@ -170,8 +170,9 @@ void writeOutputPinInit(AddressComponent, DevT_t*,
 void writeDevIDecl(AddressComponent, size_t, std::ofstream&);
 
 
-void writeThreadDevIDefs(P_thread*, size_t, std::ofstream&, std::ofstream&);
-void writeDevIInputPinDefs(GraphI_t*, AddressComponent threadAddr,
+void writeThreadDevIDefs(ComposerGraphI_t*, P_thread*, size_t,
+                                std::ofstream&, std::ofstream&);
+void writeDevIInputPinDefs(GraphI_t*, DevT_t*, AddressComponent threadAddr,
                                 std::string&, std::vector<unsigned>&,
                                 std::ofstream&, std::ofstream&);
 void writeDevIInputPinEdgeDefs(GraphI_t*, PinI_t*, AddressComponent,
@@ -183,8 +184,8 @@ void writeDevIInPinsDecl(std::string&, size_t, std::ofstream&);
 void writeDevIOutPinsDecl(std::string&, size_t, std::ofstream&);
 
 
-void writeDevIOutputPinDefs(GraphI_t*, DevT_t*, AddressComponent, std::string&,
-                                std::vector<unsigned>&,
+void writeDevIOutputPinDefs(ComposerGraphI_t*, DevI_t*, AddressComponent,
+                                std::string&, std::vector<unsigned>&,
                                 std::ofstream&, std::ofstream&);
 void writeDevIOutputPinEdgeDefs(GraphI_t*, PinI_t*, std::string&, 
                                 std::vector<unsigned>&,

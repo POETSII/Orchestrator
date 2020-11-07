@@ -8,21 +8,19 @@ extern "C"
         // Call Supervisor::OnInit
         return Supervisor::OnInit()
     }
-
     int SupervisorCall(PMsg_p* In, PMsg_p* Out)
     {
 #ifdef _APPLICATION_SUPERVISOR_
         int sentErr = 0;
-        uint8_t opcode;
-        std::vector<P_Pkt_t> pkts;  // packets are packed in Tinsel packet
-                                    // format
+        uint8_t op;
+
+        std::vector<P_Pkt_t> pkts; // packets are packed in Tinsel packet format
         In->Put<P_Pkt_t>();
         In->Get(1, pkts);
         WALKVECTOR(P_Pkt_t, pkts, pkt)
         {
-            opcode = (pkt->header.swAddr & P_SW_OPCODE_MASK) >>
-                P_SW_OPCODE_SHIFT;
-            if (opcode == P_CNC_IMPL) sentErr += Supervisor::OnImplicit(&*pkt);
+            op = (pkt->header.swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT;
+            if (op == P_CNC_IMPL) sentErr += Supervisor::OnImplicit(&*pkt);
             else sentErr += Supervisor::OnPkt(&*pkt);
         }
         return sentErr;
