@@ -36,9 +36,9 @@ ComposerGraphI_t::ComposerGraphI_t()
     compiled = false;
 }
 
-ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphI)
+ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn)
 {
-    graphI = graphI;
+    graphI = graphIIn;
     outputDir = graphI->Name();
     generated = false;
     compiled = false;
@@ -72,15 +72,13 @@ void ComposerGraphI_t::clearDevTStrsMap()
  *****************************************************************************/
 Composer::Composer()
 {
-    outputPath = "./";   
-    supervisorSendPinName = "SupervisorSend";
+    outputPath = "./";
 }
 
 Composer::Composer(Placer* plc)
 {
     placer = plc;
-    outputPath = "./";   
-    supervisorSendPinName = "SupervisorSend";
+    outputPath = "./";
 }
 
 Composer::~Composer()
@@ -103,7 +101,7 @@ void Composer::setOutputPath(std::string path)
     outputPath = path;
     
     // Make sure we end in / for consistency
-    if(*outputPath.rbegin() != '/' || *outputPath.rbegin() != '\\')
+    if(*outputPath.rbegin() != '/' && *outputPath.rbegin() != '\\')
     {
         outputPath += "/";
     }
@@ -127,6 +125,9 @@ void Composer::setPlacer(Placer* plc)
  *****************************************************************************/
 int Composer::compose(GraphI_t* graphI)
 {
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    fprintf(fd,"\nComposing %s...\n",graphI->par->Name().c_str());
+    
     int ret = generate(graphI);
     
     if(ret) return ret;
@@ -139,6 +140,7 @@ int Composer::compose(GraphI_t* graphI)
 int Composer::generate(GraphI_t* graphI)
 {
     ComposerGraphI_t* builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
     
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end()) 
@@ -156,6 +158,7 @@ int Composer::generate(GraphI_t* graphI)
     
     if(builderGraphI->generated)
     {   // Already generated, nothing to do
+        fprintf(fd,"\tApplication already generated, skipping\n");
         return 0;
     }
     
@@ -164,6 +167,7 @@ int Composer::generate(GraphI_t* graphI)
     if(prepareDirectories(builderGraphI))
     {
         //Directory prepare failed. TODO: BARF
+        fprintf(fd,"\t***FAILED TO PREPARE DIRECTORIES***\n");
         return -1;
     }
     
@@ -171,9 +175,10 @@ int Composer::generate(GraphI_t* graphI)
     std::map<GraphI_t*, std::set<P_core*> >::iterator giToCoresFinder;
     giToCoresFinder = placer->giToCores.find(graphI);
     if (giToCoresFinder == placer->giToCores.end())
-    {
-        // Something has gone horribly wrong
+    {   // Something has gone horribly wrong
         //TODO: Barf
+        fprintf(fd,"\t***FAILED TO FIND ANY CORES***\n");
+        return -2;
     }
     builderGraphI->cores = &(giToCoresFinder->second);
     
@@ -182,7 +187,10 @@ int Composer::generate(GraphI_t* graphI)
     builderGraphI->clearDevTStrsMap();      // sanity clear
     WALKVECTOR(DevT_t*,graphI->pT->DevT_v,devT)
     {
-        formDevTStrings(builderGraphI, (*devT));
+        if((*devT)->devTyp == 'D')
+        {
+            formDevTStrings(builderGraphI, (*devT));
+        }
     }
     
     
@@ -190,46 +198,86 @@ int Composer::generate(GraphI_t* graphI)
     std::ofstream props_h, pkt_h;
     
     std::stringstream props_hFName;
-    props_hFName << builderGraphI->outputDir << GENERATED_H_PATH;
+    props_hFName << outputPath << builderGraphI->outputDir;
+    props_hFName << "/" << GENERATED_PATH;
     props_hFName << "/GlobalProperties.h";
     props_h.open(props_hFName.str().c_str());
+    if(props_h.fail()) // Check that the file opened
+    {                 // if it didn't, tell logserver and exit
+        //TODO: Barf
+        //par->Post(816, vars_hFName.str(), OSFixes::getSysErrorString(errno));
+        return -1;
+    }
     writeGlobalPropsD(graphI, props_h);
     props_h.close();
     
     std::stringstream pkt_hFName;
-    pkt_hFName << 6                              << GENERATED_H_PATH;
+    pkt_hFName << outputPath << builderGraphI->outputDir;
+    pkt_hFName << "/" << GENERATED_PATH;
     pkt_hFName << "/MessageFormats.h";
     pkt_h.open(pkt_hFName.str().c_str());
+    if(pkt_h.fail()) // Check that the file opened
+    {                 // if it didn't, tell logserver and exit
+        //TODO: Barf
+        //par->Post(816, vars_hFName.str(), OSFixes::getSysErrorString(errno));
+        return -1;
+    }
     writeMessageTypes(graphI, pkt_h);
     pkt_h.close();
     
     
     //Generate Supervisor, inc Dev> Super map
-    generateSupervisor(builderGraphI);
     
+    fprintf(fd,"\tGenerating Supervisor...");
+    generateSupervisor(builderGraphI);
+    fprintf(fd,"\tDone!\n");
     
     
     P_core* pCore;                      // Core available during iteration.
     devTypStrings_t* dTStrs;
     DevT_t* devT;
-  
+    
+    fprintf(fd,"\tGenerating code for %lu cores\n",builderGraphI->cores->size());
+    
     WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
     {
         pCore = (*coreNode);
+        
+        fprintf(fd,"\tCore %lu: ", 
+          static_cast<unsigned long>(pCore->get_hardware_address()->as_uint()));
         
         //TODO:
         //mailboxCoreId = pCore->get_hardware_address()->get_mailbox();
         //mailboxCoreId += pCore->get_hardware_address()->get_core();
         
-        //======================================================================
-        // Find the device type strings for this core TODO:
-        //======================================================================
+        /*======================================================================
+         * Find the device type strings for this core 
+         *======================================================================
+         * We can abuse two facts to get the DevT:
+         *      A core only hosts one device type
+         *      Something will be in P_threadm for any core in giToCores
+         */
+        if(pCore->P_threadm.size() == 0) continue;  // pointless(?) sanity check
+        
+        std::map<AddressComponent, P_thread*>::iterator coreThread;
+        coreThread = pCore->P_threadm.begin();
+        
+        
+        std::list<DevI_t*> devLst = placer->threadToDevices[coreThread->second];
+        if(devLst.size() == 0) continue;            // pointless(?) sanity check
+        
+        DevI_t* devI = *devLst.begin();
+        devT = devI->pT;
+        
+        
         devTStrsMap_t::iterator devTStrsIter;
         devTStrsIter = builderGraphI->devTStrsMap.find(devT);
         
         if (devTStrsIter == builderGraphI->devTStrsMap.end()) 
         {   // Something has gone horribly horribly wrong
             //TODO: Barf
+            fprintf(fd,"\t***FAILED TO FIND DevT STRINGS***\n");
+            return -3;
         }
         
         dTStrs = devTStrsIter->second;
@@ -240,9 +288,12 @@ int Composer::generate(GraphI_t* graphI)
         //======================================================================
         std::ofstream vars_h, vars_cpp, handlers_h, handlers_cpp;
         
+        
+        fprintf(fd,"Files... ");                
         if (createCoreFiles(pCore, builderGraphI->outputDir, vars_h, vars_cpp, 
                             handlers_h, handlers_cpp))
         {
+            fprintf(fd,"\t***FAILED TO CREATE CORE FILES***\n");
             return 1;
         }
         
@@ -250,6 +301,7 @@ int Composer::generate(GraphI_t* graphI)
         //======================================================================
         // Write per-core source.
         //======================================================================
+        fprintf(fd,"Source... "); 
         writeCoreSrc(pCore, dTStrs, vars_h, vars_cpp, handlers_h, handlers_cpp);
         
         handlers_h.close();
@@ -279,7 +331,7 @@ int Composer::generate(GraphI_t* graphI)
                 }
                 
                 
-                writeThreadVars(pThread, vars_h, thread_vars_cpp);
+                writeThreadVars(builderGraphI,pThread,vars_h,thread_vars_cpp);
                 
                 thread_vars_cpp.close();
             }
@@ -288,6 +340,7 @@ int Composer::generate(GraphI_t* graphI)
         writeCoreVarsFoot(pCore->get_hardware_address()->as_uint(), vars_h);
         vars_h.close();
         
+        fprintf(fd,"\n"); 
     }
     
     builderGraphI->generated = true;
@@ -340,6 +393,9 @@ void Composer::reset()
  *****************************************************************************/
 int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
 {
+    GraphI_t* graphI = builderGraphI->graphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    
     //TODO: a lot of this system() calling needs to be made more cross-platform, and should probably be moved to OSFixes.hpp.
     //TODO: fix the path specifiers for system() calls throughout as they are currently inconsistent on what has a "/" at the end.
     //TODO: make the system() path specifiers cross-platform - these will fall over on Windows.
@@ -347,17 +403,19 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     //==========================================================================
     // Remove the task directory and recreate it to clean any previous build.
     //==========================================================================
-    //TODO: make this safer. Currently the remove users an "rm -rf" without any safety.
+    //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
     std::string taskDir(outputPath + builderGraphI->outputDir); 
     if(system((REMOVEDIR+" "+taskDir).c_str())) // Check that the directory deleted
     {                                  // if it didn't, tell logserver and exit
         //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to remove %s\n",taskDir.c_str());
         return 1;
     }
 
     if(system((MAKEDIR+" "+ taskDir).c_str()))// Check that the directory created
     {                                 // if it didn't, tell logserver and exit
         //par->Post(818, (task_dir), OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to create %s\n",taskDir.c_str());
         return 1;
     }
     
@@ -370,6 +428,7 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     if(system((MAKEDIR + " " + mkdirGenPath).c_str()))
     {
         //par->Post(818, mkdirGenPath, OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to create %s\n",mkdirGenPath.c_str());
         return 1;
     }
     
@@ -377,6 +436,7 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     if(system((MAKEDIR + " " + mkdirGenHPath).c_str()))
     {
         //par->Post(818, mkdirGenHPath, OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to create %s\n",mkdirGenHPath.c_str());
         return 1;
     }
     
@@ -384,6 +444,7 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     if(system((MAKEDIR + " " + mkdirGenCPath).c_str()))
     {
         //par->Post(818, mkdirGenCPath, OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to create %s\n",mkdirGenCPath.c_str());
         return 1;
     }
     
@@ -391,6 +452,7 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     if(system((MAKEDIR + " " + mkdirSoftswitchPath).c_str()))
     {
         //par->Post(818, mkdirSoftswitchPath, OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to create %s\n",mkdirSoftswitchPath.c_str());
         return 1;
     }
     
@@ -398,6 +460,7 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     if(system((MAKEDIR + " " + mkdirBuildPath).c_str()))
     {
         //par->Post(818, mkdirBuildPath, OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to create %s\n",mkdirBuildPath.c_str());
         return 1;
     }
     
@@ -415,26 +478,31 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     if(system(cpCmd.str().c_str()))
     {
         //par->Post(807, (task_dir+GENERATED_PATH), OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to execute %s\n",cpCmd.str().c_str());
         return 1;
     }
     
     // Copy Softswitch code
-    cpCmd.str(SYS_COPY+" "+RECURSIVE_CPY+" "+PERMISSION_CPY);
+    cpCmd.str("");
+    cpCmd << SYS_COPY << " " << RECURSIVE_CPY << " " << PERMISSION_CPY << " ";
     cpCmd << outputPath << "Softswitch/* ";
-    cpCmd << taskDir  << "Softswitch";
+    cpCmd << taskDir  << "/Softswitch";
     if(system(cpCmd.str().c_str()))
     {
         //par->Post(807, (task_dir+GENERATED_PATH), OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to execute %s\n",cpCmd.str().c_str());
         return 1;
     }
     
     // Copy Makefile
-    cpCmd.str(SYS_COPY+" ");
+    cpCmd.str("");
+    cpCmd << SYS_COPY << " ";
     cpCmd << outputPath << "Softswitch/Makefile ";
     cpCmd << taskDir << "/Build";
     if(system(cpCmd.str().c_str()))
     {
         //par->Post(807, (task_dir+GENERATED_PATH), OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to execute %s\n",cpCmd.str().c_str());
         return 1;
     }
     
@@ -484,7 +552,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     
     
     supervisor_h << "#ifndef __SupervisorGeneratedH__H\n";
-    supervisor_h << "#define __SupervisorH__H\n";
+    supervisor_h << "#define __SupervisorGeneratedH__H\n\n";
     
     supervisor_cpp << "#include \"supervisor_generated.h\"\n";
     supervisor_cpp << "#include \"supervisor.h\"\n\n";
@@ -498,15 +566,17 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     // TODO: change for multi supervisor.
     int devIdx = 0; // Faster than using std::distance
     builderGraphI->supevisorDevTVect.clear();       // Sanity clear
-    builderGraphI->devTSuperIdxMap.clear();         // sanity clear
+    builderGraphI->devISuperIdxMap.clear();         // sanity clear
     
-    supervisor_cpp << "const Supervisor::DeviceVector = {\n\t";
+    supervisor_cpp << "const Supervisor::DeviceVector = {";
     WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,graphI->G,i)
     {
         DevI_t* devI = graphI->G.NodeData(i);
         
+        if(devI->pT->devTyp != 'D') continue;
+        
         builderGraphI->supevisorDevTVect.push_back(devI);
-        builderGraphI->devTSuperIdxMap.insert(devTSuperIdxMap_t::value_type(devI,devIdx));
+        builderGraphI->devISuperIdxMap.insert(devISuperIdxMap_t::value_type(devI,devIdx));
         
         // Get the Thread for the HW addr
         std::map<DevI_t*, P_thread*>::iterator threadSrch;
@@ -514,11 +584,13 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         if (threadSrch == placer->deviceToThread.end()) 
         {   // Something has gone terribly terribly wrong
             //TODO: Barf
+            
+            return -1;
         }
         P_thread* thread = threadSrch->second;
         
     // Write the initialiser directly: {HwAddr, SwAddr, Name}
-        if(devIdx%100) supervisor_cpp << "\n\t";     // Add some line splitting
+        if(devIdx%100 == 0) supervisor_cpp << "\n\t";     // Add some line splitting
         supervisor_cpp << "{" << thread->get_hardware_address()->as_uint();
         supervisor_cpp << "," << devI->addr.as_uint();
         supervisor_cpp << ",\"" << devI->Name() <<"\"";
@@ -527,7 +599,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         devIdx++;
     }
     supervisor_cpp.seekp(-1,ios_base::cur); // Rewind one place to remove the stray ","
-    supervisor_cpp << "\n};";               // properly terminate the initialiser
+    supervisor_cpp << "\n};\n\n";               // properly terminate the initialiser
     
     
     
@@ -563,14 +635,23 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         // Global shared code - written directly
         if(supType->par->pShCd)
         {
+            supervisor_cpp << "// =============================== Shared Code ";
+            supervisor_cpp << "=================================\n";
             supervisor_cpp << supType->par->pShCd->C_src();
+            supervisor_cpp << "\n\n";
         }
-        
+ 
         // Code section - written directly
         if(supType->pShCd)
         {
+            supervisor_cpp << "// =================================== Code ";
+            supervisor_cpp << "====================================\n";
             supervisor_cpp << supType->pShCd->C_src();
+            supervisor_cpp << "\n\n";
         }
+        
+        supervisor_cpp << "// ================================= Handlers ";
+        supervisor_cpp << "==================================\n";
         
         // Init Handler
         if(supType->pOnInit)
@@ -640,16 +721,16 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "int Supervisor::OnInit()\n{\n";
     supervisor_cpp << "\tif(__SupervisorInit) return -1;\n";
     supervisor_cpp << "\t__SupervisorProperties = new SupervisorProperties_t;\n";
-    supervisor_cpp << "\t__SupervisorState = new SupervisorState_t;\n";
+    supervisor_cpp << "\t__SupervisorState = new SupervisorState_t;\n\n";
     supervisor_cpp << supervisorOnInitHandler;
-    supervisor_cpp << "\t__SupervisorInit = true;\n";
+    supervisor_cpp << "\n\n\t__SupervisorInit = true;\n";
     supervisor_cpp << "\treturn 0;\n";
     supervisor_cpp << "}\n\n";
     
     // Stop handler
     supervisor_cpp << "int Supervisor::OnStop()\n{\n";
     supervisor_cpp << supervisorOnStopHandler;
-    supervisor_cpp << "\tdelete __SupervisorProperties;\n";
+    supervisor_cpp << "\n\n\tdelete __SupervisorProperties;\n";
     supervisor_cpp << "\tdelete __SupervisorState;\n";
     supervisor_cpp << "\treturn 0;\n";
     supervisor_cpp << "}\n\n";
@@ -669,11 +750,11 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
     supervisor_cpp << "static_cast<const SupervisorImplicitMessage_t*>(";
     supervisor_cpp << "static_cast<const void*>(inMsg->payload));\n";
-    supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
     
     supervisor_cpp << supervisorOnImplicitHandler;
-    supervisor_cpp << "\nreturn 0;\n";
-    supervisor_cpp << "};";
+    supervisor_cpp << "\n\n\treturn 0;\n";
+    supervisor_cpp << "}\n\n";
     
     
     // OnPkt
@@ -691,26 +772,29 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
     supervisor_cpp << "static_cast<const SupervisorImplicitMessage_t*>(";
     supervisor_cpp << "static_cast<const void*>(inMsg->payload));\n";
-    supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
     
     supervisor_cpp << supervisorOnPktHandler;
-    supervisor_cpp << "\nreturn 0;\n";
-    supervisor_cpp << "};";
+    supervisor_cpp << "\n\n\treturn 0;\n";
+    supervisor_cpp << "}\n\n";
     
     // OnCTL
     supervisor_cpp << "int Supervisor::OnCtl(){";
     supervisor_cpp << supervisorOnCtlHandler;
-    supervisor_cpp << "};";
+    supervisor_cpp << "\n\n\treturn 0;\n";
+    supervisor_cpp << "}\n\n";
     
     // OnIdle
     supervisor_cpp << "int Supervisor::OnIdle(){";
     supervisor_cpp << supervisorOnIdleHandler;
-    supervisor_cpp << "};";
+    supervisor_cpp << "\n\n\treturn 0;\n";
+    supervisor_cpp << "}\n\n";
     
     //OnRTCL
     supervisor_cpp << "int Supervisor::OnRTCL(){";
     supervisor_cpp << supervisorOnRTCLHandler;
-    supervisor_cpp << "};";
+    supervisor_cpp << "\n\n\treturn 0;\n";
+    supervisor_cpp << "}\n\n";
     
     
     // Close Supervisor files.
@@ -774,8 +858,8 @@ void Composer::writeGlobalPropsI(GraphI_t* graphI, std::ofstream& props_cpp)
     if(graphI->pPropsI)
     {
         props_cpp << "const global_props_t GraphProperties ";
-        props_cpp << "OS_ATTRIBUTE_UNUSED= ";
-        props_cpp << graphI->pPropsI->C_src() << ";\n";
+        props_cpp << "OS_ATTRIBUTE_UNUSED= {";
+        props_cpp << graphI->pPropsI->C_src() << "};\n";
         props_cpp << "OS_PRAGMA_UNUSED(GraphProperties)\n";
     }
 } 
@@ -1127,7 +1211,7 @@ void Composer::formDevTInputPinHandlers(devTypStrings_t* dTypStrs)
             vars_h << "typedef struct" << devTName;
             vars_h << "_InPin_" << pinIName << "_edgestate_t \n{\n";
             vars_h << (*pinI)->pStateD->C_src();
-            vars_h << " devtyp_" << devTName;
+            vars_h << "\n} devtyp_" << devTName;
             vars_h << "_InPin_" << pinIName << "_state_t;\n\n";
 
             handlers_cpp << "   devtyp_" << devTName;
@@ -1180,25 +1264,25 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
     {
         // To make things simple, we include it in the Output pin array as the
         // LAST entry.
-        handlers_h << "const uint32_t RTS_INDEX_" << supervisorSendPinName;
+        handlers_h << "const uint32_t RTS_SUPER_IMPLICIT_SEND_INDEX";
         handlers_h << " = " << devT->PinTO_v.size() << ";\n";
         
-        //TODO: decide on this name!
-        handlers_h << "const uint32_t RTS_FLAG_" << supervisorSendPinName;
+        handlers_h << "const uint32_t RTS_SUPER_IMPLICIT_SEND_FLAG";
         handlers_h << " = 0x1 << " << devT->PinTO_v.size() << ";\n";
         
         handlers_h << "uint32_t devtyp_" << devTName;
-        handlers_h << "_OutPin_" << supervisorSendPinName;
+        handlers_h << "_Supervisor_Implicit_OutPin";
         handlers_h << "_Send_handler (const void* graphProps, ";
         handlers_h << "void* device, void* pkt);\n";
         
         handlers_cpp << "uint32_t devtyp_" << devTName;
-        handlers_cpp << "_OutPin_" << supervisorSendPinName;
+        handlers_cpp << "_Supervisor_Implicit_OutPin";
         handlers_cpp << "_Send_handler (const void* graphProps, ";
         handlers_cpp << "void* device, void* pkt)\n";
 
         handlers_cpp << dTypStrs->handlerPreamble;
         handlers_cpp << dTypStrs->handlerPreambleS;
+        handlers_cpp << "\n";
         
         if (devT->pPinTSO->pMsg->pPropsD)
         {
@@ -1236,6 +1320,7 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
 
         handlers_cpp << dTypStrs->handlerPreamble;
         handlers_cpp << dTypStrs->handlerPreambleS;
+        handlers_cpp << "\n";
 
         if ((*pinO)->pMsg->pPropsD)
         {
@@ -1274,6 +1359,7 @@ int Composer::createCoreFiles(P_core* pCore,
                                 std::ofstream& handlers_cpp)
 {
     uint32_t coreAddr = pCore->get_hardware_address()->as_uint();
+    FILE * fd = pCore->parent->parent->parent->parent->parent->fd;  // Microlog
     
     // Create the vars header
     std::stringstream vars_hFName;
@@ -1286,6 +1372,7 @@ int Composer::createCoreFiles(P_core* pCore,
     {                 // if it didn't, tell logserver and exit
         //TODO: Barf
         //par->Post(816, vars_hFName.str(), OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\t\tFailed to open %s\n",vars_hFName.str().c_str());
         return -1;
     }
     
@@ -1302,6 +1389,7 @@ int Composer::createCoreFiles(P_core* pCore,
         //TODO: Barf
         //par->Post(816, vars_cppFName.str(), OSFixes::getSysErrorString(errno));
         vars_h.close(); // Close the header
+        fprintf(fd,"\t\tFailed to open %s\n",vars_cppFName.str().c_str());
         return -1;
     }
     
@@ -1318,6 +1406,7 @@ int Composer::createCoreFiles(P_core* pCore,
         //par->Post(816, handlers_hFName.str(), OSFixes::getSysErrorString(errno));
         vars_h.close(); // Close the vars header
         vars_cpp.close(); // Close the vars source
+        fprintf(fd,"\t\tFailed to open %s\n",handlers_hFName.str().c_str());
         return -1;
     }
     
@@ -1336,6 +1425,7 @@ int Composer::createCoreFiles(P_core* pCore,
         vars_h.close(); // Close the vars header
         vars_cpp.close(); // Close the vars source
         handlers_h.close(); // Close the handler header
+        fprintf(fd,"\t\tFailed to open %s\n",handlers_cppFName.str().c_str());
         return -1;
     }
     
@@ -1351,6 +1441,9 @@ void Composer::writeCoreSrc(P_core* pCore, devTypStrings_t* dTypStrs,
     writeCoreVarsHead(coreAddr, vars_h, vars_cpp);
     writeCoreHandlerHead(coreAddr, handlers_h, handlers_cpp);
     
+    
+    // Global properties initialiser
+    writeGlobalPropsI(dTypStrs->graphI, vars_cpp);
     
     // Write out the common strings for the device type.
     vars_h << dTypStrs->varsHCommon;
@@ -1429,7 +1522,6 @@ int Composer::createThreadFile(P_thread* pThread, std::string& taskDir,
 {
     uint32_t coreAddr = pThread->parent->get_hardware_address()->as_uint();
     uint32_t threadAddr = pThread->get_hardware_address()->get_thread();
-    //TODO: Fix
     
     // Create the vars source
     std::stringstream tvars_cppFName;
@@ -1452,7 +1544,8 @@ int Composer::createThreadFile(P_thread* pThread, std::string& taskDir,
 /******************************************************************************
  * Write the common footer lines of the per-core handler header and source.
  *****************************************************************************/
-unsigned Composer::writeThreadVars(P_thread* thread,
+unsigned Composer::writeThreadVars(ComposerGraphI_t* builderGraphI,
+                                    P_thread* thread,
                                     ofstream& vars_h, ofstream& thread_vars_cpp)
 {
     AddressComponent coreAddr = thread->parent->get_hardware_address()->as_uint();
@@ -1477,7 +1570,8 @@ unsigned Composer::writeThreadVars(P_thread* thread,
     
     writeDevIDecl(threadAddr, numberOfDevices, vars_h);
     
-    writeThreadDevIDefs(thread, numberOfDevices, vars_h, thread_vars_cpp);
+    writeThreadDevIDefs(builderGraphI, thread, numberOfDevices,
+                        vars_h, thread_vars_cpp);
     
     return 0;
 }
@@ -1740,6 +1834,7 @@ void Composer::writeOutputPinInit(AddressComponent threadAddr, DevT_t* devT,
                                 std::ofstream& vars_h, std::ofstream& vars_cpp)
 {
     size_t outTypCnt = devT->PinTO_v.size();      // Number of output pins
+    std::string devTName = devT->Name();  // grab a local copy of the name
     
     if(devT->pPinTSO)
     {   // There is a supervisor output, increase the output count by one.
@@ -1778,14 +1873,14 @@ void Composer::writeOutputPinInit(AddressComponent threadAddr, DevT_t* devT,
         if(devT->pPinTSO)
         {   // There is a supervisor output, add it to the initialiser
             initialiser << "{";
-            initialiser << "&" << dTypOutPin;
-            initialiser << supervisorSendPinName;
+            initialiser << "&devtyp_" << devTName;
+            initialiser << "_Supervisor_Implicit_OutPin";
             initialiser << "_Send_handler,";  // Send_Handler
             
             if (devT->pPinTSO->pMsg->pPropsD)
             {
-                initialiser << "sizeof(pkt_";
-                initialiser << supervisorSendPinName << "_pyld_t)"; // sz_pkt
+                initialiser << "sizeof(pkt_" << devT->pPinTSO->pMsg->Name();
+                initialiser << "_pyld_t)"; // sz_pkt
             }
             else initialiser << "0";
             initialiser << "},";
@@ -1868,11 +1963,14 @@ void Composer::writeDevIOutPinsDecl(std::string& thrDevName,
 }
 
 
-void Composer::writeThreadDevIDefs(P_thread* thread, size_t numberOfDevices, 
+void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI, 
+                                P_thread* thread, size_t numberOfDevices, 
                                 std::ofstream& vars_h, std::ofstream& vars_cpp)
 {
     // Device, state and properties initialisers. 
     AddressComponent threadAddr = thread->get_hardware_address()->get_thread();
+    
+    GraphI_t* graphI = builderGraphI->graphI;
     
     // devInst_t initialiser
     std::vector<std::string> devIIStrs(numberOfDevices, "{},");      
@@ -1893,10 +1991,8 @@ void Composer::writeThreadDevIDefs(P_thread* thread, size_t numberOfDevices,
     // Iterate through all of the devices
     WALKLIST(DevI_t*, placer->threadToDevices.at(thread), dev)
     {
-        //TODO: replace with SW address
         unsigned devIdx = (*dev)->addr.get_device();
         
-        GraphI_t* graphI = (*dev)->par;
         devT = (*dev)->pT;
         DevI_t* devI = (*dev);
         
@@ -1937,9 +2033,9 @@ void Composer::writeThreadDevIDefs(P_thread* thread, size_t numberOfDevices,
         
         // Write the pin definitions/initialisers
         
-        writeDevIInputPinDefs(graphI, threadAddr, thrDevName,
+        writeDevIInputPinDefs(graphI, devT, threadAddr, thrDevName,
                                 arcKeysIn, vars_h, vars_cpp);
-        writeDevIOutputPinDefs(graphI, devT, threadAddr, thrDevName, 
+        writeDevIOutputPinDefs(builderGraphI, devI, threadAddr, thrDevName, 
                                 arcKeysOut, vars_h, vars_cpp);
         
 
@@ -2071,7 +2167,7 @@ void Composer::writeThreadDevIDefs(P_thread* thread, size_t numberOfDevices,
 /******************************************************************************
  * Write the definition for each input pin
  *****************************************************************************/
-void Composer::writeDevIInputPinDefs(GraphI_t* graphI, 
+void Composer::writeDevIInputPinDefs(GraphI_t* graphI, DevT_t* devT, 
                                         AddressComponent threadAddr,
                                         std::string& thrDevName,
                                         std::vector<unsigned>& arcKeysIn,
@@ -2079,6 +2175,7 @@ void Composer::writeDevIInputPinDefs(GraphI_t* graphI,
                                         std::ofstream& vars_cpp)
 {
     pinIArcKeyMap_t iPinIArcKMap;
+    size_t inTypCnt = devT->PinTI_v.size();  // # output pins
     
     // Walk through the input arcs and find their associated PinI_t
     WALKVECTOR(unsigned, arcKeysIn, arc)
@@ -2104,9 +2201,16 @@ void Composer::writeDevIInputPinDefs(GraphI_t* graphI,
     }
     
     // Now need to generate initialisers for all of the input pins and their 
-    // edges.
-    std::vector<std::string> inPinTIStrs(arcKeysIn.size(), "{},");      
-    std::stringstream inPinTI;
+    // edges. Start by filling array with default, then overwrite from map.
+    std::vector<std::string> inPinTIStrs(inTypCnt); 
+    for(size_t pinIdx = 0; pinIdx < inTypCnt; pinIdx++)
+    {
+        std::stringstream inPinInit;
+        inPinInit << "{PNULL,&Thread_" << threadAddr;
+        inPinInit << "_DevTyp_0_InputPins[" << pinIdx << "],";
+        inPinInit << "0,PNULL},";
+        inPinTIStrs.push_back(inPinInit.str());
+    }
      
     WALKMAP(PinI_t*, std::vector<unsigned>, iPinIArcKMap, pinIItr)
     {
@@ -2128,7 +2232,7 @@ void Composer::writeDevIInputPinDefs(GraphI_t* graphI,
             inPinInit << pinIItr->first->pT->Name() << "_InEdges},";
         }
         else
-        {
+        {   // Excessively paranoid sanity check
             inPinInit << "0,PNULL},";
         }
         
@@ -2141,10 +2245,11 @@ void Composer::writeDevIInputPinDefs(GraphI_t* graphI,
     }
     
     //Form the inPin_t definition
+    std::stringstream inPinTI;
     inPinTI << "inPin_t " << thrDevName;
-    inPinTI << "_InputPins[" << arcKeysIn.size() << "] = {";
+    inPinTI << "_InputPins[" << inTypCnt << "] = {";
     
-    for(size_t i=0; i<arcKeysIn.size(); i++)
+    for(size_t i=0; i<inTypCnt; i++)
     {
         inPinTI << inPinTIStrs[i];
     }
@@ -2184,15 +2289,12 @@ void Composer::writeDevIInputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
         
         // inEdge_t array initialiser
         std::vector<std::string> inEdgeTIStrs(edgeCount, "{},");
-        std::stringstream inEdgeTI;
         
         // devtyp_X_InPin_Y_state_t array initialiser
         std::vector<std::string> inEdgeStatesIStrs(edgeCount, "{},");
-        std::stringstream inEdgeStatesI;
         
         // devtyp_X_InPin_Y_props_t array initialiser
         std::vector<std::string> inEdgePropsIStrs(edgeCount, "{},");
-        std::stringstream inEdgePropsI;
         
         
         WALKVECTOR(unsigned, arcV, arcKey)
@@ -2248,6 +2350,10 @@ void Composer::writeDevIInputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
         // so that we only iterate once.
         
         // Start the inEdge_t initialiser
+        std::stringstream inEdgeTI;
+        std::stringstream inEdgeStatesI;
+        std::stringstream inEdgePropsI;
+        
         inEdgeTI.str("");
         inEdgeTI << "inEdge_t " << thrDevName << "_Pin_" << pinI->pT->Name();
         inEdgeTI << "_InEdges[" << edgeCount << "] = {";
@@ -2305,16 +2411,21 @@ void Composer::writeDevIInputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
 /******************************************************************************
  * Write the definition for each output pin
  *****************************************************************************/
-void Composer::writeDevIOutputPinDefs(GraphI_t* graphI, DevT_t* devT,
+void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
+                                        DevI_t* devI,
                                         AddressComponent threadAddr,
                                         std::string& thrDevName,
                                         std::vector<unsigned>& arcKeysOut,
                                         std::ofstream& vars_h,
                                         std::ofstream& vars_cpp)
 {
+    GraphI_t* graphI = builderGraphI->graphI;
+    DevT_t* devT = devI->pT;
+    
     pinIArcKeyMap_t oPinIArcKMap;
     size_t outTypCnt = devT->PinTO_v.size();  // # output pins
-        
+    
+    
     if(devT->pPinTSO)
     {   // There is a supervisor output, increase the output count by one.
         outTypCnt++;
@@ -2344,9 +2455,17 @@ void Composer::writeDevIOutputPinDefs(GraphI_t* graphI, DevT_t* devT,
     }
     
     // Now need to generate initialisers for all of the output pins and their 
-    // edges.
-    std::vector<std::string> outPinTIStrs(outTypCnt, "{},");      
-    std::stringstream outPinTI;
+    // edges. Start by filling array with default, then overwrite from map.
+    std::vector<std::string> outPinTIStrs(outTypCnt); 
+    for(size_t pinIdx = 0; pinIdx < outTypCnt; pinIdx++)
+    {
+        std::stringstream outPinInit;
+        outPinInit << "{PNULL,&Thread_" << threadAddr;
+        outPinInit << "_DevTyp_0_OutputPins[" << pinIdx << "],";
+        outPinInit << "0,PNULL,0,0},";
+        outPinTIStrs.push_back(outPinInit.str());
+    }    
+    
     
     WALKMAP(PinI_t*, std::vector<unsigned>, oPinIArcKMap, pinIItr)
     {
@@ -2357,8 +2476,6 @@ void Composer::writeDevIOutputPinDefs(GraphI_t* graphI, DevT_t* devT,
        
         // Find the pinIdx
         pinIdx = pinIItr->first->pT->Idx;
-        
-        
         
         // {PNULL,&Thread_0_DevTyp_0_OutputPins[0],2,
         //  Thread_0_Device_c_0_1_OutPin_out_Tgts,0,0}
@@ -2373,7 +2490,7 @@ void Composer::writeDevIOutputPinDefs(GraphI_t* graphI, DevT_t* devT,
             outPinInit << pinIItr->first->pT->Name() << "_Tgts,0,0},";
         }
         else
-        {
+        {   // Excessively paranoid sanity check
             outPinInit << "0,PNULL,0,0},";
         }
         
@@ -2398,13 +2515,13 @@ void Composer::writeDevIOutputPinDefs(GraphI_t* graphI, DevT_t* devT,
         outPinInit << "_DevTyp_0_OutputPins[" << pinIdx << "],";
         
         // ALWAYS have a single edge.
-        outPinInit << "1," << thrDevName << "_OutPin_";
-        outPinInit << supervisorSendPinName << "_Tgts,0,0},";
+        outPinInit << "1," << thrDevName;
+        outPinInit << "_Supervisor_Implicit_OutPin_Tgts,0,0},";
         
         // Start the outEdge_t initialiser
         std::stringstream outEdgeTI;
-        outEdgeTI << "outEdge_t " << thrDevName << "_OutPin_";
-        outEdgeTI  << supervisorSendPinName << "_Tgts[1] = {";
+        outEdgeTI << "outEdge_t " << thrDevName;
+        outEdgeTI  << "_Supervisor_Implicit_OutPin_Tgts[1] = {";
         
         // Only a single, static edge so we will do it manually.
         // {PNULL,<hwAddr>,<swAddr>,<pinAddr>}
@@ -2416,13 +2533,25 @@ void Composer::writeDevIOutputPinDefs(GraphI_t* graphI, DevT_t* devT,
         // SW address needs to be set. Default 0 for most vakues, but left
         // configurable.
         TaskComponent task = 0;
-        OpCodeComponent opCode = 0;         //TODO: choose for the implicit
+        OpCodeComponent opCode = P_CNC_IMPL;
         DeviceComponent device = 0;
         SoftwareAddress swAddr(true, true, task, opCode, device);
         outEdgeTI << swAddr.as_uint() << ",";
         
-        // Pin header:
-        //TODO: needs some thought.
+        // Pin header: retrieve the idx from the Supervisor map
+        devISuperIdxMap_t::iterator devISrch;
+        devISrch = builderGraphI->devISuperIdxMap.find(devI);
+        if (devISrch == builderGraphI->devISuperIdxMap.end()) 
+        {   // Something has gone wrong that we are going to ignore.
+            //TODO: Barf
+            outEdgeTI << "0";
+        }
+        else
+        {
+            outEdgeTI << devISrch->second;
+        }
+        
+        
         outEdgeTI << "0";
         
         // Finish off the inEdge_t initialiser
@@ -2432,6 +2561,7 @@ void Composer::writeDevIOutputPinDefs(GraphI_t* graphI, DevT_t* devT,
     }
     
     //Form the outPin_t definition
+    std::stringstream outPinTI;
     outPinTI << "outPin_t " << thrDevName;
     outPinTI << "_OutputPins[" << outTypCnt << "] = {";
     
@@ -2464,7 +2594,8 @@ void Composer::writeDevIOutputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
     {   // Probably a pointless sanity check
         
         // ioutEdge_t array initialiser
-        std::vector<std::string> outEdgeTIStrs(edgeCount, "{},");
+        std::vector<std::string> outEdgeTIStrs;
+        
         std::stringstream outEdgeTI;
         
         WALKVECTOR(unsigned, arcV, arcKey)
@@ -2504,7 +2635,6 @@ void Composer::writeDevIOutputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
             farThread = threadSrch->second;
             
             // {PNULL,<hwAddr>,<swAddr>,<pinAddr>}
-            
             outEdgeInit << "{PNULL,";
             
             // Get the hardware address of the other end.
@@ -2515,8 +2645,6 @@ void Composer::writeDevIOutputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
             SoftwareAddress swAddr = outDevI->addr;
             
             //TODO: set_task, etc. etc.
-            
-            
             
             // Get the pin and edge indicies for the other side.
             uint32_t pinAddr = 0;
@@ -2542,7 +2670,7 @@ void Composer::writeDevIOutputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
             outEdgeInit << swAddr.as_uint() << ",";
             outEdgeInit << pinAddr << "},";
             
-            outEdgeTIStrs[edgeI->Idx] = outEdgeInit.str();
+            outEdgeTIStrs.push_back(outEdgeInit.str());
         }
         
         
