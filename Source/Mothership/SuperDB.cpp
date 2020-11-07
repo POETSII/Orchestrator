@@ -55,6 +55,17 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
     return true;
 }
 
+/* Unloads a supervisor, then loads it again. Propagates the output of
+ * load_supervisor, but fails fast if the unload fails. */
+bool SuperDB::reload_supervisor(std::string appName, std::string* errorMessage)
+{
+    /* Before unloading the supervisor, get the path to the binary. */
+    std::string binPath =supervisors.find(appName)->second->path;
+
+    if (not unload_supervisor(appName)) return false;
+    return load_supervisor(appName, binPath, errorMessage);
+}
+
 /* Unloads a supervisor from the database, returning true on success and false
  * if no such supervisor exists. */
 bool SuperDB::unload_supervisor(std::string appName)

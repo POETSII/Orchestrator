@@ -126,14 +126,31 @@ void Mothership::run_application(AppInfo* app)
     queue_mpi_message(&acknowledgement);
 }
 
-/* Stops an application, by queueing STOP packets to each thread to be
- * processed by BackendOutputBroker. This packet shuts down the softswitch when
- * received. */
+/* Stops an application, by:
+ *
+ *  - Changing the application state to STOPPING, which prevents the supervisor
+ *    from receiving packets from normal devices.
+ *
+ *  - Queueing STOP packets to each thread to be processed by
+ *    BackendOutputBroker. This packet shuts down the softswitch when
+ *    received.
+ *
+ *  - Calls the exit handler for the supervisor, and reloads it. If the reload
+ *    fails, we're not in Kansas anymore Toto. */
 void Mothership::stop_application(AppInfo* app)
 {
-    debug_post(594, 1, app->name.c_str());
+    std::string appName = app->name;
+    std::string errorMessage;
+
+    debug_post(594, 1, appName.c_str());
     app->state = STOPPING;
     send_cnc_packet_to_all(app, P_CNC_STOP);
+    superdb.exit_supervisor(appName);
+    if(!superdb.reload_supervisor(appName))
+    {
+        Post(503, appName, &errorMessage);
+        app->state = BROKEN;
+    }
 }
 
 /* Sends a CNC packet with a given opcode to each thread in an application. */

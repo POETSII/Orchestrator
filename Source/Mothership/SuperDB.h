@@ -58,6 +58,7 @@ public:
     void idle_rotation();
     bool load_supervisor(std::string appName, std::string path,
                          std::string* errorMessage);
+    bool reload_supervisor(std::string appName, std::string* errorMessage);
     bool unload_supervisor(std::string appName);
     void dump(std::ofstream*);
 
