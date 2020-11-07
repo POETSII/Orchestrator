@@ -92,8 +92,17 @@ bool SuperDB::unload_supervisor(std::string appName)
 #HANDLE_SUPERVISOR_FN(init)
 #HANDLE_SUPERVISOR_FN(exit)
 #HANDLE_SUPERVISOR_FN(idle)
-#HANDLE_SUPERVISOR_CALL_FN(call)
-#HANDLE_SUPERVISOR_CALL_FN(implicitCall)
+
+int SuperDB::call_supervisor(std::string appName,
+                             PMsg_p* inputMessage, PMsg_p* outputMessage)
+{
+    FIND_SUPERVISOR;
+    pthread_mutex_lock(&(superFinder->second->lock), PNULL);
+    int rc = (*(superFinder->second->HANDLER_NAME))(inputMessage,
+                                                    outputMessage);
+    pthread_mutex_unlock(&(superFinder->second->lock), PNULL);
+    return rc;
+}
 
 /* Prints a diagnostic line for each supervisor. The argument is the stream to
  * dump to. */
