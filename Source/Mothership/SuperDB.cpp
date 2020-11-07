@@ -3,9 +3,26 @@
 /* Cleanup. */
 SuperDB::~SuperDB()
 {
+    /* Note we don't lock the deletion of supervisors here, because if we're
+     * closing down, we won't get stuck. */
     for (SuperIt superIt = supervisors.begin(); superIt != supervisors.end();
          superIt++) delete superIt->second;
     supervisors.clear();
+}
+
+/* Calls the idle handlers for each loaded supervisor in turn, if that
+ * supervisor is not busy doing something else. */
+void SuperDB::idle_rotation()
+{
+    for (SuperIt superIt = supervisors.begin(); superIt != supervisors.end();
+         superIt++)
+    {
+        /* Ignore if it's locked. */
+        if (pthread_mutex_trylock(&(superIt->second->lock)) != 0) continue;
+
+        /* Call idle method for this supervisor. */
+        idle_supervisor(superIt->first);
+    }
 }
 
 /* Loads a supervisor into the database, returning true on success and false on

@@ -55,6 +55,7 @@ public:
     ~SuperDB();
     std::map<std::string, SuperHolder*> supervisors;
 
+    void idle_rotation();
     bool load_supervisor(std::string appName, std::string path,
                          std::string* errorMessage);
     bool unload_supervisor(std::string appName);
