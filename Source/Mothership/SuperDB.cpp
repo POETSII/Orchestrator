@@ -80,27 +80,26 @@ bool SuperDB::unload_supervisor(std::string appName)
 
     /* Otherwise, unload away (via destructor), but let it finish what it's
      * doing. */
-    pthread_mutex_lock(&(superFinder->second->lock), PNULL);
+    pthread_mutex_lock(&(superIt->second->lock));
     SuperHolder* toDestroy = superIt->second;
     supervisors.erase(superIt); /* If it can't be found, it can't be locked */
-    pthread_mutex_unlock(&(superFinder->second->lock), PNULL);
+    pthread_mutex_unlock(&(superIt->second->lock));
     delete toDestroy;
     return true;
 }
 
 /* Code repetition ahoy! (methods for calling supervisor handlers) */
-#HANDLE_SUPERVISOR_FN(init)
-#HANDLE_SUPERVISOR_FN(exit)
-#HANDLE_SUPERVISOR_FN(idle)
+HANDLE_SUPERVISOR_FN(init)
+HANDLE_SUPERVISOR_FN(exit)
+HANDLE_SUPERVISOR_FN(idle)
 
 int SuperDB::call_supervisor(std::string appName,
                              PMsg_p* inputMessage, PMsg_p* outputMessage)
 {
     FIND_SUPERVISOR;
-    pthread_mutex_lock(&(superFinder->second->lock), PNULL);
-    int rc = (*(superFinder->second->HANDLER_NAME))(inputMessage,
-                                                    outputMessage);
-    pthread_mutex_unlock(&(superFinder->second->lock), PNULL);
+    pthread_mutex_lock(&(superFinder->second->lock));
+    int rc = (*(superFinder->second->call))(inputMessage, outputMessage);
+    pthread_mutex_unlock(&(superFinder->second->lock));
     return rc;
 }
 

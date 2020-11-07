@@ -6,7 +6,7 @@
 SuperHolder::SuperHolder(std::string path):
     path(path)
 {
-    pthread_mutex_init(&lock, PNULL);
+    pthread_mutex_init(&lock, NULL);
     error = false;
     so = dlopen(path.c_str(), RTLD_NOW);
 
@@ -44,7 +44,7 @@ bool SuperHolder::are_all_hooks_loaded()
 {
     return not (call == NULL or
                 exit == NULL or
-                idle = NULL or
+                idle == NULL or
                 implicitCall == NULL or
                 init == NULL);
 }

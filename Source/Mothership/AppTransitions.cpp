@@ -104,7 +104,7 @@ void Mothership::initialise_application(AppInfo* app)
     /* 4: Initialise the supervisor device on this Mothership for this
      * application, posting on error. */
     debug_post(583, 1, app->name.c_str());
-    if (superdb.initialise_supervisor(app->name) != 0) Post(523, app->name);
+    if (superdb.init_supervisor(app->name) != 0) Post(523, app->name);
 }
 
 /* Starts an application, by queueing BARRIER packets to each thread to be
@@ -146,9 +146,9 @@ void Mothership::stop_application(AppInfo* app)
     app->state = STOPPING;
     send_cnc_packet_to_all(app, P_CNC_STOP);
     superdb.exit_supervisor(appName);
-    if(!superdb.reload_supervisor(appName))
+    if(!superdb.reload_supervisor(appName, &errorMessage))
     {
-        Post(503, appName, &errorMessage);
+        Post(503, appName, errorMessage);
         app->state = BROKEN;
     }
 }

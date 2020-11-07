@@ -425,9 +425,9 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
      * behaviour for a well-behaved application, as a normal device may send
      * packets to its supervisor before it receives the 'stop' packet from its
      * Mothership. */
-    if(appdb.check_create_app(appName, distCount)->state != RUNNING)
+    if (appdb.check_create_app(appName)->state != RUNNING)
     {
-        debug_post(582, appName);
+        debug_post(582, 1, appName);
         return 0;
     }
 

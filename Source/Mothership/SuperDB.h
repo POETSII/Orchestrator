@@ -20,16 +20,16 @@ typedef std::map<std::string, SuperHolder*>::iterator SuperIt;
     if (superFinder == supervisors.end()) return -2;
 
 /* For supervisor handlers that have no arguments */
-#define HANDLE_SUPERVISOR_FN_NAME(HANDLER) ##HANDLER_supervisor
-#define HANDLE_SUPERVISOR_DECL(HANDLER) \
-    int HANDLE_SUPERVISOR_FN_NAME(std::string);
+#define HANDLE_SUPERVISOR_FN_NAME(HANDLER) HANDLER##_supervisor
+#define HANDLE_SUPERVISOR_DECL(HANDLER_NAME) \
+    int HANDLE_SUPERVISOR_FN_NAME(HANDLER_NAME)(std::string);
 #define HANDLE_SUPERVISOR_FN(HANDLER_NAME) \
 int SuperDB::HANDLE_SUPERVISOR_FN_NAME(HANDLER_NAME)(std::string appName) \
 { \
     FIND_SUPERVISOR \
-    pthread_mutex_lock(&(superFinder->second->lock), PNULL); \
+    pthread_mutex_lock(&(superFinder->second->lock)); \
     int rc = (*(superFinder->second->HANDLER_NAME))(); \
-    pthread_mutex_unlock(&(superFinder->second->lock), PNULL); \
+    pthread_mutex_unlock(&(superFinder->second->lock)); \
     return rc; \
 }
 
@@ -49,9 +49,9 @@ public:
     void dump(std::ofstream*);
 
     /* Code repetition ahoy! (methods for declaring supervisor handlers) */
-#HANDLE_SUPERVISOR_DECL(init)
-#HANDLE_SUPERVISOR_DECL(exit)
-#HANDLE_SUPERVISOR_DECL(idle)
+HANDLE_SUPERVISOR_DECL(init)
+HANDLE_SUPERVISOR_DECL(exit)
+HANDLE_SUPERVISOR_DECL(idle)
 };
 
 #endif

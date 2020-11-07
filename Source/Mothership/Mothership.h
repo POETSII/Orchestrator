@@ -112,6 +112,9 @@ private:
                                unsigned index=0);
     bool decode_unsigned_message(PMsg_p* message, unsigned* result,
                                  unsigned index=0);
+
+    /* Supervisor spinning (virtual from CommonBase). */
+    void OnIdle();
 };
 
 #endif
