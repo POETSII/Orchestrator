@@ -397,9 +397,10 @@ int Composer::compile(GraphI_t* graphI)
     WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
     {
         P_core* pCore = (*coreNode);
+        uint32_t coreAddr = pCore->get_hardware_address()->as_uint();
         
         std::string elfName = elfPath + "/softswitch_";
-        elfName += TO_STRING(pCore->get_hardware_address()->as_uint());
+        elfName += TO_STRING(coreAddr);
         elfName += ".elf";
         
         // Open the Elf to check existence
@@ -410,7 +411,7 @@ int Composer::compile(GraphI_t* graphI)
             
             // Check Instruction binary and add to pCore.
             std::string instrName = elfPath + "/softswitch_code_";
-            instrName += TO_STRING(pCore->get_hardware_address()->as_uint());
+            instrName += TO_STRING(coreAddr);
             instrName += ".v";
             
             binary = fopen(instrName.c_str(), "r");
@@ -429,7 +430,7 @@ int Composer::compile(GraphI_t* graphI)
             
             // Check Data binary and add to pCore.
             std::string dataName = elfPath + "/softswitch_data_";
-            dataName += TO_STRING(pCore->get_hardware_address()->as_uint());
+            dataName += TO_STRING(coreAddr);
             dataName += ".v";
             
             binary = fopen(dataName.c_str(), "r");
