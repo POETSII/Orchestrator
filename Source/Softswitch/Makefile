@@ -1,8 +1,8 @@
 # Main components roots
-export TINSEL_ROOT=../Tinsel
-export SOFTSW_ROOT=../Softswitch
+export TINSEL_ROOT=../../Tinsel
+export SOFTSW_ROOT=../../Softswitch
 # this needs to be modified to reflect actual codebase location
-export ORCH_ROOT=../Orchestrator
+export ORCH_ROOT=../../Orchestrator
 
 # Common directories
 TINSELINC = $(realpath $(TINSEL_ROOT)/include)
