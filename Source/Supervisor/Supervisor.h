@@ -4,14 +4,11 @@
 #include "PMsg_p.hpp"
 #include "poets_pkt.h"
 #include "OSFixes.hpp"
-#include "supervisor_generated.h";
+#include "supervisor_generated.h"
 
 #include <iostream>
 #include <vector>
 #include <map>
-
-typedef struct SupervisorProperties_t;
-typedef struct SupervisorState_t;
 
 typedef struct SupervisorDeviceInstance_t
 {
@@ -41,7 +38,7 @@ public:
    static int OnRTCL();
    
    
-}
+};
 
 
 #endif
