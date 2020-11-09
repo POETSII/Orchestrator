@@ -6,6 +6,7 @@
 const string GENERATED_PATH = "Generated";
 const string GENERATED_H_PATH = GENERATED_PATH+"/inc";
 const string GENERATED_CPP_PATH = GENERATED_PATH+"/src";
+const string COREMAKE_BASE = "make -j$(nproc --ignore=4) all 2>&1 >> make_errs.txt";
 
 
 #if (defined __BORLANDC__ || defined _MSC_VER)
@@ -355,6 +356,8 @@ int Composer::generate(GraphI_t* graphI)
 int Composer::compile(GraphI_t* graphI)
 {
     ComposerGraphI_t*  builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end()) 
     {   // The Graph Instance has not been seen before, barf.
@@ -362,8 +365,26 @@ int Composer::compile(GraphI_t* graphI)
     }
     builderGraphI = srch->second;
     
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, nothing to do
+        fprintf(fd,"\tApplication already compiled, skipping\n");
+        return 0;
+    }
+    
     //TODO: call make
     
+    std::string buildPath = outputPath + builderGraphI->outputDir;
+    buildPath += "/Build";
+    
+    
+    //if(system(("(cd "+buildPath+";"+COREMAKE_BASE+")").c_str()))
+    //{
+        //TODO: barf
+    //    return 1;
+    //}
+    
+    // builderGraphI->compiled = true;
     
     return 0;
 }
@@ -467,6 +488,9 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     
     //==========================================================================
     // Copy static source
+    //
+    // We do not copy Softswitch, Tinsel or Orch bits - we will use them from
+    // the parent directory
     //==========================================================================
     
     // Copy the default supervisor code into the right place.
@@ -475,18 +499,6 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     cpCmd << SYS_COPY << " ";
     cpCmd << outputPath << "Supervisor.* ";                     // Source
     cpCmd << taskDir << "/" << GENERATED_PATH;                  // Destination
-    if(system(cpCmd.str().c_str()))
-    {
-        //par->Post(807, (task_dir+GENERATED_PATH), OSFixes::getSysErrorString(errno));
-        fprintf(fd,"\tFailed to execute %s\n",cpCmd.str().c_str());
-        return 1;
-    }
-    
-    // Copy Softswitch code
-    cpCmd.str("");
-    cpCmd << SYS_COPY << " " << RECURSIVE_CPY << " " << PERMISSION_CPY << " ";
-    cpCmd << outputPath << "Softswitch/* ";
-    cpCmd << taskDir  << "/Softswitch";
     if(system(cpCmd.str().c_str()))
     {
         //par->Post(807, (task_dir+GENERATED_PATH), OSFixes::getSysErrorString(errno));
@@ -568,7 +580,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     builderGraphI->supevisorDevTVect.clear();       // Sanity clear
     builderGraphI->devISuperIdxMap.clear();         // sanity clear
     
-    supervisor_cpp << "const Supervisor::DeviceVector = {";
+    supervisor_cpp << "const std::vector<SupervisorDeviceInstance_t> ";
+    supervisor_cpp << "Supervisor::DeviceVector = {";
     WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,graphI->G,i)
     {
         DevI_t* devI = graphI->G.NodeData(i);
@@ -601,8 +614,17 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp.seekp(-1,ios_base::cur); // Rewind one place to remove the stray ","
     supervisor_cpp << "\n};\n\n";               // properly terminate the initialiser
     
+    // Add references for static class members
+    supervisor_cpp << "SupervisorProperties_t* ";
+    supervisor_cpp << "Supervisor::__SupervisorProperties;\n";
+    supervisor_cpp << "SupervisorState_t* Supervisor::__SupervisorState;\n\n";
     
+    // Make a global pointer for Supervisot properties and State
+    supervisor_cpp << "SupervisorProperties_t* supervisorProperties = ";
+    supervisor_cpp << "Supervisor::__SupervisorProperties;\n";
     
+    supervisor_cpp << "SupervisorState_t* supervisorState = ";
+    supervisor_cpp << "Supervisor::__SupervisorState;\n\n";
     
     
     // Default Supervisor handler strings
@@ -652,6 +674,18 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         
         supervisor_cpp << "// ================================= Handlers ";
         supervisor_cpp << "==================================\n";
+        
+        // Properties
+        if(supType->pOnInit)
+        {
+            supervisorPropertiesBody = supType->pPropsD->C_src();
+        }
+        
+        // State
+        if(supType->pOnInit)
+        {
+            supervisorStateBody = supType->pStateD->C_src();
+        }
         
         // Init Handler
         if(supType->pOnInit)
@@ -746,9 +780,9 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorState;\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorState)\n";
     
-    supervisor_cpp << "\t const SupervisorImplicitMessage_t* message";
+    supervisor_cpp << "\t const SupervisorImplicitRecvMessage_t* message";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
-    supervisor_cpp << "static_cast<const SupervisorImplicitMessage_t*>(";
+    supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>(";
     supervisor_cpp << "static_cast<const void*>(inMsg->payload));\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
     
@@ -768,9 +802,9 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorState;\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorState)\n";
     
-    supervisor_cpp << "\t const SupervisorImplicitMessage_t* message";
+    supervisor_cpp << "\t const SupervisorImplicitRecvMessage_t* message";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
-    supervisor_cpp << "static_cast<const SupervisorImplicitMessage_t*>(";
+    supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>(";
     supervisor_cpp << "static_cast<const void*>(inMsg->payload));\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
     
@@ -842,7 +876,7 @@ void Composer::writeGlobalPropsD(GraphI_t* graphI, std::ofstream& props_h)
         props_h << "typedef struct " << graphT->Name() << "_properties_t \n{\n";
         props_h << graphT->pPropsD->C_src();   // These are the actual properties
         props_h << "\n} global_props_t;\n\n";
-        props_h << "extern const global_props_t GraphProperties;\n\n";
+        props_h << "extern const global_props_t graphProperties;\n\n";
     }
     
     props_h << "#endif /*_GLOBALPROPS_H_*/\n\n";
@@ -857,10 +891,10 @@ void Composer::writeGlobalPropsI(GraphI_t* graphI, std::ofstream& props_cpp)
     //There may be an initialiser in the Graph Instance
     if(graphI->pPropsI)
     {
-        props_cpp << "const global_props_t GraphProperties ";
+        props_cpp << "const global_props_t graphProperties ";
         props_cpp << "OS_ATTRIBUTE_UNUSED= {";
         props_cpp << graphI->pPropsI->C_src() << "};\n";
-        props_cpp << "OS_PRAGMA_UNUSED(GraphProperties)\n";
+        props_cpp << "OS_PRAGMA_UNUSED(graphProperties)\n";
     }
 } 
 
@@ -963,11 +997,11 @@ void Composer::formHandlerPreamble(devTypStrings_t* dTypStrs)
 
     if (devT->pPropsD)
     {
-        handlerPreamble_SS << "   const global_props_t* graphProperties ";
+        handlerPreamble_SS << "    const global_props_t* graphProperties ";
         handlerPreamble_SS << "OS_ATTRIBUTE_UNUSED= ";
         handlerPreamble_SS << "static_cast<const global_props_t*>";
         handlerPreamble_SS << "(graphProps);\n";
-        handlerPreamble_SS << "   OS_PRAGMA_UNUSED(graphProperties)\n";
+        handlerPreamble_SS << "    OS_PRAGMA_UNUSED(graphProperties)\n";
     }
     handlerPreamble_SS << "   PDeviceInstance* deviceInstance ";
     handlerPreamble_SS << "OS_ATTRIBUTE_UNUSED= ";
@@ -977,35 +1011,35 @@ void Composer::formHandlerPreamble(devTypStrings_t* dTypStrs)
     // deviceProperties (with unused variable handling)
     if (devT->pPropsD)
     {
-        handlerPreamble_SS << "   const devtyp_" << devTName;
+        handlerPreamble_SS << "    const devtyp_" << devTName;
         handlerPreamble_SS << "_props_t* deviceProperties ";
         handlerPreamble_SS << "OS_ATTRIBUTE_UNUSED= ";
         handlerPreamble_SS << "static_cast<const devtyp_";
         handlerPreamble_SS << devTName;
         handlerPreamble_SS << "_props_t*>(deviceInstance->properties);\n";
-        handlerPreamble_SS << "   OS_PRAGMA_UNUSED(deviceProperties)\n";
+        handlerPreamble_SS << "    OS_PRAGMA_UNUSED(deviceProperties)\n";
     }
 
     // deviceState (with unused variable handling)
     if (devT->pStateD)
     {
         // Const-protected state
-        handlerPreambleCS_SS << "   const devtyp_" << devTName;
+        handlerPreambleCS_SS << "    const devtyp_" << devTName;
         handlerPreambleCS_SS << "_state_t* deviceState ";
         handlerPreambleCS_SS << "OS_ATTRIBUTE_UNUSED= ";
         handlerPreambleCS_SS << "static_cast<devtyp_";
         handlerPreambleCS_SS << devTName;
         handlerPreambleCS_SS << "_state_t*>(deviceInstance->state);\n";
-        handlerPreambleCS_SS << "   OS_PRAGMA_UNUSED(deviceState)\n";
+        handlerPreambleCS_SS << "    OS_PRAGMA_UNUSED(deviceState)\n";
         
         // "normal" state
-        handlerPreambleS_SS << "   devtyp_" << devTName;
+        handlerPreambleS_SS << "    devtyp_" << devTName;
         handlerPreambleS_SS << "_state_t* deviceState ";
         handlerPreambleS_SS << "OS_ATTRIBUTE_UNUSED= ";
         handlerPreambleS_SS << "static_cast<devtyp_";
         handlerPreambleS_SS << devTName;
         handlerPreambleS_SS << "_state_t*>(deviceInstance->state);\n";
-        handlerPreambleS_SS << "   OS_PRAGMA_UNUSED(deviceState)\n";
+        handlerPreambleS_SS << "    OS_PRAGMA_UNUSED(deviceState)\n";
     }
     
     dTypStrs->handlerPreamble = handlerPreamble_SS.str();
@@ -1054,7 +1088,27 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
     handlers_cpp << dTypStrs->handlerPreambleCS;
     handlers_cpp << devT->pOnRTS->C_src() << "\n";
     // we assume here the return value is intended to be an RTS bitmap.
-    handlers_cpp << "   return *readyToSend;\n"; 
+    handlers_cpp << "    return *readyToSend;\n"; 
+    handlers_cpp << "}\n\n";
+    
+    
+    // OnInit
+    handlers_h << "uint32_t devtyp_" << devTName;
+    handlers_h << "_OnInit_handler (const void* graphProps, ";
+    handlers_h << "void* device);\n";
+
+    handlers_cpp << "uint32_t devtyp_" << devTName;
+    handlers_cpp << "_OnInit_handler (const void* graphProps, ";
+    handlers_cpp << "void* device)\n";
+    handlers_cpp << dTypStrs->handlerPreamble;
+    handlers_cpp << dTypStrs->handlerPreambleS << "\n";
+
+    if (devT->pOnInit) // insert the OnHWIdle handler if there is one
+    {
+        handlers_cpp << devT->pOnInit->C_src() << "\n";
+    }
+    else handlers_cpp << "    return 0;\n"; // or a stub if not
+    
     handlers_cpp << "}\n\n";
     
     
@@ -1074,7 +1128,7 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
         handlers_cpp << devT->pOnDeId->C_src() << "\n";
         handlers_cpp << "    return 1;\n";  // Default return 1
     }
-    else handlers_cpp << "   return 0;\n"; // or a stub if not
+    else handlers_cpp << "    return 0;\n"; // or a stub if not
     handlers_cpp << "}\n\n";
     
     
@@ -1094,27 +1148,33 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
         handlers_cpp << devT->pOnHWId->C_src() << "\n";
         handlers_cpp << "    return 1;\n";  // Default return 1
     }
-    else handlers_cpp << "   return 0;\n"; // or a stub if not
+    else handlers_cpp << "    return 0;\n"; // or a stub if not
     handlers_cpp << "}\n\n";
     
     
-    // OnInit
-    handlers_h << "void devtyp_" << devTName;
-    handlers_h << "_OnInit_handler (const void* graphProps, ";
-    handlers_h << "void* device);\n";
+    // OnCtl
+    handlers_h << "uint32_t devtyp_" << devTName;
+    handlers_h << "_OnCtl_handler (const void* graphProps, ";
+    handlers_h << "void* device, uint8_t opcide, const void* pkt);\n";
 
-    handlers_cpp << "void devtyp_" << devTName;
-    handlers_cpp << "_OnInit_handler (const void* graphProps, ";
-    handlers_cpp << "void* device)\n";
+    handlers_cpp << "uint32_t devtyp_" << devTName;
+    handlers_cpp << "_OnCtl_handler (const void* graphProps, ";
+    handlers_cpp << "void* device, uint8_t opcide, const void* pkt)\n";
     handlers_cpp << dTypStrs->handlerPreamble;
     handlers_cpp << dTypStrs->handlerPreambleS << "\n";
-
-    if (devT->pOnInit) // insert the OnHWIdle handler if there is one
+    
+    /*
+    if (devT->pOnCtl) // insert the OnCtl handler if there is one
     {
-        handlers_cpp << devT->pOnInit->C_src() << "\n";
+        handlers_cpp << devT->pOnCtl->C_src() << "\n";
+        handlers_cpp << "    return 1;\n";  // Default return 1
     }
+    else handlers_cpp << "   return 0;\n"; // or a stub if not
+    */
+    handlers_cpp << "    return 0;\n"; // or a stub if not
     
     handlers_cpp << "}\n\n";
+    
     
     
     // Append to the strings
@@ -1136,7 +1196,7 @@ void Composer::formDevTPropsDStateD(devTypStrings_t* dTypStrs)
     // Write Properties declaration
     if (devT->pPropsD)
     {
-        vars_h << "typedef struct" << devTName << "_properties_t \n{\n";
+        vars_h << "typedef struct " << devTName << "_properties_t \n{\n";
         vars_h << devT->pPropsD->C_src();
         vars_h << "\n} devtyp_" << devTName << "_props_t;\n\n";
     }
@@ -1144,7 +1204,7 @@ void Composer::formDevTPropsDStateD(devTypStrings_t* dTypStrs)
     // Write State declaration
     if (devT->pStateD)
     {
-        vars_h << "typedef struct" << devTName << "_state_t \n{\n";
+        vars_h << "typedef struct " << devTName << "_state_t \n{\n";
         vars_h << devT->pStateD->C_src();
         vars_h << "\n} devtyp_" << devTName << "_state_t;\n\n";
     }
@@ -1190,7 +1250,7 @@ void Composer::formDevTInputPinHandlers(devTypStrings_t* dTypStrs)
 
         if ((*pinI)->pPropsD)
         {
-            vars_h << "typedef struct" << devTName;
+            vars_h << "typedef struct " << devTName;
             vars_h << "_InPin_" << pinIName << "_edgeproperties_t \n{\n";
             vars_h << (*pinI)->pPropsD->C_src();
             vars_h << "\n} devtyp_" << devTName;
@@ -1208,7 +1268,7 @@ void Composer::formDevTInputPinHandlers(devTypStrings_t* dTypStrs)
 
         if ((*pinI)->pStateD)
         {
-            vars_h << "typedef struct" << devTName;
+            vars_h << "typedef struct " << devTName;
             vars_h << "_InPin_" << pinIName << "_edgestate_t \n{\n";
             vars_h << (*pinI)->pStateD->C_src();
             vars_h << "\n} devtyp_" << devTName;
@@ -1467,7 +1527,7 @@ void Composer::writeCoreVarsHead(AddressComponent coreAddr,
     vars_h << "#include <cstdint>\n";
     vars_h << "#include \"softswitch_common.h\"\n";
     vars_h << "#include \"MessageFormats.h\"\n";
-    vars_h << "#include \"GlobalProps.h\"\n\n";
+    vars_h << "#include \"GlobalProperties.h\"\n\n";
     
     vars_cpp << "#include \"vars_" << coreAddr << ".h\"\n";
 }
@@ -1568,6 +1628,8 @@ unsigned Composer::writeThreadVars(ComposerGraphI_t* builderGraphI,
     
     writeInputPinInit(threadAddr, devT, vars_h, thread_vars_cpp);
     
+    writeOutputPinInit(threadAddr, devT, vars_h, thread_vars_cpp);
+    
     writeDevIDecl(threadAddr, numberOfDevices, vars_h);
     
     writeThreadDevIDefs(builderGraphI, thread, numberOfDevices,
@@ -1619,7 +1681,7 @@ void Composer::writeThreadContextInitialiser(P_thread* thread, DevT_t* devT,
     vars_cpp << "Thread_" << threadAddr << "_DeviceTypes,";           // devTs
     vars_cpp << numberOfDevices <<  ",";                              // numDevI
     vars_cpp << "Thread_" << threadAddr << "_Devices,";               // devIs
-    vars_cpp << ((devT->par->pPropsD)?"&GraphProperties,":"PNULL,");  // props
+    vars_cpp << ((devT->par->pPropsD)?"&graphProperties,":"PNULL,");  // props
 
 
     /* Work out the required size for rtsBuffSize: The size of the RTS buffer is
@@ -1737,9 +1799,13 @@ void Composer::writeDevTDeclInit(AddressComponent threadAddr, DevT_t* devT,
     vars_h << "_DeviceTypes[1];\n";
 
     vars_cpp << "devTyp_t Thread_" << threadAddr << "_DeviceTypes[1] ";         //set devTyp_t name
+    
+    
     vars_cpp << "= {";
     vars_cpp << "&devtyp_" << devT->Name() << "_RTS_handler,";                  // RTS_Handler
+    vars_cpp << "&devtyp_" << devT->Name() << "_OnInit_handler,";               // OnInit_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnIdle_handler,";               // OnIdle_Handler
+    vars_cpp << "&devtyp_" << devT->Name() << "_OnHWIdle_handler,";             // OnHWIdle_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnCtl_handler,";                // OnCtl_Handler
     
     //TODO: Add v4 handlers
@@ -1853,7 +1919,8 @@ void Composer::writeOutputPinInit(AddressComponent threadAddr, DevT_t* devT,
         std::string dTypOutPin = std::string("devtyp_");
         dTypOutPin += devT->Name() + std::string("_OutPin_");
         
-        initialiser.str("{");    // Clear the initialiser
+        initialiser.str("");     // Clear the initialiser
+        initialiser << "{";
         
         WALKVECTOR(PinT_t*, devT->PinTO_v, opin) // Build pin initialiser
         {
@@ -1905,7 +1972,7 @@ void Composer::writeDevIDecl(AddressComponent threadAddr,
     vars_h << "//--------------------------- Device Instance Tables ";
     vars_h << "---------------------------\n";
     vars_h << "extern devInst_t Thread_" << threadAddr;
-    vars_h << "_Devices[" << numberOfDevices << "];\n\n";
+    vars_h << "_Devices[" << numberOfDevices << "];\n";
 }
 
 
@@ -1917,7 +1984,7 @@ void Composer::writePinPropsDecl(PinI_t* pinI, std::string& thrDevName,
                                     size_t edgeCount, std::ofstream& vars_h)
 {   
     vars_h << "extern devtyp_" << pinI->pT->par->Name();
-    vars_h << "_InPin_" << pinI->pT->Name() << "_props_t";
+    vars_h << "_InPin_" << pinI->pT->Name() << "_props_t ";
     vars_h << thrDevName << "_Pin_" << pinI->pT->Name();
     vars_h << "_InEdgeProps[" << edgeCount << "];\n\n";
 }
@@ -1930,7 +1997,7 @@ void Composer::writePinStateDecl(PinI_t* pinI, std::string& thrDevName,
                                     size_t edgeCount, std::ofstream& vars_h)
 {   
     vars_h << "extern devtyp_" << pinI->pT->par->Name();
-    vars_h << "_InPin_" << pinI->pT->Name() << "_state_t";
+    vars_h << "_InPin_" << pinI->pT->Name() << "_state_t ";
     vars_h << thrDevName << "_Pin_" << pinI->pT->Name();
     vars_h << "_InEdgeStates[" << edgeCount << "];\n\n";
 }
@@ -2120,10 +2187,10 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
     devPI << "devtyp_" << devT->Name() << "_props_t Thread_" << threadAddr;
     devPI << "_DeviceProperties[" << numberOfDevices << "] = {";
     
-    // Start the devtyp_X_props_t initialiser
+    // Start the devtyp_X_state_t initialiser
     devSI.str("");
     devSI << "devtyp_" << devT->Name() << "_state_t Thread_" << threadAddr;
-    devSI << "_DeviceProperties[" << numberOfDevices << "] = {";
+    devSI << "_DeviceState[" << numberOfDevices << "] = {";
     
     
     // Fill in the initialiser strings
@@ -2160,6 +2227,13 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
     {
         vars_cpp << devSI.rdbuf();
     }
+    
+    // Make sure the properties and state decls are there.
+    vars_h << "extern devtyp_" << devT->Name() << "_props_t Thread_";
+    vars_h << threadAddr << "_DeviceProperties[" << numberOfDevices << "];\n";
+
+    vars_h << "extern devtyp_" << devT->Name() << "_state_t Thread_";
+    vars_h << threadAddr << "_DeviceState[" << numberOfDevices << "];\n\n";
 
 }
 
@@ -2202,7 +2276,7 @@ void Composer::writeDevIInputPinDefs(GraphI_t* graphI, DevT_t* devT,
     
     // Now need to generate initialisers for all of the input pins and their 
     // edges. Start by filling array with default, then overwrite from map.
-    std::vector<std::string> inPinTIStrs(inTypCnt); 
+    std::vector<std::string> inPinTIStrs; 
     for(size_t pinIdx = 0; pinIdx < inTypCnt; pinIdx++)
     {
         std::stringstream inPinInit;
@@ -2361,14 +2435,18 @@ void Composer::writeDevIInputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
         // Start the devtyp_X_InPin_Y_state_t initialiser
         inEdgeStatesI.str("");
         inEdgeStatesI << "devtyp_" << pinI->pT->par->Name();
-        inEdgeStatesI << "_props_t Thread_" << threadAddr;
-        inEdgeStatesI << "_DeviceProperties[" << edgeCount << "] = {";
+        inEdgeStatesI << "_InPin_" << pinI->pT->Name();
+        inEdgeStatesI << "_state_t ";
+        inEdgeStatesI << thrDevName << "_Pin_" << pinI->pT->Name();
+        inEdgeStatesI << "_InEdgeStates[" << edgeCount << "] = {";
         
         // Start the devtyp_X_InPin_Y_props_t initialiser
         inEdgePropsI.str("");
         inEdgePropsI << "devtyp_" << pinI->pT->par->Name();
-        inEdgePropsI << "_state_t Thread_" << threadAddr;
-        inEdgePropsI << "_DeviceProperties[" << edgeCount << "] = {";
+        inEdgePropsI << "_InPin_" << pinI->pT->Name();
+        inEdgePropsI << "_props_t Thread_ ";
+        inEdgePropsI << thrDevName << "_Pin_" << pinI->pT->Name();
+        inEdgePropsI << "_InEdgeProps[" << edgeCount << "] = {";
         
         
         // Fill in the initialiser strings
@@ -2381,11 +2459,11 @@ void Composer::writeDevIInputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
         
         // Finish off the inEdge_t initialiser
         inEdgeTI.seekp(-1, ios_base::cur);   // Remove the stray ,
-        inEdgeTI << "};\n\n";
+        inEdgeTI << "};\n";
         
         // Finish off the devtyp_X_InPin_Y_state_t initialiser
         inEdgeStatesI.seekp(-1, ios_base::cur);   // Remove the stray ,
-        inEdgeStatesI << "};\n\n";
+        inEdgeStatesI << "};\n";
         
         // Finish off the devtyp_X_InPin_Y_props_t initialiser
         inEdgePropsI.seekp(-1, ios_base::cur);   // Remove the stray ,
@@ -2456,7 +2534,7 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
     
     // Now need to generate initialisers for all of the output pins and their 
     // edges. Start by filling array with default, then overwrite from map.
-    std::vector<std::string> outPinTIStrs(outTypCnt); 
+    std::vector<std::string> outPinTIStrs; 
     for(size_t pinIdx = 0; pinIdx < outTypCnt; pinIdx++)
     {
         std::stringstream outPinInit;
@@ -2556,6 +2634,9 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
         
         // Finish off the inEdge_t initialiser
         outEdgeTI << "}};\n\n";
+        
+        // Dump it to file
+        vars_cpp << outEdgeTI.rdbuf();
         
         outPinTIStrs[pinIdx] = outPinInit.str();
     }
