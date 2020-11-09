@@ -40,7 +40,7 @@ const char * Lex::Sytype_str[] = {
 "]]>","</",
 "<!--","-->"};
 
-const char * Lex::Sytype_dbg[] = {                   
+const char * Lex::Sytype_dbg[] = {
 "S_0    [No symbol          ]" ,"S_00   [Blank              ]",
 "SE_XXX [Generic error      ]" ,"SE_FNA [File not available ]",
 "SE_SNF [Stream not found   ]" ,"SE_BUF [Lex buffer overflow]",
@@ -280,7 +280,12 @@ if (Hst.GetTok(Td)) {                  // Retrieving from the history subsystem?
 char * end;
 char c;
                                        // OK, at least we have an input stream.
-while (isspace((unsigned char)(c=Gc())))if (c=='\n') break;
+T.p.clear();
+while (isspace((unsigned char)(c=Gc())))
+{
+  if (c=='\n') break;
+  T.p += c;
+}
 T.s.clear();
 if (c==flags.cont) for (;;) {          // Multiple blank continuations ?
   while ((c=Gc()) != '\n'){if (c==EOF) goto OUT;}            // Skip to EOR/EOF
@@ -479,7 +484,6 @@ switch (c) {
                       ((Peek()=='-')&& flags.mflag) ) T.s.push_back(Gc());
               break;
 }
-
 Td = T;
 Hst.PutTok(Td);                        // Load the history buffer
 count++;                               // Update token counter
@@ -923,10 +927,7 @@ string Lex::SkipTo(Lex::Sytype sy)
 // characters themselves into the buffer, because we can't see them (nor should
 // we be able to, because yer average token may consist of an arbitrary number
 // of characters). So we re-assemble the skipped string by assembling the string
-// equivalent of the token stream. Fine, but now we don't know what the token
-// separator character was, and at this point I kind of lost the will to live
-// and poked ' ' in as and when it seemed reasonable.
-// Could do better in another life.
+// equivalent of the token stream.
 {
 string buf;
 string s0 = string(" ");
@@ -947,10 +948,11 @@ for (;;) {                             // Loop until termination token
                    // Comments need to be reconstructed
     case Sy_cmnt : //buf += Sytype_str[Sy_cmnt] + Td.s;                 break;
                    buf += Td.s;                                       break;
-                   // If it's a string type, the delimiter *might* have been a
-                   // ' ', so poke one in
-    default      : buf += ((IsStr(Td.t)?s0:string())+Td.s);           break;
+                   // If it's a string type, prepend with appropriate
+                   // whitespace
+    default      : buf += Td.p + Td.s;                                break;
 }
+
   if (Td.t==sy) return buf;            // Legitimate exit
   if (IsError(Td)) return buf;         // Error exit
   if (Td.t==Sy_EOF) return buf;        // Run out of stuff

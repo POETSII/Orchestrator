@@ -32,11 +32,12 @@ static const char * Sytype_dbg[Sy_XXXX+1];
 struct tokdat {
   tokdat():s(string("")),t(S_0),l(0),c(0){};
   void Dump(FILE * fp = stdout) {
-    fprintf(fp,"tokdat:\n.s=%s, .t=%s, .l=%d, .c=%d\n",
-            s.c_str(),Sytype_str[t],l,c);
+    fprintf(fp,"tokdat:\n.s=%s, .p='%s', .t=%s, .l=%d, .c=%d\n",
+            s.c_str(),p.c_str(),Sytype_str[t],l,c);
     fflush(fp);
   };
   string s;                            // Generating string
+  string p;                            // Whitespace preamble
   Sytype t;                            // Generated token
   int    l;                            // Stream line address
   int    c;                            // Stream column address
