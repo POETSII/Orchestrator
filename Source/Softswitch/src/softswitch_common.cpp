@@ -50,6 +50,13 @@ void softswitch_init(ThreadCtxt_t* ThreadContext)
     }
 }
 
+// <!> You know it's a hack when the "pragma GCC" comes out.
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+// 150 works consistently as an end-point in my testing. 125 does not.
+void softswitch_delay(){for (uint32_t i=0; i<150; i++);}
+#pragma GCC pop_options
+
 
 /*------------------------------------------------------------------------------
  * softswitch_barrier: Block until told to continue by the mothership
@@ -91,11 +98,14 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
             // *Debug: send packet out to show we have passed the barrier*
             // softswitch_alive(send_buf);
             // and once it's been received, process it as a startup packet
-            softswitch_onReceive(ThreadContext, recv_buf);
+            
             ThreadContext->ctlEnd = 0;
+            
+            // Sleep for X to allow everything to start
         }
         tinselAlloc(recv_buf);
     }
+    softswitch_delay();     // Delay to let other softswitches pass the barrier
 }
 //------------------------------------------------------------------------------
 
@@ -281,6 +291,9 @@ inline void device_init(devInst_t* device, ThreadCtxt_t* ThreadContext)
             i_src->pin = i_pin;
         }
     }
+    
+    // Execute the OnInit handler
+    device->devType->OnInit_Handler(ThreadContext->properties, device);
 }
 //------------------------------------------------------------------------------
 
@@ -519,25 +532,6 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
                 ThreadContext->pendCycles = 1;
                 break;
 #endif
-            case P_CNC_BARRIER:
-                // **BODGE BODGE BODGE** not so temporary handler for dealing
-                // with __init__. This works ONLY because the __init__ pin on
-                // all devices that have it in existing XML happens to be pin 0
-                // (which means that a Supervisor can guess what the pin number
-                // is supposed to be). In any case, this should route it through
-                // the __init__ handler. Luckily packet types are globally
-                // unique, or likewise this wouldn't work if the device had no
-                // __init__ pin. This test should be removed as soon as __init__
-                // pins lose any special meaning in existing XML!
-                for (devInst_t* device = recvDevBegin; device != recvDevEnd; device++)
-                {
-                    inPin_t* pin = &device->inputPins[pinIdx];    // Get the pin
-                    pin->pinType->Recv_handler(ThreadContext->properties, device, 0,
-                                                static_cast<const uint8_t*>(
-                                                const_cast<const void*>(recv_buf)
-                                                )+p_hdr_size());
-                }
-                break;
             default:            // Unused reserved Opcode - log it.
                                 handler_log(5, "BAD-OP %d", opcode);
 

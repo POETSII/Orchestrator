@@ -1,6 +1,15 @@
 #include "softswitch_common.h"
 #include "tinsel.h"
 
+
+#ifndef BACKEND_INIT
+#define BACKEND_INIT(a)
+#endif
+
+#ifndef BACKEND_DEINIT
+#define BACKEND_DEINIT()
+#endif
+
 void softswitch_main()
 {
     // The thread context will reside at the base of the DRAM memory area.
@@ -25,6 +34,10 @@ void softswitch_main()
 
 int main(int argc, char** argv)
 {
+    BACKEND_INIT(argv)     // Backend initialisation. May not be defined.
+    
     softswitch_main();
+    
+    BACKEND_DEINIT()       // Backend deinitialisation. May not be defined.
     return 0;
 }

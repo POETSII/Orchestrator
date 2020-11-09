@@ -15,6 +15,16 @@ typedef uint32_t (*RTS_handler_t)
     uint32_t*   readyToSend
 );
 
+typedef uint32_t (*OnInit_handler_t)
+(   const void* graphProps,
+    void*       device
+);
+
+typedef uint32_t (*OnHWIdle_handler_t)
+(   const void* graphProps,
+    void*       device
+);
+
 typedef uint32_t (*OnIdle_handler_t)
 (   const void* graphProps,
     void*       device
@@ -58,9 +68,11 @@ typedef struct POutputType
 
 typedef struct PDeviceType
 {
-    RTS_handler_t     RTS_Handler;      // Function pointer to the device type’s RTS handler
-    OnIdle_handler_t  OnIdle_Handler;   // Function pointer to the device type’s OnIdle handler
-    OnCtl_handler_t   OnCtl_Handler;    // Function pointer to the device type’s OnCtl handler
+    RTS_handler_t     RTS_Handler;      // F pointer to devt’s RTS handler
+    OnInit_handler_t  OnInit_Handler;   // F pointer to devt’s OnInit handler
+    OnIdle_handler_t  OnIdle_Handler;   // F pointer to devt’s OnDeIdle handler
+    OnHWIdle_handler_t  OnHWIdle_Handler;   // F pointer to devt’s OnHWIdle handler
+    OnCtl_handler_t   OnCtl_Handler;    // F pointer to devt’s  OnCtl handler
     uint32_t          sz_props;         // Size in bytes of the device type’s properties
     uint32_t          sz_state;         // Size in bytes of the device type’s state
     uint32_t          numInputTypes;    // Number of input pin types the device type has
