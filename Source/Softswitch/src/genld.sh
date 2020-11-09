@@ -5,16 +5,13 @@ while read -r EXPORT; do
     eval $EXPORT;
 done <<< `python ${TINSEL_ROOT}/config.py envs`
 
-# this can be made directory-relative: see https://stackoverflow.com/questions/192292/bash-how-best-to-include-other-scripts
-source ../Generated/cores.sh
-
 # Compute space available for instructions
 MaxInstrBytes=$((4 * 2**$LogInstrsPerCore - $MaxBootImageBytes))
 # Compute space available for thread data
 BytesPerDRAMPartition=$((2**$LogBytesPerDRAMPartition))
 CoresPerDRAM=$((2**($LogCoresPerDCache+$LogDCachesPerDRAM)))
 GlobalBytesPerCore=$((($BytesPerDRAMPartition*$ThreadsPerCore)-(1048576/$CoresPerDRAM)))
-CoreDRAMNum=$((${cores[$1]}%$CoresPerDRAM))
+CoreDRAMNum=$(($1%$CoresPerDRAM))
 InterleavedPartitionOffset=0x80000000
 
 cat - << EOF
