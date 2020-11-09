@@ -38,6 +38,9 @@ EXECUTABLE_DIR := $(ROOT_DIR)/bin
 # Test binaries are built to here:
 TEST_EXECUTABLE_DIR := $(ROOT_DIR)/test_bin
 
+# Composer links and binaries are built to here:
+COMPOSER_ENV_DIR := $(ROOT_DIR)/Output/Composer
+
 # A note on dependency handling: we couple gcc's various -M flags with Make's
 # ability to import dependency files to manage build dependencies. For more
 # information,
@@ -112,7 +115,8 @@ RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
 
-all: orchestrate launcher root dummy logserver rtcl injector mothership
+all: orchestrate launcher root dummy logserver rtcl injector mothership \
+     composer_environment
 launcher: $(LAUNCHER_EXECUTABLE)
 orchestrate: $(ORCHESTRATE_SCRIPT)
 root: $(ROOT_EXECUTABLE)
@@ -203,6 +207,44 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 	rm "$(ORCHESTRATE_TMP)"
 	rmdir "$(dir $(ORCHESTRATE_TMP))"
 
+# Building the environment for XML applications to be composed in the
+# Orchestrator. Made of a bunch of symlinks.
+COMPOSER_ENV_DEPENDENCIES := \
+	$(COMPOSER_ENV_DIR)/Orchestrator/Generics \
+	$(COMPOSER_ENV_DIR)/Orchestrator/Source/Common \
+	$(COMPOSER_ENV_DIR)/Softswitch \
+	$(COMPOSER_ENV_DIR)/Tinsel \
+	$(COMPOSER_ENV_DIR)/Makefile \
+	$(COMPOSER_ENV_DIR)/Supervisor.cpp \
+	$(COMPOSER_ENV_DIR)/Supervisor.h
+
+composer_environment: $(COMPOSER_ENV_DEPENDENCIES)
+
+$(COMPOSER_ENV_DIR)/Orchestrator/Generics:
+	$(MKDIR) "$(dir $@)"
+	ln --force --symbolic "$(abspath $(GENERICS_DIR))" "$@"
+
+$(COMPOSER_ENV_DIR)/Orchestrator/Source/Common:
+	$(MKDIR) "$(dir $@)"
+	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Common)" "$@"
+
+$(COMPOSER_ENV_DIR)/Softswitch:
+	$(MKDIR) "$(dir $@)"
+	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch)" "$@"
+
+$(COMPOSER_ENV_DIR)/Tinsel:
+	$(MKDIR) "$(dir $@)"
+	ln --force --symbolic "$(abspath $(TINSEL_DIR))" "$@"
+
+$(COMPOSER_ENV_DIR)/Makefile:
+	$(MKDIR) "$(dir $@)"
+	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch/Makefile)" "$@"
+
+$(COMPOSER_ENV_DIR)/Supervisor.cpp $(COMPOSER_ENV_DIR)/Supervisor.h:
+	$(MKDIR) "$(dir $@)"
+	ln --force --symbolic \
+	"$(abspath $(SOURCE_DIR)/Supervisor/Supervisor$(suffix $@))" "$@"
+
 # Dependency files have no build instructions (Make must not fall over if the
 # dependency file is not there), because they are created from the compilation
 # process. However, the directory structure for dependency files must be
@@ -212,7 +254,7 @@ $(DEPENDENCY_DIR)/%.d:
 
 clean:
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
-	$(ORCHESTRATE_SCRIPT) $(TEST_EXECUTABLE_DIR)
+	$(ORCHESTRATE_SCRIPT) $(TEST_EXECUTABLE_DIR) $(COMPOSER_ENV_DEPENDENCIES)
 
 # Dependency files must not be removed by Make (unless explicitly cleaned).
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
