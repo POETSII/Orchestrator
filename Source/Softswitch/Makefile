@@ -21,11 +21,17 @@ export RISCV_PATH := /usr/local/riscv
 endif
 
 ifndef MPICH_PATH
-export MPICH_PATH := /usr/local/mpich
+MPICH_PATH := /usr
+MPICH_LIB_ROOT := /usr/lib/mpich
+else
+MPICH_LIB_ROOT := $(MPICH_PATH)
 endif
 
 # Application directories
 DEFAULT_GEN_DIR = Generated
+ifndef GENDIR
+GENDIR := $(realpath ../$(DEFAULT_GEN_DIR))
+endif
 ifndef GENINC
 GENINC := $(realpath ../$(DEFAULT_GEN_DIR)/inc)
 endif
@@ -49,9 +55,9 @@ LH_CFLAGS := $(LH_CFLAGS) -DSOFTSWITCH_PRIORITISE_INSTRUMENTATION
 endif
 
 # MPI tools
-MPICHINC = $(MPICH_PATH)/include
+MPICHINC = $(MPICH_LIB_ROOT)/include
 MPICHBIN = $(MPICH_PATH)/bin
-MPICHLIB = $(MPICH_PATH)/lib
+MPICHLIB = $(MPICH_LIB_ROOT)/lib
 MPICC    = $(MPICHBIN)/mpicc
 MPICXX   = $(MPICHBIN)/mpicxx
 
@@ -68,7 +74,7 @@ RV_GCC_LIBS = $(RISCV_PATH)/lib/gcc/riscv32-unknown-elf/8.2.0/rv32im/ilp32
 # this had -nostdlib; we need it for memcpy.
 RV_CFLAGS   = -mabi=ilp32 -march=$(RV_ARCH) -static -mcmodel=medany \
               -fvisibility=hidden -nostartfiles -pipe\
-              -fsingle-precision-constant -fno-builtin-printf -ffp-contract=off
+              -fsingle-precision-constant -fno-builtin-printf -ffp-contract=off -std=c++14 -Wall
 
 # Extend PATH
 export PATH := $(PATH):$(TINSEL_ROOT):$(realpath $(TINSELBIN)):$(SOFTSWINC):$(RISCV_PATH)/bin
@@ -88,12 +94,14 @@ vpath mpi%.h $(MPICHINC)
 vpath opa_%.h $(MPICHINC)
 vpath PMsg_p.hpp $(PCOMMONINC)
 vpath poets_pkt.h $(PCOMMONINC)
-vpath OSFixes.hpp $(GENINC)
+vpath MessageFormats.h $(GENDIR)
+vpath GlobalProperties.h $(GENDIR)
+vpath OSFixes.hpp $(GENERICSINC)
 vpath Supervisor.% $(realpath ../$(DEFAULT_GEN_DIR))
-VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC)
+VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC):$(GENDIR)
 
 # Local compiler flags
-CFLAGS = $(RV_CFLAGS) $(LH_CFLAGS) -O2 -I $(TINSELINC) -I $(SOFTSWINC) -I $(GENINC) -I $(PCOMMONINC) -D__INSTRUMENTATION
+CFLAGS = $(RV_CFLAGS) $(LH_CFLAGS) -O2 -I $(TINSELINC) -I $(SOFTSWINC) -I $(GENINC) -I$(GENDIR) -I $(GENERICSINC) -I $(PCOMMONINC) -D__INSTRUMENTATION
 LDFLAGS = -melf32lriscv -G 0 -L$(RV_LIBS) -L$(RV_GCC_LIBS) -lgcc -lc
 
 MPICFLAGS = -I$(SOFTSWINC) -I$(TINSELINC) -I$(MPICHINC) -I$(PCOMMONINC) -I$(GENERICSINC) -D__INSTRUMENTATION -std=c++11 -fPIC -pipe -Wall
@@ -169,4 +177,3 @@ $(HL)/%.o :
 
 clean :
 	rm -f *.o *.elf link.ld $(BIN_DIR)/*.elf $(BIN_DIR)/libSupervisor.so
-	make clean -C $(TINSELINC)

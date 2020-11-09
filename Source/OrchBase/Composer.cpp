@@ -372,19 +372,28 @@ int Composer::compile(GraphI_t* graphI)
         return 0;
     }
     
-    //TODO: call make
+    // Make the bin directory
+    std::string taskDir(outputPath + builderGraphI->outputDir);
+    std::string mkdirBinPath(taskDir + "/bin");
+    if(system((MAKEDIR + " " + mkdirBinPath).c_str()))
+    {
+        //par->Post(818, mkdirBinPath, OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to create %s\n",mkdirBinPath.c_str());
+        return 1;
+    }
     
+    
+    // Make the magic happen: call make
     std::string buildPath = outputPath + builderGraphI->outputDir;
     buildPath += "/Build";
     
-    
-    //if(system(("(cd "+buildPath+";"+COREMAKE_BASE+")").c_str()))
-    //{
+    if(system(("(cd "+buildPath+";"+COREMAKE_BASE+")").c_str()))
+    {
         //TODO: barf
-    //    return 1;
-    //}
+        return 1;
+    }
     
-    // builderGraphI->compiled = true;
+    builderGraphI->compiled = true;
     
     return 0;
 }
@@ -868,7 +877,7 @@ void Composer::writeGlobalPropsD(GraphI_t* graphI, std::ofstream& props_h)
     props_h << "#define _GLOBALPROPS_H_\n\n";
     
     props_h << "#include <cstdint>\n";
-    props_h << "#include \"softswitch_common.h\"\n\n";
+    //props_h << "#include \"softswitch_common.h\"\n\n";
     
     if(graphT->pPropsD)
     {
@@ -910,7 +919,7 @@ void Composer::writeMessageTypes(GraphI_t* graphI, std::ofstream& pkt_h)
     pkt_h << "#define _MESSAGETYPES_H_\n\n";
     
     pkt_h << "#include <cstdint>\n";
-    pkt_h << "#include \"softswitch_common.h\"\n\n";
+    //pkt_h << "#include \"softswitch_common.h\"\n\n";
     
     WALKVECTOR(MsgT_t*,graphT->MsgT_v,msg)
     {
