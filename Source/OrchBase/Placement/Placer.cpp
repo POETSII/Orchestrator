@@ -17,6 +17,11 @@ Placer::~Placer()
          constraintIt++) delete (*constraintIt);
     for (algorithmIt = placedGraphs.begin(); algorithmIt != placedGraphs.end();
          algorithmIt++) delete algorithmIt->second;
+
+    /* Free all supervisors. */
+    std::map<GraphI_t*, Algorithm*>::iterator graphIt;
+    for (graphIt = placedGraphs.begin(); graphIt != placedGraphs.end();
+         graphIt++) delete (graphIt->first)->pSup;
 }
 
 /* Given a string and a set of arguments, creates an instance of a "derived
@@ -1068,6 +1073,14 @@ float Placer::place(GraphI_t* gi, Algorithm* algorithm)
      * instance. */
     update_software_addresses(gi);
 
+    /* Create supervisor binary.
+     *
+     * NB: This supervisor binary is not mapped to boxes (because for now,
+     * nobody actually cares). Later on, graph instances will need a map of box
+     * keys to supervisor values, for when supervisors differ across boxes. */
+    gi->pSup = new P_super;
+
+
     return score;
 }
 
@@ -1336,6 +1349,9 @@ void Placer::unplace(GraphI_t* gi, bool andConstraints)
     {
         giEdgeCosts.erase(edgeCostsFinder);
     }
+
+    /* No more supervisor. */
+    delete gi->pSup;
 }
 
 /* Updates the software addresses of each device in an application graph
