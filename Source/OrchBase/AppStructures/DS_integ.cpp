@@ -27,7 +27,7 @@ in the graph instance graph actually defined, do the entity type definitions
 have non-blank fields, and so on. There are different sorts of checks:
 
 BUILD (itype = 'B') where we do sanity checks on the device instance graph
-and the type tree seperately, and then the typelinks, if they exist
+and the type tree separately, and then the typelinks, if they exist
 PLACE (itype = 'P') where we check the placement and all associated data
 These (the above) are all focussed on user data, so the output goes to the
 detail file
