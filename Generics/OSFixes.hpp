@@ -197,6 +197,7 @@ namespace OSFixes
 /* =============================================================================
  * Hostname retrieval, as a string.
  * ===========================================================================*/
+#ifndef __riscv    // Not under RISCV
 #ifdef _WIN32
 #else /* Unix-like way */
 #include <unistd.h>
@@ -218,6 +219,7 @@ namespace OSFixes
         #endif
     }
 }
+#endif
 
 /* =============================================================================
  * Filesystem manipulation - not under RISCV though.
