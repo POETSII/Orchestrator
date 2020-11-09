@@ -1394,7 +1394,7 @@ void Placer::update_software_addresses(GraphI_t* gi)
                               threadFinder->second.end(), device);
 
             /* Define the device component of the address object in the
-             * device. */            
+             * device. */
             device->addr.set_ismothership(0);
             device->addr.set_iscnc(0);
             device->addr.set_device(std::distance(first, found));
@@ -1417,7 +1417,7 @@ void Placer::update_software_addresses(GraphI_t* gi)
             device->addr.set_iscnc(0);
             device->addr.set_device(0);
         }
-        
+
         device->addr.set_opcode(0);
         device->addr.set_task(0);
     }
