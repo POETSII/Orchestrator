@@ -374,11 +374,11 @@ int Composer::compile(GraphI_t* graphI)
     
     // Make the bin directory
     std::string taskDir(outputPath + builderGraphI->outputDir);
-    std::string mkdirBinPath(taskDir + "/bin");
-    if(system((MAKEDIR + " " + mkdirBinPath).c_str()))
+    std::string elfPath(taskDir + "/bin");
+    if(system((MAKEDIR + " " + elfPath).c_str()))
     {
         //par->Post(818, mkdirBinPath, OSFixes::getSysErrorString(errno));
-        fprintf(fd,"\tFailed to create %s\n",mkdirBinPath.c_str());
+        fprintf(fd,"\tFailed to create %s\n",elfPath.c_str());
         return 1;
     }
     
@@ -393,6 +393,85 @@ int Composer::compile(GraphI_t* graphI)
         return 1;
     }
     
+    // Check that the core binaries were made and link to each core.
+    WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
+    {
+        P_core* pCore = (*coreNode);
+        uint32_t coreAddr = pCore->get_hardware_address()->as_uint();
+        
+        std::string elfName = elfPath + "/softswitch_";
+        elfName += TO_STRING(coreAddr);
+        elfName += ".elf";
+        
+        // Open the Elf to check existence
+        FILE* elfBinary = fopen(elfName.c_str(),"r");
+        if(elfBinary != PNULL)
+        {   // We have the Elf, check that we have the individual binaries
+            FILE* binary;
+            
+            // Check Instruction binary and add to pCore.
+            std::string instrName = elfPath + "/softswitch_code_";
+            instrName += TO_STRING(coreAddr);
+            instrName += ".v";
+            
+            binary = fopen(instrName.c_str(), "r");
+            if(binary == PNULL)
+            { // Failed to open binary
+                //par->Post(806, binaryIt->c_str(), POETS::getSysErrorString(errno));
+                //TODO: Barf
+                fclose(elfBinary);
+                return -1;
+            }
+            fclose(binary);
+            
+            pCore->instructionBinary = instrName;
+            
+            
+            
+            // Check Data binary and add to pCore.
+            std::string dataName = elfPath + "/softswitch_data_";
+            dataName += TO_STRING(coreAddr);
+            dataName += ".v";
+            
+            binary = fopen(dataName.c_str(), "r");
+            if(binary == PNULL)
+            { // Failed to open binary
+                //par->Post(806, binaryIt->c_str(), POETS::getSysErrorString(errno));
+                //TODO: Barf
+                fclose(elfBinary);
+                return -1;
+            }
+            fclose(binary);
+            
+            pCore->dataBinary = dataName;
+        }
+        else
+        { // Failed to open the Elf
+            // par->Post(806, elfName.c_str(), POETS::getSysErrorString(errno));
+            //TODO: Barf
+            return -1;
+        }
+        
+        // Close the binary
+        fclose(elfBinary);
+    }
+    
+    // Check that the Supervisor Shared Object was made
+    FILE* superBinary;
+    std::string superName = elfPath + "/libSupervisor.so";
+    superBinary = fopen(superName.c_str(),"r");
+    if(superBinary == PNULL)
+    { // Failed to open the Shared Object
+        //par->Post(806, binaryPath, OSFixes::getSysErrorString(errno));
+        //TODO: Barf
+        return -1;
+    }
+    fclose(superBinary);
+    
+    // Add Supervidor filename to Graph Instance
+    graphI->pSup->binPath = superName;
+    
+    // Mark that we have compiled
     builderGraphI->compiled = true;
     
     return 0;
