@@ -293,7 +293,10 @@ inline void device_init(devInst_t* device, ThreadCtxt_t* ThreadContext)
     }
     
     // Execute the OnInit handler
-    device->devType->OnInit_Handler(ThreadContext->properties, device);
+    if(device->devType->OnInit_Handler(ThreadContext->properties, device))
+    {
+        softswitch_onRTS(ThreadContext, device);  // Call RTS for device
+    }
 }
 //------------------------------------------------------------------------------
 
