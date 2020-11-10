@@ -741,6 +741,11 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         
         // Global properties initialiser
         writeGlobalPropsI(graphI, supervisor_cpp);
+        if(graphI->pPropsI)
+        {
+            supervisor_cpp << "const global_props_t* graphProperties ";
+            supervisor_cpp << "= &GraphProperties;\n\n";
+        }
         
         // Global shared code - written directly
         if(supType->par->pShCd)
@@ -858,8 +863,9 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "}\n\n";
     
     // OnImplicit
-    supervisor_cpp << "int Supervisor::OnImplicit(P_Pkt_t* inMsg){";
+    supervisor_cpp << "int Supervisor::OnImplicit(P_Pkt_t* inMsg)\n{\n";
     
+    /* TODO remove
     supervisor_cpp << "\t const SupervisorProperties_t* SupervisorProperties";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorProperties;\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorProperties)\n";
@@ -867,34 +873,23 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "\t SupervisorState_t* SupervisorState";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorState;\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorState)\n";
+    */
     
-    supervisor_cpp << "\t const SupervisorImplicitRecvMessage_t* message";
-    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
-    supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>(";
-    supervisor_cpp << "static_cast<const void*>(inMsg->payload));\n";
-    supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
-    
+    supervisor_cpp << "\tconst SupervisorImplicitRecvMessage_t* message = ";
+    supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>";
+    supervisor_cpp << "(static_cast<const void*>(inMsg->payload));\n\n";
+
     supervisor_cpp << supervisorOnImplicitHandler;
     supervisor_cpp << "\n\n\treturn 0;\n";
     supervisor_cpp << "}\n\n";
     
     
-    // OnPkt
-    supervisor_cpp << "int Supervisor::OnPkt(P_Pkt_t* inMsg){";
+    // OnPkt - essentially a stub for now
+    supervisor_cpp << "int Supervisor::OnPkt(P_Pkt_t* inMsg)\n{=\n";
     
-    supervisor_cpp << "\t const SupervisorProperties_t* SupervisorProperties";
-    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorProperties;\n";
-    supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorProperties)\n";
-    
-    supervisor_cpp << "\t SupervisorState_t* SupervisorState";
-    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorState;\n";
-    supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorState)\n";
-    
-    supervisor_cpp << "\t const SupervisorImplicitRecvMessage_t* message";
-    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
-    supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>(";
-    supervisor_cpp << "static_cast<const void*>(inMsg->payload));\n";
-    supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
+    supervisor_cpp << "\tconst SupervisorImplicitRecvMessage_t* message = ";
+    supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>";
+    supervisor_cpp << "(static_cast<const void*>(inMsg->payload));\n\n";
     
     supervisor_cpp << supervisorOnPktHandler;
     supervisor_cpp << "\n\n\treturn 0;\n";
@@ -956,7 +951,6 @@ void Composer::writeGlobalPropsD(GraphI_t* graphI, std::ofstream& props_h)
     props_h << "#define _GLOBALPROPS_H_\n\n";
     
     props_h << "#include <cstdint>\n";
-    //props_h << "#include \"softswitch_common.h\"\n\n";
     
     if(graphT->pPropsD)
     {
@@ -964,7 +958,7 @@ void Composer::writeGlobalPropsD(GraphI_t* graphI, std::ofstream& props_h)
         props_h << "typedef struct " << graphT->Name() << "_properties_t \n{\n";
         props_h << graphT->pPropsD->C_src();   // These are the actual properties
         props_h << "\n} global_props_t;\n\n";
-        props_h << "extern const global_props_t graphProperties;\n\n";
+        props_h << "extern const global_props_t GraphProperties;\n\n";
     }
     
     props_h << "#endif /*_GLOBALPROPS_H_*/\n\n";
@@ -979,10 +973,10 @@ void Composer::writeGlobalPropsI(GraphI_t* graphI, std::ofstream& props_cpp)
     //There may be an initialiser in the Graph Instance
     if(graphI->pPropsI)
     {
-        props_cpp << "const global_props_t graphProperties ";
+        props_cpp << "const global_props_t GraphProperties ";
         props_cpp << "OS_ATTRIBUTE_UNUSED= {";
         props_cpp << graphI->pPropsI->C_src() << "};\n";
-        props_cpp << "OS_PRAGMA_UNUSED(graphProperties)\n";
+        props_cpp << "OS_PRAGMA_UNUSED(GraphProperties)\n";
     }
 } 
 
@@ -1769,7 +1763,7 @@ void Composer::writeThreadContextInitialiser(P_thread* thread, DevT_t* devT,
     vars_cpp << "Thread_" << threadAddr << "_DeviceTypes,";           // devTs
     vars_cpp << numberOfDevices <<  ",";                              // numDevI
     vars_cpp << "Thread_" << threadAddr << "_Devices,";               // devIs
-    vars_cpp << ((devT->par->pPropsD)?"&graphProperties,":"PNULL,");  // props
+    vars_cpp << ((devT->par->pPropsD)?"&GraphProperties,":"PNULL,");  // props
 
 
     /* Work out the required size for rtsBuffSize: The size of the RTS buffer is
