@@ -160,8 +160,12 @@ WALKVECTOR(GraphI_t *,pA->GraphI_v,i) {// Walk graph instances
         "%s %s has no specified type\n",++ecnt,l,Dis,Dcs);
     if (pD->Key==0) fprintf(fd,"W%3u. (%3u) "
       "%s %s has no specified graph key\n",++wcnt,l,Dis,Dcs);
+    if (pD->pPropsI=="") fprintf(fd,"I   . (%3u) "
+      "%s %s has no specified properties initialiser\n",++wcnt,Dis,Dcs);
+    if (pD->pStateI=="") fprintf(fd,"I   . (%3u) "
+      "%s %s has no specified state initialiser\n",++wcnt,Dis,Dcs);
     if (pG->G.SizeInPins(pD->Key)==0) fprintf(fd,"W%3u. (%3u) "
-        "%s %s has no packet input pins\n",++wcnt,l,Dis,Dcs);
+       "%s %s has no packet input pins\n",++wcnt,l,Dis,Dcs);
     if (pG->G.SizeOutPins(pD->Key)==0) fprintf(fd,"W%3u. (%3u) "
       "%s %s has no packet output pins\n",++wcnt,l,Dis,Dcs);
                                        // Now walk input pins on device
@@ -181,10 +185,6 @@ WALKVECTOR(GraphI_t *,pA->GraphI_v,i) {// Walk graph instances
       fprintf(fd,"I   . (%3u) %s %s has %lu pin keys:\n",
                   l,Dps,Pcs,pP->Key_v.size());
       WALKVECTOR(unsigned,pP->Key_v,k) fprintf(fd,"      ... %5u\n",*k);
-      if (pP->pPropsI==0) fprintf(fd,"I   . (%3u) "
-        "%s %s has no specified properties initialiser\n",lp,Dps,Pcs);
-      if (pP->pStateI==0) fprintf(fd,"I   . (%3u) "
-        "%s %s has no specified state initialiser\n",lp,Dps,Pcs);
     } // End WALKPDIGRAPHINPINS
                                        // And again for the output pins
     WALKPDIGRAPHOUTPINS(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,
@@ -203,10 +203,6 @@ WALKVECTOR(GraphI_t *,pA->GraphI_v,i) {// Walk graph instances
       fprintf(fd,"I   . (%3u) %s %s has %lu pin keys:\n",
                   l,Dps,Pcs,pP->Key_v.size());
       WALKVECTOR(unsigned,pP->Key_v,k) fprintf(fd,"      ... %5u\n",*k);
-      if (pP->pPropsI==0) fprintf(fd,"I   . (%3u) "
-        "%s %s has no specified properties initialiser\n",l,Dps,Pcs);
-      if (pP->pStateI==0) fprintf(fd,"I   . (%3u) "
-        "%s %s has no specified state initialiser\n",l,Dps,Pcs);
     } // End WALKPDIGRAPHOUTPINS
     unsigned pcnt = pG->G.SizeInPins(pG->G.NodeKey(i)) +
                     pG->G.SizeInPins(pG->G.NodeKey(i));

@@ -36,6 +36,8 @@ if (par!=0) fprintf(fp,"%s...%s\n",os,par->FullName().c_str());
 fprintf(fp,"%sP-address :\n",os);
 addr.Dump(off+2,fp);
 fprintf(fp,"%sGraph key      %u\n",os,Key);
+fprintf(fp,"%sProperties initialiser    %s\n",os,pPropsI.c_str());
+fprintf(fp,"%sState initialiser         %s\n",os,pStateI.c_str());
 fprintf(fp,"%sMetadata vector has %lu entries:\n",os,Meta_v.size());
 WALKVECTOR(Meta_t *,Meta_v,i) (*i)->Dump(off+2,fp);
 NameBase::Dump(off+2,fp);

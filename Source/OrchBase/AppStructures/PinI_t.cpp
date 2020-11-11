@@ -7,21 +7,17 @@
 
 //==============================================================================
 
-PinI_t::PinI_t(GraphI_t * _p,string _s):par(_p),pT(0),pPropsI(0),pStateI(0)
+PinI_t::PinI_t(GraphI_t * _p,string _s):par(_p),pT(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
-
-pPropsI = 0;
-pStateI = 0;
 }
 
 //------------------------------------------------------------------------------
 
 PinI_t::~PinI_t()
 {
-if (pPropsI!=0) delete pPropsI;
-if (pStateI!=0) delete pStateI;
+
 }
 
 //------------------------------------------------------------------------------
@@ -44,10 +40,6 @@ fprintf(fp,"%sMe,Parent                 %#018lx,%#018lx\n",
 if (par!=0) fprintf(fp,"%s...%s\n",os,par->FullName().c_str());
 fprintf(fp,"%sType cross-link :  %#018lx\n",os,(uint64_t)pT);
 if (pT!=0) fprintf(fp,"%s... -> %s\n",os,pT->FullName().c_str());
-fprintf(fp,"%sProperties initialiser    %#018lx\n",os,(uint64_t)pPropsI);
-if (pPropsI!=0) pPropsI->Dump(off+2,fp);
-fprintf(fp,"%sState initialiser         %#018lx\n",os,(uint64_t)pStateI);
-if (pStateI!=0) pStateI->Dump(off+2,fp);
 fprintf(fp,"%sKey vector has %lu entries\n",os,Key_v.size());
 WALKVECTOR(unsigned,Key_v,i) fprintf(fp,"%s%05u\n",os,*i);
 NameBase::Dump(off+2,fp);

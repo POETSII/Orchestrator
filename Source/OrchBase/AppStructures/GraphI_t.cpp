@@ -54,8 +54,7 @@ WALKSET(PinI_t *,DelSet,i) delete *i;  // Kill the "to be deleted" set
                                        // Lose any metadata
 WALKVECTOR(Meta_t *,Meta_v,i) delete *i;
 
-if (pPropsI!=0) delete pPropsI;
-if (pSup != PNULL) delete pSup;
+//if (pSup != PNULL) delete pSup;       // This is deleted by Placer!
 }
 
 //------------------------------------------------------------------------------
