@@ -35,8 +35,8 @@ unsigned             Key;              // Graph key
 vector<Meta_t *>     Meta_v;           // MetaData vector
 map<string,PinI_t *> Pmap;             // Pin-by-name map
 
-CFrag *              pPropsI;          // Properties
-CFrag *              pStateI;          // State
+std::string          pPropsI;          // Properties
+std::string          pStateI;          // State
 };
 
 //==============================================================================

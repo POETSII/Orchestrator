@@ -146,11 +146,15 @@ if (i != pGI->Dmap.end()) {            // Yes
   pD->tyId = pn->FindAttr("type");     // Device type
   pD->Def(pn->lin);                    // Save definition line
   pD->devTyp = 'D';                    // It's an internal device
+  pD->pPropsI = pn->FindAttr("P");     // Props I
+  pD->pStateI = pn->FindAttr("S");     // State I
   return pD;
 }
                                        // This is the first we've seen of it
 DevI_t * pD = new DevI_t(pGI,dname);   // New device instance
 pD->tyId = pn->FindAttr("type");       // Device type
+pD->pPropsI = pn->FindAttr("P");       // Props I
+pD->pStateI = pn->FindAttr("S");       // State I
 WALKVECTOR(xnode *,pn->vnode,i) {      // There should be only one (type of)....
   (*i)->rTyp() = DS_map[(*i)->ename];
   switch ((*i)->rTyp()) {
@@ -272,8 +276,10 @@ pE->Def(lin);
 pE->Ref(lin);
 pE->Key = kE;                          // Store the key inside its data
 pE->Idx = (pPto->Key_v.size() - 1);    // Index of edge in the to pin's Key_v
-                                       // Insert into instance graph
+pE->pPropsI = pn->FindAttr("P");       // Props I
+pE->pStateI = pn->FindAttr("S");       // State I
 
+// Insert into instance graph
 pGI->G.InsertArc(kE,pDfr->Key,pDto->Key,pE,
                  pPfr->Key_v.back(),pPfr,pPto->Key_v.back(),pPto);
 }
@@ -300,14 +306,7 @@ void DS_XML::_ExtI_t(GraphI_t * pGI,xnode * pn)
 {
 DevI_t * pD = _DevI_t(pGI,pn);
 pD->devTyp = 'X';
-
-WALKVECTOR(xnode *,pn->vnode,i) {
-  (*i)->rTyp() = DS_map[(*i)->ename];
-  switch ((*i)->rTyp()) {
-    case cProperties     : pD->pPropsI = _CFrag(*i);             break;
-    default              : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);
-  }
-}
+pD->pPropsI = pn->FindAttr("P");       // Props I
 }
 
 //------------------------------------------------------------------------------

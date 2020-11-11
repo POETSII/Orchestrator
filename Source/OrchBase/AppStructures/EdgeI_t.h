@@ -29,8 +29,8 @@ unsigned           Key;                // Graph key
 size_t             Idx;                // Index of this edge in PinI_t->key_v
 vector<Meta_t *>   Meta_v;             // MetaData vector
 
-CFrag *            pPropsI;            // Properties
-CFrag *            pStateI;            // State
+std::string          pPropsI;          // Properties
+std::string          pStateI;          // State
 };
 
 //==============================================================================
