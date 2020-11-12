@@ -96,7 +96,6 @@ bool SuperDB::unload_supervisor(std::string appName)
 /* Code repetition ahoy! (methods for calling supervisor handlers) */
 HANDLE_SUPERVISOR_FN(init)
 HANDLE_SUPERVISOR_FN(exit)
-HANDLE_SUPERVISOR_FN(idle)
 
 int SuperDB::call_supervisor(std::string appName,
                              PMsg_p* inputMessage, PMsg_p* outputMessage)
@@ -105,6 +104,16 @@ int SuperDB::call_supervisor(std::string appName,
     pthread_mutex_lock(&(superFinder->second->lock));
     int rc = (*(superFinder->second->call))(inputMessage, outputMessage);
     pthread_mutex_unlock(&(superFinder->second->lock));
+    return rc;
+}
+
+/* Calls the OnIdle handler for a supervisor with a given application
+ * name. This handler is treated differently, as the caller is expected to
+ * acquire the supervisor lock (see `idle_rotation`). */
+int SuperDB::idle_supervisor(std::string appName)
+{
+    FIND_SUPERVISOR;
+    int rc = (*(superFinder->second->idle))();
     return rc;
 }
 
