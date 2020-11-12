@@ -18,10 +18,20 @@ Placer::~Placer()
     for (algorithmIt = placedGraphs.begin(); algorithmIt != placedGraphs.end();
          algorithmIt++) delete algorithmIt->second;
 
-    /* Free all supervisors. */
+    /* Free all supervisors. Freeing supervisors is a litle complicated, as
+     * they can be deleted when their GraphI_t object is deleted, and can also
+     * be deleted when placement is destroyed, so beware. */
     std::map<GraphI_t*, Algorithm*>::iterator graphIt;
     for (graphIt = placedGraphs.begin(); graphIt != placedGraphs.end();
-         graphIt++) delete (graphIt->first)->pSup;
+         graphIt++)
+    {
+        if ((graphIt->first)->pSup != PNULL)
+        {
+            delete (graphIt->first)->pSup;
+            (graphIt->first)->pSup = PNULL; /* Now the GraphI_t won't
+                                             * double-delete */
+        }
+    }
 }
 
 /* Given a string and a set of arguments, creates an instance of a "derived

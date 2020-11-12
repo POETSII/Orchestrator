@@ -52,7 +52,11 @@ WALKSET(PinI_t *,DelSet,i) delete *i;  // Kill the "to be deleted" set
                                        // Lose any metadata
 WALKVECTOR(Meta_t *,Meta_v,i) delete *i;
 
-//if (pSup != PNULL) delete pSup;       // This is deleted by Placer!
+if (pPropsI!=0) delete pPropsI;
+/* Freeing supervisors is a litle complicated, as they can be deleted when
+ * their GraphI_t object is deleted, and can also be deleted when placement is
+ * destroyed, so beware. */
+if (pSup != PNULL) delete pSup;
 }
 
 //------------------------------------------------------------------------------
