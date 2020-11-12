@@ -96,7 +96,7 @@ CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
            -std=c++98 -Wall -fPIC -pthread -pedantic -O3 -DTRIVIAL_LOG_HANDLER
 
 # Debugging!
-DEBUGFLAGS = -g3 -Og
+DEBUGFLAGS = -g3 -O0
 
 # Debug target logic.
 debug: CXXFLAGS += $(DEBUGFLAGS) -DORCHESTRATOR_DEBUG=1
