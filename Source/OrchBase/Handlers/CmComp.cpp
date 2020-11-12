@@ -130,6 +130,74 @@ void CmComp::Cm_Compile(Cli::Cl_t clause)
 
 //------------------------------------------------------------------------------
 
+void CmComp::Cm_Decompose(Cli::Cl_t clause)
+{
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "decompose");
+        return;
+    }
+
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+
+    /* Check they're all placed before proceeding. */
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        if (par->pPlacer->placedGraphs.find(*graphIt) ==
+            par->pPlacer->placedGraphs.end())
+        {
+            par->Post(802, (*graphIt)->Name(), "decomposing");
+            return;
+        }
+    }
+
+    /* Degenerate each app in sequence. */
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        par->pComposer->decompose(*graphIt);
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void CmComp::Cm_Degenerate(Cli::Cl_t clause)
+{
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "degenerate");
+        return;
+    }
+
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+
+    /* Check they're all placed before proceeding. */
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        if (par->pPlacer->placedGraphs.find(*graphIt) ==
+            par->pPlacer->placedGraphs.end())
+        {
+            par->Post(802, (*graphIt)->Name(), "degenerating");
+            return;
+        }
+    }
+
+    /* Degenerate each app in sequence. */
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        par->pComposer->degenerate(*graphIt);
+    }
+}
+
+//------------------------------------------------------------------------------
+
 void CmComp::Cm_Clean(Cli::Cl_t clause)
 {
     /* Shout if no hardware model is loaded (i.e. there is no placer) */
@@ -207,11 +275,13 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   string sCl = (*i).Cl;                // Pull out clause string
   string sCo = pC->Co;                 // Pull out command string
   string sPa = (*i).GetP();            // Pull out (simple) parameter
-  if (sCl=="app"  ) { Cm_App(*i);      continue; }
-  if (sCl=="gene" ) { Cm_Generate(*i); continue; }
-  if (sCl=="comp" ) { Cm_Compile(*i);  continue; }
-  if (sCl=="clea" ) { Cm_Clean(*i);    continue; }
-  if (sCl=="rese" ) { Cm_Reset(*i);    continue; }
+  if (sCl=="app"  ) { Cm_App(*i);           continue; }
+  if (sCl=="gene" ) { Cm_Generate(*i);      continue; }
+  if (sCl=="comp" ) { Cm_Compile(*i);       continue; }
+  if (sCl=="deco" ) { Cm_Decompose(*i);     continue; }
+  if (sCl=="dege" ) { Cm_Degenerate(*i);    continue; }
+  if (sCl=="clea" ) { Cm_Clean(*i);         continue; }
+  if (sCl=="rese" ) { Cm_Reset(*i);         continue; }
   par->Post(25,sCl,"compose");         // Unrecognised clause
 }
 return 0;                              // Legitimate command exit
