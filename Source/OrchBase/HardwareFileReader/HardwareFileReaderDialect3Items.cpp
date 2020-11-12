@@ -11,9 +11,11 @@
  * - mailbox: Pointer to the mailbox to populate.
  * - coreQuatity: Number of cores to create (the number of threads will be
  *       determined from the UIF parse tree.
+ * - addrOffset: An offset for the address of each core. 
  * - pairCores: Whether or not to pair adjacent cores up. */
 bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
-    P_mailbox* mailbox, unsigned coreQuantity, bool pairCores)
+    P_mailbox* mailbox, unsigned coreQuantity, unsigned addrOffset,
+    bool pairCores)
 {
     bool anyErrors = false;  /* Innocent until proven guilty. */
 
@@ -34,7 +36,7 @@ bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
         P_core* firstCore;
         P_core* secondCore;
         AddressComponent coreId;
-        for (coreId = 0; coreId < coreQuantity; coreId+=2)
+        for (coreId = addrOffset; coreId < coreQuantity + addrOffset; coreId+=2)
         {
             /* Create */
             firstCore = new P_core(dformat(
@@ -64,7 +66,7 @@ bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
     {
         P_core* core;
         AddressComponent coreId;
-        for (coreId = 0; coreId < coreQuantity; coreId++)
+        for (coreId = addrOffset; coreId < coreQuantity + addrOffset; coreId++)
         {
             /* Create */
             core = new P_core(dformat(
@@ -598,6 +600,7 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
     validFields.push_back("core_core_cost");
     validFields.push_back("mailbox_core_cost");
     validFields.push_back("cores");
+    validFields.push_back("core_addr_offset");
     validFields.push_back("pair_cores");
 
     /* Holds fields we've already grabbed (for validation purposes). */
@@ -612,6 +615,7 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
      * nodes. */
     std::vector<UIF::Node*> valueNodes;
     std::vector<UIF::Node*> variableNodes;
+    unsigned coreAddrOffset = 0;
 
     /* Hold core count and pairing information until all fields have been
      * read. Note the default initialisation of these two variables will cause
@@ -698,6 +702,21 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
             /* Bind */
             mailbox->costMailboxCore = str2float(valueNodes[0]->str);
         }
+        
+        else if (variable == "core_addr_offset")
+        {
+            /* Complain if not natural */
+            if (!complain_if_value_not_natural(valueNodes[0]))
+            {
+                anyErrors = true;
+                continue;
+            }
+
+            /* Store until number of cores is defined. Note that setting this
+             * value inappropriately will cause the address to overflow and
+             * chaos to ensue (boss' orders). */
+            coreAddrOffset = str2unsigned(valueNodes[0]->str);
+        }
 
         else if (variable == "pair_cores")
         {
@@ -734,7 +753,10 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
         /* Otherwise, if everything is defined properly, create and add
          * cores. */
         else if (!d3_create_cores_and_threads_for_mailbox(
-                     mailbox, coreCount, pairCores)) {anyErrors = true;}
+                     mailbox, coreCount, coreAddrOffset, pairCores)) 
+        {
+            anyErrors = true;
+        }
     }
 
     /* Restore the old 'record', 'sectionName', and 'variable' members. */
