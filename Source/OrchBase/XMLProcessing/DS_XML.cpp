@@ -318,11 +318,11 @@ string gname = pn->FindAttr("id");
 GraphI_t * pGI = new GraphI_t(pAP,gname);
 pGI->Def(pn->lin);
 pGI->tyId = pGI->tyId2 = pn->FindAttr("graphTypeId");
+pGI->pPropsI = pn->FindAttr("P");       // Props I
 WALKVECTOR(xnode *,pn->vnode,i) {
   (*i)->rTyp() = DS_map[(*i)->ename];
   switch ((*i)->rTyp()) {
     case cMetaData        : pGI->Meta_v.push_back(_Meta(*i));        break;
-    case cProperties      : pGI->pPropsI = _CFrag(*i);               break;
     case cDeviceInstances : _DevI_ts(pGI,*i);                        break;
     case cEdgeInstances   : _EdgeI_ts(pGI,*i);                       break;
     default               : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);

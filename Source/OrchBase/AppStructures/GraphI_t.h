@@ -38,7 +38,7 @@ pdigraph<unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *> G;
 string               tyId;             // Name of type in type tree
 string               tyId2;            // Type tree we're going to link to
 GraphT_t *           pT;               // Type tree pointer
-CFrag *              pPropsI;          // Graph properties initialiser code
+std::string          pPropsI;          // Graph properties initialiser code
 map<string,unsigned> Dmap;             // Device name->key map
 vector<Meta_t *>     Meta_v;           // MetaData vector
 P_super*             pSup;             // Supervisor information

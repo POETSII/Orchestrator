@@ -16,7 +16,7 @@
 //==============================================================================
 
 GraphI_t::GraphI_t(Apps_t * _p,string _s):
-    par(_p),deployed(false),pT(0),pPropsI(0),pSup(0),built(0)
+    par(_p),deployed(false),pT(0),pPropsI(""),pSup(0),built(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
@@ -52,7 +52,6 @@ WALKSET(PinI_t *,DelSet,i) delete *i;  // Kill the "to be deleted" set
                                        // Lose any metadata
 WALKVECTOR(Meta_t *,Meta_v,i) delete *i;
 
-if (pPropsI!=0) delete pPropsI;
 /* Freeing supervisors is a litle complicated, as they can be deleted when
  * their GraphI_t object is deleted, and can also be deleted when placement is
  * destroyed, so beware. */
@@ -108,8 +107,7 @@ fprintf(fp,"%sTarget type tree from file %s\n",os,tyId.c_str());
 fprintf(fp,"%sMonkey mutable type tree   %s\n",os,tyId2.c_str());
 fprintf(fp,"%sType cross-link :  %#018lx\n",os,(uint64_t)pT);
 if (pT!=0) fprintf(fp,"%s... -> %s\n",os,pT->FullName().c_str());
-fprintf(fp,"%sProperties initialiser %#018lx\n",os,(uint64_t)pPropsI);
-if (pPropsI!=0) pPropsI->Dump(off+2,fp);
+fprintf(fp,"%sProperties initialiser %s\n",os,pPropsI.c_str());
 fprintf(fp,"%sDevice name : key map has %lu entries :\n",os,Dmap.size());
 WALKMAP(string,unsigned,Dmap,i)
   fprintf(fp,"%s%s : %u\n",os,(*i).first.c_str(),(*i).second);

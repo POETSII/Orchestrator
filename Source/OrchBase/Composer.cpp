@@ -813,7 +813,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 
         // Global properties initialiser
         writeGlobalPropsI(graphI, supervisor_cpp);
-        if(graphI->pPropsI)
+        if(graphI->pT->pPropsD)
         {
             supervisor_cpp << "const global_props_t* graphProperties ";
             supervisor_cpp << "= &GraphProperties;\n\n";
@@ -1049,11 +1049,11 @@ void Composer::writeGlobalPropsD(GraphI_t* graphI, std::ofstream& props_h)
 void Composer::writeGlobalPropsI(GraphI_t* graphI, std::ofstream& props_cpp)
 {
     //There may be an initialiser in the Graph Instance
-    if(graphI->pPropsI)
+    if(graphI->pT->pPropsD)
     {
         props_cpp << "const global_props_t GraphProperties ";
         props_cpp << "OS_ATTRIBUTE_UNUSED= {";
-        props_cpp << graphI->pPropsI->C_src() << "};\n";
+        props_cpp << graphI->pPropsI << "};\n";
         props_cpp << "OS_PRAGMA_UNUSED(GraphProperties)\n";
     }
 }
