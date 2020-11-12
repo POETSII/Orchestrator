@@ -184,8 +184,10 @@ int CmDepl::DeployGraph(GraphI_t* gi)
             payload = &(mothershipPayloads[rank].back());
 
             /* paths */
-            payload->codePath = core->instructionBinary;
-            payload->dataPath = core->dataBinary;
+            payload->codePath = getenv("HOME") + par->pCmPath->pathMshp +
+                graphName + "/" + core->instructionBinary;
+            payload->dataPath = getenv("HOME") + par->pCmPath->pathMshp +
+                graphName + "/" + core->dataBinary;
 
             /* coreAddr */
             payload->coreAddr = core->get_hardware_address()->as_uint();
@@ -216,7 +218,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
          * for now. */
         target = dformat("%s/%s/%s", getenv("HOME"),
                          par->pCmPath->pathMshp.c_str(), graphName.c_str());
-        sourceBinaries = dformat("%s/%s/*",
+        sourceBinaries = dformat("%s%s/bin/*",
                                  par->pCmPath->pathBina.c_str(),
                                  graphName.c_str());
 
@@ -305,7 +307,8 @@ int CmDepl::DeployGraph(GraphI_t* gi)
         specMessage.Send();
 
         /* Customise and send the SUPD message. */
-        soPath = gi->pSup->binPath;
+        soPath = getenv("HOME") + std::string("/") +  par->pCmPath->pathMshp +
+            graphName + "/" + gi->pSup->binPath;
         supdMessage.Put(1, &soPath);
         supdMessage.Send();
 

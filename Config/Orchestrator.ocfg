@@ -31,7 +31,7 @@ remote_mship = ".orchestrator/app_binaries/"
 // Staged source files and binaries for applications
 stage = "../Output/Composer/"
 // Application binary files for execution
-// binaries = ""
+binaries = "../Output/Composer/"
 // Trace output
 // trace = ""
 // Batch files

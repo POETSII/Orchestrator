@@ -401,11 +401,11 @@ int Composer::compile(GraphI_t* graphI)
             FILE* binary;
             
             // Check Instruction binary and add to pCore.
-            std::string instrName = elfPath + "/softswitch_code_";
-            instrName += TO_STRING(coreAddr);
-            instrName += ".v";
-            
-            binary = fopen(instrName.c_str(), "r");
+            const std::string instrName = "softswitch_code_" +
+                TO_STRING(coreAddr) + ".v";
+            std::string instrPath = elfPath + "/" + instrName;
+
+            binary = fopen(instrPath.c_str(), "r");
             if(binary == PNULL)
             { // Failed to open binary
                 //par->Post(806, binaryIt->c_str(), POETS::getSysErrorString(errno));
@@ -420,11 +420,11 @@ int Composer::compile(GraphI_t* graphI)
             
             
             // Check Data binary and add to pCore.
-            std::string dataName = elfPath + "/softswitch_data_";
-            dataName += TO_STRING(coreAddr);
-            dataName += ".v";
-            
-            binary = fopen(dataName.c_str(), "r");
+            const std::string dataName = "softswitch_data_" +
+                TO_STRING(coreAddr) + ".v";
+            std::string dataPath = elfPath + "/" + dataName;
+
+            binary = fopen(dataPath.c_str(), "r");
             if(binary == PNULL)
             { // Failed to open binary
                 //par->Post(806, binaryIt->c_str(), POETS::getSysErrorString(errno));
@@ -442,15 +442,16 @@ int Composer::compile(GraphI_t* graphI)
             //TODO: Barf
             return -1;
         }
-        
+
         // Close the binary
         fclose(elfBinary);
     }
-    
+
     // Check that the Supervisor Shared Object was made
     FILE* superBinary;
-    std::string superName = elfPath + "/libSupervisor.so";
-    superBinary = fopen(superName.c_str(),"r");
+    const std::string superName = "libSupervisor.so";
+    std::string superPath = elfPath + "/" + superName;
+    superBinary = fopen(superPath.c_str(),"r");
     if(superBinary == PNULL)
     { // Failed to open the Shared Object
         //par->Post(806, binaryPath, OSFixes::getSysErrorString(errno));
