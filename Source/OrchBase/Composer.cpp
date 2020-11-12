@@ -532,7 +532,7 @@ int Composer::degenerate(GraphI_t* graphI)
 int Composer::clean(GraphI_t* graphI)
 {   // Tidy up a specific build for a graphI. This invokes make clean
     ComposerGraphI_t*  builderGraphI;
-    //FILE * fd = graphI->par->par->fd;              // Detail output file
+    FILE * fd = graphI->par->par->fd;              // Detail output file
     
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end()) 
@@ -546,6 +546,15 @@ int Composer::clean(GraphI_t* graphI)
     if(system(("(cd "+buildPath+";"+COREMAKECLEAN+")").c_str()))
     {
         //TODO: barf?
+    }
+    
+    // Remove the bin directory.
+    //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
+    std::string taskDir(outputPath + builderGraphI->outputDir); 
+    if(system((REMOVEDIR+" "+taskDir+"/bin").c_str())) // Check that the directory deleted
+    {                                  // if it didn't, tell logserver and exit
+        //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to remove %s\n",taskDir.c_str());
     }
     
     builderGraphI->compiled = 0;
