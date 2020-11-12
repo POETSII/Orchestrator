@@ -101,10 +101,11 @@ int         compose(GraphI_t*);    // Generate and compile
 int         generate(GraphI_t*); // Generate Source Files
 int         compile(GraphI_t*);  // Compile Source Files
 
-void        decompose(GraphI_t*);  // Clear internal strings
-void        clean(GraphI_t*);    // Get rid of built files (e.g. a make clean)
+int         decompose(GraphI_t*);  // Clean then degenerate
+int         degenerate(GraphI_t*); // Clear internal strings and generated files
+int         clean(GraphI_t*);      // Get rid of built files (e.g. a make clean)
 
-void        reset();    // Reset Composer
+int         reset();    // Reset Composer
 
 void        setOutputPath(std::string);
 void        setPlacer(Placer*);
@@ -114,11 +115,9 @@ void        setPlacer(Placer*);
 private:
     
 Placer*     placer;
-std::string outputPath;    
-std::string supervisorSendPinName;
-    
+std::string outputPath;
 
-ComposerGraphIMap_t graphIMap; // Map has an entry for each Graph Instance.
+ComposerGraphIMap_t graphIMap; // Map has an entry for each seen Graph Instance.
 
 
 int prepareDirectories(ComposerGraphI_t*);

@@ -6,21 +6,12 @@
 const string GENERATED_PATH = "Generated";
 const string GENERATED_H_PATH = GENERATED_PATH+"/inc";
 const string GENERATED_CPP_PATH = GENERATED_PATH+"/src";
-const string COREMAKE_BASE = "make -j$(nproc --ignore=4) all 2>&1 >> make_errs.txt";
+
+//TODO: cross-platform this
+const string COREMAKE = "make -j$(nproc --ignore=4) all 2>&1 >> make_errs.txt";
+const string COREMAKECLEAN = "make clean 2>&1 >> clean_errs.txt";
 
 
-#if (defined __BORLANDC__ || defined _MSC_VER)
-const string SYS_COPY = "copy";
-const string MAKEDIR = "md";
-const string RECURSIVE_CPY = "";
-const string REMOVEDIR = "rd /S /Q";
-#elif (defined __GNUC__)
-const string SYS_COPY = "cp";
-const string RECURSIVE_CPY = "-r";
-const string PERMISSION_CPY = "-p";
-const string MAKEDIR = "mkdir";
-const string REMOVEDIR = "rm --force --recursive";
-#endif
 
 const unsigned int MAX_RTSBUFFSIZE = 4096;
 const unsigned int MIN_RTSBUFFSIZE = 10;
@@ -387,7 +378,7 @@ int Composer::compile(GraphI_t* graphI)
     std::string buildPath = outputPath + builderGraphI->outputDir;
     buildPath += "/Build";
     
-    if(system(("(cd "+buildPath+";"+COREMAKE_BASE+")").c_str()))
+    if(system(("(cd "+buildPath+";"+COREMAKE+")").c_str()))
     {
         //TODO: barf
         return 1;
@@ -478,22 +469,93 @@ int Composer::compile(GraphI_t* graphI)
 }
 
 /******************************************************************************
- * Stubs for now        TODO
+ * Invoke a clean and then a degenerate
  *****************************************************************************/
-void Composer::decompose(GraphI_t* graphI)
+int Composer::decompose(GraphI_t* graphI)
 {
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    fprintf(fd,"\nDecomposing %s...\n",graphI->par->Name().c_str());
     
+    int ret = clean(graphI);
+    
+    if(ret) return ret;
+    else return degenerate(graphI);
 }
 
 
-void Composer::clean(GraphI_t* graphI)
+/******************************************************************************
+ * Undo the generation step by removing any generated files and removing the 
+ * graphIMap entry.
+ *****************************************************************************/
+int Composer::degenerate(GraphI_t* graphI)
+{
+    ComposerGraphI_t*  builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    
+    ComposerGraphIMap_t::iterator graphISrch = graphIMap.find(graphI);
+    if (graphISrch == graphIMap.end()) 
+    {   // The Graph Instance has not been seen before, barf.
+        return -1;
+    }
+    builderGraphI = graphISrch->second;
+    
+    if(builderGraphI->compiled)
+    {   // Application needs to be cleaned first
+        fprintf(fd,"\tApplication must be cleaned before degenerating.\n");
+        return -2;
+    }
+    
+    if(!builderGraphI->generated)
+    {   // Nothing generated, nothing to do
+        fprintf(fd,"\tApplication not generated, skipping\n");
+        return 0;
+    }
+    
+    
+    // Remove the application directory.
+    //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
+    std::string taskDir(outputPath + builderGraphI->outputDir); 
+    if(system((REMOVEDIR+" "+taskDir).c_str())) // Check that the directory deleted
+    {                                  // if it didn't, tell logserver and exit
+        //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to remove %s\n",taskDir.c_str());
+    }
+    
+    builderGraphI->generated = 0;
+    
+    delete graphISrch->second;
+    graphIMap.erase(graphISrch);
+    
+    return 0;
+}
+
+int Composer::clean(GraphI_t* graphI)
 {   // Tidy up a specific build for a graphI. This invokes make clean
+    ComposerGraphI_t*  builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
     
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end()) 
+    {   // The Graph Instance has not been seen before, barf.
+        return -1;
+    }
+    builderGraphI = srch->second;
+    
+    std::string buildPath = outputPath + builderGraphI->outputDir;
+    buildPath += "/Build";
+    if(system(("(cd "+buildPath+";"+COREMAKECLEAN+")").c_str()))
+    {
+        //TODO: barf?
+    }
+    
+    builderGraphI->compiled = 0;
+    return 0;
 }
 
-void Composer::reset()
+int Composer::reset()
 {
     
+    return 0;
 }
 
 
