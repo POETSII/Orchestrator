@@ -464,6 +464,7 @@ int Composer::compile(GraphI_t* graphI)
     
     // Mark that we have compiled
     builderGraphI->compiled = true;
+    builderGraphI->graphI->built = true;
     
     return 0;
 }
@@ -558,6 +559,7 @@ int Composer::clean(GraphI_t* graphI)
     }
     
     builderGraphI->compiled = 0;
+    builderGraphI->graphI->built = 0;
     return 0;
 }
 

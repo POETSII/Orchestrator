@@ -16,7 +16,7 @@
 //==============================================================================
 
 GraphI_t::GraphI_t(Apps_t * _p,string _s):
-    par(_p),deployed(false),pT(0),pPropsI(0),pSup(0)
+    par(_p),deployed(false),pT(0),pPropsI(0),pSup(0),built(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
@@ -27,8 +27,6 @@ G.SetND_CB(DevI_t::DevDat_cb);
 G.SetNK_CB(DevI_t::DevKey_cb);
 G.SetAD_CB(EdgeI_t::EdgDat_cb);
 G.SetAK_CB(EdgeI_t::EdgKey_cb);
-
-pPropsI = 0;
 }
 
 //------------------------------------------------------------------------------

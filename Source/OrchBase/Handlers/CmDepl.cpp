@@ -41,7 +41,7 @@ void CmDepl::Cm_App(Cli::Cl_t clause)
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
 #warning "CmBuil::Cm_Deploy: No logic defined for checking whether an application has been build. Deploy-check does not interact with the Composer."
-        if (true) //if (!(*graphIt)->built)
+        if (!(*graphIt)->built)
         {
             par->Post(107, (*graphIt)->Name());
             return;
