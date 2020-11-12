@@ -176,4 +176,4 @@ $(HL)/%.o :
 	make -C $(TINSELHL)
 
 clean :
-	rm -f *.o *.elf link.ld $(BIN_DIR)/*.elf $(BIN_DIR)/libSupervisor.so
+	rm -f *.o *.elf link.ld $(BIN_DIR)/*.elf $(BIN_DIR)/*.v $(BIN_DIR)/libSupervisor.so
