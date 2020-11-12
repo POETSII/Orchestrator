@@ -224,7 +224,6 @@ namespace OSFixes
 /* =============================================================================
  * Filesystem manipulation - not under RISCV though.
  * ===========================================================================*/
-
 #ifndef __riscv
 #ifdef _WIN32
 #include <stdlib.h>
@@ -238,6 +237,26 @@ https://stackoverflow.com/questions/833291/is-there-an-equivalent-to-winapis
 #include <unistd.h>
 #define MAXIMUM_PATH_LENGTH PATH_MAX /* Actually, PATH_MAX isn't. See
 http://insanecoding.blogspot.com/2007/11/pathmax-simply-isnt.html */
+#endif
+
+
+/* =============================================================================
+ * File operation consts for use with System- not under RISCV though.
+ * TODO: make these into comprehensive methods for manipulation
+ * ===========================================================================*/
+#ifndef __riscv
+#if (defined __BORLANDC__ || defined _MSC_VER)
+const std::string SYS_COPY = "copy";
+const std::string MAKEDIR = "md";
+const std::string RECURSIVE_CPY = "";
+const std::string REMOVEDIR = "rd /S /Q";
+#elif (defined __GNUC__)
+const std::string SYS_COPY = "cp";
+const std::string RECURSIVE_CPY = "-r";
+const std::string PERMISSION_CPY = "-p";
+const std::string MAKEDIR = "mkdir";
+const std::string REMOVEDIR = "rm --force --recursive";
+#endif
 #endif
 
 
