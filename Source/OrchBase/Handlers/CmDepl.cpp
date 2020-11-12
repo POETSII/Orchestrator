@@ -184,10 +184,11 @@ int CmDepl::DeployGraph(GraphI_t* gi)
             payload = &(mothershipPayloads[rank].back());
 
             /* paths */
-            payload->codePath = getenv("HOME") + par->pCmPath->pathMshp +
-                graphName + "/" + core->instructionBinary;
-            payload->dataPath = getenv("HOME") + par->pCmPath->pathMshp +
-                graphName + "/" + core->dataBinary;
+            payload->codePath = std::string(getenv("HOME")) + "/" +
+                par->pCmPath->pathMshp + graphName + "/" +
+                core->instructionBinary;
+            payload->dataPath = std::string(getenv("HOME")) + "/" +
+                par->pCmPath->pathMshp + graphName + "/" + core->dataBinary;
 
             /* coreAddr */
             payload->coreAddr = core->get_hardware_address()->as_uint();
