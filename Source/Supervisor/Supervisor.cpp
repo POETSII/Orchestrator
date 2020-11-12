@@ -36,21 +36,23 @@ extern "C"
 
     int SupervisorExit(){return Supervisor::OnStop();}
 
-    SupervisorDeviceInstance_t SupervisorIdx2Addr(uint32_t idx)
+    uint64_t SupervisorIdx2Addr(uint32_t idx)
     {
+        uint64_t ret = 0;
+        
         if(idx >= Supervisor::DeviceVector.size())
         {
-            //out of range Idx
-
-            SupervisorDeviceInstance_t fail;
-            fail.HwAddr = 0;
-            fail.SwAddr = 0;
-            fail.Name = "";
-
-            return fail;
+            //out of range Idx            
+            return UINT64_MAX;
         }
-
-        return Supervisor::DeviceVector[idx];
+        
+        ret = Supervisor::DeviceVector[idx].HwAddr;
+        ret = ret << 32;
+        ret |= Supervisor::DeviceVector[idx].SwAddr;
+        
+        return ret;
     }
 
 }
+
+#include "supervisor_generated.cpp"

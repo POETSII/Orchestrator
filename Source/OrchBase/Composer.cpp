@@ -817,6 +817,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         {
             supervisor_cpp << "const global_props_t* graphProperties ";
             supervisor_cpp << "= &GraphProperties;\n\n";
+            
+            supervisor_h << "extern const global_props_t* graphProperties;\n\n";
         }
 
         // Global shared code - written directly
@@ -831,10 +833,10 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         // Code section - written directly
         if(supType->pShCd)
         {
-            supervisor_cpp << "// =================================== Code ";
-            supervisor_cpp << "====================================\n";
-            supervisor_cpp << supType->pShCd->C_src();
-            supervisor_cpp << "\n\n";
+            supervisor_h << "// =================================== Code ";
+            supervisor_h << "====================================\n";
+            supervisor_h << supType->pShCd->C_src();
+            supervisor_h << "\n\n";
         }
 
         supervisor_cpp << "// ================================= Handlers ";

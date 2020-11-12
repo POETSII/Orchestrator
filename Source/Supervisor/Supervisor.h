@@ -6,6 +6,8 @@
 #include "OSFixes.hpp"
 #include "supervisor_generated.h"
 
+#include <cstdint>
+#include <string>                 
 #include <iostream>
 #include <vector>
 #include <map>
