@@ -782,11 +782,9 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "SupervisorState_t* Supervisor::__SupervisorState;\n\n";
 
     // Make a global pointer for Supervisot properties and State
-    supervisor_cpp << "SupervisorProperties_t* supervisorProperties = ";
-    supervisor_cpp << "Supervisor::__SupervisorProperties;\n";
+    supervisor_cpp << "SupervisorProperties_t* supervisorProperties;\n";
 
-    supervisor_cpp << "SupervisorState_t* supervisorState = ";
-    supervisor_cpp << "Supervisor::__SupervisorState;\n\n";
+    supervisor_cpp << "SupervisorState_t* supervisorState;\n\n";
 
 
     // Default Supervisor handler strings
@@ -923,6 +921,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "\tif(__SupervisorInit) return -1;\n";
     supervisor_cpp << "\t__SupervisorProperties = new SupervisorProperties_t;\n";
     supervisor_cpp << "\t__SupervisorState = new SupervisorState_t;\n\n";
+    supervisor_cpp << "\tsupervisorProperties = __SupervisorProperties;\n";
+    supervisor_cpp << "\tsupervisorState = __SupervisorState;\n\n";
     supervisor_cpp << supervisorOnInitHandler;
     supervisor_cpp << "\n\n\t__SupervisorInit = true;\n";
     supervisor_cpp << "\treturn 0;\n";
