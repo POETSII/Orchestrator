@@ -51,7 +51,9 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
     /* Check for errors as per the specification... */
     if (supervisors.find(appName)->second->error)
     {
-        *errorMessage = dlerror();
+        char* tmpErr = dlerror();
+        if (tmpErr != NULL) *errorMessage = tmpErr;
+        else *errorMessage = "libdl wrote no error message";
         return false;
     }
 
