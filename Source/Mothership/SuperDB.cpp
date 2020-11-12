@@ -78,17 +78,18 @@ bool SuperDB::unload_supervisor(std::string appName)
     /* Check whether or not a supervisor has already been loaded for this
      * application. */
     SuperIt superIt = supervisors.find(appName);
-    if (superIt != supervisors.end())
+    if (superIt == supervisors.end())
     {
         return false;
     }
 
     /* Otherwise, unload away (via destructor), but let it finish what it's
      * doing. */
-    pthread_mutex_lock(&(superIt->second->lock));
+    pthread_mutex_t* superLock = &(superIt->second->lock);
+    pthread_mutex_lock(superLock);
     SuperHolder* toDestroy = superIt->second;
     supervisors.erase(superIt); /* If it can't be found, it can't be locked */
-    pthread_mutex_unlock(&(superIt->second->lock));
+    pthread_mutex_unlock(superLock);
     delete toDestroy;
     return true;
 }
