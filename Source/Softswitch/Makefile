@@ -125,8 +125,8 @@ all : $(TARGETS) $(VCTARGETS) $(VDTARGETS) supervisor
 
 supervisor: $(BIN_DIR)/libSupervisor.so
 
-$(BIN_DIR)/libSupervisor.so: Supervisor.cpp Supervisor.h
-	$(MPICXX) $(MPICFLAGS) $(MPILDFLAGS) -Wl,-soname,libSupervisor.so -o $@ $<
+$(BIN_DIR)/libSupervisor.so: Supervisor.cpp Supervisor.h supervisor_generated.cpp supervisor_generated.h
+	$(MPICXX) $(MPICFLAGS) $(MPILDFLAGS) -Wl,-soname,libSupervisor.so -o $@ $(filter %.cpp,$^)
 
 $(BIN_DIR)/softswitch_code_%.v: $(BIN_DIR)/softswitch_%.elf
 	$(TINSELBIN)/checkelf.sh $<
