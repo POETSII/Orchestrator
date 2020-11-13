@@ -2258,16 +2258,11 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
         std::vector<unsigned> arcKeysOut;
         graphI->G.FindArcs(devI->Key, arcKeysIn, arcKeysOut);
 
-        // Write the pin definitions/initialisers
-
-        writeDevIInputPinDefs(graphI, devT, threadAddr, thrDevName,
-                                arcKeysIn, vars_h, vars_cpp);
-        writeDevIOutputPinDefs(builderGraphI, devI, threadAddr, thrDevName,
-                                arcKeysOut, vars_h, vars_cpp);
-
-
         if (inTypCnt)
-        {   // Input pin array Declaration
+        {   // Input pin array Def/Init and Declaration
+    
+            writeDevIInputPinDefs(graphI, devT, threadAddr, thrDevName,
+                                    arcKeysIn, vars_h, vars_cpp);
             writeDevIInPinsDecl(thrDevName, inTypCnt, vars_h);
 
             devII << inTypCnt << ",";               // numInputs
@@ -2281,7 +2276,11 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
 
 
         if (outTypCnt)
-        {   // Output pin array declaration
+        {   // Output pin array Def/Init and declaration
+            
+            writeDevIOutputPinDefs(builderGraphI, devI, threadAddr, thrDevName,
+                                arcKeysOut, vars_h, vars_cpp);
+            
             writeDevIOutPinsDecl(thrDevName, outTypCnt, vars_h);
 
             devII << outTypCnt << ",";               // numOutputs
@@ -2372,22 +2371,24 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
     // Write the initialisers to the vars.cpp
     vars_cpp << devII.rdbuf();
 
-    if(devT->pStateD)
+    if(devT->pPropsD)
     {
         vars_cpp << devPI.rdbuf();
+        
+        // Make sure the properties decl is there.
+        vars_h << "extern devtyp_" << devT->Name() << "_props_t Thread_";
+        vars_h << threadAddr << "_DeviceProperties[";
+        vars_h << numberOfDevices << "];\n";
     }
 
     if(devT->pStateD)
     {
         vars_cpp << devSI.rdbuf();
+        
+        // Make sure the state decl is there.
+        vars_h << "extern devtyp_" << devT->Name() << "_state_t Thread_";
+        vars_h << threadAddr << "_DeviceState[" << numberOfDevices << "];\n\n";
     }
-
-    // Make sure the properties and state decls are there.
-    vars_h << "extern devtyp_" << devT->Name() << "_props_t Thread_";
-    vars_h << threadAddr << "_DeviceProperties[" << numberOfDevices << "];\n";
-
-    vars_h << "extern devtyp_" << devT->Name() << "_state_t Thread_";
-    vars_h << threadAddr << "_DeviceState[" << numberOfDevices << "];\n\n";
 
 }
 
