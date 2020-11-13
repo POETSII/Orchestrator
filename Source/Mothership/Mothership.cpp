@@ -18,6 +18,21 @@ Mothership::Mothership(int argc, char** argv):
 
 Mothership::~Mothership()
 {
+    /* Stop all running supervisors, because we're nice like that. */
+    DebugPrint("[MOTHERSHIP] Stopping all running applications...\n");
+    for (AppInfoIt appIt = appdb.appInfos.begin();
+         appIt != appdb.appInfos.end(); appIt++)
+    {
+        if (appIt->second.state == RUNNING)
+        {
+            DebugPrint("[MOTHERSHIP] Stopping application '%s'...\n",
+                       appIt->first.c_str());
+            stop_application(&(appIt->second));
+            DebugPrint("[MOTHERSHIP] Stopped application '%s'.\n",
+                       appIt->first.c_str());
+        }
+    }
+
     /* Tear down backend. */
     if (backend != PNULL)
     {
