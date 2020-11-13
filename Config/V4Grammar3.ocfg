@@ -76,7 +76,7 @@
         <MetaData MetaData="[]"/>
       </ExtI>
     </DeviceInstances>
-    <EdgeInstances EdgeInstances="[1]">
+    <EdgeInstances EdgeInstances="[0..1]">
       <EdgeI EdgeI="[],[1]path(path),[0..1](P,S)">
         <MetaData MetaData="[]"/>
       </EdgeI>
