@@ -10,24 +10,6 @@ SuperDB::~SuperDB()
     supervisors.clear();
 }
 
-/* Calls the idle handlers for each loaded supervisor in turn, if that
- * supervisor is not busy doing something else. */
-void SuperDB::idle_rotation()
-{
-    for (SuperIt superIt = supervisors.begin(); superIt != supervisors.end();
-         superIt++)
-    {
-        /* Ignore if it's locked. */
-        if (pthread_mutex_trylock(&(superIt->second->lock)) != 0) continue;
-
-        /* Call idle method for this supervisor. */
-        idle_supervisor(superIt->first);
-
-        /* Unlock the mutex we've claimed. */
-        pthread_mutex_unlock(&(superIt->second->lock));
-    }
-}
-
 /* Loads a supervisor into the database, returning true on success and false on
  * failure. If there is a failure, errorMessage is written with the contents of
  * the error. */

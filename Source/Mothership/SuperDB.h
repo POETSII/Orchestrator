@@ -41,7 +41,6 @@ public:
 
     int call_supervisor(std::string appName, PMsg_p* inputMessage,
                         PMsg_p* outputMessage);
-    void idle_rotation();
     bool load_supervisor(std::string appName, std::string path,
                          std::string* errorMessage);
     bool reload_supervisor(std::string appName, std::string* errorMessage);

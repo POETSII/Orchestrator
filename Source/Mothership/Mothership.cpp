@@ -126,8 +126,31 @@ bool Mothership::debug_post(int code, unsigned numArgs, ...)
 }
 
 /* Defines OnIdle behaviour for the Mothership (ala CommonBase) - this
- * currently just calls the idle handler for loaded supervisors in a loop. */
-void Mothership::OnIdle(){superdb.idle_rotation();}
+ * currently just calls the idle handler for loaded supervisors, skipping
+ * supervisors that are not already being called, and skipping supervisors for
+ * applications that are not running. */
+void Mothership::OnIdle()
+{
+    for (SuperIt superIt = superdb.supervisors.begin();
+         superIt != superdb.supervisors.end(); superIt++)
+    {
+        /* Ignore if its application is not running. Note that supervisors
+         * should have a corresponding appdb entry, but we add a guard here
+         * just in case. */
+        AppInfoIt appFinder = appdb.appInfos.find(superIt->first);
+        if (appFinder == appdb.appInfos.end()) continue;
+        if (appFinder->second.state != RUNNING) continue;
+
+        /* Ignore if it's locked. */
+        if (pthread_mutex_trylock(&(superIt->second->lock)) != 0) continue;
+
+        /* Call idle method for this supervisor. */
+        superdb.idle_supervisor(superIt->first);
+
+        /* Unlock the mutex we've claimed. */
+        pthread_mutex_unlock(&(superIt->second->lock));
+    }
+}
 
 /* Sets up the function map for MPI communications. See the CommonBase
  * documentation for more information on how this is expected to work. */
