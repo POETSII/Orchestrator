@@ -1155,7 +1155,7 @@ void Composer::formHandlerPreamble(devTypStrings_t* dTypStrs)
 
     handlerPreamble_SS << "{\n";
 
-    if (devT->pPropsD)
+    if (devT->par->pPropsD)
     {
         handlerPreamble_SS << "    const global_props_t* graphProperties ";
         handlerPreamble_SS << "OS_ATTRIBUTE_UNUSED= ";
