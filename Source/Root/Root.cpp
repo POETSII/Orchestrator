@@ -84,9 +84,12 @@ if(pthread_create(&kb_thread,NULL,kb_func,args))
   fprintf(stdout,"Error creating kb_thread\n");
 fflush(stdout);
 
-/* Handle input arguments - grab the hdfPath and/or batchPath. */
+/* Grab default hdfPath from configuration. */
+std::string hdfPath = pOC->Hardware();
+
+/* Handle input arguments - grab the hdfPath and/or batchPath (the former
+ * clobbers a definition from config). */
 std::string rawArgs;
-std::string hdfPath;
 std::string batchPath;
 for (int i=1; i<argc; i++)
 {
