@@ -9,6 +9,7 @@
 #include <string>
 
 #include "dfprintf.h"
+#include "OSFixes.hpp"
 #include "SuperHolder.h"
 
 /* I'm lazy. */
@@ -36,9 +37,10 @@ int SuperDB::HANDLE_SUPERVISOR_FN_NAME(HANDLER_NAME)(std::string appName) \
 class SuperDB
 {
 public:
+    SuperDB();
     ~SuperDB();
-    std::map<std::string, SuperHolder*> supervisors;
 
+    SuperHolder* get_next_idle(std::string& name);
     int call_supervisor(std::string appName, PMsg_p* inputMessage,
                         PMsg_p* outputMessage);
     bool load_supervisor(std::string appName, std::string path,
@@ -51,6 +53,10 @@ public:
 HANDLE_SUPERVISOR_DECL(init)
 HANDLE_SUPERVISOR_DECL(exit)
 HANDLE_SUPERVISOR_DECL(idle)
+
+private:
+    std::map<std::string, SuperHolder*> supervisors;
+    std::map<std::string, SuperHolder*>::iterator nextIdle;
 };
 
 #endif

@@ -68,7 +68,7 @@
   </GraphType>
   <GraphInstance GraphInstance="[],[1](id,graphTypeId),[0..1](P)">
     <MetaData MetaData="[]"/>
-    <DeviceInstances DeviceInstances="[1]">
+    <DeviceInstances DeviceInstances="[0..1]">
       <DevI DevI="[],[1](id,type),[0..1](P,S)">
         <MetaData MetaData="[]"/>
       </DevI>

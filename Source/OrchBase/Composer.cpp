@@ -743,7 +743,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     builderGraphI->devISuperIdxMap.clear();         // sanity clear
 
     supervisor_cpp << "const std::vector<SupervisorDeviceInstance_t> ";
-    supervisor_cpp << "Supervisor::DeviceVector = {";
+    supervisor_cpp << "Supervisor::DeviceVector = { ";
     WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,graphI->G,i)
     {
         DevI_t* devI = graphI->G.NodeData(i);
@@ -817,7 +817,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         {
             supervisor_cpp << "const global_props_t* graphProperties ";
             supervisor_cpp << "= &GraphProperties;\n\n";
-            
+
             supervisor_h << "extern const global_props_t* graphProperties;\n\n";
         }
 
@@ -951,9 +951,11 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorState)\n";
     */
 
-    supervisor_cpp << "\tconst SupervisorImplicitRecvMessage_t* message = ";
+    supervisor_cpp << "\tconst SupervisorImplicitRecvMessage_t* message";
+    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
     supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>";
-    supervisor_cpp << "(static_cast<const void*>(inMsg->payload));\n\n";
+    supervisor_cpp << "(static_cast<const void*>(inMsg->payload));\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
 
     supervisor_cpp << supervisorOnImplicitHandler;
     supervisor_cpp << "\n\n\treturn 0;\n";
@@ -1246,7 +1248,7 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
     handlers_cpp << "void* __Device, uint32_t* readyToSend)\n";
     handlers_cpp << dTypStrs->handlerPreamble;
     handlers_cpp << dTypStrs->handlerPreambleCS;
-    handlers_cpp << devT->pOnRTS->C_src() << "\n";
+    if (devT->pOnRTS != 0) handlers_cpp << devT->pOnRTS->C_src() << "\n";
     // we assume here the return value is intended to be an RTS bitmap.
     handlers_cpp << "    return *readyToSend;\n";
     handlers_cpp << "}\n\n";
@@ -2260,7 +2262,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
 
         if (inTypCnt)
         {   // Input pin array Def/Init and Declaration
-    
+
             writeDevIInputPinDefs(graphI, devT, threadAddr, thrDevName,
                                     arcKeysIn, vars_h, vars_cpp);
             writeDevIInPinsDecl(thrDevName, inTypCnt, vars_h);
@@ -2277,10 +2279,10 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
 
         if (outTypCnt)
         {   // Output pin array Def/Init and declaration
-            
+
             writeDevIOutputPinDefs(builderGraphI, devI, threadAddr, thrDevName,
                                 arcKeysOut, vars_h, vars_cpp);
-            
+
             writeDevIOutPinsDecl(thrDevName, outTypCnt, vars_h);
 
             devII << outTypCnt << ",";               // numOutputs
@@ -2374,7 +2376,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
     if(devT->pPropsD)
     {
         vars_cpp << devPI.rdbuf();
-        
+
         // Make sure the properties decl is there.
         vars_h << "extern devtyp_" << devT->Name() << "_props_t Thread_";
         vars_h << threadAddr << "_DeviceProperties[";
@@ -2384,7 +2386,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
     if(devT->pStateD)
     {
         vars_cpp << devSI.rdbuf();
-        
+
         // Make sure the state decl is there.
         vars_h << "extern devtyp_" << devT->Name() << "_state_t Thread_";
         vars_h << threadAddr << "_DeviceState[" << numberOfDevices << "];\n\n";

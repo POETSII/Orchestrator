@@ -1,5 +1,7 @@
 #include "SuperDB.h"
 
+SuperDB::SuperDB(){nextIdle = supervisors.begin();}
+
 /* Cleanup. */
 SuperDB::~SuperDB()
 {
@@ -8,7 +10,28 @@ SuperDB::~SuperDB()
     for (SuperIt superIt = supervisors.begin(); superIt != supervisors.end();
          superIt++) delete superIt->second;
     supervisors.clear();
+    nextIdle = supervisors.begin();
 }
+
+/* Gets the next supervisor in the idle rotation. Returns PNULL if there is no
+ * supervisor to grab. The caller needs to ensure that the supervisor is not
+ * locked, and that the application is running.*/
+SuperHolder* SuperDB::get_next_idle(std::string& name)
+{
+    /* Protect against having no defined supervisors. */
+    if (supervisors.empty()) return PNULL;
+
+    if (nextIdle == supervisors.end()) nextIdle = supervisors.begin();
+    else
+    {
+        nextIdle++;
+        if (nextIdle == supervisors.end()) nextIdle = supervisors.begin();
+    }
+
+    name = nextIdle->first;
+    return nextIdle->second;
+}
+
 
 /* Loads a supervisor into the database, returning true on success and false on
  * failure. If there is a failure, errorMessage is written with the contents of
@@ -29,6 +52,7 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
 
     /* Otherwise, load up. */
     supervisors[appName] = new SuperHolder(path);
+    nextIdle = supervisors.begin();
 
     /* Check for errors as per the specification... */
     if (supervisors.find(appName)->second->error)
@@ -71,6 +95,7 @@ bool SuperDB::unload_supervisor(std::string appName)
     pthread_mutex_lock(superLock);
     SuperHolder* toDestroy = superIt->second;
     supervisors.erase(superIt); /* If it can't be found, it can't be locked */
+    nextIdle = supervisors.begin();
     pthread_mutex_unlock(superLock);
     delete toDestroy;
     return true;
