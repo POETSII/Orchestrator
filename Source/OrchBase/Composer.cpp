@@ -44,8 +44,8 @@ ComposerGraphI_t::~ComposerGraphI_t()
     WALKMAP(DevT_t*, devTypStrings_t*, devTStrsMap, devTStrs)
     {
         delete devTStrs->second;
-        devTStrsMap.erase(devTStrs);
     }
+    devTStrsMap.clear();
 }
 
 //Safely clear the DevT strings Map
@@ -80,8 +80,8 @@ Composer::~Composer()
     WALKMAP(GraphI_t*, ComposerGraphI_t*, graphIMap, graphISrch)
     {
         delete graphISrch->second;
-        graphIMap.erase(graphISrch);
     }
+    graphIMap.clear();
 }
 
 
