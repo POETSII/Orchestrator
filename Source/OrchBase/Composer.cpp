@@ -743,7 +743,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     builderGraphI->devISuperIdxMap.clear();         // sanity clear
 
     supervisor_cpp << "const std::vector<SupervisorDeviceInstance_t> ";
-    supervisor_cpp << "Supervisor::DeviceVector = {";
+    supervisor_cpp << "Supervisor::DeviceVector = { ";
     WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,graphI->G,i)
     {
         DevI_t* devI = graphI->G.NodeData(i);
