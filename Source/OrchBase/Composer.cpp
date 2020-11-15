@@ -951,9 +951,11 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorState)\n";
     */
 
-    supervisor_cpp << "\tconst SupervisorImplicitRecvMessage_t* message = ";
+    supervisor_cpp << "\tconst SupervisorImplicitRecvMessage_t* message";
+    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
     supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>";
-    supervisor_cpp << "(static_cast<const void*>(inMsg->payload));\n\n";
+    supervisor_cpp << "(static_cast<const void*>(inMsg->payload));\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
 
     supervisor_cpp << supervisorOnImplicitHandler;
     supervisor_cpp << "\n\n\treturn 0;\n";
