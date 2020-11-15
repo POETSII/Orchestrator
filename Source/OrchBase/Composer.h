@@ -60,7 +60,7 @@ typedef struct ComposerGraphI_t
     
     // Maps/vector filled during generation. These are only valid if "generated"
     devTStrsMap_t devTStrsMap;              // Common strings for each DeVT
-    std::vector<DevI_t*> supevisorDevTVect; // Supervisor Edge Index handling. 
+    std::vector<DevI_t*> supevisorDevIVect; // Supervisor Edge Index handling. 
     devISuperIdxMap_t   devISuperIdxMap;    // Supervisor Edge Index handling. 
     // TODO: This is inherently single-supervisor for now and needs modifying to
     // have one vector per supervisor.

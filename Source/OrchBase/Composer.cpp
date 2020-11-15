@@ -739,7 +739,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     // this supervisor. For now, that is all devices so we (ab)use Digraph.
     // TODO: change for multi supervisor.
     int devIdx = 0; // Faster than using std::distance
-    builderGraphI->supevisorDevTVect.clear();       // Sanity clear
+    builderGraphI->supevisorDevIVect.clear();       // Sanity clear
     builderGraphI->devISuperIdxMap.clear();         // sanity clear
 
     supervisor_cpp << "const std::vector<SupervisorDeviceInstance_t> ";
@@ -750,7 +750,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 
         if(devI->pT->devTyp != 'D') continue;
 
-        builderGraphI->supevisorDevTVect.push_back(devI);
+        builderGraphI->supevisorDevIVect.push_back(devI);
         builderGraphI->devISuperIdxMap.insert(devISuperIdxMap_t::value_type(devI,devIdx));
 
         // Get the Thread for the HW addr
@@ -2879,9 +2879,9 @@ void Composer::writeDevIOutputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
                         & P_HD_DESTEDGEINDEX_MASK);
 
             // Pin Index
-            if(outPinI != PNULL)
+            if(inPinI != PNULL)
             {   // Pointless sanity check?
-                pinAddr |= (((outPinI->pT->Idx) << P_HD_TGTPIN_SHIFT)
+                pinAddr |= (((inPinI->pT->Idx) << P_HD_TGTPIN_SHIFT)
                             & P_HD_TGTPIN_MASK);
             }
             else
