@@ -817,7 +817,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         {
             supervisor_cpp << "const global_props_t* graphProperties ";
             supervisor_cpp << "= &GraphProperties;\n\n";
-            
+
             supervisor_h << "extern const global_props_t* graphProperties;\n\n";
         }
 
@@ -2262,7 +2262,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
 
         if (inTypCnt)
         {   // Input pin array Def/Init and Declaration
-    
+
             writeDevIInputPinDefs(graphI, devT, threadAddr, thrDevName,
                                     arcKeysIn, vars_h, vars_cpp);
             writeDevIInPinsDecl(thrDevName, inTypCnt, vars_h);
@@ -2279,10 +2279,10 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
 
         if (outTypCnt)
         {   // Output pin array Def/Init and declaration
-            
+
             writeDevIOutputPinDefs(builderGraphI, devI, threadAddr, thrDevName,
                                 arcKeysOut, vars_h, vars_cpp);
-            
+
             writeDevIOutPinsDecl(thrDevName, outTypCnt, vars_h);
 
             devII << outTypCnt << ",";               // numOutputs
@@ -2376,7 +2376,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
     if(devT->pPropsD)
     {
         vars_cpp << devPI.rdbuf();
-        
+
         // Make sure the properties decl is there.
         vars_h << "extern devtyp_" << devT->Name() << "_props_t Thread_";
         vars_h << threadAddr << "_DeviceProperties[";
@@ -2386,7 +2386,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
     if(devT->pStateD)
     {
         vars_cpp << devSI.rdbuf();
-        
+
         // Make sure the state decl is there.
         vars_h << "extern devtyp_" << devT->Name() << "_state_t Thread_";
         vars_h << threadAddr << "_DeviceState[" << numberOfDevices << "];\n\n";

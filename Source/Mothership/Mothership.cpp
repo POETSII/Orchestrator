@@ -126,30 +126,31 @@ bool Mothership::debug_post(int code, unsigned numArgs, ...)
 }
 
 /* Defines OnIdle behaviour for the Mothership (ala CommonBase) - this
- * currently just calls the idle handler for loaded supervisors, skipping
+ * currently just calls the idle handler for one supervisor, skipping
  * supervisors that are not already being called, and skipping supervisors for
  * applications that are not running. */
 void Mothership::OnIdle()
 {
-    for (SuperIt superIt = superdb.supervisors.begin();
-         superIt != superdb.supervisors.end(); superIt++)
-    {
-        /* Ignore if its application is not running. Note that supervisors
-         * should have a corresponding appdb entry, but we add a guard here
-         * just in case. */
-        AppInfoIt appFinder = appdb.appInfos.find(superIt->first);
-        if (appFinder == appdb.appInfos.end()) continue;
-        if (appFinder->second.state != RUNNING) continue;
+    /* Get next supervisor to use. */
+    std::string name;
+    SuperHolder* chosenOne = superdb.get_next_idle(name);
+    if (chosenOne == PNULL) return;
 
-        /* Ignore if it's locked. */
-        if (pthread_mutex_trylock(&(superIt->second->lock)) != 0) continue;
+    /* Ignore if its application is not running. Note that supervisors should
+     * have a corresponding appdb entry, but we add a guard here just in
+     * case. */
+    AppInfoIt appFinder = appdb.appInfos.find(name);
+    if (appFinder == appdb.appInfos.end()) return;
+    if (appFinder->second.state != RUNNING) return;
 
-        /* Call idle method for this supervisor. */
-        superdb.idle_supervisor(superIt->first);
+    /* Ignore if it's locked. */
+    if (pthread_mutex_trylock(&(chosenOne->lock)) != 0) return;
 
-        /* Unlock the mutex we've claimed. */
-        pthread_mutex_unlock(&(superIt->second->lock));
-    }
+    /* Call idle method for this supervisor. */
+    superdb.idle_supervisor(name);
+
+    /* Unlock the mutex we've claimed. */
+    pthread_mutex_unlock(&(chosenOne->lock));
 }
 
 /* Sets up the function map for MPI communications. See the CommonBase
