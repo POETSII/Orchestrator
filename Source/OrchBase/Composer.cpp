@@ -1248,7 +1248,7 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
     handlers_cpp << "void* __Device, uint32_t* readyToSend)\n";
     handlers_cpp << dTypStrs->handlerPreamble;
     handlers_cpp << dTypStrs->handlerPreambleCS;
-    handlers_cpp << devT->pOnRTS->C_src() << "\n";
+    if (devT->pOnRTS != 0) handlers_cpp << devT->pOnRTS->C_src() << "\n";
     // we assume here the return value is intended to be an RTS bitmap.
     handlers_cpp << "    return *readyToSend;\n";
     handlers_cpp << "}\n\n";
