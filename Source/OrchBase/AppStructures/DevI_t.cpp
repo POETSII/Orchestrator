@@ -9,14 +9,12 @@
 
 //==============================================================================
 
-DevI_t::DevI_t(GraphI_t * G, string name):par(G),pT(0)
+DevI_t::DevI_t(GraphI_t * G, string name):par(G),pT(0),pPropsI(0),pStateI(0)
 {
 Name(name);
 Npar(G);
 Key = 0;
 devTyp = 'U';
-pPropsI = "";
-pStateI = "";
 }
 
 //------------------------------------------------------------------------------
@@ -24,6 +22,9 @@ pStateI = "";
 DevI_t::~DevI_t()
 {
 WALKVECTOR(Meta_t *,Meta_v,i) delete *i;
+
+if (pStateI!=0) delete pStateI;
+if (pPropsI!=0) delete pPropsI;
 }
 
 //------------------------------------------------------------------------------
@@ -43,8 +44,10 @@ fprintf(fp,"%sDevice instance type      %c\n",os,devTyp);
 fprintf(fp,"%sDevice type link          %#018lx\n",os,(uint64_t)pT);
 if (pT!=0) fprintf(fp,"%s...%s\n",os,pT->FullName().c_str());
 fprintf(fp,"%sGraph device key          %u\n",os,Key);
-fprintf(fp,"%sProperties initialiser    %s\n",os,pPropsI.c_str());
-fprintf(fp,"%sState initialiser         %s\n",os,pStateI.c_str());
+fprintf(fp,"%sProperties initialiser %#018lx\n",os,(uint64_t)pPropsI);
+if (pPropsI!=0) pPropsI->Dump(off+2,fp);
+fprintf(fp,"%sPState initialiser %#018lx\n",os,(uint64_t)pStateI);
+if (pStateI!=0) pStateI->Dump(off+2,fp);
 fprintf(fp,"%sMetadata vector has %lu entries:\n",os,Meta_v.size());
 WALKVECTOR(Meta_t *,Meta_v,i) (*i)->Dump(off+2,fp);
 fprintf(fp,"%sScaffold name:pin map has %lu entries:\n",os,Pmap.size());
