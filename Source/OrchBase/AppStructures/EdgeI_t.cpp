@@ -2,17 +2,16 @@
 
 #include "EdgeI_t.h"
 #include "GraphI_t.h"
+#include "CFrag.h"
 #include "Meta_t.h"
 
 //==============================================================================
 
-EdgeI_t::EdgeI_t(GraphI_t * G, string name): par(G)
+EdgeI_t::EdgeI_t(GraphI_t * G, string name): par(G),pPropsI(0),pStateI(0)
 {
 Name(name);
 Npar(G);
 Key = 0;
-pPropsI = "";
-pStateI = "";
 }
 
 //------------------------------------------------------------------------------
@@ -20,6 +19,9 @@ pStateI = "";
 EdgeI_t::~EdgeI_t()
 {
 WALKVECTOR(Meta_t *,Meta_v,i) delete *i;
+
+if (pStateI!=0) delete pStateI;
+if (pPropsI!=0) delete pPropsI;
 }
 
 //------------------------------------------------------------------------------
@@ -36,8 +38,10 @@ if (par!=0) fprintf(fp,"%s...%s\n",os,par->FullName().c_str());
 fprintf(fp,"%sP-address :\n",os);
 addr.Dump(off+2,fp);
 fprintf(fp,"%sGraph key      %u\n",os,Key);
-fprintf(fp,"%sProperties initialiser    %s\n",os,pPropsI.c_str());
-fprintf(fp,"%sState initialiser         %s\n",os,pStateI.c_str());
+fprintf(fp,"%sProperties initialiser %#018lx\n",os,(uint64_t)pPropsI);
+if (pPropsI!=0) pPropsI->Dump(off+2,fp);
+fprintf(fp,"%sPState initialiser %#018lx\n",os,(uint64_t)pStateI);
+if (pStateI!=0) pStateI->Dump(off+2,fp);
 fprintf(fp,"%sMetadata vector has %lu entries:\n",os,Meta_v.size());
 WALKVECTOR(Meta_t *,Meta_v,i) (*i)->Dump(off+2,fp);
 NameBase::Dump(off+2,fp);

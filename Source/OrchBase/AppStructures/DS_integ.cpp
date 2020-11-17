@@ -138,6 +138,8 @@ WALKVECTOR(GraphI_t *,pA->GraphI_v,i) {// Walk graph instances
   if (pG->tyId2.empty())
     fprintf(fd,"E%3u. (%3u) "
       "Graph instance %s has no actual type defined\n",++ecnt,ld,Gcs);
+  if (pG->pPropsI==0) fprintf(fd,"I   . (%3u) "
+    "Graph instance %s has no specified properties initialiser\n",ld,Gcs);
   if (pG->Dmap.empty())
     fprintf(fd,"E%3u. (%3u) "
       "Graph instance %s has no device map entries\n",++ecnt,ld,Gcs);
@@ -160,10 +162,10 @@ WALKVECTOR(GraphI_t *,pA->GraphI_v,i) {// Walk graph instances
         "%s %s has no specified type\n",++ecnt,l,Dis,Dcs);
     if (pD->Key==0) fprintf(fd,"W%3u. (%3u) "
       "%s %s has no specified graph key\n",++wcnt,l,Dis,Dcs);
-    if (pD->pPropsI=="") fprintf(fd,"I   . (%3u) "
-      "%s %s has no specified properties initialiser\n",++wcnt,Dis,Dcs);
-    if (pD->pStateI=="") fprintf(fd,"I   . (%3u) "
-      "%s %s has no specified state initialiser\n",++wcnt,Dis,Dcs);
+    if (pD->pPropsI==0) fprintf(fd,"I   . (%3u) "
+      "%s %s has no specified properties initialiser\n",l,Dis,Dcs);
+    if (pD->pStateI==0) fprintf(fd,"I   . (%3u) "
+      "%s %s has no specified state initialiser\n",l,Dis,Dcs);
     if (pG->G.SizeInPins(pD->Key)==0) fprintf(fd,"W%3u. (%3u) "
        "%s %s has no packet input pins\n",++wcnt,l,Dis,Dcs);
     if (pG->G.SizeOutPins(pD->Key)==0) fprintf(fd,"W%3u. (%3u) "
