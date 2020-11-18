@@ -53,8 +53,7 @@ void softswitch_init(ThreadCtxt_t* ThreadContext)
 // <!> You know it's a hack when the "pragma GCC" comes out.
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
-// 150 works consistently as an end-point in my testing. 125 does not.
-void softswitch_delay(){for (uint32_t i=0; i<150; i++);}
+void softswitch_delay(){for (uint32_t i=0; i<500; i++);}
 #pragma GCC pop_options
 
 
