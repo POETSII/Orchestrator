@@ -25,7 +25,7 @@
 #define SUPER_SEND(PAYLOAD) tinselSend(tinselHostId(), PAYLOAD)
 #else
 #define SUPER_SEND(PAYLOAD) tinselSend(tinselMyBridgeId(), PAYLOAD)
-#end
+#endif
 
 #define MAX_LOG_PKT_BUFS 4
 
