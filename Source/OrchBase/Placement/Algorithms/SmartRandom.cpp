@@ -88,7 +88,7 @@ float SmartRandom::do_it(GraphI_t* gi)
 
             /* If we couldn't find a thread on that core that has space, remove
              * that core from the valid cores map (for all device types). */
-            if (threadIt == core->P_threadm.end())
+            if (threadIt == exitCondition)
             {
                 for (badCoreIt = validCoresForDeviceType.begin();
                      badCoreIt != validCoresForDeviceType.end(); badCoreIt++)
