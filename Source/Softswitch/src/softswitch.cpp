@@ -78,7 +78,6 @@ void softswitch_trivial_log_handler(const char* &logStr)
         }
         pyld->seq = i;
 
-        tinselSend(tinselHostId(), send_buf); // Send it
+        SUPER_SEND(send_buf); // Send it
     }
 }
-

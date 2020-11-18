@@ -3,7 +3,6 @@
 #include <cstring>
 #include "stdint.h"
 
-
 void softswitch_init(ThreadCtxt_t* ThreadContext)
 {
 #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION
@@ -73,7 +72,7 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
 
     // and then issue the packet indicating this thread's startup is complete.
     tinselSetLen((p_hdr_size() - 1) >> TinselLogBytesPerFlit);
-    tinselSend(tinselMyBridgeId(), send_buf);
+    SUPER_SEND(send_buf);
 
     // second phase of barrier: wait for the supervisor's response
     ThreadContext->ctlEnd = 1;
@@ -357,8 +356,7 @@ inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile voi
     // Send it
     uint32_t len = p_hdr_size() + p_instrpkt_pyld_size;
     tinselSetLen((len - 1) >> TinselLogBytesPerFlit);    // Set the packet length
-    tinselSend(tinselHostId(), send_buf); // Send it
-
+    SUPER_SEND(send_buf);
 
     // Reset fields.
     ThreadContext->lastCycles = cycles;
@@ -426,7 +424,7 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
 
         if(hdr->swAddr & P_SW_MOTHERSHIP_MASK)
         {   // Message to the Supervisor or External (this goes via the Supervisor)
-            tinselSend(tinselHostId(), send_buf);   // Goes to the tinselHost
+            SUPER_SEND(send_buf);  // Goes to the tinselHost
             ThreadContext->superCount++;         // Increment Supervisor Pkt count
         }
         else
@@ -447,7 +445,7 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
             last[15] = device->deviceID;
 
             tinselSetLen(TinselMaxFlitsPerMsg-1);
-            tinselSend(tinselHostId(), send_buf);
+            SUPER_SEND(send_buf);
             */
         }
         //--------------------------------------------------------------------------
