@@ -3,6 +3,7 @@
 #include "CmDepl.h"
 #include "OrchBase.h"
 #include "Pglobals.h"
+#include "SupervisorModes.h"
 
 //==============================================================================
 
@@ -121,10 +122,16 @@ int CmDepl::DeployGraph(GraphI_t* gi)
     for (boxIt = par->pE->P_boxm.begin(); boxIt != par->pE->P_boxm.end();
          boxIt++)
     {
+#if SINGLE_SUPERVISOR_MODE
+        /* Grab the only Mothership (which may be invalid). We don't exit
+         * immediatelyif there is no Mothership (we fail later). */
+        mothershipProc = par->loneMothership;
+#else
         /* Grab the Mothership for this box (which may be invalid). We don't
          * exit if we find an invalid entry - there may not be any devices for
          * this graph instance mapped to the box in question. */
         mothershipProc = par->P_SCMm2[boxIt->second];
+#endif
 
         /* A special "null" value defined for this rank. We have not yet
          * checked to see if this box has a Mothership mapped to it - we don't

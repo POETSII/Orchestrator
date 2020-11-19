@@ -14,6 +14,7 @@ class P_super;
 #include "Environment.h"
 #include "CommonBase.h"
 #include "Trace.h"
+#include "SupervisorModes.h"
 
 #include "CmCall.h"
 #include "CmComp.h"
@@ -64,9 +65,14 @@ Composer *             pComposer;      // Object to compose binaries
 Trace                  Tr;             // Debug trace subsystem
 FILE *                 fd;             // Output file stream for details
 
+#if SINGLE_SUPERVISOR_MODE
+// There's only one mothership
+ProcMap::ProcMap_t * loneMothership;
+#else
 // Bimap of boxes to motherships, where the pair holds unique processes by
 // their procmap entry. Yes, the name is an attempt at facetiousness.
 map2<P_box *, ProcMap::ProcMap_t *> P_SCMm2;
+#endif
 
 CmCall *               pCmCall;
 CmComp *               pCmComp;

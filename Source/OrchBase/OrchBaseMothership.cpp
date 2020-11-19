@@ -5,10 +5,18 @@
 #include "Pglobals.h"
 
 /* Constructs the bimap of mothership processes to boxes in the engine
- * (OrchBase.P_SCMm2). */
+ * (OrchBase.P_SCMm2). In single-supervisor mode, just finds the lone
+ * Mothership, if there is one. */
 void OrchBase::BuildMshipMap()
 {
     std::vector<ProcMap::ProcMap_t>::iterator procIt;
+#if SINGLE_SUPERVISOR_MODE
+    procIt = pPmap->vPmap.begin();
+    while (procIt != pPmap->vPmap.end() and
+           procIt->P_class != csMOTHERSHIPproc) procIt++;
+    if (procIt == pPmap->vPmap.end()) loneMothership = PNULL;
+    else loneMothership = &*procIt;
+#else
     std::map<AddressComponent, P_box*>::iterator boxIt;
     bool foundAMothershipForThisBox;
 
@@ -42,6 +50,7 @@ void OrchBase::BuildMshipMap()
             Post(168, boxIt->second->Name().c_str());
         }
     }
+#endif
 }
 
 /* Sends a command-and-control message to all Motherships for the set of graph
@@ -88,6 +97,12 @@ void OrchBase::MshipCommand(Cli::Cl_t clause, std::string command)
         message.Src(Urank);
         message.Put(0, &graphName);
 
+#if SINGLE_SUPERVISOR_MODE
+        /* Just yeet it to the first Mothership (there's guaranteed to be one
+         * at this point, as we could not have deployed earlier otherwise). */
+        message.Tgt(loneMothership->P_rank);
+        message.Send();
+#else
         /* Get the set of important boxes. */
         pPlacer->get_boxes_for_gi(*graphIt, &boxesOfImport);
 
@@ -98,5 +113,6 @@ void OrchBase::MshipCommand(Cli::Cl_t clause, std::string command)
             message.Tgt(P_SCMm2[*boxIt]->P_rank);
             message.Send();
         }
+#endif
     }
 }
