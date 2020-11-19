@@ -1,4 +1,5 @@
 #include "Mothership.h"
+#include "SupervisorModes.h"
 
 Mothership::Mothership(int argc, char** argv):
     CommonBase(argc, argv, std::string(csMOTHERSHIPproc),
@@ -83,27 +84,32 @@ void Mothership::load_backend()
      * one-Mothership-over-many-boxes case, but do we even want to support that
      * once we're multi-box? (It was sarcasm - we don't). */
     DebugPrint("[MOTHERSHIP] Loading Tinsel backend...\n");
-    
-    /* Tinsel 0.8 requires hostlink to be called with a parameters argument to 
+
+    /* Tinsel 0.8 requires hostlink to be called with a parameters argument to
      * enable the additional send slot (which we need for supervisor messages)
-     * in the tinsel cores. This also means that we need to provide the size of 
+     * in the tinsel cores. This also means that we need to provide the size of
      * the cluster that we are using, which may have been overidden by
-     * environment variables. The below is essentially reproduced from the 
-     * default Hostlink constructor with the exception of "useExtraSendSlot"
-     * being set to true. */
-    /* This is horrible and we will change it (hostlink) when time allows */ 
-    char* str = getenv("HOSTLINK_BOXES_X");
-    int x = str ? atoi(str) : 1;
-    str = getenv("HOSTLINK_BOXES_Y");
-    int y = str ? atoi(str) : 1;
+     * environment variables. This is horrible and we will change it (hostlink)
+     * when time allows. */
     HostLinkParams params;
-    params.numBoxesX = x;
-    params.numBoxesY = y;
     params.useExtraSendSlot = true;
-    
+
+    /* In single-supervisor mode, only one Mothership is running. As a
+     * consequence of this, we claim the entire cluster available according to
+     * Tinsel. In multi-supervisor mode, each Mothership hosts only one box. */
+    char* strX = getenv("HOSTLINK_BOXES_X");
+    char* strY = getenv("HOSTLINK_BOXES_Y");
+#if SINGLE_SUPERVISOR_MODE
+    params.numBoxesX = strX ? atoi(strX) : TinselBoxMeshXLen;
+    params.numBoxesY = strY ? atoi(strY) : TinselBoxMeshYLen;
+#else
+    params.numBoxesX = strX ? atoi(strX) : 1;
+    params.numBoxesY = strY ? atoi(strY) : 1;
+#endif
+
     pthread_mutex_lock(&(threading.mutex_backend_api));
     if (backend != PNULL) delete backend;
-    backend = new HostLink(params); // Call hostlink with the parameters
+    backend = new HostLink(params);
     pthread_mutex_unlock(&(threading.mutex_backend_api));
     DebugPrint("[MOTHERSHIP] Tinsel backend loaded.\n");
 }
