@@ -24,15 +24,11 @@
 #include "PinI_t.h"
 #include "EdgeI_t.h"
 
-
-//class P_core;
-
 struct ComposerGraphI_t;
 struct devTypStrings_t;
 
 
 typedef std::map<PinI_t*, std::vector<unsigned> >   pinIArcKeyMap_t;
-typedef std::map<PinT_t*, unsigned>                 pinTIdxMap_t;
 typedef std::map<DevT_t*, devTypStrings_t*>         devTStrsMap_t;
 typedef std::map<GraphI_t*, ComposerGraphI_t*>      ComposerGraphIMap_t;
 
@@ -81,14 +77,6 @@ typedef struct ComposerGraphI_t
 } ComposerGraphI_t;
 
 
-
-struct binaries
-{
-    std::string data;
-    std::string instr;
-};
-
-
 class Composer
 {
 public:
@@ -104,8 +92,6 @@ int         compile(GraphI_t*);  // Compile Source Files
 int         decompose(GraphI_t*);  // Clean then degenerate
 int         degenerate(GraphI_t*); // Clear internal strings and generated files
 int         clean(GraphI_t*);      // Get rid of built files (e.g. a make clean)
-
-int         reset();    // Reset Composer
 
 void        setOutputPath(std::string);
 void        setPlacer(Placer*);

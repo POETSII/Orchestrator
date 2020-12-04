@@ -238,10 +238,6 @@ int Composer::generate(GraphI_t* graphI)
         fprintf(fd,"\tCore %lu: ",
           static_cast<unsigned long>(pCore->get_hardware_address()->as_uint()));
 
-        //TODO:
-        //mailboxCoreId = pCore->get_hardware_address()->get_mailbox();
-        //mailboxCoreId += pCore->get_hardware_address()->get_core();
-
         /*======================================================================
          * Find the device type strings for this core
          *======================================================================
@@ -558,15 +554,19 @@ int Composer::clean(GraphI_t* graphI)
         //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
         fprintf(fd,"\tFailed to remove %s\n",taskDir.c_str());
     }
-
+    
+    // Cleanup the core Binary paths.
+    WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
+    {
+        P_core* pCore = (*coreNode);
+        pCore->instructionBinary = "";
+    }
+    
+    // Cleanup Supervisor binary path.
+    builderGraphI->graphI->pSup->binPath = "";
+    
     builderGraphI->compiled = 0;
     builderGraphI->graphI->built = 0;
-    return 0;
-}
-
-int Composer::reset()
-{
-
     return 0;
 }
 
@@ -734,7 +734,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 
     // Write the static member initialisors (Supervisor::init and the Device Vector)
     supervisor_cpp << "bool Supervisor::__SupervisorInit = false;\n";
-
+    
+    
     // As part of this, we need to generate an edge index for each device on
     // this supervisor. For now, that is all devices so we (ab)use Digraph.
     // TODO: change for multi supervisor.
@@ -775,7 +776,34 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     }
     supervisor_cpp.seekp(-1,ios_base::cur); // Rewind one place to remove the stray ","
     supervisor_cpp << "\n};\n\n";               // properly terminate the initialiser
-
+    
+    
+    // Fill a vector of thread hardware addresses that this supervisor is responsible for
+    int threadIdx = 0; // Faster than using std::distance
+    
+    supervisor_cpp << "const std::vector<uint32_t> ";
+    supervisor_cpp << "Supervisor::ThreadVector = { ";
+    WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
+    {
+        P_core* pCore = (*coreNode);
+        WALKMAP(AddressComponent,P_thread*,pCore->P_threadm,threadIterator)
+        {   // Iterate over the threads on this core
+            P_thread* pThread = threadIterator->second;
+            if (placer->threadToDevices[pThread].size())
+            {   // if there are devices placed on the thread
+                supervisor_cpp << pThread->get_hardware_address()->as_uint();
+                supervisor_cpp << ",";
+                
+                // Add some line splitting
+                if(threadIdx%100 == 0) supervisor_cpp << "\n\t";     
+                threadIdx++;
+            }
+        }
+    }
+    supervisor_cpp.seekp(-1,ios_base::cur); // Rewind one place to remove the stray ","
+    supervisor_cpp << "\n};\n\n";               // properly terminate the initialiser
+    
+    
     // Add references for static class members
     supervisor_cpp << "SupervisorProperties_t* ";
     supervisor_cpp << "Supervisor::__SupervisorProperties;\n";
@@ -925,16 +953,20 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "\t__SupervisorState = new SupervisorState_t;\n\n";
     supervisor_cpp << "\tsupervisorProperties = __SupervisorProperties;\n";
     supervisor_cpp << "\tsupervisorState = __SupervisorState;\n\n";
+    supervisor_cpp << "\t__SupervisorInit = true;\n\n";
     supervisor_cpp << supervisorOnInitHandler;
-    supervisor_cpp << "\n\n\t__SupervisorInit = true;\n";
-    supervisor_cpp << "\treturn 0;\n";
+    supervisor_cpp << "\n\n\treturn 0;\n";
     supervisor_cpp << "}\n\n";
 
     // Stop handler
     supervisor_cpp << "int Supervisor::OnStop()\n{\n";
+    supervisor_cpp << "\tif(!__SupervisorInit) return -1;\n";
     supervisor_cpp << supervisorOnStopHandler;
     supervisor_cpp << "\n\n\tdelete __SupervisorProperties;\n";
     supervisor_cpp << "\tdelete __SupervisorState;\n";
+    supervisor_cpp << "\tsupervisorProperties = 0;\n";
+    supervisor_cpp << "\tsupervisorState = 0;\n\n";
+    supervisor_cpp << "\t__SupervisorInit = false;\n\n";
     supervisor_cpp << "\treturn 0;\n";
     supervisor_cpp << "}\n\n";
 
@@ -1122,32 +1154,6 @@ void Composer::formDevTStrings(ComposerGraphI_t* builderGraphI, DevT_t* devT)
 }
 
 /******************************************************************************
- * Add map entries for the indicies of pin types in the device type's in PinTI_v
- *****************************************************************************/
-/*void Composer::populatePinTIdxMap(DevT_t* devT)
-{
-    unsigned pinIdx = 0;        // Quicker than std::distance
-
-    WALKVECTOR(PinT_t*,devT->PinTI_v,pinI)
-    {
-        // Sanity check that we don't alreadyy exist
-        pinTIdxMap_t::iterator srch = pinTIdxMap.find((*pinI));
-        if (srch == pinTIdxMap.end())
-        {
-            //Cool, add the Pin Type.
-            pinTIdxMap.insert(dpinTIdxMap_t::value_type((*pinI), pinIdx));
-        }
-        else
-        {
-            // Somehow the PinT_t is already in the map. IMPOSSIBLE!
-            //TODO: Barf
-        }
-
-        pinIdx++;
-    }
-}*/
-
-/******************************************************************************
  * Form the common handler preamble (deviceProperties & deviceState)
  *****************************************************************************/
 void Composer::formHandlerPreamble(devTypStrings_t* dTypStrs)
@@ -1273,8 +1279,8 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
     {
         handlers_cpp << devT->pOnInit->C_src() << "\n";
     }
-    else handlers_cpp << "    return 0;\n"; // or a stub if not
-
+    
+    handlers_cpp << "    return 1;\n"; // A default Return of 1 to trigger RTS
     handlers_cpp << "}\n\n";
 
 
@@ -2779,7 +2785,7 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
         outEdgeTI << "{PNULL,";
 
         // Hardware address is replaced in the softswitch by a call to tinsel.
-        outEdgeTI << DEST_BROADCAST << ",";
+        outEdgeTI << P_DEST_BROADCAST << ",";
 
         // SW address needs to be set. Default 0 for most vakues, but left
         // configurable.
