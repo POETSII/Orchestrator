@@ -38,8 +38,8 @@ endif
 ifndef GENSRC
 GENSRC := $(realpath ../$(DEFAULT_GEN_DIR)/src)
 endif
-ifndef BIN_DIR
-BIN_DIR := ../bin
+ifndef BINDIR
+BINDIR := ../bin
 endif
 
 ifdef TRIVIAL_LOG_HANDLER
@@ -111,9 +111,9 @@ SECEXPCPPS := $(GENSRC)/%.cpp
 SECEXPOS := %.o
 
 # binary targets
-TARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_%.elf,$(wildcard $(GENINC)/vars_*.h))
-VCTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_code_%.v,$(wildcard $(GENINC)/vars_*.h))
-VDTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BIN_DIR)/softswitch_data_%.v,$(wildcard $(GENINC)/vars_*.h))
+TARGETS := $(patsubst $(GENINC)/vars_%.h,$(BINDIR)/softswitch_%.elf,$(wildcard $(GENINC)/vars_*.h))
+VCTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BINDIR)/softswitch_code_%.v,$(wildcard $(GENINC)/vars_*.h))
+VDTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BINDIR)/softswitch_data_%.v,$(wildcard $(GENINC)/vars_*.h))
 # targets for thread-local variables
 THREADVARS := $(patsubst $(GENSRC)/%.cpp,%.o,$(wildcard $(GENSRC)/vars_*_*.cpp))
 
@@ -121,18 +121,18 @@ THREADVARS := $(patsubst $(GENSRC)/%.cpp,%.o,$(wildcard $(GENSRC)/vars_*_*.cpp))
 all : $(TARGETS) $(VCTARGETS) $(VDTARGETS) supervisor
 
 # This line can be given a target/prerequisite (tgt : $(TARGETS)) if needed
-#	$(foreach TARGET,$<,cp $(TARGET) $(BIN_DIR)/$(TARGET))
+#	$(foreach TARGET,$<,cp $(TARGET) $(BINDIR)/$(TARGET))
 
-supervisor: $(BIN_DIR)/libSupervisor.so
+supervisor: $(BINDIR)/libSupervisor.so
 
-$(BIN_DIR)/libSupervisor.so: Supervisor.cpp Supervisor.h supervisor_generated.cpp supervisor_generated.h
+$(BINDIR)/libSupervisor.so: Supervisor.cpp Supervisor.h supervisor_generated.cpp supervisor_generated.h
 	$(MPICXX) $(MPICFLAGS) $(MPILDFLAGS) -O3 -Wl,-soname,libSupervisor.so -o $@ $<
 
-$(BIN_DIR)/softswitch_code_%.v: $(BIN_DIR)/softswitch_%.elf
+$(BINDIR)/softswitch_code_%.v: $(BINDIR)/softswitch_%.elf
 	$(TINSELBIN)/checkelf.sh $<
 	$(RV_OBJCOPY) -O verilog --only-section=.text $< $@
 
-$(BIN_DIR)/softswitch_data_%.v: $(BIN_DIR)/softswitch_%.elf
+$(BINDIR)/softswitch_data_%.v: $(BINDIR)/softswitch_%.elf
 	$(RV_OBJCOPY) -O verilog --remove-section=.text --set-section-flags .bss=alloc,load,contents $< $@
 
 softswitch_%.o : softswitch_%.cpp softswitch_common.h softswitch.h poets_pkt.h poets_hardware.h tinsel.h $(TINSELINC)/config.h $(SOFTSWITCH_DEPS)
@@ -146,7 +146,7 @@ io.o : io.c io.h tinsel.h $(TINSELINC)/config.h
 
 ## the pattern substitution should find all vars_x_y.o created from vars_x_y.cpp
 .SECONDEXPANSION:
-$(BIN_DIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o softswitch.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link_%.ld entry.o libc.a libgcc.a
+$(BINDIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o softswitch.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link_%.ld entry.o libc.a libgcc.a
 	$(RV_LD) $(LDFLAGS) -T link_$(notdir $*).ld -o $@ $(filter-out link_$(notdir $*).ld, $^)
 
 # this convoluted rule (we hope) will establish as a prerequisite for any file
@@ -176,4 +176,4 @@ $(HL)/%.o :
 	make -C $(TINSELHL)
 
 clean :
-	rm -f *.o *.elf link.ld $(BIN_DIR)/*.elf $(BIN_DIR)/*.v $(BIN_DIR)/libSupervisor.so
+	rm -f *.o *.elf link.ld $(BINDIR)/*.elf $(BINDIR)/*.v $(BINDIR)/libSupervisor.so

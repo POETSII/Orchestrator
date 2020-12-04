@@ -3,11 +3,8 @@
 
 extern "C"
 {
-    int SupervisorInit()
-    {
-        // Call Supervisor::OnInit
-        return Supervisor::OnInit();
-    }
+    int SupervisorInit(){return Supervisor::OnInit();}
+    
     int SupervisorCall(PMsg_p* In, PMsg_p* Out)
     {
 #ifdef _APPLICATION_SUPERVISOR_
