@@ -27,14 +27,12 @@ string apName = cl.GetP();             // Application name
 
 if (apName.empty()) {                  // ...not supplied ?
   par->Post(244,"---");
-  ecnt++;
   return;
 }
                                        // Not "*" AND not there ?
 Apps_t * pA = Apps_t::FindApp(apName);
 if ((apName!="*")&&(pA==0)) {
   par->Post(244,apName);
-  ecnt++;
   return;
 }
                                        // OK, good to go
@@ -68,7 +66,6 @@ fflush(fd);
 
 void CmUntl::ReportUTLinkStart()
 {
-ecnt = 0;                              // Accumulated errors
 t0 = mTimer();
 fprintf(fd,"%s\n%s %s\n\nOrchestrator contains %lu applications\n"
            "Un-typelinking...\n\n",

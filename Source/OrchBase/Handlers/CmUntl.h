@@ -29,7 +29,6 @@ unsigned      operator()(Cli *);
 
 OrchBase *    par;
 FILE *        fd;
-unsigned      ecnt;
 long          t0;
 
 };
