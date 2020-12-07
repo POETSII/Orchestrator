@@ -21,11 +21,21 @@ SuperHolder* SuperDB::get_next_idle(std::string& name)
     /* Protect against having no defined supervisors. */
     if (supervisors.empty()) return PNULL;
 
-    if (nextIdle == supervisors.end()) nextIdle = supervisors.begin();
-    else
+    /* Get next supervisor, ignoring supervisors with errors or supervisors
+     * that have been freed. */
+    while (true)
     {
-        nextIdle++;
         if (nextIdle == supervisors.end()) nextIdle = supervisors.begin();
+        else
+        {
+            nextIdle++;
+            if (nextIdle == supervisors.end()) nextIdle = supervisors.begin();
+        }
+
+        /* Check the entry. */
+        if (nextIdle->second != PNULL)
+            if (!nextIdle->second->error)
+                break;
     }
 
     name = nextIdle->first;
