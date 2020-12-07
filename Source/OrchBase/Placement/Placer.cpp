@@ -663,6 +663,9 @@ void Placer::dump(GraphI_t* gi)
     std::string mapPath = dformat("%splacement_gi_to_hardware_%s_%s.csv",
                                   outFilePath.c_str(), gi->Name().c_str(),
                                   timeBuf.c_str());
+    std::string mapRevPath = dformat("%splacement_hardware_to_gi_%s_%s.csv",
+                                     outFilePath.c_str(), gi->Name().c_str(),
+                                     timeBuf.c_str());
     std::string cachePath = dformat("%splacement_edge_cache_%s.txt",
                                     outFilePath.c_str(), timeBuf.c_str());
     std::string nodeLoadPath = dformat("%splacement_node_loading_%s.csv",
@@ -675,6 +678,7 @@ void Placer::dump(GraphI_t* gi)
     dump_diagnostics(gi, diagPath.c_str());
     dump_edge_loading(edgeLoadPath.c_str());
     dump_map(gi, mapPath.c_str());
+    dump_map_reverse(gi, mapRevPath.c_str());
     dump_node_loading(nodeLoadPath.c_str());
 
     FILE* cacheFile = fopen(cachePath.c_str(), "w");
@@ -849,6 +853,48 @@ void Placer::dump_map(GraphI_t* gi, const char* path)
         P_thread* thread = deviceFinder->second;
 
         out << device->FullName() << "," << thread->FullName() << std::endl;
+    }
+
+    out.close();  /* We out, yo. */
+}
+
+/* As with dump_map, but puts the hardware nodes first. */
+void Placer::dump_map_reverse(GraphI_t* gi, const char* path)
+{
+    /* File setup. */
+    std::ofstream out;
+    out.open(path);
+    if (!out.is_open())
+    {
+        throw FileOpenException(
+            dformat("File: %s. Message: %s",
+                    path, OSFixes::getSysErrorString(errno).c_str()));
+    }
+
+    /* Iterate through each thread in the hardware model. */
+    HardwareIterator hardwareIt(engine);
+    P_thread* thread = hardwareIt.get_thread();
+    while (!hardwareIt.has_wrapped())
+    {
+        /* Only care about this thread if the application owning the first
+         * device on this thread matches with the `gi` argument. */
+        std::list<DevI_t*>* devsOnThread;
+        devsOnThread = &(threadToDevices[thread]);
+        if (!devsOnThread->empty())
+        {
+            if ((*(devsOnThread->begin()))->par == gi)
+            {
+                /* For each device on this thread, write an entry. */
+                std::list<DevI_t*>::iterator deviceIt;
+                for (deviceIt = devsOnThread->begin();
+                     deviceIt != devsOnThread->end(); deviceIt++)
+                {
+                    out << thread->FullName() << ","
+                        << (*deviceIt)->FullName() << std::endl;
+                }
+            }
+        }
+        thread = hardwareIt.next_thread();
     }
 
     out.close();  /* We out, yo. */
