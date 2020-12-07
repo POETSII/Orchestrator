@@ -478,6 +478,7 @@ if (scmnd=="syst") code=(*pCmSyst)(pC);// System
 if (scmnd=="test") code=(*pCmTest)(pC);// Test
 if (scmnd=="tlin") code=(*pCmTlin)(pC);// Tlink
 if (scmnd=="unlo") code=(*pCmUnlo)(pC);// Unload
+if (scmnd=="untl") code=(*pCmUntl)(pC);// Untypelink
 if (scmnd.at(0)==char(0)) code=CmExit(pC); // Ctrl-D behaviour in linux-land
 if (scmnd.at(0)==char(4)) code=CmExit(pC); // Ctrl-D behaviour in Windoze
 fd = pCmPath->Fclose();                 // Reset detail file stream
