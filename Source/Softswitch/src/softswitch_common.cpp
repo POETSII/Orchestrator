@@ -228,7 +228,7 @@ void softswitch_finalise(ThreadCtxt_t* ThreadContext)
     {
         uint32_t rtsStart = ThreadContext->rtsStart;
 
-        ThreadContext->rtsBuf[rtsStart]->idxTgts = 0;
+        ThreadContext->rtsBuf[rtsStart]->idxEdges = 0;
         ThreadContext->rtsBuf[rtsStart]->sendPending = 0;
         ThreadContext->rtsBuf[rtsStart] = PNULL;
 
@@ -262,9 +262,9 @@ inline void device_init(devInst_t* device, ThreadCtxt_t* ThreadContext)
         outPin_t* o_pin = &device->outputPins[out];
 
         o_pin->device = device;
-        for (uint32_t tgt = 0; tgt < o_pin->numTgts; tgt++)
+        for (uint32_t edge = 0; edge < o_pin->numEdges; edge++)
         {
-            outEdge_t* i_tgt = &o_pin->targets[tgt];
+            outEdge_t* i_tgt = &o_pin->outEdges[edge];
             i_tgt->pin = o_pin;
         }
     }
@@ -274,9 +274,9 @@ inline void device_init(devInst_t* device, ThreadCtxt_t* ThreadContext)
         inPin_t* i_pin = &device->inputPins[pkt_typ];
 
         i_pin->device = device;
-        for (uint32_t src = 0; src < i_pin->numSrcs; src++)
+        for (uint32_t src = 0; src < i_pin->numEdges; src++)
         {
-            inEdge_t* i_src = &i_pin->sources[src];
+            inEdge_t* i_src = &i_pin->inEdges[src];
             i_src->pin = i_pin;
         }
     }
@@ -394,18 +394,18 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
 
     // Pointers of convenience
     devInst_t* device = pin->device;                                // Get the Device
-    const outEdge_t* target = &pin->targets[pin->idxTgts];          // Get the target
-    volatile char* buf = static_cast<volatile char*>(send_buf);    // Send Buffer
+    const outEdge_t* target = &pin->outEdges[pin->idxEdges];        // Get the edge
+    volatile char* buf = static_cast<volatile char*>(send_buf);     // Send Buffer
     volatile P_Pkt_Hdr_t* hdr = static_cast<volatile P_Pkt_Hdr_t*>(send_buf); // Header
 
     size_t hdrSize = p_hdr_size(); //Size of the header.
 
-    if(pin->numTgts > 0)     // Sanity check: make sure the pin has targets
+    if(pin->numEdges > 0)     // Sanity check: make sure the pin has edges
     {
         //--------------------------------------------------------------------------
         // First target, need to run pin's OnSend.
         //--------------------------------------------------------------------------
-        if(pin->idxTgts == 0)
+        if(pin->idxEdges == 0)
         {
             char* pkt = const_cast<char*>(buf)+hdrSize; // Pointer to the packet, after headers, etc.
             pin->pinType->Send_Handler(ThreadContext->properties, device, pkt);
@@ -451,11 +451,11 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
         //--------------------------------------------------------------------------
     }
 
-    pin->idxTgts++;     // Increment the target index.
+    pin->idxEdges++;     // Increment the target index.
 
-    if(pin->idxTgts >= pin->numTgts)  // Reached the end of the send list.
+    if(pin->idxEdges >= pin->numEdges)  // Reached the end of the send list.
     {
-        pin->idxTgts = 0;       // Reset index,
+        pin->idxEdges = 0;       // Reset index,
         pin->sendPending = 0;   // Reset pending
 
         // Move the circular RTS buffer index
@@ -468,7 +468,7 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
         softswitch_onRTS(ThreadContext, device); // Run the Device's RTS handler. This could be conditional.
     }
 
-    return pin->idxTgts;
+    return pin->idxEdges;
 }
 //------------------------------------------------------------------------------
 
@@ -553,13 +553,13 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
         }
         else
         {   // Handle as a normal packet
-            if(edgeIdx >= pin->numSrcs)
+            if(edgeIdx >= pin->numEdges)
             {   // Sanity check the Edge Index
                 handler_log(5, "eIDX OOR %d %d %d", device, pinIdx, edgeIdx);
                 continue;               //TODO: - log/flag
             }
             pin->pinType->Recv_handler(ThreadContext->properties, device,
-                                        &pin->sources[edgeIdx],
+                                        &pin->inEdges[edgeIdx],
                                         static_cast<const uint8_t*>(
                                         const_cast<const void*>(recv_buf)
                                         )+p_hdr_size());
@@ -634,8 +634,8 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
                 // Get a pointer to the active pin
                 outPin_t* output_pin = &device->outputPins[pin];
 
-                //If the pin has targets and is not already pending,
-                if(output_pin->numTgts && output_pin->sendPending == 0)
+                //If the pin has edges and is not already pending,
+                if(output_pin->numEdges && output_pin->sendPending == 0)
                 {
                     // Flag that pin is pending
                     output_pin->sendPending = 1;
