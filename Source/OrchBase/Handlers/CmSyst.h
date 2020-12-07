@@ -26,7 +26,7 @@ void          SyTrac(Cli::Cl_t);
 unsigned      operator()(Cli *);
 
 OrchBase *    par;
-
+FILE *        fd;
 };
 
 //==============================================================================
