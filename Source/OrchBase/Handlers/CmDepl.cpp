@@ -309,7 +309,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
 
         /* Customise and send the SUPD message. */
         soPath = getenv("HOME") + std::string("/") +  par->pCmPath->pathMshp +
-            graphName + "/" + gi->pSup->binPath;
+            graphName + "/" + gi->pSupI->binPath;
         supdMessage.Put(1, &soPath);
         supdMessage.Send();
 
