@@ -457,7 +457,7 @@ int Composer::compile(GraphI_t* graphI)
     fclose(superBinary);
 
     // Add Supervidor filename to Graph Instance
-    graphI->pSup->binPath = superName;
+    graphI->pSupI->binPath = superName;
 
     // Mark that we have compiled
     builderGraphI->compiled = true;
@@ -563,7 +563,7 @@ int Composer::clean(GraphI_t* graphI)
     }
     
     // Cleanup Supervisor binary path.
-    builderGraphI->graphI->pSup->binPath = "";
+    builderGraphI->graphI->pSupI->binPath = "";
     
     builderGraphI->compiled = 0;
     builderGraphI->graphI->built = 0;

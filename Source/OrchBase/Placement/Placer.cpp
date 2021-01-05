@@ -25,10 +25,10 @@ Placer::~Placer()
     for (graphIt = placedGraphs.begin(); graphIt != placedGraphs.end();
          graphIt++)
     {
-        if ((graphIt->first)->pSup != PNULL)
+        if ((graphIt->first)->pSupI != PNULL)
         {
-            delete (graphIt->first)->pSup;
-            (graphIt->first)->pSup = PNULL; /* Now the GraphI_t won't
+            delete (graphIt->first)->pSupI;
+            (graphIt->first)->pSupI = PNULL; /* Now the GraphI_t won't
                                              * double-delete */
         }
     }
@@ -1134,7 +1134,7 @@ float Placer::place(GraphI_t* gi, Algorithm* algorithm)
      * NB: This supervisor binary is not mapped to boxes (because for now,
      * nobody actually cares). Later on, graph instances will need a map of box
      * keys to supervisor values, for when supervisors differ across boxes. */
-    gi->pSup = new P_super;
+    gi->pSupI = new P_super;
 
 
     return score;
@@ -1407,7 +1407,7 @@ void Placer::unplace(GraphI_t* gi, bool andConstraints)
     }
 
     /* No more supervisor. */
-    delete gi->pSup;
+    delete gi->pSupI;
 }
 
 /* Updates the software addresses of each device in an application graph
