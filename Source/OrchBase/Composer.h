@@ -63,6 +63,8 @@ typedef struct ComposerGraphI_t
     
     std::string outputDir;
     
+    std::string provenanceCache;
+    
     //State flags
     bool generated;
     bool compiled;
@@ -105,6 +107,8 @@ std::string outputPath;
 
 ComposerGraphIMap_t graphIMap; // Map has an entry for each seen Graph Instance.
 
+void formFileProvenance(ComposerGraphI_t*);
+void writeFileProvenance(std::string&, ComposerGraphI_t*, std::ofstream&);
 
 int prepareDirectories(ComposerGraphI_t*);
 
@@ -127,7 +131,7 @@ void formDevTOutputPinHandlers(devTypStrings_t* dTypStrs);
 
 
 
-int createCoreFiles(P_core*, std::string&, std::ofstream&,
+int createCoreFiles(P_core*, ComposerGraphI_t*, std::ofstream&,
                     std::ofstream&, std::ofstream&, std::ofstream&);
 void writeCoreSrc(P_core*, devTypStrings_t*, std::ofstream&, 
                     std::ofstream&, std::ofstream&, std::ofstream&);
@@ -139,7 +143,7 @@ void writeCoreHandlerHead(unsigned, std::ofstream&, std::ofstream&);
 void writeCoreHandlerFoot(unsigned, std::ofstream&, std::ofstream&);
 
 
-int createThreadFile(P_thread*, std::string&, std::ofstream&);
+int createThreadFile(P_thread*, ComposerGraphI_t*, std::ofstream&);
 
 unsigned writeThreadVars(ComposerGraphI_t*, P_thread*, ofstream&, ofstream&);
 void writeThreadVarsCommon(AddressComponent, AddressComponent, 
