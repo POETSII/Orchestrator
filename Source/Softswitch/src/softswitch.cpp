@@ -24,7 +24,7 @@ void softswitch_trivial_log_handler(const char* &logStr)
     uint32_t pktCnt;                        // Number of log packets needed
 
     // Packet pointers
-    volatile void* send_buf = tinselSlot(P_LOGPKT_SLOT);
+    volatile void* send_buf = tinselSendSlotExtra();
     P_Pkt_t* pkt = static_cast<P_Pkt_t*>(const_cast<void*>(send_buf));
     P_Pkt_Hdr_t* hdr = static_cast<P_Pkt_Hdr_t*>(const_cast<void*>(send_buf));
     P_Log_Pkt_Pyld_t* pyld = reinterpret_cast<P_Log_Pkt_Pyld_t*>(pkt->payload);
@@ -78,7 +78,6 @@ void softswitch_trivial_log_handler(const char* &logStr)
         }
         pyld->seq = i;
 
-        tinselSend(tinselHostId(), send_buf); // Send it
+        SUPER_SEND(send_buf); // Send it
     }
 }
-

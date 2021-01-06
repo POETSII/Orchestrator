@@ -2,6 +2,7 @@
 #define _SOFTSWITCH_H_
 
 #include "poets_pkt.h"
+#include "SupervisorModes.h"
 
 #define MAX_LOG_PKT_BUFS 4
 
@@ -10,19 +11,6 @@
 #ifndef P_LOG_LEVEL
 #define P_LOG_LEVEL P_DEFAULT_LOG_LEVEL
 #endif
-
-//------------------------------------------------------------------------------
-// Tinsel Slot Allocations.
-// Slot 0 is used to send "normal" packets.
-// Slot 1 is used for supervisor packets (e.g. instrumentation)
-// Slot 2 is used for log packets.
-// Remaining slots are used for receive slots.
-//------------------------------------------------------------------------------
-#define P_PKT_SLOT      0
-#define P_SUPPKT_SLOT   1
-#define P_LOGPKT_SLOT   2       // We currently use a separate slot for log packets. This will need to merge with P_SUPPKT_SLOT for 0.7
-#define P_RXSLOT_START  3
-//------------------------------------------------------------------------------
 
 const uint32_t p_logpkt_max_size = p_logpkt_pyld_size << P_LOG_MAX_LOGPKT_FRAG;
 const uint32_t p_logpkt_1pkt_max_size = p_logpkt_pyld_size;
