@@ -109,19 +109,4 @@ void P_device::Par(D_graph * _p)
 par = _p;
 }
 
-//------------------------------------------------------------------------------
-
-void P_device::Unlink()
-// Unlink this device from the topology database
-{
-                                       // Thread list
-list<P_device *> * pL = &(pP_thread->P_devicel);
-                                       // Zero the topology->task link
-WALKLIST(P_device *,(*pL),i) if ((*i)==this) (*i)=0;
-pP_thread = 0;                         // Disconnect device from thread
-}
-
 //==============================================================================
-
-
-

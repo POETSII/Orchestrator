@@ -95,6 +95,24 @@ bool Validator::complain_if_value_not_a_valid_type(UIF::Node* valueNode)
     return true;
 }
 
+/* Returns whether the value at a node is either "true" or "false", and appends
+ * an error message to a string if it is not. Arguments:
+ *
+ * - valueNode: The UIF node that holds the value. */
+bool Validator::complain_if_value_not_booleanish(UIF::Node* valueNode)
+{
+    if (!is_node_value_booleanish(valueNode))
+    {
+        errors.push_back(dformat(
+            "L%u: Variable '%s' in the '%s' section has value '%s', which is "
+            "not 'true' or 'false'.",
+            record->pos, variable.c_str(), sectionName.c_str(),
+            valueNode->str.c_str()));
+        return false;
+    }
+    return true;
+}
+
 /* Returns whether the value at a node is a positive floating-point number (or
  * an integer), and appends an error message to a string if it is
  * not. Arguments:
@@ -279,6 +297,14 @@ bool Validator::is_multivalue_record(std::vector<UIF::Node*>* valueNodes)
 bool Validator::is_multivariable_record(std::vector<UIF::Node*>* variableNodes)
 {
     return (variableNodes->size() != 1);
+}
+
+/* Returns whether the value at a node is either "true" or "false". Arguments:
+ *
+ * - valueNode: The UIF node that holds the value. */
+bool Validator::is_node_value_booleanish(UIF::Node* valueNode)
+{
+    return (valueNode->str == "true" or valueNode->str == "false");
 }
 
 /* Returns whether the value at a node is a positive floating-point

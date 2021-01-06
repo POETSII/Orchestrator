@@ -1,7 +1,6 @@
 #ifndef __OrchBaseH__H
 #define __OrchBaseH__H
 
-class Placement;
 class P_task;
 class P_builder;
 class T_gen;
@@ -11,9 +10,9 @@ class Dialect1Deployer;
 
 #include <stdio.h>
 #include "D_graph.h"
+#include "Placer.h"
 #include "HardwareModel.h"
 #include "HardwareFileReader.h"
-#include "Placement.h"
 #include "Cli.h"
 #include "Environment.h"
 #include "CommonBase.h"
@@ -69,18 +68,6 @@ void                   TopoSave(Cli::Cl_t);
 void                   TopoSet1(Cli::Cl_t);
 void                   TopoSet2(Cli::Cl_t);
 
-// These bodies are in OrchBaseLink.cpp
-unsigned               CmLink(Cli *);
-void                   LinkCons(Cli::Cl_t);
-void                   LinkDump(Cli::Cl_t);
-void                   LinkLink(Cli::Cl_t);
-void                   LinkNser(Cli::Cl_t);
-void                   LinkPath(Cli::Cl_t);
-void                   LinkPlac(Cli::Cl_t);
-void                   LinkUnli(Cli::Cl_t);
-void                   UnlinkAll();
-void                   Unlink(string);
-
 // These bodies are in OrchBaseOwner.cpp
 unsigned               CmOwne(Cli *);
 void                   OwneAtta(Cli::Cl_t);
@@ -88,8 +75,18 @@ void                   OwneDump(Cli::Cl_t);
 void                   OwneShow(Cli::Cl_t);
 void                   OwneTask(Cli::Cl_t);
 
+// These bodies are in OrchBasePlace.cpp
+unsigned               CmPlace(Cli *);
+void                   PlacementConstrain(Cli::Cl_t);
+bool                   PlacementDoit(Cli::Cl_t);  // Algorithm filter
+void                   PlacementDump(Cli::Cl_t);
+P_task*                PlacementGetTaskByName(std::string);  // Shortcut
+void                   PlacementLoad(Cli::Cl_t);
+void                   PlacementReset(bool post=false);  // Shortcut
+void                   PlacementUnplace(Cli::Cl_t);
+
 P_engine *                    pE;        // Poets engine (hardware model)
-Placement *                   pPlace;    // Cross-linker
+Placer*                       pPlacer;   // Placement action and information
 P_builder *                   pB;        // Object to build the datastructure
 T_gen *                       pTG;       // PoL task generator
 map<string,P_task *>          P_taskm;   // Holder for multiple task graphs

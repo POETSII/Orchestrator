@@ -28,7 +28,3 @@ unsigned            MsgType; // this is the same as the index in P_messagev.
 //==============================================================================
 
 #endif
-
-
-
-

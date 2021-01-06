@@ -1,11 +1,12 @@
-// A representation of GMB's MPI cluster. Note the bizarre thread-core relationship
+// A representation of GMB's MPI cluster. Note the bizarre thread-core
+// relationship
 
 [header("GMB_MPI")]
 +author="Mark Vousden"
 +dialect=3
 +datetime=20200402161500
-+version="0.4.0"
-+file="gmb_mpi.uif"
++version="0.5.0"
++file="valid_dialect_3_one_thread_per_core.uif"
 
 // Only the core address meaningfully contributes to the address - there's only
 // one of everything else.
@@ -45,6 +46,7 @@ MPI(addr(0),boards(B00),hostname(byron))
 +cores=60
 +mailbox_core_cost=0
 +core_core_cost=0
++pair_cores="false"
 
 [core]
 +threads=1
