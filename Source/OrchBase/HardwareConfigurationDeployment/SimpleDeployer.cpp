@@ -10,7 +10,7 @@ SimpleDeployer::SimpleDeployer()
 
     author = "Mark Vousden";
     datetime = 201901101712;
-    version = "0.3.1";
+    version = "0.5.1";
     fileOrigin = "SimpleDeployer.cpp";
 
     boxWordLength = 0;  /* There's only one box! */
