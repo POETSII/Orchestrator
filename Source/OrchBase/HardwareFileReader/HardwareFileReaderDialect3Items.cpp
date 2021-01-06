@@ -11,7 +11,7 @@
  * - mailbox: Pointer to the mailbox to populate.
  * - coreQuatity: Number of cores to create (the number of threads will be
  *       determined from the UIF parse tree.
- * - addrOffset: An offset for the address of each core. 
+ * - addrOffset: An offset for the address of each core.
  * - pairCores: Whether or not to pair adjacent cores up. */
 bool HardwareFileReader::d3_create_cores_and_threads_for_mailbox(
     P_mailbox* mailbox, unsigned coreQuantity, unsigned addrOffset,
@@ -307,7 +307,7 @@ bool HardwareFileReader::d3_define_board_fields_from_section(
     validFields.push_back("supervisor_memory");
     validFields.push_back("type");
 
-    /* Mandatory fields for board sections.. */
+    /* Mandatory fields for board sections. */
     std::vector<std::string> mandatoryFields;
     mandatoryFields.push_back("board_mailbox_cost");
     mandatoryFields.push_back("dram");
@@ -594,7 +594,7 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
         "%s(%s)", sectionNode->leaf[0]->leaf[0]->str.c_str(),
         sectionNode->leaf[0]->leaf[0]->leaf[0]->str.c_str());
 
-    /* Valid fields for mailbox sections (all are mandatory). */
+    /* Valid fields for mailbox sections. */
     std::vector<std::string> validFields;
     std::vector<std::string>::iterator fieldIterator;
     validFields.push_back("core_core_cost");
@@ -602,6 +602,13 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
     validFields.push_back("cores");
     validFields.push_back("core_addr_offset");
     validFields.push_back("pair_cores");
+
+    /* Mandatory fields for mailbox sections. */
+    std::vector<std::string> mandatoryFields;
+    mandatoryFields.push_back("core_core_cost");
+    mandatoryFields.push_back("mailbox_core_cost");
+    mandatoryFields.push_back("cores");
+    mandatoryFields.push_back("pair_cores");
 
     /* Holds fields we've already grabbed (for validation purposes). */
     std::map<std::string, bool> fieldsFound;
@@ -702,7 +709,7 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
             /* Bind */
             mailbox->costMailboxCore = str2float(valueNodes[0]->str);
         }
-        
+
         else if (variable == "core_addr_offset")
         {
             /* Complain if not natural */
@@ -733,7 +740,8 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
     }
 
     /* Ensure mandatory fields have been defined. */
-    if (!complain_if_mandatory_field_not_defined(&validFields, &fieldsFound))
+    if (!complain_if_mandatory_field_not_defined(&mandatoryFields,
+                                                 &fieldsFound))
     {
         anyErrors = true;
     }
@@ -753,7 +761,7 @@ bool HardwareFileReader::d3_define_mailbox_fields_from_section(
         /* Otherwise, if everything is defined properly, create and add
          * cores. */
         else if (!d3_create_cores_and_threads_for_mailbox(
-                     mailbox, coreCount, coreAddrOffset, pairCores)) 
+                     mailbox, coreCount, coreAddrOffset, pairCores))
         {
             anyErrors = true;
         }
