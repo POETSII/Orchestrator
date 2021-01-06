@@ -116,6 +116,16 @@ Cstr = "// Line " + int2str(pn->lin) + "\n" + Cstr;
 return new CFrag(Cstr);
 }
 
+CFrag * DS_XML::_CFrag(std::string Cstr)
+// Create a CFrag from an attribute string. 
+// This is intended for initialiser lists (of which there may be many) so
+// the line number is not included to help keep generated file size down.
+// If the attribute is empty, we don't create a CFrag for it - simples.
+{
+if(Cstr == "") return 0;
+return new CFrag(Cstr);
+}
+
 //------------------------------------------------------------------------------
 
 DevI_t * DS_XML::_DevI_t(GraphI_t * pGI,xnode * pn)
@@ -146,15 +156,15 @@ if (i != pGI->Dmap.end()) {            // Yes
   pD->tyId = pn->FindAttr("type");     // Device type
   pD->Def(pn->lin);                    // Save definition line
   pD->devTyp = 'D';                    // It's an internal device
-  pD->pPropsI = pn->FindAttr("P");     // Props I
-  pD->pStateI = pn->FindAttr("S");     // State I
+  pD->pPropsI = _CFrag(pn->FindAttr("P"));     // Props I
+  pD->pStateI = _CFrag(pn->FindAttr("S"));     // State I
   return pD;
 }
                                        // This is the first we've seen of it
 DevI_t * pD = new DevI_t(pGI,dname);   // New device instance
 pD->tyId = pn->FindAttr("type");       // Device type
-pD->pPropsI = pn->FindAttr("P");       // Props I
-pD->pStateI = pn->FindAttr("S");       // State I
+pD->pPropsI = _CFrag(pn->FindAttr("P"));     // Props I
+pD->pStateI = _CFrag(pn->FindAttr("S"));     // State I
 WALKVECTOR(xnode *,pn->vnode,i) {      // There should be only one (type of)....
   (*i)->rTyp() = DS_map[(*i)->ename];
   switch ((*i)->rTyp()) {
@@ -276,8 +286,8 @@ pE->Def(lin);
 pE->Ref(lin);
 pE->Key = kE;                          // Store the key inside its data
 pE->Idx = (pPto->Key_v.size() - 1);    // Index of edge in the to pin's Key_v
-pE->pPropsI = pn->FindAttr("P");       // Props I
-pE->pStateI = pn->FindAttr("S");       // State I
+pE->pPropsI = _CFrag(pn->FindAttr("P"));     // Props I
+pE->pStateI = _CFrag(pn->FindAttr("S"));     // State I
 
 // Insert into instance graph
 pGI->G.InsertArc(kE,pDfr->Key,pDto->Key,pE,
@@ -306,7 +316,7 @@ void DS_XML::_ExtI_t(GraphI_t * pGI,xnode * pn)
 {
 DevI_t * pD = _DevI_t(pGI,pn);
 pD->devTyp = 'X';
-pD->pPropsI = pn->FindAttr("P");       // Props I
+pD->pPropsI = _CFrag(pn->FindAttr("P"));     // Props I
 }
 
 //------------------------------------------------------------------------------
@@ -318,11 +328,11 @@ string gname = pn->FindAttr("id");
 GraphI_t * pGI = new GraphI_t(pAP,gname);
 pGI->Def(pn->lin);
 pGI->tyId = pGI->tyId2 = pn->FindAttr("graphTypeId");
+pGI->pPropsI = _CFrag(pn->FindAttr("P"));     // Props I
 WALKVECTOR(xnode *,pn->vnode,i) {
   (*i)->rTyp() = DS_map[(*i)->ename];
   switch ((*i)->rTyp()) {
     case cMetaData        : pGI->Meta_v.push_back(_Meta(*i));        break;
-    case cProperties      : pGI->pPropsI = _CFrag(*i);               break;
     case cDeviceInstances : _DevI_ts(pGI,*i);                        break;
     case cEdgeInstances   : _EdgeI_ts(pGI,*i);                       break;
     default               : par->Post(998,__FILE__,int2str(__LINE__),(*i)->ename);

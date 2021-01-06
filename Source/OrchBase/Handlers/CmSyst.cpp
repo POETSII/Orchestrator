@@ -122,8 +122,10 @@ printf("Orchestrator processes\n");
 WALKVECTOR(ProcMap::ProcMap_t,par->pPmap->vPmap,i)
   printf("Rank %02d, %35s, created %s %s\n",
       (*i).P_rank,(*i).P_class.c_str(),(*i).P_TIME.c_str(),(*i).P_DATE.c_str());
-
 fflush(stdout);
+
+// More detailed information in the microlog
+par->pPmap->Show(fd);
 }
 
 //------------------------------------------------------------------------------
@@ -142,6 +144,7 @@ unsigned CmSyst::operator()(Cli * pC)
 // Handle "system" command from the monkey
 {
 if (pC==0) return 0;                   // Paranoia
+fd = par->fd;
 WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   string sCl = (*i).Cl;                // Pull out clause name
   if (sCl=="ping") { SyPing(*i); continue; }

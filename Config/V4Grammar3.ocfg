@@ -66,10 +66,9 @@
       </SupervisorType>
     </DeviceTypes>
   </GraphType>
-  <GraphInstance GraphInstance="[],[1](id,graphTypeId)">
+  <GraphInstance GraphInstance="[],[1](id,graphTypeId),[0..1](P)">
     <MetaData MetaData="[]"/>
-    <Properties Properties="[0..1]"><CDATA CDATA="[1]"/></Properties>
-    <DeviceInstances DeviceInstances="[1]">
+    <DeviceInstances DeviceInstances="[0..1]">
       <DevI DevI="[],[1](id,type),[0..1](P,S)">
         <MetaData MetaData="[]"/>
       </DevI>
@@ -77,7 +76,7 @@
         <MetaData MetaData="[]"/>
       </ExtI>
     </DeviceInstances>
-    <EdgeInstances EdgeInstances="[1]">
+    <EdgeInstances EdgeInstances="[0..1]">
       <EdgeI EdgeI="[],[1]path(path),[0..1](P,S)">
         <MetaData MetaData="[]"/>
       </EdgeI>

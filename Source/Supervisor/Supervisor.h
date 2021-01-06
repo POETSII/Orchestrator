@@ -6,6 +6,8 @@
 #include "OSFixes.hpp"
 #include "supervisor_generated.h"
 
+#include <cstdint>
+#include <string>                 
 #include <iostream>
 #include <vector>
 #include <map>
@@ -27,6 +29,7 @@ public:
    
    
    static const std::vector<SupervisorDeviceInstance_t> DeviceVector;
+   static const std::vector<uint32_t> ThreadVector;
    
    static int OnImplicit(P_Pkt_t*);
    static int OnPkt(P_Pkt_t*);

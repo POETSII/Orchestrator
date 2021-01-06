@@ -84,9 +84,12 @@ if(pthread_create(&kb_thread,NULL,kb_func,args))
   fprintf(stdout,"Error creating kb_thread\n");
 fflush(stdout);
 
-/* Handle input arguments - grab the hdfPath and/or batchPath. */
+/* Grab default hdfPath from configuration. */
+std::string hdfPath = pOC->Hardware();
+
+/* Handle input arguments - grab the hdfPath and/or batchPath (the former
+ * clobbers a definition from config). */
 std::string rawArgs;
-std::string hdfPath;
 std::string batchPath;
 for (int i=1; i<argc; i++)
 {
@@ -475,6 +478,7 @@ if (scmnd=="syst") code=(*pCmSyst)(pC);// System
 if (scmnd=="test") code=(*pCmTest)(pC);// Test
 if (scmnd=="tlin") code=(*pCmTlin)(pC);// Tlink
 if (scmnd=="unlo") code=(*pCmUnlo)(pC);// Unload
+if (scmnd=="untl") code=(*pCmUntl)(pC);// Untypelink
 if (scmnd.at(0)==char(0)) code=CmExit(pC); // Ctrl-D behaviour in linux-land
 if (scmnd.at(0)==char(4)) code=CmExit(pC); // Ctrl-D behaviour in Windoze
 fd = pCmPath->Fclose();                 // Reset detail file stream

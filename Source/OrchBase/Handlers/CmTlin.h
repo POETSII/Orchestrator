@@ -15,7 +15,7 @@ class OrchBase;
 
 class CmTlin
 {
-public :
+public:
               CmTlin(OrchBase *);
 virtual ~     CmTlin();
 

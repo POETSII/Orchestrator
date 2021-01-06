@@ -24,15 +24,11 @@
 #include "PinI_t.h"
 #include "EdgeI_t.h"
 
-
-//class P_core;
-
 struct ComposerGraphI_t;
 struct devTypStrings_t;
 
 
 typedef std::map<PinI_t*, std::vector<unsigned> >   pinIArcKeyMap_t;
-typedef std::map<PinT_t*, unsigned>                 pinTIdxMap_t;
 typedef std::map<DevT_t*, devTypStrings_t*>         devTStrsMap_t;
 typedef std::map<GraphI_t*, ComposerGraphI_t*>      ComposerGraphIMap_t;
 
@@ -60,12 +56,14 @@ typedef struct ComposerGraphI_t
     
     // Maps/vector filled during generation. These are only valid if "generated"
     devTStrsMap_t devTStrsMap;              // Common strings for each DeVT
-    std::vector<DevI_t*> supevisorDevTVect; // Supervisor Edge Index handling. 
+    std::vector<DevI_t*> supevisorDevIVect; // Supervisor Edge Index handling. 
     devISuperIdxMap_t   devISuperIdxMap;    // Supervisor Edge Index handling. 
     // TODO: This is inherently single-supervisor for now and needs modifying to
     // have one vector per supervisor.
     
     std::string outputDir;
+    
+    std::string provenanceCache;
     
     //State flags
     bool generated;
@@ -79,14 +77,6 @@ typedef struct ComposerGraphI_t
     
     void clearDevTStrsMap();
 } ComposerGraphI_t;
-
-
-
-struct binaries
-{
-    std::string data;
-    std::string instr;
-};
 
 
 class Composer
@@ -105,8 +95,6 @@ int         decompose(GraphI_t*);  // Clean then degenerate
 int         degenerate(GraphI_t*); // Clear internal strings and generated files
 int         clean(GraphI_t*);      // Get rid of built files (e.g. a make clean)
 
-int         reset();    // Reset Composer
-
 void        setOutputPath(std::string);
 void        setPlacer(Placer*);
 
@@ -119,6 +107,8 @@ std::string outputPath;
 
 ComposerGraphIMap_t graphIMap; // Map has an entry for each seen Graph Instance.
 
+void formFileProvenance(ComposerGraphI_t*);
+void writeFileProvenance(std::string&, ComposerGraphI_t*, std::ofstream&);
 
 int prepareDirectories(ComposerGraphI_t*);
 
@@ -141,7 +131,7 @@ void formDevTOutputPinHandlers(devTypStrings_t* dTypStrs);
 
 
 
-int createCoreFiles(P_core*, std::string&, std::ofstream&,
+int createCoreFiles(P_core*, ComposerGraphI_t*, std::ofstream&,
                     std::ofstream&, std::ofstream&, std::ofstream&);
 void writeCoreSrc(P_core*, devTypStrings_t*, std::ofstream&, 
                     std::ofstream&, std::ofstream&, std::ofstream&);
@@ -153,7 +143,7 @@ void writeCoreHandlerHead(unsigned, std::ofstream&, std::ofstream&);
 void writeCoreHandlerFoot(unsigned, std::ofstream&, std::ofstream&);
 
 
-int createThreadFile(P_thread*, std::string&, std::ofstream&);
+int createThreadFile(P_thread*, ComposerGraphI_t*, std::ofstream&);
 
 unsigned writeThreadVars(ComposerGraphI_t*, P_thread*, ofstream&, ofstream&);
 void writeThreadVarsCommon(AddressComponent, AddressComponent, 

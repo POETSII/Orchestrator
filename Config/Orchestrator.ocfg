@@ -47,7 +47,7 @@ messages = "../Config/OrchestratorMessages.ocfg"
 // XMLapplication grammar validation definition
 grammar = "../Config/V4Grammar3.ocfg"
 // Hardware definition file
-// hardware = "../Config/POETSHardware.ocfg"
+hardware = "../Config/POETSHardwareOneBox.ocfg"
 // Startup algorithm + control parameters
 // placement = "the frumious bandersnatch"
 

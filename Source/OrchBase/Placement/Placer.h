@@ -160,6 +160,7 @@ private:
     void dump_diagnostics(GraphI_t* gi, const char* path);
     void dump_edge_loading(const char* path);
     void dump_map(GraphI_t* gi, const char* path);
+    void dump_map_reverse(GraphI_t* gi, const char* path);
     void dump_node_loading(const char* path);
 };
 

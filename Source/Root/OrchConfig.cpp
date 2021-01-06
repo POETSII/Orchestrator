@@ -171,6 +171,7 @@ default_paths.supervisors.clear();
 
 setup_files.messages.clear();
 setup_files.grammar.clear();
+setup_files.hardware.clear();
 setup_files.placement.clear();
 
 flags.build.clear();
@@ -206,6 +207,7 @@ fprintf(fp,"supervisors = %s\n",default_paths.supervisors.c_str());
 fprintf(fp,"\nsetup_files:\n");
 fprintf(fp,"messages    = %s\n",setup_files.messages.c_str());
 fprintf(fp,"grammar     = %s\n",setup_files.grammar.c_str());
+fprintf(fp,"hardware    = %s\n",setup_files.hardware.c_str());
 fprintf(fp,"placement   = %s\n",setup_files.placement.c_str());
 
 fprintf(fp,"\nflags:\n");

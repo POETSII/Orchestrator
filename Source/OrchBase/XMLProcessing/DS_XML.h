@@ -44,6 +44,7 @@ virtual ~     DS_XML(void);
 
 void          _Apps_t(xnode *);
 CFrag *       _CFrag(xnode *);
+CFrag *       _CFrag(std::string);
 DevI_t *      _DevI_t(GraphI_t *,xnode *);
 void          _DevI_ts(GraphI_t *,xnode *);
 DevT_t *      _DevT_t(GraphT_t *,xnode *);

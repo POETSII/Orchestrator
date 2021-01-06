@@ -1,3 +1,4 @@
+
 //------------------------------------------------------------------------------
 
 #include "GraphI_t.h"
@@ -16,7 +17,7 @@
 //==============================================================================
 
 GraphI_t::GraphI_t(Apps_t * _p,string _s):
-    par(_p),deployed(false),pT(0),pPropsI(0),pSup(0),built(0)
+    par(_p),deployed(false),pT(0),pPropsI(0),pSupI(0),built(0)
 {
 Name(_s);                              // Save name
 Npar(_p);                              // Namebase parent
@@ -53,10 +54,11 @@ WALKSET(PinI_t *,DelSet,i) delete *i;  // Kill the "to be deleted" set
 WALKVECTOR(Meta_t *,Meta_v,i) delete *i;
 
 if (pPropsI!=0) delete pPropsI;
+
 /* Freeing supervisors is a litle complicated, as they can be deleted when
  * their GraphI_t object is deleted, and can also be deleted when placement is
  * destroyed, so beware. */
-if (pSup != PNULL) delete pSup;
+if (pSupI != PNULL) delete pSupI;
 }
 
 //------------------------------------------------------------------------------

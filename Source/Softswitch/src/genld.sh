@@ -11,7 +11,7 @@ MaxInstrBytes=$((4 * 2**$LogInstrsPerCore - $MaxBootImageBytes))
 BytesPerDRAMPartition=$((2**$LogBytesPerDRAMPartition))
 CoresPerDRAM=$((2**($LogCoresPerDCache+$LogDCachesPerDRAM)))
 GlobalBytesPerCore=$((($BytesPerDRAMPartition*$ThreadsPerCore)-(1048576/$CoresPerDRAM)))
-CoreDRAMNum=$(($1%$CoresPerDRAM))
+CoreDRAMNum=$((($1>>$LogThreadsPerCore)%$CoresPerDRAM))
 InterleavedPartitionOffset=0x80000000
 
 cat - << EOF

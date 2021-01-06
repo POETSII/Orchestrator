@@ -18,6 +18,21 @@ Mothership::Mothership(int argc, char** argv):
 
 Mothership::~Mothership()
 {
+    /* Stop all running supervisors, because we're nice like that. */
+    DebugPrint("[MOTHERSHIP] Stopping all running applications...\n");
+    for (AppInfoIt appIt = appdb.appInfos.begin();
+         appIt != appdb.appInfos.end(); appIt++)
+    {
+        if (appIt->second.state == RUNNING)
+        {
+            DebugPrint("[MOTHERSHIP] Stopping application '%s'...\n",
+                       appIt->first.c_str());
+            stop_application(&(appIt->second));
+            DebugPrint("[MOTHERSHIP] Stopped application '%s'.\n",
+                       appIt->first.c_str());
+        }
+    }
+
     /* Tear down backend. */
     if (backend != PNULL)
     {
@@ -111,8 +126,32 @@ bool Mothership::debug_post(int code, unsigned numArgs, ...)
 }
 
 /* Defines OnIdle behaviour for the Mothership (ala CommonBase) - this
- * currently just calls the idle handler for loaded supervisors in a loop. */
-void Mothership::OnIdle(){superdb.idle_rotation();}
+ * currently just calls the idle handler for one supervisor, skipping
+ * supervisors that are not already being called, and skipping supervisors for
+ * applications that are not running. */
+void Mothership::OnIdle()
+{
+    /* Get next supervisor to use. */
+    std::string name;
+    SuperHolder* chosenOne = superdb.get_next_idle(name);
+    if (chosenOne == PNULL) return;
+
+    /* Ignore if its application is not running. Note that supervisors should
+     * have a corresponding appdb entry, but we add a guard here just in
+     * case. */
+    AppInfoIt appFinder = appdb.appInfos.find(name);
+    if (appFinder == appdb.appInfos.end()) return;
+    if (appFinder->second.state != RUNNING) return;
+
+    /* Ignore if it's locked. */
+    if (pthread_mutex_trylock(&(chosenOne->lock)) != 0) return;
+
+    /* Call idle method for this supervisor. */
+    superdb.idle_supervisor(name);
+
+    /* Unlock the mutex we've claimed. */
+    pthread_mutex_unlock(&(chosenOne->lock));
+}
 
 /* Sets up the function map for MPI communications. See the CommonBase
  * documentation for more information on how this is expected to work. */

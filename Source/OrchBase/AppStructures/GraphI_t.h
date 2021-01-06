@@ -41,7 +41,7 @@ GraphT_t *           pT;               // Type tree pointer
 CFrag *              pPropsI;          // Graph properties initialiser code
 map<string,unsigned> Dmap;             // Device name->key map
 vector<Meta_t *>     Meta_v;           // MetaData vector
-P_super*             pSup;             // Supervisor information
+P_super*             pSupI;            // Supervisor information
 
 bool                 built;            // Flag to indicate compile state
 };

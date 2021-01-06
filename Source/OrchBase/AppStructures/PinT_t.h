@@ -25,7 +25,6 @@ CFrag *            pHandl;             // Pin event handler source
 string             tyId;               // Message type name
 MsgT_t *           pMsg;               // Pin message type
 size_t             Idx;                // Index of edge in DevT_t->PinT{I/O}_v
-bool               dir;                // Pin direction. True for Input.
 };
 
 //==============================================================================

@@ -12,7 +12,7 @@ struct UniqueDevT
     GraphI_t* gi;
     DevT_t* pT;
     bool operator!=(const UniqueDevT& alt) const
-        {return (gi == alt.gi and pT == alt.pT);}
+        {return not (gi == alt.gi and pT == alt.pT);}
     bool operator<(const UniqueDevT& alt) const
     {
         if (gi == alt.gi) return pT < alt.pT;

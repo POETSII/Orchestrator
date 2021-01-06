@@ -20,13 +20,13 @@ SuperHolder::SuperHolder(std::string path):
     /* Load hooks. */
     call = reinterpret_cast<int (*)(PMsg_p*, PMsg_p*)>
         (dlsym(so, "SupervisorCall"));
+    if (call == NULL) error = true;
     exit = reinterpret_cast<int (*)()>(dlsym(so, "SupervisorExit"));
+    if (exit == NULL) error = true;
     idle = reinterpret_cast<int (*)()>(dlsym(so, "SupervisorIdle"));
-    implicitCall = reinterpret_cast<int (*)(PMsg_p*, PMsg_p*)>
-        (dlsym(so, "SupervisorImplicitCall"));
+    if (idle == NULL) error = true;
     init = reinterpret_cast<int (*)()>(dlsym(so, "SupervisorInit"));
-
-    if (not are_all_hooks_loaded()) error = true;
+    if (init == NULL) error = true;
     /* We out, yo */
 }
 

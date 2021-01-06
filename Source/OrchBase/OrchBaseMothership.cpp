@@ -60,7 +60,7 @@ void OrchBase::MshipCommand(Cli::Cl_t clause, std::string command)
     {
         if (!(*graphIt)->deployed)
         {
-            Post(169, (*graphIt)->Name());
+            Post(169, command, (*graphIt)->Name());
             return;
         }
     }
