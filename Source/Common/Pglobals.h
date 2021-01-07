@@ -58,6 +58,7 @@ MSHP |ACK  |DEFD |-    | (0:string)Application name
 MSHP |ACK  |LOAD |-    | (0:string)Application name
 MSHP |ACK  |RUN  |-    | (0:string)Application name
 MSHP |ACK  |STOP |-    | (0:string)Application name
+MSHP |REQ  |STOP |-    | (0:string)Application name
 
 LogServer
 ---------

@@ -77,6 +77,9 @@ FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)] = &Root::OnMshipAck;
 FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN )] = &Root::OnMshipAck;
 FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)] = &Root::OnMshipAck;
 
+// Mothership requests
+FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP)] = &Root::OnMshipReq;
+
 // Spin off a thread to handle keyboard
 void * args = this;
 pthread_t kb_thread;
@@ -368,7 +371,22 @@ unsigned Root::OnMshipAck(PMsg_p * Z)
     else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP))
         mshipAcks[mshipApp] = "STOPPED";
     else
-        mshipAcks[mshipApp] = "YOU-ARE-NOT-SUPPOSED-TO-BE-HERE";
+        Post(183, hex2str(key), int2str(Z->Src()), int2str(Z->Tgt()));
+    return 0;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned Root::OnMshipReq(PMsg_p * Z)
+// Handles requests from Motherships to central control. Currently, just stops
+// applications.
+{
+    unsigned key = Z->Key();
+    string appName;
+    Z->Get(0, appName);
+    if (key == PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP))
+        MshipCommand(Cli("stop /app = " + appName).Cl_v[0], "stop");
+    else Post(183, hex2str(key), int2str(Z->Src()), int2str(Z->Tgt()));
     return 0;
 }
 
