@@ -906,7 +906,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         supervisor_h << "#define _APPLICATION_SUPERVISOR_ 1\n\n";
         supervisor_h << "#include \"GlobalProperties.h\"\n";
         supervisor_h << "#include \"MessageFormats.h\"\n\n";
-
+        
+        // Add the QoL macros to the generated source
         supervisor_h << "#define GRAPHPROPERTIES(a)  graphProperties->a\n";
         supervisor_h << "#define SUPPROPERTIES(a)    supervisorProperties->a\n";
         supervisor_h << "#define SUPSTATE(a)         supervisorState->a\n";

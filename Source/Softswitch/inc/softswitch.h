@@ -12,6 +12,7 @@
 #define P_LOG_LEVEL P_DEFAULT_LOG_LEVEL
 #endif
 
+// Softswitch QoL Macros
 #define GRAPHPROPERTIES(a)  graphProperties->a
 #define DEVICEPROPERTIES(a) deviceProperties->a
 #define DEVICESTATE(a)      deviceState->a
