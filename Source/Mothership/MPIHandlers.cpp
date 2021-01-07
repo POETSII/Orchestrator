@@ -248,6 +248,14 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
         return 0;
     }
 
+    /* On loading the supervisor, provision its API. */
+    if(!provision_supervisor_api(appName))
+    {
+        Post(525, appName);
+        appInfo->state = BROKEN;
+        return 0;
+    }
+
     /* Otherwise, increment the distribution message count. If the distribution
      * message count is too high, shout loudly, and break the application. */
     if (!appInfo->increment_dist_count_current())

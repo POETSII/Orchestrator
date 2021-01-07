@@ -216,7 +216,8 @@ COMPOSER_ENV_DEPENDENCIES := \
 	$(COMPOSER_ENV_DIR)/Tinsel \
 	$(COMPOSER_ENV_DIR)/Makefile \
 	$(COMPOSER_ENV_DIR)/Supervisor.cpp \
-	$(COMPOSER_ENV_DIR)/Supervisor.h
+	$(COMPOSER_ENV_DIR)/Supervisor.h \
+	$(COMPOSER_ENV_DIR)/SupervisorApi.h
 
 composer_environment: $(COMPOSER_ENV_DEPENDENCIES)
 
@@ -239,6 +240,10 @@ $(COMPOSER_ENV_DIR)/Tinsel:
 $(COMPOSER_ENV_DIR)/Makefile:
 	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch/Makefile)" "$@"
+
+$(COMPOSER_ENV_DIR)/SupervisorApi.h:
+	ln --force --symbolic \
+	"$(abspath $(SOURCE_DIR)/Supervisor/SupervisorApi$(suffix $@))" "$@"
 
 $(COMPOSER_ENV_DIR)/Supervisor.cpp $(COMPOSER_ENV_DIR)/Supervisor.h:
 	$(MKDIR) "$(dir $@)"

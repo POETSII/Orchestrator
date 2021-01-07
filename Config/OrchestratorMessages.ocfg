@@ -201,6 +201,7 @@
 522(E) : "Mothership: Error decoding MPI message with key '0x%s': Expected a vector of uint32_t values in field %s. Ignoring message."
 523(E) : "Mothership: Supervisor for application '%s' failed to initialise correctly. Marking application as BROKEN (which may cause other errors)."
 524(E) : "Mothership: Application '%s' received more distribution messages than expected (%s). Marking application as BROKEN (which may cause other errors)."
+525(E) : "Mothership: Error provisioning supervisor for application '%s': 'could not find a loaded supervisor for this application."
 
 582(I) : "Mothership: Received a message containing packets for a supervisor device for application '%s' that is not running (it may be in the process of stopping). Ignoring these packets."
 583(I) : "Mothership: Initialising supervisor device for application '%s'."

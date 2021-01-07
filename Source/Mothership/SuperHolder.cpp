@@ -3,7 +3,7 @@
 /* Here we load the shared objects! It is down to the creator to verify the
  * success of the loading process (i.e. by checking (error), and by calling
  * dlerror to obtain an error message). */
-SuperHolder::SuperHolder(std::string path):
+SuperHolder::SuperHolder(std::string path, std::string appName):
     path(path)
 {
     pthread_mutex_init(&lock, NULL);
@@ -27,7 +27,13 @@ SuperHolder::SuperHolder(std::string path):
     if (idle == NULL) error = true;
     init = reinterpret_cast<int (*)()>(dlsym(so, "SupervisorInit"));
     if (init == NULL) error = true;
-    /* We out, yo */
+
+    /* Bind the method that allows the Mothership to get this Supervisor's API
+     * object, if possible (before the Mothership provisions it - we want to
+     * ensure it is loadable). */
+    getApi = reinterpret_cast<SupervisorApi* (*)()>
+        (dlsym(so, "GetSupervisorApi"));
+    if (getApi == NULL) error = true;
 }
 
 /* And here we close them. */

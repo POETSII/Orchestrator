@@ -3,8 +3,10 @@
 
 extern "C"
 {
+    SupervisorApi* GetSupervisorApi(){return &(Supervisor::api);}
+
     int SupervisorInit(){return Supervisor::OnInit();}
-    
+
     int SupervisorCall(PMsg_p* In, PMsg_p* Out)
     {
 #ifdef _APPLICATION_SUPERVISOR_
@@ -36,17 +38,17 @@ extern "C"
     uint64_t SupervisorIdx2Addr(uint32_t idx)
     {
         uint64_t ret = 0;
-        
+
         if(idx >= Supervisor::DeviceVector.size())
         {
-            //out of range Idx            
+            //out of range Idx
             return UINT64_MAX;
         }
-        
+
         ret = Supervisor::DeviceVector[idx].HwAddr;
         ret = ret << 32;
         ret |= Supervisor::DeviceVector[idx].SwAddr;
-        
+
         return ret;
     }
 

@@ -113,6 +113,10 @@ private:
     bool decode_unsigned_message(PMsg_p* message, unsigned* result,
                                  unsigned index=0);
 
+    /* Methods for provisioning the API for Supervisors. */
+    bool provision_supervisor_api(std::string appName);
+    void supervisor_api_stop_application(std::string appName);
+
     /* Supervisor spinning (virtual from CommonBase). */
     void OnIdle();
 };
