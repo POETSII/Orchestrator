@@ -20,7 +20,7 @@
 #define EDGESTATE(a)        edgeState->a
 #define MSG(a)              message->a
 #define PKT(a)              message->a
-#define RTS(a)              *readyToSend |= RTS_FLAG_a
+#define RTS(a)              *readyToSend |= RTS_FLAG_##a
 #define RTSSUP()            *readyToSend |= RTS_SUPER_IMPLICIT_SEND_FLAG
 
 const uint32_t p_logpkt_max_size = p_logpkt_pyld_size << P_LOG_MAX_LOGPKT_FRAG;
