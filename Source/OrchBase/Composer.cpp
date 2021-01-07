@@ -907,6 +907,12 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         supervisor_h << "#include \"GlobalProperties.h\"\n";
         supervisor_h << "#include \"MessageFormats.h\"\n\n";
 
+        supervisor_h << "#define GRAPHPROPERTIES(a)  graphProperties->a\n";
+        supervisor_h << "#define SUPPROPERTIES(a)    supervisorProperties->a\n";
+        supervisor_h << "#define SUPSTATE(a)         supervisorState->a\n";
+        supervisor_h << "#define MSG(a)              message->a\n";
+        supervisor_h << "#define PKT(a)              message->a\n";
+        supervisor_h << "\n";
 
         // Global properties initialiser
         writeGlobalPropsI(graphI, supervisor_cpp);
