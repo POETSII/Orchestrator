@@ -12,6 +12,17 @@
 #define P_LOG_LEVEL P_DEFAULT_LOG_LEVEL
 #endif
 
+// Softswitch QoL Macros
+#define GRAPHPROPERTIES(a)  graphProperties->a
+#define DEVICEPROPERTIES(a) deviceProperties->a
+#define DEVICESTATE(a)      deviceState->a
+#define EDGEPROPERTIES(a)   edgeProperties->a
+#define EDGESTATE(a)        edgeState->a
+#define MSG(a)              message->a
+#define PKT(a)              message->a
+#define RTS(a)              *readyToSend |= RTS_FLAG_##a
+#define RTSSUP()            *readyToSend |= RTS_SUPER_IMPLICIT_SEND_FLAG
+
 const uint32_t p_logpkt_max_size = p_logpkt_pyld_size << P_LOG_MAX_LOGPKT_FRAG;
 const uint32_t p_logpkt_1pkt_max_size = p_logpkt_pyld_size;
 const uint32_t p_logpkt_2pkt_max_size = p_logpkt_pyld_size << 1;
