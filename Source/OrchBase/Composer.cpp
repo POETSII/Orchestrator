@@ -31,7 +31,7 @@ ComposerGraphI_t::ComposerGraphI_t()
 ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn)
 {
     graphI = graphIIn;
-    outputDir = graphI->Name();
+    outputDir = graphI->GetCompoundName(true);
     generated = false;
     compiled = false;
 }
