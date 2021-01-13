@@ -801,9 +801,10 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "#include \"supervisor_generated.h\"\n";
     supervisor_cpp << "#include \"Supervisor.h\"\n\n";
 
-    // Write the static member initialisors (Supervisor::init and the Device Vector)
+    // Write the static member initialisors (Supervisor::init, Supervisor::api,
+    // and the Device Vector)
     supervisor_cpp << "bool Supervisor::__SupervisorInit = false;\n";
-
+    supervisor_cpp << "SupervisorApi Supervisor::__api;\n";
 
     // As part of this, we need to generate an edge index for each device on
     // this supervisor. For now, that is all devices so we (ab)use Digraph.
