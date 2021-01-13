@@ -26,7 +26,7 @@ class Supervisor
 {
 public:
    static bool __SupervisorInit;
-   static SupervisorApi api;
+   static SupervisorApi __api;
 
    static SupervisorProperties_t* __SupervisorProperties;
    static SupervisorState_t* __SupervisorState;

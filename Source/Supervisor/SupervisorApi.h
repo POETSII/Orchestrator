@@ -9,8 +9,8 @@
  * the function pointers. */
 
 #define SUPERVISOR_STOP_APPLICATION() \
-    ((Supervisor::api.stop_application)\
-     (Supervisor::api.mship, Supervisor::api.appName))
+    ((Supervisor::__api.stop_application)\
+     (Supervisor::__api.mship, Supervisor::__api.appName))
 
 class Mothership;
 

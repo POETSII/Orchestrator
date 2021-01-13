@@ -3,7 +3,7 @@
 
 extern "C"
 {
-    SupervisorApi* GetSupervisorApi(){return &(Supervisor::api);}
+    SupervisorApi* GetSupervisorApi(){return &(Supervisor::__api);}
 
     int SupervisorInit(){return Supervisor::OnInit();}
 
