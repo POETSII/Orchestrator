@@ -9,15 +9,17 @@
  * the function pointers. */
 
 #define SUPERVISOR_STOP_APPLICATION() \
-    ((Supervisor::api.*stop_application)(Supervisor::api.appName))
+    ((Supervisor::api.stop_application)\
+     (Supervisor::api.mship, Supervisor::api.appName))
 
 class Mothership;
 
 class SupervisorApi
 {
 public:
+    Mothership* mship;
     std::string appName;
-    void (Mothership::*stop_application)(std::string appName);
+    void (*stop_application)(Mothership* mship, std::string appName);
 };
 
 #endif
