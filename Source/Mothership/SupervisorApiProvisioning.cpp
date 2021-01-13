@@ -16,7 +16,7 @@ namespace SuperAPIBindings {
         PMsg_p message;
         message.Src(mship->Urank);
         message.Key(Q::MSHP, Q::REQ, Q::STOP);
-        message.Put<std::string>(0, &(appName));
+        message.Put(0, &(appName));
         message.Tgt(mship->pPmap->U.Root);
         mship->Post(526, appName);
         mship->queue_mpi_message(&message);
