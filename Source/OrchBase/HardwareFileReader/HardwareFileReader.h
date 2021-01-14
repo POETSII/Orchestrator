@@ -151,6 +151,7 @@ private:
     void d3_catastrophic_failure(P_engine* engine);
     bool d3_create_cores_and_threads_for_mailbox(P_mailbox* mailbox,
                                                  unsigned coreQuantity,
+                                                 unsigned addrOffset,
                                                  bool pairCores);
     bool d3_define_board_fields_from_section(P_board* board,
                                              UIF::Node* sectionNode);

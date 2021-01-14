@@ -21,6 +21,7 @@ TEST_CASE("Files with valid syntax and semantics do not raise", "[Reader]")
     semanticallyValidInputs.push_back("1_box.uif");
     semanticallyValidInputs.push_back("8_box.uif");
     semanticallyValidInputs.push_back("valid_dialect_3_mismatched_name.uif");
+    semanticallyValidInputs.push_back("valid_dialect_3_mpi.uif");
     semanticallyValidInputs.push_back("valid_dialect_3_one_thread_per_core.uif");
     semanticallyValidInputs.push_back("valid_dialect_3_some_types_in_sections.uif");
     semanticallyValidInputs.push_back("valid_dialect_3_types_everywhere.uif");
