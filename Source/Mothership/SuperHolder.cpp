@@ -51,7 +51,6 @@ bool SuperHolder::are_all_hooks_loaded()
     return not (call == NULL or
                 exit == NULL or
                 idle == NULL or
-                implicitCall == NULL or
                 init == NULL);
 }
 

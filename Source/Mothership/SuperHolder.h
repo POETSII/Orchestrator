@@ -27,7 +27,6 @@ public:
     SupervisorApi* (*getApi)();
     int (*idle)();
     int (*init)();
-    int (*implicitCall)(PMsg_p*, PMsg_p*);
 
 private:
     void* so;
