@@ -8,7 +8,9 @@
 namespace Super {
     void post(std::string message)
     {
-        (Supervisor::__api.post)(Supervisor::__api.mship, message);
+        (Supervisor::__api.post)(Supervisor::__api.mship,
+                                 Supervisor::__api.appName,
+                                 message);
     }
 
     void stop_application()
