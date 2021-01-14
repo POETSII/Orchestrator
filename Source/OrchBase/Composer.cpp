@@ -1531,9 +1531,11 @@ void Composer::formDevTInputPinHandlers(devTypStrings_t* dTypStrs)
         if ((*pinI)->pMsg->pPropsD)
         {
             handlers_cpp << "   const pkt_" << (*pinI)->pMsg->Name();
-            handlers_cpp << "_pyld_t* message = ";
+            handlers_cpp << "_pyld_t* message";
+            handlers_cpp << " OS_ATTRIBUTE_UNUSED= ";
             handlers_cpp << "static_cast<const pkt_" << (*pinI)->pMsg->Name();
             handlers_cpp << "_pyld_t*>(pkt);\n";
+            handlers_cpp << "OS_PRAGMA_UNUSED(message)\n";
         }
 
         handlers_cpp << (*pinI)->pHandl->C_src() << "\n";
@@ -1591,8 +1593,11 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
         if (devT->pPinTSO->pMsg->pPropsD)
         {
             handlers_cpp << "   pkt_" << devT->pPinTSO->pMsg->Name();
-            handlers_cpp << "_pyld_t* message = static_cast<pkt_";
+            handlers_cpp << "_pyld_t* message";
+            handlers_cpp << " OS_ATTRIBUTE_UNUSED= ";
+            handlers_cpp << "static_cast<pkt_";
             handlers_cpp << devT->pPinTSO->pMsg->Name() << "_pyld_t*>(pkt);\n";
+            handlers_cpp << "OS_PRAGMA_UNUSED(message)\n";
         }
         handlers_cpp << devT->pPinTSO->pHandl->C_src() << "\n";
 
@@ -1629,8 +1634,11 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
         if ((*pinO)->pMsg->pPropsD)
         {
             handlers_cpp << "   pkt_" << (*pinO)->pMsg->Name();
-            handlers_cpp << "_pyld_t* message = static_cast<pkt_";
+            handlers_cpp << "_pyld_t* message = ";
+            handlers_cpp << " OS_ATTRIBUTE_UNUSED= ";
+            handlers_cpp << "static_cast<pkt_";
             handlers_cpp << (*pinO)->pMsg->Name() << "_pyld_t*>(pkt);\n";
+            handlers_cpp << "OS_PRAGMA_UNUSED(message)\n";
         }
         handlers_cpp << (*pinO)->pHandl->C_src() << "\n";
 
