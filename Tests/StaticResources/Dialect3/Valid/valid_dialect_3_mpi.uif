@@ -1,12 +1,12 @@
-// Like valid_dialect_3_mpi, but with an invalid field next to
-// core_addr_offset.
+// A representation of GMB's MPI cluster. Note the bizarre thread-core
+// relationship, and the use of core_addr_offset.
 
 [header("GMB_MPI")]
 +author="Mark Vousden"
 +dialect=3
 +datetime=20210106134500
 +version="0.5.1"
-+file="invalid_dialect_3_invalid_variable_key.uif"
++file="valid_dialect_3_mpi.uif"
 
 // Only the core address meaningfully contributes to the address - there's only
 // one of everything else.
@@ -46,9 +46,8 @@ MPI(addr(0),boards(B00),hostname(gmbmpicluster))
 +cores=60
 +mailbox_core_cost=0
 +core_core_cost=0
-+core_addr_offset=0
-+quack=5
-+pair_cores="true"
++core_addr_offset=1
++pair_cores=false
 
 [core]
 +threads=1
