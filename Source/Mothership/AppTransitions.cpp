@@ -151,6 +151,14 @@ void Mothership::stop_application(AppInfo* app)
         Post(503, appName, errorMessage);
         app->state = BROKEN;
     }
+
+    /* On (re)loading the supervisor, provision its API. */
+    if(!provision_supervisor_api(appName))
+    {
+        Post(525, appName);
+        appInfo->state = BROKEN;
+        return 0;
+    }
 }
 
 /* Sends a CNC packet with a given opcode to each thread in an application. */
