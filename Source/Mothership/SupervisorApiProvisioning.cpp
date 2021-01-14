@@ -9,6 +9,12 @@
 #include "Mothership.h"
 
 namespace SuperAPIBindings {
+    /* Posts a logserver message. */
+    void post(Mothership* mship, std::string message)
+    {
+        mship->Post(527, message);
+    }
+
     /* Sends a message to root, requesting that this application be stopped
      * (across all Motherships) */
     void stop_application(Mothership* mship, std::string appName)
@@ -31,6 +37,7 @@ bool Mothership::provision_supervisor_api(std::string appName)
     if (api == PNULL) return false;
     api->mship = this;
     api->appName = appName;
+    api->post = &SuperAPIBindings::post;
     api->stop_application = &SuperAPIBindings::stop_application;
     return true;
 }

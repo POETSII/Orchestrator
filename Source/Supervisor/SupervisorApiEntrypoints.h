@@ -6,6 +6,11 @@
  * SupervisorApi class. */
 
 namespace Super {
+    void post(std::string message)
+    {
+        (Supervisor::__api.post)(Supervisor::__api.mship, message);
+    }
+
     void stop_application()
     {
         (Supervisor::__api.stop_application)
