@@ -5,7 +5,7 @@
  * application can call, which piggyback off functions defined in the
  * SupervisorApi class. */
 
-namespace SuperApi {
+namespace Super {
     void stop_application()
     {
         (Supervisor::__api.stop_application)
