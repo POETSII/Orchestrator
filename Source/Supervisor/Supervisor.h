@@ -45,5 +45,6 @@ public:
 
 };
 
+#include "SupervisorApiEntrypoints.h"
 
 #endif
