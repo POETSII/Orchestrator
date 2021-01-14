@@ -156,8 +156,7 @@ void Mothership::stop_application(AppInfo* app)
     if(!provision_supervisor_api(appName))
     {
         Post(525, appName);
-        appInfo->state = BROKEN;
-        return 0;
+        app->state = BROKEN;
     }
 }
 
