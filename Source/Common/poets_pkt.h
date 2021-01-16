@@ -121,6 +121,8 @@ typedef struct poets_log_packet_payload
     uint8_t payload[P_PKT_MAX_SIZE-(sizeof(P_Pkt_Hdr_t)+sizeof(uint8_t))];
 } P_Log_Pkt_Pyld_t;
 
+typedef uint8_t P_Pkt_pyld_t[P_PKT_MAX_SIZE-sizeof(P_Pkt_Hdr_t)];
+
 typedef struct poets_instr_packet_payload
 {
     // First Flit

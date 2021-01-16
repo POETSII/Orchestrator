@@ -243,6 +243,126 @@ void CmComp::Cm_Reset(Cli::Cl_t clause)
 
 //------------------------------------------------------------------------------
 
+void CmComp::Cm_SoftswitchBufferMode(Cli::Cl_t clause, bool mode = false)
+{
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "buffer");
+        return;
+    }
+
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+    
+    /* Set the softswitch buffering mode for each app in sequence. */
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        par->pComposer->setBuffMode(*graphIt, mode);
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void CmComp::Cm_SoftswitchInstrMode(Cli::Cl_t clause, bool mode = false)
+{
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "nobuffer");
+        return;
+    }
+
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+    
+    /* Set the instrumentation mode for each app in sequence. */
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        par->pComposer->enableInstr(*graphIt, mode);
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void CmComp::Cm_SoftswitchLogHandler(Cli::Cl_t clause)
+{
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "loghandler");
+        return;
+    }
+
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+    
+    /* Set the mode for each app in sequence. */
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        if(clause.Pa_v.size() != 2)
+        {   // Missing the log handler specification
+            //TODO: Barf
+        }
+        
+        // Grab the handler type and convert to lower
+        std::string hName = clause.Pa_v[1].Va_v[0]; //we ignore stuff after ::
+        std::transform(hName.begin(), hName.end(), hName.begin(), ::tolower);
+        
+        if(hName == "none")
+        {   // Disable the log handler
+            par->pComposer->setLogHandler(*graphIt, disabled);
+        }
+        else if(hName == "trivial")
+        {   // Set the trivial log handler 
+            par->pComposer->setLogHandler(*graphIt, trivial);
+        }
+        else
+        {   // Unknown log handler
+            //TODO: Barf
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void CmComp::Cm_SoftswitchSetRTSBuffSize(Cli::Cl_t clause)
+{
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "rtsbuffsize");
+        return;
+    }
+
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+    
+    /* Set the mode for each app in sequence. */
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        if(clause.Pa_v.size() != 2)
+        {   // Missing the RTS Buff size
+            //TODO: Barf
+        }
+        
+        // Grab the specified buffer size, we ignore stuff after ::
+        long buffSz = atol(clause.Pa_v[1].Va_v[0].c_str());
+        
+        par->pComposer->setRTSSize(*graphIt, buffSz);
+    }
+}
+
+//------------------------------------------------------------------------------
+
 void CmComp::Dump(unsigned off,FILE * fp)
 {
 #warning "CmComp::Dump: Not fully defined or connected to anything"
@@ -251,6 +371,7 @@ const char * os = s.c_str();
 fprintf(fp,"%sCmComp +++++++++++++++++++++++++++++++++++++++++++++++++++\n",os);
 if (par==0) fprintf(fp,"%sOrchBase parent not defined\n",os);
 else fprintf(fp,"%sOrchbase parent : %s\n",os,par->FullName().c_str());
+par->pComposer->Dump(off+2,fp);
 fprintf(fp,"%sCmComp -------------------------------------------------\n\n",os);
 fflush(fp);
 }
@@ -282,6 +403,17 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="dege" ) { Cm_Degenerate(*i);    continue; }
   if (sCl=="clea" ) { Cm_Clean(*i);         continue; }
   if (sCl=="rese" ) { Cm_Reset(*i);         continue; }
+  
+  // Softswitch control commands
+  if (sCl=="buff" ) { Cm_SoftswitchBufferMode(*i, true);   continue; }
+  if (sCl=="nobu" ) { Cm_SoftswitchBufferMode(*i, false);  continue; }
+  if (sCl=="logh" ) { Cm_SoftswitchLogHandler(*i);         continue; }
+  if (sCl=="inst" ) { Cm_SoftswitchInstrMode(*i, true);    continue; }
+  if (sCl=="noin" ) { Cm_SoftswitchInstrMode(*i, false);   continue; }
+  if (sCl=="rtsb" ) { Cm_SoftswitchSetRTSBuffSize(*i);     continue; }
+  
+  if (sCl=="dump" ) { Dump(0,par->fd);                     continue; }
+  
   par->Post(25,sCl,"compose");         // Unrecognised clause
 }
 return 0;                              // Legitimate command exit

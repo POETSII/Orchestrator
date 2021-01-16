@@ -8,7 +8,8 @@ const string GENERATED_H_PATH = GENERATED_PATH+"/inc";
 const string GENERATED_CPP_PATH = GENERATED_PATH+"/src";
 
 //TODO: cross-platform this
-const string COREMAKE = "make -j$(nproc --ignore=4) all 2>&1 >> make_errs.txt";
+const string COREMAKE = "make -j$(nproc --ignore=4) all ";
+const string COREMAKEPOST = "2>&1 >> make_errs.txt";
 const string COREMAKECLEAN = "make clean 2>&1 >> clean_errs.txt";
 
 
@@ -26,6 +27,13 @@ ComposerGraphI_t::ComposerGraphI_t()
     outputDir = "Composer";
     generated = false;
     compiled = false;
+    
+    // Softswitch control.
+    rtsBuffSizeMax = MAX_RTSBUFFSIZE;
+    bufferingSoftswitch = false;        // Default to a non-buffering softswitch
+    softswitchInstrumentation = true;   // Default to enable instrumentation
+    softswitchLogHandler = trivial;     // Default to the trivial log handler 
+    softswitchLoopMode = standard;      // Default to the standard loop mode
 }
 
 ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn)
@@ -34,6 +42,13 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn)
     outputDir = graphI->Name();
     generated = false;
     compiled = false;
+    
+    // Softswitch control.
+    rtsBuffSizeMax = MAX_RTSBUFFSIZE;
+    bufferingSoftswitch = false;        // Default to a non-buffering softswitch
+    softswitchInstrumentation = true;   // Default to enable instrumentation
+    softswitchLogHandler = trivial;     // Default to the trivial log handler 
+    softswitchLoopMode = standard;      // Default to the standard loop mode
 }
 
 ComposerGraphI_t::~ComposerGraphI_t()
@@ -48,7 +63,9 @@ ComposerGraphI_t::~ComposerGraphI_t()
     devTStrsMap.clear();
 }
 
-//Safely clear the DevT strings Map
+/******************************************************************************
+ * Safely clear the DevT strings Map
+ *****************************************************************************/
 void ComposerGraphI_t::clearDevTStrsMap()
 {
     WALKMAP(DevT_t*, devTypStrings_t*, devTStrsMap, devTStrs)
@@ -58,6 +75,55 @@ void ComposerGraphI_t::clearDevTStrsMap()
     }
 }
 
+/******************************************************************************
+ * Dump a ComposerGraphI_t to file for debugging
+ *****************************************************************************/
+void ComposerGraphI_t::Dump(unsigned off,FILE* file)
+{
+    std::string prefix = dformat("%d Composer Graph Instance at %" PTR_FMT ,
+                                 off, OSFixes::getAddrAsUint(this));
+    DumpUtils::open_breaker(file, prefix);
+    
+    fprintf(file, "Graph instance name:          %s \n",graphI->Name().c_str());
+    fprintf(file, "Output directory:             %s \n",outputDir.c_str());
+    fprintf(file, "Generated:                    %s \n",
+                                                generated ? "true" : "false");
+    fprintf(file, "Compiled:                     %s \n",
+                                                compiled ? "true" : "false");
+    
+    fprintf(file, "\nSoftswitch generation/compilation control:\n");
+    fprintf(file, "  Maximum RTS buffer size:    %lu \n",rtsBuffSizeMax);
+    fprintf(file, "  Buffering Softswitch:       %s \n",
+                        bufferingSoftswitch ? "true" : "false");
+    fprintf(file, "  Softswitch Instrumentation: %s \n",
+                        softswitchInstrumentation ? "true" : "false");
+                        
+    fprintf(file, "  Softswitch log handler:     ");
+    switch(softswitchLogHandler)
+    {
+        case disabled:  fprintf(file, "none\n");                          break;
+        case trivial:   fprintf(file, "trivial\n");                       break;
+        default:        fprintf(file, "**INVALID**\n");
+    }
+    
+    fprintf(file, "  Softswitch loop mode:       ");
+    switch(softswitchLoopMode)
+    {
+        case standard:  fprintf(file, "standard\n");                      break;
+        case priInstr:  fprintf(file, "prioritise instrumentation\n");    break;
+        default:        fprintf(file, "**INVALID**\n");
+    }
+    
+    fprintf(file, "\nNitty gritty details:\n");
+    fprintf(file, "  Device type strs map size:  %lu \n",
+                        static_cast<unsigned long>(devTStrsMap.size()));
+    fprintf(file, "  supevisorDevIVect size:     %lu \n",
+                        static_cast<unsigned long>(supevisorDevIVect.size()));
+    fprintf(file, "  Provenance string cache:\n%s \n",provenanceCache.c_str());                    
+    /* Close breaker and flush the dump. */
+    DumpUtils::close_breaker(file, prefix);
+    fflush(file);
+}
 
 /******************************************************************************
  * Composer constructors
@@ -84,6 +150,32 @@ Composer::~Composer()
     graphIMap.clear();
 }
 
+/******************************************************************************
+ * Dump a Composer instance to file for debugging
+ *****************************************************************************/
+void Composer::Dump(unsigned off,FILE* file)
+{
+    std::string prefix = dformat("%d Composer Instance at %" PTR_FMT ,
+                                 off, OSFixes::getAddrAsUint(this));
+    DumpUtils::open_breaker(file, prefix);
+    
+    fprintf(file, "Placer instance:              %" PTR_FMT "\n",
+                                                OSFixes::getAddrAsUint(placer));
+    fprintf(file, "Output Path:                  %s \n",outputPath.c_str());
+    fprintf(file, "Number of graph instances:    %lu \n",
+                                static_cast<unsigned long>(graphIMap.size()));
+    
+    WALKMAP(GraphI_t*, ComposerGraphI_t*, graphIMap, builderGraphI)
+    {
+        fprintf(file, "\n");
+        builderGraphI->second->Dump(off+2,file);
+    }
+    
+    
+    /* Close breaker and flush the dump. */
+    DumpUtils::close_breaker(file, prefix);
+    fflush(file);
+}
 
 /******************************************************************************
  * Change the output directory
@@ -111,6 +203,181 @@ void Composer::setPlacer(Placer* plc)
     //TODO: invalidate any generated but not compiled
 }
 
+
+/******************************************************************************
+ * Set the buffering mode for the softswitch
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::setBuffMode(GraphI_t* graphI, bool buffMode)
+{
+    ComposerGraphI_t* builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->bufferingSoftswitch = buffMode;
+    
+    return 0;
+}
+
+/******************************************************************************
+ * Set the size of the RTS Buffer
+ *
+ * Changing this requires an app to be regenerated and recompiled.
+ *****************************************************************************/
+int Composer::setRTSSize(GraphI_t* graphI, unsigned long rtsSize)
+{
+    ComposerGraphI_t* builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    if(builderGraphI->generated)
+    {   // Already generated, need to degenerate
+        degenerate(graphI);
+    }
+    
+    builderGraphI->rtsBuffSizeMax = rtsSize;
+    
+    return 0;
+}
+
+/******************************************************************************
+ * Set whether instrumentation will be enabled or disabled within a softswitch.
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::enableInstr(GraphI_t* graphI, bool ssInstr)
+{
+    ComposerGraphI_t* builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchInstrumentation = ssInstr;
+    
+    return 0;
+}
+
+/******************************************************************************
+ * Set loghandler mode for a softswitch
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::setLogHandler(GraphI_t* graphI, ssLogHandler_t logHandler)
+{
+    ComposerGraphI_t* builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchLogHandler = logHandler;
+    
+    return 0;
+}
+
+/******************************************************************************
+ * Set loop mode for a softswitch
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::setLoopMode(GraphI_t* graphI, ssLoopMode_t loopMode)
+{
+    ComposerGraphI_t* builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchLoopMode = loopMode;
+    
+    return 0;
+}
 
 /******************************************************************************
  * Public method to generate and compile
@@ -385,10 +652,45 @@ int Composer::compile(GraphI_t* graphI)
     // Make the magic happen: call make
     std::string buildPath = outputPath + builderGraphI->outputDir;
     buildPath += "/Build";
-
-    if(system(("(cd "+buildPath+";"+COREMAKE+")").c_str()))
+    
+    
+    // Form the Softswitch compilation control string
+    //TODO: Make these const strings at the top
+    std::string makeArgs = "\'";
+    
+    if(builderGraphI->bufferingSoftswitch)
+    {   // Softswitch needs to be built in buffering mode
+        makeArgs += "SOFTSWITCH_BUFFERING=1 ";
+    }
+    
+    if(!(builderGraphI->softswitchInstrumentation))
+    {   // Softswitch needs to be built with instrumentation disabled
+        makeArgs += "SOFTSWITCH_DISABLE_INSTRUMENTATION=1 ";
+    }
+    
+    switch(builderGraphI->softswitchLogHandler)
+    {   // Control the log handler 
+        case trivial:   makeArgs += "SOFTSWITCH_TRIVIAL_LOG_HANDLER=1 ";
+                        break;
+        
+        default:        break;  // De Nada!
+    }
+    
+    switch(builderGraphI->softswitchLogHandler)
+    {   // Control the main loop order
+        case priInstr:   makeArgs += "SOFTSWITCH_PRIORITISE_INSTRUMENTATION=1 ";
+                        break;
+        
+        default:        break;  // De Nada!
+    }
+    
+    makeArgs += "\' ";
+    
+    
+    if(system(("(cd "+buildPath+";"+COREMAKE+makeArgs+COREMAKEPOST+")").c_str()))
     {
-        //TODO: barf
+        //TODO: make failed, barf
+        //TODO: copy makeerrs.txt to uLog
         return 1;
     }
 
@@ -1187,7 +1489,9 @@ void Composer::writeMessageTypes(GraphI_t* graphI, std::ofstream& pkt_h)
     
     pkt_h << "#include <cstdint>\n";
     //pkt_h << "#include \"softswitch_common.h\"\n\n";
-
+    
+    //pkt_h <<  "#pragma pack(push,1)\n";
+    
     WALKVECTOR(MsgT_t*,graphT->MsgT_v,msg)
     {
         pkt_h << "typedef struct " << graphT->Name() << "_" << (*msg)->Name();
@@ -1195,7 +1499,9 @@ void Composer::writeMessageTypes(GraphI_t* graphI, std::ofstream& pkt_h)
         pkt_h << (*msg)->pPropsD->C_src();       // The message struct
         pkt_h << "\n} pkt_" << (*msg)->Name() << "_pyld_t;;\n\n";
     }
-
+    
+    //pkt_h <<  "#pragma pack(pop)\n";
+    
     pkt_h << "#endif /*_MESSAGETYPES_H_*/\n\n";
 }
 
@@ -1895,7 +2201,8 @@ unsigned Composer::writeThreadVars(ComposerGraphI_t* builderGraphI,
 
     writeThreadVarsCommon(coreAddr, threadAddr, vars_h, thread_vars_cpp);
 
-    writeThreadContextInitialiser(thread, devT, vars_h, thread_vars_cpp);
+    writeThreadContextInitialiser(builderGraphI, thread, devT,
+                                    vars_h, thread_vars_cpp);
 
     writeDevTDeclInit(threadAddr, devT, vars_h, thread_vars_cpp);
 
@@ -1937,7 +2244,8 @@ void Composer::writeThreadVarsCommon(AddressComponent coreAddr,
 /******************************************************************************
  * Generate the ThreadContext initialiser. PThreadContext/ThreadCtxt_t struct
  *****************************************************************************/
-void Composer::writeThreadContextInitialiser(P_thread* thread, DevT_t* devT,
+void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
+                                        P_thread* thread, DevT_t* devT,
                                         std::ofstream& vars_h,
                                         std::ofstream& vars_cpp)
 {
@@ -1956,76 +2264,91 @@ void Composer::writeThreadContextInitialiser(P_thread* thread, DevT_t* devT,
     vars_cpp << "Thread_" << threadAddr << "_Devices,";               // devIs
     vars_cpp << ((devT->par->pPropsD)?"&GraphProperties,":"PNULL,");  // props
 
-
-    /* Work out the required size for rtsBuffSize: The size of the RTS buffer is
-    * dependant on the number of connected output pins hosted on the Softswitch.
-    * The size is set to 1 + <number of connected pins> + <number of connected
-    * devices (if supervisor pin connected), as long as this is less than
-    * MAX_RTSBUFFSIZE, so that each connected pin can have a pending send.
-    *
-    * The additional slot is required to ensure that the crude, simple wrapping
-    * mechanism for the circular buffer does not set rtsEnd to be the same as
-    * rtsStart when adding to the buffer. If this occurs, softswitch_IsRTSReady
-    * will always return false (as it simply checks that rtsStart != rtsEnd) and
-    * no further application-generated packets will be sent by the softswitch
-    * (as softswitch_onRTS will only alter rtsEnd if it adds an entry to the
-    * buffer, which it wont do in this case as all pins will already be marked
-    * as send pending).
-    *
-    * If the buffer size is constrained to MAX_RTSBUFFSIZE, a warning is
-    * generated - if this occurs frequently, more graceful handling of rtsBuf
-    * overflowing may be required.
-    */
-    uint32_t outputCount = 1;     // Intentionally 1 to cope with wrapping.
-
-    if(devT->pPinTSO)
-    {   // There is a supervisor output, increase the output count by dev count.
-        outputCount += numberOfDevices;
+    /* Set the size of the RTSBuffer: depends on the mode of operation. In non-
+     * buffering mode, this will relate to the number of output pins hosted by
+     * the Softswitch. In Buffering mode, this is set to the maximum size (or
+     * the size specified at the command line/in the config).
+     */
+    uint32_t buffCount = 0;     // RTSBuff size.
+    if(builderGraphI->bufferingSoftswitch)
+    {
+        /* Use the value in the graph instance directly. */
+        buffCount = builderGraphI->rtsBuffSizeMax;
     }
+    else
+    {
+       /* Work out the required size for rtsBuffSize: The size of the RTS buffer
+        * is dependant on the number of connected output pins hosted on the 
+        * Softswitch.
+        * The size is set to 1 + <number of connected pins> + <number of 
+        * devices (if supervisor pin connected), as long as this is less than
+        * builderGraphI->rtsBuffSizeMax, so that each connected pin can have a 
+        * pending send.
+        *
+        * The additional slot ensures that the crude, simple wrapping mechanism 
+        * for the circular buffer does not set rtsEnd to the same as rtsStart
+        * when adding to the buffer. If this occurs, softswitch_IsRTSReady will
+        * always return false (as it simply checks that rtsStart != rtsEnd) and
+        * the softswitch will not send no further application-generated packets
+        * (as softswitch_onRTS will only alter rtsEnd if it adds an entry to the
+        * buffer, which it wont do as all pins will already be marked as send
+        * pending).
+        *
+        * If the buffer size is constrained, a warning is generated - if this 
+        * occurs frequently, more graceful handling of rtsBuf overflowing may be 
+        * required.
+        */
+        buffCount = 1;     // Intentionally 1 to cope with wrapping.
 
-    if (outTypCnt)  // If we have output pins
-    {               // Iterate through devices counting connected output pins.
-        WALKLIST(DevI_t*, placer->threadToDevices.at(thread), dev)
-        {
-            WALKVECTOR(PinT_t*, devT->PinTO_v, pin)
+        if(devT->pPinTSO)
+        {   // There is a supervisor output, increase output count by dev count.
+            buffCount += numberOfDevices;
+        }
+
+        if (outTypCnt) // If we have output pins
+        {              // Iterate through devices counting connected output pins
+            WALKLIST(DevI_t*, placer->threadToDevices.at(thread), dev)
             {
-                // Check that we have a connection
-                std::map<std::string,PinI_t *>::iterator pinSrch;
-                pinSrch = (*dev)->Pmap.find(devT->Name());
-                if(pinSrch != (*dev)->Pmap.end())
+                WALKVECTOR(PinT_t*, devT->PinTO_v, pin)
                 {
-                    if(pinSrch->second->Key_v.size())
+                    // Check that we have a connection
+                    std::map<std::string,PinI_t *>::iterator pinSrch;
+                    pinSrch = (*dev)->Pmap.find(devT->Name());
+                    if(pinSrch != (*dev)->Pmap.end())
                     {
-                        outputCount++;
+                        if(pinSrch->second->Key_v.size())
+                        {
+                            buffCount++;
 
-                        // If 0, we have overflowed & there is no point cont
-                        if (outputCount==0) break;
+                            // If 0, we have overflowed & there is no point cont
+                            if (buffCount==0) break;
+                        }
                     }
                 }
+                if (buffCount==0)
+                {
+                    buffCount = builderGraphI->rtsBuffSizeMax;
+                    break;
+                }
             }
-            if (outputCount==0)
-            {
-                outputCount = MAX_RTSBUFFSIZE;
-                break;
-            }
+        }
+
+        if (buffCount > builderGraphI->rtsBuffSizeMax)
+        { // If we have too many pins for one buffer entry per ping, set to max &warn.
+        // This may need a check adding to the Softswitch to stop buffer overflow.
+            buffCount = builderGraphI->rtsBuffSizeMax;
+            //TODO: Barf
+            //par->Post(819,int2str(thread_num),int2str(coreNum),
+            //            int2str(MAX_RTSBUFFSIZE), int2str(MAX_RTSBUFFSIZE));
+        }
+        else if (buffCount < MIN_RTSBUFFSIZE)
+        {
+            buffCount = builderGraphI->rtsBuffSizeMax;
         }
     }
 
-    if (outputCount > MAX_RTSBUFFSIZE)
-    { // If we have too many pins for one buffer entry per ping, set to max &warn.
-    // This may need a check adding to the Softswitch to stop buffer overflow.
-        outputCount = MAX_RTSBUFFSIZE;
-        //TODO: Barf
-        //par->Post(819,int2str(thread_num),int2str(coreNum),
-        //            int2str(MAX_RTSBUFFSIZE), int2str(MAX_RTSBUFFSIZE));
-    }
-    else if (outputCount < MIN_RTSBUFFSIZE)
-    {
-        outputCount = MIN_RTSBUFFSIZE;
-    }
 
-
-    vars_cpp << outputCount << ",";                                   // rtsBuffSize
+    vars_cpp << buffCount << ",";                                     // rtsBuffSize
 
     vars_cpp << "PNULL,";                                             // rtsBuf
     vars_cpp << "0,";                                                 // rtsStart
@@ -3055,3 +3378,5 @@ void Composer::writeDevIOutputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
     }
 
 }
+
+

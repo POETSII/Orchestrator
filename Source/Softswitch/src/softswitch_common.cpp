@@ -408,8 +408,16 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
         if(pin->idxEdges == 0)
         {
             char* pkt = const_cast<char*>(buf)+hdrSize; // Pointer to the packet, after headers, etc.
+
+#ifdef BUFFERING_SOFTSWITCH
+            // Copy the packet from the packet buffer to the send slot
+            memcpy(pkt, ThreadContext->pktBuf[ThreadContext->rtsStart],
+                        pin->pinType->sz_pkt);
+#else
+            // Build the packet in the send slot
             pin->pinType->Send_Handler(ThreadContext->properties, device, pkt);
             ThreadContext->txHandlerCount++;         // Increment SendHandler count
+#endif
         }
         //--------------------------------------------------------------------------
 
@@ -633,15 +641,34 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
             {
                 // Get a pointer to the active pin
                 outPin_t* output_pin = &device->outputPins[pin];
-
+#ifdef BUFFERING_SOFTSWITCH
+                uint32_t buffRem;
+                buffRem = (ThreadContext->rtsEnd >= ThreadContext->rtsStart)   ?
+                        (((ThreadContext->rtsBuffSize - ThreadContext->rtsEnd) +
+                                    ThreadContext->rtsStart))                  :
+                            (ThreadContext->rtsStart - ThreadContext->rtsEnd);
+                
+                // If the pin has edges and there is space in the buffer
+                if(output_pin->numEdges && (buffRem > 1))
+                {
+                    //output_pin->sendPending++;
+#else
                 //If the pin has edges and is not already pending,
                 if(output_pin->numEdges && output_pin->sendPending == 0)
                 {
                     // Flag that pin is pending
                     output_pin->sendPending = 1;
+#endif
 
                     // Add pin to RTS list and update end
                     ThreadContext->rtsBuf[ThreadContext->rtsEnd] = output_pin;
+
+#ifdef BUFFERING_SOFTSWITCH
+                    // Build the packet in the Packet buffer
+                    output_pin->pinType->Send_Handler(ThreadContext->properties,
+                          device, ThreadContext->pktBuf[ThreadContext->rtsEnd]);
+                    ThreadContext->txHandlerCount++;    // ++ SendHandler count
+#endif
 
                     ThreadContext->rtsEnd++;
                     if(ThreadContext->rtsEnd == ThreadContext->rtsBuffSize)

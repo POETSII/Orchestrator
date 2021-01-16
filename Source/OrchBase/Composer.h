@@ -13,6 +13,7 @@
 #include "CFrag.h"
 #include "MsgT_t.h"
 #include "Meta_t.h"
+#include "DumpUtils.h"
 
 #include "GraphT_t.h"
 #include "DevT_t.h"
@@ -48,6 +49,17 @@ typedef struct devTypStrings_t
     std::string varsHCommon;
 } devTypStrings_t;
 
+typedef enum softswitchLogHandler_t
+{
+    disabled = 0,
+    trivial
+} ssLogHandler_t;
+
+typedef enum softswitchLoopMode_t
+{
+    standard = 0,
+    priInstr
+} ssLoopMode_t;
 
 typedef struct ComposerGraphI_t
 {
@@ -69,6 +81,11 @@ typedef struct ComposerGraphI_t
     bool generated;
     bool compiled;
     
+    bool bufferingSoftswitch;
+    unsigned long rtsBuffSizeMax;
+    bool softswitchInstrumentation;
+    ssLogHandler_t softswitchLogHandler;
+    ssLoopMode_t softswitchLoopMode;
     
     // Constructors/Destructors
     ComposerGraphI_t();
@@ -76,6 +93,7 @@ typedef struct ComposerGraphI_t
     ~ComposerGraphI_t();
     
     void clearDevTStrsMap();
+    void Dump(unsigned = 0,FILE * = stdout);
 } ComposerGraphI_t;
 
 
@@ -98,7 +116,13 @@ int         clean(GraphI_t*);      // Get rid of built files (e.g. a make clean)
 void        setOutputPath(std::string);
 void        setPlacer(Placer*);
 
+int         setBuffMode(GraphI_t*, bool);
+int         setRTSSize(GraphI_t*, unsigned long);
+int         enableInstr(GraphI_t*, bool);
+int         setLogHandler(GraphI_t*, ssLogHandler_t);
+int         setLoopMode(GraphI_t*, ssLoopMode_t);
 
+void        Dump(unsigned = 0,FILE * = stdout);
 
 private:
     
@@ -148,7 +172,7 @@ int createThreadFile(P_thread*, ComposerGraphI_t*, std::ofstream&);
 unsigned writeThreadVars(ComposerGraphI_t*, P_thread*, ofstream&, ofstream&);
 void writeThreadVarsCommon(AddressComponent, AddressComponent, 
                             std::ofstream&, std::ofstream&);
-void writeThreadContextInitialiser(P_thread*, DevT_t*,
+void writeThreadContextInitialiser(ComposerGraphI_t*, P_thread*, DevT_t*,
                             std::ofstream&, std::ofstream&);
 void writeDevTDeclInit(AddressComponent, DevT_t*,
                             std::ofstream&, std::ofstream&);
