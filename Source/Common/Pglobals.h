@@ -95,6 +95,7 @@ CMND |STOP |-    |-    | (0:string)Application name
 BEND |CNC  |-    |-    | (0:P_Pkt_t)Packet
 BEND |SUPR |-    |-    | (0:string)Application name
                          (1:P_Pkt_t)Packet
+PATH |-    |-    |-    | (0:string)Output path base
 PKTS |-    |-    |-    | (0:vector<pair<uint32_t, P_Pkt_t> >)Packets
 DUMP |-    |-    |-    | (0:string)Path to write the dump to
 
