@@ -7,12 +7,27 @@
  * The other functions are all (namespaced) free fuctions. */
 
 #include "Mothership.h"
+#include "poets_pkt.h"
 
 namespace SuperAPIBindings {
     /* Posts a logserver message. */
     void post(Mothership* mship, std::string appName, std::string message)
     {
         mship->Post(527, appName, message);
+    }
+
+    /* Pushes packets into the compute system (eventually). For fairness, this
+     * manifests as an MPI message sent to ourselves, which percolates through
+     * the queueing mechanism. */
+    void push_packets(Mothership* mship,
+                      std::vector<std::pair<uint32_t, P_Pkt_t> >& packets)
+    {
+        PMsg_p message;
+        message.Src(mship->Urank);
+        message.Key(Q::PKTS);
+        message.Put(0, &(packets));
+        message.Tgt(mship->Urank);
+        mship->queue_mpi_message(&message);
     }
 
     /* Sends a message to root, requesting that this application be stopped
@@ -126,6 +141,7 @@ bool Mothership::provision_supervisor_api(std::string appName)
     api->appName = appName;
     api->get_output_directory = &SuperAPIBindings::get_output_directory;
     api->post = &SuperAPIBindings::post;
+    api->push_packets = &SuperAPIBindings::push_packets;
     api->stop_application = &SuperAPIBindings::stop_application;
     return true;
 }
