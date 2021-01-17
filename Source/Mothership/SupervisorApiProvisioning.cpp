@@ -67,7 +67,7 @@ namespace SuperAPIBindings {
 
         /* Attempt to make it (fairly safe to assume it doesn't already
          * exist, given the timestamp... NFS eat your heart out). */
-        if(system((MAKEDIR + "--parents " + userDir).c_str()))
+        if(system((MAKEDIR + " --parents " + userDir).c_str()))
         {
             mship->Post(528, userDir, appName,
                         OSFixes::getSysErrorString(errno));
@@ -83,7 +83,8 @@ namespace SuperAPIBindings {
             mship->Post(528, userDir, appName,
                         "Could not open a file for writing in the directory "
                         "(check directory permissions and ownership).");
-            if(system((REMOVEDIR + userDir + "/" + testFileName).c_str()))
+            if(system((REMOVEDIR + " " + userDir + "/" +
+                       testFileName).c_str()))
             {
                 mship->Post(528, userDir, appName,
                             "While cleaning up from the previous error, could "
@@ -97,7 +98,7 @@ namespace SuperAPIBindings {
         testFile.close();
 
         /* Remove the transient file. */
-        if(system((REMOVEDIR + userDir + "/" + testFileName).c_str()))
+        if(system((REMOVEDIR + " " + userDir + "/" + testFileName).c_str()))
         {
             mship->Post(528, userDir, appName,
                         "Could not remove a file opened as a test "
