@@ -67,10 +67,12 @@ namespace SuperAPIBindings {
 
         /* Attempt to make it (fairly safe to assume it doesn't already
          * exist, given the timestamp... NFS eat your heart out). */
-        if(system((MAKEDIR + " --parents " + userDir).c_str()))
+        FILE* system = popen((MAKEDIR + " --parents " + userDir
+                              + " 2>/dev/null").c_str(), "w");
+        if(pclose(system) != 0)
         {
             mship->Post(528, userDir, appName,
-                        OSFixes::getSysErrorString(errno));
+                        "Base directory could not be made.");
             return "";
         }
 
@@ -83,8 +85,9 @@ namespace SuperAPIBindings {
             mship->Post(528, userDir, appName,
                         "Could not open a file for writing in the directory "
                         "(check directory permissions and ownership).");
-            if(system((REMOVEDIR + " " + userDir + "/" +
-                       testFileName).c_str()))
+            system = popen((REMOVEDIR + " " + userDir + "/" +
+                            testFileName + " 2>/dev/null").c_str(), "w");
+            if(pclose(system) != 0)
             {
                 mship->Post(528, userDir, appName,
                             "While cleaning up from the previous error, could "
@@ -98,7 +101,9 @@ namespace SuperAPIBindings {
         testFile.close();
 
         /* Remove the transient file. */
-        if(system((REMOVEDIR + " " + userDir + "/" + testFileName).c_str()))
+        system = popen((REMOVEDIR + " " + userDir + "/" +
+                        testFileName + " 2>/dev/null").c_str(), "w");
+        if(pclose(system) != 0)
         {
             mship->Post(528, userDir, appName,
                         "Could not remove a file opened as a test "

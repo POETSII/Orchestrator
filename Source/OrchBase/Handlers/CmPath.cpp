@@ -245,16 +245,18 @@ fflush(fp);
  * Mothership. */
 void CmPath::UpdateMotherships()
 {
-    PMsg_p out;
-    out.Src(par->Urank);
-    out.Key(Q::PATH);
-    out.Put(0,&pathMout);
-
     /* Send to all Motherships, if any. */
     std::vector<ProcMap::ProcMap_t>::iterator procIt;
     for (procIt=par->pPmap->vPmap.begin();
          procIt!=par->pPmap->vPmap.end(); procIt++)
-        if (procIt->P_class != csMOTHERSHIPproc) out.Send(procIt->P_rank);
+        if (procIt->P_class == csMOTHERSHIPproc)
+        {
+            PMsg_p out;
+            out.Src(par->Urank);
+            out.Key(Q::PATH);
+            out.Put(0,&pathMout);
+            out.Send(procIt->P_rank);
+        }
 }
 
 //------------------------------------------------------------------------------
