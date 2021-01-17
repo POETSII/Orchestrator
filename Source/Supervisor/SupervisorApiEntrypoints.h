@@ -6,6 +6,13 @@
  * SupervisorApi class. */
 
 namespace Super {
+    void get_output_directory(std::string suffix="")
+    {
+        (Supervisor::__api.get_output_directory)(Supervisor::__api.mship,
+                                                 Supervisor::__api.appName,
+                                                 suffix);
+    }
+
     void post(std::string message)
     {
         (Supervisor::__api.post)(Supervisor::__api.mship,
@@ -15,8 +22,8 @@ namespace Super {
 
     void stop_application()
     {
-        (Supervisor::__api.stop_application)
-            (Supervisor::__api.mship, Supervisor::__api.appName);
+        (Supervisor::__api.stop_application)(Supervisor::__api.mship,
+                                             Supervisor::__api.appName);
     }
 }
 

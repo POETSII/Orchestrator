@@ -126,6 +126,7 @@ static const byte BEND;
 static const byte PKTS;
 static const byte DUMP;
 static const byte MSHP;
+static const byte PATH;
 // Level 1 subkeys
 static const byte PING;
 static const byte POST;

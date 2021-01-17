@@ -455,6 +455,25 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
     return 0;
 }
 
+unsigned Mothership::handle_msg_path(PMsg_p* message)
+{
+    /* Pull message contents. */
+    std::string userOutRoot;
+    if (!decode_string_message(message, &userOutRoot))
+    {
+        debug_post(597, 3, "Q::PATH", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
+        return 0;
+    }
+
+    debug_post(597, 3, "Q::PATH", hex2str(message->Key()).c_str(),
+               dformat("userOutRoot=%s", userOutRoot.c_str()).c_str());
+
+    /* Out we go. */
+    userOutDir = userOutRoot;
+    return 0;
+}
+
 unsigned Mothership::handle_msg_pkts(PMsg_p* message)
 {
     /* Pull message contents. */

@@ -18,6 +18,7 @@ const byte Q::BEND    = 0x0e;
 const byte Q::PKTS    = 0x0f;
 const byte Q::DUMP    = 0x10;
 const byte Q::MSHP    = 0x11;
+const byte Q::PATH    = 0x12;
 // Level 1 subkeys
 const byte Q::PING    = 0x40;
 const byte Q::POST    = 0x41;

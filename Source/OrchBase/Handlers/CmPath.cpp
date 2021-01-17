@@ -3,6 +3,7 @@
 #include "CmPath.h"
 #include "OrchBase.h"
 #include "OrchConfig.h"
+#include "Pglobals.h"
 #include "FileName.h"
 #include "Root.h"
 
@@ -29,12 +30,13 @@ pathBatc.clear();
 pathBina.clear();
 pathEngi.clear();
 pathLog .clear();
+pathMout.clear();
+pathMshp.clear();
 pathPlac.clear();
 pathStag.clear();
 pathSupe.clear();
 pathTrac.clear();
 pathUlog.clear();
-pathMshp.clear();
 }
 
 //------------------------------------------------------------------------------
@@ -205,12 +207,15 @@ pathBatc = pR->pOC->Batch();
 pathBina = pR->pOC->Binaries();
 pathEngi = pR->pOC->Engine();
 pathLog  = pR->pOC->Log();
+pathMout = pR->pOC->RemoteOut();
+pathMshp = pR->pOC->RemoteMshp();
 pathPlac = pR->pOC->Place();
 pathStag = pR->pOC->Stage();
 pathSupe = pR->pOC->Supervisors();
 pathTrac = pR->pOC->Trace();
 pathUlog = pR->pOC->Ulog();
-pathMshp = pR->pOC->RemoteMshp();
+
+UpdateMotherships();
 }
 
 //------------------------------------------------------------------------------
@@ -223,14 +228,33 @@ fprintf(fp,"Batch files            : %s\n",pathBatc.empty()?"---":pathBatc.c_str
 fprintf(fp,"Final binaries         : %s\n",pathBina.empty()?"---":pathBina.c_str());
 fprintf(fp,"Engine definitions     : %s\n",pathEngi.empty()?"---":pathEngi.c_str());
 fprintf(fp,"Log files              : %s\n",pathLog .empty()?"---":pathLog .c_str());
+fprintf(fp,"Remote app output      : %s\n",pathMout.empty()?"---":pathMout.c_str());
+fprintf(fp,"Remote mothership files: %s\n",pathMshp.empty()?"---":pathMshp.c_str());
 fprintf(fp,"Placement control      : %s\n",pathPlac.empty()?"---":pathPlac.c_str());
 fprintf(fp,"Binary stageing        : %s\n",pathStag.empty()?"---":pathStag.c_str());
 fprintf(fp,"Supervisor binaries    : %s\n",pathSupe.empty()?"---":pathSupe.c_str());
 fprintf(fp,"Trace files            : %s\n",pathTrac.empty()?"---":pathTrac.c_str());
 fprintf(fp,"MicroLog files         : %s\n",pathUlog.empty()?"---":pathUlog.c_str());
-fprintf(fp,"Remote mothership files: %s\n",pathUlog.empty()?"---":pathMshp.c_str());
 fprintf(fp,"\n");
 fflush(fp);
+}
+
+//------------------------------------------------------------------------------
+
+/* Pushes pathMout to Motherships. Note - pathMshp isn't actually used by the
+ * Mothership. */
+void CmPath::UpdateMotherships()
+{
+    PMsg_p out;
+    out.Src(par->Urank);
+    out.Key(Q::PATH);
+    out.Put(0,&pathMout);
+
+    /* Send to all Motherships, if any. */
+    std::vector<ProcMap::ProcMap_t>::iterator procIt;
+    for (procIt=par->pPmap->vPmap.begin();
+         procIt!=par->pPmap->vPmap.end(); procIt++)
+        if (procIt->P_class != csMOTHERSHIPproc) out.Send(procIt->P_rank);
 }
 
 //------------------------------------------------------------------------------
@@ -284,6 +308,15 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
     Reset();
     continue;
   }
+  if (sCl=="mout") {
+    if (Cm_Path(OK,pathMout,sPa,pR->pOC->RemoteOut())) par->Post(239,sCl);
+    else UpdateMotherships();
+    continue;
+  }
+  if (sCl=="mshp") {
+    if (Cm_Path(OK,pathMshp,sPa,pR->pOC->RemoteMshp())) par->Post(239,sCl);
+    continue;
+  }
   if (sCl=="stag") {
     if (Cm_Path(OK,pathStag,sPa,pR->pOC->Stage())) par->Post(239,sCl);
     if (par->pComposer != PNULL) par->pComposer->setOutputPath(pathStag);
@@ -299,10 +332,6 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   }
   if (sCl=="ulog") {
     if (Cm_Path(OK,pathUlog,sPa,pR->pOC->Ulog())) par->Post(239,sCl);
-    continue;
-  }
-  if (sCl=="mshp") {
-    if (Cm_Path(OK,pathMshp,sPa,pR->pOC->RemoteMshp())) par->Post(239,sCl);
     continue;
   }
   par->Post(25,sCl,"path");            // Unrecognised clause

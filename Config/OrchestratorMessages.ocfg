@@ -204,6 +204,7 @@
 525(E) : "Mothership: Error provisioning supervisor for application '%s': 'could not find a loaded supervisor for this application."
 526(I) : "Mothership: Supervisor for application '%s' has requested it to be stopped."
 527(I) : "Mothership: Message from supervisor for application '%s': %s
+528(E) : "Error creating directory '%s' for application '%s': %s"
 
 582(I) : "Mothership: Received a message containing packets for a supervisor device for application '%s' that is not running (it may be in the process of stopping). Ignoring these packets."
 583(I) : "Mothership: Initialising supervisor device for application '%s'."

@@ -26,6 +26,7 @@ FILE *        GetLolfp();
 FILE *        GetOfgfp();
 void          Reset();
 void          Show(FILE * = stdout);
+void          UpdateMotherships();
 unsigned      operator()(Cli *);
 
 OrchBase *    par;
@@ -34,6 +35,7 @@ string        pathBatc;
 string        pathBina;
 string        pathEngi;
 string        pathLog;
+string        pathMout;
 string        pathMshp;
 string        pathPlac;
 string        pathStag;

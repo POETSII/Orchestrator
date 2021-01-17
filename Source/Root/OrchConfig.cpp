@@ -62,17 +62,18 @@ WALKVECTOR(UIF::Node *,sects,i) {      // Walk the sections
       if (valus.size()>1) IncErr(P.FndRecd(*k),3);
       if (valus.empty()) s.clear();
       else s = valus[0]->str;
-      if ((*k)->str=="apps"        ) default_paths.apps        = s;
-      if ((*k)->str=="engine"      ) default_paths.engine      = s;
-      if ((*k)->str=="place"       ) default_paths.place       = s;
-      if ((*k)->str=="log"         ) default_paths.log         = s;
-      if ((*k)->str=="ulog"        ) default_paths.ulog        = s;
-      if ((*k)->str=="trace"       ) default_paths.trace       = s;
-      if ((*k)->str=="binaries"    ) default_paths.binaries    = s;
-      if ((*k)->str=="stage"       ) default_paths.stage       = s;
-      if ((*k)->str=="batch"       ) default_paths.batch       = s;
-      if ((*k)->str=="supervisors" ) default_paths.supervisors = s;
-      if ((*k)->str=="remote_mship") default_paths.remote_mship = s;
+      if ((*k)->str=="apps"         ) default_paths.apps          = s;
+      if ((*k)->str=="engine"       ) default_paths.engine        = s;
+      if ((*k)->str=="place"        ) default_paths.place         = s;
+      if ((*k)->str=="log"          ) default_paths.log           = s;
+      if ((*k)->str=="ulog"         ) default_paths.ulog          = s;
+      if ((*k)->str=="trace"        ) default_paths.trace         = s;
+      if ((*k)->str=="binaries"     ) default_paths.binaries      = s;
+      if ((*k)->str=="stage"        ) default_paths.stage         = s;
+      if ((*k)->str=="batch"        ) default_paths.batch         = s;
+      if ((*k)->str=="supervisors"  ) default_paths.supervisors   = s;
+      if ((*k)->str=="remote_mship" ) default_paths.remote_mship  = s;
+      if ((*k)->str=="remote_outdir") default_paths.remote_outdir = s;
     }
   }
   if (sn=="setup_files") {

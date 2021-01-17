@@ -10,8 +10,8 @@
 // All pretty arbitrary; just copied in and stored
 name        = OrchestratorConfiguration
 author      = "MLV and GMB"
-date        = "2020-10-06"
-version     = "0.0.5"
+date        = "2021-01-17"
+version     = "0.0.6"
 
 // All these may be overridden by the console "path" command
 [default_paths]
@@ -28,6 +28,9 @@ ulog = "../Output/Microlog/"
 place = "../Output/Placement/"
 // Location for files transferred to Motherships. Relative to home.
 remote_mship = ".orchestrator/app_binaries/"
+// Location for user output directories to be created by Motherships. Relative
+// to home.
+remote_outdir = ".orchestrator/app_output/"
 // Staged source files and binaries for applications
 stage = "../Output/Composer/"
 // Application binary files for execution

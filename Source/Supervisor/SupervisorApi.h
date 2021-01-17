@@ -13,6 +13,8 @@ class SupervisorApi
 public:
     Mothership* mship;
     std::string appName;
+    std::string (*get_output_directory)(Mothership* mship, std::string appName,
+                                        std::string suffix);
     void (*post)(Mothership* mship, std::string appName, std::string message);
     void (*stop_application)(Mothership* mship, std::string appName);
 };
