@@ -153,6 +153,24 @@ Composer::~Composer()
 }
 
 /******************************************************************************
+ * Show some summary info about a Composer instance
+ *****************************************************************************/
+void Composer::Show(FILE* file)
+{
+    fprintf(file, "Output Path:                  %s \n",outputPath.c_str());
+    fprintf(file, "Number of graph instances:    %lu \n",
+                                static_cast<unsigned long>(graphIMap.size()));
+    
+    WALKMAP(GraphI_t*, ComposerGraphI_t*, graphIMap, builderGraphI)
+    {
+        fprintf(file, "Instance Name: %s\tGenerated: %s\tCompiled: %s\n",
+                        builderGraphI->second->graphI->Name().c_str(),
+                        builderGraphI->second->generated ? "true" : "false",
+                        builderGraphI->second->compiled ? "true" : "false");
+    }
+}
+
+/******************************************************************************
  * Dump a Composer instance to file for debugging
  *****************************************************************************/
 void Composer::Dump(unsigned off,FILE* file)
@@ -214,7 +232,7 @@ void Composer::setPlacer(Placer* plc)
 int Composer::setBuffMode(GraphI_t* graphI, bool buffMode)
 {
     ComposerGraphI_t* builderGraphI;
-    FILE * fd = graphI->par->par->fd;              // Detail output file
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
 
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
@@ -248,7 +266,7 @@ int Composer::setBuffMode(GraphI_t* graphI, bool buffMode)
 int Composer::setRTSSize(GraphI_t* graphI, unsigned long rtsSize)
 {
     ComposerGraphI_t* builderGraphI;
-    FILE * fd = graphI->par->par->fd;              // Detail output file
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
 
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
@@ -287,7 +305,7 @@ int Composer::setRTSSize(GraphI_t* graphI, unsigned long rtsSize)
 int Composer::enableInstr(GraphI_t* graphI, bool ssInstr)
 {
     ComposerGraphI_t* builderGraphI;
-    FILE * fd = graphI->par->par->fd;              // Detail output file
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
 
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
@@ -321,7 +339,7 @@ int Composer::enableInstr(GraphI_t* graphI, bool ssInstr)
 int Composer::setLogHandler(GraphI_t* graphI, ssLogHandler_t logHandler)
 {
     ComposerGraphI_t* builderGraphI;
-    FILE * fd = graphI->par->par->fd;              // Detail output file
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
 
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
@@ -350,7 +368,7 @@ int Composer::setLogHandler(GraphI_t* graphI, ssLogHandler_t logHandler)
 int Composer::setLogLevel(GraphI_t* graphI, unsigned long level)
 {
     ComposerGraphI_t* builderGraphI;
-    FILE * fd = graphI->par->par->fd;              // Detail output file
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
 
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
@@ -384,7 +402,7 @@ int Composer::setLogLevel(GraphI_t* graphI, unsigned long level)
 int Composer::setLoopMode(GraphI_t* graphI, ssLoopMode_t loopMode)
 {
     ComposerGraphI_t* builderGraphI;
-    FILE * fd = graphI->par->par->fd;              // Detail output file
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
 
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
@@ -646,6 +664,24 @@ int Composer::generate(GraphI_t* graphI)
     return 0;
 }
 
+/******************************************************************************
+ * Public method to check the generation state of a Graph instance
+ *****************************************************************************/
+bool Composer::isGenerated(GraphI_t* graphI)
+{
+    ComposerGraphI_t* builderGraphI;
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, so not generated.
+        return false;
+
+    } else {
+        builderGraphI = srch->second;
+    }
+
+    return builderGraphI->generated;
+}
 
 /******************************************************************************
  * Public method to compile previously generated files for a Graph instance
@@ -658,6 +694,7 @@ int Composer::compile(GraphI_t* graphI)
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, barf.
+        fprintf(fd,"\tAttempt to compile a non-existant application\n");
         return -1;
     }
     builderGraphI = srch->second;
@@ -721,6 +758,9 @@ int Composer::compile(GraphI_t* graphI)
     
     makeArgs += "\' ";    
     
+    
+    fprintf(fd,"\tMake called with %s%s%s\n",COREMAKE.c_str(),makeArgs.c_str(),
+                                                COREMAKEPOST.c_str());
     if(system(("(cd "+buildPath+";"+COREMAKE+makeArgs+COREMAKEPOST+")").c_str()))
     {
         //TODO: make failed, barf
@@ -812,6 +852,25 @@ int Composer::compile(GraphI_t* graphI)
     builderGraphI->graphI->built = true;
 
     return 0;
+}
+
+/******************************************************************************
+ * Public method to check the compilation state of a Graph instance
+ *****************************************************************************/
+bool Composer::isCompiled(GraphI_t* graphI)
+{
+    ComposerGraphI_t* builderGraphI;
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, so not compiled.
+        return false;
+
+    } else {
+        builderGraphI = srch->second;
+    }
+
+    return builderGraphI->compiled;
 }
 
 /******************************************************************************
@@ -913,8 +972,8 @@ int Composer::clean(GraphI_t* graphI)
     // Cleanup Supervisor binary path.
     builderGraphI->graphI->pSupI->binPath = "";
     
-    builderGraphI->compiled = 0;
-    builderGraphI->graphI->built = 0;
+    builderGraphI->compiled = false;
+    builderGraphI->graphI->built = false;
     return 0;
 }
 

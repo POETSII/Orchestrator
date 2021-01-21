@@ -38,17 +38,20 @@ void CmComp::Cm_App(Cli::Cl_t clause)
         if (par->pPlacer->placedGraphs.find(*graphIt) ==
             par->pPlacer->placedGraphs.end())
         {
-            par->Post(802, (*graphIt)->Name(), "composing");
+            par->Post(802, (*graphIt)->Name(), "placed", "composing");
             return;
         }
     }
 
     /* Compose each app in sequence, failing fast. */
-#warning "CmComp::Cm_App: No logic defined for compose failure (also assumes that a non-zero exit code is the only indication of an error, and doesn't post)."
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
         par->Post(803, "Compos", (*graphIt)->Name());
-        if (par->pComposer->compose(*graphIt) != 0) return;
+        if (par->pComposer->compose(*graphIt) != 0)
+        {
+            par->Post(806, (*graphIt)->Name(), "compose");
+            return;
+        }
         par->Post(804, (*graphIt)->Name(), "composed");
     }
 }
@@ -75,17 +78,20 @@ void CmComp::Cm_Generate(Cli::Cl_t clause)
         if (par->pPlacer->placedGraphs.find(*graphIt) ==
             par->pPlacer->placedGraphs.end())
         {
-            par->Post(802, (*graphIt)->Name(), "generating source");
+            par->Post(802, (*graphIt)->Name(), "placed", "generating source");
             return;
         }
     }
 
     /* Generate source for each app in sequence, failing fast. */
-#warning "CmComp::Cm_Generate: No logic defined for generate failure (also assumes that a non-zero exit code is the only indication of an error, and doesn't post)."
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
         par->Post(803, "Generat", (*graphIt)->Name());
-        if (par->pComposer->generate(*graphIt) != 0) return;
+        if (par->pComposer->generate(*graphIt) != 0)
+        {
+            par->Post(806, (*graphIt)->Name(), "generate");
+            return;
+        }
         par->Post(804, (*graphIt)->Name(), "generated");
     }
 }
@@ -105,25 +111,33 @@ void CmComp::Cm_Compile(Cli::Cl_t clause)
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs) == 1) return;
 
-    /* Check they're all generated before proceeding. */
-#warning "CmComp::Cm_Compile: No logic defined for checking whether an application's source has been generated"
+    /* Check they're all placed and generated before proceeding. */
     std::set<GraphI_t*>::iterator graphIt;
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
         if (par->pPlacer->placedGraphs.find(*graphIt) ==
             par->pPlacer->placedGraphs.end())
         {
-            par->Post(802, (*graphIt)->Name(), "compiling source");
+            par->Post(802, (*graphIt)->Name(), "placed", "compiling source");
+            return;
+        }
+        
+        if(!par->pComposer->isGenerated(*graphIt))
+        {
+            par->Post(802, (*graphIt)->Name(), "generated", "compiling source");
             return;
         }
     }
 
     /* Generate source for each app in sequence, failing fast. */
-#warning "CmComp::Cm_Compile: No logic defined for source compiling failure (also assumes that a non-zero exit code is the only indication of an error, and doesn't post)."
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
         par->Post(803, "Compil", (*graphIt)->Name());
-        if (par->pComposer->compile(*graphIt) != 0) return;
+        if (par->pComposer->compile(*graphIt) != 0)
+        {
+            par->Post(806, (*graphIt)->Name(), "compile");
+            return;
+        }
         par->Post(804, (*graphIt)->Name(), "compiled");
     }
 }
@@ -150,7 +164,7 @@ void CmComp::Cm_Decompose(Cli::Cl_t clause)
         if (par->pPlacer->placedGraphs.find(*graphIt) ==
             par->pPlacer->placedGraphs.end())
         {
-            par->Post(802, (*graphIt)->Name(), "decomposing");
+            par->Post(802, (*graphIt)->Name(), "placed", "decomposing");
             return;
         }
     }
@@ -184,7 +198,7 @@ void CmComp::Cm_Degenerate(Cli::Cl_t clause)
         if (par->pPlacer->placedGraphs.find(*graphIt) ==
             par->pPlacer->placedGraphs.end())
         {
-            par->Post(802, (*graphIt)->Name(), "degenerating");
+            par->Post(802, (*graphIt)->Name(), "placed", "degenerating");
             return;
         }
     }
@@ -218,7 +232,7 @@ void CmComp::Cm_Clean(Cli::Cl_t clause)
         if (par->pPlacer->placedGraphs.find(*graphIt) ==
             par->pPlacer->placedGraphs.end())
         {
-            par->Post(802, (*graphIt)->Name(), "cleaning");
+            par->Post(802, (*graphIt)->Name(), "placed", "cleaning");
             return;
         }
     }
@@ -396,7 +410,6 @@ void CmComp::Cm_SoftswitchSetRTSBuffSize(Cli::Cl_t clause)
 
 void CmComp::Dump(unsigned off,FILE * fp)
 {
-#warning "CmComp::Dump: Not fully defined or connected to anything"
 string s(off,' ');
 const char * os = s.c_str();
 fprintf(fp,"%sCmComp +++++++++++++++++++++++++++++++++++++++++++++++++++\n",os);
@@ -411,8 +424,8 @@ fflush(fp);
 
 void CmComp::Show(FILE * fp)
 {
-#warning "CmComp::Show: Not fully defined"
 fprintf(fp,"\nComposer attributes and state:\n");
+par->pComposer->Show(fp);
 fprintf(fp,"\n");
 fflush(fp);
 }
@@ -445,6 +458,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="rtsb" ) { Cm_SoftswitchSetRTSBuffSize(*i);     continue; }
   
   if (sCl=="dump" ) { Dump(0,par->fd);                     continue; }
+  if (sCl=="show" ) { Show(par->fd);                     continue; }
   
   par->Post(25,sCl,"compose");         // Unrecognised clause
 }

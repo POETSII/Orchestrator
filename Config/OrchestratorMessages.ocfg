@@ -226,10 +226,11 @@
 
 800(I) : "All composer information cleared."
 801(W) : "Unable to reset a portion of the composer. Did you mean 'clear'?"
-802(W) : "Graph instance '%s' has not been placed. Not %s."
+802(W) : "Graph instance '%s' has not been %s. Not %s."
 803(I) : "%sing graph instance '%s'..."
 804(I) : "Graph instance '%s' %s successfully."
 805(W) : "No hardware model is loaded - unable to %s any graph instances in the composer."
+805(W) : "Graph instance '%s' %s failed. Check the microlog for details."
 
 // Unrecoverables
 901(U) : "%s: %s corrupt ?"

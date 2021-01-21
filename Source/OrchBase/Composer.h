@@ -124,6 +124,10 @@ int         setLogHandler(GraphI_t*, ssLogHandler_t);
 int         setLogLevel(GraphI_t*, unsigned long);
 int         setLoopMode(GraphI_t*, ssLoopMode_t);
 
+bool        isGenerated(GraphI_t*);
+bool        isCompiled(GraphI_t*);
+
+void        Show(FILE * = stdout);
 void        Dump(unsigned = 0,FILE * = stdout);
 
 private:
