@@ -85,6 +85,7 @@ typedef struct ComposerGraphI_t
     unsigned long rtsBuffSizeMax;
     bool softswitchInstrumentation;
     ssLogHandler_t softswitchLogHandler;
+    unsigned long softswitchLogLevel;
     ssLoopMode_t softswitchLoopMode;
     
     // Constructors/Destructors
@@ -120,6 +121,7 @@ int         setBuffMode(GraphI_t*, bool);
 int         setRTSSize(GraphI_t*, unsigned long);
 int         enableInstr(GraphI_t*, bool);
 int         setLogHandler(GraphI_t*, ssLogHandler_t);
+int         setLogLevel(GraphI_t*, unsigned long);
 int         setLoopMode(GraphI_t*, ssLoopMode_t);
 
 void        Dump(unsigned = 0,FILE * = stdout);

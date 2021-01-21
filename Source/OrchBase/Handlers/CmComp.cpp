@@ -332,6 +332,37 @@ void CmComp::Cm_SoftswitchLogHandler(Cli::Cl_t clause)
 
 //------------------------------------------------------------------------------
 
+void CmComp::Cm_SoftswitchLogLevel(Cli::Cl_t clause)
+{
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "loghandler");
+        return;
+    }
+
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+    
+    /* Set the level for each app in sequence. */
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        if(clause.Pa_v.size() != 2)
+        {   // Missing the log level specification
+            //TODO: Barf
+        }
+        
+        // Grab the specified log level, we ignore stuff after ::
+        unsigned long level = atol(clause.Pa_v[1].Va_v[0].c_str());
+        
+        par->pComposer->setLogLevel(*graphIt, level);
+    }
+}
+
+//------------------------------------------------------------------------------
+
 void CmComp::Cm_SoftswitchSetRTSBuffSize(Cli::Cl_t clause)
 {
     /* Shout if no hardware model is loaded (i.e. there is no placer) */
@@ -355,7 +386,7 @@ void CmComp::Cm_SoftswitchSetRTSBuffSize(Cli::Cl_t clause)
         }
         
         // Grab the specified buffer size, we ignore stuff after ::
-        long buffSz = atol(clause.Pa_v[1].Va_v[0].c_str());
+        unsigned long buffSz = atol(clause.Pa_v[1].Va_v[0].c_str());
         
         par->pComposer->setRTSSize(*graphIt, buffSz);
     }
@@ -408,6 +439,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="buff" ) { Cm_SoftswitchBufferMode(*i, true);   continue; }
   if (sCl=="nobu" ) { Cm_SoftswitchBufferMode(*i, false);  continue; }
   if (sCl=="logh" ) { Cm_SoftswitchLogHandler(*i);         continue; }
+  if (sCl=="logl" ) { Cm_SoftswitchLogLevel(*i);           continue; }
   if (sCl=="inst" ) { Cm_SoftswitchInstrMode(*i, true);    continue; }
   if (sCl=="noin" ) { Cm_SoftswitchInstrMode(*i, false);   continue; }
   if (sCl=="rtsb" ) { Cm_SoftswitchSetRTSBuffSize(*i);     continue; }

@@ -514,7 +514,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
     }
     else
     {
-        handler_log(5, "dIDX OOR %d", devAdr);
+        //handler_log(5, "dIDX OOR %d", devAdr);
         return;    // Message target is out of range. //TODO: - log/flag
     }
 
@@ -531,22 +531,22 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
                 ThreadContext->pendCycles = 1;
                 break;
 #endif
-            default:            // Unused reserved Opcode - log it.
-                                handler_log(5, "BAD-OP %d", opcode);
-
+            default:    // Unused reserved Opcode - log it.
+                        //handler_log(5, "BAD-OP %d", opcode);
+                        break;
         }
         return;
     }
 
     // Loop through each target device (1 unless a broadcast packet)
-    for (devInst_t* device = recvDevBegin; device != recvDevEnd; device++)
+    for (devInst_t* dev = recvDevBegin; dev != recvDevEnd; dev++)
     {
-        if(pinIdx >= device->numInputs)
+        if(pinIdx >= dev->numInputs)
         {   // Sanity check the pin index
-            handler_log(5, "pIDX OOR %d %d", device, pinIdx);
+            __handler_log(dev->deviceIdx, 5, "pIDX OOR %d %d", dev, pinIdx);
             continue;               //TODO: - log/flag
         }
-        inPin_t* pin = &device->inputPins[pinIdx];    // Get the pin
+        inPin_t* pin = &dev->inputPins[pinIdx];    // Get the pin
 
         ThreadContext->rxHandlerCount++;     // Increment received handler count
 
@@ -554,7 +554,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
         // Supervisor/CNC/Control Message
         if(recvHdr->swAddr & P_SW_CNC_MASK)
         {  // Trigger OnCtl. Strip volatile at this point.
-            device->devType->OnCtl_Handler(ThreadContext, device, opcode,
+            dev->devType->OnCtl_Handler(ThreadContext, dev, opcode,
                                                static_cast<const uint8_t*>(
                                                const_cast<const void*>(recv_buf)
                                                )+p_hdr_size());
@@ -563,16 +563,16 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
         {   // Handle as a normal packet
             if(edgeIdx >= pin->numEdges)
             {   // Sanity check the Edge Index
-                handler_log(5, "eIDX OOR %d %d %d", device, pinIdx, edgeIdx);
+                __handler_log(dev->deviceIdx,5,"eIDX OOR %d %d",pinIdx,edgeIdx);
                 continue;               //TODO: - log/flag
             }
-            pin->pinType->Recv_handler(ThreadContext->properties, device,
+            pin->pinType->Recv_handler(ThreadContext->properties, dev,
                                         &pin->inEdges[edgeIdx],
                                         static_cast<const uint8_t*>(
                                         const_cast<const void*>(recv_buf)
                                         )+p_hdr_size());
         }
-        softswitch_onRTS(ThreadContext, device);    // Run OnRTS for the device
+        softswitch_onRTS(ThreadContext, dev);    // Run OnRTS for the device
     }
 }
 //------------------------------------------------------------------------------

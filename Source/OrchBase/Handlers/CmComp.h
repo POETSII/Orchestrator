@@ -27,6 +27,7 @@ void          Cm_Reset(Cli::Cl_t clause);
 void          Cm_SoftswitchBufferMode(Cli::Cl_t clause, bool mode);
 void          Cm_SoftswitchInstrMode(Cli::Cl_t clause, bool mode);
 void          Cm_SoftswitchLogHandler(Cli::Cl_t clause);
+void          Cm_SoftswitchLogLevel(Cli::Cl_t clause);
 void          Cm_SoftswitchSetRTSBuffSize(Cli::Cl_t clause);
 
 void          Dump(unsigned = 0, FILE * = stdout);

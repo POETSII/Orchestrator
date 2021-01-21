@@ -17,7 +17,7 @@
  * a sequence number of 0.
  *
  *----------------------------------------------------------------------------*/
-void softswitch_trivial_log_handler(const char* &logStr)
+void softswitch_trivial_log_handler(uint32_t src, const char* &logStr)
 {
     uint32_t pktLen = strlen(logStr) + 1;   // Bytes to send
     uint32_t remLen = pktLen;               // Bytes remaining to be sent
@@ -47,7 +47,7 @@ void softswitch_trivial_log_handler(const char* &logStr)
                                 // has not actually been sent.
     hdr->swAddr = P_SW_MOTHERSHIP_MASK | P_SW_CNC_MASK;
     hdr->swAddr |= ((P_CNC_LOG << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK);
-    hdr->pinAddr = tinselId(); // usurp Pin Addr for the source HW addr
+    hdr->pinAddr = src;         // The index of the device on the supervisor
     //--------------------------------------------------------------------------
 
     for(int i = pktCnt; i >= 0; i--)

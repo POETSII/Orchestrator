@@ -126,6 +126,7 @@ typedef struct PDeviceInstance
     PThreadContext*     thread;          // Back pointer to the ThreadContext
     const devTyp_t*     devType;         // Pointer to the Device Instance
     uint32_t            deviceID;        // Thread-unique device ID
+    uint32_t            deviceIdx;       // Supervisor-unique device index
     uint32_t            numInputs;       // Number of inputs the device has
     inPin_t*            inputPins;       // Pointer to the inputPin array
     uint32_t            numOutputs;      // Number of outputs the device has

@@ -32,7 +32,8 @@ ComposerGraphI_t::ComposerGraphI_t()
     rtsBuffSizeMax = MAX_RTSBUFFSIZE;
     bufferingSoftswitch = false;        // Default to a non-buffering softswitch
     softswitchInstrumentation = true;   // Default to enable instrumentation
-    softswitchLogHandler = trivial;     // Default to the trivial log handler 
+    softswitchLogHandler = trivial;     // Default to the trivial log handler
+    softswitchLogLevel = 2;             // Default to a log level of 2
     softswitchLoopMode = standard;      // Default to the standard loop mode
 }
 
@@ -48,6 +49,7 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn)
     bufferingSoftswitch = false;        // Default to a non-buffering softswitch
     softswitchInstrumentation = true;   // Default to enable instrumentation
     softswitchLogHandler = trivial;     // Default to the trivial log handler 
+    softswitchLogLevel = 2;             // Default to a log level of 2
     softswitchLoopMode = standard;      // Default to the standard loop mode
 }
 
@@ -341,6 +343,35 @@ int Composer::setLogHandler(GraphI_t* graphI, ssLogHandler_t logHandler)
     }
     
     builderGraphI->softswitchLogHandler = logHandler;
+    
+    return 0;
+}
+
+int Composer::setLogLevel(GraphI_t* graphI, unsigned long level)
+{
+    ComposerGraphI_t* builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchLogLevel = level;
     
     return 0;
 }
@@ -657,7 +688,7 @@ int Composer::compile(GraphI_t* graphI)
     // Form the Softswitch compilation control string
     //TODO: Make these const strings at the top
     std::string makeArgs = "\'";
-    
+
     if(builderGraphI->bufferingSoftswitch)
     {   // Softswitch needs to be built in buffering mode
         makeArgs += "SOFTSWITCH_BUFFERING=1 ";
@@ -676,16 +707,19 @@ int Composer::compile(GraphI_t* graphI)
         default:        break;  // De Nada!
     }
     
-    switch(builderGraphI->softswitchLogHandler)
+    switch(builderGraphI->softswitchLoopMode)
     {   // Control the main loop order
-        case priInstr:   makeArgs += "SOFTSWITCH_PRIORITISE_INSTRUMENTATION=1 ";
+        case priInstr:  makeArgs += "SOFTSWITCH_PRIORITISE_INSTRUMENTATION=1 ";
                         break;
         
         default:        break;  // De Nada!
     }
     
-    makeArgs += "\' ";
+    // Set the softswitch log level
+    makeArgs += "SOFTSWITCH_LOGLEVEL=";
+    makeArgs += TO_STRING(builderGraphI->softswitchLogLevel);
     
+    makeArgs += "\' ";    
     
     if(system(("(cd "+buildPath+";"+COREMAKE+makeArgs+COREMAKEPOST+")").c_str()))
     {
@@ -910,6 +944,32 @@ void Composer::formFileProvenance(ComposerGraphI_t* builderGraphI)
     else
     {  
         provStr << pGIter->second->result.method <<"\n";
+    }
+    
+    
+    provStr << " * Softswitch control:\n";
+    provStr << " *   Buffering mode:\t\t";
+    provStr << (builderGraphI->bufferingSoftswitch ? "true" : "false") << "\n";
+    
+    provStr << " *   Instrumentation:\t\t";
+    provStr << (builderGraphI->softswitchInstrumentation ? "true" : "false");
+    provStr << "\n";
+    
+    provStr << " *   Log handler:\t\t\t";
+    switch(builderGraphI->softswitchLogHandler)
+    {   // Control the log handler 
+        case trivial:   provStr << "trivial\n";                         break;
+        default:        provStr << "none\n";                            break;
+    }
+    
+    provStr << " *   Log level:\t\t\t\t";
+    provStr << builderGraphI->softswitchLogLevel << "\n";
+    
+    provStr << " *   Loop mode:\t\t\t\t";
+    switch(builderGraphI->softswitchLoopMode)
+    {   // Control the main loop order
+        case priInstr:  provStr << "prioritise instrumentation\n";      break;
+        default:        provStr << "default\n";                         break;
     }
     
     builderGraphI->provenanceCache = provStr.str();
@@ -2687,6 +2747,20 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
         devII << "&Thread_" << threadAddr << "_Context,";          // thread
         devII << "&Thread_" << threadAddr << "_DeviceTypes[0],";   // devType
         devII << devIdx << ",";                  // deviceID
+        
+        
+        // Retrieve the device index from the Supervisor map
+        devISuperIdxMap_t::iterator devISrch;
+        devISrch = builderGraphI->devISuperIdxMap.find(devI);
+        if (devISrch == builderGraphI->devISuperIdxMap.end())
+        {   // Something has gone wrong that we are going to ignore.
+            //TODO: Barf
+            devII << "0,";
+        }
+        else
+        {
+            devII << devISrch->second << ",";
+        }
 
 
         // Find all of the arcs that involve this device.
