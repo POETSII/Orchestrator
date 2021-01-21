@@ -458,7 +458,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="rtsb" ) { Cm_SoftswitchSetRTSBuffSize(*i);     continue; }
   
   if (sCl=="dump" ) { Dump(0,par->fd);                     continue; }
-  if (sCl=="show" ) { Show(par->fd);                     continue; }
+  if (sCl=="show" ) { Show(par->fd);                       continue; }
   
   par->Post(25,sCl,"compose");         // Unrecognised clause
 }
