@@ -724,7 +724,7 @@ int Composer::compile(GraphI_t* graphI)
     
     // Form the Softswitch compilation control string
     //TODO: Make these const strings at the top
-    std::string makeArgs = "\'";
+    std::string makeArgs = "";
 
     if(builderGraphI->bufferingSoftswitch)
     {   // Softswitch needs to be built in buffering mode
@@ -755,16 +755,42 @@ int Composer::compile(GraphI_t* graphI)
     // Set the softswitch log level
     makeArgs += "SOFTSWITCH_LOGLEVEL=";
     makeArgs += TO_STRING(builderGraphI->softswitchLogLevel);
-    
-    makeArgs += "\' ";    
+    makeArgs += " ";    
     
     
     fprintf(fd,"\tMake called with %s%s%s\n",COREMAKE.c_str(),makeArgs.c_str(),
                                                 COREMAKEPOST.c_str());
     if(system(("(cd "+buildPath+";"+COREMAKE+makeArgs+COREMAKEPOST+")").c_str()))
-    {
-        //TODO: make failed, barf
-        //TODO: copy makeerrs.txt to uLog
+    {   // The build failed. Shout about it!
+    
+        std::string prefix = dformat("Compilation failed! make_errs.txt dump");
+        DumpUtils::open_breaker(fd, prefix);
+        fprintf(fd,"\n");
+        
+        // Copy make_errs.txt into the microlog.
+        std::string makeErrsFName = buildPath;
+        makeErrsFName += "/make_errs.txt";
+        char MEBuff [100];
+        
+        FILE * makeErrsF = fopen(makeErrsFName.c_str(), "r");
+        if(makeErrsF == PNULL)
+        {
+            fprintf(fd,"\tThe make errors file cannot be opened. Sorry!\n");
+        }
+        else
+        {
+            while(!feof(makeErrsF))
+            {
+                if(fgets(MEBuff , 100 , makeErrsF) == PNULL) break;
+                fputs(MEBuff , fd);
+            }
+            fclose(makeErrsF);
+        }
+        
+        fprintf(fd,"\n");
+        DumpUtils::close_breaker(fd, prefix);
+        fflush(fd);
+        
         return 1;
     }
 
@@ -792,8 +818,8 @@ int Composer::compile(GraphI_t* graphI)
             binary = fopen(instrPath.c_str(), "r");
             if(binary == PNULL)
             { // Failed to open binary
-                //par->Post(806, binaryIt->c_str(), POETS::getSysErrorString(errno));
-                //TODO: Barf
+                fprintf(fd,"\tFailed to open instruction binary %s after compilation\n",
+                            instrPath.c_str());
                 fclose(elfBinary);
                 return -1;
             }
@@ -811,8 +837,8 @@ int Composer::compile(GraphI_t* graphI)
             binary = fopen(dataPath.c_str(), "r");
             if(binary == PNULL)
             { // Failed to open binary
-                //par->Post(806, binaryIt->c_str(), POETS::getSysErrorString(errno));
-                //TODO: Barf
+                fprintf(fd,"\tFailed to open data binary %s after compilation\n",
+                            dataPath.c_str());
                 fclose(elfBinary);
                 return -1;
             }
@@ -822,8 +848,8 @@ int Composer::compile(GraphI_t* graphI)
         }
         else
         { // Failed to open the Elf
-            // par->Post(806, elfName.c_str(), POETS::getSysErrorString(errno));
-            //TODO: Barf
+            fprintf(fd,"\tFailed to open elf %s after compilation\n",
+                            elfName.c_str());
             return -1;
         }
 
@@ -838,8 +864,8 @@ int Composer::compile(GraphI_t* graphI)
     superBinary = fopen(superPath.c_str(),"r");
     if(superBinary == PNULL)
     { // Failed to open the Shared Object
-        //par->Post(806, binaryPath, OSFixes::getSysErrorString(errno));
-        //TODO: Barf
+        fprintf(fd,"\tFailed to open Supervisor binary %s after compilation\n",
+                            superPath.c_str());
         return -1;
     }
     fclose(superBinary);
@@ -1281,13 +1307,14 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
             P_thread* pThread = threadIterator->second;
             if (placer->threadToDevices[pThread].size())
             {   // if there are devices placed on the thread
+                // Add some line splitting
+                if(threadIdx%100 == 0) supervisor_cpp << "\n\t";
+            
                 supervisor_cpp << pThread->get_hardware_address()->as_uint();
                 supervisor_cpp << ",";
                 
-                // Add some line splitting
-                if(threadIdx%100 == 0) supervisor_cpp << "\n\t";     
                 threadIdx++;
-            }
+            } 
         }
     }
     supervisor_cpp.seekp(-1,ios_base::cur); // Rewind one place to remove the stray ","
