@@ -18,7 +18,8 @@ SuperHolder::SuperHolder(std::string path):
     }
 
     /* Load hooks. */
-    call = reinterpret_cast<int (*)(PMsg_p*, PMsg_p*)>
+    call = reinterpret_cast<int (*)(std::vector<P_Pkt_t>&, 
+                    std::vector<std::pair<uint32_t, P_Pkt_t> >&)>
         (dlsym(so, "SupervisorCall"));
     if (call == NULL) error = true;
     exit = reinterpret_cast<int (*)()>(dlsym(so, "SupervisorExit"));
@@ -45,7 +46,6 @@ bool SuperHolder::are_all_hooks_loaded()
     return not (call == NULL or
                 exit == NULL or
                 idle == NULL or
-                implicitCall == NULL or
                 init == NULL);
 }
 

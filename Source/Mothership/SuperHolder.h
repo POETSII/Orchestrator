@@ -10,6 +10,8 @@
 
 #include "PMsg_p.hpp"
 
+#include "poets_pkt.h"
+
 class SuperHolder
 {
 public:
@@ -20,11 +22,11 @@ public:
     pthread_mutex_t lock;
     bool are_all_hooks_loaded();
     void dump(std::ofstream*);
-    int (*call)(PMsg_p*, PMsg_p*);
+    int (*call)(std::vector<P_Pkt_t>&, 
+                std::vector<std::pair<uint32_t, P_Pkt_t> >&);
     int (*exit)();
     int (*idle)();
     int (*init)();
-    int (*implicitCall)(PMsg_p*, PMsg_p*);
 
 private:
     void* so;

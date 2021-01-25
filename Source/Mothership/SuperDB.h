@@ -41,8 +41,8 @@ public:
     ~SuperDB();
 
     SuperHolder* get_next_idle(std::string& name);
-    int call_supervisor(std::string appName, PMsg_p* inputMessage,
-                        PMsg_p* outputMessage);
+    int call_supervisor(std::string appName, std::vector<P_Pkt_t>& inputPackets,
+                    std::vector<std::pair<uint32_t, P_Pkt_t> >& outputPackets);
     bool load_supervisor(std::string appName, std::string path,
                          std::string* errorMessage);
     bool reload_supervisor(std::string appName, std::string* errorMessage);

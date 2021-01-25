@@ -5,16 +5,14 @@ extern "C"
 {
     int SupervisorInit(){return Supervisor::OnInit();}
     
-    int SupervisorCall(PMsg_p* In, PMsg_p* Out)
+    int SupervisorCall(std::vector<P_Pkt_t>& In, 
+                       std::vector<std::pair<uint32_t, P_Pkt_t> > Out)
     {
 #ifdef _APPLICATION_SUPERVISOR_
         int sentErr = 0;
         uint8_t op;
 
-        std::vector<P_Pkt_t> pkts; // packets are packed in Tinsel packet format
-        In->Put<P_Pkt_t>();
-        In->Get(1, pkts);
-        WALKVECTOR(P_Pkt_t, pkts, pkt)
+        WALKVECTOR(P_Pkt_t, In, pkt)
         {
             op = (pkt->header.swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT;
             if (op == P_CNC_IMPL) sentErr += Supervisor::OnImplicit(&*pkt);

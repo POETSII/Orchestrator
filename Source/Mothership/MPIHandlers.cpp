@@ -408,8 +408,7 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
 {
     int rc;
 
-    /* Get the application from the message. Note that we don't get the packets
-     * here because the supervisor SO reads the message (not the packets). */
+    /* Get the application from the message. */
     std::string appName;
     if (!decode_string_message(message, &appName))
     {
@@ -431,19 +430,30 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
         return 0;
     }
 
-    /* Set up a message for the supervisor entry point to modify. This output
-     * message is always going to be a "packets" message (it's just a device
-     * after all, sending information to another device in the compute
-     * fabric). */
-    PMsg_p outputMessage;
-    outputMessage.Src(message->Tgt());
-    outputMessage.Key(Q::PKTS);
+    /* Set up a vector of packets for the supervisor entry point to modify.
+     * If the vector comes back with entries, then we have packets to send.
+     */
+    std::vector<P_Pkt_t> inputPackets;
+    std::vector<std::pair<uint32_t, P_Pkt_t> > outputPackets;
+    
+    // Get the input packets.
+    //message->Put<P_Pkt_t>();
+    //message->Get(1, inputPackets);
+    decode_packets_message(message, &inputPackets, 1);
 
     /* Invoke the supervisor, send the message if instructed to do so, and
      * propagate errors. */
-    rc = superdb.call_supervisor(appName, message, &outputMessage);
-    if (rc > 0) queue_mpi_message(&outputMessage);
-    else if (rc < 0) Post(515, appName);
+    rc = superdb.call_supervisor(appName, inputPackets, outputPackets);
+    if (outputPackets.size() > 0) 
+    {
+        PMsg_p outputMessage;
+        outputMessage.Src(message->Tgt());
+        outputMessage.Key(Q::PKTS);
+        outputMessage.Put<std::pair<uint32_t, P_Pkt_t> >(1, &(outputPackets));
+        
+        queue_mpi_message(&outputMessage);
+    }
+    if (rc < 0) Post(515, appName);
     return 0;
 }
 
