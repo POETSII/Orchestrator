@@ -115,9 +115,6 @@ bool Mothership::decode_packets_message(PMsg_p* message,
                                         std::vector<P_Pkt_t>* packets,
                                         unsigned index)
 {
-    std::vector<P_Pkt_t> packetsBuffer;
-    std::vector<P_Pkt_t>::iterator packetIt;
-
     /* Before interacting with the message, we need to "teach" it to recognise
      * the P_Pkt_t type. See the Msg_p copy constructor for more information -
      * note that the copy constructor is invoked when the message is staged in
@@ -126,16 +123,14 @@ bool Mothership::decode_packets_message(PMsg_p* message,
 
     packets->clear();
 
-    message->Get<P_Pkt_t>(index, packetsBuffer);
-    if (packetsBuffer.empty())
+    message->Get<P_Pkt_t>(index, *packets);
+    
+    // If the packet vector has come back empty, there is an error.
+    if (packets->empty())
     {
         Post(506, hex2str(message->Key()), uint2str(index));
         return false;
     }
-
-    /* Copy the packets from the buffer to the input argument. */
-    for (packetIt = packetsBuffer.begin(); packetIt != packetsBuffer.end();
-         packetIt++) packets->push_back(*packetIt);
 
     return true;
 }

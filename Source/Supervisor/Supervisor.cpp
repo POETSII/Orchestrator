@@ -32,7 +32,8 @@ extern "C"
     int SupervisorRTCL(){return Supervisor::OnRTCL();}
 
     int SupervisorExit(){return Supervisor::OnStop();}
-
+    
+    // Return the full symbolic address of the given index
     uint64_t SupervisorIdx2Addr(uint32_t idx)
     {
         uint64_t ret = 0;
@@ -48,6 +49,12 @@ extern "C"
         ret |= Supervisor::DeviceVector[idx].SwAddr;
         
         return ret;
+    }
+    
+    // "return" a copy of the device vector.
+    void SupervisorGetAddresses(std::vector<SupervisorDeviceInstance_t>& devV)
+    {
+        devV = Supervisor::DeviceVector;
     }
 
 }
