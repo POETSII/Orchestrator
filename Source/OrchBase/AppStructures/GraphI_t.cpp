@@ -124,6 +124,18 @@ fflush(fp);
 
 //------------------------------------------------------------------------------
 
+string GraphI_t::GetCompoundName(bool path)
+// Convenience method to get the name of this graph instance compounded with
+// the name of the app from which it was loaded.
+//
+// Uses a different syntax if the name is to be used to define a path.
+{
+    if (path) return par->Name() + "__" + Name();
+    else return par->Name() + "::" + Name();
+}
+
+//------------------------------------------------------------------------------
+
 DevI_t * GraphI_t::GetDevice(string & rname)
 // Search the graph *by name* for a device.
 // If there isn't one there already, make one.

@@ -110,6 +110,7 @@
 180(W) : "Ignoring clauses in 'dump /plac' command - dumping all files to '%s'."
 181(W) : "No application graph instances have been placed. Not dumping anything."
 182(I) : "Placement information dumped to '%s'."
+183(E) : "Received MPI message with unrecognised key '%s'. Source rank: %s. Destination rank: %s.
 
 201(E) : "... failed %s with %s errors in %s msecs"
 202(I) : "Task: %s file: %s returns %s errors."
@@ -200,6 +201,10 @@
 522(E) : "Mothership: Error decoding MPI message with key '0x%s': Expected a vector of uint32_t values in field %s. Ignoring message."
 523(E) : "Mothership: Supervisor for application '%s' failed to initialise correctly. Marking application as BROKEN (which may cause other errors)."
 524(E) : "Mothership: Application '%s' received more distribution messages than expected (%s). Marking application as BROKEN (which may cause other errors)."
+525(E) : "Mothership: Error provisioning supervisor for application '%s': 'could not find a loaded supervisor for this application."
+526(I) : "Mothership: Supervisor for application '%s' has requested it to be stopped."
+527(I) : "Mothership: Message from supervisor for application '%s': %s
+528(E) : "Error creating directory '%s' for application '%s': %s"
 
 582(I) : "Mothership: Received a message containing packets for a supervisor device for application '%s' that is not running (it may be in the process of stopping). Ignoring these packets."
 583(I) : "Mothership: Initialising supervisor device for application '%s'."

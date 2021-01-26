@@ -5,7 +5,8 @@ Mothership::Mothership(int argc, char** argv):
     CommonBase(argc, argv, std::string(csMOTHERSHIPproc),
                std::string(__FILE__)),
     backend(PNULL),
-    threading(ThreadComms(this))
+    threading(ThreadComms(this)),
+    userOutDir(".orchestrator/app_output/") /* Sensible default */
 {
     try
     {
@@ -193,6 +194,7 @@ void Mothership::setup_mpi_hooks()
     FnMap[PMsg_p::KEY(Q::CMND,Q::STOP)] = &Mothership::handle_msg_cnc;
     FnMap[PMsg_p::KEY(Q::BEND,Q::CNC)] = &Mothership::handle_msg_cnc;
     FnMap[PMsg_p::KEY(Q::BEND,Q::SUPR)] = &Mothership::handle_msg_app;
+    FnMap[PMsg_p::KEY(Q::PATH)] = &Mothership::handle_msg_path;
     FnMap[PMsg_p::KEY(Q::PKTS)] = &Mothership::handle_msg_app;
     FnMap[PMsg_p::KEY(Q::DUMP)] = &Mothership::handle_msg_cnc;
 }

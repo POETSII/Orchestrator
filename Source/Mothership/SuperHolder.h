@@ -9,22 +9,24 @@
 #include <fstream>
 
 #include "PMsg_p.hpp"
+#include "SupervisorApi.h"
 
 class SuperHolder
 {
 public:
-    SuperHolder(std::string path);
+    SuperHolder(std::string path, std::string appName);
     ~SuperHolder();
     std::string path;
     bool error;
     pthread_mutex_t lock;
+    SupervisorApi* api;
     bool are_all_hooks_loaded();
     void dump(std::ofstream*);
     int (*call)(PMsg_p*, PMsg_p*);
     int (*exit)();
+    SupervisorApi* (*getApi)();
     int (*idle)();
     int (*init)();
-    int (*implicitCall)(PMsg_p*, PMsg_p*);
 
 private:
     void* so;

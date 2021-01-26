@@ -40,9 +40,10 @@ public:
     SuperDB();
     ~SuperDB();
 
-    SuperHolder* get_next_idle(std::string& name);
     int call_supervisor(std::string appName, PMsg_p* inputMessage,
                         PMsg_p* outputMessage);
+    SuperHolder* get_next_idle(std::string& name);
+    SupervisorApi* get_supervisor_api(std::string appName);
     bool load_supervisor(std::string appName, std::string path,
                          std::string* errorMessage);
     bool reload_supervisor(std::string appName, std::string* errorMessage);
