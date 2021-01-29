@@ -455,9 +455,10 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
     if (outputPackets.size() > 0) 
     {
         PMsg_p outputMessage;
-        outputMessage.Src(message->Tgt());
+        outputMessage.Tgt(Urank);
+        outputMessage.Src(Urank);
         outputMessage.Key(Q::PKTS);
-        outputMessage.Put<std::pair<uint32_t, P_Pkt_t> >(1, &(outputPackets));
+        outputMessage.Put<std::pair<uint32_t, P_Pkt_t> > (0, &(outputPackets));
         
         queue_mpi_message(&outputMessage);
     }
