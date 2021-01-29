@@ -25,7 +25,7 @@ void Mothership::handle_pkt_instr(P_Pkt_t* packet)
     }
 }
 
-/* Handle a packet as an instrumentation packet (see
+/* Handle a packet as a logging packet (see
  * LogHandler::consume_log_packet) */
 void Mothership::handle_pkt_log(P_Pkt_t* packet)
 {
