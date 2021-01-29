@@ -17,8 +17,8 @@ extern "C"
         WALKVECTOR(P_Pkt_t, In, pkt)
         {
             op = (pkt->header.swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT;
-            if (op == P_CNC_IMPL) sentErr += Supervisor::OnImplicit(&*pkt);
-            else sentErr += Supervisor::OnPkt(&*pkt);
+            if (op == P_CNC_IMPL) sentErr += Supervisor::OnImplicit(&*pkt, Out);
+            else sentErr += Supervisor::OnPkt(&*pkt, Out);
         }
         return sentErr;
 #endif

@@ -5,6 +5,7 @@
  * "privilege-escalated" jobs using Mothership logic. */
 
 #include <string>
+#include <vector>
 #include "poets_pkt.h"
 
 class Mothership;

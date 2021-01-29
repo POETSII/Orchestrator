@@ -519,7 +519,8 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
     }
 
 
-    if((recvHdr->swAddr & P_SW_CNC_MASK) && (opcode > P_CNC_MAX_USER))
+    if((recvHdr->swAddr & P_SW_CNC_MASK) && (opcode != P_CNC_IMPL)
+                                         && (opcode > P_CNC_MAX_USER))
     {   // Check for reserved Opcodes
         switch(opcode)
         {
@@ -541,37 +542,51 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
     // Loop through each target device (1 unless a broadcast packet)
     for (devInst_t* dev = recvDevBegin; dev != recvDevEnd; dev++)
     {
-        if(pinIdx >= dev->numInputs)
-        {   // Sanity check the pin index
-            __handler_log(dev->deviceIdx, 5, "pIDX OOR %d %d", dev, pinIdx);
-            continue;               //TODO: - log/flag
-        }
-        inPin_t* pin = &dev->inputPins[pinIdx];    // Get the pin
-
         ThreadContext->rxHandlerCount++;     // Increment received handler count
-
-
-        // Supervisor/CNC/Control Message
-        if(recvHdr->swAddr & P_SW_CNC_MASK)
+        
+        // If it is an implicit packet from the supervisor
+        if(opcode == P_CNC_IMPL)
+        {
+            dev->devType->OnImpl_Handler(ThreadContext, dev,
+                                            static_cast<const uint8_t*>(
+                                            const_cast<const void*>(recv_buf)
+                                                )+p_hdr_size());
+        }
+        
+        // If the received packet is a control packet, process it
+        else if(recvHdr->swAddr & P_SW_CNC_MASK)
         {  // Trigger OnCtl. Strip volatile at this point.
             dev->devType->OnCtl_Handler(ThreadContext, dev, opcode,
                                                static_cast<const uint8_t*>(
                                                const_cast<const void*>(recv_buf)
                                                )+p_hdr_size());
         }
+        
+        // Handle as a normal packet
         else
-        {   // Handle as a normal packet
+        {
+            // Sanity check the pin index
+            if(pinIdx >= dev->numInputs)
+            {   
+                __handler_log(dev->deviceIdx, 5, "pIDX OOR %d %d", dev, pinIdx);
+                continue;               //TODO: - log/flag
+            }
+            inPin_t* pin = &dev->inputPins[pinIdx];    // Get the pin
+
+            // Sanity check the Edge Index
             if(edgeIdx >= pin->numEdges)
-            {   // Sanity check the Edge Index
+            {
                 __handler_log(dev->deviceIdx,5,"eIDX OOR %d %d",pinIdx,edgeIdx);
                 continue;               //TODO: - log/flag
             }
+            
             pin->pinType->Recv_handler(ThreadContext->properties, dev,
                                         &pin->inEdges[edgeIdx],
                                         static_cast<const uint8_t*>(
                                         const_cast<const void*>(recv_buf)
                                         )+p_hdr_size());
         }
+        
         softswitch_onRTS(ThreadContext, dev);    // Run OnRTS for the device
     }
 }

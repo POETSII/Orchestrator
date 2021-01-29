@@ -16,7 +16,7 @@
         <SupervisorOutPin SupervisorOutPin="[0..1],[1]messageTypeId">
           <OnSend OnSend="[1]"><CDATA CDATA="[1]"/></OnSend>
         </SupervisorOutPin>
-        <SupervisorInPin SupervisorInPin="[0..1]">
+        <SupervisorInPin SupervisorInPin="[0..1],[1]messageTypeId">
           <OnReceive OnReceive="[1]"><CDATA CDATA="[1]"/></OnReceive>
         </SupervisorInPin>
         <InputPin InputPin="[],[1](name,messageTypeId)">

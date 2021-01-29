@@ -9,7 +9,7 @@ const string GENERATED_CPP_PATH = GENERATED_PATH+"/src";
 
 //TODO: cross-platform this
 const string COREMAKE = "make -j$(nproc --ignore=4) all ";
-const string COREMAKEPOST = "2>&1 >> make_errs.txt";
+const string COREMAKEPOST = "> make_errs.txt 2>&1";
 const string COREMAKECLEAN = "make clean 2>&1 >> clean_errs.txt";
 
 
@@ -1341,11 +1341,14 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     std::string supervisorOnRTCLHandler = "return 0;";
 
 
-    // Default Properteis, state and message struct content
+    // Default Properteis and state content
     std::string supervisorPropertiesBody = "\tbool dummy;";
     std::string supervisorStateBody = "\tbool dummy;";
-    std::string supervisorRecvMsgBody = "\tuint8_t pyld[56];";
-
+    
+    // Default message struct refs
+    std::string inPktFmt = "pkt___default_pyld_t*";
+    std::string outPktFmt = "pkt___default_pyld_t*";
+    
     if(graphI->pT->pSup)    // If we have a non-default Supervisor, build it.
     {
         SupT_t* supType = graphI->pT->pSup;
@@ -1360,6 +1363,10 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         supervisor_h << "#define SUPSTATE(a)         supervisorState->a\n";
         supervisor_h << "#define MSG(a)              message->a\n";
         supervisor_h << "#define PKT(a)              message->a\n";
+        supervisor_h << "#define RPLY(a)             reply->a\n";
+        supervisor_h << "#define BCAST(a)            bcast->a\n";
+        supervisor_h << "#define RTSRPLY()           __rtsReply=true\n";
+        supervisor_h << "#define RTSBCAST()          __rtsBcast=true\n";
         supervisor_h << "\n";
 
         // Global properties initialiser
@@ -1420,10 +1427,28 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         // Implicit receive handler
         if(supType->pPinTSI)
         {
-            // Get the body of the Supervisor message
-            supervisorRecvMsgBody = supType->pPinTSI->pMsg->pPropsD->C_src();
-
             supervisorOnImplicitHandler = supType->pPinTSI->pHandl->C_src();
+            
+            // Input packet format string.
+            inPktFmt = "pkt_";
+            inPktFmt += supType->pPinTSI->pMsg->Name();
+            inPktFmt += "_pyld_t*";
+            
+            // Output packet format string
+            // set in case there is no implicit output pin for replies, etc.
+            outPktFmt = "pkt_";
+            outPktFmt += supType->pPinTSI->pMsg->Name();
+            outPktFmt += "_pyld_t*";
+        }
+        
+        // Implicit send handler
+        if(supType->pPinTSO)
+        {    
+            // Ignore the handler for now, but extract the packet format
+            
+            outPktFmt = "pkt_";
+            outPktFmt += supType->pPinTSO->pMsg->Name();
+            outPktFmt += "_pyld_t*";
         }
 
         // General receive handler
@@ -1464,11 +1489,6 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_h << supervisorStateBody;
     supervisor_h << "\n} SupervisorState_t;\n\n";
 
-    //Implicit Message Type
-    supervisor_h << "typedef struct SupervisorImplicitRecvMessage_t\n{\n";
-    supervisor_h << supervisorRecvMsgBody;
-    supervisor_h << "\n} SupervisorImplicitRecvMessage_t;\n\n";
-
     // Init Handler
     supervisor_cpp << "int Supervisor::OnInit()\n{\n";
     supervisor_cpp << "\tif(__SupervisorInit) return -1;\n";
@@ -1494,7 +1514,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "}\n\n";
 
     // OnImplicit
-    supervisor_cpp << "int Supervisor::OnImplicit(P_Pkt_t* inMsg)\n{\n";
+    supervisor_cpp << "int Supervisor::OnImplicit(P_Pkt_t* inPkt, ";
+    supervisor_cpp << "std::vector<std::pair<uint32_t,P_Pkt_t> >& outPkt)\n{\n";
 
     /* TODO remove
     supervisor_cpp << "\t const SupervisorProperties_t* SupervisorProperties";
@@ -1505,24 +1526,70 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorState;\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorState)\n";
     */
-
-    supervisor_cpp << "\tconst SupervisorImplicitRecvMessage_t* message";
+    
+    supervisor_cpp << "\tconst " << inPktFmt << " message";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
-    supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>";
-    supervisor_cpp << "(static_cast<const void*>(inMsg->payload));\n";
+    supervisor_cpp << "static_cast<const " << inPktFmt << ">";
+    supervisor_cpp << "(static_cast<const void*>(inPkt->payload));\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
-
-    supervisor_cpp << supervisorOnImplicitHandler;
-    supervisor_cpp << "\n\n\treturn 0;\n";
+    
+    supervisor_cpp << "\tP_Pkt_t __reply OS_ATTRIBUTE_UNUSED;\n";
+    supervisor_cpp << "\t" << outPktFmt << " reply OS_ATTRIBUTE_UNUSED= ";
+    supervisor_cpp << "static_cast<" << outPktFmt << ">";
+    supervisor_cpp << "(static_cast<void*>(&(__reply.payload)));\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(reply)\n\n";
+    
+    supervisor_cpp << "\tP_Pkt_t __bcast OS_ATTRIBUTE_UNUSED;\n";
+    supervisor_cpp << "\t" << outPktFmt << " broadcast OS_ATTRIBUTE_UNUSED= ";
+    supervisor_cpp << "static_cast<" << outPktFmt << ">";
+    supervisor_cpp << "(static_cast<void*>(&(__bcast.payload)));\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(broadcast)\n\n";
+    
+    supervisor_cpp << "\tbool __rtsBcast = false;\n";
+    supervisor_cpp << "\tbool __rtsReply = false;\n\n";
+    
+    supervisor_cpp << supervisorOnImplicitHandler << "\n\n";
+    
+        // Reply packet logic
+    supervisor_cpp << "\tif(__rtsReply)\n\t{\n";
+    supervisor_cpp << "\t\tstd::pair<uint32_t,P_Pkt_t> __oPkt;\n";
+    supervisor_cpp << "\t\tconst SupervisorDeviceInstance_t* tgt = ";
+    supervisor_cpp << "&DeviceVector[inPkt->header.pinAddr];\n";
+    supervisor_cpp << "\t\t__reply.header.swAddr = tgt->SwAddr;\n";
+    supervisor_cpp << "\t\t__reply.header.swAddr |= ";
+    supervisor_cpp << "(P_CNC_IMPL << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK;\n";
+    supervisor_cpp << "\t\t__oPkt.first = tgt->HwAddr;\n";
+    supervisor_cpp << "\t\t__oPkt.second = __reply;\n";
+    supervisor_cpp << "\t\toutPkt.push_back(__oPkt);\n";
+    supervisor_cpp << "\t}\n\n";
+    
+        // Broadcast packet logic
+    supervisor_cpp << "\tif(__rtsBcast)\n\t{\n";
+    supervisor_cpp << "\t\t__bcast.header.swAddr = (P_ADDR_BROADCAST << ";
+    supervisor_cpp << "P_SW_DEVICE_SHIFT) & P_SW_DEVICE_MASK;\n";
+    supervisor_cpp << "\t\t__bcast.header.swAddr |= ";
+    supervisor_cpp << "(P_CNC_IMPL << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK;\n";
+    supervisor_cpp << "\t\tWALKCVECTOR(uint32_t,ThreadVector,threadTgt)\n\t{\n";
+    supervisor_cpp << "\t\t\tstd::pair<uint32_t,P_Pkt_t> __oPkt;\n";
+    supervisor_cpp << "\t\t\t__oPkt.first = (*threadTgt);\n";
+    supervisor_cpp << "\t\t\t__oPkt.second = __bcast;\n";
+    supervisor_cpp << "\t\t\toutPkt.push_back(__oPkt);\n";
+    supervisor_cpp << "\t\t}\n";
+    
+    supervisor_cpp << "\t}\n\n";
+    
+    
+    supervisor_cpp << "\n\treturn 0;\n";
     supervisor_cpp << "}\n\n";
 
 
     // OnPkt - essentially a stub for now
-    supervisor_cpp << "int Supervisor::OnPkt(P_Pkt_t* inMsg)\n{\n";
+    supervisor_cpp << "int Supervisor::OnPkt(P_Pkt_t* inMsg, ";
+    supervisor_cpp << "std::vector<std::pair<uint32_t,P_Pkt_t> >& outPkt)\n{\n";
 
-    supervisor_cpp << "\t const SupervisorImplicitRecvMessage_t* message";
+    supervisor_cpp << "\tconst " << inPktFmt << " message";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
-    supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>(";
+    supervisor_cpp << "static_cast<const " << inPktFmt << ">(";
     supervisor_cpp << "static_cast<const void*>(inMsg->payload));\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
 
@@ -1642,7 +1709,7 @@ void Composer::writeMessageTypes(GraphI_t* graphI, std::ofstream& pkt_h)
         pkt_h << "typedef struct " << graphT->Name() << "_" << (*msg)->Name();
         pkt_h << "_message_t \n{\n";
         pkt_h << (*msg)->pPropsD->C_src();       // The message struct
-        pkt_h << "\n} pkt_" << (*msg)->Name() << "_pyld_t;;\n\n";
+        pkt_h << "\n} pkt_" << (*msg)->Name() << "_pyld_t;\n\n";
     }
     
     //pkt_h <<  "#pragma pack(pop)\n";
@@ -1851,7 +1918,37 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
     }
     else handlers_cpp << "    return 0;\n"; // or a stub if not
     handlers_cpp << "}\n\n";
-
+    
+    
+    // OnImpl
+    handlers_h << "uint32_t devtyp_" << devTName;
+    handlers_h << "_OnImpl_handler (const void* __GraphProps, ";
+    handlers_h << "void* __Device, const void* pkt);\n";
+    
+    handlers_cpp << "uint32_t devtyp_" << devTName;
+    handlers_cpp << "_OnImpl_handler (const void* __GraphProps, ";
+    handlers_cpp << "void* __Device, const void* pkt)\n";
+    handlers_cpp << dTypStrs->handlerPreamble;
+    handlers_cpp << dTypStrs->handlerPreambleS << "\n";
+    
+    if (devT->pPinTSI) // insert the OnImpl handler if there is one
+    {
+        // Write the message cast
+        handlers_cpp << "   const pkt_" << devT->pPinTSI->pMsg->Name();
+        handlers_cpp << "_pyld_t* message";
+        handlers_cpp << " OS_ATTRIBUTE_UNUSED= ";
+        handlers_cpp << "static_cast<const pkt_" << devT->pPinTSI->pMsg->Name();
+        handlers_cpp << "_pyld_t*>(pkt);\n";
+        handlers_cpp << "OS_PRAGMA_UNUSED(message)\n";
+        
+        // Insert the handler
+        handlers_cpp << devT->pPinTSI->pHandl->C_src() << "\n";
+    }
+    
+    handlers_cpp << "    return 0;\n"; // or a stub if not
+    handlers_cpp << "}\n\n";
+    
+    
 
     // OnCtl
     handlers_h << "uint32_t devtyp_" << devTName;
@@ -1873,7 +1970,6 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
     else handlers_cpp << "   return 0;\n"; // or a stub if not
     */
     handlers_cpp << "    return 0;\n"; // or a stub if not
-
     handlers_cpp << "}\n\n";
 
 
@@ -2091,7 +2187,7 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
         if ((*pinO)->pMsg->pPropsD)
         {
             handlers_cpp << "   pkt_" << (*pinO)->pMsg->Name();
-            handlers_cpp << "_pyld_t* message = ";
+            handlers_cpp << "_pyld_t* message";
             handlers_cpp << " OS_ATTRIBUTE_UNUSED= ";
             handlers_cpp << "static_cast<pkt_";
             handlers_cpp << (*pinO)->pMsg->Name() << "_pyld_t*>(pkt);\n";
@@ -2555,6 +2651,7 @@ void Composer::writeDevTDeclInit(AddressComponent threadAddr, DevT_t* devT,
     vars_cpp << "&devtyp_" << devT->Name() << "_OnInit_handler,";               // OnInit_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnIdle_handler,";               // OnIdle_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnHWIdle_handler,";             // OnHWIdle_Handler
+    vars_cpp << "&devtyp_" << devT->Name() << "_OnImpl_handler,";               // OnImpl_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnCtl_handler,";                // OnCtl_Handler
 
     //TODO: Add v4 handlers

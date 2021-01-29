@@ -30,6 +30,12 @@ typedef uint32_t (*OnIdle_handler_t)
     void*       __Device
 );
 
+typedef uint32_t (*OnImpl_handler_t)
+(   const void* graphProps,
+    void*       __Device,
+    const void* pkt
+);
+
 typedef uint32_t (*OnCtl_handler_t)
 (   const void* __GraphProps,
     void*       __Device,
@@ -70,6 +76,7 @@ typedef struct PDeviceType
     OnInit_handler_t  OnInit_Handler;   // F pointer to devt’s OnInit handler
     OnIdle_handler_t  OnIdle_Handler;   // F pointer to devt’s OnDeIdle handler
     OnHWIdle_handler_t  OnHWIdle_Handler;   // F pointer to devt’s OnHWIdle handler
+    OnImpl_handler_t  OnImpl_Handler;   // F pointer to devt's Implicit receive handler
     OnCtl_handler_t   OnCtl_Handler;    // F pointer to devt’s  OnCtl handler
     uint32_t          sz_props;         // Size in bytes of the device type’s properties
     uint32_t          sz_state;         // Size in bytes of the device type’s state
