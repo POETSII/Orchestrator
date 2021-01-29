@@ -69,7 +69,7 @@ void OrchBase::MshipCommand(Cli::Cl_t clause, std::string command)
     {
         if (!(*graphIt)->deployed)
         {
-            Post(169, command, (*graphIt)->Name());
+            Post(169, command, (*graphIt)->GetCompoundName());
             return;
         }
     }
@@ -78,7 +78,7 @@ void OrchBase::MshipCommand(Cli::Cl_t clause, std::string command)
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
         PMsg_p message;
-        std::string graphName = (*graphIt)->Name();
+        std::string graphName = (*graphIt)->GetCompoundName();
 
         /* Boxes that are relevant for the application being commanded. */
         std::set<P_box*> boxesOfImport;

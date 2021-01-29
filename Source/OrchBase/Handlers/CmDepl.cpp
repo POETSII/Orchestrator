@@ -43,7 +43,7 @@ void CmDepl::Cm_App(Cli::Cl_t clause)
     {
         if (!(*graphIt)->built)
         {
-            par->Post(107, (*graphIt)->Name());
+            par->Post(107, (*graphIt)->GetCompoundName());
             return;
         }
     }
@@ -107,7 +107,8 @@ int CmDepl::DeployGraph(GraphI_t* gi)
     std::vector<PMsg_p*>::iterator messageIt;
 
     /* Other payloady bits. */
-    std::string graphName = gi->Name();
+    std::string graphName = gi->GetCompoundName();
+    std::string graphPathName = gi->GetCompoundName(true);
     unsigned distCount;
     uint8_t appNumber;
     std::string soPath;
@@ -191,10 +192,11 @@ int CmDepl::DeployGraph(GraphI_t* gi)
 
             /* paths */
             payload->codePath = std::string(getenv("HOME")) + "/" +
-                par->pCmPath->pathMshp + graphName + "/" +
+                par->pCmPath->pathMshp + graphPathName + "/" +
                 core->instructionBinary;
             payload->dataPath = std::string(getenv("HOME")) + "/" +
-                par->pCmPath->pathMshp + graphName + "/" + core->dataBinary;
+                par->pCmPath->pathMshp + graphPathName + "/" +
+                core->dataBinary;
 
             /* coreAddr */
             payload->coreAddr = core->get_hardware_address()->as_uint();
@@ -224,10 +226,11 @@ int CmDepl::DeployGraph(GraphI_t* gi)
          * them. To do this, we naively copy all binaries to all Motherships
          * for now. */
         target = dformat("%s/%s/%s", getenv("HOME"),
-                         par->pCmPath->pathMshp.c_str(), graphName.c_str());
+                         par->pCmPath->pathMshp.c_str(),
+                         graphPathName.c_str());
         sourceBinaries = dformat("%s%s/bin/*",
                                  par->pCmPath->pathBina.c_str(),
-                                 graphName.c_str());
+                                 graphPathName.c_str());
 
         /* Identify whether or not this Mothership is running on the same
          * machine as Root, to determine how we deploy binaries. Store the
@@ -315,7 +318,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
 
         /* Customise and send the SUPD message. */
         soPath = getenv("HOME") + std::string("/") +  par->pCmPath->pathMshp +
-            graphName + "/" + gi->pSupI->binPath;
+            graphPathName + "/" + gi->pSupI->binPath;
         supdMessage.Put(1, &soPath);
         supdMessage.Send();
 

@@ -106,6 +106,8 @@ vpath MessageFormats.h $(GENDIR)
 vpath GlobalProperties.h $(GENDIR)
 vpath OSFixes.hpp $(GENERICSINC)
 vpath Supervisor.% $(realpath ../$(DEFAULT_GEN_DIR))
+vpath SupervisorApi.% $(realpath ../$(DEFAULT_GEN_DIR))
+vpath SupervisorApiEntrypoints.% $(realpath ../$(DEFAULT_GEN_DIR))
 VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC):$(GENDIR)
 
 # Local compiler flags
@@ -133,7 +135,7 @@ all : $(TARGETS) $(VCTARGETS) $(VDTARGETS) supervisor
 
 supervisor: $(BINDIR)/libSupervisor.so
 
-$(BINDIR)/libSupervisor.so: Supervisor.cpp Supervisor.h supervisor_generated.cpp supervisor_generated.h
+$(BINDIR)/libSupervisor.so: Supervisor.cpp Supervisor.h supervisor_generated.cpp supervisor_generated.h SupervisorApi.h SupervisorApiEntrypoints.h
 	$(MPICXX) $(MPICFLAGS) $(MPILDFLAGS) -O3 -Wl,-soname,libSupervisor.so -o $@ $<
 
 $(BINDIR)/softswitch_code_%.v: $(BINDIR)/softswitch_%.elf

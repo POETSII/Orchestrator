@@ -248,6 +248,14 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
         return 0;
     }
 
+    /* On loading the supervisor, provision its API. */
+    if(!provision_supervisor_api(appName))
+    {
+        Post(525, appName);
+        appInfo->state = BROKEN;
+        return 0;
+    }
+
     /* Otherwise, increment the distribution message count. If the distribution
      * message count is too high, shout loudly, and break the application. */
     if (!appInfo->increment_dist_count_current())
@@ -454,6 +462,25 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
         queue_mpi_message(&outputMessage);
     }
     if (rc < 0) Post(515, appName);
+    return 0;
+}
+
+unsigned Mothership::handle_msg_path(PMsg_p* message)
+{
+    /* Pull message contents. */
+    std::string userOutRoot;
+    if (!decode_string_message(message, &userOutRoot))
+    {
+        debug_post(597, 3, "Q::PATH", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
+        return 0;
+    }
+
+    debug_post(597, 3, "Q::PATH", hex2str(message->Key()).c_str(),
+               dformat("userOutRoot=%s", userOutRoot.c_str()).c_str());
+
+    /* Out we go. */
+    userOutDir = userOutRoot;
     return 0;
 }
 

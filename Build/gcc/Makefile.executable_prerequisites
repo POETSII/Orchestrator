@@ -250,7 +250,7 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/PacketHandlers.cpp \
                      $(SOURCE_DIR)/Mothership/SuperDB.cpp \
                      $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
-                     $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
+                     $(SOURCE_DIR)/Mothership/SupervisorApiProvisioning.cpp \
                      $(SOURCE_DIR)/Mothership/ThreadComms.cpp \
                      $(SOURCE_DIR)/Mothership/ThreadLogic.cpp \
 

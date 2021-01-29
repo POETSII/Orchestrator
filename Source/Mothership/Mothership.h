@@ -40,6 +40,9 @@ public:
     SuperDB superdb;
     ThreadComms threading;
 
+    /* Root directory for supervisor output, relative to home. */
+    std::string userOutDir;
+
     /* Methods for transitioning applications through states, triggered by
      * different Q::APP message keys. */
     void initialise_application(AppInfo*);
@@ -57,6 +60,7 @@ public:
     unsigned handle_msg_cmnd_stop(PMsg_p* message);
     unsigned handle_msg_bend_cnc(PMsg_p* message);
     unsigned handle_msg_bend_supr(PMsg_p* message);
+    unsigned handle_msg_path(PMsg_p* message);
     unsigned handle_msg_pkts(PMsg_p* message);
     unsigned handle_msg_dump(PMsg_p* message);
 
@@ -112,6 +116,10 @@ private:
                                unsigned index=0);
     bool decode_unsigned_message(PMsg_p* message, unsigned* result,
                                  unsigned index=0);
+
+    /* Methods for provisioning the API for Supervisors. */
+    bool provision_supervisor_api(std::string appName);
+    void supervisor_api_stop_application(std::string appName);
 
     /* Supervisor spinning (virtual from CommonBase). */
     void OnIdle();

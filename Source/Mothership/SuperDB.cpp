@@ -42,6 +42,15 @@ SuperHolder* SuperDB::get_next_idle(std::string& name)
     return nextIdle->second;
 }
 
+/* Retrieves a reference to the api-communications object used by the
+ * supervisor shared object, so it can be populated or modified. Note the lack
+ * of locking. */
+SupervisorApi* SuperDB::get_supervisor_api(std::string appName)
+{
+    SuperIt superFinder = supervisors.find(appName); \
+    if (superFinder == supervisors.end()) return PNULL;
+    return (*(superFinder->second->getApi))();
+}
 
 /* Loads a supervisor into the database, returning true on success and false on
  * failure. If there is a failure, errorMessage is written with the contents of
@@ -61,7 +70,7 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
     }
 
     /* Otherwise, load up. */
-    supervisors[appName] = new SuperHolder(path);
+    supervisors[appName] = new SuperHolder(path, appName);
     nextIdle = supervisors.begin();
 
     /* Check for errors as per the specification... */

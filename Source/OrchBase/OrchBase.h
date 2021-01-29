@@ -39,7 +39,6 @@ class P_super;
 #include "CmUnpl.h"
 #include "CmUntl.h"
 
-#define TASK_DEPLOY_DIR ".orchestrator/task_binaries"  // Relative to home.
 using namespace std;
 
 //==============================================================================
