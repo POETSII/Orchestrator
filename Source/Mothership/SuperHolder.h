@@ -24,8 +24,7 @@ public:
     SupervisorApi* api;
     bool are_all_hooks_loaded();
     void dump(std::ofstream*);
-    int (*call)(std::vector<P_Pkt_t>&, 
-                std::vector<std::pair<uint32_t, P_Pkt_t> >&);
+    int (*call)(std::vector<P_Pkt_t>&, std::vector<P_Addr_Pkt_t>&);
     int (*exit)();
     SupervisorApi* (*getApi)();
     int (*idle)();

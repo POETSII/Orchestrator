@@ -152,8 +152,8 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
 
 void* ThreadComms::backend_output_broker(void* mothershipArg)
 {
-    std::vector<std::pair<uint32_t, P_Pkt_t> >packets;
-    std::vector<std::pair<uint32_t, P_Pkt_t> >::iterator packetIt;
+    std::vector<P_Addr_Pkt_t>packets;
+    std::vector<P_Addr_Pkt_t>::iterator packetIt;
     uint32_t numberOfFlitsForThisPacket;
     Mothership* mothership = (Mothership*)mothershipArg;
 
@@ -191,7 +191,7 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
         /* Otherwise, blocking-send each packet in turn. */
         for (packetIt = packets.begin(); packetIt != packets.end(); packetIt++)
         {
-            mothership->debug_post(591, 1, hex2str(packetIt->first).c_str());
+            mothership->debug_post(591, 1, hex2str(packetIt->hwAddr).c_str());
 
             /* Compute number of flits for this packet. */
             numberOfFlitsForThisPacket = p_hdr_size() >> TinselLogBytesPerFlit;
@@ -199,9 +199,9 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
 
             /* Send the packet (with that number of flits) */
             pthread_mutex_lock(&(mothership->threading.mutex_backend_api));
-            mothership->backend->send(packetIt->first,
+            mothership->backend->send(packetIt->hwAddr,
                                       numberOfFlitsForThisPacket,
-                                      &(packetIt->second), true);
+                                      &(packetIt->packet), true);
             pthread_mutex_unlock(&(mothership->threading.mutex_backend_api));
 
         }

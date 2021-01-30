@@ -126,7 +126,7 @@ HANDLE_SUPERVISOR_FN(exit)
 
 int SuperDB::call_supervisor(std::string appName,
                     std::vector<P_Pkt_t>& inputPackets, 
-                    std::vector<std::pair<uint32_t, P_Pkt_t> >& outputPackets)
+                    std::vector<P_Addr_Pkt_t>& outputPackets)
 {
     FIND_SUPERVISOR;
     pthread_mutex_lock(&(superFinder->second->lock));

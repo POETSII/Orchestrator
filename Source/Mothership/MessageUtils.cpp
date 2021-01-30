@@ -72,23 +72,19 @@ bool Mothership::decode_addresses_message(PMsg_p* message,
 }
 
 bool Mothership::decode_addressed_packets_message(PMsg_p* message,
-    std::vector<std::pair<uint32_t, P_Pkt_t> >* packets, unsigned index)
+    std::vector<P_Addr_Pkt_t>* packets, unsigned index)
 {
-    std::vector<std::pair<uint32_t, P_Pkt_t> > packetsBuffer;
-    std::vector<std::pair<uint32_t, P_Pkt_t> >::iterator packetIt;
+    message->Put<P_Addr_Pkt_t>();  // Tell the message its type
 
     packets->clear();
-
-    message->Get<std::pair<uint32_t, P_Pkt_t> >(index, packetsBuffer);
-    if (packetsBuffer.empty())
+    
+    message->Get<P_Addr_Pkt_t>(index, *packets);
+    
+    if (packets->empty())
     {
         Post(516, hex2str(message->Key()), uint2str(index));
         return false;
     }
-
-    /* Copy the packets from the buffer to the input argument. */
-    for (packetIt = packetsBuffer.begin(); packetIt != packetsBuffer.end();
-         packetIt++) packets->push_back(*packetIt);
 
     return true;
 }

@@ -442,7 +442,7 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
      * If the vector comes back with entries, then we have packets to send.
      */
     std::vector<P_Pkt_t> inputPackets;
-    std::vector<std::pair<uint32_t, P_Pkt_t> > outputPackets;
+    std::vector<P_Addr_Pkt_t> outputPackets;
     
     // Get the input packets.
     //message->Put<P_Pkt_t>();
@@ -458,7 +458,7 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
         outputMessage.Tgt(Urank);
         outputMessage.Src(Urank);
         outputMessage.Key(Q::PKTS);
-        outputMessage.Put<std::pair<uint32_t, P_Pkt_t> > (0, &(outputPackets));
+        outputMessage.Put<P_Addr_Pkt_t> (0, &(outputPackets));
         
         queue_mpi_message(&outputMessage);
     }
@@ -488,7 +488,7 @@ unsigned Mothership::handle_msg_path(PMsg_p* message)
 unsigned Mothership::handle_msg_pkts(PMsg_p* message)
 {
     /* Pull message contents. */
-    std::vector<std::pair<uint32_t, P_Pkt_t> > packets;
+    std::vector<P_Addr_Pkt_t> packets;
     if (!decode_addressed_packets_message(message, &packets))
     {
         debug_post(597, 3, "Q::PKTS", hex2str(message->Key()).c_str(),

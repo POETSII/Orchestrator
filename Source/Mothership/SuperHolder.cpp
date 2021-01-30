@@ -19,8 +19,8 @@ SuperHolder::SuperHolder(std::string path, std::string appName):
 
     /* Load hooks. */
     call = reinterpret_cast<int (*)(std::vector<P_Pkt_t>&, 
-                    std::vector<std::pair<uint32_t, P_Pkt_t> >&)>
-        (dlsym(so, "SupervisorCall"));
+                                    std::vector<P_Addr_Pkt_t>&)>
+                                        (dlsym(so, "SupervisorCall"));
     if (call == NULL) error = true;
     exit = reinterpret_cast<int (*)()>(dlsym(so, "SupervisorExit"));
     if (exit == NULL) error = true;

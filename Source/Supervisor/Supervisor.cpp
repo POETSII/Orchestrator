@@ -7,8 +7,7 @@ extern "C"
 
     int SupervisorInit(){return Supervisor::OnInit();}
 
-    int SupervisorCall(std::vector<P_Pkt_t>& In, 
-                       std::vector<std::pair<uint32_t, P_Pkt_t> > Out)
+    int SupervisorCall(std::vector<P_Pkt_t>& In, std::vector<P_Addr_Pkt_t> Out)
     {
 #ifdef _APPLICATION_SUPERVISOR_
         int sentErr = 0;

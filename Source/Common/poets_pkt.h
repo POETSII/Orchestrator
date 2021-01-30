@@ -109,6 +109,14 @@ typedef struct poets_packet
     // Further flits contain data.
 } P_Pkt_t;
 
+
+typedef struct poets_address_packet
+{
+    uint32_t hwAddr;    // Destination hardware address
+    P_Pkt_t packet;     // The actual packet
+} P_Addr_Pkt_t;
+
+
 typedef struct poets_debug_packet
 {
     uint32_t origin;  /* Hardware address */

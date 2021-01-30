@@ -1515,7 +1515,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 
     // OnImplicit
     supervisor_cpp << "int Supervisor::OnImplicit(P_Pkt_t* inPkt, ";
-    supervisor_cpp << "std::vector<std::pair<uint32_t,P_Pkt_t> >& outPkt)\n{\n";
+    supervisor_cpp << "std::vector<P_Addr_Pkt_t>& outPkt)\n{\n";
 
     /* TODO remove
     supervisor_cpp << "\t const SupervisorProperties_t* SupervisorProperties";
@@ -1552,14 +1552,14 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     
         // Reply packet logic
     supervisor_cpp << "\tif(__rtsReply)\n\t{\n";
-    supervisor_cpp << "\t\tstd::pair<uint32_t,P_Pkt_t> __oPkt;\n";
+    supervisor_cpp << "\t\tP_Addr_Pkt_t __oPkt;\n";
     supervisor_cpp << "\t\tconst SupervisorDeviceInstance_t* tgt = ";
     supervisor_cpp << "&DeviceVector[inPkt->header.pinAddr];\n";
     supervisor_cpp << "\t\t__reply.header.swAddr = tgt->SwAddr;\n";
     supervisor_cpp << "\t\t__reply.header.swAddr |= ";
     supervisor_cpp << "(P_CNC_IMPL << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK;\n";
-    supervisor_cpp << "\t\t__oPkt.first = tgt->HwAddr;\n";
-    supervisor_cpp << "\t\t__oPkt.second = __reply;\n";
+    supervisor_cpp << "\t\t__oPkt.hwAddr = tgt->HwAddr;\n";
+    supervisor_cpp << "\t\t__oPkt.packet = __reply;\n";
     supervisor_cpp << "\t\toutPkt.push_back(__oPkt);\n";
     supervisor_cpp << "\t}\n\n";
     
@@ -1570,9 +1570,9 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "\t\t__bcast.header.swAddr |= ";
     supervisor_cpp << "(P_CNC_IMPL << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK;\n";
     supervisor_cpp << "\t\tWALKCVECTOR(uint32_t,ThreadVector,threadTgt)\n\t{\n";
-    supervisor_cpp << "\t\t\tstd::pair<uint32_t,P_Pkt_t> __oPkt;\n";
-    supervisor_cpp << "\t\t\t__oPkt.first = (*threadTgt);\n";
-    supervisor_cpp << "\t\t\t__oPkt.second = __bcast;\n";
+    supervisor_cpp << "\t\t\tP_Addr_Pkt_t __oPkt;\n";
+    supervisor_cpp << "\t\t\t__oPkt.hwAddr = (*threadTgt);\n";
+    supervisor_cpp << "\t\t\t__oPkt.packet = __bcast;\n";
     supervisor_cpp << "\t\t\toutPkt.push_back(__oPkt);\n";
     supervisor_cpp << "\t\t}\n";
     
@@ -1585,7 +1585,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 
     // OnPkt - essentially a stub for now
     supervisor_cpp << "int Supervisor::OnPkt(P_Pkt_t* inMsg, ";
-    supervisor_cpp << "std::vector<std::pair<uint32_t,P_Pkt_t> >& outPkt)\n{\n";
+    supervisor_cpp << "std::vector<P_Addr_Pkt_t>& outPkt)\n{\n";
 
     supervisor_cpp << "\tconst " << inPktFmt << " message";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";

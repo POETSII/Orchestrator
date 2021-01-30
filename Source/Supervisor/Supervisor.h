@@ -34,8 +34,8 @@ public:
    static const std::vector<SupervisorDeviceInstance_t> DeviceVector;
    static const std::vector<uint32_t> ThreadVector;
 
-   static int OnImplicit(P_Pkt_t*, std::vector<std::pair<uint32_t, P_Pkt_t> >&);
-   static int OnPkt(P_Pkt_t*, std::vector<std::pair<uint32_t, P_Pkt_t> >&);
+   static int OnImplicit(P_Pkt_t*, std::vector<P_Addr_Pkt_t>&);
+   static int OnPkt(P_Pkt_t*, std::vector<P_Addr_Pkt_t>&);
 
    static int OnInit();
    static int OnStop();

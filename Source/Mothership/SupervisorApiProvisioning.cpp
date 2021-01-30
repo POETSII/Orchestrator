@@ -20,7 +20,7 @@ namespace SuperAPIBindings {
      * manifests as an MPI message sent to ourselves, which percolates through
      * the queueing mechanism. */
     void push_packets(Mothership* mship,
-                      std::vector<std::pair<uint32_t, P_Pkt_t> >& packets)
+                      std::vector<P_Addr_Pkt_t>& packets)
     {
         PMsg_p message;
         message.Src(mship->Urank);
