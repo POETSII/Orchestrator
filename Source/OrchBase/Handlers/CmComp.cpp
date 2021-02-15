@@ -322,7 +322,7 @@ void CmComp::Cm_SoftswitchLogHandler(Cli::Cl_t clause)
     {
         if(clause.Pa_v.size() != 2)
         {   // Missing the log handler specification
-            //TODO: Barf
+            par->Post(807, "/LOGH", (*graphIt)->Name());
         }
         
         // Grab the handler type and convert to lower
@@ -365,7 +365,7 @@ void CmComp::Cm_SoftswitchLogLevel(Cli::Cl_t clause)
     {
         if(clause.Pa_v.size() != 2)
         {   // Missing the log level specification
-            //TODO: Barf
+            par->Post(807, "/LOGL", (*graphIt)->Name());
         }
         
         // Grab the specified log level, we ignore stuff after ::
@@ -396,7 +396,7 @@ void CmComp::Cm_SoftswitchSetRTSBuffSize(Cli::Cl_t clause)
     {
         if(clause.Pa_v.size() != 2)
         {   // Missing the RTS Buff size
-            //TODO: Barf
+            par->Post(807, "/RTSB", (*graphIt)->Name());
         }
         
         // Grab the specified buffer size, we ignore stuff after ::
@@ -406,6 +406,33 @@ void CmComp::Cm_SoftswitchSetRTSBuffSize(Cli::Cl_t clause)
     }
 }
 
+
+void CmComp::Cm_SoftswitchAddFlags(Cli::Cl_t clause)
+{
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "rtsbuffsize");
+        return;
+    }
+
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+    
+    /* Set the flags for each app in sequence. */
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        if(clause.Pa_v.size() != 2)
+        {   // Missing the flags
+            par->Post(807, "/ARGS", (*graphIt)->Name());
+        }
+        
+        // Grab the specified flags and populate, we ignore stuff after ::
+        par->pComposer->addFlags(*graphIt, clause.Pa_v[1].Va_v[0]);
+    }
+}
 //------------------------------------------------------------------------------
 
 void CmComp::Dump(unsigned off,FILE * fp)
@@ -456,6 +483,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="inst" ) { Cm_SoftswitchInstrMode(*i, true);    continue; }
   if (sCl=="noin" ) { Cm_SoftswitchInstrMode(*i, false);   continue; }
   if (sCl=="rtsb" ) { Cm_SoftswitchSetRTSBuffSize(*i);     continue; }
+  if (sCl=="args" ) { Cm_SoftswitchAddFlags(*i);           continue; }
   
   if (sCl=="dump" ) { Dump(0,par->fd);                     continue; }
   if (sCl=="show" ) { Show(par->fd);                       continue; }

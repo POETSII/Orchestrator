@@ -77,6 +77,8 @@ typedef struct ComposerGraphI_t
     
     std::string provenanceCache;
     
+    std::string compilationFlags;
+    
     //State flags
     bool generated;
     bool compiled;
@@ -90,7 +92,7 @@ typedef struct ComposerGraphI_t
     
     // Constructors/Destructors
     ComposerGraphI_t();
-    ComposerGraphI_t(GraphI_t*);
+    ComposerGraphI_t(GraphI_t*, std::string&);
     ~ComposerGraphI_t();
     
     void clearDevTStrsMap();
@@ -111,7 +113,7 @@ int         generate(GraphI_t*); // Generate Source Files
 int         compile(GraphI_t*);  // Compile Source Files
 
 int         decompose(GraphI_t*);  // Clean then degenerate
-int         degenerate(GraphI_t*); // Clear internal strings and generated files
+int         degenerate(GraphI_t*, bool = false); // Clear internal strings and generated files
 int         clean(GraphI_t*);      // Get rid of built files (e.g. a make clean)
 
 void        setOutputPath(std::string);
@@ -123,6 +125,7 @@ int         enableInstr(GraphI_t*, bool);
 int         setLogHandler(GraphI_t*, ssLogHandler_t);
 int         setLogLevel(GraphI_t*, unsigned long);
 int         setLoopMode(GraphI_t*, ssLoopMode_t);
+int         addFlags(GraphI_t*, std::string&);
 
 bool        isGenerated(GraphI_t*);
 bool        isCompiled(GraphI_t*);

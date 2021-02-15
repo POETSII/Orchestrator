@@ -235,7 +235,8 @@
 803(I) : "%sing graph instance '%s'..."
 804(I) : "Graph instance '%s' %s successfully."
 805(W) : "No hardware model is loaded - unable to %s any graph instances in the composer."
-805(W) : "Graph instance '%s' %s failed. Check the microlog for details."
+806(W) : "Graph instance '%s' %s failed. Check the microlog for details."
+807(W) : "%s failed for Graph instance '%s': missing parameter."
 
 // Unrecoverables
 901(U) : "%s: %s corrupt ?"

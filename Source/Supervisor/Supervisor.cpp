@@ -7,7 +7,7 @@ extern "C"
 
     int SupervisorInit(){return Supervisor::OnInit();}
 
-    int SupervisorCall(std::vector<P_Pkt_t>& In, std::vector<P_Addr_Pkt_t> Out)
+    int SupervisorCall(std::vector<P_Pkt_t>& In, std::vector<P_Addr_Pkt_t>& Out)
     {
 #ifdef _APPLICATION_SUPERVISOR_
         int sentErr = 0;
@@ -51,7 +51,7 @@ extern "C"
     }
     
     // "return" a copy of the device vector.
-    void SupervisorGetAddresses(std::vector<SupervisorDeviceInstance_t>& devV)
+    void GetSupervisorAddresses(std::vector<SupervisorDeviceInstance_t>& devV)
     {
         devV = Supervisor::DeviceVector;
     }

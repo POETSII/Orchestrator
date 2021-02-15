@@ -35,12 +35,16 @@ ComposerGraphI_t::ComposerGraphI_t()
     softswitchLogHandler = trivial;     // Default to the trivial log handler
     softswitchLogLevel = 2;             // Default to a log level of 2
     softswitchLoopMode = standard;      // Default to the standard loop mode
+    
+    compilationFlags = "";
+    provenanceCache = "";
 }
 
-ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn)
+ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
 {
     graphI = graphIIn;
-    outputDir = graphI->GetCompoundName(true);
+    outputDir = outputPath;
+    outputDir += graphI->GetCompoundName(true);
     generated = false;
     compiled = false;
     
@@ -51,6 +55,9 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn)
     softswitchLogHandler = trivial;     // Default to the trivial log handler 
     softswitchLogLevel = 2;             // Default to a log level of 2
     softswitchLoopMode = standard;      // Default to the standard loop mode
+    
+    compilationFlags = "";
+    provenanceCache = "";
 }
 
 ComposerGraphI_t::~ComposerGraphI_t()
@@ -106,6 +113,8 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
         default:        fprintf(file, "**INVALID**\n");
     }
     
+    fprintf(file, "  Softswitch log level:       %lu\n",softswitchLogLevel);
+    
     fprintf(file, "  Softswitch loop mode:       ");
     switch(softswitchLoopMode)
     {
@@ -119,7 +128,49 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
                         static_cast<unsigned long>(devTStrsMap.size()));
     fprintf(file, "  supevisorDevIVect size:     %lu \n",
                         static_cast<unsigned long>(supevisorDevIVect.size()));
-    fprintf(file, "  Provenance string cache:\n%s \n",provenanceCache.c_str());                    
+    fprintf(file, "  Provenance string cache:\n%s \n\n",provenanceCache.c_str());
+    
+    
+    // Form the Softswitch compilation control string
+    std::string makeArgs = "";
+    if(bufferingSoftswitch)
+    {   // Softswitch needs to be built in buffering mode
+        makeArgs += "SOFTSWITCH_BUFFERING=1 ";
+    }
+    if(!(softswitchInstrumentation))
+    {   // Softswitch needs to be built with instrumentation disabled
+        makeArgs += "SOFTSWITCH_DISABLE_INSTRUMENTATION=1 ";
+    }
+    switch(softswitchLogHandler)
+    {   // Control the log handler 
+        case trivial:   makeArgs += "SOFTSWITCH_TRIVIAL_LOG_HANDLER=1 ";
+                        break;
+        
+        default:        break;  // De Nada!
+    }
+    switch(softswitchLoopMode)
+    {   // Control the main loop order
+        case priInstr:  makeArgs += "SOFTSWITCH_PRIORITISE_INSTRUMENTATION=1 ";
+                        break;
+        
+        default:        break;  // De Nada!
+    }
+    // Set the softswitch log level
+    makeArgs += "SOFTSWITCH_LOGLEVEL=";
+    makeArgs += TO_STRING(softswitchLogLevel);
+    makeArgs += " ";
+    // Add the user-supplied flags if they exist
+    if(compilationFlags.size())
+    {
+        makeArgs += "CM_CFLAGS=\"";
+        makeArgs += compilationFlags;
+        makeArgs += "\" ";
+    }
+    // Print the Make invocation
+    fprintf(file, "  Make invocation:\n\t%s%s%s\n\n",   COREMAKE.c_str(),
+                                                        makeArgs.c_str(),
+                                                        COREMAKEPOST.c_str());
+
     /* Close breaker and flush the dump. */
     DumpUtils::close_breaker(file, prefix);
     fflush(file);
@@ -235,7 +286,7 @@ int Composer::setBuffMode(GraphI_t* graphI, bool buffMode)
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, map it.
-        builderGraphI = new ComposerGraphI_t(graphI);
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
 
         // Insert the GraphI
         std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
@@ -269,7 +320,7 @@ int Composer::setRTSSize(GraphI_t* graphI, unsigned long rtsSize)
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, map it.
-        builderGraphI = new ComposerGraphI_t(graphI);
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
 
         // Insert the GraphI
         std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
@@ -287,7 +338,7 @@ int Composer::setRTSSize(GraphI_t* graphI, unsigned long rtsSize)
     
     if(builderGraphI->generated)
     {   // Already generated, need to degenerate
-        degenerate(graphI);
+        degenerate(graphI, false);
     }
     
     builderGraphI->rtsBuffSizeMax = rtsSize;
@@ -308,7 +359,7 @@ int Composer::enableInstr(GraphI_t* graphI, bool ssInstr)
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, map it.
-        builderGraphI = new ComposerGraphI_t(graphI);
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
 
         // Insert the GraphI
         std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
@@ -342,7 +393,7 @@ int Composer::setLogHandler(GraphI_t* graphI, ssLogHandler_t logHandler)
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, map it.
-        builderGraphI = new ComposerGraphI_t(graphI);
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
 
         // Insert the GraphI
         std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
@@ -371,7 +422,7 @@ int Composer::setLogLevel(GraphI_t* graphI, unsigned long level)
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, map it.
-        builderGraphI = new ComposerGraphI_t(graphI);
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
 
         // Insert the GraphI
         std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
@@ -405,7 +456,7 @@ int Composer::setLoopMode(GraphI_t* graphI, ssLoopMode_t loopMode)
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, map it.
-        builderGraphI = new ComposerGraphI_t(graphI);
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
 
         // Insert the GraphI
         std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
@@ -425,6 +476,43 @@ int Composer::setLoopMode(GraphI_t* graphI, ssLoopMode_t loopMode)
     
     return 0;
 }
+
+
+/******************************************************************************
+ * Add C flags to the compilation
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::addFlags(GraphI_t* graphI, std::string& flags)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->compilationFlags += flags;
+    builderGraphI->compilationFlags += " ";
+    
+    return 0;
+}
+
 
 /******************************************************************************
  * Public method to generate and compile
@@ -451,7 +539,7 @@ int Composer::generate(GraphI_t* graphI)
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, map it.
-        builderGraphI = new ComposerGraphI_t(graphI);
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
 
         // Insert the GraphI
         std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
@@ -507,7 +595,7 @@ int Composer::generate(GraphI_t* graphI)
     std::ofstream props_h, pkt_h;
 
     std::stringstream props_hFName;
-    props_hFName << outputPath << builderGraphI->outputDir;
+    props_hFName << builderGraphI->outputDir;
     props_hFName << "/" << GENERATED_PATH;
     props_hFName << "/GlobalProperties.h";
 
@@ -526,7 +614,7 @@ int Composer::generate(GraphI_t* graphI)
 
 
     std::stringstream pkt_hFName;
-    pkt_hFName << outputPath << builderGraphI->outputDir;
+    pkt_hFName << builderGraphI->outputDir;
     pkt_hFName << "/" << GENERATED_PATH;
     pkt_hFName << "/MessageFormats.h";
 
@@ -705,7 +793,7 @@ int Composer::compile(GraphI_t* graphI)
     }
 
     // Make the bin directory
-    std::string taskDir(outputPath + builderGraphI->outputDir);
+    std::string taskDir(builderGraphI->outputDir);
     std::string elfPath(taskDir + "/bin");
     if(system((MAKEDIR + " " + elfPath).c_str()))
     {
@@ -716,7 +804,7 @@ int Composer::compile(GraphI_t* graphI)
 
 
     // Make the magic happen: call make
-    std::string buildPath = outputPath + builderGraphI->outputDir;
+    std::string buildPath(builderGraphI->outputDir);
     buildPath += "/Build";
     
     
@@ -753,7 +841,15 @@ int Composer::compile(GraphI_t* graphI)
     // Set the softswitch log level
     makeArgs += "SOFTSWITCH_LOGLEVEL=";
     makeArgs += TO_STRING(builderGraphI->softswitchLogLevel);
-    makeArgs += " ";    
+    makeArgs += " ";
+    
+    // Add the user-supplied flags if they exist
+    if(builderGraphI->compilationFlags.size())
+    {
+        makeArgs += "CM_CFLAGS=\"";
+        makeArgs += builderGraphI->compilationFlags;
+        makeArgs += "\" ";
+    }
     
     
     fprintf(fd,"\tMake called with %s%s%s\n",COREMAKE.c_str(),makeArgs.c_str(),
@@ -908,7 +1004,7 @@ int Composer::decompose(GraphI_t* graphI)
     int ret = clean(graphI);
 
     if(ret) return ret;
-    else return degenerate(graphI);
+    else return degenerate(graphI, true);
 }
 
 
@@ -916,7 +1012,7 @@ int Composer::decompose(GraphI_t* graphI)
  * Undo the generation step by removing any generated files and removing the
  * graphIMap entry.
  *****************************************************************************/
-int Composer::degenerate(GraphI_t* graphI)
+int Composer::degenerate(GraphI_t* graphI, bool del)
 {
     ComposerGraphI_t*  builderGraphI;
     FILE * fd = graphI->par->par->fd;              // Detail output file
@@ -936,28 +1032,42 @@ int Composer::degenerate(GraphI_t* graphI)
 
     if(!builderGraphI->generated)
     {   // Nothing generated, nothing to do
-        fprintf(fd,"\tApplication not generated, skipping\n");
-        return 0;
+        if(!del)
+        {
+            fprintf(fd,"\tApplication not generated, skipping\n");
+            return 0;
+        }
     }
+    else
+    {
+        // Remove the application directory.
+        //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
+        std::string taskDir(builderGraphI->outputDir);
+        if(system((REMOVEDIR+" "+taskDir).c_str())) // Check that the directory deleted
+        {                                  // if it didn't, tell logserver and exit
+            //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
+            fprintf(fd,"\tFailed to remove %s\n",taskDir.c_str());
+        }
 
-
-    // Remove the application directory.
-    //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
-    std::string taskDir(outputPath + builderGraphI->outputDir);
-    if(system((REMOVEDIR+" "+taskDir).c_str())) // Check that the directory deleted
-    {                                  // if it didn't, tell logserver and exit
-        //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
-        fprintf(fd,"\tFailed to remove %s\n",taskDir.c_str());
+        builderGraphI->generated = 0;
+        builderGraphI->provenanceCache = "";
+        builderGraphI->supevisorDevIVect.clear();
+        builderGraphI->devISuperIdxMap.clear();
+        builderGraphI->clearDevTStrsMap();
     }
-
-    builderGraphI->generated = 0;
-
-    delete graphISrch->second;
-    graphIMap.erase(graphISrch);
+    
+    if(del)
+    {
+        delete graphISrch->second;
+        graphIMap.erase(graphISrch);
+    }
 
     return 0;
 }
 
+/******************************************************************************
+ * Undo the compilation step by invoking a make clean.
+ *****************************************************************************/
 int Composer::clean(GraphI_t* graphI)
 {   // Tidy up a specific build for a graphI. This invokes make clean
     ComposerGraphI_t*  builderGraphI;
@@ -970,7 +1080,7 @@ int Composer::clean(GraphI_t* graphI)
     }
     builderGraphI = srch->second;
 
-    std::string buildPath = outputPath + builderGraphI->outputDir;
+    std::string buildPath(builderGraphI->outputDir);
     buildPath += "/Build";
     if(system(("(cd "+buildPath+";"+COREMAKECLEAN+")").c_str()))
     {
@@ -979,7 +1089,7 @@ int Composer::clean(GraphI_t* graphI)
 
     // Remove the bin directory.
     //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
-    std::string taskDir(outputPath + builderGraphI->outputDir);
+    std::string taskDir(builderGraphI->outputDir);
     if(system((REMOVEDIR+" "+taskDir+"/bin").c_str())) // Check that the directory deleted
     {                                  // if it didn't, tell logserver and exit
         //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
@@ -1097,7 +1207,7 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     // Remove the task directory and recreate it to clean any previous build.
     //==========================================================================
     //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
-    std::string taskDir(outputPath + builderGraphI->outputDir);
+    std::string taskDir(builderGraphI->outputDir);
     if(system((REMOVEDIR+" "+taskDir).c_str())) // Check that the directory deleted
     {                                  // if it didn't, tell logserver and exit
         //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
@@ -1141,13 +1251,13 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
         return 1;
     }
 
-    std::string mkdirSoftswitchPath(taskDir + "/Softswitch");
+    /*std::string mkdirSoftswitchPath(taskDir + "/Softswitch");
     if(system((MAKEDIR + " " + mkdirSoftswitchPath).c_str()))
     {
         //par->Post(818, mkdirSoftswitchPath, OSFixes::getSysErrorString(errno));
         fprintf(fd,"\tFailed to create %s\n",mkdirSoftswitchPath.c_str());
         return 1;
-    }
+    }*/
 
     std::string mkdirBuildPath(taskDir + "/Build");
     if(system((MAKEDIR + " " + mkdirBuildPath).c_str()))
@@ -1200,7 +1310,6 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
  *****************************************************************************/
 int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 {
-    std::string taskDir = builderGraphI->outputDir;
     GraphI_t* graphI = builderGraphI->graphI;
 
     //Create the graph instance-specific ones
@@ -1209,7 +1318,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 
     // Create the Supervisor header
     std::stringstream supervisor_hFName;
-    supervisor_hFName << outputPath << taskDir << "/" << GENERATED_PATH;
+    supervisor_hFName << builderGraphI->outputDir << "/" << GENERATED_PATH;
     supervisor_hFName << "/supervisor_generated.h";
 
     std::string supervisor_hFNameStr = supervisor_hFName.str();
@@ -1225,7 +1334,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 
     // Create the Supervisor source
     std::stringstream supervisor_cppFName;
-    supervisor_cppFName << outputPath << taskDir << "/" << GENERATED_PATH;
+    supervisor_cppFName << builderGraphI->outputDir << "/" << GENERATED_PATH;
     supervisor_cppFName << "/supervisor_generated.cpp";
 
     std::string supervisor_cppFNameStr = supervisor_cppFName.str();
@@ -1246,8 +1355,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "#include \"supervisor_generated.h\"\n";
     supervisor_cpp << "#include \"Supervisor.h\"\n\n";
 
-    // Write the static member initialisors (Supervisor::init, Supervisor::api,
-    // and the Device Vector)
+    // Write static member initialisors for Supervisor::init & Supervisor::api
     supervisor_cpp << "bool Supervisor::__SupervisorInit = false;\n";
     supervisor_cpp << "SupervisorApi Supervisor::__api;\n";
 
@@ -1257,9 +1365,16 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     int devIdx = 0; // Faster than using std::distance
     builderGraphI->supevisorDevIVect.clear();       // Sanity clear
     builderGraphI->devISuperIdxMap.clear();         // sanity clear
-
+    
+    // Write the static initialisor for the Device Vector
     supervisor_cpp << "const std::vector<SupervisorDeviceInstance_t> ";
     supervisor_cpp << "Supervisor::DeviceVector = { ";
+    
+    //TEMP: Supervisor name map until we have a name server
+    std::stringstream superNameMap;
+    superNameMap << "const std::map<std::string, const SupervisorDeviceInstance_t*> ";
+    superNameMap << "Supervisor::DeviceNameMap = { ";
+    
     WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,graphI->G,i)
     {
         DevI_t* devI = graphI->G.NodeData(i);
@@ -1286,12 +1401,20 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         supervisor_cpp << "," << devI->addr.as_uint();
         supervisor_cpp << ",\"" << devI->Name() <<"\"";
         supervisor_cpp << "},";
-
+        
+    //TEMP: And let's add a (temporary) initialiser for the name map.   
+        if(devIdx%100 == 0) superNameMap << "\n\t";     // Add some line splitting
+        superNameMap << "{\"" << devI->Name()<<"\", &Supervisor::DeviceVector[";
+        superNameMap  << devIdx << "]},";
+        
         devIdx++;
     }
     supervisor_cpp.seekp(-1,ios_base::cur); // Rewind one place to remove the stray ","
     supervisor_cpp << "\n};\n\n";               // properly terminate the initialiser
-
+    
+    superNameMap.seekp(-1,ios_base::cur);   //TEMP: Rewind one place to remove the stray ","
+    superNameMap << "\n};\n\n";             //TEMP: properly terminate the initialiser
+    supervisor_cpp << superNameMap.rdbuf(); //TEMP:
 
     // Fill a vector of thread hardware addresses that this supervisor is responsible for
     int threadIdx = 0; // Faster than using std::distance
@@ -1363,9 +1486,9 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         supervisor_h << "#define SUPSTATE(a)         supervisorState->a\n";
         supervisor_h << "#define MSG(a)              message->a\n";
         supervisor_h << "#define PKT(a)              message->a\n";
-        supervisor_h << "#define RPLY(a)             reply->a\n";
+        supervisor_h << "#define REPLY(a)            reply->a\n";
         supervisor_h << "#define BCAST(a)            bcast->a\n";
-        supervisor_h << "#define RTSRPLY()           __rtsReply=true\n";
+        supervisor_h << "#define RTSREPLY()          __rtsReply=true\n";
         supervisor_h << "#define RTSBCAST()          __rtsBcast=true\n";
         supervisor_h << "\n";
 
@@ -1514,8 +1637,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "}\n\n";
 
     // OnImplicit
-    supervisor_cpp << "int Supervisor::OnImplicit(P_Pkt_t* inPkt, ";
-    supervisor_cpp << "std::vector<P_Addr_Pkt_t>& outPkt)\n{\n";
+    supervisor_cpp << "int Supervisor::OnImplicit(P_Pkt_t* __inPkt, ";
+    supervisor_cpp << "std::vector<P_Addr_Pkt_t>& __outPkt)\n{\n";
 
     /* TODO remove
     supervisor_cpp << "\t const SupervisorProperties_t* SupervisorProperties";
@@ -1530,7 +1653,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "\tconst " << inPktFmt << " message";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
     supervisor_cpp << "static_cast<const " << inPktFmt << ">";
-    supervisor_cpp << "(static_cast<const void*>(inPkt->payload));\n";
+    supervisor_cpp << "(static_cast<const void*>(__inPkt->payload));\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
     
     supervisor_cpp << "\tP_Pkt_t __reply OS_ATTRIBUTE_UNUSED;\n";
@@ -1554,13 +1677,13 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "\tif(__rtsReply)\n\t{\n";
     supervisor_cpp << "\t\tP_Addr_Pkt_t __oPkt;\n";
     supervisor_cpp << "\t\tconst SupervisorDeviceInstance_t* tgt = ";
-    supervisor_cpp << "&DeviceVector[inPkt->header.pinAddr];\n";
+    supervisor_cpp << "&DeviceVector[__inPkt->header.pinAddr];\n";
     supervisor_cpp << "\t\t__reply.header.swAddr = tgt->SwAddr;\n";
     supervisor_cpp << "\t\t__reply.header.swAddr |= ";
     supervisor_cpp << "(P_CNC_IMPL << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK;\n";
     supervisor_cpp << "\t\t__oPkt.hwAddr = tgt->HwAddr;\n";
     supervisor_cpp << "\t\t__oPkt.packet = __reply;\n";
-    supervisor_cpp << "\t\toutPkt.push_back(__oPkt);\n";
+    supervisor_cpp << "\t\t__outPkt.push_back(__oPkt);\n";
     supervisor_cpp << "\t}\n\n";
     
         // Broadcast packet logic
@@ -1573,7 +1696,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "\t\t\tP_Addr_Pkt_t __oPkt;\n";
     supervisor_cpp << "\t\t\t__oPkt.hwAddr = (*threadTgt);\n";
     supervisor_cpp << "\t\t\t__oPkt.packet = __bcast;\n";
-    supervisor_cpp << "\t\t\toutPkt.push_back(__oPkt);\n";
+    supervisor_cpp << "\t\t\t__outPkt.push_back(__oPkt);\n";
     supervisor_cpp << "\t\t}\n";
     
     supervisor_cpp << "\t}\n\n";
@@ -1584,13 +1707,13 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 
 
     // OnPkt - essentially a stub for now
-    supervisor_cpp << "int Supervisor::OnPkt(P_Pkt_t* inMsg, ";
-    supervisor_cpp << "std::vector<P_Addr_Pkt_t>& outPkt)\n{\n";
+    supervisor_cpp << "int Supervisor::OnPkt(P_Pkt_t* __inPkt, ";
+    supervisor_cpp << "std::vector<P_Addr_Pkt_t>& __outPkt)\n{\n";
 
     supervisor_cpp << "\tconst " << inPktFmt << " message";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
     supervisor_cpp << "static_cast<const " << inPktFmt << ">(";
-    supervisor_cpp << "static_cast<const void*>(inMsg->payload));\n";
+    supervisor_cpp << "static_cast<const void*>(__inPkt->payload));\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
 
     supervisor_cpp << supervisorOnPktHandler;
@@ -1716,11 +1839,6 @@ void Composer::writeMessageTypes(GraphI_t* graphI, std::ofstream& pkt_h)
     
     pkt_h << "#endif /*_MESSAGETYPES_H_*/\n\n";
 }
-
-
-
-
-
 
 
 /******************************************************************************
@@ -2224,12 +2342,10 @@ int Composer::createCoreFiles(P_core* pCore, ComposerGraphI_t* builderGraphI,
 {
     uint32_t coreAddr = pCore->get_hardware_address()->as_uint();
     FILE * fd = pCore->parent->parent->parent->parent->parent->fd;  // Microlog
-
-    std::string taskDir = builderGraphI->outputDir;
-
+    
     // Create the vars header
     std::stringstream vars_hFName;
-    vars_hFName << outputPath << taskDir << "/" << GENERATED_H_PATH;
+    vars_hFName << builderGraphI->outputDir << "/" << GENERATED_H_PATH;
     vars_hFName << "/vars_" << coreAddr << ".h";
 
     std::string vars_hFNameStr = vars_hFName.str();
@@ -2247,7 +2363,7 @@ int Composer::createCoreFiles(P_core* pCore, ComposerGraphI_t* builderGraphI,
 
     // Create the vars source
     std::stringstream vars_cppFName;
-    vars_cppFName << outputPath << taskDir << "/" << GENERATED_CPP_PATH;
+    vars_cppFName << builderGraphI->outputDir << "/" << GENERATED_CPP_PATH;
     vars_cppFName << "/vars_" << coreAddr << ".cpp";
 
     std::string vars_cppFNameStr = vars_cppFName.str();
@@ -2265,7 +2381,7 @@ int Composer::createCoreFiles(P_core* pCore, ComposerGraphI_t* builderGraphI,
 
     // Create the vars header
     std::stringstream handlers_hFName;
-    handlers_hFName << outputPath << taskDir << "/" << GENERATED_H_PATH;
+    handlers_hFName << builderGraphI->outputDir << "/" << GENERATED_H_PATH;
     handlers_hFName << "/handlers_" << coreAddr << ".h";
 
     std::string handlers_hFNameStr = handlers_hFName.str();
@@ -2285,7 +2401,7 @@ int Composer::createCoreFiles(P_core* pCore, ComposerGraphI_t* builderGraphI,
 
     // Create the vars source
     std::stringstream handlers_cppFName;
-    handlers_cppFName << outputPath << taskDir << "/" << GENERATED_CPP_PATH;
+    handlers_cppFName << builderGraphI->outputDir << "/" << GENERATED_CPP_PATH;
     handlers_cppFName << "/handlers_" << coreAddr << ".cpp";
 
     std::string handlers_cppFNameStr = handlers_cppFName.str();
@@ -2404,12 +2520,10 @@ int Composer::createThreadFile(P_thread* pThread,
 {
     uint32_t coreAddr = pThread->parent->get_hardware_address()->as_uint();
     uint32_t threadAddr = pThread->get_hardware_address()->get_thread();
-
-    std::string taskDir = builderGraphI->outputDir;
-
+    
     // Create the vars source
     std::stringstream tvars_cppFName;
-    tvars_cppFName << outputPath << taskDir << "/" << GENERATED_CPP_PATH;
+    tvars_cppFName << builderGraphI->outputDir << "/" << GENERATED_CPP_PATH;
     tvars_cppFName << "/vars_" << coreAddr;
     tvars_cppFName << "_" << threadAddr << ".cpp";
 
