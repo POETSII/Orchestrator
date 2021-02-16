@@ -314,7 +314,7 @@ void CmComp::Cm_SoftswitchLogHandler(Cli::Cl_t clause)
 
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
-    if (par->GetGraphIs(clause, graphs) == 1) return;
+    if (par->GetGraphIs(clause, graphs,1) == 1) return;
     
     /* Set the mode for each app in sequence. */
     std::set<GraphI_t*>::iterator graphIt;
@@ -357,7 +357,7 @@ void CmComp::Cm_SoftswitchLogLevel(Cli::Cl_t clause)
 
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
-    if (par->GetGraphIs(clause, graphs) == 1) return;
+    if (par->GetGraphIs(clause, graphs,1) == 1) return;
     
     /* Set the level for each app in sequence. */
     std::set<GraphI_t*>::iterator graphIt;
@@ -388,7 +388,7 @@ void CmComp::Cm_SoftswitchSetRTSBuffSize(Cli::Cl_t clause)
 
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
-    if (par->GetGraphIs(clause, graphs) == 1) return;
+    if (par->GetGraphIs(clause, graphs,1) == 1) return;
     
     /* Set the mode for each app in sequence. */
     std::set<GraphI_t*>::iterator graphIt;
@@ -418,7 +418,7 @@ void CmComp::Cm_SoftswitchAddFlags(Cli::Cl_t clause)
 
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
-    if (par->GetGraphIs(clause, graphs) == 1) return;
+    if (par->GetGraphIs(clause, graphs,1) == 1) return;
     
     /* Set the flags for each app in sequence. */
     std::set<GraphI_t*>::iterator graphIt;
