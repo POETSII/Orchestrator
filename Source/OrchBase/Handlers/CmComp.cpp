@@ -323,6 +323,7 @@ void CmComp::Cm_SoftswitchLogHandler(Cli::Cl_t clause)
         if(clause.Pa_v.size() != 2)
         {   // Missing the log handler specification
             par->Post(807, "/LOGH", (*graphIt)->Name());
+            return;
         }
         
         // Grab the handler type and convert to lower
@@ -366,6 +367,7 @@ void CmComp::Cm_SoftswitchLogLevel(Cli::Cl_t clause)
         if(clause.Pa_v.size() != 2)
         {   // Missing the log level specification
             par->Post(807, "/LOGL", (*graphIt)->Name());
+            return;
         }
         
         // Grab the specified log level, we ignore stuff after ::
@@ -397,6 +399,7 @@ void CmComp::Cm_SoftswitchSetRTSBuffSize(Cli::Cl_t clause)
         if(clause.Pa_v.size() != 2)
         {   // Missing the RTS Buff size
             par->Post(807, "/RTSB", (*graphIt)->Name());
+            return;
         }
         
         // Grab the specified buffer size, we ignore stuff after ::
@@ -427,6 +430,7 @@ void CmComp::Cm_SoftswitchAddFlags(Cli::Cl_t clause)
         if(clause.Pa_v.size() != 2)
         {   // Missing the flags
             par->Post(807, "/ARGS", (*graphIt)->Name());
+            return;
         }
         
         // Grab the specified flags and populate, we ignore stuff after ::
