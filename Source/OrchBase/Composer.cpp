@@ -27,7 +27,6 @@ ComposerGraphI_t::ComposerGraphI_t()
     outputDir = "Composer";
     generated = false;
     compiled = false;
-    placer = PNULL;
     
     // Softswitch control.
     rtsBuffSizeMax = MAX_RTSBUFFSIZE;
@@ -48,7 +47,6 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
     outputDir += graphI->GetCompoundName(true);
     generated = false;
     compiled = false;
-    placer = PNULL;
     
     // Softswitch control.
     rtsBuffSizeMax = MAX_RTSBUFFSIZE;
@@ -183,6 +181,7 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
  *****************************************************************************/
 Composer::Composer()
 {
+    placer = PNULL;
     outputPath = "./";
 }
 
@@ -2719,14 +2718,14 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
         if (buffCount > builderGraphI->rtsBuffSizeMax)
         { // If we have too many pins for one buffer entry per ping, set to max &warn.
         // This may need a check adding to the Softswitch to stop buffer overflow.
-            fprintf(fd,"\nRTS Buffer for thread %lu truncated from %lu to %lu\n",
+            fprintf(fd,"\nRTS Buffer for thread %u truncated from %u to %lu\n",
             threadAddr, buffCount, builderGraphI->rtsBuffSizeMax);
             
             buffCount = builderGraphI->rtsBuffSizeMax;
         }
         else if (buffCount < MIN_RTSBUFFSIZE)
         {
-            fprintf(fd,"\nRTS Buffer for thread %lu expanded from %lu to %lu\n",
+            fprintf(fd,"\nRTS Buffer for thread %u expanded from %u to %u\n",
             threadAddr, buffCount, MIN_RTSBUFFSIZE);
             buffCount = MIN_RTSBUFFSIZE;
         }
