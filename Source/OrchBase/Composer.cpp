@@ -27,6 +27,7 @@ ComposerGraphI_t::ComposerGraphI_t()
     outputDir = "Composer";
     generated = false;
     compiled = false;
+    placer = PNULL;
     
     // Softswitch control.
     rtsBuffSizeMax = MAX_RTSBUFFSIZE;
@@ -47,6 +48,7 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
     outputDir += graphI->GetCompoundName(true);
     generated = false;
     compiled = false;
+    placer = PNULL;
     
     // Softswitch control.
     rtsBuffSizeMax = MAX_RTSBUFFSIZE;
@@ -192,7 +194,6 @@ Composer::Composer(Placer* plc)
 
 Composer::~Composer()
 {
-
     // Tidy up the map
     WALKMAP(GraphI_t*, ComposerGraphI_t*, graphIMap, graphISrch)
     {
@@ -269,7 +270,13 @@ void Composer::setOutputPath(std::string path)
 void Composer::setPlacer(Placer* plc)
 {
     placer = plc;
-    //TODO: invalidate any generated but not compiled
+    
+    // Changing the placer invalidates everything. Cleanup!
+    WALKMAP(GraphI_t*, ComposerGraphI_t*, graphIMap, graphISrch)
+    {
+        delete graphISrch->second;
+    }
+    graphIMap.clear();
 }
 
 
@@ -535,7 +542,7 @@ int Composer::generate(GraphI_t* graphI)
 {
     ComposerGraphI_t* builderGraphI;
     FILE * fd = graphI->par->par->fd;              // Detail output file
-
+    
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, map it.
@@ -566,11 +573,15 @@ int Composer::generate(GraphI_t* graphI)
     }
 
     // Get the list of cores
+    if(placer == PNULL)
+    {   // No placer set, we cannot continue.
+        fprintf(fd,"\t***No placer set. Please gently shout at an Orchestrator developer.***\n");
+        return -3;
+    }
     std::map<GraphI_t*, std::set<P_core*> >::iterator giToCoresFinder;
     giToCoresFinder = placer->giToCores.find(graphI);
     if (giToCoresFinder == placer->giToCores.end())
     {   // Something has gone horribly wrong
-        //TODO: Barf
         fprintf(fd,"\t***FAILED TO FIND ANY CORES***\n");
         return -2;
     }
@@ -780,7 +791,7 @@ int Composer::compile(GraphI_t* graphI)
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, barf.
-        fprintf(fd,"\tAttempt to compile a non-existant application\n");
+        fprintf(fd,"\tAttempt to compile a non-existant application.\n");
         return -1;
     }
     builderGraphI = srch->second;
@@ -788,8 +799,14 @@ int Composer::compile(GraphI_t* graphI)
 
     if(builderGraphI->compiled)
     {   // Already compiled, nothing to do
-        fprintf(fd,"\tApplication already compiled, skipping\n");
+        fprintf(fd,"\tApplication already compiled, skipping.\n");
         return 0;
+    }
+    
+    if(!(builderGraphI->generated))
+    {   // Application not generated, barf
+        fprintf(fd,"\tAttempt to compile a non-generated application.\n");
+        return -1;
     }
 
     // Make the bin directory
@@ -2612,6 +2629,9 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
                                         std::ofstream& vars_h,
                                         std::ofstream& vars_cpp)
 {
+    
+    FILE * fd = builderGraphI->graphI->par->par->fd;       // Detail output file
+    
     AddressComponent threadAddr = thread->get_hardware_address()->get_thread();
     std::list<DevI_t*>::size_type numberOfDevices =
         placer->threadToDevices.at(thread).size();  // Get the thread dev count
@@ -2644,7 +2664,7 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
         * is dependant on the number of connected output pins hosted on the 
         * Softswitch.
         * The size is set to 1 + <number of connected pins> + <number of 
-        * devices (if supervisor pin connected), as long as this is less than
+        * devices> (if supervisor pin connected), as long as this is less than
         * builderGraphI->rtsBuffSizeMax, so that each connected pin can have a 
         * pending send.
         *
@@ -2699,14 +2719,16 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
         if (buffCount > builderGraphI->rtsBuffSizeMax)
         { // If we have too many pins for one buffer entry per ping, set to max &warn.
         // This may need a check adding to the Softswitch to stop buffer overflow.
+            fprintf(fd,"\nRTS Buffer for thread %lu truncated from %lu to %lu\n",
+            threadAddr, buffCount, builderGraphI->rtsBuffSizeMax);
+            
             buffCount = builderGraphI->rtsBuffSizeMax;
-            //TODO: Barf
-            //par->Post(819,int2str(thread_num),int2str(coreNum),
-            //            int2str(MAX_RTSBUFFSIZE), int2str(MAX_RTSBUFFSIZE));
         }
         else if (buffCount < MIN_RTSBUFFSIZE)
         {
-            buffCount = builderGraphI->rtsBuffSizeMax;
+            fprintf(fd,"\nRTS Buffer for thread %lu expanded from %lu to %lu\n",
+            threadAddr, buffCount, MIN_RTSBUFFSIZE);
+            buffCount = MIN_RTSBUFFSIZE;
         }
     }
 

@@ -1,6 +1,8 @@
 #include "softswitch.h"
 #include "tinsel.h"
 
+#ifdef TRIVIAL_LOG_HANDLER
+
 #include <cstring>  // needed for strlen and memcpy
 
 /*------------------------------------------------------------------------------
@@ -81,3 +83,4 @@ void softswitch_trivial_log_handler(uint32_t src, const char* &logStr)
         SUPER_SEND(send_buf); // Send it
     }
 }
+#endif
