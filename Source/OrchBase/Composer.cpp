@@ -3446,7 +3446,7 @@ void Composer::writeDevIInputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
         inEdgePropsI.str("");
         inEdgePropsI << "devtyp_" << pinI->pT->par->Name();
         inEdgePropsI << "_InPin_" << pinI->pT->Name();
-        inEdgePropsI << "_props_t Thread_ ";
+        inEdgePropsI << "_props_t ";
         inEdgePropsI << thrDevName << "_Pin_" << pinI->pT->Name();
         inEdgePropsI << "_InEdgeProps[" << edgeCount << "] = {";
 
