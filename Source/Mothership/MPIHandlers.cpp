@@ -445,8 +445,6 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
     std::vector<P_Addr_Pkt_t> outputPackets;
     
     // Get the input packets.
-    //message->Put<P_Pkt_t>();
-    //message->Get(1, inputPackets);
     decode_packets_message(message, &inputPackets, 1);
 
     /* Invoke the supervisor, send the message if instructed to do so, and

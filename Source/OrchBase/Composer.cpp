@@ -1267,14 +1267,6 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
         return 1;
     }
 
-    /*std::string mkdirSoftswitchPath(taskDir + "/Softswitch");
-    if(system((MAKEDIR + " " + mkdirSoftswitchPath).c_str()))
-    {
-        //par->Post(818, mkdirSoftswitchPath, OSFixes::getSysErrorString(errno));
-        fprintf(fd,"\tFailed to create %s\n",mkdirSoftswitchPath.c_str());
-        return 1;
-    }*/
-
     std::string mkdirBuildPath(taskDir + "/Build");
     if(system((MAKEDIR + " " + mkdirBuildPath).c_str()))
     {
@@ -1480,7 +1472,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     std::string supervisorOnRTCLHandler = "return 0;";
 
 
-    // Default Properteis and state content
+    // Default Properties and state content
     std::string supervisorPropertiesBody = "\tbool dummy;";
     std::string supervisorStateBody = "\tbool dummy;";
     
@@ -1655,16 +1647,6 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     // OnImplicit
     supervisor_cpp << "int Supervisor::OnImplicit(P_Pkt_t* __inPkt, ";
     supervisor_cpp << "std::vector<P_Addr_Pkt_t>& __outPkt)\n{\n";
-
-    /* TODO remove
-    supervisor_cpp << "\t const SupervisorProperties_t* SupervisorProperties";
-    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorProperties;\n";
-    supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorProperties)\n";
-
-    supervisor_cpp << "\t SupervisorState_t* SupervisorState";
-    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorState;\n";
-    supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorState)\n";
-    */
     
     supervisor_cpp << "\tconst " << inPktFmt << " message";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
@@ -1839,7 +1821,6 @@ void Composer::writeMessageTypes(GraphI_t* graphI, std::ofstream& pkt_h)
     pkt_h << "#define _MESSAGETYPES_H_\n\n";
 
     pkt_h << "#include <cstdint>\n";
-    //pkt_h << "#include \"softswitch_common.h\"\n\n";
     
     //pkt_h <<  "#pragma pack(push,1)\n";
     
@@ -2636,6 +2617,7 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
         placer->threadToDevices.at(thread).size();  // Get the thread dev count
 
     size_t outTypCnt = devT->PinTO_v.size();      // Number of output pins
+    bool rtsOF = false;                           // Flag to indicate RTS sz OF
 
     vars_cpp << "ThreadCtxt_t Thread_" << threadAddr << "_Context ";
     vars_cpp << "__attribute__((section (\".thr" << threadAddr << "_base\"))) ";
@@ -2716,10 +2698,13 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
         }
 
         if (buffCount > builderGraphI->rtsBuffSizeMax)
-        { // If we have too many pins for one buffer entry per ping, set to max &warn.
-        // This may need a check adding to the Softswitch to stop buffer overflow.
+        { // If we have too many pins for one buffer entry per pin, set to max 
+          // & warn. This may need a check adding to the Softswitch to stop
+          // buffer overflow.
             fprintf(fd,"\nRTS Buffer for thread %u truncated from %u to %lu\n",
             threadAddr, buffCount, builderGraphI->rtsBuffSizeMax);
+            
+            rtsOF = true;
             
             buffCount = builderGraphI->rtsBuffSizeMax;
         }
@@ -2753,6 +2738,12 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
     vars_cpp << "0,";                                 // blockCount
     vars_cpp << "0";                                  // cycleIdx
     vars_cpp << "};\n";
+    
+    if(rtsOF)
+    {
+        vars_cpp << "#warning RTS Buffer for Thread " << threadAddr;
+        vars_cpp << " truncated to " << builderGraphI->rtsBuffSizeMax << "\n";
+    }
 }
 
 /******************************************************************************
