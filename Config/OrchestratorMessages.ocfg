@@ -124,6 +124,7 @@
 211(E) : "%s element in unexpected position in definition file at about %s"
 212(S) : "Cannot locate %s type definition %s"
 213(I) : "Integrity check for %s file %s graph instance %s"
+214(I) : "Removing application %s from the Orchestrator"
 
 230(I) : "Integrity check for type definition tree %s in file %s"
 231(I) : "Note backlinks to other graphs are NOT checked"
