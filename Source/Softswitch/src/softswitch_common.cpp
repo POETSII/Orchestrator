@@ -657,6 +657,7 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
                 // Get a pointer to the active pin
                 outPin_t* output_pin = &device->outputPins[pin];
 #ifdef BUFFERING_SOFTSWITCH
+                // Calculate the remaining space in the packet buffer.
                 uint32_t buffRem;
                 buffRem = (ThreadContext->rtsEnd >= ThreadContext->rtsStart)   ?
                         (((ThreadContext->rtsBuffSize - ThreadContext->rtsEnd) +
