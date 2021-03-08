@@ -50,6 +50,18 @@ extern "C"
         return ret;
     }
     
+    // Return the name of the given index
+    std::string SupervisorIdx2Name(uint32_t idx)
+    {
+        if(idx >= Supervisor::DeviceVector.size())
+        {
+            //out of range Idx
+            return "";
+        }
+        
+        return Supervisor::DeviceVector[idx].Name;
+    }
+    
     // "return" a copy of the device vector.
     void GetSupervisorAddresses(std::vector<SupervisorDeviceInstance_t>& devV)
     {
