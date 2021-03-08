@@ -18,7 +18,6 @@
 export RISCV_PATH="{{ RISCV_DIR }}"
 export MPICH_PATH="{{ MPICH_DIR }}"
 export PATH="{{ MPICH_DIR }}/bin:{{ RISCV_BIN_DIR }}:$PATH"
-#export SOFTSWITCH_TRIVIAL_LOG_HANDLER=1
 
 # Quartus
 QUARTUS_SETUP_SCRIPT="/local/ecad/setup-quartus17v0.bash"
