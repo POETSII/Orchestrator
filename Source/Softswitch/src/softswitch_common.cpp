@@ -691,7 +691,18 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
                     {
                         ThreadContext->rtsEnd = 0;
                     }
+#ifdef BUFFERING_SOFTSWITCH
                 }
+#else
+                }
+                else if((output_pin->sendPending == 1) && 
+                        (ThreadContext->rtsStart == ThreadContext->rtsEnd))
+                {   // Sanity check to catch buffer overflow
+                    __handler_log(device->deviceIdx,5,"rtsBuff Broken %d %d %d",
+                                    device->deviceIdx, ThreadContext->rtsStart,
+                                    ThreadContext->rtsEnd);
+                }
+#endif
             }
         }
     }
