@@ -2673,11 +2673,21 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
         {              // Iterate through devices counting connected output pins
             WALKLIST(DevI_t*, placer->threadToDevices.at(thread), dev)
             {
+                /* The below relies on the Pmap in the device instance to find 
+                 * output pins with reference to the Pin's PinT_t. 
+                 * By design, this map is cleared to save memory. This behaviour
+                 * has been changed to facilitate the below. An alternative
+                 * would be to maintain a vector of pointers to PinI_ts that is
+                 * retained after Pmap is cleared HOWEVER, this requires some
+                 * thought to ensure that we can discriminate output pins as a
+                 * naive implementation ends up allocating buffer space for
+                 * input pins as well as output pins.
+                 */
                 WALKVECTOR(PinT_t*, devT->PinTO_v, pin)
                 {
                     // Check that we have a connection
                     std::map<std::string,PinI_t *>::iterator pinSrch;
-                    pinSrch = (*dev)->Pmap.find(devT->Name());
+                    pinSrch = (*dev)->Pmap.find((*pin)->Name());
                     if(pinSrch != (*dev)->Pmap.end())
                     {
                         if(pinSrch->second->Key_v.size())
