@@ -3255,8 +3255,8 @@ void Composer::writeDevIInputPinDefs(GraphI_t* graphI, DevT_t* devT,
     // Walk through the input arcs and find their associated PinI_t
     WALKVECTOR(unsigned, arcKeysIn, arc)
     {
-        PinI_t* oPin;
-        PinI_t* iPin;
+        PinI_t* oPin = PNULL;
+        PinI_t* iPin = PNULL;
         unsigned oPinKey, iPinKey;
 
         //  Get the pin data for the edge
