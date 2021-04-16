@@ -1374,14 +1374,13 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     builderGraphI->supevisorDevIVect.clear();       // Sanity clear
     builderGraphI->devISuperIdxMap.clear();         // sanity clear
     
-    // Write the static initialisor for the Device Vector
-    supervisor_cpp << "const std::vector<SupervisorDeviceInstance_t> ";
-    supervisor_cpp << "Supervisor::DeviceVector = { ";
+    
+    
+    // Generate the initialisers for the Supervisor vectors
+    std::stringstream superVectorVals;
     
     //TEMP: Supervisor name map until we have a name server
-    std::stringstream superNameMap;
-    superNameMap << "const std::map<std::string, const SupervisorDeviceInstance_t*> ";
-    superNameMap << "Supervisor::DeviceNameMap = { ";
+    std::stringstream superNameVals;
     
     WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,graphI->G,i)
     {
@@ -1403,26 +1402,53 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         }
         P_thread* thread = threadSrch->second;
 
-    // Write the initialiser directly: {HwAddr, SwAddr, Name}
-        if(devIdx%100 == 0) supervisor_cpp << "\n\t";     // Add some line splitting
-        supervisor_cpp << "{" << thread->get_hardware_address()->as_uint();
-        supervisor_cpp << "," << devI->addr.as_uint();
-        supervisor_cpp << ",\"" << devI->Name() <<"\"";
-        supervisor_cpp << "},";
+    // Write the initialiser: {HwAddr, SwAddr, Name}
+        superVectorVals << "\tDeviceVector[" << devIdx << "] = ";
+        superVectorVals << "{" << thread->get_hardware_address()->as_uint();
+        superVectorVals << "," << devI->addr.as_uint();
+        superVectorVals << ",\"" << devI->Name() <<"\"";
+        superVectorVals << "};\n";
         
     //TEMP: And let's add a (temporary) initialiser for the name map.   
-        if(devIdx%100 == 0) superNameMap << "\n\t";     // Add some line splitting
-        superNameMap << "{\"" << devI->Name()<<"\", &Supervisor::DeviceVector[";
-        superNameMap  << devIdx << "]},";
+        superNameVals << "\tDeviceNameMap.insert(std::map<std::string,";
+        superNameVals << "const SupervisorDeviceInstance_t*>::value_type(\"";
+        superNameVals << devI->Name()<<"\",&Supervisor::DeviceVector[";
+        superNameVals  << devIdx << "]) );\n";
+        //[" << devIdx << "] = ";
+        //superNameVals << "{\"" << devI->Name()<<"\", &Supervisor::DeviceVector[";
+        //superNameVals  << devIdx << "]};\n";
         
         devIdx++;
     }
-    supervisor_cpp.seekp(-1,ios_base::cur); // Rewind one place to remove the stray ","
-    supervisor_cpp << "\n};\n\n";               // properly terminate the initialiser
     
-    superNameMap.seekp(-1,ios_base::cur);   //TEMP: Rewind one place to remove the stray ","
-    superNameMap << "\n};\n\n";             //TEMP: properly terminate the initialiser
-    supervisor_cpp << superNameMap.rdbuf(); //TEMP:
+    superVectorVals << "\n";
+    superNameVals << "\n";
+    devIdx++;
+    
+    
+    supervisor_cpp << "#pragma GCC push_options\n";     // Speed up compiles by NOT optimising
+    supervisor_cpp << "#pragma GCC optimize (\"O0\")\n";  // devicevector and map initialisation.
+    
+    supervisor_cpp << "std::vector<SupervisorDeviceInstance_t> initVector()\n{\n";
+    supervisor_cpp << "\tstd::vector<SupervisorDeviceInstance_t> DeviceVector(";
+    supervisor_cpp << devIdx << ");\n";
+    supervisor_cpp << superVectorVals.rdbuf();
+    supervisor_cpp << "\n\treturn DeviceVector;\n}\n";
+    
+    supervisor_cpp << "std::map<std::string,const SupervisorDeviceInstance_t*> ";
+    supervisor_cpp << "initMap()\n{\n\t";
+    supervisor_cpp << "std::map<std::string,const SupervisorDeviceInstance_t*> ";
+    supervisor_cpp << "DeviceNameMap;\n";
+    supervisor_cpp << superNameVals.rdbuf(); //TEMP:
+    supervisor_cpp << "\n\treturn DeviceNameMap;\n}\n";
+    
+    
+    // Write the static initialisor for the Device Vector
+    supervisor_cpp << "const std::vector<SupervisorDeviceInstance_t> ";
+    supervisor_cpp << "Supervisor::DeviceVector = initVector();\n";
+    
+    supervisor_cpp << "const std::map<std::string, const SupervisorDeviceInstance_t*>";
+    supervisor_cpp << "Supervisor::DeviceNameMap = initMap();\n\n";
 
     // Fill a vector of thread hardware addresses that this supervisor is responsible for
     int threadIdx = 0; // Faster than using std::distance
@@ -1448,7 +1474,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         }
     }
     supervisor_cpp.seekp(-1,ios_base::cur); // Rewind one place to remove the stray ","
-    supervisor_cpp << "\n};\n\n";               // properly terminate the initialiser
+    supervisor_cpp << "\n};\n";               // properly terminate the initialiser
+    supervisor_cpp << "#pragma GCC pop_options\n\n";
 
 
     // Add references for static class members
@@ -1628,9 +1655,11 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "\tsupervisorProperties = __SupervisorProperties;\n";
     supervisor_cpp << "\tsupervisorState = __SupervisorState;\n\n";
     supervisor_cpp << "\t__SupervisorInit = true;\n\n";
+    
     supervisor_cpp << supervisorOnInitHandler;
     supervisor_cpp << "\n\n\treturn 0;\n";
-    supervisor_cpp << "}\n\n";
+    supervisor_cpp << "}\n";
+    supervisor_cpp << "\n";
 
     // Stop handler
     supervisor_cpp << "int Supervisor::OnStop()\n{\n";
