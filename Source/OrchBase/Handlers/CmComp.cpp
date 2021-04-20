@@ -133,7 +133,7 @@ void CmComp::Cm_Compile(Cli::Cl_t clause)
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
         par->Post(803, "Compil", (*graphIt)->Name());
-        if (par->pComposer->bypass(*graphIt) != 0)
+        if (par->pComposer->compile(*graphIt) != 0)
         {
             par->Post(806, (*graphIt)->Name(), "compile");
             return;
