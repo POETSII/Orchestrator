@@ -108,9 +108,10 @@ Composer(Placer*);
 Composer();
 ~Composer();    
 
-int         compose(GraphI_t*);    // Generate and compile
+int         compose(GraphI_t*);  // Generate and compile
 int         generate(GraphI_t*); // Generate Source Files
 int         compile(GraphI_t*);  // Compile Source Files
+int         bypass(GraphI_t*);   // Use existing binaries, bypass compose
 
 int         decompose(GraphI_t*);  // Clean then degenerate
 int         degenerate(GraphI_t*, bool = false); // Clear internal strings and generated files
@@ -139,6 +140,8 @@ Placer*     placer;
 std::string outputPath;
 
 ComposerGraphIMap_t graphIMap; // Map has an entry for each seen Graph Instance.
+
+int checkBinaries(ComposerGraphI_t*);
 
 void formFileProvenance(ComposerGraphI_t*);
 void writeFileProvenance(std::string&, ComposerGraphI_t*, std::ofstream&);

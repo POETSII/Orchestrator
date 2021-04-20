@@ -133,12 +133,52 @@ void CmComp::Cm_Compile(Cli::Cl_t clause)
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
         par->Post(803, "Compil", (*graphIt)->Name());
-        if (par->pComposer->compile(*graphIt) != 0)
+        if (par->pComposer->bypass(*graphIt) != 0)
         {
             par->Post(806, (*graphIt)->Name(), "compile");
             return;
         }
         par->Post(804, (*graphIt)->Name(), "compiled");
+    }
+}
+
+//------------------------------------------------------------------------------
+
+void CmComp::Cm_Bypass(Cli::Cl_t clause)
+{
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "bypass");
+        return;
+    }
+
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+
+    /* Check they're all placed before proceeding. */
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        if (par->pPlacer->placedGraphs.find(*graphIt) ==
+            par->pPlacer->placedGraphs.end())
+        {
+            par->Post(802, (*graphIt)->Name(), "placed", "composing (bypass)");
+            return;
+        }
+    }
+
+    /* Compose each app in sequence, failing fast. */
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        par->Post(803, "Bypass", (*graphIt)->Name());
+        if (par->pComposer->bypass(*graphIt) != 0)
+        {
+            par->Post(806, (*graphIt)->Name(), "bypass");
+            return;
+        }
+        par->Post(804, (*graphIt)->Name(), "bypassed");
     }
 }
 
@@ -474,6 +514,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="app"  ) { Cm_App(*i);           continue; }
   if (sCl=="gene" ) { Cm_Generate(*i);      continue; }
   if (sCl=="comp" ) { Cm_Compile(*i);       continue; }
+  if (sCl=="bypa" ) { Cm_Bypass(*i);       continue; }
   if (sCl=="deco" ) { Cm_Decompose(*i);     continue; }
   if (sCl=="dege" ) { Cm_Degenerate(*i);    continue; }
   if (sCl=="clea" ) { Cm_Clean(*i);         continue; }

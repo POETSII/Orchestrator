@@ -904,84 +904,7 @@ int Composer::compile(GraphI_t* graphI)
         return 1;
     }
 
-    // Check that the core binaries were made and link to each core.
-    WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
-    {
-        P_core* pCore = (*coreNode);
-        uint32_t coreAddr = pCore->get_hardware_address()->as_uint();
-
-        std::string elfName = elfPath + "/softswitch_";
-        elfName += TO_STRING(coreAddr);
-        elfName += ".elf";
-
-        // Open the Elf to check existence
-        FILE* elfBinary = fopen(elfName.c_str(),"r");
-        if(elfBinary != PNULL)
-        {   // We have the Elf, check that we have the individual binaries
-            FILE* binary;
-
-            // Check Instruction binary and add to pCore.
-            const std::string instrName = "softswitch_code_" +
-                TO_STRING(coreAddr) + ".v";
-            std::string instrPath = elfPath + "/" + instrName;
-
-            binary = fopen(instrPath.c_str(), "r");
-            if(binary == PNULL)
-            { // Failed to open binary
-                fprintf(fd,"\tFailed to open instruction binary %s after compilation\n",
-                            instrPath.c_str());
-                fclose(elfBinary);
-                return -1;
-            }
-            fclose(binary);
-
-            pCore->instructionBinary = instrName;
-
-
-
-            // Check Data binary and add to pCore.
-            const std::string dataName = "softswitch_data_" +
-                TO_STRING(coreAddr) + ".v";
-            std::string dataPath = elfPath + "/" + dataName;
-
-            binary = fopen(dataPath.c_str(), "r");
-            if(binary == PNULL)
-            { // Failed to open binary
-                fprintf(fd,"\tFailed to open data binary %s after compilation\n",
-                            dataPath.c_str());
-                fclose(elfBinary);
-                return -1;
-            }
-            fclose(binary);
-
-            pCore->dataBinary = dataName;
-        }
-        else
-        { // Failed to open the Elf
-            fprintf(fd,"\tFailed to open elf %s after compilation\n",
-                            elfName.c_str());
-            return -1;
-        }
-
-        // Close the binary
-        fclose(elfBinary);
-    }
-
-    // Check that the Supervisor Shared Object was made
-    FILE* superBinary;
-    const std::string superName = "libSupervisor.so";
-    std::string superPath = elfPath + "/" + superName;
-    superBinary = fopen(superPath.c_str(),"r");
-    if(superBinary == PNULL)
-    { // Failed to open the Shared Object
-        fprintf(fd,"\tFailed to open Supervisor binary %s after compilation\n",
-                            superPath.c_str());
-        return -1;
-    }
-    fclose(superBinary);
-
-    // Add Supervidor filename to Graph Instance
-    graphI->pSupI->binPath = superName;
+    if(checkBinaries(builderGraphI) != 0) return -1;
 
     // Mark that we have compiled
     builderGraphI->compiled = true;
@@ -1127,6 +1050,168 @@ int Composer::clean(GraphI_t* graphI)
     return 0;
 }
 
+
+/******************************************************************************
+ * Bypass the generate and compile steps, making use of existing binaries.
+ *****************************************************************************/
+int Composer::bypass(GraphI_t* graphI)
+{
+    ComposerGraphI_t*  builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    fprintf(fd,"\nComposer bypassing %s (making use of existing binaries)...\n",
+                graphI->par->Name().c_str());
+    
+    
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    // Get the list of cores
+    if(placer == PNULL)
+    {   // No placer set, we cannot continue.
+        fprintf(fd,"\t***No placer set. Please gently shout at an Orchestrator developer.***\n");
+        return -3;
+    }
+    std::map<GraphI_t*, std::set<P_core*> >::iterator giToCoresFinder;
+    giToCoresFinder = placer->giToCores.find(graphI);
+    if (giToCoresFinder == placer->giToCores.end())
+    {   // Something has gone horribly wrong
+        fprintf(fd,"\t***FAILED TO FIND ANY CORES***\n");
+        return -2;
+    }
+    builderGraphI->cores = &(giToCoresFinder->second);
+    
+    
+    if(builderGraphI->generated && builderGraphI->compiled) 
+    {   // Already generated and compiled, nothing to do.
+        fprintf(fd,"\tApplication already generated and compiled, skipping\n");
+        return 0;
+    }
+    if(builderGraphI->generated || builderGraphI->compiled)
+    {   // Already generated or compiled, cannot proceed in this state.
+        fprintf(fd,"\tApplication already generatedor compiled, cannot bypass\n");
+        return -1;
+    }
+    
+    
+    //TODO: check that a hash of the XML and Orchestrator settings match.
+    
+    // Mark that the graph is generated.
+    builderGraphI->generated = true;
+    
+    // Check that the binaries for all of the cores exist
+    if(checkBinaries(builderGraphI) != 0 ) return -1;
+    
+    // Mark that we have compiled
+    builderGraphI->compiled = true;
+    builderGraphI->graphI->built = true;
+    
+    return 0;
+}
+
+
+/******************************************************************************
+ * Check that binaries exist for each core.
+ *****************************************************************************/
+int Composer::checkBinaries(ComposerGraphI_t* builderGraphI)
+{
+    GraphI_t* graphI = builderGraphI->graphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    
+    std::string taskDir(builderGraphI->outputDir);
+    std::string elfPath(taskDir + "/bin");
+    
+    // Check that the core binaries were made and link to each core.
+    WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
+    {
+        P_core* pCore = (*coreNode);
+        uint32_t coreAddr = pCore->get_hardware_address()->as_uint();
+
+        std::string elfName = elfPath + "/softswitch_";
+        elfName += TO_STRING(coreAddr);
+        elfName += ".elf";
+
+        // Open the Elf to check existence
+        FILE* elfBinary = fopen(elfName.c_str(),"r");
+        if(elfBinary != PNULL)
+        {   // We have the Elf, check that we have the individual binaries
+            FILE* binary;
+
+            // Check Instruction binary and add to pCore.
+            const std::string instrName = "softswitch_code_" +
+                TO_STRING(coreAddr) + ".v";
+            std::string instrPath = elfPath + "/" + instrName;
+
+            binary = fopen(instrPath.c_str(), "r");
+            if(binary == PNULL)
+            { // Failed to open binary
+                fprintf(fd,"\tFailed to open instruction binary %s after compilation\n",
+                            instrPath.c_str());
+                fclose(elfBinary);
+                return -1;
+            }
+            fclose(binary);
+
+            pCore->instructionBinary = instrName;
+
+
+
+            // Check Data binary and add to pCore.
+            const std::string dataName = "softswitch_data_" +
+                TO_STRING(coreAddr) + ".v";
+            std::string dataPath = elfPath + "/" + dataName;
+
+            binary = fopen(dataPath.c_str(), "r");
+            if(binary == PNULL)
+            { // Failed to open binary
+                fprintf(fd,"\tFailed to open data binary %s after compilation\n",
+                            dataPath.c_str());
+                fclose(elfBinary);
+                return -1;
+            }
+            fclose(binary);
+
+            pCore->dataBinary = dataName;
+        }
+        else
+        { // Failed to open the Elf
+            fprintf(fd,"\tFailed to open elf %s after compilation\n",
+                            elfName.c_str());
+            return -1;
+        }
+
+        // Close the binary
+        fclose(elfBinary);
+    }
+
+    // Check that the Supervisor Shared Object was made
+    FILE* superBinary;
+    const std::string superName = "libSupervisor.so";
+    std::string superPath = elfPath + "/" + superName;
+    superBinary = fopen(superPath.c_str(),"r");
+    if(superBinary == PNULL)
+    { // Failed to open the Shared Object
+        fprintf(fd,"\tFailed to open Supervisor binary %s after compilation\n",
+                            superPath.c_str());
+        return -1;
+    }
+    fclose(superBinary);
+
+    // Add Supervidor filename to Graph Instance
+    graphI->pSupI->binPath = superName;
+    
+    return 0;
+}
 
 /******************************************************************************
  * Form a cache of the common file provenance blurb.
@@ -3544,8 +3629,8 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
     // Walk through the input arcs and find their associated PinI_t
     WALKVECTOR(unsigned, arcKeysOut, arc)
     {
-        PinI_t* oPin;
-        PinI_t* iPin;
+        PinI_t* oPin = PNULL;
+        PinI_t* iPin = PNULL;
         unsigned oPinKey, iPinKey;
 
         //  Get the pin data for the edge
