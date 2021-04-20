@@ -1488,11 +1488,11 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         P_thread* thread = threadSrch->second;
 
     // Write the initialiser: {HwAddr, SwAddr, Name}
-        superVectorVals << "\tDeviceVector[" << devIdx << "] = ";
+        superVectorVals << "\tDeviceVector.push_back(";
         superVectorVals << "{" << thread->get_hardware_address()->as_uint();
         superVectorVals << "," << devI->addr.as_uint();
         superVectorVals << ",\"" << devI->Name() <<"\"";
-        superVectorVals << "};\n";
+        superVectorVals << "});\n";
         
     //TEMP: And let's add a (temporary) initialiser for the name map.   
         //superNameVals << "\tDeviceNameMap.insert(std::map<std::string,";
@@ -1515,8 +1515,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "#pragma GCC optimize (\"O0\")\n";  // devicevector and map initialisation.
     
     supervisor_cpp << "std::vector<SupervisorDeviceInstance_t> initVector()\n{\n";
-    supervisor_cpp << "\tstd::vector<SupervisorDeviceInstance_t> DeviceVector(";
-    supervisor_cpp << devIdx << ");\n";
+    supervisor_cpp << "\tstd::vector<SupervisorDeviceInstance_t> DeviceVector;\n";
+    supervisor_cpp << "\tDeviceVector.reserve(" << devIdx << ");\n";
     supervisor_cpp << superVectorVals.rdbuf();
     supervisor_cpp << "\n\treturn DeviceVector;\n}\n";
     
