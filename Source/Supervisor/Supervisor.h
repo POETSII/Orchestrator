@@ -17,7 +17,7 @@ typedef struct SupervisorDeviceInstance_t
 {
     uint32_t HwAddr;
     uint32_t SwAddr;
-    std::string Name;   // Temporary until we have Nameserver
+    char* Name;   // Temporary until we have Nameserver
 } SupervisorDeviceInstance_t;
 
 class SupervisorApi;
