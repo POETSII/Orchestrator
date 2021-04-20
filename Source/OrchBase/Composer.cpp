@@ -1410,10 +1410,10 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         superVectorVals << "};\n";
         
     //TEMP: And let's add a (temporary) initialiser for the name map.   
-        superNameVals << "\tDeviceNameMap.insert(std::map<std::string,";
-        superNameVals << "const SupervisorDeviceInstance_t*>::value_type(\"";
-        superNameVals << devI->Name()<<"\",&Supervisor::DeviceVector[";
-        superNameVals  << devIdx << "]) );\n";
+        //superNameVals << "\tDeviceNameMap.insert(std::map<std::string,";
+        //superNameVals << "const SupervisorDeviceInstance_t*>::value_type(\"";
+        //superNameVals << devI->Name()<<"\",&Supervisor::DeviceVector[";
+        //superNameVals  << devIdx << "]) );\n";
         //[" << devIdx << "] = ";
         //superNameVals << "{\"" << devI->Name()<<"\", &Supervisor::DeviceVector[";
         //superNameVals  << devIdx << "]};\n";
@@ -1435,20 +1435,20 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << superVectorVals.rdbuf();
     supervisor_cpp << "\n\treturn DeviceVector;\n}\n";
     
-    supervisor_cpp << "std::map<std::string,const SupervisorDeviceInstance_t*> ";
-    supervisor_cpp << "initMap()\n{\n\t";
-    supervisor_cpp << "std::map<std::string,const SupervisorDeviceInstance_t*> ";
-    supervisor_cpp << "DeviceNameMap;\n";
-    supervisor_cpp << superNameVals.rdbuf(); //TEMP:
-    supervisor_cpp << "\n\treturn DeviceNameMap;\n}\n";
+    //supervisor_cpp << "std::map<std::string,const SupervisorDeviceInstance_t*> ";
+    //supervisor_cpp << "initMap()\n{\n\t";
+    //supervisor_cpp << "std::map<std::string,const SupervisorDeviceInstance_t*> ";
+    //supervisor_cpp << "DeviceNameMap;\n";
+    //supervisor_cpp << superNameVals.rdbuf(); //TEMP:
+    //supervisor_cpp << "\n\treturn DeviceNameMap;\n}\n";
     
     
     // Write the static initialisor for the Device Vector
     supervisor_cpp << "const std::vector<SupervisorDeviceInstance_t> ";
     supervisor_cpp << "Supervisor::DeviceVector = initVector();\n";
     
-    supervisor_cpp << "const std::map<std::string, const SupervisorDeviceInstance_t*>";
-    supervisor_cpp << "Supervisor::DeviceNameMap = initMap();\n\n";
+    //supervisor_cpp << "const std::map<std::string, const SupervisorDeviceInstance_t*>";
+    //supervisor_cpp << "Supervisor::DeviceNameMap = initMap();\n\n";
 
     // Fill a vector of thread hardware addresses that this supervisor is responsible for
     int threadIdx = 0; // Faster than using std::distance

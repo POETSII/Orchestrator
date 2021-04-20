@@ -34,7 +34,7 @@ public:
    static const std::vector<SupervisorDeviceInstance_t> DeviceVector;
    static const std::vector<uint32_t> ThreadVector;
    
-   static const std::map<std::string,const SupervisorDeviceInstance_t*> DeviceNameMap;
+   //static const std::map<std::string,const SupervisorDeviceInstance_t*> DeviceNameMap;
 
    static int OnImplicit(P_Pkt_t*, std::vector<P_Addr_Pkt_t>&);
    static int OnPkt(P_Pkt_t*, std::vector<P_Addr_Pkt_t>&);
