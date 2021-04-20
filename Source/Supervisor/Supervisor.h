@@ -17,7 +17,7 @@ typedef struct SupervisorDeviceInstance_t
 {
     uint32_t HwAddr;
     uint32_t SwAddr;
-    char* Name;   // Temporary until we have Nameserver
+    const char* Name;   // Temporary until we have Nameserver
 } SupervisorDeviceInstance_t;
 
 class SupervisorApi;
