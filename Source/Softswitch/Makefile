@@ -147,7 +147,7 @@ SupervisorData.o : supervisor.bin
 	rm supervisor.bin
 
 $(BINDIR)/libSupervisor.so: Supervisor.cpp Supervisor.h supervisor_generated.cpp supervisor_generated.h SupervisorApi.h SupervisorApiEntrypoints.h SupervisorData.o
-	$(MPICXX) $(MPICFLAGS) $(MPILDFLAGS) -O3 -Wl,-soname,libSupervisor.so -o $@ $<
+	$(MPICXX) $(MPICFLAGS) $(MPILDFLAGS) -O3 -Wl,-soname,libSupervisor.so -o $@ $< SupervisorData.o
 
 $(BINDIR)/softswitch_code_%.v: $(BINDIR)/softswitch_%.elf
 	$(TINSELBIN)/checkelf.sh $<
