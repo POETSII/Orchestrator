@@ -1,6 +1,5 @@
 #include "Composer.h"
 
-
 // Temporary consts (were in build_defs).
 //TODO: reconcile
 const string GENERATED_PATH = "Generated";
@@ -1406,7 +1405,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     GraphI_t* graphI = builderGraphI->graphI;
 
     //Create the graph instance-specific ones
-    std::ofstream supervisor_cpp, supervisor_h;
+    std::ofstream supervisor_cpp, supervisor_h, supervisor_bin;
 
 
     // Create the Supervisor header
@@ -1439,7 +1438,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         //par->Post(816, vars_hFName.str(), OSFixes::getSysErrorString(errno));
         return -1;
     }
-
+    
+    // Write the file provenance headers
     writeFileProvenance(supervisor_hFNameStr, builderGraphI, supervisor_h);
     supervisor_h << "#ifndef __SupervisorGeneratedH__H\n";
     supervisor_h << "#define __SupervisorGeneratedH__H\n\n";
@@ -1462,10 +1462,24 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     
     
     // Generate the initialisers for the Supervisor vectors
-    std::stringstream superVectorVals;
+    //std::stringstream superVectorVals;
     
     //TEMP: Supervisor name map until we have a name server
     std::stringstream superNameVals;
+      
+    // Create the Supervisor binary blob
+    std::stringstream supervisor_binFName;
+    supervisor_binFName << builderGraphI->outputDir << "/" << GENERATED_PATH;
+    supervisor_binFName << "/supervisor.bin";
+    std::string supervisor_binFNameStr = supervisor_binFName.str();
+
+    supervisor_bin.open(supervisor_binFNameStr.c_str());
+    if(supervisor_bin.fail()) // Check that the file opened
+    {                 // if it didn't, tell logserver and exit
+        //TODO: Barf
+        //par->Post(816, vars_hFName.str(), OSFixes::getSysErrorString(errno));
+        return -1;
+    }
     
     WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,graphI->G,i)
     {
@@ -1486,13 +1500,20 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
             return -1;
         }
         P_thread* thread = threadSrch->second;
-
+        
+        
+        SupervisorDeviceInstance_t tmpSDevI = {
+                        thread->get_hardware_address()->as_uint(),
+                        devI->addr.as_uint(), ""};
+        strcpy(tmpSDevI.Name, devI->Name().c_str());
+        supervisor_bin.write((char*)(&tmpSDevI), sizeof(SupervisorDeviceInstance_t));
+        
     // Write the initialiser: {HwAddr, SwAddr, Name}
-        superVectorVals << "\tDeviceVector.push_back(";
-        superVectorVals << "{" << thread->get_hardware_address()->as_uint();
-        superVectorVals << "," << devI->addr.as_uint();
-        superVectorVals << ",\"" << devI->Name() <<"\"";
-        superVectorVals << "});\n";
+        //superVectorVals << "\tDeviceVector.push_back(";
+        //superVectorVals << "{" << thread->get_hardware_address()->as_uint();
+        //superVectorVals << "," << devI->addr.as_uint();
+        //superVectorVals << ",\"" << devI->Name() <<"\"";
+        //superVectorVals << "});\n";
         
     //TEMP: And let's add a (temporary) initialiser for the name map.   
         //superNameVals << "\tDeviceNameMap.insert(std::map<std::string,";
@@ -1506,7 +1527,9 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         devIdx++;
     }
     
-    superVectorVals << "\n";
+    supervisor_bin.close();
+    
+    //superVectorVals << "\n";
     superNameVals << "\n";
     devIdx++;
     
@@ -1514,11 +1537,13 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "#pragma GCC push_options\n";     // Speed up compiles by NOT optimising
     supervisor_cpp << "#pragma GCC optimize (\"O0\")\n";  // devicevector and map initialisation.
     
-    supervisor_cpp << "std::vector<SupervisorDeviceInstance_t> initVector()\n{\n";
-    supervisor_cpp << "\tstd::vector<SupervisorDeviceInstance_t> DeviceVector;\n";
-    supervisor_cpp << "\tDeviceVector.reserve(" << devIdx << ");\n";
-    supervisor_cpp << superVectorVals.rdbuf();
-    supervisor_cpp << "\n\treturn DeviceVector;\n}\n";
+    supervisor_cpp << "extern SupervisorDeviceInstance_t _binary_supervisor_bin_start[];\n";
+    supervisor_cpp << "extern SupervisorDeviceInstance_t _binary_supervisor_bin_end[];\n";
+    //supervisor_cpp << "std::vector<SupervisorDeviceInstance_t> initVector()\n{\n";
+    //supervisor_cpp << "\tstd::vector<SupervisorDeviceInstance_t> DeviceVector;\n";
+    //supervisor_cpp << "\tDeviceVector.reserve(" << devIdx << ");\n";
+    //supervisor_cpp << superVectorVals.rdbuf();
+    //supervisor_cpp << "\n\treturn DeviceVector;\n}\n";
     
     //supervisor_cpp << "std::map<std::string,const SupervisorDeviceInstance_t*> ";
     //supervisor_cpp << "initMap()\n{\n\t";
@@ -1530,7 +1555,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     
     // Write the static initialisor for the Device Vector
     supervisor_cpp << "const std::vector<SupervisorDeviceInstance_t> ";
-    supervisor_cpp << "Supervisor::DeviceVector = initVector();\n";
+    supervisor_cpp << "Supervisor::DeviceVector(_binary_supervisor_bin_start,";
+    supervisor_cpp << "_binary_supervisor_bin_end);\n\n";
     
     //supervisor_cpp << "const std::map<std::string, const SupervisorDeviceInstance_t*>";
     //supervisor_cpp << "Supervisor::DeviceNameMap = initMap();\n\n";

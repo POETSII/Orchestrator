@@ -221,4 +221,12 @@ inline unsigned pack_pkt(uint8_t ms, uint8_t cnc, uint8_t task, uint8_t opcode,
 }
 
 #pragma pack(pop)
+
+// Supervisor Data structure
+typedef struct SupervisorDeviceInstance_t
+{
+    uint32_t HwAddr;
+    uint32_t SwAddr;
+    char Name[52];   // Temporary until we have Nameserver
+} SupervisorDeviceInstance_t;
 #endif

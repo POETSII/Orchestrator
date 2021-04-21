@@ -113,6 +113,7 @@ vpath OSFixes.hpp $(GENERICSINC)
 vpath Supervisor.% $(realpath ../$(DEFAULT_GEN_DIR))
 vpath SupervisorApi.% $(realpath ../$(DEFAULT_GEN_DIR))
 vpath SupervisorApiEntrypoints.% $(realpath ../$(DEFAULT_GEN_DIR))
+vpath supervisor.bin $(realpath ../$(DEFAULT_GEN_DIR))
 VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC):$(GENDIR)
 
 # Local compiler flags
@@ -140,7 +141,12 @@ all : $(TARGETS) $(VCTARGETS) $(VDTARGETS) supervisor
 
 supervisor: $(BINDIR)/libSupervisor.so
 
-$(BINDIR)/libSupervisor.so: Supervisor.cpp Supervisor.h supervisor_generated.cpp supervisor_generated.h SupervisorApi.h SupervisorApiEntrypoints.h
+SupervisorData.o : supervisor.bin
+	cp $< ./
+	ld -r -b binary -o $@ supervisor.bin
+	rm supervisor.bin
+
+$(BINDIR)/libSupervisor.so: Supervisor.cpp Supervisor.h supervisor_generated.cpp supervisor_generated.h SupervisorApi.h SupervisorApiEntrypoints.h SupervisorData.o
 	$(MPICXX) $(MPICFLAGS) $(MPILDFLAGS) -O3 -Wl,-soname,libSupervisor.so -o $@ $<
 
 $(BINDIR)/softswitch_code_%.v: $(BINDIR)/softswitch_%.elf
