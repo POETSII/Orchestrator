@@ -475,7 +475,7 @@ float Placer::compute_fitness(P_task* task)
  * globally, or to a given task. */
 unsigned Placer::constrained_max_devices_per_thread(P_task* task)
 {
-    unsigned maximumSoFar = MAX_DEVICES_PER_THREAD_DEFAULT;
+    unsigned maximumSoFar = UINT_MAX;
 
     /* Iterate through each constraint. */
     std::list<Constraint*>::iterator constraintIterator;
@@ -499,7 +499,10 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
             }
         }
     }
-    return maximumSoFar;
+
+    /* If unconstrained, apply a default. */
+    if (maximumSoFar == UINT_MAX) return MAX_DEVICES_PER_THREAD_DEFAULT;
+    else return maximumSoFar;
 }
 
 /* Returns the maximum number of threads that can be used on a core, such that
