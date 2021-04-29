@@ -19,6 +19,7 @@ TEST_CASE("Files with valid syntax and semantics do not raise", "[Reader]")
     * directories... grumble grumble. */
     std::vector<std::string> semanticallyValidInputs;
     semanticallyValidInputs.push_back("1_box.uif");
+    semanticallyValidInputs.push_back("6_box.uif");
     semanticallyValidInputs.push_back("8_box.uif");
     semanticallyValidInputs.push_back("valid_dialect_3_mismatched_name.uif");
     semanticallyValidInputs.push_back("valid_dialect_3_mpi.uif");
