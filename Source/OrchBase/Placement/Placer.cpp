@@ -632,8 +632,8 @@ void Placer::dump(GraphI_t* gi)
 {
     /* If the score is zero, we're naturally quite suspicious. For example, if
      * the application graph instance was placed using bucket-filling (i.e. the
-     * algorithm that works the fastest but doesn't care about the score), we
-     * need to compute the score now. */
+     * algorithm that works fast, but doesn't care about the score), we need to
+     * compute the score now. */
     std::map<GraphI_t*, Algorithm*>::iterator gisIt = placedGraphs.find(gi);
     if (gisIt->second->result.score == 0)
     {
