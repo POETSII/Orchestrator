@@ -1,21 +1,20 @@
-#include "BucketFilling.h"
-#include "GraphT_t.h"
 #include "DevT_t.h"
+#include "GraphT_t.h"
+#include "ThreadFilling.h"
 
-BucketFilling::BucketFilling(Placer* placer):Algorithm(placer)
+ThreadFilling::ThreadFilling(Placer* placer):Algorithm(placer)
 {
-    result.method = "buck";
+    result.method = "tfil";
 }
 
-/* Places a gi onto the engine held by a placer using a naive bucket-filling
+/* Places a gi onto the engine held by a placer using a naive thread-filling
  * algorithm.
  *
  * This algorithm is very basic - adherence to constraints are hardcoded where
- * appropriate, it does not compute fitness, and simply encapsulates the old
- * placement logic.
+ * appropriate. It does not compute fitness.
  *
  * Returns zero. */
-float BucketFilling::do_it(GraphI_t* gi)
+float ThreadFilling::do_it(GraphI_t* gi)
 {
     result.startTime = placer->timestamp();
 
@@ -126,7 +125,7 @@ float BucketFilling::do_it(GraphI_t* gi)
 
 /* Returns true if none of the threads in a core hold any devices, and false
  * otherwise. */
-bool BucketFilling::is_core_empty(P_core* core)
+bool ThreadFilling::is_core_empty(P_core* core)
 {
     /* Iterate over the threads in this core. */
     std::map<AddressComponent, P_thread*>::iterator threadIt;
@@ -144,7 +143,7 @@ bool BucketFilling::is_core_empty(P_core* core)
  * upper core of an empty core pair, it is left alone. Arguments:
  *
  * - hardwareIt: The hardware iterator, modified in place. */
-void BucketFilling::poke_iterator(HardwareIterator& hardwareIt)
+void ThreadFilling::poke_iterator(HardwareIterator& hardwareIt)
 {
     /* Reset flag. */
     hardwareIt.has_wrapped();
