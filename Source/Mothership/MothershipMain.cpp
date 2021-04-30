@@ -23,6 +23,12 @@ int main(int argc, char** argv)
         unrecoverable.Post();
     }
 
+    catch (OrchestratorException& e)
+    {
+        fprintf(stderr, "MOTHERSHIP INTERNAL UNHANDLED EXCEPTION: %s\n",
+                e.message.c_str());
+    }
+
     catch (...)
     {
         fprintf(stderr, "MOTHERSHIP UNHANDLED EXCEPTION!\n");
