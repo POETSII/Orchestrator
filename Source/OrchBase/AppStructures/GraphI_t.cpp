@@ -77,6 +77,24 @@ WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i)
 
 //------------------------------------------------------------------------------
 
+unsigned GraphI_t::DevicesByType(map<DevT_t *,unsigned>& output)
+// Populate `output` with counts of normal devices of each type, and populate
+// `cnt` with the total number of devices.
+{
+unsigned cnt = 0;
+WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i)
+{
+  if ((*i).second.data->devTyp == 'D')
+  {
+    cnt++;
+    output[(*i).second.data->pT]++;
+  }
+}
+return cnt;
+}
+
+//------------------------------------------------------------------------------
+
 void GraphI_t::Dump(unsigned off,FILE * fp)
 {
 string s(off,' ');
