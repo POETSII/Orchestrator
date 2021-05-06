@@ -122,6 +122,10 @@ LDFLAGS = -melf32lriscv -G 0 -L$(RV_LIBS) -L$(RV_GCC_LIBS) -lgcc -lc
 
 MPICFLAGS = -I$(SOFTSWINC) -I$(TINSELINC) -I$(MPICHINC) -I$(PCOMMONINC) -I$(GENERICSINC)  -std=c++14 -fPIC -pipe -Wall
 MPILDFLAGS = -shared -L$(MPICHLIB)
+# User-supplied flags MUST come last.
+ifdef CM_CFLAGS
+MPICFLAGS += $(CM_CFLAGS)
+endif
 
 SECEXPCPPS := $(GENSRC)/%.cpp
 SECEXPOS := %.o
