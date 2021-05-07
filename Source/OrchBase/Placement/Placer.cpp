@@ -500,7 +500,7 @@ float Placer::compute_fitness(GraphI_t* gi)
  * globally, or to a given application graph instance. */
 unsigned Placer::constrained_max_devices_per_thread(GraphI_t* gi)
 {
-    unsigned maximumSoFar = MAX_DEVICES_PER_THREAD_DEFAULT;
+    unsigned maximumSoFar = UINT_MAX;
 
     /* Iterate through each constraint. */
     std::list<Constraint*>::iterator constraintIterator;
@@ -524,7 +524,10 @@ unsigned Placer::constrained_max_devices_per_thread(GraphI_t* gi)
             }
         }
     }
-    return maximumSoFar;
+
+    /* If unconstrained, apply a default. */
+    if (maximumSoFar == UINT_MAX) return MAX_DEVICES_PER_THREAD_DEFAULT;
+    else return maximumSoFar;
 }
 
 /* Returns the maximum number of threads that can be used on a core, such that
