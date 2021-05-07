@@ -81,15 +81,15 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
     /* Initial placement using smart-random. Note that we rely on this being a
      * valid placement in order for this algorithm to select across the
      * domain. (MLV never writes broken code! >_>). If it doesn't work, fall
-     * back to bucket filling (which is more stiff and harder to "anneal", but
+     * back to thread-filling (which is more stiff and harder to "anneal", but
      * is generally safer). */
     fprintf(log, "[I] Performing initial placement (smart-random).\n");
     SmartRandom initialAlgorithm = SmartRandom(placer);
     if (initialAlgorithm.do_it(gi) == -1)
     {
-        fprintf(log, "[I] It failed. Trying bucket-filling instead...\n");
+        fprintf(log, "[I] It failed. Trying thread-filling instead...\n");
         placer->unplace(gi, false);  /* Leave the constraints alone. */
-        BucketFilling otherInitialAlgorithm = BucketFilling(placer);
+        ThreadFilling otherInitialAlgorithm = ThreadFilling(placer);
         otherInitialAlgorithm.do_it(gi);
     }
 
