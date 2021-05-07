@@ -28,6 +28,11 @@ SuperHolder::SuperHolder(std::string path, std::string appName):
     if (idle == NULL) error = true;
     init = reinterpret_cast<int (*)()>(dlsym(so, "SupervisorInit"));
     if (init == NULL) error = true;
+    
+    getAddr = reinterpret_cast<uint64_t(*)()>(dlsym(so,"SupervisorIdx2Addr"));
+    if (getAddr == NULL) error = true;
+    getAddrVector = reinterpret_cast<void(*)()>(dlsym(so,"SupervisorIdx2Name"));
+    if (getAddrVector == NULL) error = true;
 
     /* Bind the method that allows the Mothership to get this Supervisor's API
      * object, if possible (before the Mothership provisions it - we want to
