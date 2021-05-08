@@ -30,6 +30,7 @@ public:
     int (*idle)();
     int (*init)();
     uint64_t (*getAddr)(uint32_t);
+    const SupervisorDeviceInstance_t* (*getInstance)(uint32_t);
     void (*getAddrVector)(std::vector<SupervisorDeviceInstance_t>&);
 
 private:

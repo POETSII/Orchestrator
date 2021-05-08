@@ -187,7 +187,7 @@
 507(E) : "Mothership: Thread '%s' received MPI message with key '0x%s', which it did not know how to decode. Ignoring message."
 508(E) : "Mothership: Error opening file '%s' for dumping: %s."
 509(E) : "Instrumentation: %s"
-510(I) : "Log from thread %s: "
+510(I) : "Log from device %s: "
 511(W) : "Mothership: Unknown core for thread '0x%s' in '%s' packet. Ignoring."
 512(W) : "Mothership: Unknown application for core '0x%s' in '%s' packet. Ignoring."
 513(W) : "Mothership: Received an unexpected '%s' packet for an application in state '%s'. Ignoring."
@@ -207,6 +207,8 @@
 527(I) : "Mothership: Message from supervisor for application '%s': %s
 528(E) : "Error creating directory '%s' for application '%s': %s"
 
+580(E) : "Mothership: Received a log packet with an invalid device index 0x%s."
+581(I) : "Mothership: Consuming log packet from device address 0x%s with name %s."
 582(I) : "Mothership: Received a message containing packets for a supervisor device for application '%s' that is not running (it may be in the process of stopping). Ignoring these packets."
 583(I) : "Mothership: Initialising supervisor device for application '%s'."
 584(I) : "Mothership: Calling backend->loadDataViaCore with arguments dataPath=%s, meshX=0x%s, meshY=0x%s, coreId=0x%s."

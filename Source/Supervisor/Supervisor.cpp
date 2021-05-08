@@ -50,6 +50,14 @@ extern "C"
         return ret;
     }
     
+    // Return a pointer to the SupervisorDeviceInstance for the given index
+    const SupervisorDeviceInstance_t* SupervisorIdx2Inst(uint32_t idx)
+    {
+        if(idx >= Supervisor::DeviceVector.size()) return PNULL;    // OOR
+        
+        return &(Supervisor::DeviceVector[idx]);
+    }
+    
     // Return the name of the given index
     std::string SupervisorIdx2Name(uint32_t idx)
     {

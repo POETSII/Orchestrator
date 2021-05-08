@@ -43,6 +43,8 @@ public:
     SuperHolder* get_next_idle(std::string& name);
     int call_supervisor(std::string appName, std::vector<P_Pkt_t>& inputPackets,
                     std::vector<P_Addr_Pkt_t>& outputPackets);
+    int get_device_instance(std::string appName, uint32_t index,
+                                const SupervisorDeviceInstance_t*& instance);     
     SupervisorApi* get_supervisor_api(std::string appName);
     bool load_supervisor(std::string appName, std::string path,
                          std::string* errorMessage);

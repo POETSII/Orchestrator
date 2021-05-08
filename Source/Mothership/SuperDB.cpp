@@ -135,6 +135,18 @@ int SuperDB::call_supervisor(std::string appName,
     return rc;
 }
 
+/* Gets the SupervisorDeviceInstance_t for the dpecified device index*/
+int SuperDB::get_device_instance(std::string appName, uint32_t index,
+                                    const SupervisorDeviceInstance_t*& instance)
+{
+    int rc = 0;
+    FIND_SUPERVISOR;
+    pthread_mutex_lock(&(superFinder->second->lock));
+    instance = (*(superFinder->second->getInstance))(index);
+    pthread_mutex_unlock(&(superFinder->second->lock));
+    return rc;
+}
+
 /* Calls the OnIdle handler for a supervisor with a given application
  * name. This handler is treated differently, as the caller is expected to
  * acquire the supervisor lock (see `idle_rotation`). */

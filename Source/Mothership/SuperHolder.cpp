@@ -29,9 +29,15 @@ SuperHolder::SuperHolder(std::string path, std::string appName):
     init = reinterpret_cast<int (*)()>(dlsym(so, "SupervisorInit"));
     if (init == NULL) error = true;
     
-    getAddr = reinterpret_cast<uint64_t(*)()>(dlsym(so,"SupervisorIdx2Addr"));
+    getAddr = reinterpret_cast<uint64_t(*)(uint32_t)>(dlsym(so,
+                                                        "SupervisorIdx2Addr"));
     if (getAddr == NULL) error = true;
-    getAddrVector = reinterpret_cast<void(*)()>(dlsym(so,"SupervisorIdx2Name"));
+    getInstance = reinterpret_cast<const SupervisorDeviceInstance_t* (*)
+                                (uint32_t)> (dlsym(so, "SupervisorIdx2Inst"));
+    if (getInstance == NULL) error = true;
+    getAddrVector = reinterpret_cast<void(*)(std::vector<
+                                            SupervisorDeviceInstance_t>&)>
+                                            (dlsym(so,"SupervisorIdx2Name"));
     if (getAddrVector == NULL) error = true;
 
     /* Bind the method that allows the Mothership to get this Supervisor's API
