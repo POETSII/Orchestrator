@@ -1594,17 +1594,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 
         supervisor_h << "#define _APPLICATION_SUPERVISOR_ 1\n\n";
         
-        // Add the QoL macros to the generated source
-        supervisor_h << "#define GRAPHPROPERTIES(a)  graphProperties->a\n";
-        supervisor_h << "#define SUPPROPERTIES(a)    supervisorProperties->a\n";
-        supervisor_h << "#define SUPSTATE(a)         supervisorState->a\n";
-        supervisor_h << "#define MSG(a)              message->a\n";
-        supervisor_h << "#define PKT(a)              message->a\n";
-        supervisor_h << "#define REPLY(a)            reply->a\n";
-        supervisor_h << "#define BCAST(a)            bcast->a\n";
-        supervisor_h << "#define RTSREPLY()          __rtsReply=true\n";
-        supervisor_h << "#define RTSBCAST()          __rtsBcast=true\n";
-        supervisor_h << "\n";
+        supervisor_h << "#include \"Supervisor.h\"\n\n";
 
         // Global properties initialiser
         writeGlobalPropsI(graphI, supervisor_cpp);

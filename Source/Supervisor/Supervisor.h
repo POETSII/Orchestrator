@@ -13,6 +13,16 @@
 #include <vector>
 #include <map>
 
+#define GRAPHPROPERTIES(a)  graphProperties->a
+#define SUPPROPERTIES(a)    supervisorProperties->a
+#define SUPSTATE(a)         supervisorState->a
+#define MSG(a)              message->a
+#define PKT(a)              message->a
+#define REPLY(a)            reply->a
+#define BCAST(a)            bcast->a
+#define RTSREPLY()          __rtsReply=true
+#define RTSBCAST()          __rtsBcast=true
+
 class SupervisorApi;
 
 class Supervisor
