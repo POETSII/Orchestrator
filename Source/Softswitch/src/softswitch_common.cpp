@@ -513,9 +513,10 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
         recvDevEnd = recvDevBegin + 1;
     }
     else
-    {
-        //handler_log(5, "dIDX OOR %d", devAdr);
-        return;    // Message target is out of range. //TODO: - log/flag
+    {   // Log to indicate out of range. Pretend to be the first device.
+        __handler_log(ThreadContext->devInsts[0].deviceIdx, 5, 
+                        "dIDX OOR %d", devAdr);
+        return;
     }
 
 
@@ -533,7 +534,8 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
                 break;
 #endif
             default:    // Unused reserved Opcode - log it.
-                        //handler_log(5, "BAD-OP %d", opcode);
+                        __handler_log(ThreadContext->devInsts[0].deviceIdx, 5, 
+                                        "BAD-OP %d", opcode);
                         break;
         }
         return;
