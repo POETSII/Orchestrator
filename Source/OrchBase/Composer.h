@@ -61,6 +61,12 @@ typedef enum softswitchLoopMode_t
     priInstr
 } ssLoopMode_t;
 
+/* THE structure that keeps track of the status of, and all of the values, etc. 
+ * that are involved in composing, an application/graph instance.
+ *
+ * The Composer class holds a map of these, with one entry for each graph 
+ * instance that has been seen by the Composer.
+ */
 typedef struct ComposerGraphI_t
 {
     GraphI_t* graphI;
