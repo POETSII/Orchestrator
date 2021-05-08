@@ -1584,13 +1584,15 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     std::string inPktFmt = "pkt___default_pyld_t*";
     std::string outPktFmt = "pkt___default_pyld_t*";
     
+    // Include the generated global props and messages for all supervisors. 
+    supervisor_h << "#include \"GlobalProperties.h\"\n";
+    supervisor_h << "#include \"MessageFormats.h\"\n\n";
+    
     if(graphI->pT->pSup)    // If we have a non-default Supervisor, build it.
     {
         SupT_t* supType = graphI->pT->pSup;
 
         supervisor_h << "#define _APPLICATION_SUPERVISOR_ 1\n\n";
-        supervisor_h << "#include \"GlobalProperties.h\"\n";
-        supervisor_h << "#include \"MessageFormats.h\"\n\n";
         
         // Add the QoL macros to the generated source
         supervisor_h << "#define GRAPHPROPERTIES(a)  graphProperties->a\n";
