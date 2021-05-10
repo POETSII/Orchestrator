@@ -1139,9 +1139,7 @@ float Placer::place(GraphI_t* gi, Algorithm* algorithm)
      * NB: This supervisor binary is not mapped to boxes (because for now,
      * nobody actually cares). Later on, graph instances will need a map of box
      * keys to supervisor values, for when supervisors differ across boxes. */
-    gi->pSupI = new P_super;
-
-
+    if (gi->pSupI == PNULL) gi->pSupI = new P_super;
     return score;
 }
 
@@ -1413,6 +1411,7 @@ void Placer::unplace(GraphI_t* gi, bool andConstraints)
 
     /* No more supervisor. */
     delete gi->pSupI;
+    gi->pSupI = PNULL;
 }
 
 /* Updates the software addresses of each device in an application graph

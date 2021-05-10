@@ -82,13 +82,19 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
 
     /* If the caller requests an in-place anneal, check if the graph is
      * placed. If it's not, issue a warning. */
-    if (inPlace and
-        (placer->placedGraphs.find(gi) != placer->placedGraphs.end()))
+    std::map<GraphI_t*, Algorithm*>::iterator algorithmIt;
+    algorithmIt = placer->placedGraphs.find(gi);
+    if (inPlace and (algorithmIt == placer->placedGraphs.end()))
     {
         fprintf(log, "[W] Initial placement requested, but this graph "
                      "instance has not been placed.\n");
     }
-    else if (inPlace) fprintf(log, "[I] Annealing on existing placement.\n");
+    else if (inPlace)
+    {
+        fprintf(log, "[I] Annealing on an existing placement.\n");
+        /* Clear old algorithm object. */
+        delete algorithmIt->second;
+    }
     else
     {
         /* Initial placement using smart-random. Note that we rely on this
