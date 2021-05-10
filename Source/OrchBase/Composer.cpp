@@ -3118,6 +3118,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
     AddressComponent threadAddr = thread->get_hardware_address()->get_thread();
 
     GraphI_t* graphI = builderGraphI->graphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
 
     // devInst_t initialiser
     std::vector<std::string> devIIStrs(numberOfDevices, "{},");
@@ -3178,7 +3179,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
         devISrch = builderGraphI->devISuperIdxMap.find(devI);
         if (devISrch == builderGraphI->devISuperIdxMap.end())
         {   // Something has gone wrong that we are going to ignore.
-            //TODO: Barf
+            fprintf(fd,"**WARNING** Device not found in Supervisor idx map\n");
             devII << "0,";
         }
         else
@@ -3599,6 +3600,8 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
                                         std::ofstream& vars_cpp)
 {
     GraphI_t* graphI = builderGraphI->graphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    
     DevT_t* devT = devI->pT;
 
     pinIArcKeyMap_t oPinIArcKMap;
@@ -3722,7 +3725,8 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
         devISrch = builderGraphI->devISuperIdxMap.find(devI);
         if (devISrch == builderGraphI->devISuperIdxMap.end())
         {   // Something has gone wrong that we are going to ignore.
-            //TODO: Barf
+            fprintf(fd,"**WARNING** Device not found in Supervisor idx map");
+            fprintf(fd," when writing implicit Send Pin initialiser.\n");
             outEdgeTI << "0";
         }
         else
