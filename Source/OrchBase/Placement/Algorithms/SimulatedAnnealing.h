@@ -21,7 +21,7 @@ class HardwareIterator;
 class SimulatedAnnealing: public Algorithm
 {
 public:
-    SimulatedAnnealing(Placer* placer, bool disorder=true, bool inPlace=true);
+    SimulatedAnnealing(Placer* placer, bool disorder=true, bool inPlace=false);
 
     bool disorder;
     bool inPlace;
