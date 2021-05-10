@@ -25,7 +25,7 @@ SoftwareAddress::SoftwareAddress(
 
 /* Alternatively, construct a software address from a uint32_t. */
 SoftwareAddress::SoftwareAddress(uint32_t address){
-    definitions = 10;
+    definitions = SOFTWARE_ADDRESS_FULLY_DEFINED_MASK;
     raw = address;
 }
 
@@ -118,7 +118,7 @@ void SoftwareAddress::set_device(DeviceComponent value)
 
 /* Construct a software address from a uint32_t. */
 void SoftwareAddress::from_uint(uint32_t address){
-    definitions = 10;
+    definitions = SOFTWARE_ADDRESS_FULLY_DEFINED_MASK;
     raw = address;
 }
 
