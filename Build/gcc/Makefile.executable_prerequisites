@@ -87,11 +87,11 @@ XML_PARSER_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/XMLProcessing/*.cpp)
 PLACEMENT_SOURCES = $(SOURCE_DIR)/OrchBase/Placement/CostCache.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Placer.cpp \
                     $(SOURCE_DIR)/Common/SoftwareAddress.cpp \
-                    $(SOURCE_DIR)/OrchBase/Placement/Algorithms/BucketFilling.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/PlacementLoader.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/SimulatedAnnealing.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/SmartRandom.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/SpreadFilling.cpp \
+                    $(SOURCE_DIR)/OrchBase/Placement/Algorithms/ThreadFilling.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Constraints/MaxDevicesPerThread.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Constraints/MaxThreadsPerCore.cpp
 

@@ -1,0 +1,170 @@
+// A representation of the 6-box POETS Engine in Dialect 3. Costs are
+// unknown.
+
+[header("6Box")]
++author="Mark Vousden"
++dialect=3
++datetime=20210427103300
++version="0.5.1"
++file="6_box.uif"
+
+// Sums to 16 bits, leading bits are not used.
+[packet_address_format]
++box=3  // The box address component is not used.
++board=(3,3)
++mailbox=(2,2)
++core=2
++thread=4
+
+// All items are of the same type.
+[default_types]
++box_type="CommonBox"
++board_type="CommonBoard"
++mailbox_type="CommonMbox"
+
+// Boxes/boards are connected as follows:
+//
+// Heaney (He)           Ibsen (Ib)
+// +-------------------+ +-------------------+
+// |                   | |                   |
+// | B01 -- B11 -- B21 --- B01 -- B11 -- B21 |
+// |                   | |                   |
+// |  |      |      |  | |  |      |      |  |
+// |                   | |                   |
+// | B00 -- B10 -- B20 --- B00 -- B10 -- B20 |
+// |                   | |                   |
+// +--|------|------|--+ +--|------|------|--+
+// Fielding (Fe)         Goethe (Go)
+// +--|------|------|--+ +--|------|------|--+
+// |                   | |                   |
+// | B01 -- B11 -- B21 --- B01 -- B11 -- B21 |
+// |                   | |                   |
+// |  |      |      |  | |  |      |      |  |
+// |                   | |                   |
+// | B00 -- B10 -- B20 --- B00 -- B10 -- B20 |
+// |                   | |                   |
+// +--|------|------|--+ +--|------|------|--+
+// Defoe (De)            Eliot (El)
+// +--|------|------|--+ +--|------|------|--+
+// |                   | |                   |
+// | B01 -- B11 -- B21 --- B01 -- B11 -- B21 |
+// |                   | |                   |
+// |  |      |      |  | |  |      |      |  |
+// |                   | |                   |
+// | B00 -- B10 -- B20 --- B00 -- B10 -- B20 |
+// |                   | |                   |
+// +-------------------+ +-------------------+
+//
+[engine_box]
+De(addr(010),boards(B00,B01,B10,B11,B20,B21),hostname(defoe))
+El(addr(011),boards(B00,B01,B10,B11,B20,B21),hostname(eliot))
+Fi(addr(100),boards(B00,B01,B10,B11,B20,B21),hostname(fielding))
+Go(addr(101),boards(B00,B01,B10,B11,B20,B21),hostname(goethe))
+He(addr(110),boards(B00,B01,B10,B11,B20,B21),hostname(heaney))
+Ib(addr(111),boards(B00,B01,B10,B11,B20,B21),hostname(ibsen))
++external_box_cost=0
+
+// Note that the Y-component of the board address in hardware comes before the
+// X-component. The notation for boards here is, for example:
+//
+//  (Xb,Yb):Box(board(BXY),addr(Y,X))
+//
+// where {X,Y} denotes the {horizontal,vertical}-component of the co-ordinate
+// in the board system, and {Xb,Yb} denotes the {horizontal,vertical}-component
+// of the co-ordinate in the engine system.
+[engine_board]
+(0,2):De(board(B00),addr(010,000))=De(board(B10)),De(board(B01))
+(1,2):De(board(B10),addr(010,001))=De(board(B00)),De(board(B20)),De(board(B11))
+(2,2):De(board(B20),addr(010,010))=De(board(B10)),De(board(B21)),El(board(B00))
+(3,2):El(board(B00),addr(010,011))=De(board(B20)),El(board(B10)),El(board(B01))
+(4,2):El(board(B10),addr(010,100))=El(board(B00)),El(board(B20)),El(board(B11))
+(5,2):El(board(B20),addr(010,101))=El(board(B10)),El(board(B21))
+(0,3):De(board(B01),addr(011,000))=De(board(B00)),De(board(B11)),Fi(board(B00))
+(1,3):De(board(B11),addr(011,001))=De(board(B10)),De(board(B01)),De(board(B21)),Fi(board(B10))
+(2,3):De(board(B21),addr(011,010))=De(board(B20)),De(board(B11)),El(board(B01)),Fi(board(B20))
+(3,3):El(board(B01),addr(011,011))=El(board(B00)),De(board(B21)),El(board(B11)),Go(board(B00))
+(4,3):El(board(B11),addr(011,100))=El(board(B10)),El(board(B01)),El(board(B21)),Go(board(B10))
+(5,3):El(board(B21),addr(011,101))=El(board(B20)),El(board(B11)),Go(board(B20))
+(0,4):Fi(board(B00),addr(100,000))=De(board(B01)),Fi(board(B10)),Fi(board(B01))
+(1,4):Fi(board(B10),addr(100,001))=De(board(B11)),Fi(board(B00)),Fi(board(B20)),Fi(board(B11))
+(2,4):Fi(board(B20),addr(100,010))=De(board(B21)),Fi(board(B10)),Fi(board(B21)),Go(board(B00))
+(3,4):Go(board(B00),addr(100,011))=El(board(B01)),Fi(board(B20)),Go(board(B10)),Go(board(B01))
+(4,4):Go(board(B10),addr(100,100))=El(board(B11)),Go(board(B00)),Go(board(B20)),Go(board(B11))
+(5,4):Go(board(B20),addr(100,101))=El(board(B21)),Go(board(B10)),Go(board(B21))
+(0,5):Fi(board(B01),addr(101,000))=Fi(board(B00)),Fi(board(B11)),He(board(B00))
+(1,5):Fi(board(B11),addr(101,001))=Fi(board(B10)),Fi(board(B01)),Fi(board(B21)),He(board(B10))
+(2,5):Fi(board(B21),addr(101,010))=Fi(board(B20)),Fi(board(B11)),Go(board(B01)),He(board(B20))
+(3,5):Go(board(B01),addr(101,011))=Go(board(B00)),Fi(board(B21)),Go(board(B11)),Ib(board(B00))
+(4,5):Go(board(B11),addr(101,100))=Go(board(B10)),Go(board(B01)),Go(board(B21)),Ib(board(B10))
+(5,5):Go(board(B21),addr(101,101))=Go(board(B20)),Go(board(B11)),Ib(board(B20))
+(0,6):He(board(B00),addr(110,000))=Fi(board(B01)),He(board(B10)),He(board(B01))
+(1,6):He(board(B10),addr(110,001))=Fi(board(B11)),He(board(B00)),He(board(B20)),He(board(B11))
+(2,6):He(board(B20),addr(110,010))=Fi(board(B21)),He(board(B10)),He(board(B21)),Ib(board(B00))
+(3,6):Ib(board(B00),addr(110,011))=Go(board(B01)),He(board(B20)),Ib(board(B10)),Ib(board(B01))
+(4,6):Ib(board(B10),addr(110,100))=Go(board(B11)),Ib(board(B00)),Ib(board(B20)),Ib(board(B11))
+(5,6):Ib(board(B20),addr(110,101))=Go(board(B21)),Ib(board(B10)),Ib(board(B21))
+(0,7):He(board(B01),addr(111,000))=He(board(B00)),He(board(B11))
+(1,7):He(board(B11),addr(111,001))=He(board(B10)),He(board(B01)),He(board(B21))
+(2,7):He(board(B21),addr(111,010))=He(board(B20)),He(board(B11)),Ib(board(B01))
+(3,7):Ib(board(B01),addr(111,011))=Ib(board(B00)),He(board(B21)),Ib(board(B11))
+(4,7):Ib(board(B11),addr(111,100))=Ib(board(B10)),Ib(board(B01)),Ib(board(B21))
+(5,7):Ib(board(B21),addr(111,101))=Ib(board(B20)),Ib(board(B11))
++board_board_cost=8  // Relative to [board].mailbox_mailbox_cost.
+
+[box(CommonBox)]
++box_board_cost=0
++supervisor_memory=10240
+
+// Mailboxes are connected within a board as follows:
+//
+// +--------------------------+
+// |                          |
+// | M03 -- M13 -- M23 -- M33 |
+// |                          |
+// |  |      |      |      |  |
+// |                          |
+// | M02 -- M12 -- M22 -- M32 |
+// |                          |
+// |  |      |      |      |  |
+// |                          |
+// | M01 -- M11 -- M21 -- M31 |
+// |                          |
+// |  |      |      |      |  |
+// |                          |
+// | M00 -- M10 -- M20 -- M30 |
+// |                          |
+// +--------------------------+
+[board(CommonBoard)]
+(0,0):M00(addr(00,00))=M10,M01
+(1,0):M10(addr(01,00))=M00,M20,M11
+(2,0):M20(addr(10,00))=M10,M30,M21
+(3,0):M30(addr(11,00))=M20,M31
+(0,1):M01(addr(00,01))=M00,M11,M02
+(1,1):M11(addr(01,01))=M10,M01,M21,M12
+(2,1):M21(addr(10,01))=M20,M11,M31,M22
+(3,1):M31(addr(11,01))=M30,M21,M32
+(0,2):M02(addr(00,10))=M01,M12,M03
+(1,2):M12(addr(01,10))=M11,M02,M22,M13
+(2,2):M22(addr(10,10))=M21,M12,M32,M23
+(3,2):M32(addr(11,10))=M31,M22,M33
+(0,3):M03(addr(00,11))=M02,M13
+(1,3):M13(addr(01,11))=M12,M03,M23
+(2,3):M23(addr(10,11))=M22,M13,M33
+(3,3):M33(addr(11,11))=M32,M23
++board_mailbox_cost=0
++supervisor_memory=0
++mailbox_mailbox_cost=1 // Relative to box::board_board_cost
++dram=4096  // MiB, two DDR3 DRAM boards.
+
+[mailbox(CommonMbox)]
++cores=4
++mailbox_core_cost=0
++core_core_cost=0
++pair_cores="true"
+
+[core]
++threads=16
++instruction_memory=8  // KiB
++data_memory=0
++core_thread_cost=0
++thread_thread_cost=0
