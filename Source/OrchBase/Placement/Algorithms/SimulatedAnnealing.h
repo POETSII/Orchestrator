@@ -21,10 +21,11 @@ class HardwareIterator;
 class SimulatedAnnealing: public Algorithm
 {
 public:
-    SimulatedAnnealing(Placer* placer, bool disorder=true);
+    SimulatedAnnealing(Placer* placer, bool disorder=true, bool inPlace=true);
 
-    unsigned iteration;
     bool disorder;
+    bool inPlace;
+    unsigned iteration;
 
     /* Holds, for each device type, which cores are valid for placement of
      * devices of that type. */

@@ -1,8 +1,10 @@
 #include "SimulatedAnnealing.h"
 
-SimulatedAnnealing::SimulatedAnnealing(Placer* placer, bool disorder):
+SimulatedAnnealing::SimulatedAnnealing(Placer* placer, bool disorder,
+                                       bool inPlace):
     Algorithm(placer),
-    disorder(disorder)
+    disorder(disorder),
+    inPlace(inPlace)
 {
     if (disorder) result.method = "sa";
     else result.method = "gc";
@@ -78,19 +80,30 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
         }
     }
 
-    /* Initial placement using smart-random. Note that we rely on this being a
-     * valid placement in order for this algorithm to select across the
-     * domain. (MLV never writes broken code! >_>). If it doesn't work, fall
-     * back to thread-filling (which is more stiff and harder to "anneal", but
-     * is generally safer). */
-    fprintf(log, "[I] Performing initial placement (smart-random).\n");
-    SmartRandom initialAlgorithm = SmartRandom(placer);
-    if (initialAlgorithm.do_it(gi) == -1)
+    /* If the caller requests an in-place anneal, check if the graph is
+     * placed. If it's not, issue a warning. */
+    if (inPlace and
+        (placer->placedGraphs.find(gi) != placer->placedGraphs.end()))
     {
-        fprintf(log, "[I] It failed. Trying thread-filling instead...\n");
-        placer->unplace(gi, false);  /* Leave the constraints alone. */
-        ThreadFilling otherInitialAlgorithm = ThreadFilling(placer);
-        otherInitialAlgorithm.do_it(gi);
+        fprintf(log, "[W] Initial placement requested, but this graph "
+                     "instance has not been placed.\n");
+    }
+    else if (inPlace) fprintf(log, "[I] Annealing on existing placement.\n");
+    else
+    {
+        /* Initial placement using smart-random. Note that we rely on this
+         * being a valid placement in order for this algorithm to select across
+         * the domain. (MLV never writes broken code! >_>). If it doesn't work,
+         * fall back to thread-filling, which is generally safer. */
+        fprintf(log, "[I] Performing initial placement (smart-random).\n");
+        SmartRandom initialAlgorithm = SmartRandom(placer);
+        if (initialAlgorithm.do_it(gi) == -1)
+        {
+            fprintf(log, "[I] It failed. Trying spread-filling instead...\n");
+            placer->unplace(gi, false);  /* Leave the constraints alone. */
+            ThreadFilling otherInitialAlgorithm = ThreadFilling(placer);
+            otherInitialAlgorithm.do_it(gi);
+        }
     }
 
     /* Compute fitness of initial placement. */
