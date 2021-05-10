@@ -43,8 +43,10 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
         output = new SimulatedAnnealing(this, true);  /* With disorder. */
     if (colloquialDescription.substr(0, 2) == "gc")
         output = new SimulatedAnnealing(this, false);  /* Without disorder. */
-    if (colloquialDescription == "buck") output = new BucketFilling(this);
-    if (colloquialDescription == "link") output = new BucketFilling(this);
+    if (colloquialDescription.substr(0, 3) == "app" or
+        colloquialDescription == "buck" or
+        colloquialDescription == "tfil" or
+        colloquialDescription == "link") output = new ThreadFilling(this);
     if (colloquialDescription == "rand") output = new SmartRandom(this);
 
     if (output == PNULL)
@@ -498,7 +500,7 @@ float Placer::compute_fitness(GraphI_t* gi)
  * globally, or to a given application graph instance. */
 unsigned Placer::constrained_max_devices_per_thread(GraphI_t* gi)
 {
-    unsigned maximumSoFar = MAX_DEVICES_PER_THREAD_DEFAULT;
+    unsigned maximumSoFar = UINT_MAX;
 
     /* Iterate through each constraint. */
     std::list<Constraint*>::iterator constraintIterator;
@@ -522,7 +524,10 @@ unsigned Placer::constrained_max_devices_per_thread(GraphI_t* gi)
             }
         }
     }
-    return maximumSoFar;
+
+    /* If unconstrained, apply a default. */
+    if (maximumSoFar == UINT_MAX) return MAX_DEVICES_PER_THREAD_DEFAULT;
+    else return maximumSoFar;
 }
 
 /* Returns the maximum number of threads that can be used on a core, such that
@@ -631,7 +636,7 @@ void Placer::define_valid_cores_map(GraphI_t* gi,
 void Placer::dump(GraphI_t* gi)
 {
     /* If the score is zero, we're naturally quite suspicious. For example, if
-     * the application graph instance was placed using bucket-filling (i.e. the
+     * the application graph instance was placed using thread-filling (i.e. the
      * algorithm that works the fastest but doesn't care about the score), we
      * need to compute the score now. */
     std::map<GraphI_t*, Algorithm*>::iterator gisIt = placedGraphs.find(gi);
