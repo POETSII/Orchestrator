@@ -18,6 +18,7 @@ class PlaceArgs
 {
 public:
     PlaceArgs(){setup();}
+    void copy_to(std::map<std::string, std::string>& copy){copy = args;}
     void clear(){args.clear();}
 
     /* Getters for arguments of each type. */
