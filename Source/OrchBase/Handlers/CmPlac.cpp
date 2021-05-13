@@ -197,6 +197,8 @@ bool CmPlac::PlacementDoIt(Cli::Cl_t clause)
                                              e.message);}
     catch (FileOpenException& e) {par->Post(318, (*graphIt)->Name(),
                                             e.message);}
+    catch (InvalidArgumentException& e) {par->Post(325, (*graphIt)->Name(),
+                                                   clause.Cl, e.message);}
     catch (NoEngineException&) {par->Post(305, (*graphIt)->Name());}
     catch (NoSpaceToPlaceException&) {par->Post(306, (*graphIt)->Name());}
     return true;

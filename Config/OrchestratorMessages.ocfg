@@ -175,6 +175,7 @@
 322(I) : "Constraining the maximum number of placed devices per thread in the hardware model to %s."
 323(I) : "Constraining the maximum number of threads used for placement on each core in the hardware model to %s."
 324(W) : "Graph instance '%s' has not been type-linked. Not %s."
+325(W) : "Unable to place graph instance '%s' using the '%s' method - %s"
 
 500(F) : "Mothership: Could not create pthread %s. Exiting."
 501(F) : "Mothership: Could not join to pthread %s. Exiting."
