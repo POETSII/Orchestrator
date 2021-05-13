@@ -13,10 +13,10 @@ class HardwareIterator;
 #include "ThreadFilling.h"
 
 /* Naive end point. */
-#define ITERATION_MAX 100000000
+#define ITERATION_MAX_DEFAULT unsigned(1e8)
 
 /* Exponential decay with half life of a third of the number of iterations. */
-#define DISORDER_DECAY log(0.5) / (ITERATION_MAX / 3.0)
+#define DISORDER_DECAY
 
 class SimulatedAnnealing: public Algorithm
 {
@@ -25,6 +25,7 @@ public:
 
     bool disorder;
     unsigned iteration;
+    unsigned maxIteration;  /* Set in do_it */
 
     /* Holds, for each device type, which cores are valid for placement of
      * devices of that type. */

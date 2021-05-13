@@ -25,13 +25,14 @@ float SimulatedAnnealing::acceptance_probability(float fitnessBefore,
 
 /* Computes the disorder value as a function of the iteration number, between
  * half (at iteration=0) and zero (lim iteration ->inf). Decrease must be
- * monotonic. For now, it's a simple exponential decay.
+ * monotonic. For now, it's a simple exponential decay with half life of a
+ * third of the number of iterations (thats what the factor 3 is for).
  *
  * In the case of simulated annealing that only accepts better
  * configurations, disorder is always zero. */
 float SimulatedAnnealing::compute_disorder()
 {
-    if (disorder) return 0.5 * exp(DISORDER_DECAY * iteration);
+    if (disorder) return 0.5 * exp(log(0.5) * 3 * iteration / maxIteration);
     else return 0;
 }
 
@@ -47,6 +48,10 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
     bool inPlace = false;
     if (placer->args.is_set("inplace"))
         inPlace = placer->args.get_bool("inplace");
+
+    maxIteration = ITERATION_MAX_DEFAULT;
+    if (placer->args.is_set("iterations"))
+        maxIteration = placer->args.get_uint("iterations");
 
     /* Generic setup. */
     std::string algorithmName;
@@ -443,7 +448,7 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
 /* Returns true if the termination condition holds, and false otherwise. It's
  * pretty simple - for now we're just counting iterations - but this probably
  * will change as we become more curious. */
-bool SimulatedAnnealing::is_finished(){return iteration >= ITERATION_MAX;}
+bool SimulatedAnnealing::is_finished(){return iteration >= maxIteration;}
 
 /* Performs the selection operation for simulated annealing. Arguments
  *
