@@ -1102,9 +1102,16 @@ float Placer::place(GraphI_t* gi, Algorithm* algorithm)
         "defining an engine pointer in the placer. If you're running this "
         "from OrchBase, how did you get here?");
 
+    /* Check that the options set by the operator make sense for the algorithm
+     * being used. May throw. */
+    args.validate_args(algorithm->result.method);
+
     /* Complain if the application graph instance has already been placed (by
-     * memory address). */
-    if (placedGraphs.find(gi) != placedGraphs.end())
+     * memory address). Don't do this if an in-place approach is requested. */
+    bool inPlace = false;
+    if (args.is_set("inplace")) inPlace = args.get_bool("inplace");
+
+    if (placedGraphs.find(gi) != placedGraphs.end() and !inPlace)
     {
         delete algorithm;
         throw AlreadyPlacedException(dformat(
