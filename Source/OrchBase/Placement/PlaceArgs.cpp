@@ -108,7 +108,8 @@ void PlaceArgs::setup()
 }
 
 /* Given the name of an algorithm, checks the all set arguments. Throws an
- * InvalidArgumentException if an argument doesn't match for this algorithm. */
+ * InvalidArgumentException, and clears all set arguments, if an argument
+ * doesn't match for this algorithm. */
 void PlaceArgs::validate_args(std::string algName)
 {
     /* Search */
@@ -135,6 +136,7 @@ void PlaceArgs::validate_args(std::string algName)
             errStream << *badArgIt;
         }
         errStream << "' are not valid for the '" << algName << "' algorithm.";
+        clear();
         throw InvalidArgumentException(errStream.str());
     }
 }
