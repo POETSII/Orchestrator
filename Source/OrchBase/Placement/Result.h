@@ -6,10 +6,12 @@
  *
  * See the placement documentation for further information. */
 
+#include <map>
 #include <string>
 
 struct Result
 {
+    std::map<std::string, std::string> args;
     unsigned maxDevicesPerThread;
     float maxEdgeCost;
     std::string method;

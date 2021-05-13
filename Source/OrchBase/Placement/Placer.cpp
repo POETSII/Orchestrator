@@ -780,6 +780,13 @@ void Placer::dump_diagnostics(GraphI_t* gi, const char* path)
     out << "startTime:" << result->startTime << std::endl;
     out << "endTime:" << result->endTime << std::endl;
     out << "score:" << result->score << std::endl;
+
+    /* Args at the end, as key:value pairs. */
+    out << "argCount:" << result->args.size() << std::endl;
+    std::map<std::string, std::string>::iterator argIt;
+    for (argIt = result->args.begin(); argIt != result->args.end(); argIt++)
+        out << argIt->first << ":" << argIt->second << std::endl;
+
     out.close();
 }
 
@@ -1161,7 +1168,9 @@ float Placer::place(GraphI_t* gi, Algorithm* algorithm)
     /* Run the algorithm on the application graph instance. */
     float score = algorithm->do_it(gi);
 
-    /* Clear input arguments. */
+    /* Write input arguments to the algorithm's result object, then clear
+     * them. */
+    args.copy_to(algorithm->result.args);
     args.clear();
 
     /* Check placement integrity, throwing if there's a problem. */

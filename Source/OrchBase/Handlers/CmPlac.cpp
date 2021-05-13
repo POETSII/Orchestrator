@@ -74,7 +74,10 @@ unsigned CmPlac::operator()(Cli* cli)
     return 0;
 }
 
-/* Dumps the command object, not placement information. */
+/* Dumps the command object, not placement information. Since it's stateless,
+ * this is a bit pointless, but continuity matters. If you want to dump
+ * placement information, try 'placement /dump = *', or 'show /placement' for
+ * something more digestible. */
 void CmPlac::Dump(FILE * fp)
 {
 fprintf(fp,"CmPlac+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
@@ -319,16 +322,16 @@ bool CmPlac::PlacementSetArg(Cli::Cl_t clause)
     }
 
     /* Have a go. */
+    std::string proposedValue = clause.Pa_v[0].Concatenate();
     try
     {
-        std::string value = Pa_v[0].Concatenate();
-        par->pPlacer->args.set(clause.Cl, value);
-        par->Post(326, clause.Cl, value);  /* Success */
+        par->pPlacer->args.set(clause.Cl, proposedValue);
+        par->Post(326, clause.Cl, proposedValue);  /* Success */
     }
 
     catch (InvalidArgumentException& e)
     {
-        par->Post(327, clause.Cl, value, e.message);  /* Failure */
+        par->Post(327, clause.Cl, proposedValue, e.message);  /* Failure */
     }
 
     return true;  /* The clause was valid (we checked earlier) */
@@ -349,20 +352,4 @@ void CmPlac::PlacementUnplace(Cli::Cl_t clause)
         par->pPlacer->unplace(*graphIt);
         par->Post(307, (*graphIt)->Name());
     }
-}
-
-/* Synopsis of placement information. */
-void CmPlac::Show(FILE* fp)
-{
-    fprintf(fp,
-            "\nPlacement subsystem attributes and state:\n"
-            "Number of graphs placed: %lu\n"
-            "Number of devices placed: %lu\n"
-            "Number of threads used for placement: %lu\n"
-            "Number of explicit constraints defined: %lu\n",
-            par->pPlacer->placedGraphs.size(),
-            par->pPlacer->deviceToThread.size(),
-            par->pPlacer->threadToDevices.size(),
-            par->pPlacer->constraints.size());
-    fflush(fp);
 }

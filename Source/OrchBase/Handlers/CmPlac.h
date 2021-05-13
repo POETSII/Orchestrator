@@ -20,10 +20,10 @@ void          PlacementConstrain(Cli::Cl_t clause);
 bool          PlacementDoIt(Cli::Cl_t clause);
 void          PlacementDump(Cli::Cl_t clause);
 void          PlacementLoad(Cli::Cl_t clause);
+bool          PlacementSetArg(Cli::Cl_t clause);
 void          PlacementUnplace(Cli::Cl_t clause);
 
 void          Dump(FILE * = stdout);
-void          Show(FILE * = stdout);
 unsigned      operator()(Cli *);
 
 OrchBase *    par;
