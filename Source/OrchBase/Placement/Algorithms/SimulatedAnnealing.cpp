@@ -46,12 +46,11 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
 
     /* Grab arguments, if any are set. */
     bool inPlace = false;
-    if (placer->args.is_set("inplace"))
-        inPlace = placer->args.get_bool("inplace");
+    if (placer->args.is_set("inpl")) inPlace = placer->args.get_bool("inpl");
 
     maxIteration = ITERATION_MAX_DEFAULT;
-    if (placer->args.is_set("iterations"))
-        maxIteration = placer->args.get_uint("iterations");
+    if (placer->args.is_set("iter"))
+        maxIteration = placer->args.get_uint("iter");
 
     /* Generic setup. */
     std::string algorithmName;

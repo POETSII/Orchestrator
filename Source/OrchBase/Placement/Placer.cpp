@@ -1109,7 +1109,7 @@ float Placer::place(GraphI_t* gi, Algorithm* algorithm)
     /* Complain if the application graph instance has already been placed (by
      * memory address). Don't do this if an in-place approach is requested. */
     bool inPlace = false;
-    if (args.is_set("inplace")) inPlace = args.get_bool("inplace");
+    if (args.is_set("inpl")) inPlace = args.get_bool("inpl");
 
     if (placedGraphs.find(gi) != placedGraphs.end() and !inPlace)
     {

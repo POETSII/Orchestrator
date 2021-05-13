@@ -103,8 +103,8 @@ void PlaceArgs::setup()
     validAlgs["gc"].insert("iterations");
     validAlgs["gc"].insert("inplace");
 
-    validTypes["inplace"] = "bool";
-    validTypes["iterations"] = "unsigned";
+    validTypes["inpl"] = "bool";  /* Inplace */
+    validTypes["iter"] = "unsigned";  /* Iterations */
 }
 
 /* Given the name of an algorithm, checks the all set arguments. Throws an
