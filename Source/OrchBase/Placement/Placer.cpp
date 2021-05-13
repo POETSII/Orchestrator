@@ -60,6 +60,40 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
     return output;
 }
 
+/* A simple filter:
+ *
+ * - if `unknown` is the name of an algorithm, returns true and sets
+ *   `isAlgorithm` to true.
+ *
+ * - if `unknown` is the name of an argumetn, returns true and sets
+ *   `isAlgorithm` to false.
+ *
+ * - if `unknown` is neither an algorithm nor argument, returns false and does
+ *   not set `isAlgorithm`. */
+bool Placer::algorithm_or_argument(std::string unknown, bool& isAlgorithm)
+{
+    if (unknown == "app" or   /* Default */
+        unknown == "buck" or  /* Thread filling */
+        unknown == "gc" or    /* Gradient climber */
+        unknown == "link" or  /* Default */
+        unknown == "rand" or  /* Smart-Random */
+        unknown == "sa" or    /* Simulated Annealing */
+        unknown == "tfil")    /* Thread filling */
+    {
+        isAlgorithm = true;
+        return true;
+    }
+
+    else if (unknown == "inpl" or  /* In place */
+             unknown == "iter")    /* Maximum number of iterations */
+    {
+        isAlgorithm = false;
+        return true;
+    }
+
+    return false;
+}
+
 /* Returns true if all core pairs (or single cores, if that's how the model is
  * configured) have devices of one (or zero) type mapped to them, and false
  * otherwise. Arguments:
