@@ -1,10 +1,8 @@
 #include "SimulatedAnnealing.h"
 
-SimulatedAnnealing::SimulatedAnnealing(Placer* placer, bool disorder,
-                                       bool inPlace):
+SimulatedAnnealing::SimulatedAnnealing(Placer* placer, bool disorder):
     Algorithm(placer),
-    disorder(disorder),
-    inPlace(inPlace)
+    disorder(disorder)
 {
     if (disorder) result.method = "sa";
     else result.method = "gc";
@@ -45,6 +43,12 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
 {
     std::string time = placer->timestamp();
 
+    /* Grab arguments, if any are set. */
+    bool inPlace = false;
+    if (placer->args.is_set("inplace"))
+        inPlace = placer->args.get_bool("inplace");
+
+    /* Generic setup. */
     std::string algorithmName;
     if (disorder) algorithmName = "simulated_annealing";
     else algorithmName = "gradientless_climber";
