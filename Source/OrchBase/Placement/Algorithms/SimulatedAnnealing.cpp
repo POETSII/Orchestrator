@@ -88,19 +88,11 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
      * placed. If it's not, issue a warning. */
     std::map<GraphI_t*, Algorithm*>::iterator algorithmIt;
     algorithmIt = placer->placedGraphs.find(gi);
-    if (inPlace and (algorithmIt == placer->placedGraphs.end()))
+    if (algorithmIt == placer->placedGraphs.end())  /* Not placed. */
     {
-        fprintf(log, "[W] Initial placement requested, but this graph "
-                     "instance has not been placed.\n");
-    }
-    else if (inPlace)
-    {
-        fprintf(log, "[I] Annealing on an existing placement.\n");
-        /* Clear old algorithm object. */
-        delete algorithmIt->second;
-    }
-    else
-    {
+        if (inPlace) fprintf(log, "[W] Initial placement requested, but this "
+                                  "graph instance has not been placed.\n");
+
         /* Initial placement using smart-random. Note that we rely on this
          * being a valid placement in order for this algorithm to select across
          * the domain. (MLV never writes broken code! >_>). If it doesn't work,
@@ -114,6 +106,11 @@ float SimulatedAnnealing::do_it(GraphI_t* gi)
             ThreadFilling otherInitialAlgorithm = ThreadFilling(placer);
             otherInitialAlgorithm.do_it(gi);
         }
+    }
+    else if (inPlace)  /* Was already placed, as user intended. */
+    {
+        fprintf(log, "[I] Annealing on an existing placement.\n");
+        delete algorithmIt->second;  /* Clear old algorithm object. */
     }
 
     /* Compute fitness of initial placement. */
