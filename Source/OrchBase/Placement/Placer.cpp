@@ -1161,6 +1161,9 @@ float Placer::place(GraphI_t* gi, Algorithm* algorithm)
     /* Run the algorithm on the application graph instance. */
     float score = algorithm->do_it(gi);
 
+    /* Clear input arguments. */
+    args.clear();
+
     /* Check placement integrity, throwing if there's a problem. */
     check_integrity(gi, algorithm);
 
