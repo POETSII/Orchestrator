@@ -52,11 +52,24 @@ unsigned CmPlac::operator()(Cli* cli)
         /* Are we loading a placement spec? */
         else if (clauseRoot == "load") PlacementLoad(*clause);
 
-        /* If nothing is appropriate, assume it's a placement algorithm. */
-        else isClauseValid = PlacementDoIt(*clause);
+        /* If nothing is appropriate, the operator is either setting an
+         * argument or wanting to run a placement algorithm (or they're an
+         * idiot). Ask the placer which it is. */
+        bool isAlgorithm;
+        bool isSomething = par->pPlacer->algorithm_or_argument(clauseRoot,
+                                                               isAlgorithm);
+        if (isSomething)
+        {
+            if (isAlgorithm)
+                isClauseValid = PlacementDoIt(*clause);
+            else
+                isClauseValid = PlacementSetArg(*clause);
+        }
 
-        /* If it isn't a placement algorithm, we whinge. */
-        if (!isClauseValid) par->Post(25, clause->Cl, "placement");
+        /* If we don't know what it is, we whinge. The second predicate is for
+         * safety (safety nets cost little, bad UX costs a lot). */
+        if (!isSomething or !isClauseValid) par->Post(25, clause->Cl,
+                                                      "placement");
     }
     return 0;
 }
@@ -291,6 +304,34 @@ void CmPlac::PlacementLoad(Cli::Cl_t clause)
     catch (NoSpaceToPlaceException&)
         {par->Post(306, (*graphs.begin())->Name());}
     return;
+}
+
+/* Returns true if the clause was valid (or some other error happened), and
+ * false otherwise. */
+bool CmPlac::PlacementSetArg(Cli::Cl_t clause)
+{
+    /* Skip (and post) if there is not exactly one parameter (argument
+     * value) */
+    if (clause.Pa_v.size() != 1)
+    {
+        par->Post(47, clause.Cl, "placement", "1");
+        return true;
+    }
+
+    /* Have a go. */
+    try
+    {
+        std::string value = Pa_v[0].Concatenate();
+        par->pPlacer->args.set(clause.Cl, value);
+        par->Post(326, clause.Cl, value);  /* Success */
+    }
+
+    catch (InvalidArgumentException& e)
+    {
+        par->Post(327, clause.Cl, value, e.message);  /* Failure */
+    }
+
+    return true;  /* The clause was valid (we checked earlier) */
 }
 
 void CmPlac::PlacementUnplace(Cli::Cl_t clause)
