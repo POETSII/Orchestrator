@@ -135,7 +135,10 @@ void PlaceArgs::validate_args(std::string algName)
             else comma = true;
             errStream << *badArgIt;
         }
-        errStream << "' are not valid for the '" << algName << "' algorithm.";
+        if (badArgs.size() == 1) errStream << "' is ";
+        else errStream << "' are ";
+        errStream << "not valid for the '" << algName << "' algorithm. "
+                  << "Clearing arguments.";
         clear();
         throw InvalidArgumentException(errStream.str());
     }
