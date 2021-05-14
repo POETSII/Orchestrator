@@ -98,13 +98,13 @@ void PlaceArgs::set(std::string name, std::string value)
 void PlaceArgs::setup()
 {
     /* ho ho ho */
-    validAlgs["sa"].insert("iterations");
-    validAlgs["sa"].insert("inplace");
-    validAlgs["gc"].insert("iterations");
-    validAlgs["gc"].insert("inplace");
-
     validTypes["inpl"] = "bool";  /* Inplace */
     validTypes["iter"] = "unsigned";  /* Iterations */
+
+    validAlgs["sa"].insert("iter");
+    validAlgs["sa"].insert("inpl");
+    validAlgs["gc"].insert("iter");
+    validAlgs["gc"].insert("inpl");
 }
 
 /* Given the name of an algorithm, checks the all set arguments. Throws an
