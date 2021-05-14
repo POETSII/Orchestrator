@@ -73,8 +73,8 @@ unsigned CmPlac::operator()(Cli* cli)
 
         /* If we don't know what it is, we whinge. The second predicate is for
          * safety (safety nets cost little, bad UX costs a lot). */
-        if (!isSomething or !isClauseValid) par->Post(25, clause->Cl,
-                                                      "placement");
+        if (!isSomething and !isClauseValid) par->Post(25, clause->Cl,
+                                                       "placement");
     }
     return 0;
 }
