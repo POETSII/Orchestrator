@@ -47,7 +47,7 @@ unsigned PlaceArgs::get_uint(std::string name)
             dformat("Argument '%s' has not been set.", name.c_str()));
 
     /* Get it and decode it. */
-    return str2uint(name);
+    return str2uint(args[name]);
 }
 
 /* Sets the value of an argument, doing some validation on the type. */
