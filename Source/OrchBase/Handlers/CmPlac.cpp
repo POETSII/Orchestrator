@@ -33,6 +33,14 @@ unsigned CmPlac::operator()(Cli* cli)
          * clause). */
         bool isClauseValid = true;
         clauseRoot = clause->Cl.substr(0, 4);
+
+        /* The following might not make sense, but before we enter our
+         * conditional hell, we want to be able to disambiguate between clauses
+         * that invoke algorithms, and clauses that set arguments. */
+        bool isAlgorithm;
+        bool isSomething = par->pPlacer->algorithm_or_argument(clauseRoot,
+                                                               isAlgorithm);
+
         if (clauseRoot == "dump") PlacementDump(*clause);
         else if (clauseRoot == "unpl") PlacementUnplace(*clause);
 
@@ -54,10 +62,7 @@ unsigned CmPlac::operator()(Cli* cli)
 
         /* If nothing is appropriate, the operator is either setting an
          * argument or wanting to run a placement algorithm (or they're an
-         * idiot). Ask the placer which it is. */
-        bool isAlgorithm;
-        bool isSomething = par->pPlacer->algorithm_or_argument(clauseRoot,
-                                                               isAlgorithm);
+         * idiot). */
         if (isSomething)
         {
             if (isAlgorithm)
