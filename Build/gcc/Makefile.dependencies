@@ -5,7 +5,7 @@
 # file. If you're not, and you're using the "orchestrator_dependencies"
 # tarball, you'll need to change ORCHESTRATOR_DEPENDENCIES_DIR to point to
 # where you have extracted to. On Tinsel-POETS boxes, it should be:
-ORCHESTRATOR_DEPENDENCIES_DIR ?= /mnt/e/dt10_all/POETS/orchestrator_dependencies_7
+ORCHESTRATOR_DEPENDENCIES_DIR ?= /local/orchestrator-common/orchestrator_dependencies_6
 
 # You'll also need to ensure you've checked out this repository with the Tinsel
 # submodule, and that you've built the hostlink. Otherwise, you will need to
