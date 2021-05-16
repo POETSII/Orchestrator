@@ -52,7 +52,7 @@ class BASE_EVENT
 // In the sense that Dump() is virtual, it's polymorphic; the design intention
 // is that you derive from it for more complicated events.
 {
-template <class T> friend struct lt_BASE_EVENT;
+template <class U> friend struct lt_BASE_EVENT;
 friend class EvPump<T>;
 
 public:

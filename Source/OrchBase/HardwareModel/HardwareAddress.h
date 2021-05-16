@@ -27,6 +27,7 @@
 #include "InvalidAddressException.h"
 #include "P_addr.h"
 #include <cmath>  /* For validating address components. */
+#include <stdint.h>
 
 /* The current Tinsel design does not use a box component for addresses. This
  * class is designed to operate in both the cases where the box component

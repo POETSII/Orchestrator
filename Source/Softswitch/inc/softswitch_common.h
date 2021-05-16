@@ -10,33 +10,43 @@ struct POutputPin;
 struct PInputPin;
 
 typedef uint32_t (*RTS_handler_t)
-(   const void* graphProps,
-    void*       device,
+(   const void* __GraphProps,
+    void*       __Device,
     uint32_t*   readyToSend
 );
 
-typedef uint32_t (*OnIdle_handler_t)
+typedef uint32_t (*OnInit_handler_t)
 (   const void* graphProps,
-    void*       device
+    void*       __Device
+);
+
+typedef uint32_t (*OnHWIdle_handler_t)
+(   const void* __GraphProps,
+    void*       __Device
+);
+
+typedef uint32_t (*OnIdle_handler_t)
+(   const void* __GraphProps,
+    void*       __Device
 );
 
 typedef uint32_t (*OnCtl_handler_t)
-(   const void* graphProps,
-    void*       device,
+(   const void* __GraphProps,
+    void*       __Device,
     uint8_t     opcode,
     const void* pkt
 );
 
 typedef uint32_t (*Recv_handler_t)
-(   const void* graphProps,
-    void*       device,
-    void*       edge,
+(   const void* __GraphProps,
+    void*       __Device,
+    void*       __Edge,
     const void* pkt
 );
 
 typedef uint32_t (*Send_handler_t)
-(   const void* graphProps,
-    void*       device,
+(   const void* __GraphProps,
+    void*       __Device,
     void*       pkt
 );
 
@@ -44,7 +54,6 @@ typedef struct PInputType
 {
     Recv_handler_t Recv_handler;        // Function pointer to the input type’s receive handler
     uint32_t       sz_pkt;              // Size in bytes of the packet
-    uint32_t       pktType;             // Index of the packet type
     uint32_t       sz_props;            // Size of the edge's properties
     uint32_t       sz_state;            // Size of the edge's state
 } in_pintyp_t;
@@ -53,14 +62,15 @@ typedef struct POutputType
 {
     Send_handler_t Send_Handler;        // Function pointer to the input type’s send handler
     uint32_t       sz_pkt;              // Size in bytes of the packet
-    uint32_t       pktType;             // Index of the packet type
 } out_pintyp_t;
 
 typedef struct PDeviceType
 {
-    RTS_handler_t     RTS_Handler;      // Function pointer to the device type’s RTS handler
-    OnIdle_handler_t  OnIdle_Handler;   // Function pointer to the device type’s OnIdle handler
-    OnCtl_handler_t   OnCtl_Handler;    // Function pointer to the device type’s OnCtl handler
+    RTS_handler_t     RTS_Handler;      // F pointer to devt’s RTS handler
+    OnInit_handler_t  OnInit_Handler;   // F pointer to devt’s OnInit handler
+    OnIdle_handler_t  OnIdle_Handler;   // F pointer to devt’s OnDeIdle handler
+    OnHWIdle_handler_t  OnHWIdle_Handler;   // F pointer to devt’s OnHWIdle handler
+    OnCtl_handler_t   OnCtl_Handler;    // F pointer to devt’s  OnCtl handler
     uint32_t          sz_props;         // Size in bytes of the device type’s properties
     uint32_t          sz_state;         // Size in bytes of the device type’s state
     uint32_t          numInputTypes;    // Number of input pin types the device type has
@@ -86,9 +96,9 @@ typedef struct POutputPin
 {
     PDeviceInstance*  device;               // Back pointer to the device instance
     out_pintyp_t*     pinType;              // Pointer to the pin type
-    uint32_t          numTgts;              // Number of targets the pin has
-    outEdge_t*        targets;              // Pointer to the array of output edges
-    uint32_t          idxTgts;              // Index of the next edge to send on
+    uint32_t          numEdges;             // Number of edges the pin has
+    outEdge_t*        outEdges;             // Pointer to the array of output edges
+    uint32_t          idxEdges;             // Index of the next edge to send on
     uint32_t          sendPending;          // Flag indicating the pin wants to send
 } outPin_t;
 
@@ -97,8 +107,6 @@ typedef struct POutputPin
 typedef struct PInputEdge
 {
     const PInputPin*  pin;              // Back pointer to pin the pin instance
-    uint32_t          tgt;              // Destination device hwAddr (for convenience)
-    uint32_t          src;              // Source device hwAddr (for convenience)
     const void*       properties;       // Pointer to the edge properties
     void*             state;            // Pointer to the edge state
 } inEdge_t;
@@ -109,10 +117,10 @@ typedef struct PInputPin
 {
     const PDeviceInstance*   device;    // Back pointer to the device instance
     in_pintyp_t*             pinType;   // Pointer to the pin type
-    uint32_t                 numSrcs;   // Number of sources
-    inEdge_t*                sources;   // Pointer to array of input edges
+    uint32_t                 numEdges;  // Number of sources
+    inEdge_t*                inEdges;     // Pointer to array of input edges
 } inPin_t;
-  
+
 typedef struct PDeviceInstance
 {
     PThreadContext*     thread;          // Back pointer to the ThreadContext
@@ -139,7 +147,7 @@ typedef struct PThreadContext
     uint32_t            rtsEnd;          // index of the last pending RTS
     uint32_t            idleStart;       // index of where to start OnIdle from
     uint32_t            ctlEnd;
-    
+
     // Instrumentation
     uint32_t            lastCycles;         // cached last cycle count
     uint32_t            pendCycles;         // Is there an instrumentation update pending? 2=yes, 1=claimed, 0=no
@@ -152,14 +160,14 @@ typedef struct PThreadContext
     uint32_t            idleHandlerCount;   // Number of OnIdle handlers called.
     uint32_t            blockCount;         // Number of times we have been blocked by being unable to send
     uint32_t            cycleIdx;           // Update index
-    
-#if TinselEnablePerfCount == true   
+
+#if TinselEnablePerfCount == true
     // Optional Tinsel Instrumentation
     uint32_t            lastmissCount;         // Cache miss count
     uint32_t            lasthitCount;          // Cache hit count
     uint32_t            lastwritebackCount;    // Cache writeback count
     uint32_t            lastCPUIdleCount;      // CPU idle-cycle count (lower 32 bits)
-#endif 
+#endif
 } ThreadCtxt_t;
 
 
@@ -181,7 +189,7 @@ bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt);
 uint32_t softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device);
 
 
-// utility functions to manage ready-to-send queue 
+// utility functions to manage ready-to-send queue
 inline bool softswitch_IsRTSReady(ThreadCtxt_t* ThreadContext) {return (ThreadContext->rtsStart != ThreadContext->rtsEnd);};
 
 // workaround bodge for some unfinished business in the XML handler fragments. Should be fixed in the XML.

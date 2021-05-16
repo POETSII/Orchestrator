@@ -20,8 +20,8 @@ public:
 virtual ~        Ns_el();
 
 vector<Ns_0 *> * Construct();
-void             Dump(FILE * = stdout);
-void             Dump0(FILE *,unsigned);
+void             Dump(unsigned = 0,FILE * = stdout);
+void             Dump0(unsigned = 0,FILE * = stdout,unsigned = 0);
 int              Length();
 void             PutD(string,string,string,string,string,vector<string>,
                       vector<string>,vector<string>,vector<string>,unsigned,
@@ -63,7 +63,7 @@ public:
                  Ns_0();
 virtual ~        Ns_0(){}
 
-virtual void     Dump(FILE * = stdout);
+virtual void     Dump(unsigned = 0,FILE * = stdout);
 
 unsigned         key;
 unsigned char    type;
@@ -84,7 +84,7 @@ private:
 string           msg;
 
 protected:
-virtual void     Dump(FILE * = stdout){}
+virtual void     Dump(unsigned = 0,FILE * = stdout){}
 };
 
 //==============================================================================
@@ -96,7 +96,7 @@ public:
 virtual ~        Ns_dev(){}
 
 protected:
-virtual void     Dump(FILE * = stdout);
+virtual void     Dump(unsigned = 0, FILE * = stdout);
 
 private:
 string           Etype;
@@ -121,7 +121,7 @@ public:
 virtual ~        Ns_sup(){}
 
 protected:
-virtual void     Dump(FILE * = stdout);
+virtual void     Dump(unsigned = 0,FILE * = stdout);
 
 private:
 string           Tname;
@@ -141,7 +141,7 @@ public:
 virtual ~        Ns_tsk(){}
 
 protected:
-virtual void     Dump(FILE * = stdout);
+virtual void     Dump(unsigned = 0,FILE * = stdout);
 
 private:
 string           Oname;
@@ -157,7 +157,7 @@ public:
 virtual ~        Ns_own(){}
 
 protected:
-virtual void     Dump(FILE * = stdout);
+virtual void     Dump(unsigned = 0,FILE * = stdout);
 };
 
 //==============================================================================

@@ -15,13 +15,13 @@ NameServer::NameServer(int argc,char * argv[],string d):
   CommonBase(argc,argv,d,string(__FILE__))
 {
                                        // Load the message map
-FnMapx[PMsg_p::KEY(Q::CANDC,Q::CLEAR)] = &NameServer::OnClr;
-FnMapx[PMsg_p::KEY(Q::CANDC,Q::DUMP )] = &NameServer::OnDump;
-FnMapx[PMsg_p::KEY(Q::TASK, Q::FWD  )] = &NameServer::OnFwd;
-FnMapx[PMsg_p::KEY(Q::CANDC,Q::LOAD )] = &NameServer::OnLoad;
-FnMapx[PMsg_p::KEY(Q::CANDC,Q::LOG  )] = &NameServer::OnLog;
-FnMapx[PMsg_p::KEY(Q::CANDC,Q::MONI )] = &NameServer::OnMoni;
-FnMapx[PMsg_p::KEY(Q::TASK, Q::QUERY)] = &NameServer::OnQuery;
+FnMap[PMsg_p::KEY(Q::CANDC,Q::CLEAR)] = &NameServer::OnClr;
+FnMap[PMsg_p::KEY(Q::CANDC,Q::DUMP )] = &NameServer::OnDump;
+FnMap[PMsg_p::KEY(Q::APP,  Q::FWD  )] = &NameServer::OnFwd;
+FnMap[PMsg_p::KEY(Q::CANDC,Q::LOAD )] = &NameServer::OnLoad;
+FnMap[PMsg_p::KEY(Q::CANDC,Q::LOG  )] = &NameServer::OnLog;
+FnMap[PMsg_p::KEY(Q::CANDC,Q::MONI )] = &NameServer::OnMoni;
+FnMap[PMsg_p::KEY(Q::QUERY,Q::N000 )] = &NameServer::OnQuery;
 
 MPISpinner();                          // Spin on MPI messages; exit only on DIE
 
@@ -37,12 +37,13 @@ NameServer::~NameServer()
 
 //------------------------------------------------------------------------------
 
-void NameServer::Dump(FILE * fp)
+void NameServer::Dump(unsigned off,FILE * fp)
 {
-fprintf(fp,"NameServer dump+++++++++++++++++++++++++++++++++++\n");
-
-fprintf(fp,"NameServer dump-----------------------------------\n");
-CommonBase::Dump(fp);
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"%sNameServer dump ++++++++++++++++++++++++++++++++++++++++++\n",os);
+CommonBase::Dump(off+2,fp);
+fprintf(fp,"%sNameServer dump ------------------------------------------\n",os);
 }
 
 //------------------------------------------------------------------------------
@@ -58,8 +59,6 @@ p0->Dump();
 
 unsigned NameServer::OnClr(PMsg_p *)
 {
-
-
 return 0;
 }
 
@@ -67,8 +66,6 @@ return 0;
 
 unsigned NameServer::OnDump(PMsg_p *)
 {
-
-
 return 0;
 }
 
@@ -76,8 +73,6 @@ return 0;
 
 unsigned NameServer::OnFwd(PMsg_p *)
 {
-
-
 return 0;
 }
 
@@ -101,8 +96,6 @@ return 0;
 
 unsigned NameServer::OnLog(PMsg_p *)
 {
-
-
 return 0;
 }
 
@@ -110,8 +103,6 @@ return 0;
 
 unsigned NameServer::OnMoni(PMsg_p *)
 {
-
-
 return 0;
 }
 
@@ -119,12 +110,8 @@ return 0;
 
 unsigned NameServer::OnQuery(PMsg_p *)
 {
-
-
 return 0;
 }
-
-//------------------------------------------------------------------------------
 
 //==============================================================================
 

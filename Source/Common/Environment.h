@@ -10,6 +10,7 @@ unsigned  BPW();
 string    GetCompiler();
 string    GetOS();
 int       GetPID();
+string    GetUser();
 
 //==============================================================================
    

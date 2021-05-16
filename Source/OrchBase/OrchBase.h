@@ -1,26 +1,45 @@
 #ifndef __OrchBaseH__H
 #define __OrchBaseH__H
 
-class P_task;
-class P_builder;
-class T_gen;
-class P_owner;
+class Composer;
 class P_super;
-class Dialect1Deployer;
 
 #include <stdio.h>
-#include "D_graph.h"
+#include "GraphI_t.h"
 #include "Placer.h"
 #include "HardwareModel.h"
 #include "HardwareFileReader.h"
 #include "Cli.h"
+#include "Composer.h"
 #include "Environment.h"
 #include "CommonBase.h"
-#include "P_owner.h"
-#include "map2.h"
-using namespace std;
+#include "Trace.h"
+#include "SupervisorModes.h"
 
-#define TASK_DEPLOY_DIR ".orchestrator/task_binaries"  // Relative to home.
+#include "CmCall.h"
+#include "CmComp.h"
+#include "CmDepl.h"
+#include "CmDump.h"
+#include "CmExec.h"
+#include "CmInit.h"
+#include "CmInje.h"
+#include "CmLoad.h"
+#include "CmName.h"
+#include "CmPath.h"
+#include "CmPlac.h"
+#include "CmReca.h"
+#include "CmRTCL.h"
+#include "CmRun.h"
+#include "CmShow.h"
+#include "CmStop.h"
+#include "CmSyst.h"
+#include "CmTest.h"
+#include "CmTlin.h"
+#include "CmUnlo.h"
+#include "CmUnpl.h"
+#include "CmUntl.h"
+
+using namespace std;
 
 //==============================================================================
 
@@ -29,82 +48,58 @@ class OrchBase : public CommonBase, public NameBase
 public:
                        OrchBase(int,char *[],string,string);
 virtual ~              OrchBase();
-void                   Dump(FILE * = stdout);
+void                   Dump(unsigned = 0,FILE * = stdout);
 
-// These bodies are in OrchBaseTask.cpp:
 void                   BuildMshipMap();
-void                   ClearDcls();
-void                   ClearDcls(string);
-void                   ClearTasks();
-void                   ClearTasks(char);
-void                   ClearTasks(string);
-unsigned               CmTask(Cli *);  // Handle task command from monkey
-void                   TaskBuild(Cli::Cl_t);
-void                   TaskClear(Cli::Cl_t);
-void                   TaskDeploy(Cli::Cl_t);
-void                   TaskDump(Cli::Cl_t);
-void                   TaskGeom(Cli::Cl_t);
-void                   TaskLoad(Cli::Cl_t);
-void                   TaskPath(Cli::Cl_t);
-void                   TaskPol(Cli::Cl_t);
-void                   TaskRecall(Cli::Cl_t);
-void                   TaskMCmd(Cli::Cl_t,string);
-void                   TaskShow(Cli::Cl_t);
-
-// These bodies are in OrchBaseTopo.cpp:
-void                   ClearBoxConfig();
-void                   ClearBoxConfig(string);
 void                   ClearTopo();
-unsigned               CmTopo(Cli *);
-void                   TopoClea(Cli::Cl_t);
-void                   TopoConf(Cli::Cl_t);
-void                   TopoCons(Cli::Cl_t);
-void                   TopoDump(Cli::Cl_t);
-void                   TopoDisc(Cli::Cl_t);
-void                   TopoLoad(Cli::Cl_t);
-void                   TopoMode(Cli::Cl_t);
-void                   TopoPath(Cli::Cl_t);
-void                   TopoSave(Cli::Cl_t);
-void                   TopoSet1(Cli::Cl_t);
-void                   TopoSet2(Cli::Cl_t);
+void                   ComposerReset(bool post=false);
+int                    GetGraphIs(Cli::Cl_t, std::set<GraphI_t*>&,
+                                  int skip=-1);
+void                   MshipCommand(Cli::Cl_t clause, std::string command);
+void                   PlacementReset(bool post=false);
 
-// These bodies are in OrchBaseOwner.cpp
-unsigned               CmOwne(Cli *);
-void                   OwneAtta(Cli::Cl_t);
-void                   OwneDump(Cli::Cl_t);
-void                   OwneShow(Cli::Cl_t);
-void                   OwneTask(Cli::Cl_t);
+P_engine *             pE;             // Poets engine (hardware model)
+Placer *               pPlacer;        // Cross-linker
+Composer *             pComposer;      // Object to compose binaries
+Trace                  Tr;             // Debug trace subsystem
+FILE *                 fd;             // Output file stream for details
 
-// These bodies are in OrchBasePlace.cpp
-unsigned               CmPlace(Cli *);
-void                   PlacementConstrain(Cli::Cl_t);
-bool                   PlacementDoit(Cli::Cl_t);  // Algorithm filter
-void                   PlacementDump(Cli::Cl_t);
-P_task*                PlacementGetTaskByName(std::string);  // Shortcut
-void                   PlacementLoad(Cli::Cl_t);
-void                   PlacementReset(bool post=false);  // Shortcut
-void                   PlacementUnplace(Cli::Cl_t);
+#if SINGLE_SUPERVISOR_MODE
+// There's only one mothership
+ProcMap::ProcMap_t * loneMothership;
+#else
+// Bimap of boxes to motherships, where the pair holds unique processes by
+// their procmap entry. Yes, the name is an attempt at facetiousness.
+map2<P_box *, ProcMap::ProcMap_t *> P_SCMm2;
+#endif
 
-P_engine *                    pE;        // Poets engine (hardware model)
-Placer*                       pPlacer;   // Placement action and information
-P_builder *                   pB;        // Object to build the datastructure
-T_gen *                       pTG;       // PoL task generator
-map<string,P_task *>          P_taskm;   // Holder for multiple task graphs
-map<string,P_typdcl *>        P_typdclm; // Holder for ALL task type
-                                         // declarations
-string                        taskpath;  // Absolute file path for task
-                                         // commands
-string                        topopath;  // Absolute file path for topo
-                                         // commands
-map<string,P_super *>         P_superm;  // Container of supervisor devices
-map<string,P_owner *>         P_ownerm;  // Task ownership container
-map2<P_box *,
-     pair<unsigned,
-      ProcMap::ProcMap_t *> > P_SCMm2;   // Bimap of boxes to motherships,
-                                         // where the pair holds unique
-                                         // processes by their communicator and
-                                         // procmap entry. Yes, the name is an
-                                         // attempt at facetiousness.
+CmCall *               pCmCall;
+CmComp *               pCmComp;
+CmDepl *               pCmDepl;
+CmDump *               pCmDump;
+CmExec *               pCmExec;
+CmInit *               pCmInit;
+CmInje *               pCmInje;
+CmLoad *               pCmLoad;
+CmName *               pCmName;
+CmPath *               pCmPath;
+CmPlac *               pCmPlac;
+CmReca  *              pCmReca;
+CmRTCL *               pCmRTCL;
+CmRun  *               pCmRun;
+CmShow *               pCmShow;
+CmStop  *              pCmStop;
+CmSyst *               pCmSyst;
+CmTest *               pCmTest;
+CmTlin *               pCmTlin;
+CmUnlo *               pCmUnlo;
+CmUnpl *               pCmUnpl;
+CmUntl *               pCmUntl;
+
+// Legacy members retained for a (hopefully) smoother transition
+string                 taskpath;       // Absolute file path for task commands
+string                 topopath;       // Absolute file path for topo commands
+map<string,P_super *>  P_superm;       // Container of supervisor devices
 };
 
 //==============================================================================

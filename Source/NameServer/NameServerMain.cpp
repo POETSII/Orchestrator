@@ -1,5 +1,6 @@
 //------------------------------------------------------------------------------
 
+#include "Debug.h"
 #include "NameServer.h"
 #include "Unrec_t.h"
 #include "Pglobals.h"
@@ -24,11 +25,9 @@ catch(...) {
   printf("\n\n%s Main unhandled exception...???   \n\n",csNAMESERVERproc);
   fflush(stdout);
 }
-printf("%s Main closing down\n",csNAMESERVERproc);
-fflush(stdout);
+DebugPrint("%s Main closing down.\n",csNAMESERVERproc);
 delete pNameServer;
 return 0;
 }
 
 //------------------------------------------------------------------------------
- 

@@ -29,10 +29,9 @@ fi
 
 # Paths for dynamically-linked libraries.
 MPI_LIB_DIR="{{ MPICH_LIB_DIR }}"
-QT_LIB_DIR="{{ QT_LIB_DIR }}"
 GCC_LIB_DIR="{{ GCC_LIB_DIR }}"
 CR_LIB_DIR="{{ CR_LIB_DIR }}"
-INTERNAL_LIB_PATH="$QT_LIB_DIR":"$MPI_LIB_DIR":"$GCC_LIB_DIR":
+INTERNAL_LIB_PATH="$MPI_LIB_DIR":"$GCC_LIB_DIR":
 
 # Paths for dynamically-linked libraries required by MPI.
 export LD_LIBRARY_PATH="$CR_LIB_DIR":"$MPI_LIB_DIR":"$LD_LIBRARY_PATH":./

@@ -10,14 +10,21 @@
 #include "DumpUtils.h"
 #include "NameBase.h"
 #include "pdigraph.hpp"
+class    Meta_t;
 
 class P_link : public NameBase, public DumpChan
 {
 public:
-    P_link(float weight);
-    P_link(float weight, NameBase* parent);
-    float weight;
-    void Dump(FILE* = stdout);
+                    P_link(string);
+                    P_link(float weight);
+                    P_link(float weight, NameBase* parent);
+virtual ~           P_link();
+float               weight;
+void                Dump(FILE* = stdout);
+static void         LnkDat_cb(P_link * const &);
+static void         LnkKey_cb(unsigned const &);
+unsigned            key;
+vector<Meta_t *>    Meta_v;             // MetaData vector
 };
 
 #endif

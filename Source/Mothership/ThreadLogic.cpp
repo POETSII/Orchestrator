@@ -43,7 +43,7 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
                 else firstSpin = false;
             }
             #endif
-            sleep(SLOW_SPIN_SLEEP_PERIOD);
+            OSFixes::sleep(SLOW_SPIN_SLEEP_PERIOD);
             continue;
         }
         #if ORCHESTRATOR_DEBUG
@@ -121,7 +121,7 @@ void* ThreadComms::mpi_application_resolver(void* mothershipArg)
                 else firstSpin = false;
             }
             #endif
-            sleep(SLOW_SPIN_SLEEP_PERIOD);
+            OSFixes::sleep(SLOW_SPIN_SLEEP_PERIOD);
             continue;
         }
         #if ORCHESTRATOR_DEBUG
@@ -181,7 +181,7 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
                 else firstSpin = false;
             }
             #endif
-            sleep(SLOW_SPIN_SLEEP_PERIOD);
+            OSFixes::sleep(SLOW_SPIN_SLEEP_PERIOD);
             continue;
         }
         #if ORCHESTRATOR_DEBUG
@@ -363,7 +363,6 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                      * this supervisor. This message will be sent to this (the
                      * same) process. */
                     PMsg_p message;
-                    message.comm = mothership->Comms[0];
                     message.Key(Q::BEND, Q::SUPR);
                     message.Src(mothership->Urank);
                     message.Tgt(mothership->Urank);
@@ -451,7 +450,7 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
             }
             #endif
 
-            sleep(SLOW_SPIN_SLEEP_PERIOD);
+            OSFixes::sleep(SLOW_SPIN_SLEEP_PERIOD);
             continue;
         }
 

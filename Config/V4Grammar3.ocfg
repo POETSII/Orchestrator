@@ -1,0 +1,85 @@
+<?xml version="1.0"?>
+<!-- V4 Grammar definition file, 2020-09-29. -->
+<Graphs Graphs="[1],[1]xmlns,[0..1]formatMinorVersion,[1]appname">
+  <GraphType GraphType="[1],[1]id">
+    <Properties Properties="[0..1]"><CDATA CDATA="[1]"/></Properties>
+    <MetaData MetaData="[]"/>
+    <SharedCode SharedCode="[0..1]"><CDATA CDATA="[1]"/></SharedCode>
+    <MessageTypes MessageTypes="[0..1]">
+      <MessageType MessageType="[],[1]id"><CDATA CDATA="[1]"/></MessageType>
+    </MessageTypes>
+    <DeviceTypes DeviceTypes="[1]">
+      <DeviceType DeviceType="[],[1]id">
+        <Properties Properties="[0..1]"><CDATA CDATA="[1]"/></Properties>
+        <State State="[0..1]"><CDATA CDATA="[1]"/></State>
+        <SharedCode SharedCode="[0..1]"><CDATA CDATA="[1]"/></SharedCode>
+        <SupervisorOutPin SupervisorOutPin="[0..1],[1]messageTypeId">
+          <OnSend OnSend="[1]"><CDATA CDATA="[1]"/></OnSend>
+        </SupervisorOutPin>
+        <SupervisorInPin SupervisorInPin="[0..1]">
+          <OnReceive OnReceive="[1]"><CDATA CDATA="[1]"/></OnReceive>
+        </SupervisorInPin>
+        <InputPin InputPin="[],[1](name,messageTypeId)">
+          <Properties Properties="[0..1]"><CDATA CDATA="[1]"/></Properties>
+          <State State="[0..1]"><CDATA CDATA="[1]"/></State>
+          <OnReceive OnReceive="[1]"><CDATA CDATA="[1]"/></OnReceive>
+        </InputPin>
+        <OutputPin OutputPin="[],[1](name,messageTypeId)">
+          <OnSend OnSend="[1]"><CDATA CDATA="[1]"/></OnSend>
+        </OutputPin>
+        <ReadyToSend ReadyToSend="[0..1]"><CDATA CDATA="[1]"/></ReadyToSend>
+        <OnInit OnInit="[0..1]"><CDATA CDATA="[1]"/></OnInit>
+        <OnHardwareIdle OnHardwareIdle="[0..1]"><CDATA CDATA="[1]"/></OnHardwareIdle>
+        <OnDeviceIdle OnDeviceIdle="[0..1]"><CDATA CDATA="[1]"/></OnDeviceIdle>
+        <MetaData MetaData="[]"/>
+      </DeviceType>
+      <ExternalType ExternalType="[],[1]id">
+        <Properties Properties="[0..1]"><CDATA CDATA="[1]"/></Properties>
+        <InputPin InputPin="[],[1](name,messageTypeId)"/>
+        <OutputPin OutputPin="[],[1](name,messageTypeId)"/>
+        <MetaData MetaData="[]"/>
+      </ExternalType>
+      <SupervisorType SupervisorType="[0..1],[1]id,[0..1](SupervisorInPin,SupervisorOutPin)">
+        <Properties Properties="[0..1]"><CDATA CDATA="[1]"/></Properties>
+        <State State="[0..1]"><CDATA CDATA="[1]"/></State>
+        <Code Code="[0..1]"><CDATA CDATA="[1]"/></Code>
+        <SupervisorOutPin SupervisorOutPin="[0..1],[1]id,[1]messageTypeId">
+          <OnSend OnSend="[1]"><CDATA CDATA="[1]"/></OnSend>
+        </SupervisorOutPin>
+        <SupervisorInPin SupervisorInPin="[0..1],[1]id,[1]messageTypeId">
+          <OnReceive OnReceive="[1]"><CDATA CDATA="[1]"/></OnReceive>
+        </SupervisorInPin>
+        <InputPin InputPin="[],[1](name,messageTypeId)">
+          <Properties Properties="[0..1]"><CDATA CDATA="[1]"/></Properties>
+          <State State="[0..1]"><CDATA CDATA="[1]"/></State>
+          <OnReceive OnReceive="[1]"><CDATA CDATA="[1]"/></OnReceive>
+        </InputPin>
+        <OutputPin OutputPin="[],[1](name,messageTypeId)">
+          <OnSend OnSend="[1]"><CDATA CDATA="[1]"/></OnSend>
+        </OutputPin>
+        <OnInit OnInit="[0..1]"><CDATA CDATA="[1]"/></OnInit>
+        <OnSupervisorIdle OnSupervisorIdle="[0..1]"><CDATA CDATA="[1]"/></OnSupervisorIdle>
+        <OnRTCL OnRTCL="[..1]"><CDATA CDATA="[1]"/></OnRTCL>
+        <OnStop OnStop="[..1]"><CDATA CDATA="[1]"/></OnStop>
+        <OnCTL  OnCTL="[..1]"><CDATA CDATA="[1]"/></OnCTL>
+        <MetaData MetaData="[]"/>
+      </SupervisorType>
+    </DeviceTypes>
+  </GraphType>
+  <GraphInstance GraphInstance="[],[1](id,graphTypeId),[0..1](P)">
+    <MetaData MetaData="[]"/>
+    <DeviceInstances DeviceInstances="[0..1]">
+      <DevI DevI="[],[1](id,type),[0..1](P,S)">
+        <MetaData MetaData="[]"/>
+      </DevI>
+      <ExtI ExtI="[],[1](id,type),[0..1]P">
+        <MetaData MetaData="[]"/>
+      </ExtI>
+    </DeviceInstances>
+    <EdgeInstances EdgeInstances="[0..1]">
+      <EdgeI EdgeI="[],[1]path(path),[0..1](P,S)">
+        <MetaData MetaData="[]"/>
+      </EdgeI>
+    </EdgeInstances>
+  </GraphInstance>
+</Graphs>

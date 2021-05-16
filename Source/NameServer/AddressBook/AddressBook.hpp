@@ -46,11 +46,11 @@
 #define MAXSUPERVISORS 16
 
 //==============================================================================
-namespace AddressBook 
+namespace AddressBook
 {
 typedef std::map<std::string, TaskRecord_t*> TaskMap_t;
 
-enum ReturnCode_t { ERR_BAD_COUNT = -1, 
+enum ReturnCode_t { ERR_BAD_COUNT = -1,
                     SUCCESS = 0,
                     ERR_NONFATAL,
                     ERR_INVALID_TASK,

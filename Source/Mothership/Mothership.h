@@ -19,7 +19,7 @@ class ThreadComms;
 #include "SuperDB.h"
 #include "ThreadComms.h"
 
-#define SLOW_SPIN_SLEEP_PERIOD 1
+#define SLOW_SPIN_SLEEP_PERIOD 10  /* Milliseconds */
 
 class Mothership: public CommonBase
 {
@@ -40,6 +40,9 @@ public:
     SuperDB superdb;
     ThreadComms threading;
 
+    /* Root directory for supervisor output, relative to home. */
+    std::string userOutDir;
+
     /* Methods for transitioning applications through states, triggered by
      * different Q::APP message keys. */
     void initialise_application(AppInfo*);
@@ -57,6 +60,7 @@ public:
     unsigned handle_msg_cmnd_stop(PMsg_p* message);
     unsigned handle_msg_bend_cnc(PMsg_p* message);
     unsigned handle_msg_bend_supr(PMsg_p* message);
+    unsigned handle_msg_path(PMsg_p* message);
     unsigned handle_msg_pkts(PMsg_p* message);
     unsigned handle_msg_dump(PMsg_p* message);
 
@@ -71,9 +75,8 @@ public:
     void handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop=false);
 
     /* More stuff needed for CommonBase to work. */
-    typedef unsigned (Mothership::*pMeth)(PMsg_p*, unsigned);
-    typedef std::map<unsigned, pMeth> FnMap_t;
-    std::vector<FnMap_t*> FnMapx;
+    typedef unsigned (Mothership::*pMeth)(PMsg_p*);
+    std::map<unsigned, pMeth> FnMap;
 #include "Decode.cpp"
 
 private:
@@ -84,10 +87,10 @@ private:
     void send_cnc_packet_to_all(AppInfo* app, uint8_t opcode);
 
     /* Methods for handling MPI messages via MPIInputBroker */
-    unsigned handle_msg_exit(PMsg_p* message, unsigned commIndex);
-    unsigned handle_msg_syst_kill(PMsg_p* message, unsigned commIndex);
-    unsigned handle_msg_app(PMsg_p* message, unsigned commIndex);
-    unsigned handle_msg_cnc(PMsg_p* message, unsigned commIndex);
+    unsigned handle_msg_exit(PMsg_p* message);
+    unsigned handle_msg_syst_kill(PMsg_p* message);
+    unsigned handle_msg_app(PMsg_p* message);
+    unsigned handle_msg_cnc(PMsg_p* message);
 
     /* Methods for safely decoding MPI messages with certain field
      * configurations. */
@@ -113,6 +116,13 @@ private:
                                unsigned index=0);
     bool decode_unsigned_message(PMsg_p* message, unsigned* result,
                                  unsigned index=0);
+
+    /* Methods for provisioning the API for Supervisors. */
+    bool provision_supervisor_api(std::string appName);
+    void supervisor_api_stop_application(std::string appName);
+
+    /* Supervisor spinning (virtual from CommonBase). */
+    void OnIdle();
 };
 
 #endif

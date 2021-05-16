@@ -36,15 +36,15 @@ struct FWThreadArg
                               thread to iterate over. This mailbox is
                               included. */
     P_engine* engine; /* Engine pointer for the inner iterator. */
-    std::map<P_mailbox*, std::map<P_mailbox*, float>>* costs;
-    std::map<P_mailbox*, std::map<P_mailbox*, P_mailbox*>>* pathNext;
+    std::map<P_mailbox*, std::map<P_mailbox*, float> >* costs;
+    std::map<P_mailbox*, std::map<P_mailbox*, P_mailbox*> >* pathNext;
 };
 
 class CostCache: public DumpChan
 {
 public:
-    std::map<P_mailbox*, std::map<P_mailbox*, float>> costs;
-    std::map<P_mailbox*, std::map<P_mailbox*, P_mailbox*>> pathNext;
+    std::map<P_mailbox*, std::map<P_mailbox*, float> > costs;
+    std::map<P_mailbox*, std::map<P_mailbox*, P_mailbox*> > pathNext;
     P_engine* engine;
     CostCache(P_engine* engine);
     void build_cache();

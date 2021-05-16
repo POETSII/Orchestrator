@@ -98,7 +98,7 @@ unsigned AddressBook::AddTask(const std::string &TaskName, TaskData_t &Data)
        really gains anything because a DevTypeRecord_t contains 2 internal
        vectors (which would be zero-initialised) and a resize is thus inevitable
        anyway when actual device types are inserted.
-       
+
        GMB: The pre-allocation here saves potentially disastrous re-allocation
        later - the outer vector will not be re-sized when the inner ones are as
        the inner vectors are not stored in the continuous memory space of the
@@ -108,7 +108,7 @@ unsigned AddressBook::AddTask(const std::string &TaskName, TaskData_t &Data)
     Task->DevTypes.reserve(Data.DeviceTypes.size());   //pre-alloc vector
     std::vector<DevTypeRecord_t> *DTypes = &(Data.DeviceTypes);
     for(std::vector<DevTypeRecord_t>::iterator D=DTypes->begin();
-            D!=DTypes->end(); D++)       
+            D!=DTypes->end(); D++)
         AddDeviceType(Task->Name, *D); // add is bound to succeed because we have
                                        // pre-validated.
     return SUCCESS;
@@ -163,8 +163,8 @@ unsigned AddressBook::ClearTask(const std::string &TaskName)
     cTask.SupervisorCount = 0;
     if ((err = DelTask(TaskName)) != SUCCESS) return err;
     return AddTask(TaskName, cTask);
-}  
-    
+}
+
 /*==============================================================================
  * ListTask:    Populate a vector with all of the names of loaded tasks
  *============================================================================*/
@@ -200,14 +200,14 @@ unsigned AddressBook::GetTask(const std::string &TaskName, TaskData_t &Task)
     Task.ExternalCount = TRec->ExtCntMax;
     Task.ExternalCountLd = TRec->ExtCnt;
     Task.SupervisorCount = TRec->SupCnt;
-    
-    
+
+
     //Clear the copied task's vectors just in case this is a re-used TaskData
     Task.DeviceTypes.clear();
     Task.MessageTypes.clear();
     Task.AttributeTypes.clear();
-    
-    
+
+
     // Copy MessageType strings
     for(std::vector<MsgTypeRecord_t>::const_iterator M=TRec->MsgTypes.begin();
             M!=TRec->MsgTypes.end(); M++)
@@ -446,7 +446,7 @@ unsigned AddressBook::BuildMaps(std::string &TaskName)
     }
 
     TRec->MapValid = true; // added 18 July 2019 ADR update the map status
-    
+
     return SUCCESS;
 }
 
@@ -561,13 +561,13 @@ unsigned AddressBook::AddDevice(std::string &TaskName, Record_t &DevRec, bool Va
     //
     // Reverted by GMB as this potentially means heafty rebuilding
     // when futzing with the data structure - the correct course of
-    // action is to check the task validity after adding devices and 
+    // action is to check the task validity after adding devices and
     // rebuilding the link and map then if required.
     //
     //unsigned err;
     //if (!TRec->MapValid && ((err = BuildMaps(TRec->Name)) != SUCCESS)) return err;
     //if (!TRec->LinkValid && ((err = BuildLink(TRec->Name)) != SUCCESS)) return err;
-    
+
     return SUCCESS;
 }
 
@@ -677,7 +677,7 @@ int AddressBook::GetMappedSupervisorCount(std::string &TaskName)
     {
         return(ERR_BAD_COUNT);
     }
-    
+
     return TRec->SupMap.size();
 }
 
@@ -996,7 +996,7 @@ unsigned AddressBook::ValidateTask(TaskData_t &Data)
 }
 
 /*==============================================================================
- * ValidateDeviceType:  Check that DeviceType Message indices are valid and not 
+ * ValidateDeviceType:  Check that DeviceType Message indices are valid and not
  *                  out of range.
  * Added and separated from ValidateTask 5 July 2019 ADR
  *============================================================================*/

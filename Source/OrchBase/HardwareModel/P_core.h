@@ -34,7 +34,7 @@ public:
     void clear();
 
     /* Cores live in mailboxes; this is the mailbox that this core lives in. */
-    P_mailbox* parent = NULL;
+    P_mailbox* parent;
     void on_being_contained_hook(P_mailbox* container);
 
     /* Cores contain threads, mapped by their hardware address components. */

@@ -13,7 +13,7 @@ void P_port::Dump(FILE* file)
 {
     std::string prefix = dformat("P_port %s", FullName().c_str());
     DumpUtils::open_breaker(file, prefix);
-    NameBase::Dump(file);
+    NameBase::Dump(0,file);
     DumpUtils::close_breaker(file, prefix);
     fflush(file);
 }

@@ -80,7 +80,7 @@ public:
     /* Access */
     inline SoftwareAddressInt get_software_address(){return raw;}
     inline SoftwareAddressInt as_uint(){return get_software_address();}
-    void Dump(FILE* = stdout);
+    void Dump(unsigned = 0, FILE* = stdout);
 
     /* Defines whether or not the software address is fully defined. */
     inline bool is_fully_defined()

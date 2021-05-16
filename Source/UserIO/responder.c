@@ -17,7 +17,7 @@ void responder() {
     printf("UserIO_requester: entering synchronous send\n");
     MPI_Ssend((void*)buf,len,MPI_UNSIGNED_CHAR,UserIO_Client,99,MPI_COMM_WORLD);
   }
-}    	
-	  		
-	
-  
+}
+
+
+

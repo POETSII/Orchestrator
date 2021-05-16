@@ -35,7 +35,7 @@ void ThreadComms::START_THREAD_FN_NAME(THREAD_NAME)() \
     if(result) \
     { \
         throw ThreadException(dformat("'THREAD_NAME': %s", \
-            POETS::getSysErrorString(result).c_str())); \
+            OSFixes::getSysErrorString(result).c_str())); \
     } \
 }
 
@@ -46,7 +46,7 @@ void ThreadComms::JOIN_THREAD_FN_NAME(THREAD_NAME)() \
     if(result) \
     { \
         throw ThreadException(dformat("'THREAD_NAME': %s", \
-            POETS::getSysErrorString(result).c_str())); \
+            OSFixes::getSysErrorString(result).c_str())); \
     } \
 }
 

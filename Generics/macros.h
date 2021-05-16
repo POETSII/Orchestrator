@@ -25,6 +25,8 @@
         for(TN vector<T>::reverse_iterator i=v.rbegin();i!=v.rend();i++)
 #define WALKLIST(T,v,i) \
         for(TN list<T>::iterator i=v.begin();i!=v.end();i++)
+#define WALKLISTREVERSE(T,v,i) \
+        for(TN list<T>::reverse_iterator i=v.begin();i!=v.end();i++)
 #define WALKSET(T,v,i) \
         for(TN set<T>::iterator i=v.begin();i!=v.end();i++)
 #define WALKSET2(T,op,v,i) \
@@ -46,6 +48,8 @@
         for(typename vector<T>::reverse_iterator i=v.rbegin();i!=v.rend();i++)
 #define TWALKLIST(T,v,i) \
         for(typename list<T>::iterator i=v.begin();i!=v.end();i++)
+#define TWALKLISTREVERSE(T,v,i) \
+        for(typename list<T>::reverse_iterator i=v.begin();i!=v.end();i++)
 #define TWALKSET(T,v,i) \
         for(typename set<T>::iterator i=v.begin();i!=v.end();i++)
 #define TWALKSET2(T,op,v,i) \

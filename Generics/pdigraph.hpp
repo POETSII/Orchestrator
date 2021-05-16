@@ -3,13 +3,11 @@
 
 #include "rand.h"
 #include <map>
-#include <string>
 #include <vector>
 #include <utility>
 using namespace std;
+#include "DumpChan.h"
 
-
-#include "dumpchan.h"
 //==============================================================================
           /*
 class DumpChan
@@ -51,6 +49,7 @@ bool         DrivingNodes(const NKT &,vector<PKT> &,vector<AKT> &,
 void         Dump();
 void         DumpChan(FILE * fp = stdout)  { dfp = fp;              }
 AT *         FindArc(const AKT &);
+bool         FindArcPins(const AKT &,PKT &,PT &,PKT &,PT &);
 bool         FindArcs(const NKT &,const PKT &,vector<AKT> &,vector<AKT> &);
 bool         FindArcs(const NKT &,vector<AKT> &,vector<AKT> &);
 NT *         FindNode(const NKT &);
@@ -60,6 +59,7 @@ bool         FindNodes(const NKT &,vector<PKT> &,vector<AKT> &,
                        vector<PKT> &,vector<NKT> &);
 PT *         FindPin(const NKT &,const PKT &);
 bool         FindPins(const AKT &,PKT &,PKT &);
+bool         FindPins(const NKT &,const PKT &,vector<PT> &,vector<PT> &);
 bool         FindPins(const NKT &,vector<PKT> &,vector<PKT> &);
 bool         FlipArc(const AKT &);
 bool         InsertArc(const AKT &,const NKT &,const NKT &,const AT & =AT(),
@@ -147,13 +147,13 @@ public: // Routines to do with dumping, pretty printing and walking in general
 
 #define WALKPDIGRAPHINPINS(NKT,NT,AKT,AT,PKT,PT,g,iNode,i) \
   for(multimap<NKT,pdigraph<NKT,NT,AKT,AT,PKT,PT>::pin>::iterator \
-      i=g.index_n[iNode].fani.begin(); \
-      i!=g.index_n[iNode].fani.end();i++)
+      i=g.index_n.find(iNode)->second.fani.begin();                  \
+      i!=g.index_n.find(iNode)->second.fani.end();i++)
 
 #define WALKPDIGRAPHOUTPINS(NKT,NT,AKT,AT,PKT,PT,g,iNode,i) \
   for(multimap<NKT,pdigraph<NKT,NT,AKT,AT,PKT,PT>::pin>::iterator \
-      i=g.index_n[iNode].fano.begin(); \
-      i!=g.index_n[iNode].fano.end();i++)
+      i=g.index_n.find(iNode)->second.fano.begin();                   \
+      i!=g.index_n.find(iNode)->second.fano.end();i++)
 
 #define PIN(i) (*i).second.data
 
@@ -263,4 +263,3 @@ void             RConfig();            // Set up the random access structure
 #undef _1
 #undef _2
 #endif
-

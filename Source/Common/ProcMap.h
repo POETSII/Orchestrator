@@ -6,6 +6,7 @@
 #include "PMsg_p.hpp"
 #include <vector>
 #include <string>
+#include "OSFixes.hpp"
 using namespace std;
 class CommonBase;
 
@@ -37,10 +38,10 @@ vector<ProcMap_t> vPmap;
 
                        ProcMap(CommonBase *);
 virtual ~              ProcMap();
-void                   Dump(FILE * = stdout);
-void                   GetProcs(vector<ProcMap_t> &);
+void                   Dump(FILE * fp = stdout) { Show(fp); }
 string                 Name(int rank) { return M[rank]; }
 void                   Register(PMsg_p *);
+void                   Show(FILE * = stdout);
 
 CommonBase *           par;
 

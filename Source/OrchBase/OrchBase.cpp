@@ -1,40 +1,45 @@
 //------------------------------------------------------------------------------
 
-#include "Pglobals.h"
 #include "OrchBase.h"
-#include "P_builder.h"
-#include "filename.h"
+#include "FileName.h"
 #include "P_core.h"
-#include "P_task.h"
-#include "P_typdcl.h"
-#include "P_devtyp.h"
-#include "T_gen.h"
-#include "SimpleDeployer.h"
-#include "Dialect1Deployer.h"
-#include "MultiSimpleDeployer.h"
 #include "Ns_el.h"
 #include "P_super.h"
-
-//==============================================================================
-// This class is chopped up into multiple .cpp files, because it's so
-// bloody boring. The translation unit is *this* file + all its includes.
-// The below are NOT translation units in their own right.
-
-#include "OrchBaseTask.cpp"            // Handlers for "task" commands
-#include "OrchBaseTopo.cpp"            // Handlers for "topo" commands
-#include "OrchBaseOwner.cpp"           // Handlers for "owner" commands
-#include "OrchBasePlace.cpp"           // Guess
 
 //==============================================================================
 
 OrchBase::OrchBase(int argc,char * argv[],string d,string sfile) :
   CommonBase(argc,argv,d,sfile)
 {
-pE        = 0;
-pPlacer   = 0;
-pB        = new P_builder(argc, argv, this);       // Object to build the datastructure
-pTG       = new T_gen(this);           // PoL task generator
+pE        = PNULL;
+pPlacer   = PNULL;
+pComposer = PNULL;
 Name("O_");                            // NameBase root name
+
+// Command handlers
+pCmCall = new CmCall(this);
+pCmComp = new CmComp(this);
+pCmDepl = new CmDepl(this);
+pCmDump = new CmDump(this);
+pCmExec = new CmExec(this);
+pCmInit = new CmInit(this);
+pCmInje = new CmInje(this);
+pCmLoad = new CmLoad(this);
+pCmName = new CmName(this);
+pCmPath = new CmPath(this);
+pCmPlac = new CmPlac(this);
+pCmReca = new CmReca(this);
+pCmRTCL = new CmRTCL(this);
+pCmRun  = new CmRun(this);
+pCmShow = new CmShow(this);
+pCmStop = new CmStop(this);
+pCmSyst = new CmSyst(this);
+pCmTest = new CmTest(this);
+pCmTlin = new CmTlin(this);
+pCmUnlo = new CmUnlo(this);
+pCmUnpl = new CmUnpl(this);
+pCmUntl = new CmUntl(this);
+
 taskpath  = string(" ");
 }
 
@@ -42,47 +47,269 @@ taskpath  = string(" ");
 
 OrchBase::~OrchBase()
 {
-if (pE!=0)        delete pE;           // Destroy the engine
-if (pPlacer!=0)   delete pPlacer;      // Destroy the placer
-if (pB!=0)        delete pB;           // Object to build the datastructure
-if (pTG!=0)       delete pTG;          // PoL generator
+if (pE != PNULL) delete pE;               // Destroy the engine
+if (pPlacer != PNULL) delete pPlacer;     // Destroy the placer
+if (pComposer != PNULL) delete pComposer; // Destroy the composer
 
-// ADR supervisors do not need to be deleted here as they will be removed
-// in the task graphs.
-                                       // Supervisors
-//WALKMAP(string,P_super *,P_superm,i) delete (*i).second;
-                                       // Task map contents
-WALKMAP(string,P_task *,P_taskm,i) delete (*i).second;
-                                       // Type declare map contents
-WALKMAP(string,P_typdcl *,P_typdclm,i) delete (*i).second;
-                                       // Owners
-WALKMAP(string,P_owner *,P_ownerm,i) delete (*i).second;
+// Command handlers
+if (pCmCall != PNULL) delete pCmCall;
+if (pCmComp != PNULL) delete pCmComp;
+if (pCmDepl != PNULL) delete pCmDepl;
+if (pCmDump != PNULL) delete pCmDump;
+if (pCmExec != PNULL) delete pCmExec;
+if (pCmInit != PNULL) delete pCmInit;
+if (pCmInje != PNULL) delete pCmInje;
+if (pCmLoad != PNULL) delete pCmLoad;
+if (pCmName != PNULL) delete pCmName;
+if (pCmPath != PNULL) delete pCmPath;
+if (pCmPlac != PNULL) delete pCmPlac;
+if (pCmReca != PNULL) delete pCmReca;
+if (pCmRTCL != PNULL) delete pCmRTCL;
+if (pCmRun  != PNULL) delete pCmRun;
+if (pCmShow != PNULL) delete pCmShow;
+if (pCmStop != PNULL) delete pCmStop;
+if (pCmSyst != PNULL) delete pCmSyst;
+if (pCmTest != PNULL) delete pCmTest;
+if (pCmTlin != PNULL) delete pCmTlin;
+if (pCmUnlo != PNULL) delete pCmUnlo;
+if (pCmUnpl != PNULL) delete pCmUnpl;
+if (pCmUntl != PNULL) delete pCmUntl;
+
+// Applications
+Apps_t::DelAll();
 }
 
 //------------------------------------------------------------------------------
 
-void OrchBase::Dump(FILE * fp)
+void OrchBase::ClearTopo()
 {
-fprintf(fp,"OrchBase dump+++++++++++++++++++++++++++++++\n");  fflush(fp);
-fprintf(fp,"NameBase %s\n",FullName().c_str());
-fprintf(fp,"Task path %s\n",taskpath.c_str());
-fprintf(fp,"HARDWARE++++++++++++++++++++++++++++++++++++\n");
-if (pE==0) fprintf(fp,"No hardware topology loaded\n");
+    if (pE == PNULL) return;
+    if (pE->FullName().empty())
+    {
+        Post(134, "with no name");
+    }
+    else
+    {
+        Post(134, pE->FullName());
+    }
+    delete pE;
+    pE = PNULL;
+    PlacementReset();
+}
+
+//------------------------------------------------------------------------------
+
+void OrchBase::ComposerReset(bool post)
+{
+    if (pComposer != PNULL)
+    {
+        delete pComposer;
+        pComposer = PNULL;
+    }
+    if (pPlacer != PNULL)
+    {
+        pComposer = new Composer(pPlacer);
+        pComposer->setOutputPath(pCmPath->pathStag);
+    }
+    if (post) Post(800);
+}
+
+//------------------------------------------------------------------------------
+
+/* Collects all of the graph instances requested from a "Cli" command.
+ *
+ * This method iterates through all parameters in a command. Three forms of
+ * parameters are considered:
+ *
+ * 1. "*": Fetch all graph instances from all tasks.
+ *
+ * 2. "<ALPHANUMERIC_APPNAME>": Fetch all graph instances associated with the
+ *    application with name `<ALPHANUMERIC_APPNAME>`.
+ *
+ * 3. "<ALPHANUMERIC_APPNAME>::<ALPHANUMERIC_GRAPHINAME>": Fetches the graph
+ *    instance named `<ALPHANUMERIC_GRAPHINAME>` that is owned by the
+ *    application named `<ALPHANUMERIC_APPNAME>`.
+ *
+ * This method "errors" if:
+ *
+ * - Syntax (1) is used, and there are no graph instances.
+ *
+ * - Syntax (2) is used, and there is no application with that name.
+ *
+ * - Syntax (2) is used and the application exists, but that application has no
+ *   graph instances.
+ *
+ * - Syntax (3) is used and the specified graph instance does not exist.
+ *
+ * - No parameters are passed in.
+ *
+ * - A parameter has a double-or-more "::" syntax (e.g. A::B::C).
+ *
+ * On error, this method fails fast - it posts, clears `graphs`, and bails.
+ *
+ * Operators are ignored (as per the documentation) when finding applications
+ * and graphs in this way.
+ *
+ * Optionally, the `skip`th parameter in the clause may be skipped.
+ *
+ * Returns 0 if all is well, and 1 on error. */
+int OrchBase::GetGraphIs(Cli::Cl_t clause, std::set<GraphI_t*>& graphs,
+                         int skip)
+{
+    graphs.clear();
+
+    /* Error if no parameters are passed in. */
+    if (clause.Pa_v.empty())
+    {
+        Post(171, clause.Cl);
+        return 1;
+    }
+
+    /* We'll be needing some iterators... */
+    int paramIndex = 0;
+    std::vector<Cli::Pa_t>::iterator paramIt;
+    std::map<std::string, Apps_t*>::iterator appIt;
+    std::vector<GraphI_t*>::iterator graphIt;
+
+    /* Iterate over all parameters. */
+    for (paramIt = clause.Pa_v.begin(); paramIt != clause.Pa_v.end();
+         paramIt++)
+    {
+        /* Skip condition. */
+        if (paramIndex == skip) continue;
+        else paramIndex++;
+
+        /* Is this even possible? */
+        if (paramIt->Va_v.empty()) continue;
+
+        /* Syntax (1). */
+        if (paramIt->Va_v.size() == 1 and paramIt->Va_v[0] == "*")
+        {
+            /* For each application... */
+            for (appIt = Apps_t::Apps_m.begin();
+                 appIt != Apps_t::Apps_m.end(); appIt++)
+            {
+                /* For each graph instance... */
+                for (graphIt = appIt->second->GraphI_v.begin();
+                     graphIt != appIt->second->GraphI_v.end(); graphIt++)
+                {
+                    /* Store */
+                    graphs.insert(*graphIt);
+                }
+            }
+
+            /* No graph instances? It means we haven't added any. Error out. */
+            if (graphs.empty())
+            {
+                Post(172);
+                return 1;
+            }
+        }
+
+        /* Syntax (2/3). */
+        else if (paramIt->Va_v.size() == 1 or paramIt->Va_v.size() == 2)
+        {
+            /* Find the application. */
+            Apps_t* application = Apps_t::FindApp(paramIt->Va_v[0]);
+
+            /* Couldn't find it? Error out. */
+            if (application == 0)
+            {
+                graphs.clear();
+                Post(173, paramIt->Va_v[0]);
+                return 1;
+            }
+
+            /* Found it, but it has no graph instances? Error out. */
+            if (application->GraphI_v.empty())
+            {
+                graphs.clear();
+                Post(174, paramIt->Va_v[0]);
+                return 1;
+            }
+
+            /* Syntax (2). */
+            if (paramIt->Va_v.size() == 1)
+            {
+                /* For each graph instance... */
+                for (graphIt = appIt->second->GraphI_v.begin();
+                     graphIt != appIt->second->GraphI_v.end(); graphIt++)
+                {
+                    /* Store */
+                    graphs.insert(*graphIt);
+                }
+            }
+
+            /* Syntax (3). */
+            else
+            {
+                /* Find the graph instance. */
+                GraphI_t* graph = application->FindGrph(paramIt->Va_v[1]);
+
+                /* Couldn't find it? Error out. */
+                if (graph == 0)
+                {
+                    graphs.clear();
+                    Post(175, paramIt->Va_v[0], paramIt->Va_v[1]);
+                    return 1;
+                }
+
+                /* Otherwise, store. */
+                graphs.insert(graph);
+            }
+        }
+
+        /* Strange syntax. */
+        else
+        {
+            graphs.clear();
+            Post(176, paramIt->Concatenate());
+            return 1;
+        }
+    }
+
+    /* All is well. */
+    return 0;
+}
+
+//------------------------------------------------------------------------------
+
+void OrchBase::PlacementReset(bool post)
+{
+    if (pComposer != PNULL)
+    {
+        delete pComposer;
+        pComposer = PNULL;
+    }
+    if (pPlacer != PNULL)
+    {
+        delete pPlacer;
+        pPlacer = PNULL;
+    }
+    if (pE != PNULL)
+    {
+        pPlacer = new Placer(pE);
+        pPlacer->outFilePath = pCmPath->pathPlac;
+    }
+    if (post) Post(308);
+}
+
+//------------------------------------------------------------------------------
+
+void OrchBase::Dump(unsigned off,FILE * fp)
+{
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"%sOrchBase dump+++++++++++++++++++++++++++++++\n",os);
+fprintf(fp,"%sNameBase %s\n",os,FullName().c_str());
+fprintf(fp,"%sTask path %s\n",os,taskpath.c_str());
+fprintf(fp,"%sHARDWARE++++++++++++++++++++++++++++++++++++\n",os);
+if (pE==0) fprintf(fp,"%sNo hardware topology loaded\n",os);
 else pE->Dump(fp);
-fprintf(fp,"HARDWARE------------------------------------\n");
-fprintf(fp,"SOFTWARE++++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"SUPERVISORS+++++++++++++++++++++++++++++++++\n");
-WALKMAP(string,P_super *,P_superm,i) (*i).second->Dump(fp);
-fprintf(fp,"SUPERVISORS---------------------------------\n");
-fprintf(fp,"TASK MAP++++++++++++++++++++++++++++++++++++\n");
-WALKMAP(string,P_task *,P_taskm,i) (*i).second->Dump(fp);
-fprintf(fp,"TASK MAP------------------------------------\n");
-fprintf(fp,"TYPE DECLARES+++++++++++++++++++++++++++++++\n");
-WALKMAP(string,P_typdcl *,P_typdclm,i) (*i).second->Dump(fp);
-fprintf(fp,"TYPE DECLARES-------------------------------\n");
-fprintf(fp,"SOFTWARE------------------------------------\n");
-NameBase::Dump(fp);
-fprintf(fp,"OrchBase dump-------------------------------\n");  fflush(fp);
+fprintf(fp,"%sHARDWARE------------------------------------\n",os);
+NameBase::Dump(off,fp);
+fprintf(fp,"%sOrchBase dump-------------------------------\n",os);
+fflush(fp);
 }
 
 //==============================================================================

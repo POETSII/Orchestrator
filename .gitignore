@@ -6,7 +6,14 @@ bin/*
 test_bin/*
 Build/gcc/Objects
 Build/gcc/Dependency_lists
+Output/
 orchestrate.sh
+
+# Ignore .bak extensions created by winmerge
+*.bak
+
+# Ignore .orig extensions made by Meld
+*.orig
 
 # Default C++ gitignore content, from https://github.com/github/gitignore:
 

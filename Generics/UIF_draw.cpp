@@ -189,18 +189,22 @@ dv.push_back(DC(_DC_BRSH,kbrush=b));
 //------------------------------------------------------------------------------
 
 void UIF_DRAW::Draw0(vector<DC> &dv,UIF::Node * nd,int lev)
-// Recursive bit of the above that actually does the work.
+// Recursive bit of the above that actually does the work. This routine walks
+// the (Windoze-agnostic) geometry structures on the UIF tree, and streams them
+// into a (still Windoze-agnostic) linear datastructure held in the vector dv
 {
-                                       // Pull out the tag pointer
+                                       // Pull out the node tag pointer
 draw_0 * p0 = static_cast<draw_0 *>(nd->tag);
-                                       // Draw the child arcs
-
-WALKVECTOR(UIF::Node *,nd->leaf,i) if ((*i)!=0) {
-  PushPen(dv,((*i)->P()==nd)? _DC_BLCK:_DC_RED);
-  draw_0 * p1 = static_cast<draw_0 *>((*i)->tag);
-  dv.push_back(DC(_DC_MOVE,p0->x,p0->y));
-  dv.push_back(DC(_DC_LINE,p1->x,p1->y));
-}
+                                       // Draw the child arcs FROM this node TO
+                                       // its children
+WALKVECTOR(UIF::Node *,nd->leaf,i)     // Walk the children, drawing the arcs
+                                       // FROM me To them
+  if ((*i)!=0) {                       // The child may be null ?
+    PushPen(dv,((*i)->P()==nd)? _DC_BLCK:_DC_RED);  // Internal corruption check
+    draw_0 * p1 = static_cast<draw_0 *>((*i)->tag); // Get child geometry
+    dv.push_back(DC(_DC_MOVE,p0->x,p0->y));         // Move to start (me)
+    dv.push_back(DC(_DC_LINE,p1->x,p1->y));         // Draw to end (child)
+  }
 PushPen(dv,Notype_attr[nd->Type()][0]);// Node settings
 PushBrush(dv,Notype_attr[nd->Type()][1]);
 dv.push_back(DC(_DC_CIRC,p0->x,p0->y));// The node itself
@@ -209,8 +213,10 @@ if ((nd->str.c_str())[0]!=0)           // Any text ?
   dv.push_back(DC(_DC_TEXT,p0->x,p0->y,const_cast<char *>(nd->str.c_str())));
 if (nd->qop!=Lex::S_00)                // Any operator ?
   dv.push_back(DC(_DC_OPER,p0->x,p0->y,const_cast<char *>(Lex::Sytype_str[nd->qop])));
-dv.push_back(DC(_DC_POSI,p0->x,p0->y,(int)(nd->pos)));    // Source position
+                                       // Source position
+dv.push_back(DC(_DC_POSI,p0->x,p0->y,(int)(nd->pos)));
 if (--lev==0) return;                  // Recursion terminated early ?
+                                       // Nope - keep going down
 WALKVECTOR(UIF::Node *,nd->leaf,i) if ((*i)!=0) Draw0(dv,(*i),lev);
 }
 

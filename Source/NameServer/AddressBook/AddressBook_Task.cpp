@@ -49,32 +49,32 @@ TaskData_t::TaskData_t(std::string &N, std::string &P, std::string &X,
 int TaskData_t::size() const
 {
     int size = 0;
-    
+
     size += sizeof(unsigned long)*5;      // Size of the 5 longs
     size += sizeof(char) * Name.size();   // Size of the name
     size += sizeof(char) * Path.size();   // Size of the path
     size += sizeof(char) * XML.size();    // Size of the XML Filename
     size += sizeof(char) * ExecutablePath.size();   // Size of the exec path
     size += sizeof(TaskState_t);
-    
+
     for(std::vector<DevTypeRecord_t>::const_iterator DT = DeviceTypes.begin();
         DT != DeviceTypes.end(); DT++)    // Size of the device types
     {
         size += DT->size();
     }
-    
+
     for(std::vector<std::string>::const_iterator MT = MessageTypes.begin();
         MT != MessageTypes.end(); MT++)   // Size of the Message Types
     {
         size += MT->size();
     }
-    
+
     for(std::vector<std::string>::const_iterator AT = AttributeTypes.begin();
         AT != AttributeTypes.end(); AT++) // Size of the Attribute Types
     {
         size += AT->size();
     }
-    
+
     return size;
 }
 
@@ -104,7 +104,7 @@ TaskRecord_t::TaskRecord_t()
  * TaskRecord_t::TaskRecord_t(): Full initialiser for a TaskRecord_t
  *============================================================================*/
 TaskRecord_t::TaskRecord_t(std::string &N, std::string &P, std::string &X,
-                           std::string &E, TaskState_t S, unsigned long DC, 
+                           std::string &E, TaskState_t S, unsigned long DC,
                            unsigned long EC)
 {
     Name = N;
@@ -137,7 +137,7 @@ TaskRecord_t::TaskRecord_t(std::string &N, std::string &P, std::string &X,
  *      inconsistencies. If RECOVERABLEINTEGRITY is defined, a successful
  *      integrity check marks the data structure as clean.
  *
- *      When AB_THREADING is defined (by default this is when built with C++11 
+ *      When AB_THREADING is defined (by default this is when built with C++11
  *      (or newer) AND (C11 (or newer) OR POSIX)), the integrity checks are
  *      parallelised to reduce the potentially significant runtime of large
  *      applications. The number of threads is set based on the available
@@ -148,10 +148,10 @@ TaskRecord_t::TaskRecord_t(std::string &N, std::string &P, std::string &X,
  *          DeviceType vectors, etc.    0.5*concurrency threads
  *          Supervisors vector          0.25*concurrency threads
  *          Externals vector            0.25*concurrency threads
- *       
+ *
  *============================================================================*/
 unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
-{   
+{
     AB_ULONG ExtConCnt(0);
     AB_UNSIGNED MappedSupervisors(0);
 
@@ -203,7 +203,7 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
 
 #ifdef AB_THREADING
     //==========================================================================
-    // Multi-threaded checks of large structures. Number of threads used scales 
+    // Multi-threaded checks of large structures. Number of threads used scales
     // with the number of CPU cores. The checks are read-only so no locks for
     // data structure access. Atomic types are used for return values.
     unsigned threadCnt = 0, i = 0;
@@ -223,21 +223,21 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     //==========================================================================
     // Thread(s) for checking DeviceType vectors, etc.
     unsigned long dtConcurrency = halfConcurrency;
-    if (DevTypes.size() < halfConcurrency)      // Limit number of threads if we 
-    {                                           // have fewer DeviceTypes than  
+    if (DevTypes.size() < halfConcurrency)      // Limit number of threads if we
+    {                                           // have fewer DeviceTypes than
         dtConcurrency = DevTypes.size();        // possible threads.
     }
-    
+
     if (dtConcurrency > 0)
     {
         unsigned long devTypeSplit = DevTypes.size() / dtConcurrency;
         for(i = 0; i < dtConcurrency; i++)
         {
             // Handle any remainder in the last thread - integ method checks bounds.
-            unsigned endMul = (i==(dtConcurrency-1)) ? 2 : 1;   
-            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegDevTypeMap, this, 
-                                                Verbose, fp, (devTypeSplit * i), 
-                                                (devTypeSplit * (i+endMul)), 
+            unsigned endMul = (i==(dtConcurrency-1)) ? 2 : 1;
+            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegDevTypeMap, this,
+                                                Verbose, fp, (devTypeSplit * i),
+                                                (devTypeSplit * (i+endMul)),
                                                 std::ref(retVal));
         }
         threadCnt += i;
@@ -246,22 +246,22 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     //==========================================================================
     // Thread(s) for checking Devices vector
     unsigned long dConcurrency = concurrency;
-    if (Devices.size() < concurrency)           // Limit number of threads if we 
+    if (Devices.size() < concurrency)           // Limit number of threads if we
     {                                           // have fewer Devices than
         dConcurrency = Devices.size();          // possible threads.
     }
-    
+
     if (dConcurrency > 0)   // account for 0 devices, incase we are called before devices loaded
     {
         unsigned long long devSplit = Devices.size() / dConcurrency;
         for(i = 0; i < dConcurrency; i++)
         {
             // Handle any remainder in the last thread - integ method checks bounds.
-            unsigned endMul = (i==(dConcurrency-1)) ? 2 : 1;   
-            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegDevices, this, 
-                                                Verbose, fp, (devSplit * i), 
-                                                (devSplit * (i+endMul)), 
-                                                std::ref(retVal), 
+            unsigned endMul = (i==(dConcurrency-1)) ? 2 : 1;
+            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegDevices, this,
+                                                Verbose, fp, (devSplit * i),
+                                                (devSplit * (i+endMul)),
+                                                std::ref(retVal),
                                                 std::ref(ExtConCnt));
         }
         threadCnt += i;
@@ -270,11 +270,11 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     //==========================================================================
     // Thread(s) for checking Externals vector
     unsigned long eConcurrency = qrtrConcurrency;
-    if (Externals.size() < qrtrConcurrency)     // Limit number of threads if we 
+    if (Externals.size() < qrtrConcurrency)     // Limit number of threads if we
     {                                           // have fewer Externals than
         eConcurrency = Externals.size();        // possible threads.
     }
-    
+
     if (eConcurrency > 0)   // Account for having no externals
     {
         unsigned long extSplit = Externals.size() / eConcurrency;
@@ -282,8 +282,8 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
         {
             // Handle any remainder in the last thread - integ method checks bounds.
             unsigned endMul = (i==(eConcurrency-1)) ? 2 : 1;
-            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegExternals, this, 
-                                                Verbose, fp, (extSplit * i), 
+            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegExternals, this,
+                                                Verbose, fp, (extSplit * i),
                                                 (extSplit * (i+endMul)),
                                                 std::ref(retVal));
         }
@@ -291,26 +291,26 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     }
 
     //==========================================================================
-    // Thread(s) for checking Supervisors vector. 
+    // Thread(s) for checking Supervisors vector.
     unsigned long sConcurrency = qrtrConcurrency;
     if (Supervisors.size() < qrtrConcurrency)   // Limit number of threads if we
     {                                           // have fewer Supervisors than
         sConcurrency = Supervisors.size();      // possible threads.
     }
-    
+
     if (sConcurrency > 0)   // Account for having no supervisors
     {
         unsigned long superSplit = Supervisors.size() / sConcurrency;
-        for(i = 0; 
+        for(i = 0;
             i < sConcurrency;
             i++)
         {
             // Handle any remainder in the last thread - integ method checks bounds.
             unsigned endMul = (i==(sConcurrency-1)) ? 2 : 1;
-            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegSupervisors, this, 
-                                                Verbose, fp, (superSplit * i), 
+            threads[threadCnt+i] = std::thread(&TaskRecord_t::IntegSupervisors, this,
+                                                Verbose, fp, (superSplit * i),
                                                 (superSplit * (i+endMul)),
-                                                std::ref(retVal), 
+                                                std::ref(retVal),
                                                 std::ref(MappedSupervisors));
         }
         threadCnt += i;
@@ -345,7 +345,7 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
                 retVal.retT++;
             }
         }
-    } 
+    }
 
     // Check integrity of AttributeType map
     for(std::vector<AttrTypePair>::iterator A
@@ -439,7 +439,7 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     {
         // External Connection vector size mismatch - Map broken
         if (Verbose) fprintf(fp, "M: External Connection Vector size mismatch: %lu!=%lu\n",
-                            static_cast<unsigned long>(ExtCon.size()), 
+                            static_cast<unsigned long>(ExtCon.size()),
                             static_cast<unsigned long>(ExtConCnt));
         retVal.retM++;
     }
@@ -449,7 +449,7 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
     if (MappedSupervisors != SupMap.size()) {
         // Supervisor Map size missmatch
         if (Verbose) fprintf(fp, "L: Supervisor Size mismatch: %u!=%lu\n",
-                            static_cast<unsigned>(MappedSupervisors), 
+                            static_cast<unsigned>(MappedSupervisors),
                             static_cast<unsigned long>(SupMap.size()));
         retVal.retL++;
     }
@@ -511,9 +511,9 @@ unsigned TaskRecord_t::Integrity(bool Verbose, FILE * fp)
 
 /*==============================================================================
  * TaskRecord_t::IntegDevTypeMap(): Run an integrity check on the device type
- * map in the range of DStart-DEnd. 
+ * map in the range of DStart-DEnd.
  *============================================================================*/
-void TaskRecord_t::IntegDevTypeMap(bool Verbose, FILE * fp, unsigned long DTStart, 
+void TaskRecord_t::IntegDevTypeMap(bool Verbose, FILE * fp, unsigned long DTStart,
                                    unsigned long DTEnd, IntegVals_t &retVal)
 {
     for(std::vector<DevTypePair>::iterator D = DevTypes.begin() + DTStart;
@@ -580,10 +580,10 @@ void TaskRecord_t::IntegDevTypeMap(bool Verbose, FILE * fp, unsigned long DTStar
 
 /*==============================================================================
  * TaskRecord_t::IntegDevices(): Run an integrity check on the devices in the
- * range of DStart-DEnd. 
+ * range of DStart-DEnd.
  *============================================================================*/
-void TaskRecord_t::IntegDevices(bool Verbose, FILE * fp, unsigned long DStart, 
-                                unsigned long DEnd, IntegVals_t &retVal, 
+void TaskRecord_t::IntegDevices(bool Verbose, FILE * fp, unsigned long DStart,
+                                unsigned long DEnd, IntegVals_t &retVal,
                                 AB_ULONG &ExtConCnt)
 {
     for(std::vector<Record_t>::const_iterator D = Devices.begin() + DStart;
@@ -706,10 +706,10 @@ void TaskRecord_t::IntegDevices(bool Verbose, FILE * fp, unsigned long DStart,
 }
 
 /*==============================================================================
- * TaskRecord_t::IntegExternals(): Run an integrity check on the externals in 
- * the range of DStart-DEnd. 
+ * TaskRecord_t::IntegExternals(): Run an integrity check on the externals in
+ * the range of DStart-DEnd.
  *============================================================================*/
-void TaskRecord_t::IntegExternals(bool Verbose, FILE * fp, unsigned long EStart, 
+void TaskRecord_t::IntegExternals(bool Verbose, FILE * fp, unsigned long EStart,
                                   unsigned long EEnd, IntegVals_t &retVal)
 {
     for(std::vector<Record_t>::const_iterator E = Externals.begin() + EStart;
@@ -801,10 +801,10 @@ void TaskRecord_t::IntegExternals(bool Verbose, FILE * fp, unsigned long EStart,
 
 /*==============================================================================
  * TaskRecord_t::IntegSupervisors(): Run an integrity check on the supervisors
- * in the range of DStart-DEnd. 
+ * in the range of DStart-DEnd.
  *============================================================================*/
-void TaskRecord_t::IntegSupervisors(bool Verbose, FILE * fp, unsigned long SStart, 
-                                    unsigned long SEnd, IntegVals_t &retVal, 
+void TaskRecord_t::IntegSupervisors(bool Verbose, FILE * fp, unsigned long SStart,
+                                    unsigned long SEnd, IntegVals_t &retVal,
                                     AB_UNSIGNED &MappedSupervisors)
 {
     for(std::vector<Record_t>::const_iterator S = Supervisors.begin() + SStart;

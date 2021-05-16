@@ -39,7 +39,7 @@ int SERVER_PORT;
     exit(0);
   }
 
-  SERVER_PORT = atoi(argv[1]); 
+  SERVER_PORT = atoi(argv[1]);
   /*
   	build address structure
   */
@@ -48,7 +48,7 @@ int SERVER_PORT;
   sin.sin_family=AF_INET;
   sin.sin_addr.s_addr=INADDR_ANY;
   sin.sin_port=htons(SERVER_PORT);
-  
+
   /*
   	open as passive
   */
@@ -56,7 +56,7 @@ int SERVER_PORT;
     printf("socket creation error %s\n",strerror(errno));
     exit(0);
   }
-  
+
   /*
   	bind socket to address
   */
@@ -90,9 +90,9 @@ int SERVER_PORT;
       }
     }
     printf("client side appears dead server closing connection\n");
-    close(new_s);  
+    close(new_s);
   }
-}    	
-	  		
-	
-  
+}
+
+
+

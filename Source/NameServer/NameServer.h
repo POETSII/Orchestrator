@@ -15,7 +15,7 @@ virtual ~           NameServer();
 
 private:
 #include            "Decode.cpp"
-void                Dump(FILE * = stdout);
+void                Dump(unsigned = 0,FILE * = stdout);
 void                Load1(Ns_0 *);
 unsigned            OnClr  (PMsg_p *);
 unsigned            OnDump (PMsg_p *);
@@ -26,7 +26,7 @@ unsigned            OnMoni (PMsg_p *);
 unsigned            OnQuery(PMsg_p *);
 
 typedef unsigned    (NameServer::*pMeth)(PMsg_p *);
-map<unsigned,pMeth> FnMapx;
+map<unsigned,pMeth> FnMap;
 
 };
 

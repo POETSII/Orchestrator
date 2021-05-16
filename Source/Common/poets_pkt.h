@@ -25,10 +25,8 @@
 //------------------------------------------------------------------------------
 
 
-#define DEST_BROADCAST 0xFFFFFFFF       // still used in P_builder to id supervisor pins
+#define P_DEST_BROADCAST 0xFFFFFFFF       // still used in P_builder to id supervisor pins
 #define P_SUP_PIN_INIT 0                // very temporary bodge for __init__ pins
-
-#define LOG_DEVICES_PER_THREAD 10       // Seems to be used in P_builder. May conflict with build_derfs definition
 
 //------------------------------------------------------------------------------
 // Used in GetHWAddr
@@ -80,6 +78,7 @@
 
 #define P_CNC_MAX_USER              0xEF
 
+#define P_CNC_IMPL                  0xFA
 #define P_CNC_INSTR                 0xFB
 #define P_CNC_LOG                   0xFC
 #define P_CNC_BARRIER               0xFD

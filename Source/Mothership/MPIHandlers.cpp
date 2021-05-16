@@ -14,18 +14,18 @@
 
 #include "Mothership.h"
 
-unsigned Mothership::handle_msg_exit(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_exit(PMsg_p* message)
 {
     debug_post(598, 2, "Q::EXIT", "Exiting gracefully.");
     threading.set_quit();
 
     /* CommonBase's OnExit (does some MPI teardown). The returncode is read by
      * Decode, and causes MPISpinner to end. */
-    OnExit(message, commIndex);
+    OnExit(message);
     return 1;
 }
 
-unsigned Mothership::handle_msg_syst_kill(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_syst_kill(PMsg_p* message)
 {
     /* ThreadComms notices that we haven't set_quit, so it doesn't wait for the
      * other threads to finish before leaving. */
@@ -33,11 +33,11 @@ unsigned Mothership::handle_msg_syst_kill(PMsg_p* message, unsigned commIndex)
 
     /* CommonBase's OnExit (does some MPI teardown). The returncode is read by
      * Decode, and causes MPISpinner to end. */
-    OnExit(message, commIndex);
+    OnExit(message);
     return 1;
 }
 
-unsigned Mothership::handle_msg_app(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_app(PMsg_p* message)
 {
     #if ORCHESTRATOR_DEBUG
     std::string key = "Unknown";
@@ -50,7 +50,7 @@ unsigned Mothership::handle_msg_app(PMsg_p* message, unsigned commIndex)
     return 0;
 }
 
-unsigned Mothership::handle_msg_cnc(PMsg_p* message, unsigned commIndex)
+unsigned Mothership::handle_msg_cnc(PMsg_p* message)
 {
     #if ORCHESTRATOR_DEBUG
     std::string key = "Unknown";
@@ -203,10 +203,9 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
     if (appInfo->check_update_defined_state())
     {
         PMsg_p acknowledgement;
-        acknowledgement.comm = Comms[RootCIdx()];
         acknowledgement.Src(Urank);
         acknowledgement.Put<std::string>(0, &(appInfo->name));
-        acknowledgement.Tgt(pPmap[RootCIdx()]->U.Root);
+        acknowledgement.Tgt(pPmap->U.Root);
         acknowledgement.Key(Q::MSHP, Q::ACK, Q::DEFD);
         queue_mpi_message(&acknowledgement);
     }
@@ -245,6 +244,14 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
     if(!superdb.load_supervisor(appName, soPath, &errorMessage))
     {
         Post(503, appName, errorMessage);
+        appInfo->state = BROKEN;
+        return 0;
+    }
+
+    /* On loading the supervisor, provision its API. */
+    if(!provision_supervisor_api(appName))
+    {
+        Post(525, appName);
         appInfo->state = BROKEN;
         return 0;
     }
@@ -422,11 +429,21 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
     debug_post(597, 3, "Q::BEND,Q::SUPR", hex2str(message->Key()).c_str(),
                dformat("appName=%s", appName.c_str()).c_str());
 
+    /* If the application is not running, we complain in debug. This may be
+     * behaviour for a well-behaved application, as a normal device may send
+     * packets to its supervisor before it receives the 'stop' packet from its
+     * Mothership. */
+    if (appdb.check_create_app(appName)->state != RUNNING)
+    {
+        debug_post(582, 1, appName);
+        return 0;
+    }
+
     /* Set up a message for the supervisor entry point to modify. This output
      * message is always going to be a "packets" message (it's just a device
      * after all, sending information to another device in the compute
      * fabric). */
-    PMsg_p outputMessage(message->comm);
+    PMsg_p outputMessage;
     outputMessage.Src(message->Tgt());
     outputMessage.Key(Q::PKTS);
 
@@ -435,6 +452,25 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
     rc = superdb.call_supervisor(appName, message, &outputMessage);
     if (rc > 0) queue_mpi_message(&outputMessage);
     else if (rc < 0) Post(515, appName);
+    return 0;
+}
+
+unsigned Mothership::handle_msg_path(PMsg_p* message)
+{
+    /* Pull message contents. */
+    std::string userOutRoot;
+    if (!decode_string_message(message, &userOutRoot))
+    {
+        debug_post(597, 3, "Q::PATH", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
+        return 0;
+    }
+
+    debug_post(597, 3, "Q::PATH", hex2str(message->Key()).c_str(),
+               dformat("userOutRoot=%s", userOutRoot.c_str()).c_str());
+
+    /* Out we go. */
+    userOutDir = userOutRoot;
     return 0;
 }
 
@@ -478,7 +514,7 @@ unsigned Mothership::handle_msg_dump(PMsg_p* message)
     outS.open(dumpPath.c_str(), std::ofstream::out | std::ofstream::trunc);
     if (outS.fail())
     {
-        Post(508, dumpPath, POETS::getSysErrorString(errno));
+        Post(508, dumpPath, OSFixes::getSysErrorString(errno));
         return 0;
     }
     dump(&outS);
@@ -488,10 +524,10 @@ unsigned Mothership::handle_msg_dump(PMsg_p* message)
     outF = fopen(dumpPath.c_str(), "a");
     if (outF == PNULL)
     {
-        Post(508, dumpPath, POETS::getSysErrorString(errno));
+        Post(508, dumpPath, OSFixes::getSysErrorString(errno));
         return 0;
     }
-    Dump(outF);
+    Dump(0, outF);
     fclose(outF);
     return 0;
 }

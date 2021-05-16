@@ -10,19 +10,15 @@ class Injector : public CommonBase
 
 public:
                     Injector(int,char **,string);
-virtual ~           Injector();
 
-typedef unsigned    (Injector::*pMeth)(PMsg_p *,unsigned);
-typedef map<unsigned,Injector::pMeth> FnMap_t;
+typedef unsigned    (Injector::*pMeth)(PMsg_p*);
+map<unsigned,Injector::pMeth> FnMap;
 
 private:
-unsigned            Connect(string);
 #include            "Decode.cpp"
 void                Dump(FILE * = stdout);
-unsigned            OnInjectAck (PMsg_p *,unsigned);
-unsigned            OnInjectFlag(PMsg_p *,unsigned);
-
-vector<FnMap_t*>    FnMapx;
+unsigned            OnInjectAck (PMsg_p*);
+unsigned            OnInjectFlag(PMsg_p*);
 
 public:
 static struct injData_t {

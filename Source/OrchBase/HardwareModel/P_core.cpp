@@ -8,6 +8,7 @@
  * - name: Name of this core object (see namebase) */
 P_core::P_core(std::string name)
 {
+    parent = PNULL;
     Name(name);
     pair = PNULL;
 }
@@ -81,7 +82,7 @@ void P_core::Dump(FILE* file)
     DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
-    NameBase::Dump(file);
+    NameBase::Dump(0,file);
 
     /* Dump information about binaries. */
     if (dataBinary.empty())

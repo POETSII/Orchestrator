@@ -169,7 +169,7 @@ void Msg_p::Dump(FILE * fp)
 // but not "Dump all the stuff", because the nature of "stuff" is not stored
 // (or storable) in the object. You have to use Dump<T>() below.
 {
-fprintf(fp,"Msg_p+++++++++++++++++++++++++++++++++++++++++++++\n");
+fprintf(fp,"\nMsg_p+++++++++++++++++++++++++++++++++++++++++++++\n");
 fprintf(fp,"Raw dumping Msg_p\n\n");
 fprintf(fp,"Source : %4d, Target    : %4d\n",src,tgt);
 fprintf(fp,"Tag    : %4d, Identifier: %4d, Mode      : %4d\n",tag,id,mode);
@@ -192,7 +192,7 @@ WALKMAP(int,typemap *,Tmap,i) {
 }
 for (int i=1;i<typecount;i++) fprintf(fp,"%2d <-> %-20s\n",i,t2imap[i]);
 
-fprintf(fp,"Msg_p---------------------------------------------\n");
+fprintf(fp,"Msg_p---------------------------------------------\n\n");
 fflush(fp);
 }
 
@@ -274,23 +274,21 @@ return ans;
 
 //------------------------------------------------------------------------------
 
-void Msg_p::L(int index,byte val)
+void Msg_p::L(unsigned index,byte val)
 // Set a subkey field
 {
-int i = int(index);
-if ((i<0)||(i>=static_cast<const int>(Z_FIELDS))) return;
+if (index >= Z_FIELDS) return;
 vm.clear();                            // Stream vector is now dirty
-subkey[i] = val;
+subkey[index] = val;
 }
 
 //------------------------------------------------------------------------------
 
-byte Msg_p::L(int index)
+byte Msg_p::L(unsigned index)
 // Retrieve a subkey field
 {
-int i = int(index);
-if ((i<0)||(i>=static_cast<const int>(Z_FIELDS))) return 0xff;
-return subkey[i];
+if (index>=Z_FIELDS) return 0xff;
+return subkey[index];
 }
 
 //------------------------------------------------------------------------------

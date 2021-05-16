@@ -104,7 +104,7 @@ void Mothership::initialise_application(AppInfo* app)
     /* 4: Initialise the supervisor device on this Mothership for this
      * application, posting on error. */
     debug_post(583, 1, app->name.c_str());
-    if (superdb.initialise_supervisor(app->name) != 0) Post(523, app->name);
+    if (superdb.init_supervisor(app->name) != 0) Post(523, app->name);
 }
 
 /* Starts an application, by queueing BARRIER packets to each thread to be
@@ -119,22 +119,45 @@ void Mothership::run_application(AppInfo* app)
 
     /* Send "acknowledgement" message to root. */
     PMsg_p acknowledgement;
-    acknowledgement.comm = Comms[RootCIdx()];
     acknowledgement.Src(Urank);
     acknowledgement.Key(Q::MSHP, Q::ACK, Q::RUN);
     acknowledgement.Put<std::string>(0, &(app->name));
-    acknowledgement.Tgt(pPmap[RootCIdx()]->U.Root);
+    acknowledgement.Tgt(pPmap->U.Root);
     queue_mpi_message(&acknowledgement);
 }
 
-/* Stops an application, by queueing STOP packets to each thread to be
- * processed by BackendOutputBroker. This packet shuts down the softswitch when
- * received. */
+/* Stops an application, by:
+ *
+ *  - Changing the application state to STOPPING, which prevents the supervisor
+ *    from receiving packets from normal devices.
+ *
+ *  - Queueing STOP packets to each thread to be processed by
+ *    BackendOutputBroker. This packet shuts down the softswitch when
+ *    received.
+ *
+ *  - Calls the exit handler for the supervisor, and reloads it. If the reload
+ *    fails, we're not in Kansas anymore Toto. */
 void Mothership::stop_application(AppInfo* app)
 {
-    debug_post(594, 1, app->name.c_str());
+    std::string appName = app->name;
+    std::string errorMessage;
+
+    debug_post(594, 1, appName.c_str());
     app->state = STOPPING;
     send_cnc_packet_to_all(app, P_CNC_STOP);
+    superdb.exit_supervisor(appName);
+    if(!superdb.reload_supervisor(appName, &errorMessage))
+    {
+        Post(503, appName, errorMessage);
+        app->state = BROKEN;
+    }
+
+    /* On (re)loading the supervisor, provision its API. */
+    if(!provision_supervisor_api(appName))
+    {
+        Post(525, appName);
+        app->state = BROKEN;
+    }
 }
 
 /* Sends a CNC packet with a given opcode to each thread in an application. */

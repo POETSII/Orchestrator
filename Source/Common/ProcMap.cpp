@@ -23,14 +23,51 @@ ProcMap::~ProcMap()
 
 //------------------------------------------------------------------------------
 
-void ProcMap::Dump(FILE * fp)
+void ProcMap::Register(PMsg_p * Z)
+// Load a single record into the map
+{
+ProcMap_t rec;                         // Create the record
+int cnt;                               // Unload the message
+int * pi = Z->Get<int>(1,cnt);         // ... rank
+if (pi!=0) rec.P_rank = *pi;
+Z->Get(2,rec.P_proc);                  // ... machine name
+Z->Get(3,rec.P_user);                  // ... user name on machine
+Z->Get(4,rec.P_class);                 // ... C++ class
+unsigned * pu = Z->Get<unsigned>(5,cnt);
+if (pu!=0) rec.P_BPW = *pu;            // ... bits per word
+Z->Get(6,rec.P_compiler);              // ... compiler
+Z->Get(7,rec.P_OS);                    // ... operating system
+Z->Get(8,rec.P_source);                // ... source file
+Z->Get(9,rec.P_binary);                // ... binary file
+Z->Get(10,rec.P_TIME);                 // ... compilation time
+Z->Get(11,rec.P_DATE);                 // ... compilation date
+pi = Z->Get<int>(12,cnt);              // ... *provided* MPI thread class
+if (pi!=0) rec.P_ttype = *pi;
+rec.P_tig = (bool)MPI_WTIME_IS_GLOBAL; // Are we synchronised?
+rec.P_tick = MPI_Wtick();              // Timer resolution
+
+vPmap.push_back(rec);                  // Load the map
+M[rec.P_rank] = rec.P_class;           // ...and the special process ranks
+if (rec.P_class==string(csROOTproc))        U.Root       = rec.P_rank;
+if (rec.P_class==string(csLOGSERVERproc))   U.LogServer  = rec.P_rank;
+if (rec.P_class==string(csDUMMYproc))       U.Dummy.push_back(rec.P_rank);
+if (rec.P_class==string(csRTCLproc))        U.RTCL       = rec.P_rank;
+if (rec.P_class==string(csINJECTORproc))    U.Injector   = rec.P_rank;
+if (rec.P_class==string(csNAMESERVERproc))  U.NameServer = rec.P_rank;
+if (rec.P_class==string(csMONITORproc))     U.Monitor.push_back(rec.P_rank);
+if (rec.P_class==string(csMOTHERSHIPproc))  U.Mothership.push_back(rec.P_rank);
+}
+
+//------------------------------------------------------------------------------
+
+void ProcMap::Show(FILE * fp)
 {
 fprintf(fp,"Process Map start\n"
            "++++++++++++++++++++++++++++++++++++++"
            "++++++++++++++++++++++++++++++++++++++\n");
-//fprintf(fp,"Me,Parent      0x%#018x,0x%#016x\n",(void *)this,(void *)par);
-fprintf(fp,"Me,Parent      %" PTR_FMT ",",reinterpret_cast<uint64_t>(this));
-fprintf(fp,"%" PTR_FMT "\n",reinterpret_cast<uint64_t>(par));
+fprintf(fp,"Me,Parent      %" PTR_FMT ",%" PTR_FMT "\n",
+        OSFixes::getAddrAsUint(this),OSFixes::getAddrAsUint(par));
+
 fprintf(fp,"Process map (%u entries):\n",static_cast<unsigned>(vPmap.size()));
 WALKVECTOR(ProcMap_t,vPmap,i) {
   fprintf(fp,"\n- - - - - - - - - - - - - - - - - - - "
@@ -43,7 +80,7 @@ WALKVECTOR(ProcMap_t,vPmap,i) {
              (*i).P_source.c_str(),(*i).P_binary.c_str());
   fprintf(fp,"at   %s on %s\n",
              (*i).P_TIME.c_str(),(*i).P_DATE.c_str());
-  fprintf(fp,"executing on %s\n",(*i).P_proc.c_str());
+  fprintf(fp,"executing on %s ",(*i).P_proc.c_str());
   fprintf(fp,"as user %s\n", (*i).P_user.c_str());
   fprintf(fp,"\nMPI hybrid programming model: ");
   switch ((*i).P_ttype) {
@@ -81,71 +118,24 @@ else {
 fprintf(fp,"\n"); fflush(fp);
 fprintf(fp,"Named process ranks... \n");
 fprintf(fp,"---------------------- \n");
-fprintf(fp,"Root rank       : %d\n",U.Root);
-fprintf(fp,"LogServer rank  : %d\n",U.LogServer);
-fprintf(fp,"RTCL rank       : %d\n",U.RTCL);
-fprintf(fp,"Injector rank   : %d\n",U.Injector);
-fprintf(fp,"NameServer rank : %d\n",U.NameServer);
+fprintf(fp,"Root rank       : %2d\n",U.Root);
+fprintf(fp,"LogServer rank  : %2d\n",U.LogServer);
+fprintf(fp,"RTCL rank       : %2d\n",U.RTCL);
+fprintf(fp,"Injector rank   : %2d\n",U.Injector);
+fprintf(fp,"NameServer rank : %2d\n",U.NameServer);
 fprintf(fp,"Mothership ranks: ");
-WALKVECTOR(int,U.Mothership,i) fprintf(fp,"%d ",*i);
+WALKVECTOR(int,U.Mothership,i) fprintf(fp,"%2d ",*i);
 fprintf(fp,"\nMonitor ranks   : ");
-WALKVECTOR(int,U.Monitor,i) fprintf(fp,"%d ",*i);
+WALKVECTOR(int,U.Monitor,i) fprintf(fp,"%2d ",*i);
 fprintf(fp,"\nDummy ranks     : ");
-WALKVECTOR(int,U.Dummy,i) fprintf(fp,"%d ",*i);
+WALKVECTOR(int,U.Dummy,i) fprintf(fp,"%2d ",*i);
 fprintf(fp,"\n\n");
-WALKMAP(int,string,M,i) fprintf(fp,"%d: %s\n",(*i).first,(*i).second.c_str());
-fprintf(fp,"\n\n"); 
+WALKMAP(int,string,M,i) fprintf(fp,"%2d: %s\n",(*i).first,(*i).second.c_str());
+fprintf(fp,"\n\n");
 fprintf(fp,"Process Map end\n"
            "--------------------------------------"
            "--------------------------------------\n\n");
 fflush(fp);
-}
-
-//------------------------------------------------------------------------------
-
-//void ProcMap::GetProcs(vector<string> & vs)
-void ProcMap::GetProcs(vector<ProcMap_t> & vs)
-// Load the argument vector with the list of current process main class names
-{
-//WALKVECTOR(ProcMap_t,vPmap,i) vs.push_back((*i).P_class);
-vs = vPmap;
-}
-
-//------------------------------------------------------------------------------
-
-void ProcMap::Register(PMsg_p * Z)
-// Load a single record into the map
-{
-ProcMap_t rec;                         // Create the record
-int cnt;                               // Unload the message
-int * pi = Z->Get<int>(1,cnt);         // ... rank
-if (pi!=0) rec.P_rank = *pi;
-Z->Get(2,rec.P_proc);                  // ... machine name
-Z->Get(3,rec.P_user);                  // ... user name on machine
-Z->Get(4,rec.P_class);                 // ... C++ class
-unsigned * pu = Z->Get<unsigned>(5,cnt);
-if (pu!=0) rec.P_BPW = *pu;            // ... bits per word
-Z->Get(6,rec.P_compiler);              // ... compiler
-Z->Get(7,rec.P_OS);                    // ... operating system
-Z->Get(8,rec.P_source);                // ... source file
-Z->Get(9,rec.P_binary);                // ... binary file
-Z->Get(10,rec.P_TIME);                  // ... compilation time
-Z->Get(11,rec.P_DATE);                 // ... compilation date
-pi = Z->Get<int>(12,cnt);              // ... *provided* MPI thread class
-if (pi!=0) rec.P_ttype = *pi;
-rec.P_tig = (bool)MPI_WTIME_IS_GLOBAL; // Are we synchronised?
-rec.P_tick = MPI_Wtick();              // Timer resolution
-
-vPmap.push_back(rec);                  // Load the map
-M[rec.P_rank] = rec.P_class;           // ...and the special process ranks
-if (rec.P_class==string(csROOTproc))        U.Root       = rec.P_rank;
-if (rec.P_class==string(csLOGSERVERproc))   U.LogServer  = rec.P_rank;
-if (rec.P_class==string(csDUMMYproc))       U.Dummy.push_back(rec.P_rank);
-if (rec.P_class==string(csRTCLproc))        U.RTCL       = rec.P_rank;
-if (rec.P_class==string(csINJECTORproc))    U.Injector   = rec.P_rank;
-if (rec.P_class==string(csNAMESERVERproc))  U.NameServer = rec.P_rank;
-if (rec.P_class==string(csMONITORproc))     U.Monitor.push_back(rec.P_rank);
-if (rec.P_class==string(csMOTHERSHIPproc))  U.Mothership.push_back(rec.P_rank);
 }
 
 //==============================================================================

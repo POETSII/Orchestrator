@@ -17,7 +17,7 @@
 #include "macros.h"
 #include "NameBase.h"
 #include "P_core.h"
-#include "P_device.h"
+#include "DevI_t.h"
 
 /* Facilitate out-of-order includes. */
 class P_core;
@@ -29,7 +29,7 @@ public:
 
     /* Threads live in cores; this is the core that this thread lives in, if
      * any. */
-    P_core* parent = NULL;
+    P_core* parent;
     void on_being_contained_hook(P_core* container);
 
     unsigned int dataMemoryAddress;

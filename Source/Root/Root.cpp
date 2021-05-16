@@ -2,16 +2,20 @@
 
 #include "Root.h"
 #include "CommonBase.h"
+#include "OrchConfig.h"
 #include "pthread.h"
 #include <stdio.h>
 #include "PMsg_p.hpp"
 #include "Pglobals.h"
 #include "Cli.h"
 #include "flat.h"
+#include <new>
 
 #include "OSFixes.hpp"
+//==============================================================================
 
 const char * Root::prompt = "POETS>";
+bool         Root::promptOn = true;
 
 //------------------------------------------------------------------------------
 
@@ -20,24 +24,19 @@ void * kb_func(void * pPar)
 // and send it to the main thread in this process, where it gets picked up by
 // the MPI spinner.
 {
-//printf("\nRoot::kb_func: thread starting\n\n"); fflush(stdout);
-Root* parent = static_cast<Root*>(pPar);
-int len = 0;                                      // Characters in buffer
-for(;;) {
-  if (len==0) Root::Prompt();                     // Console prompt
-  fflush(stdout);
+int len = 0;                           // Characters in buffer
+for(;;) {                              // Superloop
+  if (len==0) Root::Prompt();          // Console prompt
   static const unsigned SIZE = 512;
   char buf[SIZE];
-  buf[0] = '\0';                                  // Borland bug: notes 21/7/17
+  buf[0] = '\0';                       // Borland bug: notes 21/7/17
   for(unsigned j=1;j<SIZE;j++) buf[j]='x';
   if (fgets(buf,SIZE-1,stdin) == PNULL) continue; // Pull in keyboard string.
-  len=strlen(buf)-1;                              // Ignore trailing newline
-  if (len==0) continue;                           // Hard to see how
-  if (buf[len]=='\n')buf[len]='\0';               // Replace trailing newline
+  len=strlen(buf)-1;                   // Ignore trailing newline
+  if (len==0) continue;                // Hard to see how
+  if (buf[len]=='\n')buf[len]='\0';    // Replace trailing newline
   PMsg_p Pkt;
-  Pkt.comm = parent->Comms[0];                    // comm is always our local
-                                                  // one (index 0)
-  Pkt.Put<char>(1,buf,len+2);                     // Put it in a packet
+  Pkt.Put<char>(1,buf,len+2);          // Put it in a packet
   Pkt.Key(Q::KEYB);
 
 //int cnt;                               // cnt now includes trailing '\0'
@@ -45,48 +44,55 @@ for(;;) {
 //printf("len=%d, cnt=%d, obuf=%s\n",len,cnt,obuf);  fflush(stdout);
 
   Pkt.Src(0);
-  Pkt.Send(0);                                    // Send to root process main
-                                                  // thread
-
-  // User wants out - kill this thread
-  if (strcmp(buf,"exit")==0 or buf[0]==0) break;
+  Pkt.Send(0);                         // Send to root process main thread
+                                       // User wants out - kill this thread
+  if (strcmp(buf,"exit")==0) break;    // "exit" typed
+  if (buf[0]==char(0)) break;          // ctrl-d in linux-land
+  if (buf[0]==char(4)) break;          // ctrl-d in u$oft-land
 }
-
-//printf("kb_func: thread closing\n"); fflush(stdout);
-pthread_exit(NULL);
+// Tell the user we're leaving immediately.
+Root::promptOn = false;
+printf("Exiting...\n");
+pthread_exit(NULL);                    // Kill the keyboard thread
 return NULL;
 }
 
 //==============================================================================
 
-Root::Root(int argc,char * argv[],string d)
-    :OrchBase(argc,argv,d,string(__FILE__))
+Root::Root(int argc,char * argv[],string d) :
+  OrchBase(argc,argv,d,string(__FILE__))
 {
-echo         = false;                  // Batch subsystem opaque
+if (!Config()) return;                 // Set up defaults from config file
 injData.flag = 0;                      // Clear injector controls
-
-FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
                                        // Load the default incoming event map
-(*FnMapx[0])[PMsg_p::KEY(Q::KEYB         )] = &Root::OnKeyb;
-(*FnMapx[0])[PMsg_p::KEY(Q::TEST         )] = &Root::OnTest;
-(*FnMapx[0])[PMsg_p::KEY(Q::LOG  ,Q::FULL)] = &Root::OnLogP;
-(*FnMapx[0])[PMsg_p::KEY(Q::INJCT,Q::REQ )] = &Root::OnInje;
+FnMap[PMsg_p::KEY(Q::KEYB         )] = &Root::OnKeyb;
+FnMap[PMsg_p::KEY(Q::TEST         )] = &Root::OnTest;
+FnMap[PMsg_p::KEY(Q::LOG  ,Q::FULL)] = &Root::OnLogP;
+FnMap[PMsg_p::KEY(Q::INJCT,Q::REQ )] = &Root::OnInje;
+FnMap[PMsg_p::KEY(Q::PMAP         )] = &Root::OnPmap;
 
 // Mothership acknowledgements
-(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD)] = &Root::OnMshipAck;
-(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)] = &Root::OnMshipAck;
-(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN )] = &Root::OnMshipAck;
-(*FnMapx[0])[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)] = &Root::OnMshipAck;
+FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD)] = &Root::OnMshipAck;
+FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)] = &Root::OnMshipAck;
+FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN )] = &Root::OnMshipAck;
+FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)] = &Root::OnMshipAck;
 
-void * args = this;                    // Spin off a thread to handle keyboard
+// Mothership requests
+FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP)] = &Root::OnMshipReq;
+
+// Spin off a thread to handle keyboard
+void * args = this;
 pthread_t kb_thread;
 if(pthread_create(&kb_thread,NULL,kb_func,args))
   fprintf(stdout,"Error creating kb_thread\n");
 fflush(stdout);
 
-/* Handle input arguments - grab the hdfPath and/or batchPath. */
+/* Grab default hdfPath from configuration. */
+std::string hdfPath = pOC->Hardware();
+
+/* Handle input arguments - grab the hdfPath and/or batchPath (the former
+ * clobbers a definition from config). */
 std::string rawArgs;
-std::string hdfPath;
 std::string batchPath;
 for (int i=1; i<argc; i++)
 {
@@ -95,10 +101,12 @@ for (int i=1; i<argc; i++)
 }
 
 Cli cli(rawArgs);
-if (cli.problem.prob)
+int row, column;
+cli.Err(row, column);
+if (row != -1)
 {
-  printf("Command-line error near character %d. Ignoring commandline "
-         "arguments.\n", cli.problem.col);
+  printf("Command-line error near character '%d'. Ignoring non-debug "
+         "commandline arguments.\n", cli.problem.col);
 }
 else
 {
@@ -114,7 +122,8 @@ else
  * entry using the batch system (see Root::OnIdle). */
 if (!batchPath.empty())
 {
-  Equeue.push_front(Cli(dformat("call /file = \"%s\"", batchPath.c_str())));
+  pCmCall->Equeue.push_front(Cli(dformat(
+    "call /file = \"%s\"", batchPath.c_str())));
 }
 
 /* Pass hardware description file to topology generation, if one was given to
@@ -131,109 +140,52 @@ if (!batchPath.empty())
  * making Post work correctly. */
 if (!hdfPath.empty())
 {
-  Equeue.push_front(Cli(dformat("topo /load = \"%s\"", hdfPath.c_str())));
+  pCmCall->Equeue.push_front(Cli(dformat(
+    "load /engine = \"%s\"", hdfPath.c_str())));
 }
 
 MPISpinner();                          // Spin on *all* messages; exit on DIE
-printf("********* Root rank %d on the way out\n",Urank); fflush(stdout);
+pthread_join(kb_thread, NULL);
 }
 
 //------------------------------------------------------------------------------
 
 Root::~Root()
 {
-//printf("********* Root rank %d destructor\n",Urank); fflush(stdout);
-WALKVECTOR(FnMap_t*, FnMapx, F)
-    delete *F;
+if (pOC!=0) delete pOC;
 }
 
 //------------------------------------------------------------------------------
 
-void Root::CallEcho(Cli::Cl_t Cl)
-// Monkey wants to see what's going on in the batch subsystem
+bool Root::Config()
+// Here we load the non-user facing defaults from a static configuration file.
+// This file has a fixed name, and is resident in the same subdirectory as the
+// Root binary. From this, all other file locations, paths and defaults are
+// derived. There is a minimal bit of saving-us-from-cockups, but not much,
+// because if this doesn't work the LogServer has no elaboration file, and we
+// can't load applications or do anything, really.
 {
-string secho = Cl.GetP();
-if (strcmp(secho.c_str(),"on" )==0) echo = true;
-if (strcmp(secho.c_str(),"off")==0) echo = false;
-Post(34,echo?"on":"off");
+pOC = new OrchConfig();                // Build the configuration object
+if (pOC->ErrCnt()!=0) {                // Errors: do what we can for user f/b
+  vector<pair<int,int> > ev = pOC->ExposeErr();
+  printf("\n%u Orchestrator configuration file %s errors\n\n",
+         pOC->ErrCnt(),pOC->Where().c_str());
+  for(unsigned i=0;i<ev.size();i++)
+    printf("%u: line %d code %d\n",i+1,ev[i].first,ev[i].second);
+  printf("*** *Attempting* a graceful closedown\n\n");
+  fflush(stdout);
+  CmExit(0);                           // Close down the rest of the Universe
+  return false;
 }
+                                       // OK, we're good
+pCmPath->Reset();                      // Copy over the default paths
 
-//------------------------------------------------------------------------------
 
-void Root::CallFile(Cli::Cl_t Cl)
-// Switch input from monkey to file
-{
-string sfile = Cl.GetP();              // Get the batch filename
-if (find(stack.begin(),stack.end(),sfile)!=stack.end()) {
-  Equeue.pop_front();                  // EOF marker in command Q now NFG
-  Post(33,sfile);                      // Trap attempted batch recursion
-  return;
-}
-if (sfile.empty()) {                   // Blank batch filename
-  Post(31);
-  return;
-}
-if (!file_readable(sfile.c_str())) {
-  Post(32,sfile);
-  return;
-}
 
-Cli Cx;
-Cx.Co = "*";
-Cx.Dump();
-Equeue.push_front(Cx);
-list<Cli> temp = Cli::File(sfile,true);// Bolt incoming file to front of queue
-Equeue.splice(Equeue.begin(),temp);
-stack.push_back(sfile);                // Store current batch file name
+// TODO : copy over all the other defaults
+Post(63,"TODO: Copy defaults out of Root::Config");
 
-/*
-FILE * fp = fopen(sfile.c_str(),"r");  // Try and open it?
-if (fp==0) Post(32,sfile);             // Nope, for whatever reason
-else {                                 // OK, at last, we're good to go
-  stack.push_back(sfile);              // Store current batch file name
-  static const unsigned SIZE = 512;
-  for(;;) {                            // One line at a time....
-    char buf[SIZE];
-    char * ps = fgets(buf,SIZE-1,fp);  // Pull in the data; ends with "/n/0"
-    if (ps!=0) {                       // Process it ?
-      if (echo) Post(28,string(ps));   // Copy to monkey
-      ProcCmnd(&Cli(string(ps)));      // Action it
-    }
-    else break;                        // EOF?
-  }
-  stack.pop_back();                    // Junk current stack frame
-  fclose(fp);                          // Close current file
-}
-*/
-}
-
-//------------------------------------------------------------------------------
-
-void Root::CallShow(Cli::Cl_t Cl)
-// Monkey wants to see the call stack
-{
-FILE * fp = stdout;
-fprintf(fp,"Batch call stack has %lu entries\n",stack.size());
-WALKVECTOR(string,stack,i) fprintf(fp,"%s\n",(*i).c_str());
-fprintf(fp,"Batch command queue has %lu entries\n",Equeue.size());
-WALKLIST(Cli,Equeue,i) fprintf(fp,"%s\n",(*i).Orig.c_str());
-fflush(fp);
-}
-
-//------------------------------------------------------------------------------
-
-unsigned Root::CmCall(Cli * pC)
-// Pass command input to a file
-{
-if (pC==0) return 0;                   // Paranoia - nothing to call
-WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
-  string scl = (*i).Cl;                // Pull out clause name
-  if (strcmp(scl.c_str(),"echo")==0) { CallEcho(*i); continue; }
-  if (strcmp(scl.c_str(),"file")==0) { CallFile(*i); continue; }
-  if (strcmp(scl.c_str(),"show")==0) { CallShow(*i); continue; }
-  Post(25,scl,"call");                 // Unrecognised clause
-}
-return 0;
+return true;
 }
 
 //------------------------------------------------------------------------------
@@ -254,56 +206,27 @@ unsigned Root::CmExit(Cli * pC)
 // standing (aside from us) so we can get the message acks back for the
 // console
 {
-if (pC==0) return 0;                   // Paranoia
+
                                        // Coming from batch?
-if (!stack.empty()) {
+if (!pCmCall->stack.empty()) {
   Post(35);
   return 0;
 }
-int p, pL, tpL, lIdx;
-lIdx = 0;
-pL = -1;                               // maybe we have no LogServer?
+
 PMsg_p Pkt;                            // Burst closedown command to all ranks
 Pkt.Src(Urank);
 Pkt.Key(Q::EXIT);
-for (unsigned cIdx=0;cIdx < Comms.size();cIdx++)
-{
-Pkt.comm = Comms[cIdx];                // on all communicators
-if ((tpL = pPmap[cIdx]->U.LogServer) != Q::NAP) // is this the LogServer's local comm?
-{
-   pL = tpL;    // Yes. Cache LogServer rank
-   lIdx = cIdx; // and comm index
-   for(p=0;p<Usize[cIdx];p++)
-   {
-      if ((((static_cast<int>(cIdx) != RootCIdx())
-            || (p!=static_cast<int>(Urank)))) && (p!=tpL))
-      { // NOT the LogServer
-        Post(50,pPmap[cIdx]->M[p],int2str(p));
-        Pkt.Send(p);
-      }
-   }
-}
-else
-{
-   for(p=0;p<Usize[cIdx];p++) // No. LogServer not on this comm. Shut everyone down.
-   {
-      if (((static_cast<int>(cIdx) != RootCIdx())
-            || (p!=static_cast<int>(Urank))))
-      {  // Don't need to send to self
-         Post(50,pPmap[cIdx]->M[p],int2str(p));
-         Pkt.Send(p);
-      }
-   }
-}
-}
-Post(50,Sderived,int2str(Urank));            // Root is going anyway
-if (pL >= 0)                                 // a Logserver existed?
-{
-Post(50,pPmap[lIdx]->M[pL],int2str(pL));     // Ensure LogServer goes last
-Pkt.comm = Comms[lIdx];                      // Set LogServer's comm for the packet
+int pL = pPmap->U.LogServer;           // Cache LogServer rank
+for(int p=0;p<Usize;p++)
+  if ((p!=(int)Urank)&&(p!=pL)) {      // NOT the LogServer
+    Post(50,pPmap->M[p],int2str(p));
+    Pkt.Send(p);
+  }
+Post(50,pPmap->M[pL],int2str(pL));     // Ensure LogServer goes last
+Post(50,Sderived,int2str(Urank));      // Root is going anyway
 Pkt.Send(pL);
-}
-return CommonBase::OnExit(&Pkt,0);           // Run the base class exit handler
+
+return CommonBase::OnExit(&Pkt);           // Run the base class exit handler
 // return 1;                                 // Return closedown flag
 }
 
@@ -318,190 +241,78 @@ if (pC==0) return 0;                   // Paranoia
 WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clauses, looking for "flag"
   if (strcmp((*i).Cl.c_str(),"flag")!=0) continue;
   WALKVECTOR(Cli::Pa_t,(*i).Pa_v,j)
-    if (!(*j).Val.empty()) injData.flag = str2hex((*j).Val);
+    if (!(*j).Va_v.empty()) injData.flag = str2hex((*j).Va_v[0]);
 }
 Post(55,hex2str(injData.flag));        // Tell the monkey
 PMsg_p Msg;
-unsigned cIdx = 0;
-for (; cIdx < Comms.size(); cIdx++)
-{
-    if (pPmap[cIdx]->U.Injector != Q::NAP)
-    {
-       Msg.comm = Comms[cIdx];
-       break;
-    }
-}
-if (cIdx >= Comms.size())
-{
-   Post(160);
-   return 0;                           // no injector, but should probably return normally
-}
 Msg.Put(1,&(pC->Orig));                // Wrap the command into a message
 Msg.Key(Q::INJCT,Q::FLAG);             // Message type
-Msg.Send(pPmap[cIdx]->U.Injector);     // Send it to the injector process
+Msg.Send(pPmap->U.Injector);     // Send it to the injector process
 return 0;                              // Legitimate command exit
 }
 
 //------------------------------------------------------------------------------
 
-unsigned Root::CmRTCL(Cli * pC)
-// Handle "RTCL" from the monkey. We've already parsed the command line, so we
-// know it's OK. Rather than pack/unpack the data structure, just send the
-// original command line string and the RTC can re-parse it - it's never very
-// long. It's not like we're paying for the electricity.
+unsigned Root::CmRetu(Cli * pC)
+// Handle a "return" command. (No effect from the console.) From inside a batch
+// command, we skip the rest of the calling file.
+// It has one clause, (which is the line number that generated it) so we don't
+// need to loop - just grab the first one, and the first parameter is the line.
 {
-if (pC==0) return 0;                   // Paranoia
-//pC->Dump();
-PMsg_p Msg;
-unsigned cIdx = 0;
-for (; cIdx < Comms.size(); cIdx++)
-{
-    if (pPmap[cIdx]->U.RTCL != Q::NAP)
-    {
-       Msg.comm = Comms[cIdx];
-       break;
-    }
+if (pCmCall->stack.empty()) return 0;  // We're in console mode
+                                       // Tell the user what's going on
+Post(38,pCmCall->stack.back(),pC->Cl_v[0].GetP());
+Cli c = pCmCall->Equeue.front();       // Next command in batch queue
+while (c.Co[0]!='*') {                 // While not EOF marker ("*")....
+  pCmCall->Equeue.pop_front();         // Lose it
+  c = pCmCall->Equeue.front();         // New next command
 }
-if (cIdx >= Comms.size())
-{
-   Post(161);
-   return 0;                           // no RTCL, but should probably return normally
-}
-Msg.Put(1,&(pC->Orig));                // Command line
-Msg.Src(Urank);                        // Me
-Msg.Key(Q::RTCL);                      // Key
-Msg.Send(pPmap[cIdx]->U.RTCL);               // Away we go
-return 0;                              // Legitimate command exit
-}
-
-//------------------------------------------------------------------------------
-
-unsigned Root::CmSyst(Cli * pC)
-// Handle "system" from the monkey.
-{
-if (pC==0) return 0;                   // Paranoia
-WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
-  string scl = (*i).Cl;                // Pull out clause name
-  if (strcmp(scl.c_str(),"conn")==0) { SystConn(*i); continue; }
-  if (strcmp(scl.c_str(),"path")==0) { SystPath(*i); continue; }
-  if (strcmp(scl.c_str(),"ping")==0) { SystPing(*i); continue; }
-  if (strcmp(scl.c_str(), "run")==0) { SystRun(*i);  continue; }
-  if (strcmp(scl.c_str(),"show")==0) { SystShow(*i); continue; }
-  if (strcmp(scl.c_str(),"time")==0) { SystTime(*i); continue; }
-  Post(25,scl,"system");               // Unrecognised clause
-}
-return 0;                              // Legitimate command exit
-}
-
-//------------------------------------------------------------------------------
-
-unsigned Root::CmTest(Cli * pC)
-// Test command handler. (It's already been trimmed)
-{
-if (pC->Cl_v.empty()) return 0;        // Nothing to do
-WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
-  const char * cs = (*i).Cl.c_str();
-  if (strcmp(cs,"time")==0) {          // Tell the monkey the time
-    unsigned count = str2int((*i).GetP(0,"16"));
-    for (unsigned i=0;i<=count;i++) Post(46,int2str(i,2),GetTime());
-  }
-  if (strcmp(cs,"floo")==0) {          // Initiate a flood event
-    unsigned width = str2uint((*i).GetP(0,"2"));
-    unsigned level = str2uint((*i).GetP(1,"4"));
-    PMsg_p Z;
-    Z.Key(Q::TEST,Q::FLOO);
-    Z.Put<unsigned>(1,&width);
-    Z.Put<unsigned>(2,&level);
-    WALKVECTOR(MPI_Comm,Comms,C)      // flood to all active comms.
-    {
-       Z.comm = *C;
-       Z.Bcast();
-    }
-    Post(51,uint2str(width),uint2str(level));
-  }
-}
+pCmCall->Equeue.pop_front();           // Lose the "*"
+pCmCall->stack.pop_back();             // Modify the recursion trap stack
 return 0;
 }
 
 //------------------------------------------------------------------------------
 
-unsigned Root::Connect(string svc)
+void Root::Dump(unsigned off,FILE * fp)
 {
-if (unsigned err = CommonBase::Connect(svc)) return err;
-FnMapx.push_back(new FnMap_t); // insert another function table
-
-// Root doesn't have to sit in the same local universe as the LogServer,
-// nor any injectors (which might conveniently be remote in many cases so
-// that they can grab data from an external source). So these functions ought
-// to be registered for new connections. Keyboard and test functionality, though
-// will always be in the same universe and needn't be re-registered.
-(*FnMapx[FnMapx.size()-1])[PMsg_p::KEY(Q::LOG  ,Q::FULL)] = &Root::OnLogP;
-(*FnMapx[FnMapx.size()-1])[PMsg_p::KEY(Q::INJCT,Q::REQ )] = &Root::OnInje;
-return MPI_SUCCESS;
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"\n%sRoot dump ++++++++++++++++++++++++++++++++++++++++++++++\n",os);
+fprintf(fp,"%sEvent handler table:\n",os);
+fprintf(fp,"%sKey        Method\n",os);
+WALKMAP(unsigned,pMeth,FnMap,i)
+{
+  fprintf(fp,"%s%#010x %" PTR_FMT "\n",os,(*i).first,
+                        OSFixes::getAddrAsUint((*i).second));
 }
-
-//------------------------------------------------------------------------------
-
-void Root::Dump(FILE * fp)
-{
-fprintf(fp,"Root dump+++++++++++++++++++++++++++++++++++\n");
-fprintf(fp,"Event handler table:\n");
-unsigned cIdx = 0;
-WALKVECTOR(FnMap_t*,FnMapx,F)
-{
-fprintf(fp,"Function table for comm %d:\n", cIdx++);
-fprintf(fp,"Key        Method\n");
-// tricky: dereference of F needs enclosing in parentheses
-// because the expansion of the macro plus operator precedence
-// means it would try to dereference the iterator obtained from
-// F. Not what is expected...
-WALKMAP(unsigned,pMeth,(**F),i)
-{
-  //fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
-  fprintf(fp,"%#010x ",(*i).first);
-
-  // Now for a horrible double type cast to get us a sensible function pointer.
-  // void*s are only meant to point to objects, not functions. So we get to a
-  // void** as a pointer to a function pointer is an object pointer. We can then
-  // follow this pointer to get to the void*, which we then reinterpret to get
-  // the function's address as a uint64_t.
-  fprintf(fp,"%" PTR_FMT "\n",reinterpret_cast<uint64_t>(
-                                *(reinterpret_cast<void**>(&((*i).second))))
-          );
-}
-}
-fprintf(fp,"prompt    = %s\n",prompt);
-
-fprintf(fp,"Batch file echo %s\n",echo ? "ON" : "OFF");
-fprintf(fp,"Injector controls:\n");
-fprintf(fp,"flag = %0x\n",injData.flag);
-fprintf(fp,"Root dump-----------------------------------\n");
+fprintf(fp,"%sprompt    = %s\n",os,prompt);
+fprintf(fp,"%sInjector controls:\n",os);
+fprintf(fp,"%sflag = %0x\n",os,injData.flag);
+OrchBase::Dump(off+2,fp);
+fprintf(fp,"%sRoot dump ----------------------------------------------\n\n",os);
 fflush(fp);
-CommonBase::Dump(fp);
 }
 
 //------------------------------------------------------------------------------
 
 void Root::OnIdle()
 {
-if (Equeue.empty()) return;            // Batch queue empty?
-Cli Cm = Equeue.front();               // Pull off the next one
-Equeue.pop_front();                    // Erase from qeueue
-if (Cm.Co[0]=='*') stack.pop_back();   // EOF marker? - remove from call stack
+Cli Cm = pCmCall->Front();             // Anything in the batch queue?
+if (Cm.Empty()) return;                // No - bail                                      // Command comment echo to logserver?
+
+if ((pCmCall->echo)&&(!Cm.Orig.empty())) {
+  Post(22);
+  Post(36,Cm.Orig);
+}
+                                       // EOF marker? - remove from call stack
+if (Cm.Co[0]=='*') pCmCall->stack.pop_back();
 else ProcCmnd(&Cm);                    // Handle ordinary batch command
-//  return;                              // Go round again
-//}
-//if (IsCallFile(Cm)) {                  // Special case: Is this call /file=????
-//Cm.Dump();
-//  CallFile(Cm.Cl_v[0]);
-//  return;
-//}
-//ProcCmnd(&Cm);                         // Handle ordinary batch command
 }
 
 //------------------------------------------------------------------------------
 
-unsigned Root::OnInje(PMsg_p * Z, unsigned cIdx)
+unsigned Root::OnInje(PMsg_p * Z)
 // Handle a message coming in from the Injector.
 {
 string s;
@@ -513,7 +324,7 @@ return ProcCmnd(&cmnd);                // Inject it into the command processor
 
 //------------------------------------------------------------------------------
 
-unsigned Root::OnKeyb(PMsg_p * Z, unsigned cIdx)
+unsigned Root::OnKeyb(PMsg_p * Z)
 // Handle a message coming in from the monkey.
 {
 int cnt;
@@ -521,10 +332,16 @@ char * buf = Z->Get<char>(1,cnt);
 //printf("Rank %d : Root::OnKeyb: %d ||%s||\n",Urank,cnt,buf);    fflush(stdout);
 Cli Pc(buf);                           // Wake up the command line interpreter
 int l,c;
-if (Pc.Err(l,c)) {                     // Handle any syntax errors locally
-  string eline = string(strlen(prompt),' ');
-  eline += string(c-1,' ') + "^^^";
-  printf("%s\nCommand line syntax error - line ignored\n",eline.c_str());
+Pc.Err(l,c);
+if (l>=0) {                            // Handle any syntax errors locally
+  string el = string(strlen(prompt),' ');
+  el += string(c-1,' ') + "^^^";
+  printf("%s\nCommand line syntax error - line ignored by POETS\n",el.c_str());
+  /* This really requires more thought... errors, stdout, stderr, piping...
+   * I found this because I compiled under gcc 9.3.0, which raises a warning.
+  printf("...trying OS command shell:\n\n");
+  system(buf);
+  printf("\n"); */
   Prompt();                            // Console prompt
   return 0;                            // Bail with "not closedown" value
 }
@@ -536,7 +353,46 @@ return ret;
 
 //------------------------------------------------------------------------------
 
-unsigned Root::OnLogP(PMsg_p * Z, unsigned cIdx)
+unsigned Root::OnMshipAck(PMsg_p * Z)
+// Updates the mothership acknowledgement table. The table is primarily
+// intended as a debugging tool, but will be invaluable for orchestrating POETS
+// jobs over multiple boxes.
+{
+    unsigned key = Z->Key();
+    string appName;
+    Z->Get(0, appName);
+    pair<int, string> mshipApp = make_pair(Z->Src(), appName);
+    if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD))
+        mshipAcks[mshipApp] = "DEFINED";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD))
+        mshipAcks[mshipApp] = "READY";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN))
+        mshipAcks[mshipApp] = "RUNNING";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP))
+        mshipAcks[mshipApp] = "STOPPED";
+    else
+        Post(183, hex2str(key), int2str(Z->Src()), int2str(Z->Tgt()));
+    return 0;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned Root::OnMshipReq(PMsg_p * Z)
+// Handles requests from Motherships to central control. Currently, just stops
+// applications.
+{
+    unsigned key = Z->Key();
+    string appName;
+    Z->Get(0, appName);
+    if (key == PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP))
+        MshipCommand(Cli("stop /app = " + appName).Cl_v[0], "stop");
+    else Post(183, hex2str(key), int2str(Z->Src()), int2str(Z->Tgt()));
+    return 0;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned Root::OnLogP(PMsg_p * Z)
 // Handler for an expanded full posted message back from the LogServer
 //      LOG|FULL|   -|   - (1:int)message_id,
 //                         (2:char)message_type,
@@ -562,30 +418,33 @@ return 0;
 
 //------------------------------------------------------------------------------
 
-unsigned Root::OnMshipAck(PMsg_p * Z, unsigned cIdx)
-// Updates the mothership acknowledgement table. The table is primarily
-// intended as a debugging tool.
+unsigned Root::OnPmap(PMsg_p * Z)
+// Here we intercept INCOMING messages loading the process map. Firstly, we
+// hand the message directly down to CommonBase to load the process map.
+// If the message was NOT from the LogServer, that's it.
+// If it was, then we now know that our process map knows about the LogServer,
+// so we can send it (the LogServer) the location of its message elaboration
+// file.
 {
-    unsigned key = Z->Key();
-    string appName;
-    Z->Get(0, appName);
-    pair<int, string> mshipApp = make_pair(Z->Src(), appName);
-    if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD))
-        mshipAcks[mshipApp] = "DEFINED";
-    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD))
-        mshipAcks[mshipApp] = "READY";
-    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN))
-        mshipAcks[mshipApp] = "RUNNING";
-    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP))
-        mshipAcks[mshipApp] = "STOPPED";
-    else
-        mshipAcks[mshipApp] = "YOU-ARE-NOT-SUPPOSED-TO-BE-HERE";
-    return 0;
+unsigned ret = CommonBase::OnPmap(Z);  // Base class behaviour
+                                       // Not from LogServer - bail
+if (Z->Src()!=pPmap->U.LogServer) return ret;
+
+PMsg_p Msg;                            // Tell logserver: message elaboration
+Msg.Key(Q::LOG,Q::LOAD);               // Message type
+Msg.Src(Urank);                        // Me
+Msg.Tgt(pPmap->U.LogServer);           // Target (now we know we know it)
+string MsgFile = pOC->Messages();      // Elaboration file location
+Msg.Put(0,&MsgFile);
+string LogFile = pOC->Log();           // Log output file
+Msg.Put(1,&LogFile);
+Msg.Send();                            // Kick it
+return ret;                            // And go about our business
 }
 
 //------------------------------------------------------------------------------
 
-unsigned Root::OnTest(PMsg_p * Z, unsigned cIdx)
+unsigned Root::OnTest(PMsg_p * Z)
 // This is an override for CommonBase::OnTest, which the rest of the Universe
 // is using
 // This is ADB playing; ignore me
@@ -600,180 +459,74 @@ return 0;
 
 unsigned Root::ProcCmnd(Cli * pC)
 // Take the monkey command and point it to the right place
-// All known monkey input is tabulated in Pglobals.h,
+// All known monkey input is (should be) tabulated in Pglobals.h,
 // (along with all known message layouts).
 {
 if (pC==0) return 1;                   // Paranoia
 pC->Trim();
 string scmnd = pC->Co;                 // Pull out the command string
+if (scmnd.empty()) return 0;           // It has no commands - it's a comment
 if (scmnd[0]=='*') {                   // Special case - EOF marker
-  stack.pop_back();                    // Remove from call stack
+  pCmCall->stack.pop_back();           // Remove from call stack
   return 0;
 }
-// Note you can't use .size() here, because some strings have been resized to 4,
-// so for them the size includes the '\0', whereas the others, it doesn't.....
-if (strcmp(scmnd.c_str(),"call")==0) return CmCall(pC);
-if (strcmp(scmnd.c_str(),"exit")==0) return CmExit(pC);
-if (strcmp(scmnd.c_str(),"inje")==0) return CmInje(pC);
-if (strcmp(scmnd.c_str(),"link")==0) return CmPlace(pC); // Synonym
-if (strcmp(scmnd.c_str(),"owne")==0) return CmOwne(pC);
-if (strcmp(scmnd.c_str(),"plac")==0) return CmPlace(pC);
-if (strcmp(scmnd.c_str(),"rtcl")==0) return CmRTCL(pC);
-if (strcmp(scmnd.c_str(),"syst")==0) return CmSyst(pC);
-if (strcmp(scmnd.c_str(),"task")==0) return CmTask(pC);
-if (strcmp(scmnd.c_str(),"test")==0) return CmTest(pC);
-if (strcmp(scmnd.c_str(),"topo")==0) return CmTopo(pC);
-
-// Handle Ctrl-D behaviour in common shells. Ctrl-D repeatedly sends the EOF
-// character. Check only the first character of the input.
-if (scmnd.at(0)==0) return CmExit(pC);
-
-return CmDrop(pC);
+// Each command has its own class, with a splitter functor (operator()()) to
+// decode the individual clauses.
+fd = pCmPath->Fopen();                 // Sort out the detail file stream
+                                       // Write a micro-header?
+if ((pCmPath->OuMode==CmPath::Ou_Lolf)||(pCmPath->OuMode==CmPath::Ou_Ofgf))
+  WriteUheader(pC);
+const unsigned INVALIDCODE=999;        // Yukky yukky yuk yuk
+unsigned code = INVALIDCODE;
+if (scmnd=="call") code=(*pCmCall)(pC);// Call
+if (scmnd=="comp") code=(*pCmComp)(pC);// Compose
+if (scmnd=="depl") code=(*pCmDepl)(pC);// Deploy
+if (scmnd=="dump") code=(*pCmDump)(pC);// Dump
+if (scmnd=="exit") code=CmExit(pC);    // Exit
+if (scmnd=="init") code=(*pCmInit)(pC);// Initialise
+if (scmnd=="load") code=(*pCmLoad)(pC);// Load
+if (scmnd=="path") code=(*pCmPath)(pC);// Path
+if (scmnd=="plac") code=(*pCmPlac)(pC);// Place
+if (scmnd=="reca") code=(*pCmReca)(pC);// Recall
+if (scmnd=="retu") code=CmRetu(pC);    // Return
+if (scmnd=="run")  code=(*pCmRun)(pC); // Run
+if (scmnd=="show") code=(*pCmShow)(pC);// Show
+if (scmnd=="stop") code=(*pCmStop)(pC);// Stop
+if (scmnd=="syst") code=(*pCmSyst)(pC);// System
+if (scmnd=="test") code=(*pCmTest)(pC);// Test
+if (scmnd=="tlin") code=(*pCmTlin)(pC);// Tlink
+if (scmnd=="unlo") code=(*pCmUnlo)(pC);// Unload
+if (scmnd=="untl") code=(*pCmUntl)(pC);// Untypelink
+if (scmnd.at(0)==char(0)) code=CmExit(pC); // Ctrl-D behaviour in linux-land
+if (scmnd.at(0)==char(4)) code=CmExit(pC); // Ctrl-D behaviour in Windoze
+fd = pCmPath->Fclose();                 // Reset detail file stream
+if (code==INVALIDCODE) return CmDrop(pC);
+return code;
 }
 
 //------------------------------------------------------------------------------
 
 void Root::Prompt(FILE * fp)
 {
-if (fp!=stdout) return;
+if (fp!=stdout or !Root::promptOn) return;
 fprintf(fp,"%s",Root::prompt);     // Console prompt
 fflush(fp);
 }
 
 //------------------------------------------------------------------------------
 
-void Root::SystConn(Cli::Cl_t Cl)
-// Connect to a group of processes identified by a service name in the parameter
+void Root::WriteUheader(Cli * pC)
 {
-if (Cl.Pa_v.size()==0) {
-  Post(47,"conn","system","1"); // need to be given a service to connect to
-  return;
-}
-if (static_cast<int>(pPmap[0]->vPmap.size()) != Usize[0])
-{
-  Post(62); // can't connect to another universe before we know the size of our own.
-}
-string svc = Cl.Pa_v[0].Val; // get the service name
-// connection is collective, so we have to organise everyone
-WALKVECTOR(ProcMap::ProcMap_t,pPmap[0]->vPmap,j) {   // Walk the local process list
-  if (Cli::StrEq((*j).P_class,Sderived)) continue;   // No need to notify self
-  PMsg_p Pkt;
-  Pkt.comm = Comms[0];           // local comm
-  Pkt.Put(0,&svc);               // Target service name
-  Pkt.Src(Urank);                // Sending rank
-  Pkt.Key(Q::SYST,Q::CONN);      // It's a connection request
-  Pkt.Send((*j).P_rank);
-}
-if (Connect(svc))
-   Post(60,svc.c_str());
-}
-//------------------------------------------------------------------------------
-void Root::SystPath(Cli::Cl_t Cl)
-// Add a pathname to the list of to-be-appended paths
-{
-
-}
-
-//------------------------------------------------------------------------------
-
-void Root::SystPing(Cli::Cl_t Cl)
-//
-{
-if (Cl.Pa_v.size()==0) {
-  Post(48,"ping","system","1");
-  return;
-}
-for(unsigned k=0;k<4;k++) {
-//Post(27,uint2str(k));
-  WALKVECTOR(Cli::Pa_t,Cl.Pa_v,i) {  // Walk the parameter (ping) list
-//    printf("%s\n",(*i).Val.c_str()); fflush(stdout);
-    string tgt = (*i).Val;             // Class name to be pinged
-    if (Cli::StrEq(tgt,Sderived)) continue;           // Can't ping yourself
-    unsigned cIdx = 0;
-    for (; cIdx < Comms.size(); cIdx++)               // check all communicators
-    {
-       WALKVECTOR(ProcMap::ProcMap_t,pPmap[cIdx]->vPmap,j) {   // Walk the process list
-         if (Cli::StrEq((*j).P_class,Sderived)) continue;// Still can't ping self
-         if ((Cli::StrEq(tgt,(*j).P_class))||(tgt=="*")) {
-           PMsg_p Pkt;
-           Pkt.comm = Comms[cIdx];
-           Pkt.Put(1,&((*j).P_class));    // Target process name
-           string tD(GetDate());
-           string tT(GetTime());
-           Pkt.Put(2,&tD); // Never actually used these
-           Pkt.Put(3,&tT);
-           Pkt.Put<unsigned>(4,&k);       // Ping attempt
-           Pkt.Src(Urank);                // Sending rank
-           Pkt.Key(Q::SYST,Q::PING,Q::REQ);
-           Pkt.Send((*j).P_rank);
-         }
-       }
-    }
-  }
-}
-}
-
-//------------------------------------------------------------------------------
-
-void Root::SystRun(Cli::Cl_t Cl)
-// Spawn a group of processes and connect to them. The run command should look like
-// either: 1) a list of triplets: number of procs, hostname, executable; or 2) a
-// file specification containing lines of this form. For this first version we
-// are not allowing command-line arguments, although this capacity could be
-// retrofitted if deemed essential.
-{
-// no arguments: bad command
-if (Cl.Pa_v.size()==0) {
-  Post(48,"run","system","1");
-  return;
-}
-// 1 argument: a file
-if (Cl.Pa_v.size()==1) {
-
-  return;
-}
-if (Cl.Pa_v.size()==2) {
-  Post(48,"run","system","1");
-  return;
-}
-if (Cl.Pa_v.size()%3!=0) {
-  Post(48,"ping","system","1");
-  return;
-}
-}
-
-//------------------------------------------------------------------------------
-
-void Root::SystShow(Cli::Cl_t)
-// Monkey wants the list of processes
-{
-//vector<string> vprocs;
-//if (pPmap!=0) pPmap->GetProcs(vprocs);
-vector<ProcMap::ProcMap_t> vprocs;
-for (unsigned cIdx = 0; cIdx < Comms.size(); cIdx++)
-{
-if (pPmap[cIdx]!=0) pPmap[cIdx]->GetProcs(vprocs);
-Post(29,uint2str(vprocs.size()),uint2str(cIdx));
-Post(30,Sproc);
-printf("\n");
-printf("Processes for comm %d\n", cIdx);
-//WALKVECTOR(string,vprocs,i) printf("%s\n",(*i).c_str());
-WALKVECTOR(ProcMap::ProcMap_t,vprocs,i)
-  printf("Rank %02d, %35s, created %s %s\n",
-      (*i).P_rank,(*i).P_class.c_str(),(*i).P_TIME.c_str(),(*i).P_DATE.c_str());
-printf("\n");
-}
-fflush(stdout);
-}
-
-//------------------------------------------------------------------------------
-
-void Root::SystTime(Cli::Cl_t)
-// Monkey wants the time
-{
-string sT = GetTime();
-string sD = GetDate();
-Post(26,sD,sT);
+fprintf(fd,"%s\n%s %s ",Q::eline.c_str(),GetDate(),GetTime());
+if (!pCmPath->lastfile.empty()) fprintf(fd,"file %s\n",
+                                           pCmPath->lastfile.c_str());
+fprintf(fd,"command [%s]\nfrom ",pC->Orig.c_str());
+if (pCmCall->stack.empty()) fprintf(fd,"console\n");
+else fprintf(fd,"batch file %s line %d\n",
+                pCmCall->stack.back().c_str(),pC->problem.lin);
+fprintf(fd,"%s\n\n",Q::eline.c_str());
+fflush(fd);
+Post(20,pC->Orig,pCmPath->lastfile);
 }
 
 //==============================================================================

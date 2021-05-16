@@ -29,7 +29,7 @@ char *host;
 char buf[MAX_LINE];
 int s,new_s,len;
 int sockOK = 0;
-  
+
   /*
   	build address structure
   */
@@ -38,7 +38,7 @@ int sockOK = 0;
   sin.sin_family=AF_INET;
   sin.sin_addr.s_addr=INADDR_ANY;
   sin.sin_port=htons(SERVER_PORT);
-  
+
   /*
   	open as passive
   */
@@ -46,7 +46,7 @@ int sockOK = 0;
     printf("UserIO-server: socket creation error %s\n",strerror(errno));
     MPI_Abort(MPI_COMM_WORLD,-2);
   }
-  
+
   /*
   	bind socket to address
   */
@@ -86,11 +86,11 @@ int sockOK = 0;
         MPI_Ssend((void*)buf,len,MPI_UNSIGNED_CHAR,UserIO_Requester,107,MPI_COMM_WORLD);
         buf[len+1] = '\0';
         printf("UserIO-server sent  to Requester %s\n",buf);
-     
+
     }
-    close(new_s);  
+    close(new_s);
   }
-}    	
-	  		
-	
-  
+}
+
+
+
