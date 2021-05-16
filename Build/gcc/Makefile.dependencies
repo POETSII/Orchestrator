@@ -5,7 +5,7 @@
 # file. If you're not, and you're using the "orchestrator_dependencies"
 # tarball, you'll need to change ORCHESTRATOR_DEPENDENCIES_DIR to point to
 # where you have extracted to. On Tinsel-POETS boxes, it should be:
-ORCHESTRATOR_DEPENDENCIES_DIR ?= /local/orchestrator-common/orchestrator_dependencies_6
+ORCHESTRATOR_DEPENDENCIES_DIR ?= /mnt/e/dt10_all/POETS/orchestrator_dependencies_7
 
 # You'll also need to ensure you've checked out this repository with the Tinsel
 # submodule, and that you've built the hostlink. Otherwise, you will need to
@@ -38,6 +38,11 @@ CXX = $(MPICH_DIR)/bin/mpicxx
 QT_DIR = $(ORCHESTRATOR_DEPENDENCIES_DIR)/Qt5.6.3/5.6.3/gcc_64
 QT_LIB_DIR = $(QT_DIR)/lib
 QT_INC_DIR = $(QT_DIR)/include
+
+ifeq ($(wildcard $(ORCHESTRATOR_DEPENDENCIES_DIR)/Qt5.6.3/5.6.3/gcc_64/QtCore),)
+QT_INC_DIR = /usr/include/x86_64-linux-gnu/qt5
+endif
+
 
 # GCC, not used for building the Orchestrator, but necessary for the
 # Mothership. Immediate-set, because it's used by the shell.
