@@ -1641,7 +1641,7 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
         if ((*pinO)->pMsg->pPropsD)
         {
             handlers_cpp << "   pkt_" << (*pinO)->pMsg->Name();
-            handlers_cpp << "_pyld_t* message = ";
+            handlers_cpp << "_pyld_t* message ";
             handlers_cpp << " OS_ATTRIBUTE_UNUSED= ";
             handlers_cpp << "static_cast<pkt_";
             handlers_cpp << (*pinO)->pMsg->Name() << "_pyld_t*>(pkt);\n";
