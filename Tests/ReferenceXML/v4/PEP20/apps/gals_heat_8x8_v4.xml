@@ -1,0 +1,537 @@
+<?xml version="1.0"?>
+<Graphs xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" formatMinorVersion="0">
+<GraphType xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" id="gals_heat" >
+  <Properties><![CDATA[
+    uint32_t maxTime;
+    uint32_t exportDeltaMask;
+  ]]></Properties>
+  <SharedCode><![CDATA[
+        #ifdef POETS_LEGACY_HAS_HANDLER_EXIT
+        #define _do_handler_exit(code) handler_exit(code)
+        #else
+        #define _do_handler_exit(code) ((void)0)
+        #endif
+
+        #define fake_handler_exit(code) \
+        { \
+            if((code)==0){ \
+                handler_log(0, "_HANDLER_EXIT_SUCCESS_9be65737_"); \
+            }else{ \
+                handler_log(0, "_HANDLER_EXIT_FAIL_9be65737_"); \
+            } \
+            _do_handler_exit(code); \
+        }
+
+      #include <cmath>
+    ]]></SharedCode>
+  <MessageTypes>
+    <MessageType id="finished">
+      <Message />
+    </MessageType>
+    <MessageType id="update">
+      <Message><![CDATA[
+        uint32_t t;
+        float v;
+      ]]></Message>
+    </MessageType>
+  </MessageTypes>
+  <DeviceTypes>
+    <DeviceType id="dirichlet_variable">
+      <Properties><![CDATA[
+        float bias;
+        float amplitude;
+        float phase;
+        float frequency;
+        uint32_t neighbours;
+      ]]></Properties>
+      <State><![CDATA[
+        float v;
+        uint32_t t;
+        uint32_t cs;
+        uint32_t ns;
+      ]]></State>
+      <SharedCode />
+      <InputPin name="in" messageTypeId="update">
+        <Properties/>
+        <State/>
+        <OnReceive><![CDATA[
+			handler_log(3, "m=(t=%d,v=%.4f) tNow=%d, sNow=%d, aNow=%.4f, sNext=%d, aNext=%f", message->t, message->v, deviceState->t, deviceState->cs, deviceState->ns);
+
+			if(message->t==deviceState->t){
+				deviceState->cs++;
+        assert(deviceState->cs <= deviceProperties->neighbours);
+		  }else{
+				deviceState->ns++;
+        assert(deviceState->ns <= deviceProperties->neighbours);
+				assert(
+					(deviceState->t + 1 == message->t) // Either it is one step ahead
+					||
+					(deviceState->t == graphProperties->maxTime+1)  // Or we are idle and don't care
+				);
+		  }
+		  ]]></OnReceive>
+      </InputPin>
+      <OutputPin name="out" messageTypeId="update">
+        <OnSend><![CDATA[
+			assert(deviceState->t < graphProperties->maxTime);
+			assert(deviceState->cs==deviceProperties->neighbours);
+
+			deviceState->v=deviceProperties->bias + deviceProperties->amplitude
+					* sin(deviceProperties->phase + deviceProperties->frequency * deviceState->t);
+
+			deviceState->t = deviceState->t + 1;
+			deviceState->cs = deviceState->ns;
+			deviceState->ns = 0;
+
+			message->t = deviceState->t;
+			message->v = deviceState->v;
+		  ]]></OnSend>
+      </OutputPin>
+      <OutputPin name="finished" messageTypeId="finished">
+        <OnSend><![CDATA[
+			assert(deviceState->t==graphProperties->maxTime);
+			deviceState->t++; // We advance beyond the end of time and go idle
+			// And send an empty pulse to exit node
+			]]></OnSend>
+      </OutputPin>
+      <ReadyToSend><![CDATA[
+		*readyToSend		= 0;
+		if(deviceState->t < graphProperties->maxTime){
+			if(deviceState->cs==deviceProperties->neighbours){
+				*readyToSend = RTS_FLAG_out;
+			}
+		}else if(deviceState->t == graphProperties->maxTime){
+			*readyToSend=RTS_FLAG_finished;
+		}
+		]]></ReadyToSend>
+    <OnInit><![CDATA[
+		  deviceState->t=0;
+		  deviceState->cs=deviceProperties->neighbours;
+		  deviceState->ns=0;
+
+		  deviceState->v=deviceProperties->bias + deviceProperties->amplitude
+			     * sin(deviceProperties->phase + deviceProperties->frequency * deviceState->t);
+		  ]]></OnInit>
+    <OnHardwareIdle />
+    <OnDeviceIdle />
+    </DeviceType>
+    <DeviceType id="cell">
+      <Properties><![CDATA[
+        float iv;
+        uint32_t nhood;
+        float wSelf;
+      ]]></Properties>
+      <State><![CDATA[
+        float v;
+        uint32_t t;
+        float ca;
+        uint32_t cs;
+        float na;
+        uint32_t ns;
+      ]]></State>
+      <SharedCode />
+      
+      <InputPin name="in" messageTypeId="update">
+        <Properties><![CDATA[
+          float w;
+        ]]></Properties>
+        <State />
+        <OnReceive><![CDATA[
+			handler_log(3, "m=(t=%d,v=%.4f) tNow=%d, sNow=%d, aNow=%.4f, sNext=%d, aNext=%f", message->t, message->v, deviceState->t, deviceState->cs, deviceState->ca, deviceState->ns, deviceState->na);
+		  if(message->t==deviceState->t){
+				deviceState->ca += edgeProperties->w * message->v;
+				deviceState->cs++;
+		  }else{
+				deviceState->na += edgeProperties->w * message->v;
+				deviceState->ns++;
+
+				assert(
+					(deviceState->t + 1 == message->t) // Either it is one step ahead
+					||
+					(deviceState->t == graphProperties->maxTime+1)  // Or we are idle and don't care
+				);
+			}
+		]]></OnReceive>
+      </InputPin>
+      <OutputPin name="finished" messageTypeId="finished">
+        <OnSend><![CDATA[
+			deviceState->t++; // We advance beyond the end of time and go idle
+			// And send an empty pulse to exit node
+			]]></OnSend>
+      </OutputPin>
+      <OutputPin name="out" messageTypeId="update">
+        <OnSend><![CDATA[
+
+		  handler_log(3, "tNow=%d, sNow=%d, aNow=%.4f, sNext=%d, aNext=%f", deviceState->t, deviceState->cs, deviceState->ca, deviceState->ns, deviceState->na);
+
+			assert(deviceState->cs == deviceProperties->nhood);
+
+			deviceState->t += 1;
+			deviceState->v=deviceState->ca;
+
+			// TODO : move this out of the send handler into compute
+			if( (deviceState->t & graphProperties->exportDeltaMask)==0 ){
+				//handler_export_key_value(0, 0x800000ul+(uint32_t)(int32_t)(deviceState->v*65536));
+			}
+
+			deviceState->ca = deviceProperties->wSelf * deviceState->v + deviceState->na;
+			deviceState->cs = deviceState->ns;
+
+			deviceState->na=0;
+			deviceState->ns=0;
+
+			message->t=deviceState->t;
+			message->v=deviceState->ca;
+
+			// It is possible that all our neighbours are ahead and have broadcast, so
+			// we could immediately be ready to go.
+		  ]]></OnSend>
+      </OutputPin>
+      <ReadyToSend><![CDATA[
+		*readyToSend = 0;
+		if(deviceState->t < graphProperties->maxTime){
+			if(deviceState->cs==deviceProperties->nhood){
+				*readyToSend = RTS_FLAG_out;
+			}
+		}else if(deviceState->t == graphProperties->maxTime){
+			*readyToSend = RTS_FLAG_finished;
+		}
+		]]></ReadyToSend>
+    <OnInit><![CDATA[
+		  deviceState->v=0;
+		  deviceState->t=0;
+		  deviceState->ca = deviceProperties->iv;
+		  deviceState->cs = deviceProperties->nhood;
+
+		  deviceState->ns=0;
+		  deviceState->na=0;
+
+		  handler_log(3, "value = %f", deviceState->v);
+		  ]]></OnInit>
+      <OnHardwareIdle />
+      <OnDeviceIdle />
+    </DeviceType>
+    <DeviceType id="exit_node">
+      <Properties><![CDATA[
+        uint32_t fanin;
+      ]]></Properties>
+      <State><![CDATA[
+        uint32_t done;
+      ]]></State>
+      <SharedCode />
+        
+      <InputPin name="done" messageTypeId="finished">
+        <Properties />
+        <State />
+        <OnReceive><![CDATA[
+				deviceState->done++;
+				if(deviceState->done == deviceProperties->fanin){
+					fake_handler_exit(0);
+				}
+				]]></OnReceive>
+      </InputPin>
+      <ReadyToSend><![CDATA[
+			*readyToSend=0;
+			]]></ReadyToSend>
+      <OnInit />
+      <OnHardwareIdle />
+      <OnDeviceIdle />
+    </DeviceType>
+  </DeviceTypes>
+</GraphType>
+ <GraphInstance id="heat_8_8" graphTypeId="gals_heat" P="{65,15}">
+  <DeviceInstances>
+   <DevI id="v_0_1" type="dirichlet_variable" P="{0,1.0,1,0.0170898438,1} "></DevI>
+   <DevI id="v_0_2" type="dirichlet_variable" P="{0,1.0,1,0.0341796875,1} "></DevI>
+   <DevI id="v_0_3" type="dirichlet_variable" P="{0,1.0,1,0.0512695312,1} "></DevI>
+   <DevI id="v_0_4" type="dirichlet_variable" P="{0,1.0,1,0.068359375,1} "></DevI>
+   <DevI id="v_0_5" type="dirichlet_variable" P="{0,1.0,1,0.0854492188,1} "></DevI>
+   <DevI id="v_0_6" type="dirichlet_variable" P="{0,1.0,1,0.1025390625,1} "></DevI>
+   <DevI id="v_1_0" type="dirichlet_variable" P="{0,1.0,1,0.0170898438,1} "></DevI>
+   <DevI id="c_1_1" type="cell" P="{-0.2836207473,4,0.5} "></DevI>
+   <DevI id="c_1_2" type="cell" P="{-0.2280477461,4,0.5} "></DevI>
+   <DevI id="c_1_3" type="cell" P="{0.4402558944,4,0.5} "></DevI>
+   <DevI id="c_1_4" type="cell" P="{0.3580267458,4,0.5} "></DevI>
+   <DevI id="c_1_5" type="cell" P="{0.0642134823,4,0.5} "></DevI>
+   <DevI id="c_1_6" type="cell" P="{0.0589122438,4,0.5} "></DevI>
+   <DevI id="v_1_7" type="dirichlet_variable" P="{0,1.0,1,0.13671875,1} "></DevI>
+   <DevI id="v_2_0" type="dirichlet_variable" P="{0,1.0,1,0.0341796875,1} "></DevI>
+   <DevI id="c_2_1" type="cell" P="{-0.7146191216,4,0.5} "></DevI>
+   <DevI id="c_2_2" type="cell" P="{0.7333047882,4,0.5} "></DevI>
+   <DevI id="c_2_3" type="cell" P="{0.2272716213,4,0.5} "></DevI>
+   <DevI id="c_2_4" type="cell" P="{-0.9878277473,4,0.5} "></DevI>
+   <DevI id="c_2_5" type="cell" P="{-0.8712832779,4,0.5} "></DevI>
+   <DevI id="c_2_6" type="cell" P="{0.2044735065,4,0.5} "></DevI>
+   <DevI id="v_2_7" type="dirichlet_variable" P="{0,1.0,1,0.1538085938,1} "></DevI>
+   <DevI id="v_3_0" type="dirichlet_variable" P="{0,1.0,1,0.0512695312,1} "></DevI>
+   <DevI id="c_3_1" type="cell" P="{-0.2012110132,4,0.5} "></DevI>
+   <DevI id="c_3_2" type="cell" P="{-0.2212433495,4,0.5} "></DevI>
+   <DevI id="c_3_3" type="cell" P="{0.1544784655,4,0.5} "></DevI>
+   <DevI id="c_3_4" type="cell" P="{0.3208203113,4,0.5} "></DevI>
+   <DevI id="c_3_5" type="cell" P="{0.6414008544,4,0.5} "></DevI>
+   <DevI id="c_3_6" type="cell" P="{-0.4361829827,4,0.5} "></DevI>
+   <DevI id="v_3_7" type="dirichlet_variable" P="{0,1.0,1,0.1708984375,1} "></DevI>
+   <DevI id="v_4_0" type="dirichlet_variable" P="{0,1.0,1,0.068359375,1} "></DevI>
+   <DevI id="c_4_1" type="cell" P="{0.6931967382,4,0.5} "></DevI>
+   <DevI id="c_4_2" type="cell" P="{-0.2027419253,4,0.5} "></DevI>
+   <DevI id="c_4_3" type="cell" P="{0.2260895314,4,0.5} "></DevI>
+   <DevI id="v_4_4" type="dirichlet_variable" P="{0,1.0,1.5,0.1953125,4} "></DevI>
+   <DevI id="c_4_5" type="cell" P="{-0.6575429536,4,0.5} "></DevI>
+   <DevI id="c_4_6" type="cell" P="{0.7798838907,4,0.5} "></DevI>
+   <DevI id="v_4_7" type="dirichlet_variable" P="{0,1.0,1,0.1879882812,1} "></DevI>
+   <DevI id="v_5_0" type="dirichlet_variable" P="{0,1.0,1,0.0854492188,1} "></DevI>
+   <DevI id="c_5_1" type="cell" P="{0.9010574081,4,0.5} "></DevI>
+   <DevI id="c_5_2" type="cell" P="{0.5946438606,4,0.5} "></DevI>
+   <DevI id="c_5_3" type="cell" P="{-0.2395011048,4,0.5} "></DevI>
+   <DevI id="c_5_4" type="cell" P="{-0.9539117055,4,0.5} "></DevI>
+   <DevI id="c_5_5" type="cell" P="{-0.6196293926,4,0.5} "></DevI>
+   <DevI id="c_5_6" type="cell" P="{-0.26785033,4,0.5} "></DevI>
+   <DevI id="v_5_7" type="dirichlet_variable" P="{0,1.0,1,0.205078125,1} "></DevI>
+   <DevI id="v_6_0" type="dirichlet_variable" P="{0,1.0,1,0.1025390625,1} "></DevI>
+   <DevI id="c_6_1" type="cell" P="{-0.8129548686,4,0.5} "></DevI>
+   <DevI id="c_6_2" type="cell" P="{0.8290932665,4,0.5} "></DevI>
+   <DevI id="c_6_3" type="cell" P="{0.7038600169,4,0.5} "></DevI>
+   <DevI id="c_6_4" type="cell" P="{0.2462055083,4,0.5} "></DevI>
+   <DevI id="c_6_5" type="cell" P="{0.8215028558,4,0.5} "></DevI>
+   <DevI id="c_6_6" type="cell" P="{0.1981478115,4,0.5} "></DevI>
+   <DevI id="v_6_7" type="dirichlet_variable" P="{0,1.0,1,0.2221679688,1} "></DevI>
+   <DevI id="v_7_1" type="dirichlet_variable" P="{0,1.0,1,0.13671875,1} "></DevI>
+   <DevI id="v_7_2" type="dirichlet_variable" P="{0,1.0,1,0.1538085938,1} "></DevI>
+   <DevI id="v_7_3" type="dirichlet_variable" P="{0,1.0,1,0.1708984375,1} "></DevI>
+   <DevI id="v_7_4" type="dirichlet_variable" P="{0,1.0,1,0.1879882812,1} "></DevI>
+   <DevI id="v_7_5" type="dirichlet_variable" P="{0,1.0,1,0.205078125,1} "></DevI>
+   <DevI id="v_7_6" type="dirichlet_variable" P="{0,1.0,1,0.2221679688,1} "></DevI>
+   <DevI id="finished" type="exit_node" />
+  </DeviceInstances>
+  <EdgeInstances>
+   <EdgeI path="v_0_1:in-c_1_1:out" />
+   <EdgeI path="v_0_2:in-c_1_2:out" />
+   <EdgeI path="v_0_3:in-c_1_3:out" />
+   <EdgeI path="v_0_4:in-c_1_4:out" />
+   <EdgeI path="v_0_5:in-c_1_5:out" />
+   <EdgeI path="v_0_6:in-c_1_6:out" />
+   <EdgeI path="v_1_0:in-c_1_1:out" />
+   <EdgeI path="c_1_1:in-v_1_0:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_1:in-c_2_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_1:in-c_1_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_1:in-v_0_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_2:in-c_1_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_2:in-c_2_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_2:in-c_1_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_2:in-v_0_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_3:in-c_1_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_3:in-c_2_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_3:in-c_1_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_3:in-v_0_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_4:in-c_1_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_4:in-c_2_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_4:in-c_1_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_4:in-v_0_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_5:in-c_1_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_5:in-c_2_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_5:in-c_1_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_5:in-v_0_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_6:in-c_1_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_6:in-c_2_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_6:in-v_1_7:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_1_6:in-v_0_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="v_1_7:in-c_1_6:out" />
+   <EdgeI path="v_2_0:in-c_2_1:out" />
+   <EdgeI path="c_2_1:in-v_2_0:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_1:in-c_3_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_1:in-c_2_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_1:in-c_1_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_2:in-c_2_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_2:in-c_3_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_2:in-c_2_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_2:in-c_1_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_3:in-c_2_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_3:in-c_3_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_3:in-c_2_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_3:in-c_1_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_4:in-c_2_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_4:in-c_3_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_4:in-c_2_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_4:in-c_1_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_5:in-c_2_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_5:in-c_3_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_5:in-c_2_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_5:in-c_1_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_6:in-c_2_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_6:in-c_3_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_6:in-v_2_7:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_2_6:in-c_1_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="v_2_7:in-c_2_6:out" />
+   <EdgeI path="v_3_0:in-c_3_1:out" />
+   <EdgeI path="c_3_1:in-v_3_0:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_1:in-c_4_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_1:in-c_3_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_1:in-c_2_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_2:in-c_3_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_2:in-c_4_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_2:in-c_3_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_2:in-c_2_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_3:in-c_3_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_3:in-c_4_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_3:in-c_3_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_3:in-c_2_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_4:in-c_3_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_4:in-v_4_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_4:in-c_3_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_4:in-c_2_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_5:in-c_3_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_5:in-c_4_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_5:in-c_3_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_5:in-c_2_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_6:in-c_3_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_6:in-c_4_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_6:in-v_3_7:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_3_6:in-c_2_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="v_3_7:in-c_3_6:out" />
+   <EdgeI path="v_4_0:in-c_4_1:out" />
+   <EdgeI path="c_4_1:in-v_4_0:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_1:in-c_5_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_1:in-c_4_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_1:in-c_3_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_2:in-c_4_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_2:in-c_5_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_2:in-c_4_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_2:in-c_3_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_3:in-c_4_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_3:in-c_5_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_3:in-v_4_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_3:in-c_3_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="v_4_4:in-c_4_3:out" />
+   <EdgeI path="v_4_4:in-c_5_4:out" />
+   <EdgeI path="v_4_4:in-c_4_5:out" />
+   <EdgeI path="v_4_4:in-c_3_4:out" />
+   <EdgeI path="c_4_5:in-v_4_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_5:in-c_5_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_5:in-c_4_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_5:in-c_3_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_6:in-c_4_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_6:in-c_5_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_6:in-v_4_7:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_4_6:in-c_3_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="v_4_7:in-c_4_6:out" />
+   <EdgeI path="v_5_0:in-c_5_1:out" />
+   <EdgeI path="c_5_1:in-v_5_0:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_1:in-c_6_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_1:in-c_5_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_1:in-c_4_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_2:in-c_5_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_2:in-c_6_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_2:in-c_5_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_2:in-c_4_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_3:in-c_5_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_3:in-c_6_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_3:in-c_5_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_3:in-c_4_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_4:in-c_5_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_4:in-c_6_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_4:in-c_5_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_4:in-v_4_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_5:in-c_5_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_5:in-c_6_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_5:in-c_5_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_5:in-c_4_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_6:in-c_5_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_6:in-c_6_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_6:in-v_5_7:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_5_6:in-c_4_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="v_5_7:in-c_5_6:out" />
+   <EdgeI path="v_6_0:in-c_6_1:out" />
+   <EdgeI path="c_6_1:in-v_6_0:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_1:in-v_7_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_1:in-c_6_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_1:in-c_5_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_2:in-c_6_1:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_2:in-v_7_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_2:in-c_6_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_2:in-c_5_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_3:in-c_6_2:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_3:in-v_7_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_3:in-c_6_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_3:in-c_5_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_4:in-c_6_3:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_4:in-v_7_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_4:in-c_6_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_4:in-c_5_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_5:in-c_6_4:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_5:in-v_7_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_5:in-c_6_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_5:in-c_5_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_6:in-c_6_5:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_6:in-v_7_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_6:in-v_6_7:out" P="{0.125} "></EdgeI>
+   <EdgeI path="c_6_6:in-c_5_6:out" P="{0.125} "></EdgeI>
+   <EdgeI path="v_6_7:in-c_6_6:out" />
+   <EdgeI path="v_7_1:in-c_6_1:out" />
+   <EdgeI path="v_7_2:in-c_6_2:out" />
+   <EdgeI path="v_7_3:in-c_6_3:out" />
+   <EdgeI path="v_7_4:in-c_6_4:out" />
+   <EdgeI path="v_7_5:in-c_6_5:out" />
+   <EdgeI path="v_7_6:in-c_6_6:out" />
+   <EdgeI path="finished:done-v_0_1:finished" />
+   <EdgeI path="finished:done-v_0_2:finished" />
+   <EdgeI path="finished:done-v_0_3:finished" />
+   <EdgeI path="finished:done-v_0_4:finished" />
+   <EdgeI path="finished:done-v_0_5:finished" />
+   <EdgeI path="finished:done-v_0_6:finished" />
+   <EdgeI path="finished:done-v_1_0:finished" />
+   <EdgeI path="finished:done-c_1_1:finished" />
+   <EdgeI path="finished:done-c_1_2:finished" />
+   <EdgeI path="finished:done-c_1_3:finished" />
+   <EdgeI path="finished:done-c_1_4:finished" />
+   <EdgeI path="finished:done-c_1_5:finished" />
+   <EdgeI path="finished:done-c_1_6:finished" />
+   <EdgeI path="finished:done-v_1_7:finished" />
+   <EdgeI path="finished:done-v_2_0:finished" />
+   <EdgeI path="finished:done-c_2_1:finished" />
+   <EdgeI path="finished:done-c_2_2:finished" />
+   <EdgeI path="finished:done-c_2_3:finished" />
+   <EdgeI path="finished:done-c_2_4:finished" />
+   <EdgeI path="finished:done-c_2_5:finished" />
+   <EdgeI path="finished:done-c_2_6:finished" />
+   <EdgeI path="finished:done-v_2_7:finished" />
+   <EdgeI path="finished:done-v_3_0:finished" />
+   <EdgeI path="finished:done-c_3_1:finished" />
+   <EdgeI path="finished:done-c_3_2:finished" />
+   <EdgeI path="finished:done-c_3_3:finished" />
+   <EdgeI path="finished:done-c_3_4:finished" />
+   <EdgeI path="finished:done-c_3_5:finished" />
+   <EdgeI path="finished:done-c_3_6:finished" />
+   <EdgeI path="finished:done-v_3_7:finished" />
+   <EdgeI path="finished:done-v_4_0:finished" />
+   <EdgeI path="finished:done-c_4_1:finished" />
+   <EdgeI path="finished:done-c_4_2:finished" />
+   <EdgeI path="finished:done-c_4_3:finished" />
+   <EdgeI path="finished:done-v_4_4:finished" />
+   <EdgeI path="finished:done-c_4_5:finished" />
+   <EdgeI path="finished:done-c_4_6:finished" />
+   <EdgeI path="finished:done-v_4_7:finished" />
+   <EdgeI path="finished:done-v_5_0:finished" />
+   <EdgeI path="finished:done-c_5_1:finished" />
+   <EdgeI path="finished:done-c_5_2:finished" />
+   <EdgeI path="finished:done-c_5_3:finished" />
+   <EdgeI path="finished:done-c_5_4:finished" />
+   <EdgeI path="finished:done-c_5_5:finished" />
+   <EdgeI path="finished:done-c_5_6:finished" />
+   <EdgeI path="finished:done-v_5_7:finished" />
+   <EdgeI path="finished:done-v_6_0:finished" />
+   <EdgeI path="finished:done-c_6_1:finished" />
+   <EdgeI path="finished:done-c_6_2:finished" />
+   <EdgeI path="finished:done-c_6_3:finished" />
+   <EdgeI path="finished:done-c_6_4:finished" />
+   <EdgeI path="finished:done-c_6_5:finished" />
+   <EdgeI path="finished:done-c_6_6:finished" />
+   <EdgeI path="finished:done-v_6_7:finished" />
+   <EdgeI path="finished:done-v_7_1:finished" />
+   <EdgeI path="finished:done-v_7_2:finished" />
+   <EdgeI path="finished:done-v_7_3:finished" />
+   <EdgeI path="finished:done-v_7_4:finished" />
+   <EdgeI path="finished:done-v_7_5:finished" />
+   <EdgeI path="finished:done-v_7_6:finished" />
+  </EdgeInstances>
+ </GraphInstance>
+</Graphs>
