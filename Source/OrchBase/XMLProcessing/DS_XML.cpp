@@ -78,6 +78,18 @@ void DS_XML::_Apps_t(xnode * pn)
 // XML::Graphs
 {
 string aname = pn->FindAttr("appname");// Get the app name
+if(aname.empty()){
+  xnode *c=pn->FindChild("GraphInstance");
+  if(c){
+    string id=c->FindAttr("id");
+    if(id!=""){
+      aname=id;
+    }
+  }
+  if(aname.empty()){
+    par->Post(932, pn->par->ename ); // Filename is root element name (?).
+  }
+}
 Apps_t * pAP = new Apps_t(par,aname);  // Uniquely knits itself into skyhook
 pAP->Def(pn->lin);                     // Defined on line...
 pAP->filename = pn->par->ename;        // Filename is root element name
@@ -387,7 +399,9 @@ MsgT_t * DS_XML::_MsgT_t(GraphT_t * pGT,xnode * pn)
 string mname = pn->FindAttr("id");
 MsgT_t * pM = new MsgT_t(pGT,mname);
 pM->Def(pn->lin);
-pM->pPropsD = _CFrag(pn);
+xnode *cc=pn->FindChild("Message");
+pM->pPropsD = _CFrag(cc);
+fprintf(stderr, "Msg: %s = '%s'\n", mname.c_str(), pM->pPropsD->C_src().c_str());
 return pM;
 }
 
