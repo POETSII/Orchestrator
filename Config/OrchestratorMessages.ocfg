@@ -266,6 +266,7 @@
 929(U) : "DS_integ::DS_integ: App name %s has disappeared"
 930(U) : "DS_XML::PBuild: incoming .tag field non-null"
 931(U) : "DS_XML::_EdgeI_t: pathDecode returns error code %s"
+932(U) : "File %s: Graphs element does not have `appname` attribute, and there is no GraphInstance/@id to use instead."
 996(U) : "CmLoad::Cm_App: DS_XML returns %s errors"
 997(U) : "File %s line %s: .........."
 998(U) : "File %s line %s: Unknown XML element %s should have caught by the validator"
