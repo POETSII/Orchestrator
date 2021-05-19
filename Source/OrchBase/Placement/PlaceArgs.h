@@ -27,11 +27,12 @@ public:
 
     bool is_set(std::string name){return args.find(name) != args.end();}
     void set(std::string name, std::string value);
-    void setup();
     std::map<std::string, std::string>::size_type size(){return args.size();}
     void validate_args(std::string algName);
 
 private:
+    void setup();
+
     /* Holds currently-stored arguments from the operator. */
     std::map<std::string, std::string> args;
 
