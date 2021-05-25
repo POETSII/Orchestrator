@@ -8,6 +8,7 @@ Build/gcc/Objects
 Build/gcc/Dependency_lists
 Output/
 orchestrate.sh
+.orch_history
 
 # Ignore .bak extensions created by winmerge
 *.bak
