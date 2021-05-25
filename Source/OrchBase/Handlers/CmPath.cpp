@@ -41,24 +41,25 @@ pathUlog.clear();
 
 //------------------------------------------------------------------------------
 
-bool CmPath::Cm_Path(bool OK,string & rpath,string newval, string oldval)
+bool CmPath::Cm_Path(bool OK,string & rpath,string newval,string oldval,
+                     bool isDir)
 // If OK, rpath is set to newval, return FALSE
 // Except if.... newval == "~", in which case rpath = oldval, return FALSE
 // ..and if neither, return TRUE
 {
-if (OK) {                              // Replace path with a new valid value
-  FileName::Force1Linux(newval);       // Linuxify it
-  if (*(newval.rbegin()) != '/')       // Because nobody needed to look at the
-                                       // end of a string before 2011.
-      newval.append("/");              // Being civil
+if (OK) {                                  // Replace path with a new valid value
+  FileName::Force1Linux(newval);           // Linuxify it
+  if (isDir && *(newval.rbegin()) != '/')  // Because nobody needed to look at
+                                           // the end of a string before 2011.
+      newval.append("/");                  // Being civil
   rpath = newval;
   return false;
 }
-if (newval == "~") {                   // Local reset of this path only
+if (newval == "~") {                       // Local reset of this path only
   rpath = oldval;
   return false;
 }
-return true;                           // Whatever it was, it isn't valid
+return true;                               // Whatever it was, it isn't valid
 }
 
 //------------------------------------------------------------------------------
@@ -281,15 +282,15 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   FileName Fn(sPa+"xxxx");             // Create a temporary 'legal' filepath
   bool OK = !Fn.Err();                 // Do it make sense?
   if (strcmp(sCl.c_str(),"apps")==0) {
-    if (Cm_Path(OK,pathApps,sPa,pR->pOC->Apps())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathApps,sPa,pR->pOC->Apps(),true)) par->Post(239,sCl);
     continue;
   }
   if (sCl=="batc") {
-    if (Cm_Path(OK,pathBatc,sPa,pR->pOC->Batch())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathBatc,sPa,pR->pOC->Batch(),true)) par->Post(239,sCl);
     continue;
   }
   if (sCl=="bina") {
-    if (Cm_Path(OK,pathBina,sPa,pR->pOC->Binaries())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathBina,sPa,pR->pOC->Binaries(),true)) par->Post(239,sCl);
     continue;
   }
   if (sCl=="clea") {
@@ -297,15 +298,15 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
     continue;
   }
   if (sCl=="engi") {
-    if (Cm_Path(OK,pathEngi,sPa,pR->pOC->Engine())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathEngi,sPa,pR->pOC->Engine(),true)) par->Post(239,sCl);
     continue;
   }
   if (sCl=="log" ) {
-    if (Cm_Path(OK,pathLog,sPa,pR->pOC->Log())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathLog,sPa,pR->pOC->Log(),false)) par->Post(239,sCl);
     continue;
   }
   if (sCl=="plac") {
-    if (Cm_Path(OK,pathPlac,sPa,pR->pOC->Place())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathPlac,sPa,pR->pOC->Place(),true)) par->Post(239,sCl);
     if (par->pPlacer != PNULL) par->pPlacer->outFilePath = pathPlac;
     continue;
   }
@@ -314,29 +315,29 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
     continue;
   }
   if (sCl=="mout") {
-    if (Cm_Path(OK,pathMout,sPa,pR->pOC->RemoteOut())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathMout,sPa,pR->pOC->RemoteOut(),true)) par->Post(239,sCl);
     else UpdateMotherships();
     continue;
   }
   if (sCl=="mshp") {
-    if (Cm_Path(OK,pathMshp,sPa,pR->pOC->RemoteMshp())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathMshp,sPa,pR->pOC->RemoteMshp(),true)) par->Post(239,sCl);
     continue;
   }
   if (sCl=="stag") {
-    if (Cm_Path(OK,pathStag,sPa,pR->pOC->Stage())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathStag,sPa,pR->pOC->Stage(),true)) par->Post(239,sCl);
     if (par->pComposer != PNULL) par->pComposer->setOutputPath(pathStag);
     continue;
   }
   if (sCl=="supe") {
-    if (Cm_Path(OK,pathSupe,sPa,pR->pOC->Supervisors())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathSupe,sPa,pR->pOC->Supervisors(),true)) par->Post(239,sCl);
     continue;
   }
   if (sCl=="trac") {
-    if (Cm_Path(OK,pathTrac,sPa,pR->pOC->Trace())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathTrac,sPa,pR->pOC->Trace(),true)) par->Post(239,sCl);
     continue;
   }
   if (sCl=="ulog") {
-    if (Cm_Path(OK,pathUlog,sPa,pR->pOC->Ulog())) par->Post(239,sCl);
+    if (Cm_Path(OK,pathUlog,sPa,pR->pOC->Ulog(),false)) par->Post(239,sCl);
     continue;
   }
   par->Post(25,sCl,"path");            // Unrecognised clause
