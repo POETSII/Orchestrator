@@ -48,6 +48,9 @@ bool CmPath::Cm_Path(bool OK,string & rpath,string newval, string oldval)
 {
 if (OK) {                              // Replace path with a new valid value
   FileName::Force1Linux(newval);       // Linuxify it
+  if (*(newval.rbegin()) != '/')       // Because nobody needed to look at the
+                                       // end of a string before 2011.
+      newval.append("/");              // Being civil
   rpath = newval;
   return false;
 }
