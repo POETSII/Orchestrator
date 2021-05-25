@@ -115,7 +115,12 @@ done
 
 # Run the launcher from the build directory.
 pushd "{{ EXECUTABLE_DIR }}" > /dev/null
-./orchestrate /p = "\"$INTERNAL_LIB_PATH\"" $ARGS
+if ! command -v rlwrap &> /dev/null; then
+    ./orchestrate /p = "\"$INTERNAL_LIB_PATH\"" $ARGS
+else
+    rlwrap --remember --history-filename ../.orch_history \
+        ./orchestrate /p = "\"$INTERNAL_LIB_PATH\"" $ARGS
+fi
 if [ $GNU_HELP -eq 1 ]; then
     printf "\nNote that there is limited support for short-form GNU-style switches (e.g. '-h -f FILE').\n"
 fi
