@@ -11,6 +11,8 @@
 #include "PMsg_p.hpp"
 #include "SupervisorApi.h"
 
+#include "poets_pkt.h"
+
 class SuperHolder
 {
 public:
@@ -22,11 +24,14 @@ public:
     SupervisorApi* api;
     bool are_all_hooks_loaded();
     void dump(std::ofstream*);
-    int (*call)(PMsg_p*, PMsg_p*);
+    int (*call)(std::vector<P_Pkt_t>&, std::vector<P_Addr_Pkt_t>&);
     int (*exit)();
     SupervisorApi* (*getApi)();
     int (*idle)();
     int (*init)();
+    uint64_t (*getAddr)(uint32_t);
+    const SupervisorDeviceInstance_t* (*getInstance)(uint32_t);
+    void (*getAddrVector)(std::vector<SupervisorDeviceInstance_t>&);
 
 private:
     void* so;

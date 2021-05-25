@@ -109,6 +109,14 @@ typedef struct poets_packet
     // Further flits contain data.
 } P_Pkt_t;
 
+
+typedef struct poets_address_packet
+{
+    uint32_t hwAddr;    // Destination hardware address
+    P_Pkt_t packet;     // The actual packet
+} P_Addr_Pkt_t;
+
+
 typedef struct poets_debug_packet
 {
     uint32_t origin;  /* Hardware address */
@@ -120,6 +128,8 @@ typedef struct poets_log_packet_payload
     uint8_t seq;
     uint8_t payload[P_PKT_MAX_SIZE-(sizeof(P_Pkt_Hdr_t)+sizeof(uint8_t))];
 } P_Log_Pkt_Pyld_t;
+
+typedef uint8_t P_Pkt_pyld_t[P_PKT_MAX_SIZE-sizeof(P_Pkt_Hdr_t)];
 
 typedef struct poets_instr_packet_payload
 {
@@ -211,4 +221,12 @@ inline unsigned pack_pkt(uint8_t ms, uint8_t cnc, uint8_t task, uint8_t opcode,
 }
 
 #pragma pack(pop)
+
+// Supervisor Data structure
+typedef struct SupervisorDeviceInstance_t
+{
+    uint32_t HwAddr;
+    uint32_t SwAddr;
+    char Name[52];   // Temporary until we have Nameserver
+} SupervisorDeviceInstance_t;
 #endif

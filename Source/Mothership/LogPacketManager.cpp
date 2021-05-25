@@ -5,21 +5,21 @@
 /* Take a packet and add it to the data section. If a message has been
  * completed by this operation, write the message to 'out' ('out' is cleared
  * otherwise). */
-void LogPacketManager::consume_log_packet(P_Pkt_t* packet, std::string* out)
+void LogPacketManager::consume_log_packet(P_Pkt_t* packet, 
+                                    const SupervisorDeviceInstance_t* instance, 
+                                    std::string* out)
 {
 
     P_Log_Pkt_Pyld_t* packetDatum;
     ThreadLogDatum* cumulativeDatum;
-    std::map<uint32_t, ThreadLogDatum>::iterator dataFinder;
-    uint32_t source;
+    std::map<uint64_t, ThreadLogDatum>::iterator dataFinder;
+    uint64_t source;
 
     out->clear();
 
-    /* Extract source address for instrumentation packet, so that the compute
-     * thread can be identified. The softswitch explicitly puts the hardware
-     * address of the sender of instrumentation packets in the pinAddr
-     * field. */
-    source = packet->header.pinAddr;
+    /* Extract source address for instrumentation packet from the
+       SupervisotDeviceInstance. */
+    source = ((uint64_t)instance->HwAddr << 32) + instance->SwAddr;
 
     /* Extract logging data and sequencing from the packet. */
     packetDatum = reinterpret_cast<P_Log_Pkt_Pyld_t*>(packet->payload);
@@ -93,6 +93,7 @@ void LogPacketManager::consume_log_packet(P_Pkt_t* packet, std::string* out)
         data.erase(source);
 
         /* Lob over the fence */
-        *out = dformat("0x%x: %s", source, message);
+        *out = dformat("%s (Thread 0x%x): %s", instance->Name, instance->HwAddr,
+                        message);
     }
 }

@@ -13,6 +13,7 @@
 #include "CFrag.h"
 #include "MsgT_t.h"
 #include "Meta_t.h"
+#include "DumpUtils.h"
 
 #include "GraphT_t.h"
 #include "DevT_t.h"
@@ -48,7 +49,24 @@ typedef struct devTypStrings_t
     std::string varsHCommon;
 } devTypStrings_t;
 
+typedef enum softswitchLogHandler_t
+{
+    disabled = 0,
+    trivial
+} ssLogHandler_t;
 
+typedef enum softswitchLoopMode_t
+{
+    standard = 0,
+    priInstr
+} ssLoopMode_t;
+
+/* THE structure that keeps track of the status of, and all of the values, etc. 
+ * that are involved in composing, an application/graph instance.
+ *
+ * The Composer class holds a map of these, with one entry for each graph 
+ * instance that has been seen by the Composer.
+ */
 typedef struct ComposerGraphI_t
 {
     GraphI_t* graphI;
@@ -65,17 +83,26 @@ typedef struct ComposerGraphI_t
     
     std::string provenanceCache;
     
+    std::string compilationFlags;
+    
     //State flags
     bool generated;
     bool compiled;
     
+    bool bufferingSoftswitch;
+    unsigned long rtsBuffSizeMax;
+    bool softswitchInstrumentation;
+    ssLogHandler_t softswitchLogHandler;
+    unsigned long softswitchLogLevel;
+    ssLoopMode_t softswitchLoopMode;
     
     // Constructors/Destructors
     ComposerGraphI_t();
-    ComposerGraphI_t(GraphI_t*);
+    ComposerGraphI_t(GraphI_t*, std::string&);
     ~ComposerGraphI_t();
     
     void clearDevTStrsMap();
+    void Dump(unsigned = 0,FILE * = stdout);
 } ComposerGraphI_t;
 
 
@@ -87,18 +114,31 @@ Composer(Placer*);
 Composer();
 ~Composer();    
 
-int         compose(GraphI_t*);    // Generate and compile
+int         compose(GraphI_t*);  // Generate and compile
 int         generate(GraphI_t*); // Generate Source Files
 int         compile(GraphI_t*);  // Compile Source Files
+int         bypass(GraphI_t*);   // Use existing binaries, bypass compose
 
 int         decompose(GraphI_t*);  // Clean then degenerate
-int         degenerate(GraphI_t*); // Clear internal strings and generated files
+int         degenerate(GraphI_t*, bool = false); // Clear internal strings and generated files
 int         clean(GraphI_t*);      // Get rid of built files (e.g. a make clean)
 
 void        setOutputPath(std::string);
 void        setPlacer(Placer*);
 
+int         setBuffMode(GraphI_t*, bool);
+int         setRTSSize(GraphI_t*, unsigned long);
+int         enableInstr(GraphI_t*, bool);
+int         setLogHandler(GraphI_t*, ssLogHandler_t);
+int         setLogLevel(GraphI_t*, unsigned long);
+int         setLoopMode(GraphI_t*, ssLoopMode_t);
+int         addFlags(GraphI_t*, std::string&);
 
+bool        isGenerated(GraphI_t*);
+bool        isCompiled(GraphI_t*);
+
+void        Show(FILE * = stdout);
+void        Dump(unsigned = 0,FILE * = stdout);
 
 private:
     
@@ -106,6 +146,8 @@ Placer*     placer;
 std::string outputPath;
 
 ComposerGraphIMap_t graphIMap; // Map has an entry for each seen Graph Instance.
+
+int checkBinaries(ComposerGraphI_t*);
 
 void formFileProvenance(ComposerGraphI_t*);
 void writeFileProvenance(std::string&, ComposerGraphI_t*, std::ofstream&);
@@ -148,7 +190,7 @@ int createThreadFile(P_thread*, ComposerGraphI_t*, std::ofstream&);
 unsigned writeThreadVars(ComposerGraphI_t*, P_thread*, ofstream&, ofstream&);
 void writeThreadVarsCommon(AddressComponent, AddressComponent, 
                             std::ofstream&, std::ofstream&);
-void writeThreadContextInitialiser(P_thread*, DevT_t*,
+void writeThreadContextInitialiser(ComposerGraphI_t*, P_thread*, DevT_t*,
                             std::ofstream&, std::ofstream&);
 void writeDevTDeclInit(AddressComponent, DevT_t*,
                             std::ofstream&, std::ofstream&);

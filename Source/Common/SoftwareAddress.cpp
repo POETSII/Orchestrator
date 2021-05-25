@@ -23,6 +23,12 @@ SoftwareAddress::SoftwareAddress(
     set_device(device);
 }
 
+/* Alternatively, construct a software address from a uint32_t. */
+SoftwareAddress::SoftwareAddress(uint32_t address){
+    definitions = SOFTWARE_ADDRESS_FULLY_DEFINED_MASK;
+    raw = address;
+}
+
 /* Alternatively, construct a software address without explicitly priming it
  * with values. */
 SoftwareAddress::SoftwareAddress(){
@@ -108,6 +114,12 @@ void SoftwareAddress::set_device(DeviceComponent value)
     raw &= ~DEVICE_BIT_MASK; /* Clear */
     raw |= value; /* Set */
     set_defined(4);
+}
+
+/* Construct a software address from a uint32_t. */
+void SoftwareAddress::from_uint(uint32_t address){
+    definitions = SOFTWARE_ADDRESS_FULLY_DEFINED_MASK;
+    raw = address;
 }
 
 /* Write debug and diagnostic information using dumpchan. Arguments:

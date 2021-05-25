@@ -195,15 +195,18 @@ void Mothership::send_cnc_packet_to_all(AppInfo* app, uint8_t opcode)
 
     /* For each thread in the task, queue a copy of this packet for that
      * thread. */
-    std::vector<std::pair<uint32_t, P_Pkt_t> > allPackets;
+    std::vector<P_Addr_Pkt_t> allPackets;
     for (coreIt = app->coreInfos.begin(); coreIt != app->coreInfos.end();
          coreIt++)
         for (threadAddressIt = coreIt->second.threadsExpected.begin();
              threadAddressIt != coreIt->second.threadsExpected.end();
              threadAddressIt++)
         {
-            allPackets.push_back(std::pair<uint32_t, P_Pkt_t>
-                                 (*threadAddressIt, packet));
+            P_Addr_Pkt_t pkt;
+            pkt.hwAddr = *threadAddressIt;
+            pkt.packet = packet;
+            
+            allPackets.push_back(pkt);
         }
     threading.push_backend_out_queue(&allPackets);
 }
