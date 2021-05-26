@@ -30,9 +30,12 @@ MPICH_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/mpich
 MPICH_LIB_DIR := $(MPICH_DIR)/lib
 MPICH_INC_DIR := $(MPICH_DIR)/include
 
-# Consequently, our C and C++ compilers are:
-CC = $(MPICH_DIR)/bin/mpicc
-CXX = $(MPICH_DIR)/bin/mpicxx
+# Optionally use ccache if we can find it. Custom compiler, after all.
+CCACHE = $(shell command -v ccache)
+
+# Consequently, our C and C++ compilers are (with ccache, if it exists):
+CC = $(CCACHE) $(MPICH_DIR)/bin/mpicc
+CXX = $(CCACHE) $(MPICH_DIR)/bin/mpicxx
 
 # GCC, not used for building the Orchestrator, but necessary for the
 # Mothership. Immediate-set, because it's used by the shell.
