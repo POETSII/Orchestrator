@@ -1,6 +1,5 @@
 #include "Composer.h"
 
-
 // Temporary consts (were in build_defs).
 //TODO: reconcile
 const string GENERATED_PATH = "Generated";
@@ -8,7 +7,8 @@ const string GENERATED_H_PATH = GENERATED_PATH+"/inc";
 const string GENERATED_CPP_PATH = GENERATED_PATH+"/src";
 
 //TODO: cross-platform this
-const string COREMAKE = "make -j$(nproc --ignore=4) all 2>&1 >> make_errs.txt";
+const string COREMAKE = "make -j$(nproc --ignore=4) all ";
+const string COREMAKEPOST = "> make_errs.txt 2>&1";
 const string COREMAKECLEAN = "make clean 2>&1 >> clean_errs.txt";
 
 
@@ -26,14 +26,37 @@ ComposerGraphI_t::ComposerGraphI_t()
     outputDir = "Composer";
     generated = false;
     compiled = false;
+    
+    // Softswitch control.
+    rtsBuffSizeMax = MAX_RTSBUFFSIZE;
+    bufferingSoftswitch = false;        // Default to a non-buffering softswitch
+    softswitchInstrumentation = true;   // Default to enable instrumentation
+    softswitchLogHandler = trivial;     // Default to the trivial log handler
+    softswitchLogLevel = 2;             // Default to a log level of 2
+    softswitchLoopMode = standard;      // Default to the standard loop mode
+    
+    compilationFlags = "";
+    provenanceCache = "";
 }
 
-ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn)
+ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
 {
     graphI = graphIIn;
-    outputDir = graphI->GetCompoundName(true);
+    outputDir = outputPath;
+    outputDir += graphI->GetCompoundName(true);
     generated = false;
     compiled = false;
+    
+    // Softswitch control.
+    rtsBuffSizeMax = MAX_RTSBUFFSIZE;
+    bufferingSoftswitch = false;        // Default to a non-buffering softswitch
+    softswitchInstrumentation = true;   // Default to enable instrumentation
+    softswitchLogHandler = trivial;     // Default to the trivial log handler 
+    softswitchLogLevel = 2;             // Default to a log level of 2
+    softswitchLoopMode = standard;      // Default to the standard loop mode
+    
+    compilationFlags = "";
+    provenanceCache = "";
 }
 
 ComposerGraphI_t::~ComposerGraphI_t()
@@ -58,12 +81,106 @@ void ComposerGraphI_t::clearDevTStrsMap()
     }
 }
 
+/******************************************************************************
+ * Dump a ComposerGraphI_t to file for debugging
+ *****************************************************************************/
+void ComposerGraphI_t::Dump(unsigned off,FILE* file)
+{
+    std::string prefix = dformat("%d Composer Graph Instance at %" PTR_FMT ,
+                                 off, OSFixes::getAddrAsUint(this));
+    DumpUtils::open_breaker(file, prefix);
+    
+    fprintf(file, "Graph instance name:          %s \n",graphI->Name().c_str());
+    fprintf(file, "Output directory:             %s \n",outputDir.c_str());
+    fprintf(file, "Generated:                    %s \n",
+                                                generated ? "true" : "false");
+    fprintf(file, "Compiled:                     %s \n",
+                                                compiled ? "true" : "false");
+    
+    fprintf(file, "\nSoftswitch generation/compilation control:\n");
+    fprintf(file, "  Maximum RTS buffer size:    %lu \n",rtsBuffSizeMax);
+    fprintf(file, "  Buffering Softswitch:       %s \n",
+                        bufferingSoftswitch ? "true" : "false");
+    fprintf(file, "  Softswitch Instrumentation: %s \n",
+                        softswitchInstrumentation ? "true" : "false");
+                        
+    fprintf(file, "  Softswitch log handler:     ");
+    switch(softswitchLogHandler)
+    {
+        case disabled:  fprintf(file, "none\n");                          break;
+        case trivial:   fprintf(file, "trivial\n");                       break;
+        default:        fprintf(file, "**INVALID**\n");
+    }
+    
+    fprintf(file, "  Softswitch log level:       %lu\n",softswitchLogLevel);
+    
+    fprintf(file, "  Softswitch loop mode:       ");
+    switch(softswitchLoopMode)
+    {
+        case standard:  fprintf(file, "standard\n");                      break;
+        case priInstr:  fprintf(file, "prioritise instrumentation\n");    break;
+        default:        fprintf(file, "**INVALID**\n");
+    }
+    
+    fprintf(file, "\nNitty gritty details:\n");
+    fprintf(file, "  Device type strs map size:  %lu \n",
+                        static_cast<unsigned long>(devTStrsMap.size()));
+    fprintf(file, "  supevisorDevIVect size:     %lu \n",
+                        static_cast<unsigned long>(supevisorDevIVect.size()));
+    fprintf(file, "  Provenance string cache:\n%s \n\n",provenanceCache.c_str());
+    
+    
+    // Form the Softswitch compilation control string
+    std::string makeArgs = "";
+    if(bufferingSoftswitch)
+    {   // Softswitch needs to be built in buffering mode
+        makeArgs += "SOFTSWITCH_BUFFERING=1 ";
+    }
+    if(!(softswitchInstrumentation))
+    {   // Softswitch needs to be built with instrumentation disabled
+        makeArgs += "SOFTSWITCH_DISABLE_INSTRUMENTATION=1 ";
+    }
+    switch(softswitchLogHandler)
+    {   // Control the log handler 
+        case trivial:   makeArgs += "SOFTSWITCH_TRIVIAL_LOG_HANDLER=1 ";
+                        break;
+        
+        default:        break;  // De Nada!
+    }
+    switch(softswitchLoopMode)
+    {   // Control the main loop order
+        case priInstr:  makeArgs += "SOFTSWITCH_PRIORITISE_INSTRUMENTATION=1 ";
+                        break;
+        
+        default:        break;  // De Nada!
+    }
+    // Set the softswitch log level
+    makeArgs += "SOFTSWITCH_LOGLEVEL=";
+    makeArgs += TO_STRING(softswitchLogLevel);
+    makeArgs += " ";
+    // Add the user-supplied flags if they exist
+    if(compilationFlags.size())
+    {
+        makeArgs += "CM_CFLAGS=\"";
+        makeArgs += compilationFlags;
+        makeArgs += "\" ";
+    }
+    // Print the Make invocation
+    fprintf(file, "  Make invocation:\n\t%s%s%s\n\n",   COREMAKE.c_str(),
+                                                        makeArgs.c_str(),
+                                                        COREMAKEPOST.c_str());
+
+    /* Close breaker and flush the dump. */
+    DumpUtils::close_breaker(file, prefix);
+    fflush(file);
+}
 
 /******************************************************************************
  * Composer constructors
  *****************************************************************************/
 Composer::Composer()
 {
+    placer = PNULL;
     outputPath = "./";
 }
 
@@ -75,7 +192,6 @@ Composer::Composer(Placer* plc)
 
 Composer::~Composer()
 {
-
     // Tidy up the map
     WALKMAP(GraphI_t*, ComposerGraphI_t*, graphIMap, graphISrch)
     {
@@ -84,6 +200,50 @@ Composer::~Composer()
     graphIMap.clear();
 }
 
+/******************************************************************************
+ * Show some summary info about a Composer instance
+ *****************************************************************************/
+void Composer::Show(FILE* file)
+{
+    fprintf(file, "Output Path:                  %s \n",outputPath.c_str());
+    fprintf(file, "Number of graph instances:    %lu \n",
+                                static_cast<unsigned long>(graphIMap.size()));
+    
+    WALKMAP(GraphI_t*, ComposerGraphI_t*, graphIMap, builderGraphI)
+    {
+        fprintf(file, "Instance Name: %s\tGenerated: %s\tCompiled: %s\n",
+                        builderGraphI->second->graphI->Name().c_str(),
+                        builderGraphI->second->generated ? "true" : "false",
+                        builderGraphI->second->compiled ? "true" : "false");
+    }
+}
+
+/******************************************************************************
+ * Dump a Composer instance to file for debugging
+ *****************************************************************************/
+void Composer::Dump(unsigned off,FILE* file)
+{
+    std::string prefix = dformat("%d Composer Instance at %" PTR_FMT ,
+                                 off, OSFixes::getAddrAsUint(this));
+    DumpUtils::open_breaker(file, prefix);
+    
+    fprintf(file, "Placer instance:              %" PTR_FMT "\n",
+                                                OSFixes::getAddrAsUint(placer));
+    fprintf(file, "Output Path:                  %s \n",outputPath.c_str());
+    fprintf(file, "Number of graph instances:    %lu \n",
+                                static_cast<unsigned long>(graphIMap.size()));
+    
+    WALKMAP(GraphI_t*, ComposerGraphI_t*, graphIMap, builderGraphI)
+    {
+        fprintf(file, "\n");
+        builderGraphI->second->Dump(off+2,file);
+    }
+    
+    
+    /* Close breaker and flush the dump. */
+    DumpUtils::close_breaker(file, prefix);
+    fflush(file);
+}
 
 /******************************************************************************
  * Change the output directory
@@ -108,7 +268,254 @@ void Composer::setOutputPath(std::string path)
 void Composer::setPlacer(Placer* plc)
 {
     placer = plc;
-    //TODO: invalidate any generated but not compiled
+    
+    // Changing the placer invalidates everything. Cleanup!
+    WALKMAP(GraphI_t*, ComposerGraphI_t*, graphIMap, graphISrch)
+    {
+        delete graphISrch->second;
+    }
+    graphIMap.clear();
+}
+
+
+/******************************************************************************
+ * Set the buffering mode for the softswitch
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::setBuffMode(GraphI_t* graphI, bool buffMode)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->bufferingSoftswitch = buffMode;
+    
+    return 0;
+}
+
+/******************************************************************************
+ * Set the size of the RTS Buffer
+ *
+ * Changing this requires an app to be regenerated and recompiled.
+ *****************************************************************************/
+int Composer::setRTSSize(GraphI_t* graphI, unsigned long rtsSize)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    if(builderGraphI->generated)
+    {   // Already generated, need to degenerate
+        degenerate(graphI, false);
+    }
+    
+    builderGraphI->rtsBuffSizeMax = rtsSize;
+    
+    return 0;
+}
+
+/******************************************************************************
+ * Set whether instrumentation will be enabled or disabled within a softswitch.
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::enableInstr(GraphI_t* graphI, bool ssInstr)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchInstrumentation = ssInstr;
+    
+    return 0;
+}
+
+/******************************************************************************
+ * Set loghandler mode for a softswitch
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::setLogHandler(GraphI_t* graphI, ssLogHandler_t logHandler)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchLogHandler = logHandler;
+    
+    return 0;
+}
+
+int Composer::setLogLevel(GraphI_t* graphI, unsigned long level)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchLogLevel = level;
+    
+    return 0;
+}
+
+/******************************************************************************
+ * Set loop mode for a softswitch
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::setLoopMode(GraphI_t* graphI, ssLoopMode_t loopMode)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchLoopMode = loopMode;
+    
+    return 0;
+}
+
+
+/******************************************************************************
+ * Add C flags to the compilation
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::addFlags(GraphI_t* graphI, std::string& flags)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->compilationFlags += flags;
+    builderGraphI->compilationFlags += " ";
+    
+    return 0;
 }
 
 
@@ -133,11 +540,11 @@ int Composer::generate(GraphI_t* graphI)
 {
     ComposerGraphI_t* builderGraphI;
     FILE * fd = graphI->par->par->fd;              // Detail output file
-
+    
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, map it.
-        builderGraphI = new ComposerGraphI_t(graphI);
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
 
         // Insert the GraphI
         std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
@@ -164,11 +571,15 @@ int Composer::generate(GraphI_t* graphI)
     }
 
     // Get the list of cores
+    if(placer == PNULL)
+    {   // No placer set, we cannot continue.
+        fprintf(fd,"\t***No placer set. Please gently shout at an Orchestrator developer.***\n");
+        return -3;
+    }
     std::map<GraphI_t*, std::set<P_core*> >::iterator giToCoresFinder;
     giToCoresFinder = placer->giToCores.find(graphI);
     if (giToCoresFinder == placer->giToCores.end())
     {   // Something has gone horribly wrong
-        //TODO: Barf
         fprintf(fd,"\t***FAILED TO FIND ANY CORES***\n");
         return -2;
     }
@@ -193,7 +604,7 @@ int Composer::generate(GraphI_t* graphI)
     std::ofstream props_h, pkt_h;
 
     std::stringstream props_hFName;
-    props_hFName << outputPath << builderGraphI->outputDir;
+    props_hFName << builderGraphI->outputDir;
     props_hFName << "/" << GENERATED_PATH;
     props_hFName << "/GlobalProperties.h";
 
@@ -212,7 +623,7 @@ int Composer::generate(GraphI_t* graphI)
 
 
     std::stringstream pkt_hFName;
-    pkt_hFName << outputPath << builderGraphI->outputDir;
+    pkt_hFName << builderGraphI->outputDir;
     pkt_hFName << "/" << GENERATED_PATH;
     pkt_hFName << "/MessageFormats.h";
 
@@ -348,6 +759,24 @@ int Composer::generate(GraphI_t* graphI)
     return 0;
 }
 
+/******************************************************************************
+ * Public method to check the generation state of a Graph instance
+ *****************************************************************************/
+bool Composer::isGenerated(GraphI_t* graphI)
+{
+    ComposerGraphI_t* builderGraphI;
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, so not generated.
+        return false;
+
+    } else {
+        builderGraphI = srch->second;
+    }
+
+    return builderGraphI->generated;
+}
 
 /******************************************************************************
  * Public method to compile previously generated files for a Graph instance
@@ -360,6 +789,7 @@ int Composer::compile(GraphI_t* graphI)
     ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
     if (srch == graphIMap.end())
     {   // The Graph Instance has not been seen before, barf.
+        fprintf(fd,"\tAttempt to compile a non-existant application.\n");
         return -1;
     }
     builderGraphI = srch->second;
@@ -367,12 +797,18 @@ int Composer::compile(GraphI_t* graphI)
 
     if(builderGraphI->compiled)
     {   // Already compiled, nothing to do
-        fprintf(fd,"\tApplication already compiled, skipping\n");
+        fprintf(fd,"\tApplication already compiled, skipping.\n");
         return 0;
+    }
+    
+    if(!(builderGraphI->generated))
+    {   // Application not generated, barf
+        fprintf(fd,"\tAttempt to compile a non-generated application.\n");
+        return -1;
     }
 
     // Make the bin directory
-    std::string taskDir(outputPath + builderGraphI->outputDir);
+    std::string taskDir(builderGraphI->outputDir);
     std::string elfPath(taskDir + "/bin");
     if(system((MAKEDIR + " " + elfPath).c_str()))
     {
@@ -383,15 +819,317 @@ int Composer::compile(GraphI_t* graphI)
 
 
     // Make the magic happen: call make
-    std::string buildPath = outputPath + builderGraphI->outputDir;
+    std::string buildPath(builderGraphI->outputDir);
     buildPath += "/Build";
+    
+    
+    // Form the Softswitch compilation control string
+    //TODO: Make these const strings at the top
+    std::string makeArgs = "";
 
-    if(system(("(cd "+buildPath+";"+COREMAKE+")").c_str()))
+    if(builderGraphI->bufferingSoftswitch)
+    {   // Softswitch needs to be built in buffering mode
+        makeArgs += "SOFTSWITCH_BUFFERING=1 ";
+    }
+    
+    if(!(builderGraphI->softswitchInstrumentation))
+    {   // Softswitch needs to be built with instrumentation disabled
+        makeArgs += "SOFTSWITCH_DISABLE_INSTRUMENTATION=1 ";
+    }
+    
+    switch(builderGraphI->softswitchLogHandler)
+    {   // Control the log handler 
+        case trivial:   makeArgs += "SOFTSWITCH_TRIVIAL_LOG_HANDLER=1 ";
+                        break;
+        
+        default:        break;  // De Nada!
+    }
+    
+    switch(builderGraphI->softswitchLoopMode)
+    {   // Control the main loop order
+        case priInstr:  makeArgs += "SOFTSWITCH_PRIORITISE_INSTRUMENTATION=1 ";
+                        break;
+        
+        default:        break;  // De Nada!
+    }
+    
+    // Set the softswitch log level
+    makeArgs += "SOFTSWITCH_LOGLEVEL=";
+    makeArgs += TO_STRING(builderGraphI->softswitchLogLevel);
+    makeArgs += " ";
+    
+    // Add the user-supplied flags if they exist
+    if(builderGraphI->compilationFlags.size())
     {
-        //TODO: barf
+        makeArgs += "CM_CFLAGS=\"";
+        makeArgs += builderGraphI->compilationFlags;
+        makeArgs += "\" ";
+    }
+    
+    
+    fprintf(fd,"\tMake called with %s%s%s\n",COREMAKE.c_str(),makeArgs.c_str(),
+                                                COREMAKEPOST.c_str());
+    if(system(("(cd "+buildPath+";"+COREMAKE+makeArgs+COREMAKEPOST+")").c_str()))
+    {   // The build failed. Shout about it!
+    
+        std::string prefix = dformat("Compilation failed! make_errs.txt dump");
+        DumpUtils::open_breaker(fd, prefix);
+        fprintf(fd,"\n");
+        
+        // Copy make_errs.txt into the microlog.
+        std::string makeErrsFName = buildPath;
+        makeErrsFName += "/make_errs.txt";
+        char MEBuff [100];
+        
+        FILE * makeErrsF = fopen(makeErrsFName.c_str(), "r");
+        if(makeErrsF == PNULL)
+        {
+            fprintf(fd,"\tThe make errors file cannot be opened. Sorry!\n");
+        }
+        else
+        {
+            while(!feof(makeErrsF))
+            {
+                if(fgets(MEBuff , 100 , makeErrsF) == PNULL) break;
+                fputs(MEBuff , fd);
+            }
+            fclose(makeErrsF);
+        }
+        
+        fprintf(fd,"\n");
+        DumpUtils::close_breaker(fd, prefix);
+        fflush(fd);
+        
         return 1;
     }
 
+    if(checkBinaries(builderGraphI) != 0) return -1;
+
+    // Mark that we have compiled
+    builderGraphI->compiled = true;
+    builderGraphI->graphI->built = true;
+
+    return 0;
+}
+
+/******************************************************************************
+ * Public method to check the compilation state of a Graph instance
+ *****************************************************************************/
+bool Composer::isCompiled(GraphI_t* graphI)
+{
+    ComposerGraphI_t* builderGraphI;
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, so not compiled.
+        return false;
+
+    } else {
+        builderGraphI = srch->second;
+    }
+
+    return builderGraphI->compiled;
+}
+
+/******************************************************************************
+ * Invoke a clean and then a degenerate
+ *****************************************************************************/
+int Composer::decompose(GraphI_t* graphI)
+{
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    fprintf(fd,"\nDecomposing %s...\n",graphI->par->Name().c_str());
+
+    int ret = clean(graphI);
+
+    if(ret) return ret;
+    else return degenerate(graphI, true);
+}
+
+
+/******************************************************************************
+ * Undo the generation step by removing any generated files and removing the
+ * graphIMap entry.
+ *****************************************************************************/
+int Composer::degenerate(GraphI_t* graphI, bool del)
+{
+    ComposerGraphI_t*  builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator graphISrch = graphIMap.find(graphI);
+    if (graphISrch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, barf.
+        return -1;
+    }
+    builderGraphI = graphISrch->second;
+
+    if(builderGraphI->compiled)
+    {   // Application needs to be cleaned first
+        fprintf(fd,"\tApplication must be cleaned before degenerating.\n");
+        return -2;
+    }
+
+    if(!builderGraphI->generated)
+    {   // Nothing generated, nothing to do
+        if(!del)
+        {
+            fprintf(fd,"\tApplication not generated, skipping\n");
+            return 0;
+        }
+    }
+    else
+    {
+        // Remove the application directory.
+        //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
+        std::string taskDir(builderGraphI->outputDir);
+        if(system((REMOVEDIR+" "+taskDir).c_str())) // Check that the directory deleted
+        {                                  // if it didn't, tell logserver and exit
+            //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
+            fprintf(fd,"\tFailed to remove %s\n",taskDir.c_str());
+        }
+
+        builderGraphI->generated = 0;
+        builderGraphI->provenanceCache = "";
+        builderGraphI->supevisorDevIVect.clear();
+        builderGraphI->devISuperIdxMap.clear();
+        builderGraphI->clearDevTStrsMap();
+    }
+    
+    if(del)
+    {
+        delete graphISrch->second;
+        graphIMap.erase(graphISrch);
+    }
+
+    return 0;
+}
+
+/******************************************************************************
+ * Undo the compilation step by invoking a make clean.
+ *****************************************************************************/
+int Composer::clean(GraphI_t* graphI)
+{   // Tidy up a specific build for a graphI. This invokes make clean
+    ComposerGraphI_t*  builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, barf.
+        return -1;
+    }
+    builderGraphI = srch->second;
+
+    std::string buildPath(builderGraphI->outputDir);
+    buildPath += "/Build";
+    if(system(("(cd "+buildPath+";"+COREMAKECLEAN+")").c_str()))
+    {
+        //TODO: barf?
+    }
+
+    // Remove the bin directory.
+    //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
+    std::string taskDir(builderGraphI->outputDir);
+    if(system((REMOVEDIR+" "+taskDir+"/bin").c_str())) // Check that the directory deleted
+    {                                  // if it didn't, tell logserver and exit
+        //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
+        fprintf(fd,"\tFailed to remove %s\n",taskDir.c_str());
+    }
+
+    // Cleanup the core Binary paths.
+    WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
+    {
+        P_core* pCore = (*coreNode);
+        pCore->instructionBinary = "";
+    }
+
+    // Cleanup Supervisor binary path.
+    builderGraphI->graphI->pSupI->binPath = "";
+    
+    builderGraphI->compiled = false;
+    builderGraphI->graphI->built = false;
+    return 0;
+}
+
+
+/******************************************************************************
+ * Bypass the generate and compile steps, making use of existing binaries.
+ *****************************************************************************/
+int Composer::bypass(GraphI_t* graphI)
+{
+    ComposerGraphI_t*  builderGraphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    fprintf(fd,"\nComposer bypassing %s (making use of existing binaries)...\n",
+                graphI->par->Name().c_str());
+    
+    
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    // Get the list of cores
+    if(placer == PNULL)
+    {   // No placer set, we cannot continue.
+        fprintf(fd,"\t***No placer set. Please gently shout at an Orchestrator developer.***\n");
+        return -3;
+    }
+    std::map<GraphI_t*, std::set<P_core*> >::iterator giToCoresFinder;
+    giToCoresFinder = placer->giToCores.find(graphI);
+    if (giToCoresFinder == placer->giToCores.end())
+    {   // Something has gone horribly wrong
+        fprintf(fd,"\t***FAILED TO FIND ANY CORES***\n");
+        return -2;
+    }
+    builderGraphI->cores = &(giToCoresFinder->second);
+    
+    
+    if(builderGraphI->generated && builderGraphI->compiled) 
+    {   // Already generated and compiled, nothing to do.
+        fprintf(fd,"\tApplication already generated and compiled, skipping\n");
+        return 0;
+    }
+    if(builderGraphI->generated || builderGraphI->compiled)
+    {   // Already generated or compiled, cannot proceed in this state.
+        fprintf(fd,"\tApplication already generatedor compiled, cannot bypass\n");
+        return -1;
+    }
+    
+    
+    //TODO: check that a hash of the XML and Orchestrator settings match.
+    
+    // Mark that the graph is generated.
+    builderGraphI->generated = true;
+    
+    // Check that the binaries for all of the cores exist
+    if(checkBinaries(builderGraphI) != 0 ) return -1;
+    
+    // Mark that we have compiled
+    builderGraphI->compiled = true;
+    builderGraphI->graphI->built = true;
+    
+    return 0;
+}
+
+
+/******************************************************************************
+ * Check that binaries exist for each core.
+ *****************************************************************************/
+int Composer::checkBinaries(ComposerGraphI_t* builderGraphI)
+{
+    GraphI_t* graphI = builderGraphI->graphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    
+    std::string taskDir(builderGraphI->outputDir);
+    std::string elfPath(taskDir + "/bin");
+    
     // Check that the core binaries were made and link to each core.
     WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
     {
@@ -416,8 +1154,8 @@ int Composer::compile(GraphI_t* graphI)
             binary = fopen(instrPath.c_str(), "r");
             if(binary == PNULL)
             { // Failed to open binary
-                //par->Post(806, binaryIt->c_str(), POETS::getSysErrorString(errno));
-                //TODO: Barf
+                fprintf(fd,"\tFailed to open instruction binary %s after compilation\n",
+                            instrPath.c_str());
                 fclose(elfBinary);
                 return -1;
             }
@@ -435,8 +1173,8 @@ int Composer::compile(GraphI_t* graphI)
             binary = fopen(dataPath.c_str(), "r");
             if(binary == PNULL)
             { // Failed to open binary
-                //par->Post(806, binaryIt->c_str(), POETS::getSysErrorString(errno));
-                //TODO: Barf
+                fprintf(fd,"\tFailed to open data binary %s after compilation\n",
+                            dataPath.c_str());
                 fclose(elfBinary);
                 return -1;
             }
@@ -446,8 +1184,8 @@ int Composer::compile(GraphI_t* graphI)
         }
         else
         { // Failed to open the Elf
-            // par->Post(806, elfName.c_str(), POETS::getSysErrorString(errno));
-            //TODO: Barf
+            fprintf(fd,"\tFailed to open elf %s after compilation\n",
+                            elfName.c_str());
             return -1;
         }
 
@@ -462,126 +1200,17 @@ int Composer::compile(GraphI_t* graphI)
     superBinary = fopen(superPath.c_str(),"r");
     if(superBinary == PNULL)
     { // Failed to open the Shared Object
-        //par->Post(806, binaryPath, OSFixes::getSysErrorString(errno));
-        //TODO: Barf
+        fprintf(fd,"\tFailed to open Supervisor binary %s after compilation\n",
+                            superPath.c_str());
         return -1;
     }
     fclose(superBinary);
 
     // Add Supervidor filename to Graph Instance
     graphI->pSupI->binPath = superName;
-
-    // Mark that we have compiled
-    builderGraphI->compiled = true;
-    builderGraphI->graphI->built = true;
-
+    
     return 0;
 }
-
-/******************************************************************************
- * Invoke a clean and then a degenerate
- *****************************************************************************/
-int Composer::decompose(GraphI_t* graphI)
-{
-    FILE * fd = graphI->par->par->fd;              // Detail output file
-    fprintf(fd,"\nDecomposing %s...\n",graphI->par->Name().c_str());
-
-    int ret = clean(graphI);
-
-    if(ret) return ret;
-    else return degenerate(graphI);
-}
-
-
-/******************************************************************************
- * Undo the generation step by removing any generated files and removing the
- * graphIMap entry.
- *****************************************************************************/
-int Composer::degenerate(GraphI_t* graphI)
-{
-    ComposerGraphI_t*  builderGraphI;
-    FILE * fd = graphI->par->par->fd;              // Detail output file
-
-    ComposerGraphIMap_t::iterator graphISrch = graphIMap.find(graphI);
-    if (graphISrch == graphIMap.end())
-    {   // The Graph Instance has not been seen before, barf.
-        return -1;
-    }
-    builderGraphI = graphISrch->second;
-
-    if(builderGraphI->compiled)
-    {   // Application needs to be cleaned first
-        fprintf(fd,"\tApplication must be cleaned before degenerating.\n");
-        return -2;
-    }
-
-    if(!builderGraphI->generated)
-    {   // Nothing generated, nothing to do
-        fprintf(fd,"\tApplication not generated, skipping\n");
-        return 0;
-    }
-
-
-    // Remove the application directory.
-    //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
-    std::string taskDir(outputPath + builderGraphI->outputDir);
-    if(system((REMOVEDIR+" "+taskDir).c_str())) // Check that the directory deleted
-    {                                  // if it didn't, tell logserver and exit
-        //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
-        fprintf(fd,"\tFailed to remove %s\n",taskDir.c_str());
-    }
-
-    builderGraphI->generated = 0;
-
-    delete graphISrch->second;
-    graphIMap.erase(graphISrch);
-
-    return 0;
-}
-
-int Composer::clean(GraphI_t* graphI)
-{   // Tidy up a specific build for a graphI. This invokes make clean
-    ComposerGraphI_t*  builderGraphI;
-    FILE * fd = graphI->par->par->fd;              // Detail output file
-
-    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
-    if (srch == graphIMap.end())
-    {   // The Graph Instance has not been seen before, barf.
-        return -1;
-    }
-    builderGraphI = srch->second;
-
-    std::string buildPath = outputPath + builderGraphI->outputDir;
-    buildPath += "/Build";
-    if(system(("(cd "+buildPath+";"+COREMAKECLEAN+")").c_str()))
-    {
-        //TODO: barf?
-    }
-
-    // Remove the bin directory.
-    //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
-    std::string taskDir(outputPath + builderGraphI->outputDir);
-    if(system((REMOVEDIR+" "+taskDir+"/bin").c_str())) // Check that the directory deleted
-    {                                  // if it didn't, tell logserver and exit
-        //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
-        fprintf(fd,"\tFailed to remove %s\n",taskDir.c_str());
-    }
-
-    // Cleanup the core Binary paths.
-    WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
-    {
-        P_core* pCore = (*coreNode);
-        pCore->instructionBinary = "";
-    }
-
-    // Cleanup Supervisor binary path.
-    builderGraphI->graphI->pSupI->binPath = "";
-
-    builderGraphI->compiled = 0;
-    builderGraphI->graphI->built = 0;
-    return 0;
-}
-
 
 /******************************************************************************
  * Form a cache of the common file provenance blurb.
@@ -609,7 +1238,33 @@ void Composer::formFileProvenance(ComposerGraphI_t* builderGraphI)
     {
         provStr << pGIter->second->result.method <<"\n";
     }
-
+    
+    
+    provStr << " * Softswitch control:\n";
+    provStr << " *   Buffering mode:\t\t";
+    provStr << (builderGraphI->bufferingSoftswitch ? "true" : "false") << "\n";
+    
+    provStr << " *   Instrumentation:\t\t";
+    provStr << (builderGraphI->softswitchInstrumentation ? "true" : "false");
+    provStr << "\n";
+    
+    provStr << " *   Log handler:\t\t\t";
+    switch(builderGraphI->softswitchLogHandler)
+    {   // Control the log handler 
+        case trivial:   provStr << "trivial\n";                         break;
+        default:        provStr << "none\n";                            break;
+    }
+    
+    provStr << " *   Log level:\t\t\t\t";
+    provStr << builderGraphI->softswitchLogLevel << "\n";
+    
+    provStr << " *   Loop mode:\t\t\t\t";
+    switch(builderGraphI->softswitchLoopMode)
+    {   // Control the main loop order
+        case priInstr:  provStr << "prioritise instrumentation\n";      break;
+        default:        provStr << "default\n";                         break;
+    }
+    
     builderGraphI->provenanceCache = provStr.str();
 }
 
@@ -652,7 +1307,7 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     // Remove the task directory and recreate it to clean any previous build.
     //==========================================================================
     //TODO: make this safer. Currently the remove uses an "rm -rf" without any safety.
-    std::string taskDir(outputPath + builderGraphI->outputDir);
+    std::string taskDir(builderGraphI->outputDir);
     if(system((REMOVEDIR+" "+taskDir).c_str())) // Check that the directory deleted
     {                                  // if it didn't, tell logserver and exit
         //par->Post(817, task_dir, OSFixes::getSysErrorString(errno));
@@ -693,14 +1348,6 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
     {
         //par->Post(818, mkdirGenCPath, OSFixes::getSysErrorString(errno));
         fprintf(fd,"\tFailed to create %s\n",mkdirGenCPath.c_str());
-        return 1;
-    }
-
-    std::string mkdirSoftswitchPath(taskDir + "/Softswitch");
-    if(system((MAKEDIR + " " + mkdirSoftswitchPath).c_str()))
-    {
-        //par->Post(818, mkdirSoftswitchPath, OSFixes::getSysErrorString(errno));
-        fprintf(fd,"\tFailed to create %s\n",mkdirSoftswitchPath.c_str());
         return 1;
     }
 
@@ -755,16 +1402,15 @@ int Composer::prepareDirectories(ComposerGraphI_t* builderGraphI)
  *****************************************************************************/
 int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 {
-    std::string taskDir = builderGraphI->outputDir;
     GraphI_t* graphI = builderGraphI->graphI;
 
     //Create the graph instance-specific ones
-    std::ofstream supervisor_cpp, supervisor_h;
+    std::ofstream supervisor_cpp, supervisor_h, supervisor_bin;
 
 
     // Create the Supervisor header
     std::stringstream supervisor_hFName;
-    supervisor_hFName << outputPath << taskDir << "/" << GENERATED_PATH;
+    supervisor_hFName << builderGraphI->outputDir << "/" << GENERATED_PATH;
     supervisor_hFName << "/supervisor_generated.h";
 
     std::string supervisor_hFNameStr = supervisor_hFName.str();
@@ -780,7 +1426,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
 
     // Create the Supervisor source
     std::stringstream supervisor_cppFName;
-    supervisor_cppFName << outputPath << taskDir << "/" << GENERATED_PATH;
+    supervisor_cppFName << builderGraphI->outputDir << "/" << GENERATED_PATH;
     supervisor_cppFName << "/supervisor_generated.cpp";
 
     std::string supervisor_cppFNameStr = supervisor_cppFName.str();
@@ -792,7 +1438,8 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         //par->Post(816, vars_hFName.str(), OSFixes::getSysErrorString(errno));
         return -1;
     }
-
+    
+    // Write the file provenance headers
     writeFileProvenance(supervisor_hFNameStr, builderGraphI, supervisor_h);
     supervisor_h << "#ifndef __SupervisorGeneratedH__H\n";
     supervisor_h << "#define __SupervisorGeneratedH__H\n\n";
@@ -801,8 +1448,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "#include \"supervisor_generated.h\"\n";
     supervisor_cpp << "#include \"Supervisor.h\"\n\n";
 
-    // Write the static member initialisors (Supervisor::init, Supervisor::api,
-    // and the Device Vector)
+    // Write static member initialisors for Supervisor::init & Supervisor::api
     supervisor_cpp << "bool Supervisor::__SupervisorInit = false;\n";
     supervisor_cpp << "SupervisorApi Supervisor::__api;\n";
 
@@ -812,9 +1458,23 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     int devIdx = 0; // Faster than using std::distance
     builderGraphI->supevisorDevIVect.clear();       // Sanity clear
     builderGraphI->devISuperIdxMap.clear();         // sanity clear
+    
+    
+      
+    // Create the Supervisor's DeviceVector binary blob
+    std::stringstream supervisor_binFName;
+    supervisor_binFName << builderGraphI->outputDir << "/" << GENERATED_PATH;
+    supervisor_binFName << "/supervisor.bin";
+    std::string supervisor_binFNameStr = supervisor_binFName.str();
 
-    supervisor_cpp << "const std::vector<SupervisorDeviceInstance_t> ";
-    supervisor_cpp << "Supervisor::DeviceVector = { ";
+    supervisor_bin.open(supervisor_binFNameStr.c_str());
+    if(supervisor_bin.fail()) // Check that the file opened
+    {                 // if it didn't, tell logserver and exit
+        //TODO: Barf
+        //par->Post(816, vars_hFName.str(), OSFixes::getSysErrorString(errno));
+        return -1;
+    }
+    
     WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,graphI->G,i)
     {
         DevI_t* devI = graphI->G.NodeData(i);
@@ -834,19 +1494,38 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
             return -1;
         }
         P_thread* thread = threadSrch->second;
-
-    // Write the initialiser directly: {HwAddr, SwAddr, Name}
-        if(devIdx%100 == 0) supervisor_cpp << "\n\t";     // Add some line splitting
-        supervisor_cpp << "{" << thread->get_hardware_address()->as_uint();
-        supervisor_cpp << "," << devI->addr.as_uint();
-        supervisor_cpp << ",\"" << devI->Name() <<"\"";
-        supervisor_cpp << "},";
-
+        
+        
+        // To keep compilation times reasonable, we create a binary 
+        // representation of the Supervisor's DeviceVector in a file. This file
+        // is turned into a linkable object as part of the compilation process.
+        // When done as an initialiser or initialiser method, the compilation 
+        // times for the Supervisor shared object were unreasonable.
+        SupervisorDeviceInstance_t tmpSDevI = {
+                        thread->get_hardware_address()->as_uint(),
+                        devI->addr.as_uint(), ""};
+        strcpy(tmpSDevI.Name, devI->Name().c_str());
+        supervisor_bin.write((char*)(&tmpSDevI), sizeof(SupervisorDeviceInstance_t));
+        
         devIdx++;
     }
-    supervisor_cpp.seekp(-1,ios_base::cur); // Rewind one place to remove the stray ","
-    supervisor_cpp << "\n};\n\n";               // properly terminate the initialiser
-
+    
+    supervisor_bin.close(); // We are done with the binary for now.
+    
+    devIdx++;       // this now becomes a device count rather than index.
+    
+    
+    supervisor_cpp << "#pragma GCC push_options\n";     // Speed up compiles by NOT optimising
+    supervisor_cpp << "#pragma GCC optimize (\"O0\")\n";  // devicevector initialisation.
+    
+    
+    // Write the static initialisor for the Device Vector
+    supervisor_cpp << "extern SupervisorDeviceInstance_t _binary_supervisor_bin_start[];\n";
+    supervisor_cpp << "extern SupervisorDeviceInstance_t _binary_supervisor_bin_end[];\n";
+    supervisor_cpp << "const std::vector<SupervisorDeviceInstance_t> ";
+    supervisor_cpp << "Supervisor::DeviceVector(_binary_supervisor_bin_start,";
+    supervisor_cpp << "_binary_supervisor_bin_end);\n\n";
+    
 
     // Fill a vector of thread hardware addresses that this supervisor is responsible for
     int threadIdx = 0; // Faster than using std::distance
@@ -861,17 +1540,19 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
             P_thread* pThread = threadIterator->second;
             if (placer->threadToDevices[pThread].size())
             {   // if there are devices placed on the thread
-                supervisor_cpp << pThread->get_hardware_address()->as_uint();
-                supervisor_cpp << ",";
-
                 // Add some line splitting
                 if(threadIdx%100 == 0) supervisor_cpp << "\n\t";
+            
+                supervisor_cpp << pThread->get_hardware_address()->as_uint();
+                supervisor_cpp << ",";
+                
                 threadIdx++;
             }
         }
     }
     supervisor_cpp.seekp(-1,ios_base::cur); // Rewind one place to remove the stray ","
-    supervisor_cpp << "\n};\n\n";               // properly terminate the initialiser
+    supervisor_cpp << "\n};\n";               // properly terminate the initialiser
+    supervisor_cpp << "#pragma GCC pop_options\n\n";
 
 
     // Add references for static class members
@@ -895,26 +1576,25 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     std::string supervisorOnRTCLHandler = "return 0;";
 
 
-    // Default Properteis, state and message struct content
+    // Default Properties and state content
     std::string supervisorPropertiesBody = "\tbool dummy;";
     std::string supervisorStateBody = "\tbool dummy;";
-    std::string supervisorRecvMsgBody = "\tuint8_t pyld[56];";
-
+    
+    // Default message struct refs
+    std::string inPktFmt = "pkt___default_pyld_t*";
+    std::string outPktFmt = "pkt___default_pyld_t*";
+    
+    // Include the generated global props and messages for all supervisors. 
+    supervisor_h << "#include \"GlobalProperties.h\"\n";
+    supervisor_h << "#include \"MessageFormats.h\"\n\n";
+    
     if(graphI->pT->pSup)    // If we have a non-default Supervisor, build it.
     {
         SupT_t* supType = graphI->pT->pSup;
 
         supervisor_h << "#define _APPLICATION_SUPERVISOR_ 1\n\n";
-        supervisor_h << "#include \"GlobalProperties.h\"\n";
-        supervisor_h << "#include \"MessageFormats.h\"\n\n";
         
-        // Add the QoL macros to the generated source
-        supervisor_h << "#define GRAPHPROPERTIES(a)  graphProperties->a\n";
-        supervisor_h << "#define SUPPROPERTIES(a)    supervisorProperties->a\n";
-        supervisor_h << "#define SUPSTATE(a)         supervisorState->a\n";
-        supervisor_h << "#define MSG(a)              message->a\n";
-        supervisor_h << "#define PKT(a)              message->a\n";
-        supervisor_h << "\n";
+        supervisor_h << "#include \"Supervisor.h\"\n\n";
 
         // Global properties initialiser
         writeGlobalPropsI(graphI, supervisor_cpp);
@@ -974,10 +1654,28 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
         // Implicit receive handler
         if(supType->pPinTSI)
         {
-            // Get the body of the Supervisor message
-            supervisorRecvMsgBody = supType->pPinTSI->pMsg->pPropsD->C_src();
-
             supervisorOnImplicitHandler = supType->pPinTSI->pHandl->C_src();
+            
+            // Input packet format string.
+            inPktFmt = "pkt_";
+            inPktFmt += supType->pPinTSI->pMsg->Name();
+            inPktFmt += "_pyld_t*";
+            
+            // Output packet format string
+            // set in case there is no implicit output pin for replies, etc.
+            outPktFmt = "pkt_";
+            outPktFmt += supType->pPinTSI->pMsg->Name();
+            outPktFmt += "_pyld_t*";
+        }
+        
+        // Implicit send handler
+        if(supType->pPinTSO)
+        {    
+            // Ignore the handler for now, but extract the packet format
+            
+            outPktFmt = "pkt_";
+            outPktFmt += supType->pPinTSO->pMsg->Name();
+            outPktFmt += "_pyld_t*";
         }
 
         // General receive handler
@@ -1018,11 +1716,6 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_h << supervisorStateBody;
     supervisor_h << "\n} SupervisorState_t;\n\n";
 
-    //Implicit Message Type
-    supervisor_h << "typedef struct SupervisorImplicitRecvMessage_t\n{\n";
-    supervisor_h << supervisorRecvMsgBody;
-    supervisor_h << "\n} SupervisorImplicitRecvMessage_t;\n\n";
-
     // Init Handler
     supervisor_cpp << "int Supervisor::OnInit()\n{\n";
     supervisor_cpp << "\tif(__SupervisorInit) return -1;\n";
@@ -1031,9 +1724,11 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "\tsupervisorProperties = __SupervisorProperties;\n";
     supervisor_cpp << "\tsupervisorState = __SupervisorState;\n\n";
     supervisor_cpp << "\t__SupervisorInit = true;\n\n";
+    
     supervisor_cpp << supervisorOnInitHandler;
     supervisor_cpp << "\n\n\treturn 0;\n";
-    supervisor_cpp << "}\n\n";
+    supervisor_cpp << "}\n";
+    supervisor_cpp << "\n";
 
     // Stop handler
     supervisor_cpp << "int Supervisor::OnStop()\n{\n";
@@ -1048,36 +1743,73 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     supervisor_cpp << "}\n\n";
 
     // OnImplicit
-    supervisor_cpp << "int Supervisor::OnImplicit(P_Pkt_t* inMsg)\n{\n";
-
-    /* TODO remove
-    supervisor_cpp << "\t const SupervisorProperties_t* SupervisorProperties";
-    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorProperties;\n";
-    supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorProperties)\n";
-
-    supervisor_cpp << "\t SupervisorState_t* SupervisorState";
-    supervisor_cpp << " OS_ATTRIBUTE_UNUSED= __SupervisorState;\n";
-    supervisor_cpp << "\tOS_PRAGMA_UNUSED(SupervisorState)\n";
-    */
-
-    supervisor_cpp << "\tconst SupervisorImplicitRecvMessage_t* message";
+    supervisor_cpp << "int Supervisor::OnImplicit(P_Pkt_t* __inPkt, ";
+    supervisor_cpp << "std::vector<P_Addr_Pkt_t>& __outPkt)\n{\n";
+    
+    supervisor_cpp << "\tconst " << inPktFmt << " message";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
-    supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>";
-    supervisor_cpp << "(static_cast<const void*>(inMsg->payload));\n";
+    supervisor_cpp << "static_cast<const " << inPktFmt << ">";
+    supervisor_cpp << "(static_cast<const void*>(__inPkt->payload));\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
-
-    supervisor_cpp << supervisorOnImplicitHandler;
-    supervisor_cpp << "\n\n\treturn 0;\n";
+    
+    supervisor_cpp << "\tP_Pkt_t __reply OS_ATTRIBUTE_UNUSED;\n";
+    supervisor_cpp << "\t" << outPktFmt << " reply OS_ATTRIBUTE_UNUSED= ";
+    supervisor_cpp << "static_cast<" << outPktFmt << ">";
+    supervisor_cpp << "(static_cast<void*>(&(__reply.payload)));\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(reply)\n\n";
+    
+    supervisor_cpp << "\tP_Pkt_t __bcast OS_ATTRIBUTE_UNUSED;\n";
+    supervisor_cpp << "\t" << outPktFmt << " broadcast OS_ATTRIBUTE_UNUSED= ";
+    supervisor_cpp << "static_cast<" << outPktFmt << ">";
+    supervisor_cpp << "(static_cast<void*>(&(__bcast.payload)));\n";
+    supervisor_cpp << "\tOS_PRAGMA_UNUSED(broadcast)\n\n";
+    
+    supervisor_cpp << "\tbool __rtsBcast = false;\n";
+    supervisor_cpp << "\tbool __rtsReply = false;\n\n";
+    
+    supervisor_cpp << supervisorOnImplicitHandler << "\n\n";
+    
+        // Reply packet logic
+    supervisor_cpp << "\tif(__rtsReply)\n\t{\n";
+    supervisor_cpp << "\t\tP_Addr_Pkt_t __oPkt;\n";
+    supervisor_cpp << "\t\tconst SupervisorDeviceInstance_t* tgt = ";
+    supervisor_cpp << "&DeviceVector[__inPkt->header.pinAddr];\n";
+    supervisor_cpp << "\t\t__reply.header.swAddr = tgt->SwAddr;\n";
+    supervisor_cpp << "\t\t__reply.header.swAddr |= ";
+    supervisor_cpp << "(P_CNC_IMPL << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK;\n";
+    supervisor_cpp << "\t\t__oPkt.hwAddr = tgt->HwAddr;\n";
+    supervisor_cpp << "\t\t__oPkt.packet = __reply;\n";
+    supervisor_cpp << "\t\t__outPkt.push_back(__oPkt);\n";
+    supervisor_cpp << "\t}\n\n";
+    
+        // Broadcast packet logic
+    supervisor_cpp << "\tif(__rtsBcast)\n\t{\n";
+    supervisor_cpp << "\t\t__bcast.header.swAddr = (P_ADDR_BROADCAST << ";
+    supervisor_cpp << "P_SW_DEVICE_SHIFT) & P_SW_DEVICE_MASK;\n";
+    supervisor_cpp << "\t\t__bcast.header.swAddr |= ";
+    supervisor_cpp << "(P_CNC_IMPL << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK;\n";
+    supervisor_cpp << "\t\tWALKCVECTOR(uint32_t,ThreadVector,threadTgt)\n\t{\n";
+    supervisor_cpp << "\t\t\tP_Addr_Pkt_t __oPkt;\n";
+    supervisor_cpp << "\t\t\t__oPkt.hwAddr = (*threadTgt);\n";
+    supervisor_cpp << "\t\t\t__oPkt.packet = __bcast;\n";
+    supervisor_cpp << "\t\t\t__outPkt.push_back(__oPkt);\n";
+    supervisor_cpp << "\t\t}\n";
+    
+    supervisor_cpp << "\t}\n\n";
+    
+    
+    supervisor_cpp << "\n\treturn 0;\n";
     supervisor_cpp << "}\n\n";
 
 
     // OnPkt - essentially a stub for now
-    supervisor_cpp << "int Supervisor::OnPkt(P_Pkt_t* inMsg)\n{\n";
+    supervisor_cpp << "int Supervisor::OnPkt(P_Pkt_t* __inPkt, ";
+    supervisor_cpp << "std::vector<P_Addr_Pkt_t>& __outPkt)\n{\n";
 
-    supervisor_cpp << "\t const SupervisorImplicitRecvMessage_t* message";
+    supervisor_cpp << "\tconst " << inPktFmt << " message";
     supervisor_cpp << " OS_ATTRIBUTE_UNUSED= ";
-    supervisor_cpp << "static_cast<const SupervisorImplicitRecvMessage_t*>(";
-    supervisor_cpp << "static_cast<const void*>(inMsg->payload));\n";
+    supervisor_cpp << "static_cast<const " << inPktFmt << ">(";
+    supervisor_cpp << "static_cast<const void*>(__inPkt->payload));\n";
     supervisor_cpp << "\tOS_PRAGMA_UNUSED(message)\n\n";
 
     supervisor_cpp << supervisorOnPktHandler;
@@ -1187,23 +1919,21 @@ void Composer::writeMessageTypes(GraphI_t* graphI, std::ofstream& pkt_h)
     pkt_h << "#define _MESSAGETYPES_H_\n\n";
 
     pkt_h << "#include <cstdint>\n";
-    //pkt_h << "#include \"softswitch_common.h\"\n\n";
-
+    
+    //pkt_h <<  "#pragma pack(push,1)\n";
+    
     WALKVECTOR(MsgT_t*,graphT->MsgT_v,msg)
     {
         pkt_h << "typedef struct " << graphT->Name() << "_" << (*msg)->Name();
         pkt_h << "_message_t \n{\n";
         pkt_h << (*msg)->pPropsD->C_src();       // The message struct
-        pkt_h << "\n} pkt_" << (*msg)->Name() << "_pyld_t;;\n\n";
+        pkt_h << "\n} pkt_" << (*msg)->Name() << "_pyld_t;\n\n";
     }
-
+    
+    //pkt_h <<  "#pragma pack(pop)\n";
+    
     pkt_h << "#endif /*_MESSAGETYPES_H_*/\n\n";
 }
-
-
-
-
-
 
 
 /******************************************************************************
@@ -1401,7 +2131,37 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
     }
     else handlers_cpp << "    return 0;\n"; // or a stub if not
     handlers_cpp << "}\n\n";
-
+    
+    
+    // OnImpl
+    handlers_h << "uint32_t devtyp_" << devTName;
+    handlers_h << "_OnImpl_handler (const void* __GraphProps, ";
+    handlers_h << "void* __Device, const void* pkt);\n";
+    
+    handlers_cpp << "uint32_t devtyp_" << devTName;
+    handlers_cpp << "_OnImpl_handler (const void* __GraphProps, ";
+    handlers_cpp << "void* __Device, const void* pkt)\n";
+    handlers_cpp << dTypStrs->handlerPreamble;
+    handlers_cpp << dTypStrs->handlerPreambleS << "\n";
+    
+    if (devT->pPinTSI) // insert the OnImpl handler if there is one
+    {
+        // Write the message cast
+        handlers_cpp << "   const pkt_" << devT->pPinTSI->pMsg->Name();
+        handlers_cpp << "_pyld_t* message";
+        handlers_cpp << " OS_ATTRIBUTE_UNUSED= ";
+        handlers_cpp << "static_cast<const pkt_" << devT->pPinTSI->pMsg->Name();
+        handlers_cpp << "_pyld_t*>(pkt);\n";
+        handlers_cpp << "OS_PRAGMA_UNUSED(message)\n";
+        
+        // Insert the handler
+        handlers_cpp << devT->pPinTSI->pHandl->C_src() << "\n";
+    }
+    
+    handlers_cpp << "    return 0;\n"; // or a stub if not
+    handlers_cpp << "}\n\n";
+    
+    
 
     // OnCtl
     handlers_h << "uint32_t devtyp_" << devTName;
@@ -1423,7 +2183,6 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
     else handlers_cpp << "   return 0;\n"; // or a stub if not
     */
     handlers_cpp << "    return 0;\n"; // or a stub if not
-
     handlers_cpp << "}\n\n";
 
 
@@ -1641,7 +2400,8 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
         if ((*pinO)->pMsg->pPropsD)
         {
             handlers_cpp << "   pkt_" << (*pinO)->pMsg->Name();
-            handlers_cpp << "_pyld_t* message ";
+
+            handlers_cpp << "_pyld_t* message";
             handlers_cpp << " OS_ATTRIBUTE_UNUSED= ";
             handlers_cpp << "static_cast<pkt_";
             handlers_cpp << (*pinO)->pMsg->Name() << "_pyld_t*>(pkt);\n";
@@ -1678,12 +2438,10 @@ int Composer::createCoreFiles(P_core* pCore, ComposerGraphI_t* builderGraphI,
 {
     uint32_t coreAddr = pCore->get_hardware_address()->as_uint();
     FILE * fd = pCore->parent->parent->parent->parent->parent->fd;  // Microlog
-
-    std::string taskDir = builderGraphI->outputDir;
-
+    
     // Create the vars header
     std::stringstream vars_hFName;
-    vars_hFName << outputPath << taskDir << "/" << GENERATED_H_PATH;
+    vars_hFName << builderGraphI->outputDir << "/" << GENERATED_H_PATH;
     vars_hFName << "/vars_" << coreAddr << ".h";
 
     std::string vars_hFNameStr = vars_hFName.str();
@@ -1701,7 +2459,7 @@ int Composer::createCoreFiles(P_core* pCore, ComposerGraphI_t* builderGraphI,
 
     // Create the vars source
     std::stringstream vars_cppFName;
-    vars_cppFName << outputPath << taskDir << "/" << GENERATED_CPP_PATH;
+    vars_cppFName << builderGraphI->outputDir << "/" << GENERATED_CPP_PATH;
     vars_cppFName << "/vars_" << coreAddr << ".cpp";
 
     std::string vars_cppFNameStr = vars_cppFName.str();
@@ -1719,7 +2477,7 @@ int Composer::createCoreFiles(P_core* pCore, ComposerGraphI_t* builderGraphI,
 
     // Create the vars header
     std::stringstream handlers_hFName;
-    handlers_hFName << outputPath << taskDir << "/" << GENERATED_H_PATH;
+    handlers_hFName << builderGraphI->outputDir << "/" << GENERATED_H_PATH;
     handlers_hFName << "/handlers_" << coreAddr << ".h";
 
     std::string handlers_hFNameStr = handlers_hFName.str();
@@ -1739,7 +2497,7 @@ int Composer::createCoreFiles(P_core* pCore, ComposerGraphI_t* builderGraphI,
 
     // Create the vars source
     std::stringstream handlers_cppFName;
-    handlers_cppFName << outputPath << taskDir << "/" << GENERATED_CPP_PATH;
+    handlers_cppFName << builderGraphI->outputDir << "/" << GENERATED_CPP_PATH;
     handlers_cppFName << "/handlers_" << coreAddr << ".cpp";
 
     std::string handlers_cppFNameStr = handlers_cppFName.str();
@@ -1858,12 +2616,10 @@ int Composer::createThreadFile(P_thread* pThread,
 {
     uint32_t coreAddr = pThread->parent->get_hardware_address()->as_uint();
     uint32_t threadAddr = pThread->get_hardware_address()->get_thread();
-
-    std::string taskDir = builderGraphI->outputDir;
-
+    
     // Create the vars source
     std::stringstream tvars_cppFName;
-    tvars_cppFName << outputPath << taskDir << "/" << GENERATED_CPP_PATH;
+    tvars_cppFName << builderGraphI->outputDir << "/" << GENERATED_CPP_PATH;
     tvars_cppFName << "/vars_" << coreAddr;
     tvars_cppFName << "_" << threadAddr << ".cpp";
 
@@ -1904,7 +2660,8 @@ unsigned Composer::writeThreadVars(ComposerGraphI_t* builderGraphI,
 
     writeThreadVarsCommon(coreAddr, threadAddr, vars_h, thread_vars_cpp);
 
-    writeThreadContextInitialiser(thread, devT, vars_h, thread_vars_cpp);
+    writeThreadContextInitialiser(builderGraphI, thread, devT,
+                                    vars_h, thread_vars_cpp);
 
     writeDevTDeclInit(threadAddr, devT, vars_h, thread_vars_cpp);
 
@@ -1946,15 +2703,20 @@ void Composer::writeThreadVarsCommon(AddressComponent coreAddr,
 /******************************************************************************
  * Generate the ThreadContext initialiser. PThreadContext/ThreadCtxt_t struct
  *****************************************************************************/
-void Composer::writeThreadContextInitialiser(P_thread* thread, DevT_t* devT,
+void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
+                                        P_thread* thread, DevT_t* devT,
                                         std::ofstream& vars_h,
                                         std::ofstream& vars_cpp)
 {
+    
+    FILE * fd = builderGraphI->graphI->par->par->fd;       // Detail output file
+    
     AddressComponent threadAddr = thread->get_hardware_address()->get_thread();
     std::list<DevI_t*>::size_type numberOfDevices =
         placer->threadToDevices.at(thread).size();  // Get the thread dev count
 
     size_t outTypCnt = devT->PinTO_v.size();      // Number of output pins
+    bool rtsOF = false;                           // Flag to indicate RTS sz OF
 
     vars_cpp << "ThreadCtxt_t Thread_" << threadAddr << "_Context ";
     vars_cpp << "__attribute__((section (\".thr" << threadAddr << "_base\"))) ";
@@ -1965,76 +2727,106 @@ void Composer::writeThreadContextInitialiser(P_thread* thread, DevT_t* devT,
     vars_cpp << "Thread_" << threadAddr << "_Devices,";               // devIs
     vars_cpp << ((devT->par->pPropsD)?"&GraphProperties,":"PNULL,");  // props
 
-
-    /* Work out the required size for rtsBuffSize: The size of the RTS buffer is
-    * dependant on the number of connected output pins hosted on the Softswitch.
-    * The size is set to 1 + <number of connected pins> + <number of connected
-    * devices (if supervisor pin connected), as long as this is less than
-    * MAX_RTSBUFFSIZE, so that each connected pin can have a pending send.
-    *
-    * The additional slot is required to ensure that the crude, simple wrapping
-    * mechanism for the circular buffer does not set rtsEnd to be the same as
-    * rtsStart when adding to the buffer. If this occurs, softswitch_IsRTSReady
-    * will always return false (as it simply checks that rtsStart != rtsEnd) and
-    * no further application-generated packets will be sent by the softswitch
-    * (as softswitch_onRTS will only alter rtsEnd if it adds an entry to the
-    * buffer, which it wont do in this case as all pins will already be marked
-    * as send pending).
-    *
-    * If the buffer size is constrained to MAX_RTSBUFFSIZE, a warning is
-    * generated - if this occurs frequently, more graceful handling of rtsBuf
-    * overflowing may be required.
-    */
-    uint32_t outputCount = 1;     // Intentionally 1 to cope with wrapping.
-
-    if(devT->pPinTSO)
-    {   // There is a supervisor output, increase the output count by dev count.
-        outputCount += numberOfDevices;
+    /* Set the size of the RTSBuffer: depends on the mode of operation. In non-
+     * buffering mode, this will relate to the number of output pins hosted by
+     * the Softswitch. In Buffering mode, this is set to the maximum size (or
+     * the size specified at the command line/in the config).
+     */
+    uint32_t buffCount = 0;     // RTSBuff size.
+    if(builderGraphI->bufferingSoftswitch)
+    {
+        /* Use the value in the graph instance directly. */
+        buffCount = builderGraphI->rtsBuffSizeMax;
     }
+    else
+    {
+       /* Work out the required size for rtsBuffSize: The size of the RTS buffer
+        * is dependant on the number of connected output pins hosted on the 
+        * Softswitch.
+        * The size is set to 1 + <number of connected pins> + <number of 
+        * devices> (if supervisor pin connected), as long as this is less than
+        * builderGraphI->rtsBuffSizeMax, so that each connected pin can have a 
+        * pending send.
+        *
+        * The additional slot ensures that the crude, simple wrapping mechanism 
+        * for the circular buffer does not set rtsEnd to the same as rtsStart
+        * when adding to the buffer. If this occurs, softswitch_IsRTSReady will
+        * always return false (as it simply checks that rtsStart != rtsEnd) and
+        * the softswitch will not send no further application-generated packets
+        * (as softswitch_onRTS will only alter rtsEnd if it adds an entry to the
+        * buffer, which it wont do as all pins will already be marked as send
+        * pending).
+        *
+        * If the buffer size is constrained, a warning is generated - if this 
+        * occurs frequently, more graceful handling of rtsBuf overflowing may be 
+        * required.
+        */
+        buffCount = 1;     // Intentionally 1 to cope with wrapping.
 
-    if (outTypCnt)  // If we have output pins
-    {               // Iterate through devices counting connected output pins.
-        WALKLIST(DevI_t*, placer->threadToDevices.at(thread), dev)
-        {
-            WALKVECTOR(PinT_t*, devT->PinTO_v, pin)
+        if(devT->pPinTSO)
+        {   // There is a supervisor output, increase output count by dev count.
+            buffCount += numberOfDevices;
+        }
+
+        if (outTypCnt) // If we have output pins
+        {              // Iterate through devices counting connected output pins
+            WALKLIST(DevI_t*, placer->threadToDevices.at(thread), dev)
             {
-                // Check that we have a connection
-                std::map<std::string,PinI_t *>::iterator pinSrch;
-                pinSrch = (*dev)->Pmap.find(devT->Name());
-                if(pinSrch != (*dev)->Pmap.end())
+                /* The below relies on the Pmap in the device instance to find 
+                 * output pins with reference to the Pin's PinT_t. 
+                 * By design, this map is cleared to save memory. This behaviour
+                 * has been changed to facilitate the below. An alternative
+                 * would be to maintain a vector of pointers to PinI_ts that is
+                 * retained after Pmap is cleared HOWEVER, this requires some
+                 * thought to ensure that we can discriminate output pins as a
+                 * naive implementation ends up allocating buffer space for
+                 * input pins as well as output pins.
+                 */
+                WALKVECTOR(PinT_t*, devT->PinTO_v, pin)
                 {
-                    if(pinSrch->second->Key_v.size())
+                    // Check that we have a connection
+                    std::map<std::string,PinI_t *>::iterator pinSrch;
+                    pinSrch = (*dev)->Pmap.find((*pin)->Name());
+                    if(pinSrch != (*dev)->Pmap.end())
                     {
-                        outputCount++;
+                        if(pinSrch->second->Key_v.size())
+                        {
+                            buffCount++;
 
-                        // If 0, we have overflowed & there is no point cont
-                        if (outputCount==0) break;
+                            // If 0, we have overflowed & there is no point cont
+                            if (buffCount==0) break;
+                        }
                     }
                 }
+                if (buffCount==0)
+                {
+                    buffCount = builderGraphI->rtsBuffSizeMax;
+                    break;
+                }
             }
-            if (outputCount==0)
-            {
-                outputCount = MAX_RTSBUFFSIZE;
-                break;
-            }
+        }
+
+        if (buffCount > builderGraphI->rtsBuffSizeMax)
+        { // If we have too many pins for one buffer entry per pin, set to max 
+          // & warn. This may need a check adding to the Softswitch to stop
+          // buffer overflow.
+            fprintf(fd,"\nRTS Buffer for thread %u truncated from %u to %lu\n",
+            threadAddr, buffCount, builderGraphI->rtsBuffSizeMax);
+            
+            rtsOF = true;
+            
+            buffCount = builderGraphI->rtsBuffSizeMax;
+        }
+        else if (buffCount < MIN_RTSBUFFSIZE)
+        {
+            fprintf(fd,"\nRTS Buffer for thread %u expanded from %u to %u\n",
+            threadAddr, buffCount, MIN_RTSBUFFSIZE);
+            buffCount = MIN_RTSBUFFSIZE;
         }
     }
 
-    if (outputCount > MAX_RTSBUFFSIZE)
-    { // If we have too many pins for one buffer entry per ping, set to max &warn.
-    // This may need a check adding to the Softswitch to stop buffer overflow.
-        outputCount = MAX_RTSBUFFSIZE;
-        //TODO: Barf
-        //par->Post(819,int2str(thread_num),int2str(coreNum),
-        //            int2str(MAX_RTSBUFFSIZE), int2str(MAX_RTSBUFFSIZE));
-    }
-    else if (outputCount < MIN_RTSBUFFSIZE)
-    {
-        outputCount = MIN_RTSBUFFSIZE;
-    }
 
-
-    vars_cpp << outputCount << ",";                                   // rtsBuffSize
+    vars_cpp << buffCount << ",";                                     // rtsBuffSize
 
     vars_cpp << "PNULL,";                                             // rtsBuf
     vars_cpp << "0,";                                                 // rtsStart
@@ -2055,6 +2847,12 @@ void Composer::writeThreadContextInitialiser(P_thread* thread, DevT_t* devT,
     vars_cpp << "0,";                                 // blockCount
     vars_cpp << "0";                                  // cycleIdx
     vars_cpp << "};\n";
+    
+    if(rtsOF)
+    {
+        vars_cpp << "#warning RTS Buffer for Thread " << threadAddr;
+        vars_cpp << " truncated to " << builderGraphI->rtsBuffSizeMax << "\n";
+    }
 }
 
 /******************************************************************************
@@ -2088,6 +2886,7 @@ void Composer::writeDevTDeclInit(AddressComponent threadAddr, DevT_t* devT,
     vars_cpp << "&devtyp_" << devT->Name() << "_OnInit_handler,";               // OnInit_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnIdle_handler,";               // OnIdle_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnHWIdle_handler,";             // OnHWIdle_Handler
+    vars_cpp << "&devtyp_" << devT->Name() << "_OnImpl_handler,";               // OnImpl_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnCtl_handler,";                // OnCtl_Handler
 
     //TODO: Add v4 handlers
@@ -2320,6 +3119,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
     AddressComponent threadAddr = thread->get_hardware_address()->get_thread();
 
     GraphI_t* graphI = builderGraphI->graphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
 
     // devInst_t initialiser
     std::vector<std::string> devIIStrs(numberOfDevices, "{},");
@@ -2373,6 +3173,20 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
         devII << "&Thread_" << threadAddr << "_Context,";          // thread
         devII << "&Thread_" << threadAddr << "_DeviceTypes[0],";   // devType
         devII << devIdx << ",";                  // deviceID
+        
+        
+        // Retrieve the device index from the Supervisor map
+        devISuperIdxMap_t::iterator devISrch;
+        devISrch = builderGraphI->devISuperIdxMap.find(devI);
+        if (devISrch == builderGraphI->devISuperIdxMap.end())
+        {   // Something has gone wrong that we are going to ignore.
+            fprintf(fd,"**WARNING** Device not found in Supervisor idx map\n");
+            devII << "0,";
+        }
+        else
+        {
+            devII << devISrch->second << ",";
+        }
 
 
         // Find all of the arcs that involve this device.
@@ -2541,8 +3355,8 @@ void Composer::writeDevIInputPinDefs(GraphI_t* graphI, DevT_t* devT,
     // Walk through the input arcs and find their associated PinI_t
     WALKVECTOR(unsigned, arcKeysIn, arc)
     {
-        PinI_t* oPin;
-        PinI_t* iPin;
+        PinI_t* oPin = PNULL;
+        PinI_t* iPin = PNULL;
         unsigned oPinKey, iPinKey;
 
         //  Get the pin data for the edge
@@ -2733,7 +3547,7 @@ void Composer::writeDevIInputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
         inEdgePropsI.str("");
         inEdgePropsI << "devtyp_" << pinI->pT->par->Name();
         inEdgePropsI << "_InPin_" << pinI->pT->Name();
-        inEdgePropsI << "_props_t Thread_";
+        inEdgePropsI << "_props_t ";
         inEdgePropsI << thrDevName << "_Pin_" << pinI->pT->Name();
         inEdgePropsI << "_InEdgeProps[" << edgeCount << "] = {";
 
@@ -2787,6 +3601,8 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
                                         std::ofstream& vars_cpp)
 {
     GraphI_t* graphI = builderGraphI->graphI;
+    FILE * fd = graphI->par->par->fd;              // Detail output file
+    
     DevT_t* devT = devI->pT;
 
     pinIArcKeyMap_t oPinIArcKMap;
@@ -2801,8 +3617,8 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
     // Walk through the input arcs and find their associated PinI_t
     WALKVECTOR(unsigned, arcKeysOut, arc)
     {
-        PinI_t* oPin;
-        PinI_t* iPin;
+        PinI_t* oPin = PNULL;
+        PinI_t* iPin = PNULL;
         unsigned oPinKey, iPinKey;
 
         //  Get the pin data for the edge
@@ -2910,7 +3726,8 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
         devISrch = builderGraphI->devISuperIdxMap.find(devI);
         if (devISrch == builderGraphI->devISuperIdxMap.end())
         {   // Something has gone wrong that we are going to ignore.
-            //TODO: Barf
+            fprintf(fd,"**WARNING** Device not found in Supervisor idx map");
+            fprintf(fd," when writing implicit Send Pin initialiser.\n");
             outEdgeTI << "0";
         }
         else

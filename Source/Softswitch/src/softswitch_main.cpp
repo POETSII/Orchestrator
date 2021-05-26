@@ -19,6 +19,12 @@ void softswitch_main()
     outPin_t* rtsBuf[ThreadContext->rtsBuffSize+1];
     ThreadContext->rtsBuf = rtsBuf;
 
+#ifdef BUFFERING_SOFTSWITCH
+    // configure the packet buffer if we are in buffering mode
+    P_Pkt_pyld_t pktBuf[ThreadContext->rtsBuffSize+1];
+    ThreadContext->pktBuf = pktBuf;
+#endif
+
     // Softswitch Initialisation
     softswitch_init(ThreadContext);
 

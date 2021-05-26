@@ -106,7 +106,7 @@ private:
                                   std::vector<uint32_t>* addresses,
                                   unsigned index=0);
     bool decode_addressed_packets_message(PMsg_p* message,
-        std::vector<std::pair<uint32_t, P_Pkt_t> >* packets, unsigned index=0);
+        std::vector<P_Addr_Pkt_t>* packets, unsigned index=0);
     bool decode_char_message(PMsg_p* message, unsigned char* result,
                              unsigned index=0);
     bool decode_packets_message(PMsg_p* message,

@@ -17,7 +17,7 @@ public:
 virtual ~     CmPath();
 
 void          Clear();
-bool          Cm_Path(bool,string &,string,string);
+bool          Cm_Path(bool,string &,string,string,bool);
 void          Dump(unsigned = 0,FILE * = stdout);
 FILE *        Fclose();
 FILE *        Fopen();

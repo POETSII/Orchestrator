@@ -215,7 +215,7 @@ void ThreadComms::push_MPI_app_queue(std::vector<PMsg_p>* messages)
 /* If there are packets in the queue, grabs the next packet from
  * BackendOutputQueue, writes packet with it, and returns true. Otherwise,
  * returns false. */
-bool ThreadComms::pop_backend_out_queue(std::pair<uint32_t, P_Pkt_t>* packet)
+bool ThreadComms::pop_backend_out_queue(P_Addr_Pkt_t* packet)
 {
     bool returnValue = false;
     pthread_mutex_lock(&mutex_backend_output_queue);
@@ -233,7 +233,7 @@ bool ThreadComms::pop_backend_out_queue(std::pair<uint32_t, P_Pkt_t>* packet)
  * BackendOutputQueue, writes them to packets, and returns true. Otherwise,
  * returns false. */
 bool ThreadComms::pop_backend_out_queue(
-    std::vector<std::pair<uint32_t, P_Pkt_t> >* packets)
+    std::vector<P_Addr_Pkt_t>* packets)
 {
     bool returnValue = false;
     packets->clear();
@@ -249,7 +249,7 @@ bool ThreadComms::pop_backend_out_queue(
 }
 
 /* Takes packet and places it into the queue. */
-void ThreadComms::push_backend_out_queue(std::pair<uint32_t, P_Pkt_t> packet)
+void ThreadComms::push_backend_out_queue(P_Addr_Pkt_t packet)
 {
     pthread_mutex_lock(&mutex_backend_output_queue);
     BackendOutputQueue.push(packet);
@@ -259,9 +259,9 @@ void ThreadComms::push_backend_out_queue(std::pair<uint32_t, P_Pkt_t> packet)
 /* Takes all packets and pushes them into the queue in the order in which they
  * are stored in the vector. */
 void ThreadComms::push_backend_out_queue(
-    std::vector<std::pair<uint32_t, P_Pkt_t> >* packets)
+    std::vector<P_Addr_Pkt_t>* packets)
 {
-    std::vector<std::pair<uint32_t, P_Pkt_t> >::iterator packet;
+    std::vector<P_Addr_Pkt_t>::iterator packet;
     pthread_mutex_lock(&mutex_backend_output_queue);
     for (packet = packets->begin(); packet != packets->end(); packet++)
     {

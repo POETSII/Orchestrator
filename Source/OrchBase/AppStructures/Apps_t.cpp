@@ -34,7 +34,7 @@ Apps_t::~Apps_t()
 {
 if (pPoL==0) ExtCnt--;
 else PoLCnt--;
-par->Post(802,Name());
+par->Post(214,Name());
 WALKVECTOR(GraphI_t *,GraphI_v,i) delete *i;
 WALKVECTOR(GraphT_t *,GraphT_v,i) delete *i;
 }

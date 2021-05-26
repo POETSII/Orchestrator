@@ -606,7 +606,7 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
 
     /* Defines help string, printed when user calls with `-h`. */
     std::string helpDoc = dformat(
-"Usage: %s [/b = FILE] [/d] [/f = FILE] [/h] [/g = PROCESS] [/n] [/o = HOST] [/p = PATH] [/v = PROCESS]\n"
+"Usage: %s [/b=FILE] [/d] [/f=FILE] [/h] [/g=PROCESS] [/n] [/o=HOST] [/p=PATH] [/v=PROCESS]\n"
 "\n"
 "This is the Orchestrator launcher. It starts the following Orchestrator processes:\n"
 "\n"
@@ -617,11 +617,11 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
 "\n"
 "For verbosity, compile with debugging enabled by setting ORCHESTRATOR_DEBUG to 1 (i.e. `make debug`, or `$(CXX) -DORCHESTRATOR_DEBUG`. See `Debug.{cpp,h}`). This launcher accepts the following optional arguments:\n"
 "\n"
-"\t/%s = FILE: Path to a batch script to run on the root process on startup. Each command is added to root's MPI message queue, and each runs independently of the other. See the Orchestrator documentation for more information on the batch system.\n"
+"\t/%s=FILE: Path to a batch script to run on the root process on startup. Each command is added to root's MPI message queue, and each runs independently of the other. See the Orchestrator documentation for more information on the batch system.\n"
 "\n"
 "\t/%s: Don't start the Orchestrator! Still deploys binaries, but does not execute the command. Instead, the command is printed in your shell.\n"
 "\n"
-"\t/%s = FILE: Path to a hardware file to read hostnames from, in order to get hostnames for starting remote mothership processes. If none is provided, '%s' is searched (this default is defined in the launcher source, and is not yet read from any configuration file). If the operator does not wish to use this default, the operator can reset the topology in the root shell using a 'topology' command.\n"
+"\t/%s=FILE: Path to a hardware file to read hostnames from, in order to get hostnames for starting remote mothership processes. If none is provided, '%s' is searched (this default is defined in the launcher source, and is not yet read from any configuration file). If the operator does not wish to use this default, the operator can reset the topology in the root shell using a 'topology' command.\n"
 "\n"
 "\t/%s: Prints this help text.\n"
 "\n"
@@ -629,9 +629,9 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
 "\n"
 "\t/%s: Does not spawn any mothership processes, regardless of other arguments you pass in.\n"
 "\n"
-"\t/%s = HOST: Override all Mothership hosts, specified from a hardware description file, with HOST. Using this option will only spawn one mothership process (unless /%s is used, in which case no mothership processes are spawned).\n"
+"\t/%s=HOST: Override all Mothership hosts, specified from a hardware description file, with HOST. Using this option will only spawn one mothership process (unless /%s is used, in which case no mothership processes are spawned).\n"
 "\n"
-"\t/%s = PATH: Define an LD_LIBRARY_PATH environment variable for all spawned processes. This is useful for defining where shared object files can be found by children.\n"
+"\t/%s=PATH: Define an LD_LIBRARY_PATH environment variable for all spawned processes. This is useful for defining where shared object files can be found by children.\n"
 "\t/%s: Points valgrind (%s) at one of the processes listed above, except motherships spawned via a host list. Combine with /%s at your own risk.\n"
 "\n"
 "If you are still bamboozled, or you're a developer, check out the Orchestrator documentation.\n",
