@@ -1,0 +1,5 @@
+load /engine = "../placement_test_003.uif"
+load /app = +"placement_test_003.xml"
+tlink /app = *
+placement /spread = *
+placement /dump = *

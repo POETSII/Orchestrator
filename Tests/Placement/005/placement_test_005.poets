@@ -1,0 +1,6 @@
+load /engine = "../placement_test_005.uif"
+load /app = +"placement_test_005.xml"
+tlink /app = *
+placement /constraint = "MaxThreadsPerCore", 2
+placement /spread = *
+placement /dump = *

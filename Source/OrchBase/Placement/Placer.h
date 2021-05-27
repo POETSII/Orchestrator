@@ -25,6 +25,7 @@ struct Result;
 #include "PlacementLoader.h"
 #include "SimulatedAnnealing.h"
 #include "SmartRandom.h"
+#include "SpreadFilling.h"
 
 /* Constraints! */
 #include "MaxDevicesPerThread.h"
@@ -128,7 +129,7 @@ public:
 
     /* Redistribution of devices within a graph instance at the core level. */
     void redistribute_devices_in_gi(GraphI_t* gi);
-    void redistribute_devices_in_core(P_core* core);
+    void redistribute_devices_in_core(P_core* core, GraphI_t* gi=PNULL);
 
     /* Low-level placement operation, to be used only be algorithms */
     void link(P_thread* thread, DevI_t* device);

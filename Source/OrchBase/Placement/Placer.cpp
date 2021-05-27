@@ -48,6 +48,7 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
         colloquialDescription == "tfil" or
         colloquialDescription == "link") output = new ThreadFilling(this);
     if (colloquialDescription == "rand") output = new SmartRandom(this);
+    if (colloquialDescription == "spre") output = new SpreadFilling(this);
 
     if (output == PNULL)
     {
@@ -637,8 +638,8 @@ void Placer::dump(GraphI_t* gi)
 {
     /* If the score is zero, we're naturally quite suspicious. For example, if
      * the application graph instance was placed using thread-filling (i.e. the
-     * algorithm that works the fastest but doesn't care about the score), we
-     * need to compute the score now. */
+     * algorithm that works fast but doesn't care about the score), we need to
+     * compute the score now. */
     std::map<GraphI_t*, Algorithm*>::iterator gisIt = placedGraphs.find(gi);
     if (gisIt->second->result.score == 0)
     {
@@ -1268,9 +1269,12 @@ void Placer::populate_result_structures(Result* result, GraphI_t* gi,
  * across those threads. Remainder devices are placed on threads earlier in the
  * map.
  *
+ * Optionally, respect MaxThreadsPerCore constraints imposed on a particular
+ * graph instance.
+ *
  * Does not check if any threads are overloaded (which is a valid assumption,
  * given that none of the thread are overloaded before this operation). */
-void Placer::redistribute_devices_in_core(P_core* core)
+void Placer::redistribute_devices_in_core(P_core* core, GraphI_t* gi)
 {
     /* Get all devices in the threads in this core. We don't have to unplace
      * them, because `link` does that. */
@@ -1293,6 +1297,8 @@ void Placer::redistribute_devices_in_core(P_core* core)
     /* Deal one device to each thread in turn, until no devices remain (a bit
      * like hold'em). */
     threadIt = core->P_threadm.begin();
+    unsigned threadNum = 1;  /* heresy */
+    unsigned threadMax = constrained_max_threads_per_core(gi);
     std::vector<DevI_t*>::iterator deviceIt;
     for (deviceIt = devices.begin(); deviceIt != devices.end(); deviceIt++)
     {
@@ -1300,10 +1306,12 @@ void Placer::redistribute_devices_in_core(P_core* core)
         threadIt++;
 
         /* Thread wraparound. */
-        if (threadIt == core->P_threadm.end())
+        if (threadIt == core->P_threadm.end() or threadNum == threadMax)
         {
             threadIt = core->P_threadm.begin();
+            threadNum = 1;
         }
+        else threadNum++;
     }
 }
 
@@ -1315,7 +1323,7 @@ void Placer::redistribute_devices_in_gi(GraphI_t* gi)
     std::set<P_core*>::iterator coreIt;
     for (coreIt = cores->begin(); coreIt != cores->end(); coreIt++)
     {
-        redistribute_devices_in_core(*coreIt);
+        redistribute_devices_in_core(*coreIt, gi);
     }
 }
 
