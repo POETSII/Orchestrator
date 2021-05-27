@@ -14,7 +14,7 @@ PLACEMENT_DUMP_DIR="./Output/Placement"
 # The caller needs to:
 #
 #  - Run this script from the root directory of the Orchestrator repository,
-#  - and where the Orchestrator has been built.
+#    and where the Orchestrator has been built.
 #
 #  - Define PLACEMENT_TEST_DIR in the environment of this script, as the
 #    absolute path to the placement tests directory. Don't add a trailing slash

@@ -11,6 +11,10 @@ has:
  - A device-map dump to be used as a comparison, to verify the outcome of the
    test.
 
+The `run-all-tests.sh` script runs each test in turn, and must be run from the
+root directory of the Orchestrator repository, given a complete (`all` or
+`debug`) build.
+
 Directory
 ---
 
