@@ -15,6 +15,14 @@ TN=0
 
 LOAD_PLOG_FILTER='s/^.*for the command '\''load \/app = [^'\'']+'\'' will be written to '\''([^'\'']+)'\''.+$/\1/p'
 
+
+function TODO_parse {
+    F="$1"
+    RR=$(realpath --relative-to="$ORCHROOT" "$F")
+    echo "not ok $TN - # TODO Parse $RR, $2"
+    TN=$((TN+1))
+}
+
 function test_parse_success {
     F="$1"
     if [[ $VERBOSE -eq 1 ]] ; then
@@ -67,7 +75,11 @@ function test_parse_failure {
 }
 
 for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/apps/*.xml ; do
-    test_parse_success $i
+    if [[ "$i" == *betweeness_centrality_16_16_20_20_v4.xml ]] ; then
+        TODO_parse $i "orchestrator needs indexed sends."
+    else
+        test_parse_success $i
+    fi
 done 
 for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/tests/valid/*/*.xml ; do
     test_parse_success $i

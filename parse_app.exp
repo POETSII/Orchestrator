@@ -32,6 +32,7 @@ expect {
     default { end_program "Timeout or unexpected outcome while loading app.\n" ; }   
     "unintelligible" { end_program "Command was invalid." ; }
     "failed validation with" { end_program "The XML file could not be validated.\n"; }
+    "which is not supported by orchestrator" { end_program "The XML file is not supported by the orchestrator.\n"; }
     -re ".*Application file .* loaded in .* ms."
 }
 

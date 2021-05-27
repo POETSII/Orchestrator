@@ -50,3 +50,4 @@ orchestrate.sh
 *.exe
 *.out
 *.app
+*.tmp
