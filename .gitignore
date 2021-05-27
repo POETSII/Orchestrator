@@ -10,6 +10,7 @@ Output/
 orchestrate.sh
 result.csv
 run-all-tests.sh
+.orch_history
 
 # Ignore .bak extensions created by winmerge
 *.bak

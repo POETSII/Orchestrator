@@ -32,7 +32,8 @@ public:
     /* This 'data' buffer holds payloads of log packets that haven't been
      * transmitted yet. The key for this map is the source compute-thread
      * address. */
-    std::map<uint32_t, ThreadLogDatum> data;
-    void consume_log_packet(P_Pkt_t*, std::string*);
+    std::map<uint64_t, ThreadLogDatum> data;
+    void consume_log_packet(P_Pkt_t*, const SupervisorDeviceInstance_t*,
+                            std::string*);
 };
 #endif

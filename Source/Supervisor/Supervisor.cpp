@@ -7,20 +7,17 @@ extern "C"
 
     int SupervisorInit(){return Supervisor::OnInit();}
 
-    int SupervisorCall(PMsg_p* In, PMsg_p* Out)
+    int SupervisorCall(std::vector<P_Pkt_t>& In, std::vector<P_Addr_Pkt_t>& Out)
     {
 #ifdef _APPLICATION_SUPERVISOR_
         int sentErr = 0;
         uint8_t op;
 
-        std::vector<P_Pkt_t> pkts; // packets are packed in Tinsel packet format
-        In->Put<P_Pkt_t>();
-        In->Get(1, pkts);
-        WALKVECTOR(P_Pkt_t, pkts, pkt)
+        WALKVECTOR(P_Pkt_t, In, pkt)
         {
             op = (pkt->header.swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT;
-            if (op == P_CNC_IMPL) sentErr += Supervisor::OnImplicit(&*pkt);
-            else sentErr += Supervisor::OnPkt(&*pkt);
+            if (op == P_CNC_IMPL) sentErr += Supervisor::OnImplicit(&*pkt, Out);
+            else sentErr += Supervisor::OnPkt(&*pkt, Out);
         }
         return sentErr;
 #endif
@@ -34,7 +31,8 @@ extern "C"
     int SupervisorRTCL(){return Supervisor::OnRTCL();}
 
     int SupervisorExit(){return Supervisor::OnStop();}
-
+    
+    // Return the full symbolic address of the given index
     uint64_t SupervisorIdx2Addr(uint32_t idx)
     {
         uint64_t ret = 0;
@@ -50,6 +48,32 @@ extern "C"
         ret |= Supervisor::DeviceVector[idx].SwAddr;
 
         return ret;
+    }
+    
+    // Return a pointer to the SupervisorDeviceInstance for the given index
+    const SupervisorDeviceInstance_t* SupervisorIdx2Inst(uint32_t idx)
+    {
+        if(idx >= Supervisor::DeviceVector.size()) return PNULL;    // OOR
+        
+        return &(Supervisor::DeviceVector[idx]);
+    }
+    
+    // Return the name of the given index
+    std::string SupervisorIdx2Name(uint32_t idx)
+    {
+        if(idx >= Supervisor::DeviceVector.size())
+        {
+            //out of range Idx
+            return "";
+        }
+        
+        return Supervisor::DeviceVector[idx].Name;
+    }
+    
+    // "return" a copy of the device vector.
+    void GetSupervisorAddresses(std::vector<SupervisorDeviceInstance_t>& devV)
+    {
+        devV = Supervisor::DeviceVector;
     }
 
 }

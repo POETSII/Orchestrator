@@ -42,16 +42,29 @@ ifndef BINDIR
 BINDIR := ../bin
 endif
 
-ifdef TRIVIAL_LOG_HANDLER
+ifdef SOFTSWITCH_BUFFERING
+LH_CFLAGS := $(LH_CFLAGS) -DBUFFERING_SOFTSWITCH
+endif
+
+ifdef SOFTSWITCH_TRIVIAL_LOG_HANDLER
 LH_CFLAGS := $(LH_CFLAGS) -DTRIVIAL_LOG_HANDLER
 endif
 
-ifdef DISABLE_SOFTSWITCH_INSTRUMENTATION
+ifdef SOFTSWITCH_LOGLEVEL
+LH_CFLAGS := $(LH_CFLAGS) -DP_LOG_LEVEL=$(SOFTSWITCH_LOGLEVEL)
+endif
+
+ifdef SOFTSWITCH_DISABLE_INSTRUMENTATION
 LH_CFLAGS := $(LH_CFLAGS) -DDISABLE_SOFTSWITCH_INSTRUMENTATION
 endif
 
 ifdef SOFTSWITCH_PRIORITISE_INSTRUMENTATION
 LH_CFLAGS := $(LH_CFLAGS) -DSOFTSWITCH_PRIORITISE_INSTRUMENTATION
+endif
+
+# User-supplied flags MUST come last.
+ifdef CM_CFLAGS
+LH_CFLAGS := $(LH_CFLAGS) $(CM_CFLAGS)
 endif
 
 # MPI tools
@@ -100,14 +113,19 @@ vpath OSFixes.hpp $(GENERICSINC)
 vpath Supervisor.% $(realpath ../$(DEFAULT_GEN_DIR))
 vpath SupervisorApi.% $(realpath ../$(DEFAULT_GEN_DIR))
 vpath SupervisorApiEntrypoints.% $(realpath ../$(DEFAULT_GEN_DIR))
+vpath supervisor.bin $(realpath ../$(DEFAULT_GEN_DIR))
 VPATH := $(SOFTSWSRC):$(SOFTSWINC):$(TINSELLIB):$(TINSELINC):$(GENERICSINC):$(GENDIR)
 
 # Local compiler flags
-CFLAGS = $(RV_CFLAGS) $(LH_CFLAGS) -O2 -I $(TINSELINC) -I $(SOFTSWINC) -I $(GENINC) -I$(GENDIR) -I $(GENERICSINC) -I $(PCOMMONINC) -D__INSTRUMENTATION
+CFLAGS = $(RV_CFLAGS) -O2 $(LH_CFLAGS) -I $(TINSELINC) -I $(SOFTSWINC) -I $(GENINC) -I$(GENDIR) -I $(GENERICSINC) -I $(PCOMMONINC)
 LDFLAGS = -melf32lriscv -G 0 -L$(RV_LIBS) -L$(RV_GCC_LIBS) -lgcc -lc
 
-MPICFLAGS = -I$(SOFTSWINC) -I$(TINSELINC) -I$(MPICHINC) -I$(PCOMMONINC) -I$(GENERICSINC) -D__INSTRUMENTATION -std=c++14 -fPIC -pipe -Wall
+MPICFLAGS = -I$(SOFTSWINC) -I$(TINSELINC) -I$(MPICHINC) -I$(PCOMMONINC) -I$(GENERICSINC)  -std=c++14 -fPIC -pipe -Wall
 MPILDFLAGS = -shared -L$(MPICHLIB)
+# User-supplied flags MUST come last.
+ifdef CM_CFLAGS
+MPICFLAGS += $(CM_CFLAGS)
+endif
 
 SECEXPCPPS := $(GENSRC)/%.cpp
 SECEXPOS := %.o
@@ -127,8 +145,13 @@ all : $(TARGETS) $(VCTARGETS) $(VDTARGETS) supervisor
 
 supervisor: $(BINDIR)/libSupervisor.so
 
-$(BINDIR)/libSupervisor.so: Supervisor.cpp Supervisor.h supervisor_generated.cpp supervisor_generated.h SupervisorApi.h SupervisorApiEntrypoints.h
-	$(MPICXX) $(MPICFLAGS) $(MPILDFLAGS) -O3 -Wl,-soname,libSupervisor.so -o $@ $<
+SupervisorData.o : supervisor.bin
+	cp $< ./
+	ld -r -b binary -o $@ supervisor.bin
+	rm supervisor.bin
+
+$(BINDIR)/libSupervisor.so: Supervisor.cpp Supervisor.h supervisor_generated.cpp supervisor_generated.h SupervisorApi.h SupervisorApiEntrypoints.h SupervisorData.o
+	$(MPICXX) $(MPICFLAGS) $(MPILDFLAGS) -O3 -Wl,-soname,libSupervisor.so -o $@ $< SupervisorData.o
 
 $(BINDIR)/softswitch_code_%.v: $(BINDIR)/softswitch_%.elf
 	$(TINSELBIN)/checkelf.sh $<

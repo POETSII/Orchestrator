@@ -5,6 +5,7 @@
  * "privilege-escalated" jobs using Mothership logic. */
 
 #include <string>
+#include <vector>
 #include "poets_pkt.h"
 
 class Mothership;
@@ -17,8 +18,7 @@ public:
     std::string (*get_output_directory)(Mothership* mship, std::string appName,
                                         std::string suffix);
     void (*post)(Mothership* mship, std::string appName, std::string message);
-    void (*push_packets)(Mothership* mship,
-                         std::vector<std::pair<uint32_t, P_Pkt_t> >& packets);
+    void (*push_packets)(Mothership* mship, std::vector<P_Addr_Pkt_t>& packets);
     void (*stop_application)(Mothership* mship, std::string appName);
 };
 

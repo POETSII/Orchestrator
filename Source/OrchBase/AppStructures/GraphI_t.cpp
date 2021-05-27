@@ -261,8 +261,10 @@ WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i) {
     fprintf(fd,"U. Device %s has scaffolding for %u pins "
                "but only %u input pins and %u output pins in the graph\n",
                pD->FullName().c_str(),pins,G.SizeInPins(kD),G.SizeOutPins(kD));
-                                       // Either way, we're done with scaffold
-  pD->Pmap.clear();
+  
+  // Either way, we're done with scaffold by design, BUT we need this map for
+  // Composer, so we don't clear it.
+  //pD->Pmap.clear();
 }
 }
 

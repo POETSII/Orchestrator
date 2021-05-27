@@ -30,6 +30,12 @@ typedef uint32_t (*OnIdle_handler_t)
     void*       __Device
 );
 
+typedef uint32_t (*OnImpl_handler_t)
+(   const void* graphProps,
+    void*       __Device,
+    const void* pkt
+);
+
 typedef uint32_t (*OnCtl_handler_t)
 (   const void* __GraphProps,
     void*       __Device,
@@ -70,6 +76,7 @@ typedef struct PDeviceType
     OnInit_handler_t  OnInit_Handler;   // F pointer to devt’s OnInit handler
     OnIdle_handler_t  OnIdle_Handler;   // F pointer to devt’s OnDeIdle handler
     OnHWIdle_handler_t  OnHWIdle_Handler;   // F pointer to devt’s OnHWIdle handler
+    OnImpl_handler_t  OnImpl_Handler;   // F pointer to devt's Implicit receive handler
     OnCtl_handler_t   OnCtl_Handler;    // F pointer to devt’s  OnCtl handler
     uint32_t          sz_props;         // Size in bytes of the device type’s properties
     uint32_t          sz_state;         // Size in bytes of the device type’s state
@@ -126,6 +133,7 @@ typedef struct PDeviceInstance
     PThreadContext*     thread;          // Back pointer to the ThreadContext
     const devTyp_t*     devType;         // Pointer to the Device Instance
     uint32_t            deviceID;        // Thread-unique device ID
+    uint32_t            deviceIdx;       // Supervisor-unique device index
     uint32_t            numInputs;       // Number of inputs the device has
     inPin_t*            inputPins;       // Pointer to the inputPin array
     uint32_t            numOutputs;      // Number of outputs the device has
@@ -141,8 +149,11 @@ typedef struct PThreadContext
     uint32_t            numDevInsts;
     devInst_t*          devInsts;
     const void*         properties;
-    uint32_t            rtsBuffSize;      // The size of the RTS buffer
+    uint32_t            rtsBuffSize;     // The size of the RTS buffer
     outPin_t**          rtsBuf;          // Pointer to the RTS buffer array
+#ifdef BUFFERING_SOFTSWITCH
+    P_Pkt_pyld_t*       pktBuf;          // Pointer to the Packet buffer.
+#endif
     uint32_t            rtsStart;        // index of the first pending RTS
     uint32_t            rtsEnd;          // index of the last pending RTS
     uint32_t            idleStart;       // index of where to start OnIdle from

@@ -25,13 +25,41 @@ void Mothership::handle_pkt_instr(P_Pkt_t* packet)
     }
 }
 
-/* Handle a packet as an instrumentation packet (see
+/* Handle a packet as a logging packet (see
  * LogHandler::consume_log_packet) */
 void Mothership::handle_pkt_log(P_Pkt_t* packet)
 {
     std::string message;
-    debug_post(588, 2, "P_CNC_LOG", hex2str(packet->header.pinAddr).c_str());
-    logging.consume_log_packet(packet, &message);
+    std::string appName;
+    const SupervisorDeviceInstance_t* instance;
+    
+    /* Grab the task ID. */
+    uint8_t packetAppNumber = (packet->header.swAddr & P_SW_TASK_MASK) >>
+        P_SW_TASK_SHIFT;
+
+    /* Grab the task name from the ID, complaining if we can't find it. */
+    std::map<uint8_t, std::string>::iterator appFinder;
+    appFinder = appdb.numberToApp.find(packetAppNumber);
+    if (appFinder == appdb.numberToApp.end())
+    {
+        Post(520, hex2str(packetAppNumber));
+        return;
+    }
+    appName = appFinder->second;
+    
+    // Grab the SupervisorDeviceInstance_t for the device with the specified idx
+    superdb.get_device_instance(appName, packet->header.pinAddr, instance);
+    
+    if(instance == PNULL)
+    {   // The device index was invalid. Shout about it.
+        Post(580, hex2str(packet->header.pinAddr).c_str());
+        return;
+    }
+    
+    uint64_t source = ((uint64_t)instance->HwAddr << 32) + instance->SwAddr; 
+    
+    debug_post(581, 2, hex2str(source).c_str(), instance->Name);
+    logging.consume_log_packet(packet, instance, &message);
     if (!message.empty()) Post(510, message);
 }
 

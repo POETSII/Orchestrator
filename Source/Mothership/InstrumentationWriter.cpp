@@ -15,12 +15,11 @@ void InstrumentationWriter::setup_directory()
 {
     std::vector<std::string> commands;
 
-    /* Create directory if it does not exist */
-    commands.push_back(dformat("mkdir --parents %s", outDirectory.c_str()));
+    /* Remove any existing instrumentation files. Terrible removal. */
+    commands.push_back(dformat("rm -rf %s", outDirectory.c_str()));
 
-    /* Remove any existing instrumentation files */
-    commands.push_back(dformat("rm -rf %s/instrumentation_thread*.csv",
-                               outDirectory.c_str()));
+    /* Create directory */
+    commands.push_back(dformat("mkdir --parents %s", outDirectory.c_str()));
 
     /* Run the commands, warning on failure. */
     for (std::vector<std::string>::iterator commandIt=commands.begin();
