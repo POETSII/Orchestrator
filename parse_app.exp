@@ -6,7 +6,20 @@ send_user "Relative xml path = $script\n"
 set script [file normalize $script]
 send_user "Absolute xml path = $script\n"
 
+
+
 spawn ./orchestrate.sh
+
+proc end_program {msg} {
+    send "exit\n";
+    close;
+    wait;
+    sleep 0.2
+    send_user $msg;
+    exit 1;
+}
+
+
 
 expect {
     default { send_user "Orchestrator didn't make it to prompt.\n" ; exit 1; }   
@@ -16,9 +29,9 @@ expect {
 send "load /app = \"$script\"\n"
 
 expect {
-    default { send_user "Timeout or unexpected outcome while loading app.\n" ; exit 1; }   
-    "unintelligible" { send_user "Command was invalid." ; exit 1; }
-    "failed validation with" { send_user "The XML file could not be validated.\n"; exit 1; }
+    default { end_program "Timeout or unexpected outcome while loading app.\n" ; }   
+    "unintelligible" { end_program "Command was invalid." ; }
+    "failed validation with" { end_program "The XML file could not be validated.\n"; }
     -re ".*Application file .* loaded in .* ms."
 }
 
