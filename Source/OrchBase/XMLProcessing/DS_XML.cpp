@@ -19,6 +19,8 @@
 #include "Pglobals.h"
 #include "OrchBase.h"
 
+#include <iostream>
+
 //==============================================================================
 
 DS_XML::DS_XML(OrchBase * _par)
@@ -116,6 +118,51 @@ Cstr = "// Line " + int2str(pn->lin) + "\n" + Cstr;
 return new CFrag(Cstr);
 }
 
+static const char *match_curly_braces(const char *begin, const char *end)
+{
+  assert(*begin == '{');
+  ++begin;
+  while(begin<end){
+    char ch=*begin;
+    if(ch=='}'){
+      return begin;
+    }else if(ch=='{'){
+      const char *n=match_curly_braces(begin, end);
+      if(n==0){
+        return 0; // No matching curly inside.
+      }
+      assert(n<end);
+      begin=n+1;
+    }else{
+      begin++;
+    }
+  }
+  return 0; // No matching curly
+}
+
+bool has_single_top_level_curlies(const char *begin, const char *end)
+{
+  int curlies=0;
+  while(begin<end){
+    char ch=*begin;
+    if(isspace(ch)){
+      begin++;
+    }else if(ch=='{'){
+      const char *n=match_curly_braces(begin, end);
+      if(n==0){
+        // malformed
+        return 0;
+      }
+      curlies++;
+      begin=n+1;
+    }else{
+      // We have a comma or something else at the top-level. Must not have single top-level curly
+      return false;
+    }
+  }
+  return curlies==1;
+}
+
 CFrag * DS_XML::_CFrag(std::string Cstr)
 // Create a CFrag from an attribute string.
 // This is intended for initialiser lists (of which there may be many) so
@@ -123,6 +170,17 @@ CFrag * DS_XML::_CFrag(std::string Cstr)
 // If the attribute is empty, we don't create a CFrag for it - simples.
 {
 if(Cstr == "") return 0;
+
+// HACK : heuristic to deal with brace surrounded variants. If the
+// string has the form "\s*{.*" then we assume it is brace surrounded.
+// See https://github.com/POETSII/Orchestrator/issues/225
+  if(has_single_top_level_curlies(Cstr.c_str(), Cstr.c_str()+Cstr.size())){
+    int left=Cstr.find('{');
+    int right=Cstr.find_last_of('}');
+    std::string rr=Cstr.substr(left+1, right-left-1);
+    Cstr=rr;
+  }
+
 return new CFrag(Cstr);
 }
 
