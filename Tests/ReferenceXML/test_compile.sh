@@ -6,10 +6,7 @@ HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 ORCHROOT="$(realpath $HERE/../..)"
 
 VERBOSE=1
-ABORT_ON_ERROR=1
-
-VERBOSE=1
-ABORT_ON_ERROR=1
+ABORT_ON_ERROR=0
 
 TN=0
 
@@ -46,6 +43,9 @@ function test_compile_success {
         echo "ok $TN - Compile $RR"
     else
         echo "not ok $TN - Compile $RR"
+        if [[ $ABORT_ON_ERROR -eq 1 ]] ; then
+            exit 1
+        fi
     fi
 
     TN=$((TN+1))
