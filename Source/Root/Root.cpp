@@ -49,6 +49,8 @@ for(;;) {                              // Superloop
   if (strcmp(buf,"exit")==0) break;    // "exit" typed
   if (buf[0]==char(0)) break;          // ctrl-d in linux-land
   if (buf[0]==char(4)) break;          // ctrl-d in u$oft-land
+  // "exit" from elsewhere
+  if (static_cast<Root*>(pPar)->exitTriggered) break;
 }
 // Tell the user we're leaving immediately.
 Root::promptOn = false;
@@ -79,6 +81,10 @@ FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)] = &Root::OnMshipAck;
 
 // Mothership requests
 FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP)] = &Root::OnMshipReq;
+
+// Set up exit flags
+exitOnEmpty = false;
+exitTriggered = false;
 
 // Spin off a thread to handle keyboard
 void * args = this;
@@ -207,8 +213,19 @@ unsigned Root::CmExit(Cli * pC)
 // console
 {
 
-                                       // Coming from batch?
-if (!pCmCall->stack.empty()) {
+                                       // Act on staging clauses.
+WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
+  if (i->Cl=="at")
+  {
+      string p = i->GetP(0);
+      if (p.empty()) Post(47,i->Cl,"exit","1");
+      if (p=="end") exitOnEmpty = true;
+      else Post(66,p);
+  }
+  else Post(25,i->Cl,"exit");           // Unrecognised clause
+}
+                                       // Normal exit coming from batch?
+if (!pCmCall->stack.empty()&&(!exitOnEmpty)) {
   Post(35);
   return 0;
 }
@@ -299,15 +316,21 @@ fflush(fp);
 void Root::OnIdle()
 {
 Cli Cm = pCmCall->Front();             // Anything in the batch queue?
-if (Cm.Empty()) return;                // No - bail                                      // Command comment echo to logserver?
-
-if ((pCmCall->echo)&&(!Cm.Orig.empty())) {
-  Post(22);
-  Post(36,Cm.Orig);
+if (!Cm.Empty())                       // If so, act on it.
+{
+  if ((pCmCall->echo)&&(!Cm.Orig.empty())) {
+    Post(22);
+    Post(36,Cm.Orig);
+  }                                    // EOF marker? - remove from call stack
+  if (Cm.Co[0]=='*') pCmCall->stack.pop_back();
+  else ProcCmnd(&Cm);                  // Handle ordinary batch command
 }
-                                       // EOF marker? - remove from call stack
-if (Cm.Co[0]=='*') pCmCall->stack.pop_back();
-else ProcCmnd(&Cm);                    // Handle ordinary batch command
+else                                   // Nothing there, check exit conditions
+{
+  // Exit on empty queue, if staged.
+  if (exitOnEmpty) exitTriggered = true;
+}
+return;
 }
 
 //------------------------------------------------------------------------------

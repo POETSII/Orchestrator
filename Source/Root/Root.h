@@ -63,6 +63,9 @@ struct injData_t {
 }                              injData;
 
 OrchConfig *                   pOC;
+
+bool                           exitOnEmpty;   // exit /at = end
+bool                           exitTriggered; // Informing keyboard thread
 };
 
 //==============================================================================
