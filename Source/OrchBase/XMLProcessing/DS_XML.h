@@ -77,6 +77,7 @@ long          t0;                      // Wallclock time
 unsigned      ecnt;                    // Local error counter
 unsigned      wcnt;                    // Local warning counter
 FILE *        fd;                      // Output stream
+string        aname;                   // Name of the current application
 
 };
 
