@@ -20,12 +20,10 @@ public:
 virtual ~     CmTlin();
 
 void          Cm_App(Cli::Cl_t);
-void          Cm_Grap(Cli::Cl_t);
 void          Dump(unsigned = 0,FILE * = stdout);
 void          ReportTLinkEnd();
 void          ReportTLinkStart();
 void          Show(FILE * = stdout);
-void          TypeLink(Apps_t *);
 unsigned      operator()(Cli *);
 
 private :
