@@ -151,6 +151,8 @@
 252(I) : "Starting integrity check on application %s"
 253(I) : "System wide integrity check took %s ms"
 254(W) : "Failed to typelink graph instance '%s' (%s errors)."
+255(I) : "Un-typelinking graph instance '%s'...
+256(I) : "Graph instance '%s' is no longer typelinked."
 
 300(W) : "Unable to invoke the placement system - no hardware model has been loaded."
 301(W) : "Unable to identify graph instance '%s' (the first parameter should be of the form 'APPNAME::GRAPHINSTANCENAME')."
