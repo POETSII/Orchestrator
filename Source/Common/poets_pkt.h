@@ -186,40 +186,6 @@ const unsigned int  p_instrmsg_pyld_size = p_instrpkt_pyld_size;
 
 inline size_t p_msg_size() {return p_pkt_size();}
 
-// message buffers (last argument) in the message setters must be volatile because we might wish
-// to write directly to a hardware resource containing the buffer, which in general may be volatile.
-inline unsigned set_pkt_hdr(uint8_t ms, uint8_t cnc, uint8_t task, uint8_t opcode,
-                    uint32_t dev, uint8_t pin, uint32_t edge,
-                    uint8_t len, P_Pkt_Hdr_t* hdr)
-{
-    if (len > p_pkt_pyld_size) return 1;            // die if the message is too big
-
-    hdr->swAddr = ((ms << P_SW_MOTHERSHIP_SHIFT) & P_SW_MOTHERSHIP_MASK);
-    hdr->swAddr |= ((cnc << P_SW_CNC_SHIFT) & P_SW_CNC_MASK);
-    hdr->swAddr |= ((task << P_SW_TASK_SHIFT) & P_SW_TASK_MASK);
-    hdr->swAddr |= ((opcode << P_SW_OPCODE_SHIFT) & P_SW_OPCODE_MASK);
-    hdr->swAddr |= ((dev << P_SW_DEVICE_SHIFT) & P_SW_DEVICE_MASK);
-
-    hdr->pinAddr = ((pin << P_HD_TGTPIN_SHIFT) & P_HD_TGTPIN_MASK);
-    hdr->pinAddr |= ((pin << P_HD_DESTEDGEINDEX_SHIFT) & P_HD_DESTEDGEINDEX_MASK);
-
-    return 0;
-}
-
-
-inline unsigned pack_pkt(uint8_t ms, uint8_t cnc, uint8_t task, uint8_t opcode,
-                    uint32_t dev, uint8_t pin, uint32_t edge,
-                    uint8_t len, void* pyld, P_Pkt_t* pkt)
-{
-    if(set_pkt_hdr(ms, cnc, task, opcode, dev, pin, edge, len, &pkt->header))
-    {   // pack up the header
-        return 1;
-    }
-
-    memcpy(pkt->payload, pyld, len);                     // and the payload
-    return 0;
-}
-
 #pragma pack(pop)
 
 // Supervisor Data structure
