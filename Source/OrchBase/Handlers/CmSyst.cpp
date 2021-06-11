@@ -33,7 +33,7 @@ fflush(fp);
 
 //------------------------------------------------------------------------------
 
-void CmSyst::SyInte(Cli::Cl_t Cl)
+void CmSyst::SyInte()
 // Launch datastructure integrity check. It's tucked away in 'system' because
 // it could so easily get very slow. As DBT puts it: This is where Time goes
 // to die.
@@ -152,7 +152,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="show") { SyShow(*i); continue; }
   if (sCl=="time") { SyTime(*i); continue; }
 //  if (strcmp(scl.c_str(),"trac")==0) { Trac(*i); continue; }
-  if (sCl=="inte") { SyInte(*i); continue; }
+  if (sCl=="inte") { SyInte(); continue; }
   par->Post(25,sCl,"system");          // Unrecognised clause
 }
 return 0;                              // Legitimate command exit

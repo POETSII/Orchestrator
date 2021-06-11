@@ -11,7 +11,7 @@
  * exception, then tosses it over the fence. Arguments:
  *
  * - engine: Partially-populated unsafe engine. */
-void HardwareFileReader::d3_catastrophic_failure(P_engine* engine)
+void HardwareFileReader::d3_catastrophic_failure()
 {
     std::string allErrors;
     construct_error_output_string(&allErrors);
@@ -33,7 +33,7 @@ void HardwareFileReader::d3_populate_hardware_model(P_engine* engine)
 {
     /* Check sections are defined correctly. Not much point continuing if they
      * are not defined correctly. */
-    if (!d3_load_validate_sections()){d3_catastrophic_failure(engine);}
+    if (!d3_load_validate_sections()){d3_catastrophic_failure();}
 
     /* Populate the engine with information from the header section. */
     bool passedValidation = true;
@@ -49,7 +49,7 @@ void HardwareFileReader::d3_populate_hardware_model(P_engine* engine)
     /* We can't go any further than this without risking a segfault, because if
      * the address format is not defined properly, item address assignment will
      * fail badly. */
-    if (!passedValidation){d3_catastrophic_failure(engine);}
+    if (!passedValidation){d3_catastrophic_failure();}
 
     /* Boxes */
     passedValidation &= d3_populate_validate_engine_box(engine);
@@ -58,5 +58,5 @@ void HardwareFileReader::d3_populate_hardware_model(P_engine* engine)
     passedValidation &= d3_populate_validate_engine_board_and_below(engine);
 
     /* Were there any errors? */
-    if (!passedValidation){d3_catastrophic_failure(engine);}
+    if (!passedValidation){d3_catastrophic_failure();}
 }

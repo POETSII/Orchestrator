@@ -411,8 +411,14 @@ fflush(fd);
 
 void DS_integ::Dump(unsigned off,FILE * fp)
 {
+string s(off,' ');
+const char * os = s.c_str();
 fprintf(fp,"DS_integ+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-
+fprintf(fp,"%sMe,Parent      0x%#018lx,0x%#018lx\n",
+           os,(uint64_t)this,(uint64_t)par);
+if (par!=0) fprintf(fp,"%s...%s\n",os,par->FullName().c_str());
+fprintf(fp,"%sWarning count  %u\n",os,wcnt);
+fprintf(fp,"%sError count  %u\n",os,ecnt);
 fprintf(fp,"DS_integ-----------------------------------------------------\n\n");
 fflush(fp);
 }

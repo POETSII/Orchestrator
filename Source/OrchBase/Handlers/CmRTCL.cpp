@@ -20,9 +20,11 @@ CmRTCL::~CmRTCL()
 
 void CmRTCL::Dump(unsigned off,FILE * fp)
 {
+string s(off,' ');
+const char * os = s.c_str();
 fprintf(fp,"CmRTCL+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-if (par==0) fprintf(fp,"OrchBase parent not defined\n");
-else fprintf(fp,"Orchbase parent : %s\n",par->FullName().c_str());
+if (par==0) fprintf(fp,"%sOrchBase parent not defined\n",os);
+else fprintf(fp,"%sOrchbase parent : %s\n",os,par->FullName().c_str());
 fprintf(fp,"CmRTCL-------------------------------------------------------\n\n");
 fflush(fp);
 }

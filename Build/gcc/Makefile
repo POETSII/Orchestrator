@@ -93,7 +93,8 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
 
 # All flags to be used in compilation.
 CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
-           -std=c++98 -Wall -fPIC -pthread -pedantic -O3 -DTRIVIAL_LOG_HANDLER
+           -std=c++98 -Wall -Wextra -fPIC -pthread -pedantic -O3 \
+           -DTRIVIAL_LOG_HANDLER
 
 # Debugging!
 DEBUGFLAGS = -g3 -O0

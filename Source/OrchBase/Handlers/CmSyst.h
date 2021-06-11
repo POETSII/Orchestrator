@@ -17,7 +17,7 @@ public:
 virtual ~     CmSyst();
 
 void          Dump(FILE * = stdout);
-void          SyInte(Cli::Cl_t);
+void          SyInte();
 void          SyPing(Cli::Cl_t);
 void          SyRun(Cli::Cl_t);
 void          SyShow(Cli::Cl_t);

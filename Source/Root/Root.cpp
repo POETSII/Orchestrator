@@ -66,7 +66,6 @@ if (!Config()) return;                 // Set up defaults from config file
 injData.flag = 0;                      // Clear injector controls
                                        // Load the default incoming event map
 FnMap[PMsg_p::KEY(Q::KEYB         )] = &Root::OnKeyb;
-FnMap[PMsg_p::KEY(Q::TEST         )] = &Root::OnTest;
 FnMap[PMsg_p::KEY(Q::LOG  ,Q::FULL)] = &Root::OnLogP;
 FnMap[PMsg_p::KEY(Q::INJCT,Q::REQ )] = &Root::OnInje;
 FnMap[PMsg_p::KEY(Q::PMAP         )] = &Root::OnPmap;
@@ -440,19 +439,6 @@ string LogFile = pOC->Log();           // Log output file
 Msg.Put(1,&LogFile);
 Msg.Send();                            // Kick it
 return ret;                            // And go about our business
-}
-
-//------------------------------------------------------------------------------
-
-unsigned Root::OnTest(PMsg_p * Z)
-// This is an override for CommonBase::OnTest, which the rest of the Universe
-// is using
-// This is ADB playing; ignore me
-{
-//int cnt;
-//char * buf = Z->Get<char>(1,cnt);
-//printf("Rank %d : Root::OnTest: ||%s||\n",Urank,buf);    fflush(stdout);
-return 0;
 }
 
 //------------------------------------------------------------------------------

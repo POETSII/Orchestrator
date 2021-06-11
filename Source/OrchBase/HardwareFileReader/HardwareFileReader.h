@@ -148,7 +148,7 @@ private:
     bool d1_validate_sections();
 
     /* Dialect 3 validation and deployment members and methods. */
-    void d3_catastrophic_failure(P_engine* engine);
+    void d3_catastrophic_failure();
     bool d3_create_cores_and_threads_for_mailbox(P_mailbox* mailbox,
                                                  unsigned coreQuantity,
                                                  unsigned addrOffset,
