@@ -468,7 +468,7 @@ WALKVECTOR(xnode *,pn->vnode,i) {
     // Uninplemented functionality: throw an E
     case cInputPin         : //Intentional fall-through
     case cOutputPin        : par->Post(254,"SupervisorType",(*i)->ename,
-                                int2str(pn->lin));          break;
+                                int2str(pn->lin));                    break;
     // Paranoid U catch-all
     default                : par->Post(998,__FILE__,int2str(__LINE__),
                                        (*i)->ename);
