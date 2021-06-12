@@ -538,7 +538,7 @@ float x[8];
           <Properties/>
           <State/>
           <OnReceive><![CDATA[
-            assert((deviceState->i&1)==1);
+            assert((deviceState->i& 1)==1);
             assert(deviceState->i<16);
 
             auto rx=deviceProperties->x[deviceState->i/2];
@@ -563,7 +563,7 @@ float x[8];
         </OutputPin>
         <OutputPin name="problem" messageTypeId="linear_problem" indexed="false">
           <OnSend><![CDATA[
-            assert((deviceState->i&1)==0);
+            assert((deviceState->i& 1)==0);
             assert(deviceState->i<16);
 
             message->x = 5;
@@ -573,7 +573,7 @@ float x[8];
         </OutputPin>
         <ReadyToSend><![CDATA[
         *readyToSend=0;
-        if( (deviceState->i < 16) && (0==(deviceState->i&1)) ){
+        if( (deviceState->i < 16) && (0==(deviceState->i& 1)) ){
             *readyToSend=RTS_FLAG_problem;
         }else if(deviceState->i == 16){
             *readyToSend=RTS_FLAG_finished;
