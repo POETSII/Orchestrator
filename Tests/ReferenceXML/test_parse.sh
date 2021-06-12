@@ -5,8 +5,25 @@ echo "TAP version 13"
 HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 ORCHROOT="$(realpath $HERE/../..)"
 
-VERBOSE=1
-ABORT_ON_ERROR=1
+VERBOSE=0
+ABORT_ON_ERROR=0
+
+while [[ $# -gt 0 ]] ; do
+    case $1 in
+        --verbose)
+        VERBOSE=1
+        shift
+        ;;
+        --abort-on-error)
+        ABORT_ON_ERROR=1
+        shift
+        ;;
+        *)    # unknown option
+        >&2 "Didnt understand option $1"
+        exit 1
+        ;;
+    esac
+done
 
 TN=0
 
@@ -26,7 +43,7 @@ function TODO_parse {
 function test_parse_success {
     F="$1"
     if [[ $VERBOSE -eq 1 ]] ; then
-        OUTPUT=$($ORCHROOT/parse_app.exp $F )
+        OUTPUT=$($HERE/parse_app.exp $F )
         RES=$?
 
         if [[ $RES -ne 0 ]] ; then
@@ -40,7 +57,8 @@ function test_parse_success {
             done < $ORCHROOT/bin/${PLOG_LINE}
         fi
     else
-        $ORCHROOT/parse_app.exp $F > /dev/null
+        $HERE/parse_app.exp $F > /dev/null
+        RES=$?
     fi
     
 
@@ -60,7 +78,7 @@ function test_parse_success {
 
 function test_parse_failure {
     F="$1"
-    $ORCHROOT/parse_app.exp $F > /dev/null
+    $HERE/parse_app.exp $F > /dev/null
     RES=$?
 
     RR=$(realpath --relative-to="$ORCHROOT" "$F")

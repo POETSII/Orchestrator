@@ -1,12 +1,16 @@
 #!/usr/bin/env expect
 
+# https://stackoverflow.com/a/23287132
+variable SCRIPT_PATH [file normalize [info script]]
+set HERE [file dirname $SCRIPT_PATH]
+
 set script [lindex $argv 0]
 send_user "Relative xml path = $script\n"
 
 set script [file normalize $script]
 send_user "Absolute xml path = $script\n"
 
-spawn ./orchestrate.sh
+spawn "$HERE/../../orchestrate.sh"
 
 expect {
     default { send_user "Orchestrator didn't make it to prompt.\n" ; exit 1; }   

@@ -5,8 +5,25 @@ echo "TAP version 13"
 HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 ORCHROOT="$(realpath $HERE/../..)"
 
-VERBOSE=1
+VERBOSE=0
 ABORT_ON_ERROR=0
+
+while [[ $# -gt 0 ]] ; do
+    case $1 in
+        --verbose)
+        VERBOSE=1
+        shift
+        ;;
+        --abort-on-error)
+        ABORT_ON_ERROR=1
+        shift
+        ;;
+        *)    # unknown option
+        >&2 "Didnt understand option $1"
+        exit 1
+        ;;
+    esac
+done
 
 TN=0
 
@@ -18,7 +35,7 @@ PLOG_FILTER='s/^.*will be written to '\''([^'\'']+[.]plog)'\''.+$/\1/p'
 function test_compile_success {
     F="$1"
     if [[ $VERBOSE -eq 1 ]] ; then
-        OUTPUT=$($ORCHROOT/compile_app.exp $F )
+        OUTPUT=$($HERE/compile_app.exp $F )
         RES=$?
 
         if [[ $RES -ne 0 ]] ; then
@@ -35,7 +52,8 @@ function test_compile_success {
             done < $ORCHROOT/bin/${PLOG_LINE}
         fi
     else
-        $ORCHROOT/compile_app.exp $F > /dev/null
+        $HERE/compile_app.exp $F > /dev/null
+        RES=$?
     fi
     RR=$(realpath --relative-to="$ORCHROOT" "$F")
 
@@ -53,7 +71,7 @@ function test_compile_success {
 
 function test_compile_failure {
     F="$1"
-    $ORCHROOT/compile_app.exp $F > /dev/null
+    $HERE/compile_app.exp $F > /dev/null
     RES=$?
 
     RR=$(realpath --relative-to="$ORCHROOT" "$F")
