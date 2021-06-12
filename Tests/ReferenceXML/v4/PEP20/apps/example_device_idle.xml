@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<Graphs xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" formatMinorVersion="0">
+    <GraphType id="gt_example_dt10">
+        <Properties />
+        <SharedCode />
+        <MessageTypes>
+            <MessageType id="m1">
+                <Message />
+            </MessageType>
+        </MessageTypes>
+        <DeviceTypes>
+            <DeviceType id="dt1">
+                <Properties />
+                <State><![CDATA[ uint32_t steps; uint32_t computed; uint32_t sent; uint32_t received; ]]></State>
+                <SharedCode />
+                <InputPin name="i1" messageTypeId="m1">
+                    <Properties />
+                    <State />
+                    <OnReceive><![CDATA[
+                        handler_log(0, "Recv/o1");
+                        deviceState->received++;
+                    ]]></OnReceive>
+                </InputPin>
+                <OutputPin name="o1" messageTypeId="m1">
+                    <OnSend><![CDATA[
+                        handler_log(0, "Send/o1");
+                        deviceState->sent++;
+                    ]]></OnSend>
+                </OutputPin>
+                <ReadyToSend><![CDATA[
+                    if(deviceState->steps < 10){
+                        if(deviceState->sent < 10){
+                            *readyToSend = RTS_FLAG_o1;
+                        }
+                        if(deviceState->computed < 10){
+                            *requestIdle = true;
+                        }
+                    }
+                ]]></ReadyToSend>
+                <OnInit><![CDATA[
+                    handler_log(0, "Init/dt1!");
+                ]]></OnInit>
+                <OnHardwareIdle><![CDATA[
+                    handler_log(0, " computer=%u, sent=%u, received=%u", deviceState->computed, deviceState->sent=10, deviceState->received);
+                    assert(deviceState->computed==10);
+                    assert(deviceState->sent==10);
+                    assert(deviceState->received==10);
+                    deviceState->computed=0;
+                    deviceState->sent=0;
+                    deviceState->received=0;
+                    deviceState->steps++;
+                    if(deviceState->steps==10){
+                        handler_log(0, "_HANDLER_EXIT_SUCCESS_9be65737_");
+                    }
+                ]]></OnHardwareIdle>
+                <OnDeviceIdle><![CDATA[
+                    handler_log(0, "Compute");
+                    deviceState->computed++;
+                ]]></OnDeviceIdle>
+            </DeviceType>
+        </DeviceTypes>
+    </GraphType>
+    <GraphInstance id="gi" graphTypeId="gt_example_dt10">
+        <DeviceInstances>
+            <DevI id="di1" type="dt1" />
+            <DevI id="di2" type="dt1" />
+            <DevI id="di3" type="dt1" />
+            <DevI id="di4" type="dt1" />
+        </DeviceInstances>
+        <EdgeInstances>
+            <EdgeI path="di1:i1-di1:o1" />
+            <EdgeI path="di2:i1-di2:o1" />
+            <EdgeI path="di3:i1-di4:o1" />
+            <EdgeI path="di4:i1-di3:o1" />
+        </EdgeInstances>
+    </GraphInstance>
+</Graphs>

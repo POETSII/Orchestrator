@@ -1,0 +1,209 @@
+<?xml version='1.0' encoding='ASCII'?>
+<Graphs xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" formatMinorVersion="0">
+  <GraphType id="storm">
+    <Properties/>
+    <SharedCode><![CDATA[
+        #ifdef POETS_LEGACY_HAS_HANDLER_EXIT
+        #define _do_handler_exit(code) handler_exit(code)
+        #else
+        #define _do_handler_exit(code) ((void)0)
+        #endif
+
+        #define fake_handler_exit(code) \
+        { \
+            if((code)==0){ \
+                handler_log(0, "_HANDLER_EXIT_SUCCESS_9be65737_"); \
+            }else{ \
+                handler_log(0, "_HANDLER_EXIT_FAIL_9be65737_"); \
+            } \
+            _do_handler_exit(code); \
+        }
+
+]]></SharedCode>
+    <MessageTypes>
+      <MessageType id="exchange">
+        <Message><![CDATA[uint32_t credit;
+]]></Message>
+      </MessageType>
+    </MessageTypes>
+    <DeviceTypes>
+      <DeviceType id="node">
+        <Properties><![CDATA[uint32_t degree;
+uint32_t isRoot;
+]]></Properties>
+        <State><![CDATA[uint32_t credit;
+uint32_t totalCredit;
+]]></State>
+        <SharedCode><![CDATA[]]></SharedCode>
+        <InputPin name="credit" messageTypeId="exchange">
+          <Properties/>
+          <State/>
+          <OnReceive><![CDATA[
+		  deviceState->credit += message->credit;
+			handler_log(4, "Received %u credit, local credit is %u", message->credit, deviceState->credit);
+			if(deviceProperties->isRoot && deviceState->credit==deviceState->totalCredit){
+				fake_handler_exit(0);
+			}
+		  ]]></OnReceive>
+        </InputPin>
+        <OutputPin name="wide" messageTypeId="exchange" indexed="false">
+          <OnSend><![CDATA[
+		if(deviceProperties->isRoot){
+			assert(deviceState->credit==0);
+			uint32_t perDevice=1;
+			while( perDevice * deviceProperties->degree < 0x10000000ul ){
+				perDevice *= 2;
+			}
+			message->credit=perDevice;
+			deviceState->credit=1;
+			deviceState->totalCredit=1+perDevice * deviceProperties->degree;
+		}else{
+			assert(deviceState->credit >= deviceProperties->degree );
+			uint32_t perDevice=1;
+			while( (perDevice * 2) * deviceProperties->degree <= deviceState->credit){
+				perDevice *= 2;
+			}
+			message->credit=perDevice;
+			deviceState->credit -= perDevice*deviceProperties->degree;
+		}
+		handler_log(4, "Sending %u credit wide, local credit is %u", message->credit, deviceState->credit);
+		]]></OnSend>
+        </OutputPin>
+        <OutputPin name="narrow" messageTypeId="exchange" indexed="false">
+          <OnSend><![CDATA[
+		assert(!deviceProperties->isRoot);
+		assert(deviceState->credit > 0);
+		message->credit=(deviceState->credit+1)/2;
+		deviceState->credit -= message->credit;
+		handler_log(4, "Sending %u credit narrow, local credit is %u", message->credit, deviceState->credit);
+
+		]]></OnSend>
+        </OutputPin>
+        <ReadyToSend><![CDATA[
+			*readyToSend = 0;
+			if(deviceProperties->isRoot){
+				if(deviceState->credit==0){
+					*readyToSend = RTS_FLAG_wide;
+				}
+			}else{
+				if(deviceState->credit >= deviceProperties->degree){
+					uint32_t b=1664525*deviceState->credit+1013904223;
+					if( (b>>30)==0 ){
+				 		*readyToSend = RTS_FLAG_wide;
+					}else{
+						*readyToSend = RTS_FLAG_narrow;
+					}
+				}else if(deviceState->credit > 0 ){
+					*readyToSend = RTS_FLAG_narrow;
+				}
+			}
+		]]></ReadyToSend>
+        <OnInit><![CDATA[]]></OnInit>
+        <OnHardwareIdle/>
+        <OnDeviceIdle/>
+      </DeviceType>
+    </DeviceTypes>
+  </GraphType>
+  <GraphInstance id="storm_16_4_4" graphTypeId="storm">
+    <DeviceInstances>
+      <DevI id="n0" type="node" P="{4,1}" S="{0,0}"/>
+      <DevI id="n1" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n2" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n3" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n4" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n5" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n6" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n7" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n8" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n9" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n10" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n11" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n12" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n13" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n14" type="node" P="{4,0}" S="{0,0}"/>
+      <DevI id="n15" type="node" P="{4,0}" S="{0,0}"/>
+    </DeviceInstances>
+    <EdgeInstances>
+      <EdgeI path="n1:credit-n0:narrow"/>
+      <EdgeI path="n0:credit-n0:wide"/>
+      <EdgeI path="n3:credit-n0:wide"/>
+      <EdgeI path="n2:credit-n0:wide"/>
+      <EdgeI path="n1:credit-n0:wide"/>
+      <EdgeI path="n2:credit-n1:narrow"/>
+      <EdgeI path="n2:credit-n1:wide"/>
+      <EdgeI path="n1:credit-n1:wide"/>
+      <EdgeI path="n4:credit-n1:wide"/>
+      <EdgeI path="n3:credit-n1:wide"/>
+      <EdgeI path="n3:credit-n2:narrow"/>
+      <EdgeI path="n2:credit-n2:wide"/>
+      <EdgeI path="n3:credit-n2:wide"/>
+      <EdgeI path="n5:credit-n2:wide"/>
+      <EdgeI path="n4:credit-n2:wide"/>
+      <EdgeI path="n4:credit-n3:narrow"/>
+      <EdgeI path="n5:credit-n3:wide"/>
+      <EdgeI path="n4:credit-n3:wide"/>
+      <EdgeI path="n3:credit-n3:wide"/>
+      <EdgeI path="n6:credit-n3:wide"/>
+      <EdgeI path="n5:credit-n4:narrow"/>
+      <EdgeI path="n4:credit-n4:wide"/>
+      <EdgeI path="n5:credit-n4:wide"/>
+      <EdgeI path="n6:credit-n4:wide"/>
+      <EdgeI path="n7:credit-n4:wide"/>
+      <EdgeI path="n6:credit-n5:narrow"/>
+      <EdgeI path="n6:credit-n5:wide"/>
+      <EdgeI path="n5:credit-n5:wide"/>
+      <EdgeI path="n7:credit-n5:wide"/>
+      <EdgeI path="n8:credit-n5:wide"/>
+      <EdgeI path="n7:credit-n6:narrow"/>
+      <EdgeI path="n8:credit-n6:wide"/>
+      <EdgeI path="n7:credit-n6:wide"/>
+      <EdgeI path="n6:credit-n6:wide"/>
+      <EdgeI path="n9:credit-n6:wide"/>
+      <EdgeI path="n8:credit-n7:narrow"/>
+      <EdgeI path="n9:credit-n7:wide"/>
+      <EdgeI path="n8:credit-n7:wide"/>
+      <EdgeI path="n7:credit-n7:wide"/>
+      <EdgeI path="n10:credit-n7:wide"/>
+      <EdgeI path="n9:credit-n8:narrow"/>
+      <EdgeI path="n8:credit-n8:wide"/>
+      <EdgeI path="n9:credit-n8:wide"/>
+      <EdgeI path="n11:credit-n8:wide"/>
+      <EdgeI path="n10:credit-n8:wide"/>
+      <EdgeI path="n10:credit-n9:narrow"/>
+      <EdgeI path="n12:credit-n9:wide"/>
+      <EdgeI path="n10:credit-n9:wide"/>
+      <EdgeI path="n11:credit-n9:wide"/>
+      <EdgeI path="n9:credit-n9:wide"/>
+      <EdgeI path="n11:credit-n10:narrow"/>
+      <EdgeI path="n13:credit-n10:wide"/>
+      <EdgeI path="n11:credit-n10:wide"/>
+      <EdgeI path="n10:credit-n10:wide"/>
+      <EdgeI path="n12:credit-n10:wide"/>
+      <EdgeI path="n12:credit-n11:narrow"/>
+      <EdgeI path="n12:credit-n11:wide"/>
+      <EdgeI path="n13:credit-n11:wide"/>
+      <EdgeI path="n14:credit-n11:wide"/>
+      <EdgeI path="n11:credit-n11:wide"/>
+      <EdgeI path="n13:credit-n12:narrow"/>
+      <EdgeI path="n12:credit-n12:wide"/>
+      <EdgeI path="n15:credit-n12:wide"/>
+      <EdgeI path="n13:credit-n12:wide"/>
+      <EdgeI path="n14:credit-n12:wide"/>
+      <EdgeI path="n14:credit-n13:narrow"/>
+      <EdgeI path="n14:credit-n13:wide"/>
+      <EdgeI path="n15:credit-n13:wide"/>
+      <EdgeI path="n0:credit-n13:wide"/>
+      <EdgeI path="n13:credit-n13:wide"/>
+      <EdgeI path="n15:credit-n14:narrow"/>
+      <EdgeI path="n14:credit-n14:wide"/>
+      <EdgeI path="n0:credit-n14:wide"/>
+      <EdgeI path="n15:credit-n14:wide"/>
+      <EdgeI path="n1:credit-n14:wide"/>
+      <EdgeI path="n0:credit-n15:narrow"/>
+      <EdgeI path="n15:credit-n15:wide"/>
+      <EdgeI path="n1:credit-n15:wide"/>
+      <EdgeI path="n2:credit-n15:wide"/>
+      <EdgeI path="n0:credit-n15:wide"/>
+    </EdgeInstances>
+  </GraphInstance>
+</Graphs>
