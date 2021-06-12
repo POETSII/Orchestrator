@@ -167,7 +167,7 @@ void formDevTStrings(ComposerGraphI_t*, DevT_t*);
 void populatePinTIdxMap(DevT_t*);
 void formHandlerPreamble(devTypStrings_t*);
 void formDevTHandlers(devTypStrings_t*);
-void formDevTPropsDStateD(devTypStrings_t*);
+void formDevTPropsDStateD(GraphI_t *graph,  devTypStrings_t*);
 void formDevTInputPinHandlers(devTypStrings_t* dTypStrs);
 void formDevTOutputPinHandlers(devTypStrings_t* dTypStrs);
 
