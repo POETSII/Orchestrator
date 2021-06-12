@@ -1,0 +1,74 @@
+<Graphs xmlns="" appname="placement_test_001">
+  <GraphType id="placement_test_001_type">
+    <DeviceTypes>
+      <DeviceType id="A"/>
+      <DeviceType id="B"/>
+      <DeviceType id="C"/>
+    </DeviceTypes>
+  </GraphType>
+  <GraphInstance id="placement_test_001_instance"
+                 graphTypeId="placement_test_001_type">
+    <DeviceInstances>
+      <DevI id="A01" type="A"/>
+      <DevI id="A02" type="A"/>
+      <DevI id="A03" type="A"/>
+      <DevI id="A04" type="A"/>
+      <DevI id="A05" type="A"/>
+      <DevI id="A06" type="A"/>
+      <DevI id="A07" type="A"/>
+      <DevI id="A08" type="A"/>
+      <DevI id="A09" type="A"/>
+      <DevI id="A10" type="A"/>
+      <DevI id="B01" type="B"/>
+      <DevI id="B02" type="B"/>
+      <DevI id="B03" type="B"/>
+      <DevI id="B04" type="B"/>
+      <DevI id="B05" type="B"/>
+      <DevI id="B06" type="B"/>
+      <DevI id="B07" type="B"/>
+      <DevI id="B08" type="B"/>
+      <DevI id="B09" type="B"/>
+      <DevI id="B10" type="B"/>
+      <DevI id="B11" type="B"/>
+      <DevI id="B12" type="B"/>
+      <DevI id="B13" type="B"/>
+      <DevI id="B14" type="B"/>
+      <DevI id="B15" type="B"/>
+      <DevI id="B16" type="B"/>
+      <DevI id="B17" type="B"/>
+      <DevI id="B18" type="B"/>
+      <DevI id="B19" type="B"/>
+      <DevI id="B20" type="B"/>
+      <DevI id="C01" type="C"/>
+      <DevI id="C02" type="C"/>
+      <DevI id="C03" type="C"/>
+      <DevI id="C04" type="C"/>
+      <DevI id="C05" type="C"/>
+      <DevI id="C06" type="C"/>
+      <DevI id="C07" type="C"/>
+      <DevI id="C08" type="C"/>
+      <DevI id="C09" type="C"/>
+      <DevI id="C10" type="C"/>
+      <DevI id="C11" type="C"/>
+      <DevI id="C12" type="C"/>
+      <DevI id="C13" type="C"/>
+      <DevI id="C14" type="C"/>
+      <DevI id="C15" type="C"/>
+      <DevI id="C16" type="C"/>
+      <DevI id="C17" type="C"/>
+      <DevI id="C18" type="C"/>
+      <DevI id="C19" type="C"/>
+      <DevI id="C20" type="C"/>
+      <DevI id="C21" type="C"/>
+      <DevI id="C22" type="C"/>
+      <DevI id="C23" type="C"/>
+      <DevI id="C24" type="C"/>
+      <DevI id="C25" type="C"/>
+      <DevI id="C26" type="C"/>
+      <DevI id="C27" type="C"/>
+      <DevI id="C28" type="C"/>
+      <DevI id="C29" type="C"/>
+      <DevI id="C30" type="C"/>
+    </DeviceInstances>
+  </GraphInstance>
+</Graphs>

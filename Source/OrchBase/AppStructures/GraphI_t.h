@@ -24,6 +24,7 @@ public:
                      GraphI_t(Apps_t *,string);
 virtual ~            GraphI_t();
 void                 DevicesOfType(DevT_t *,vector<DevI_t *>&);
+unsigned             DevicesByType(map<DevT_t *,unsigned>&);
 void                 Dump(unsigned =0,FILE * = stdout);
 string               GetCompoundName(bool path = false);
 DevI_t *             GetDevice(string &);

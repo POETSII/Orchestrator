@@ -56,3 +56,7 @@ All tests passed (67 assertions in 18 test cases)
 ==20767== For counts of detected and suppressed errors, rerun with: -v
 ==20767== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 0 from 0)
 ```
+
+Note that the placement tests are an exception to this, as they require the
+full Orchestrator to run correctly (strictly speaking they don't, but it was
+quicker to do it that way). Read that readme instead.
