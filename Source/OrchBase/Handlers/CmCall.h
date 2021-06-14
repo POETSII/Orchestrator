@@ -20,6 +20,7 @@ void             CaEcho(Cli::Cl_t);
 void             CaFile(Cli::Cl_t);
 void             Dump(unsigned = 0,FILE * = stdout);
 Cli              Front();
+bool             IsEmpty();
 void             Show(FILE * = stdout);
 unsigned         operator()(Cli *);
 

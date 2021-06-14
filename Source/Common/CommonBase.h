@@ -31,6 +31,7 @@ virtual unsigned       Decode(PMsg_p *) = 0;
 void                   Dump(unsigned = 0,FILE * = stdout);
 unsigned               OnExit(PMsg_p *);
 virtual void           OnIdle();
+virtual bool           HaveIdleWork(); // Return false if there is something we want to do in OnIdle
 unsigned               OnPmap(PMsg_p *);
 unsigned               OnSystPingAck(PMsg_p *);
 unsigned               OnSystPingReq(PMsg_p *);
