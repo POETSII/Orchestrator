@@ -121,6 +121,13 @@ fflush(fp);
 
 //------------------------------------------------------------------------------
 
+bool CmCall::IsEmpty()
+{
+  return Equeue.empty();
+}
+
+//------------------------------------------------------------------------------
+
 Cli CmCall::Front()
 // Provides a valid Cm object: if there was one in the Q, it gets popped off
 // the front; otherwise an empty one is returned.

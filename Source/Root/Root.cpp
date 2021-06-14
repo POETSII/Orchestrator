@@ -296,6 +296,14 @@ fflush(fp);
 
 //------------------------------------------------------------------------------
 
+bool Root::HaveIdleWork()
+{
+  if(pCmCall->IsEmpty()){
+    return false;
+  }
+  return true;
+}
+
 void Root::OnIdle()
 {
 Cli Cm = pCmCall->Front();             // Anything in the batch queue?
