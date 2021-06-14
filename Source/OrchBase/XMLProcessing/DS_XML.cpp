@@ -464,6 +464,12 @@ WALKVECTOR(xnode *,pn->vnode,i) {
     case cOnCTL            : pS->pOnCTL   = _CFrag(*i);               break;
     case cOnInit           : pS->pOnInit = _CFrag(*i);                break;
     case cMetaData         : pS->Meta_v.push_back(_Meta(*i));         break;
+    
+    // Uninplemented functionality: throw an E
+    case cInputPin         : //Intentional fall-through
+    case cOutputPin        : par->Post(254,"SupervisorType",(*i)->ename,
+                                int2str(pn->lin));                    break;
+    // Paranoid U catch-all
     default                : par->Post(998,__FILE__,int2str(__LINE__),
                                        (*i)->ename);
   }
