@@ -8,6 +8,7 @@ uint32_t gen_k;
 		#include <cmath>
 		#include <utility>
 		#include <cstring>
+    #include <climits>
 
 		const unsigned K_MSG=sizeof(std::declval<apsp_vec_barrier_share_message_t>().distances) / sizeof(std::declval<apsp_vec_barrier_share_message_t>().distances[0]);
 		const unsigned K_STATE=sizeof(std::declval<apsp_vec_barrier_vertex_state_t>().distances) / sizeof(std::declval<apsp_vec_barrier_vertex_state_t>().distances[0]);
@@ -78,7 +79,7 @@ uint32_t distances[8];
 					// Sometimes we need to be precise about exactly how many vertices are in this batch,
 					// but most of the time it is _slightly_ more efficient to use K (instruction count + memory accesses + reg pressure).
 					// There is only one round where curr_k < K, versus floor(n/K) where curr_k==K. Ignored for now.
-					deviceState->curr_k=std::min(K, graphProperties->total_vertices-deviceState->round_base);
+					deviceState->curr_k=std::min<uint32_t>(K, graphProperties->total_vertices-deviceState->round_base);
 					assert(deviceState->curr_k <= K);
 
 					deviceState->round_base += K;
@@ -222,7 +223,7 @@ uint32_t round_base;
           <OnReceive><![CDATA[
 					deviceState->sum_sum_distances += message->sum_sum_distance;
 					assert(deviceState->round_base < graphProperties->total_vertices);
-					unsigned curr_k = std::min(K, graphProperties->total_vertices - deviceState->round_base);
+					unsigned curr_k = std::min<uint32_t>(K, graphProperties->total_vertices - deviceState->round_base);
 					assert(curr_k <= K);
 					for(unsigned i=0; i<curr_k; i++){
 						deviceState->max_distances[i] = std::max(deviceState->max_distances[i], message->max_distances[i]);
@@ -248,7 +249,7 @@ uint32_t round_base;
 					assert(deviceState->vertex_count == graphProperties->total_vertices);
 					assert(deviceState->round_base < graphProperties->total_vertices);
 
-					unsigned curr_k = std::min(K, graphProperties->total_vertices - deviceState->round_base);
+					unsigned curr_k = std::min<uint32_t>(K, graphProperties->total_vertices - deviceState->round_base);
 					assert(curr_k <= K);
 					for(unsigned i=0; i<curr_k; i++){
 						deviceState->sum_max_distances += deviceState->max_distances[i];

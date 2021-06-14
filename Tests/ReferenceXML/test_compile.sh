@@ -32,6 +32,13 @@ TN=0
 
 PLOG_FILTER='s/^.*will be written to '\''([^'\'']+[.]plog)'\''.+$/\1/p'
 
+function TODO_compile {
+    F="$1"
+    RR=$(realpath --relative-to="$ORCHROOT" "$F")
+    echo "not ok $TN - # TODO Compile $RR, $2"
+    TN=$((TN+1))
+}
+
 function test_compile_success {
     F="$1"
     if [[ $VERBOSE -eq 1 ]] ; then
@@ -86,7 +93,13 @@ function test_compile_failure {
 }
 
 for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/apps/*.xml ; do
-    test_compile_success $i
+    if [[ "$i" == */apsp_vec_barrier_150_10.xml ]] ; then
+        TODO_compile $i "Bug #232 needs to be fixed."
+    elif [[ "$i" == */betweeness_centrality_16_16_20_20_v4.xml ]] ; then
+        TODO_compile $i "orchestrator needs indexed sends."
+    else 
+        test_compile_success $i
+    fi
 done 
 for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/tests/valid/*/*.xml ; do
     test_compile_success $i
