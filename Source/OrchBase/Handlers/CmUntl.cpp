@@ -23,22 +23,14 @@ CmUntl::~CmUntl()
 void CmUntl::Cm_App(Cli::Cl_t cl)
 // Un-typelink a named application OR all of them.
 {
-string apName = cl.GetP();             // Application name
-
-if (apName.empty()) {                  // ...not supplied ?
-  par->Post(244,"---");
-  return;
+set<GraphI_t*> gis;
+if (par->GetGraphIs(cl,gis)==1) return;
+WALKSET(GraphI_t*,gis,i)
+{
+  par->Post(255,(*i)->Name());
+  (*i)->UnTLink();
+  par->Post(256,(*i)->Name());
 }
-                                       // Not "*" AND not there ?
-Apps_t * pA = Apps_t::FindApp(apName);
-if ((apName!="*")&&(pA==0)) {
-  par->Post(244,apName);
-  return;
-}
-                                       // OK, good to go
-if (pA!=0) UnTypeLink(pA);             // Un-typelink the named application
-                                       // ... or all of them ?
-else WALKMAP(string,Apps_t *,Apps_t::Apps_m,i) UnTypeLink((*i).second);
 }
 
 //------------------------------------------------------------------------------
@@ -84,26 +76,15 @@ fflush(fp);
 
 //------------------------------------------------------------------------------
 
-void CmUntl::UnTypeLink(Apps_t * pA)
-// UnTypelink a whole application.
-{
-WALKVECTOR(GraphI_t *,pA->GraphI_v,i) (*i)->UnTLink();
-}
-
-//------------------------------------------------------------------------------
-
 unsigned CmUntl::operator()(Cli * pC)
 // Handle "untl(ink)" command from the monkey.
 {
-//printf("CmUntl operator() splitter for ....\n");
-//fflush(stdout);
 if (pC==0) return 0;                   // Paranoia
 fd = par->fd;
 ReportUTLinkStart();
 WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   string sCl = (*i).Cl;               // Pull out clause name
   if (sCl=="app" ) { Cm_App(*i);                     continue; }
-  if (sCl=="tree") { par->Post(247,sCl,(*i).GetP()); continue; }
   par->Post(25,sCl,"untlink");         // Unrecognised clause
 }
 ReportUTLinkEnd();
