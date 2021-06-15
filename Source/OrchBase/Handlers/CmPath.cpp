@@ -120,7 +120,7 @@ switch (OuMode) {
 void CmPath::GenerateMode()
 // Generate the output mode
 {
-if (pathUlog.empty()) {                // Default eveything to the console
+if (pathUlog.empty()) {                // Default everything to the console
   OuMode = Ou_Stdo;
   return;
 }

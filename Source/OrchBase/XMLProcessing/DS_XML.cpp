@@ -77,7 +77,7 @@ DS_XML::~DS_XML()
 void DS_XML::_Apps_t(xnode * pn)
 // XML::Graphs
 {
-string aname = pn->FindAttr("appname");// Get the app name
+aname = pn->FindAttr("appname");       // Get (and store) the application name
 Apps_t * pAP = new Apps_t(par,aname);  // Uniquely knits itself into skyhook
 pAP->Def(pn->lin);                     // Defined on line...
 pAP->filename = pn->par->ename;        // Filename is root element name
@@ -117,7 +117,7 @@ return new CFrag(Cstr);
 }
 
 CFrag * DS_XML::_CFrag(std::string Cstr)
-// Create a CFrag from an attribute string. 
+// Create a CFrag from an attribute string.
 // This is intended for initialiser lists (of which there may be many) so
 // the line number is not included to help keep generated file size down.
 // If the attribute is empty, we don't create a CFrag for it - simples.
@@ -341,7 +341,7 @@ WALKVECTOR(xnode *,pn->vnode,i) {
                                        // Report undefined devices;
                                        // Minor integrity check;
                                        // Dismantle a bit of scaffold
-pGI->UndefDevs();
+pGI->UndefDevs(wcnt,ecnt);
 return pGI;
 }
 
