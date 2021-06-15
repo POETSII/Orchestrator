@@ -323,7 +323,7 @@ switch (c) {
                   default  : T.s=Sytype_str[T.t=Sy_amp ];       break;  // &
                 }
               }
-              else T.s = "$" + T.s;
+              else T.s = "&" + T.s;
               break;
   case '*'  : switch (Peek()) {
                 case '*' : T.s=Sytype_str[T.t=Sy_exp ]; Gc(); break;  // **

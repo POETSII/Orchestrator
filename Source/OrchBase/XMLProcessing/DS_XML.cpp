@@ -177,7 +177,7 @@ bool has_single_top_level_curlies(const char *begin, const char *end)
 }
 
 CFrag * DS_XML::_CFrag(std::string Cstr)
-// Create a CFrag from an attribute string. 
+// Create a CFrag from an attribute string.
 // This is intended for initialiser lists (of which there may be many) so
 // the line number is not included to help keep generated file size down.
 // If the attribute is empty, we don't create a CFrag for it - simples.
@@ -412,7 +412,7 @@ WALKVECTOR(xnode *,pn->vnode,i) {
                                        // Report undefined devices;
                                        // Minor integrity check;
                                        // Dismantle a bit of scaffold
-pGI->UndefDevs();
+pGI->UndefDevs(wcnt,ecnt);
 return pGI;
 }
 
@@ -545,6 +545,12 @@ WALKVECTOR(xnode *,pn->vnode,i) {
     case cOnCTL            : pS->pOnCTL   = _CFrag(*i);               break;
     case cOnInit           : pS->pOnInit = _CFrag(*i);                break;
     case cMetaData         : pS->Meta_v.push_back(_Meta(*i));         break;
+
+    // Uninplemented functionality: throw an E
+    case cInputPin         : //Intentional fall-through
+    case cOutputPin        : par->Post(257,"SupervisorType",(*i)->ename,
+                                int2str(pn->lin));                    break;
+    // Paranoid U catch-all
     default                : par->Post(998,__FILE__,int2str(__LINE__),
                                        (*i)->ename);
   }

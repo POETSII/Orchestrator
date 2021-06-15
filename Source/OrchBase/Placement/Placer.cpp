@@ -61,6 +61,40 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
     return output;
 }
 
+/* A simple filter:
+ *
+ * - if `unknown` is the name of an algorithm, returns true and sets
+ *   `isAlgorithm` to true.
+ *
+ * - if `unknown` is the name of an argumetn, returns true and sets
+ *   `isAlgorithm` to false.
+ *
+ * - if `unknown` is neither an algorithm nor argument, returns false and does
+ *   not set `isAlgorithm`. */
+bool Placer::algorithm_or_argument(std::string unknown, bool& isAlgorithm)
+{
+    if (unknown == "app" or   /* Default */
+        unknown == "buck" or  /* Thread filling */
+        unknown == "gc" or    /* Gradient climber */
+        unknown == "link" or  /* Default */
+        unknown == "rand" or  /* Smart-Random */
+        unknown == "sa" or    /* Simulated Annealing */
+        unknown == "tfil")    /* Thread filling */
+    {
+        isAlgorithm = true;
+        return true;
+    }
+
+    else if (unknown == "inpl" or  /* In place */
+             unknown == "iter")    /* Maximum number of iterations */
+    {
+        isAlgorithm = false;
+        return true;
+    }
+
+    return false;
+}
+
 /* Returns true if all core pairs (or single cores, if that's how the model is
  * configured) have devices of one (or zero) type mapped to them, and false
  * otherwise. Arguments:
@@ -747,6 +781,13 @@ void Placer::dump_diagnostics(GraphI_t* gi, const char* path)
     out << "startTime:" << result->startTime << std::endl;
     out << "endTime:" << result->endTime << std::endl;
     out << "score:" << result->score << std::endl;
+
+    /* Args at the end, as key:value pairs. */
+    out << "argCount:" << result->args.size() << std::endl;
+    std::map<std::string, std::string>::iterator argIt;
+    for (argIt = result->args.begin(); argIt != result->args.end(); argIt++)
+        out << argIt->first << ":" << argIt->second << std::endl;
+
     out.close();
 }
 
@@ -1103,9 +1144,16 @@ float Placer::place(GraphI_t* gi, Algorithm* algorithm)
         "defining an engine pointer in the placer. If you're running this "
         "from OrchBase, how did you get here?");
 
+    /* Check that the options set by the operator make sense for the algorithm
+     * being used. May throw. */
+    args.validate_args(algorithm->result.method);
+
     /* Complain if the application graph instance has already been placed (by
-     * memory address). */
-    if (placedGraphs.find(gi) != placedGraphs.end())
+     * memory address). Don't do this if an in-place approach is requested. */
+    bool inPlace = false;
+    if (args.is_set("inpl")) inPlace = args.get_bool("inpl");
+
+    if (placedGraphs.find(gi) != placedGraphs.end() and !inPlace)
     {
         delete algorithm;
         throw AlreadyPlacedException(dformat(
@@ -1120,6 +1168,11 @@ float Placer::place(GraphI_t* gi, Algorithm* algorithm)
 
     /* Run the algorithm on the application graph instance. */
     float score = algorithm->do_it(gi);
+
+    /* Write input arguments to the algorithm's result object, then clear
+     * them. */
+    args.copy_to(algorithm->result.args);
+    args.clear();
 
     /* Check placement integrity, throwing if there's a problem. */
     check_integrity(gi, algorithm);
