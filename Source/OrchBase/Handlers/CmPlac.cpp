@@ -327,16 +327,16 @@ bool CmPlac::PlacementSetArg(Cli::Cl_t clause)
     }
 
     /* Have a go. */
-    std::string proposedValue = clause.Pa_v[0].Concatenate();
+    std::string proposed = clause.Pa_v[0].Op + clause.Pa_v[0].Concatenate();
     try
     {
-        par->pPlacer->args.set(clause.Cl, proposedValue);
-        par->Post(326, clause.Cl, proposedValue);  /* Success */
+        par->pPlacer->args.set(clause.Cl, proposed);
+        par->Post(326, clause.Cl, proposed);  /* Success */
     }
 
     catch (InvalidArgumentException& e)
     {
-        par->Post(327, clause.Cl, proposedValue, e.message);  /* Failure */
+        par->Post(327, clause.Cl, proposed, e.message);  /* Failure */
     }
 
     return true;  /* The clause was valid (we checked earlier) */
