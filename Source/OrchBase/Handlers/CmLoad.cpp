@@ -71,11 +71,12 @@ ecnt = g_ecnt + c_ecnt;                // Total errors = grammar + client
 if (ecnt!=0) par->Post(201,"validation",uint2str(ecnt),long2str(mTimer(t0)));
 else {
   pXB->PBuild(pXV->ClRoot());
-  pXB->ErrCnt(ecnt,wcnt);              // There should be no errors from here...
-  if (ecnt!=0) par->Post(996,uint2str(ecnt));
+  pXB->ErrCnt(ecnt,wcnt);              // Still finding errors...
+  if (ecnt!=0) par->Post(196,uint2str(ecnt),pXB->aname,fn);
   if (wcnt!=0) par->Post(204,fn,uint2str(wcnt),long2str(mTimer(t0)));
   fprintf(par->fd,"\nBuild reports %u errors, %u warnings\n\n",ecnt,wcnt);
   fflush(par->fd);
+  if (ecnt!=0) Apps_t::DelApp(pXB->aname); // Tidy up
   par->Post(65,fn,long2str(mTimer(t0)));
 }
 
@@ -212,7 +213,8 @@ unsigned CmLoad::operator()(Cli * pC)
 //fflush(stdout);
                                        // Just the once
 if (pXV==0) pXV = new XValid(dynamic_cast<Root *>(par)->pOC->Grammar(),par->fd);
-else pXV->SetOChan(par->fd);
+                                       // If it was already here...
+pXV->SetOChan(par->fd);                // ... the ulog may have changed
 if (pXB==0) pXB = new DS_XML(par);
 if (pC==0) return 0;                   // Paranoia
 WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list

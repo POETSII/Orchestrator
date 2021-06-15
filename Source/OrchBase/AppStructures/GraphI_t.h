@@ -30,7 +30,7 @@ string               GetCompoundName(bool path = false);
 DevI_t *             GetDevice(string &);
 bool                 TLink() { return pT!=0; }
 unsigned             TypeLink();
-void                 UndefDevs();
+void                 UndefDevs(unsigned &,unsigned &);
 void                 UnTLink();
 
 Apps_t *             par;              // Object parent
