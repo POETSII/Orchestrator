@@ -197,13 +197,22 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
             numberOfFlitsForThisPacket = p_hdr_size() >> TinselLogBytesPerFlit;
             if (numberOfFlitsForThisPacket == 0) ++numberOfFlitsForThisPacket;
 
-            /* Send the packet (with that number of flits) */
-            pthread_mutex_lock(&(mothership->threading.mutex_backend_api));
-            mothership->backend->send(packetIt->hwAddr,
-                                      numberOfFlitsForThisPacket,
-                                      &(packetIt->packet), true);
-            pthread_mutex_unlock(&(mothership->threading.mutex_backend_api));
-
+            /* Send the packet (with that number of flits). If the network
+             * pushes back, then take a short holiday. Did you enjoy it?
+             * Alright, back to work. */
+            bool sendResult = true;
+            do
+            {
+                if (!sendResult) OSFixes::sleep(SLOW_SPIN_SLEEP_PERIOD);
+                pthread_mutex_lock(
+                    &(mothership->threading.mutex_backend_api));
+                sendResult = mothership->backend->trySend(
+                    packetIt->hwAddr,
+                    numberOfFlitsForThisPacket,
+                    &(packetIt->packet));
+                pthread_mutex_unlock(
+                    &(mothership->threading.mutex_backend_api));
+            } while (!sendResult);
         }
     }
 
