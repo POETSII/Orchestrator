@@ -1,8 +1,8 @@
 #include "MaxDevicesPerThread.h"
 
 MaxDevicesPerThread::MaxDevicesPerThread(
-    bool mandatory, float penalty, P_task* task, unsigned maximum):
-    Constraint(category, mandatory, penalty, task),
+    bool mandatory, float penalty, GraphI_t* gi, unsigned maximum):
+    Constraint(category, mandatory, penalty, gi),
     maximum(maximum)
 {
     Name(dformat(
@@ -14,7 +14,7 @@ MaxDevicesPerThread::MaxDevicesPerThread(
  * "maximum" devices, and false otherwise. */
 bool MaxDevicesPerThread::is_satisfied(Placer* placer)
 {
-    std::map<P_thread*, std::list<P_device*>>::iterator it;
+    std::map<P_thread*, std::list<DevI_t*> >::iterator it;
     for (it = placer->threadToDevices.begin();
          it != placer->threadToDevices.end(); it++)
     {
@@ -31,9 +31,9 @@ bool MaxDevicesPerThread::is_satisfied(Placer* placer)
 /* Returns true if the threads that the devices are placed on do not have more
  * than "maximum" devices, and false otherwise. */
 bool MaxDevicesPerThread::is_satisfied_delta(Placer* placer,
-                                             std::vector<P_device*> devices)
+                                             std::vector<DevI_t*> devices)
 {
-    std::vector<P_device*>::iterator deviceIt;
+    std::vector<DevI_t*>::iterator deviceIt;
     for (deviceIt = devices.begin(); deviceIt != devices.end(); deviceIt++)
     {
         /* Given one device, get the thread that contains it, then compare with
@@ -55,8 +55,8 @@ void MaxDevicesPerThread::Dump(FILE* file)
     else fprintf(file,
                  "This is a soft constraint with penalty %f.\n", penalty);
 
-    if (task == PNULL) fprintf(file, "Task: None\n");
-    else fprintf(file, "Task: %s\n", task->Name().c_str());
+    if (gi == PNULL) fprintf(file, "Graph instance: None\n");
+    else fprintf(file, "Graph instance: %s\n", gi->Name().c_str());
 
     /* Close breaker and flush the dump. */
     DumpUtils::close_breaker(file, prefix);

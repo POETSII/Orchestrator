@@ -15,12 +15,11 @@ void InstrumentationWriter::setup_directory()
 {
     std::vector<std::string> commands;
 
-    /* Create directory if it does not exist */
-    commands.push_back(dformat("mkdir --parents %s", outDirectory.c_str()));
+    /* Remove any existing instrumentation files. Terrible removal. */
+    commands.push_back(dformat("rm -rf %s", outDirectory.c_str()));
 
-    /* Remove any existing instrumentation files */
-    commands.push_back(dformat("rm -rf %s/instrumentation_thread*.csv",
-                               outDirectory.c_str()));
+    /* Create directory */
+    commands.push_back(dformat("mkdir --parents %s", outDirectory.c_str()));
 
     /* Run the commands, warning on failure. */
     for (std::vector<std::string>::iterator commandIt=commands.begin();
@@ -46,7 +45,7 @@ void InstrumentationWriter::setup_directory()
                     "'%s' ran unsuccessfully with message '%s'. "
                     "Instrumentation data may not be recorded correctly.",
                     commandIt->c_str(),
-                    POETS::getSysErrorString(errno).c_str()));
+                    OSFixes::getSysErrorString(errno).c_str()));
             }
         }
     }
@@ -74,7 +73,7 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
         if (fileFailureTriggered) return false;
         throw InstrumentationException(dformat(
             "Unable to open instrumentation file at '%s'. Error: '%s'.",
-            fileTarget.c_str(), POETS::getSysErrorString(errno).c_str()));
+            fileTarget.c_str(), OSFixes::getSysErrorString(errno).c_str()));
     }
 
     /* Extract instrumentation data from the packet. */
@@ -114,7 +113,7 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
 #else
         unsigned columns = 16;
 #endif
-        
+
         fprintf(file, "%u, ", source);  // First column must be the thread ID
         for (unsigned column=2; column<columns; column++)   // The rest get 0'ed
             fprintf(file, "0, ");

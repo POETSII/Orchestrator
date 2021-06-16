@@ -1,0 +1,161 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!-- C++Builder XML Project -->
+<PROJECT>
+  <MACROS>
+    <VERSION value="BCB.06.00"/>
+    <PROJECT value="..\..\bin\LogServer1.exe"/>
+    <OBJFILES value="LogServerMain.obj LogServer.obj CommonBase.obj Environment.obj flat.obj 
+      jnj.obj lex.obj Msg_p.obj Pglobals.obj PMsg_p.obj ProcMap.obj uif.obj 
+      Unrec_t.obj"/>
+    <RESFILES value="LogServer1.res"/>
+    <IDLFILES value=""/>
+    <IDLGENFILES value=""/>
+    <DEFFILE value=""/>
+    <RESDEPEN value="$(RESFILES)"/>
+    <LIBFILES value="C:\MPI\Microsoft\Lib\x86\msmpi_omf.lib"/>
+    <LIBRARIES value=""/>
+    <SPARELIBS value=""/>
+    <PACKAGES value="vcl.bpi rtl.bpi vclx.bpi bcbsmp.bpi dbrtl.bpi adortl.bpi vcldb.bpi 
+      qrpt.bpi bdertl.bpi vcldbx.bpi dsnap.bpi cds.bpi bdecds.bpi teeui.bpi 
+      teedb.bpi tee.bpi teeqr.bpi ibxpress.bpi visualclx.bpi visualdbclx.bpi 
+      vclie.bpi xmlrtl.bpi inet.bpi inetdbbde.bpi inetdbxpress.bpi inetdb.bpi 
+      nmfast.bpi bcbie.bpi soaprtl.bpi dclocx.bpi dbexpress.bpi dbxcds.bpi 
+      indy.bpi bcb2kaxserver.bpi"/>
+    <PATHCPP value=".;..\..\Source\LogServer;..\..\Source\LogServer;..\..\Source\Common;..\..\Source\Common;..\..\Generics;..\..\Generics;..\..\Generics;..\..\Generics;..\..\Source\Common;..\..\Source\Common;..\..\Source\Common;..\..\Generics;..\..\Source\Common"/>
+    <PATHPAS value=".;"/>
+    <PATHRC value=".;"/>
+    <PATHASM value=".;"/>
+    <DEBUGLIBPATH value="$(BCB)\lib\debug"/>
+    <RELEASELIBPATH value="$(BCB)\lib\release"/>
+    <LINKER value="ilink32"/>
+    <USERDEFINES value="MSMPI_NO_SAL;MSMPI_NO_DEPRECATE_20;_DEBUG"/>
+    <SYSDEFINES value="NO_STRICT;_NO_VCL;USEPACKAGES"/>
+    <MAINSOURCE value="LogServer1.bpf"/>
+    <INCLUDEPATH value="..\..\Source\Common;..\..\Source\LogServer;..\..\Generics;C:\Apps\pThreads\Pre-built.2\include;C:\MPI\Microsoft\Include;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl"/>
+    <LIBPATH value="..\..\Generics;..\..\Source\Common;..\..\Source\LogServer;$(BCB)\lib\obj;$(BCB)\lib"/>
+    <WARNINGS value="-w-par"/>
+    <OTHERFILES value=""/>
+  </MACROS>
+  <OPTIONS>
+    <CFLAG1 value="-vGc -vGt -vGd -Od -Vx -Ve -X- -r- -a8 -b- -k -y -v -vi- -tWC -tWM- -c"/>
+    <PFLAGS value="-N2..\..\Borland -N0..\..\Borland -$Y+ -$W -$O- -$A8 -v -JPHNE -M"/>
+    <RFLAGS value=""/>
+    <AFLAGS value="/mx /w2 /zi"/>
+    <LFLAGS value="-I..\..\Borland -D&quot;&quot; -ap -Tpe -x -Gn -v"/>
+    <OTHERFILES value=""/>
+  </OPTIONS>
+  <LINKER>
+    <ALLOBJ value="c0x32.obj $(PACKAGES) $(OBJFILES)"/>
+    <ALLRES value="$(RESFILES)"/>
+    <ALLLIB value="cg32.lib $(LIBFILES) $(LIBRARIES) import32.lib cw32.lib"/>
+    <OTHERFILES value=""/>
+  </LINKER>
+  <FILELIST>
+      <FILE FILENAME="LogServer1.res" FORMNAME="" UNITNAME="LogServer1.res" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="LogServer1.bpf" FORMNAME="" UNITNAME="LogServer1" CONTAINERID="BPF" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\LogServer\LogServerMain.cpp" FORMNAME="" UNITNAME="LogServerMain" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\LogServer\LogServer.cpp" FORMNAME="" UNITNAME="LogServer" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\CommonBase.cpp" FORMNAME="" UNITNAME="CommonBase.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Environment.cpp" FORMNAME="" UNITNAME="Environment" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\flat.cpp" FORMNAME="" UNITNAME="flat" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\jnj.cpp" FORMNAME="" UNITNAME="jnj.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\lex.cpp" FORMNAME="" UNITNAME="lex.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\Msg_p.cpp" FORMNAME="" UNITNAME="Msg_p" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Pglobals.cpp" FORMNAME="" UNITNAME="Pglobals" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\PMsg_p.cpp" FORMNAME="" UNITNAME="PMsg_p" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\ProcMap.cpp" FORMNAME="" UNITNAME="ProcMap.cpp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Generics\uif.cpp" FORMNAME="" UNITNAME="uif" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="..\..\Source\Common\Unrec_t.cpp" FORMNAME="" UNITNAME="Unrec_t" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="C:\MPI\Microsoft\Lib\x86\msmpi_omf.lib" FORMNAME="" UNITNAME="msmpi_omf.lib" CONTAINERID="LibTool" DESIGNCLASS="" LOCALCOMMAND=""/>
+  </FILELIST>
+  <BUILDTOOLS>
+  </BUILDTOOLS>
+
+  <IDEOPTIONS>
+[Version Info]
+IncludeVerInfo=0
+AutoIncBuild=0
+MajorVer=1
+MinorVer=0
+Release=0
+Build=0
+Debug=0
+PreRelease=0
+Special=0
+Private=0
+DLL=0
+Locale=2057
+CodePage=1252
+
+[Version Info Keys]
+CompanyName=
+FileDescription=
+FileVersion=1.0.0.0
+InternalName=
+LegalCopyright=
+LegalTrademarks=
+OriginalFilename=
+ProductName=
+ProductVersion=1.0.0.0
+Comments=
+
+[Excluded Packages]
+d:\cbuilder\Bin\dclite60.bpl=Borland Integrated Translation Environment
+
+[HistoryLists\hlIncludePath]
+Count=5
+Item0=..\..\Source\Common;..\..\Source\LogServer;..\..\Generics;C:\Apps\pThreads\Pre-built.2\include;C:\MPI\Microsoft\Include;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item1=..\..\Source\Common;..\..\Source\LogServer;..\..\Generics;C:\Apps\pThreads\Pre-built.2\include;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item2=..\..\Source\Common;..\..\Source\LogServer;..\..\Generics;C:\MPI\Microsoft\Include;$(BCB)\include;$(BCB)\include\vcl
+Item3=..\..\Source\Common;..\..\Source\LogServer;..\..\Generics;$(BCB)\include;$(BCB)\include\vcl
+Item4=..\..\Source\Common;..\..\Source\LogServer;$(BCB)\include;$(BCB)\include\vcl
+
+[HistoryLists\hlLibraryPath]
+Count=2
+Item0=..\..\Generics;..\..\Source\Common;..\..\Source\LogServer;$(BCB)\lib\obj;$(BCB)\lib
+Item1=..\..\Source\Common;..\..\Source\LogServer;$(BCB)\lib\obj;$(BCB)\lib
+
+[HistoryLists\hlDebugSourcePath]
+Count=1
+Item0=$(BCB)\source\vcl
+
+[HistoryLists\hlConditionals]
+Count=6
+Item0=MSMPI_NO_SAL;MSMPI_NO_DEPRECATE_20;_DEBUG
+Item1=MSMPI_NO_SAL
+Item2=MSMPI_NO_DEPRECATE_20;_DEBUG
+Item3=MSMPI_NO_DEPRECATE_20
+Item4=_DEBUG;MSMPI_NO_DEPRECATE_20
+Item5=_DEBUG
+
+[HistoryLists\hlIntOutputDir]
+Count=1
+Item0=..\..\Borland
+
+[HistoryLists\hlFinalOutputDir]
+Count=3
+Item0=..\..\bin
+Item1=..\..\Borland\
+Item2=..\..\Borland
+
+[Debugging]
+DebugSourceDirs=$(BCB)\source\vcl
+
+[Parameters]
+RunParams=
+Launcher=
+UseLauncher=0
+DebugCWD=
+HostApplication=
+RemoteHost=
+RemotePath=
+RemoteLauncher=
+RemoteCWD=
+RemoteDebug=0
+
+[Compiler]
+ShowInfoMsgs=0
+LinkDebugVcl=1
+LinkCGLIB=1
+  </IDEOPTIONS>
+</PROJECT>

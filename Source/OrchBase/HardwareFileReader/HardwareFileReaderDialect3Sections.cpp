@@ -76,7 +76,8 @@ bool HardwareFileReader::d3_load_validate_sections()
     validTypedSectionNames.push_back("mailbox");
 
     /* Section names by rule. */
-    std::vector<std::vector<std::string>> rules(5, std::vector<std::string>());
+    std::vector<std::vector<std::string> > \
+        rules(5, std::vector<std::string>());
     rules[0].push_back("header");
     rules[0].push_back("packet_address_format");
     rules[0].push_back("engine_box");
@@ -107,8 +108,8 @@ bool HardwareFileReader::d3_load_validate_sections()
     std::string ruleErrors;
 
     /* Section name nodes, by name. */
-    std::map<std::string, std::vector<UIF::Node*>> sectionsByName;
-    std::map<std::string, std::vector<UIF::Node*>>::iterator \
+    std::map<std::string, std::vector<UIF::Node*> > sectionsByName;
+    std::map<std::string, std::vector<UIF::Node*> >::iterator \
         sectionsByNameIterator;
     for (nameIterator=validSectionNames.begin();
          nameIterator!=validSectionNames.end(); nameIterator++)

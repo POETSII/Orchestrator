@@ -62,6 +62,7 @@ public:
     SoftwareAddress(IsMothershipComponent isMothership, IsCncComponent isCnc,
                     TaskComponent task, OpCodeComponent opCode,
                     DeviceComponent device);
+    SoftwareAddress(uint32_t address);                
     SoftwareAddress();
 
     /* Getters and setters. */
@@ -76,11 +77,13 @@ public:
     void set_task(TaskComponent value);
     void set_opcode(OpCodeComponent value);
     void set_device(DeviceComponent value);
+    
+    void from_uint(uint32_t address);
 
     /* Access */
     inline SoftwareAddressInt get_software_address(){return raw;}
     inline SoftwareAddressInt as_uint(){return get_software_address();}
-    void Dump(FILE* = stdout);
+    void Dump(unsigned = 0, FILE* = stdout);
 
     /* Defines whether or not the software address is fully defined. */
     inline bool is_fully_defined()

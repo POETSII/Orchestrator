@@ -16,11 +16,13 @@
 #
 # These common sources also require some sources from /Generics.
 TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
+                       $(SOURCE_DIR)/Common/Debug.cpp \
                        $(SOURCE_DIR)/Common/Environment.cpp \
                        $(SOURCE_DIR)/Common/Pglobals.cpp \
                        $(SOURCE_DIR)/Common/PMsg_p.cpp \
                        $(SOURCE_DIR)/Common/ProcMap.cpp \
                        $(SOURCE_DIR)/Common/Unrec_t.cpp \
+                       $(GENERICS_DIR)/dfprintf.cpp \
                        $(GENERICS_DIR)/flat.cpp \
                        $(GENERICS_DIR)/Msg_p.cpp \
                        $(GENERICS_DIR)/NameBase.cpp
@@ -29,7 +31,7 @@ TRULY_COMMON_SOURCES = $(SOURCE_DIR)/Common/CommonBase.cpp \
 SOFTWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/SoftwareAddress.cpp \
                            $(SOURCE_DIR)/Common/DumpUtils.cpp \
                            $(GENERICS_DIR)/dfprintf.cpp \
-                           $(GENERICS_DIR)/dumpchan.cpp
+                           $(GENERICS_DIR)/DumpChan.cpp
 
 # Sources used by executables that need to address hardware.
 HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareModel/HardwareAddress.cpp \
@@ -38,7 +40,7 @@ HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareModel/HardwareAddress.
                            $(SOURCE_DIR)/OrchBase/P_addr.cpp \
                            $(GENERICS_DIR)/flat.cpp \
                            $(GENERICS_DIR)/dfprintf.cpp \
-                           $(GENERICS_DIR)/dumpchan.cpp
+                           $(GENERICS_DIR)/DumpChan.cpp
 
 # Sources used by executables that require the hardware model.
 HARDWARE_MODEL_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareModel/AddressableItem.cpp \
@@ -78,13 +80,19 @@ HARDWARE_FILE_READER_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareFileReader/Hardwar
                                $(GENERICS_DIR)/uif.cpp \
                                $(HARDWARE_DEPLOYER_SOURCES)
 
+# Sources for XML processing
+XML_PARSER_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/XMLProcessing/*.cpp)
+
 # Sources used by placement
 PLACEMENT_SOURCES = $(SOURCE_DIR)/OrchBase/Placement/CostCache.cpp \
+                    $(SOURCE_DIR)/OrchBase/Placement/PlaceArgs.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Placer.cpp \
-                    $(SOURCE_DIR)/OrchBase/Placement/Algorithms/BucketFilling.cpp \
+                    $(SOURCE_DIR)/Common/SoftwareAddress.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/PlacementLoader.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/SimulatedAnnealing.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/SmartRandom.cpp \
+                    $(SOURCE_DIR)/OrchBase/Placement/Algorithms/SpreadFilling.cpp \
+                    $(SOURCE_DIR)/OrchBase/Placement/Algorithms/ThreadFilling.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Constraints/MaxDevicesPerThread.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Constraints/MaxThreadsPerCore.cpp
 
@@ -134,31 +142,26 @@ LAUNCHER_SOURCES = $(SOURCE_DIR)/Launcher/LauncherMain.cpp \
 # Add the first three items of this bulleted list:
 ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(SOURCE_DIR)/Root/Root.cpp \
+               $(SOURCE_DIR)/Root/OrchConfig.cpp \
                $(GENERICS_DIR)/Cli.cpp \
-               $(GENERICS_DIR)/dfprintf.cpp \
-               $(GENERICS_DIR)/dumpchan.cpp \
-               $(GENERICS_DIR)/filename.cpp \
+               $(GENERICS_DIR)/DumpChan.cpp \
+               $(GENERICS_DIR)/FileName.cpp \
                $(GENERICS_DIR)/lex.cpp \
                $(GENERICS_DIR)/rand.cpp \
+               $(GENERICS_DIR)/xmlP.cpp \
+               $(GENERICS_DIR)/XMLTreeDump.cpp \
                $(SOURCE_DIR)/NameServer/Ns_el.cpp
 
 ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
 ROOT_SOURCES += $(HARDWARE_FILE_READER_SOURCES)
 ROOT_SOURCES += $(HARDWARE_MODEL_SOURCES)
+ROOT_SOURCES += $(XML_PARSER_SOURCES)
 ROOT_SOURCES += $(PLACEMENT_SOURCES)
 
 # Add (almost) all of the sources from OrchBase and Parser.
 ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/*.cpp)
-ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/Parser/*.cpp)
-
-# These four files are not translation units, so they cannot be compiled into
-# objects and are included by OrchBase.cpp (this was done to reduce the size of
-# the file). Since we're collecting OrchBase sources using a wildcard, we must
-# explicitly exclude these four items from the source list.
-ROOT_SOURCE_EXCEPTIONS = $(addprefix $(SOURCE_DIR)/OrchBase/, \
-    OrchBaseTask.cpp OrchBaseTopo.cpp OrchBaseOwner.cpp OrchBasePlace.cpp)
-ROOT_SOURCES := $(filter-out $(ROOT_SOURCE_EXCEPTIONS), \
-                             $(ROOT_SOURCES))
+ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/AppStructures/*.cpp)
+ROOT_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/Handlers/*.cpp)
 
 # The dummy component consists of:
 #
@@ -183,7 +186,6 @@ DUMMY_SOURCES += $(TRULY_COMMON_SOURCES)
 #
 LOGSERVER_SOURCES = $(SOURCE_DIR)/LogServer/LogServerMain.cpp \
                     $(SOURCE_DIR)/LogServer/LogServer.cpp \
-                    $(GENERICS_DIR)/dfprintf.cpp \
                     $(GENERICS_DIR)/jnj.cpp \
                     $(GENERICS_DIR)/lex.cpp \
                     $(GENERICS_DIR)/uif.cpp
@@ -206,7 +208,6 @@ LOGSERVER_MESSAGE_FILE_ORIGIN = $(SOURCE_DIR)/OrchestratorMessages.txt
 RTCL_SOURCES = $(SOURCE_DIR)/RTCL/RTCLMain.cpp \
                $(SOURCE_DIR)/RTCL/RTCL.cpp \
                $(GENERICS_DIR)/Cli.cpp \
-               $(GENERICS_DIR)/dfprintf.cpp \
                $(GENERICS_DIR)/lex.cpp
 
 RTCL_SOURCES += $(TRULY_COMMON_SOURCES)
@@ -223,7 +224,6 @@ RTCL_SOURCES += $(TRULY_COMMON_SOURCES)
 INJECTOR_SOURCES = $(SOURCE_DIR)/Injector/InjectorMain.cpp \
                    $(SOURCE_DIR)/Injector/Injector.cpp \
                    $(GENERICS_DIR)/Cli.cpp \
-                   $(GENERICS_DIR)/dfprintf.cpp \
                    $(GENERICS_DIR)/lex.cpp
 
 INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
@@ -236,6 +236,8 @@ INJECTOR_SOURCES += $(TRULY_COMMON_SOURCES)
 # - The truly common sources.
 #
 # - Some "generics" (/Generics) sources.
+#
+# - A set of base Orchestrator (/Source/OrchBase) sources.
 #
 # Hostlink sources are to be compiled separately.
 MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
@@ -250,11 +252,9 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/PacketHandlers.cpp \
                      $(SOURCE_DIR)/Mothership/SuperDB.cpp \
                      $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
-                     $(SOURCE_DIR)/Mothership/SuperHolder.cpp \
+                     $(SOURCE_DIR)/Mothership/SupervisorApiProvisioning.cpp \
                      $(SOURCE_DIR)/Mothership/ThreadComms.cpp \
                      $(SOURCE_DIR)/Mothership/ThreadLogic.cpp \
-                     $(SOURCE_DIR)/Common/Debug.cpp \
-                     $(GENERICS_DIR)/dfprintf.cpp
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 

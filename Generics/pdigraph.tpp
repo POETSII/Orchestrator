@@ -181,8 +181,7 @@ return true;
 
 PDIGRAPH_ void _PDIGRAPH::Dump()
 {
-std::string s(35,'=');
-fprintf(dfp,"Pdigraph topological dump %35s++++++++++++++++++++\n",s.c_str());
+fprintf(dfp,"Pdigraph topological dump ++++++++++++++++++++\n");
 fprintf(dfp,"Node index (%u entries):\n",static_cast<unsigned>(index_n.size()));
 int c1 = 1;
 int c2;
@@ -238,7 +237,7 @@ WALKMAP(AKT,arc,index_a,i) {
   fprintf(dfp,"~");              DoND_CB((*(((*i)._2).to_n))._2.data);
   fprintf(dfp,")\n\n");
 }
-fprintf(dfp,"Pdigraph topological dump %35s--------------------\n",s.c_str());
+fprintf(dfp,"Pdigraph topological dump --------------------\n");
 }
 
 //------------------------------------------------------------------------------
@@ -252,13 +251,30 @@ return (i==index_a.end()) ? (AT *)0 : &((*i)._2.data);
 
 //------------------------------------------------------------------------------
 
-PDIGRAPH_ bool  _PDIGRAPH::FindArcs(const NKT & n_k,const PKT & p_k,
+PDIGRAPH_ bool _PDIGRAPH::FindArcPins(const AKT & a_k,
+                                      PKT & p_fr_k,PT & p_fr_d,
+                                      PKT & p_to_k,PT & p_to_d)
+// Routine to return the key and data of the arc keyed to a_k.
+// Recall you can't search on the pin key, because they're not unique.
+{
+TPa_it a_it = ArcKey2It(a_k);          // Arc key -> iterator
+if (a_it==index_a.end()) return false; // Arc not there
+
+p_fr_k = PinKey ((*a_it)._2.fr_p);     // Inpin key
+p_fr_d = PinData((*a_it)._2.fr_p);     // Inpin data
+p_to_k = PinKey ((*a_it)._2.to_p);     // Outpin key
+p_to_d = PinData((*a_it)._2.to_p);     // Outpin data
+return true;
+}
+
+//------------------------------------------------------------------------------
+
+PDIGRAPH_ bool _PDIGRAPH::FindArcs(const NKT & n_k,const PKT & p_k,
                                    vector<AKT> & vI,vector<AKT> & vO)
 // Given a node and a pin key, return any/all arc keys
 {
 vI.clear();
 vO.clear();
-
 if (FindNode(n_k)==0) return false;    // Node not there
 if (FindPin(n_k,p_k)==0) return false; // Pin not there
 
@@ -395,12 +411,38 @@ return (PT *)0;                        // Nope
 
 PDIGRAPH_ bool _PDIGRAPH::FindPins(const AKT & a_k,PKT & p_fr_k,PKT & p_to_k)
 // Given the arc key, overwrite references to the two pin keys
+// This method is of questionable utility, because the pin keys are not unique.
 {
 TPa_it a_it = ArcKey2It(a_k);          // Arc key -> iterator
 if (a_it==index_a.end()) return false; // Arc not there
 
 p_fr_k = PinKey((*a_it)._2.fr_p);      // (Inpins)
 p_to_k = PinKey((*a_it)._2.to_p);      // (Outpins)
+return true;
+}
+
+//------------------------------------------------------------------------------
+
+PDIGRAPH_ bool _PDIGRAPH::FindPins(const NKT & n_k, const PKT & p_k,
+                                   vector<PT> & vIP,vector<PT> & vOP)
+// A more useful version of the above. Given a node key and a pin key, return
+// the SET of pin data that has that pin key. PIN KEYS ARE NOT UNIQUE
+{
+vIP.clear();
+vOP.clear();
+if (FindNode(n_k)==0) return false;    // Is it there?
+TPp_it LB_i,UB_i;                      // Upper and lower pin iterators
+
+LB_i = index_n[n_k].fani.lower_bound(p_k);    // ...input pins
+UB_i = index_n[n_k].fani.upper_bound(p_k);
+for(TN multimap<PKT,pin>::iterator i=LB_i;i!=UB_i;i++)
+  vIP.push_back((*i)._2.data);
+
+LB_i = index_n[n_k].fano.lower_bound(p_k);    // ...output pins
+UB_i = index_n[n_k].fano.upper_bound(p_k);
+for(TN multimap<PKT,pin>::iterator i=LB_i;i!=UB_i;i++)
+  vOP.push_back((*i)._2.data);
+
 return true;
 }
 
@@ -473,10 +515,10 @@ return true;
 
 PDIGRAPH_ bool _PDIGRAPH::InsertNode(const NKT & key_n,const NT & data_n)
 {
-                                       // Is it already in the map?
+                                                   // Is it already in the map?
 if (index_n.find(key_n)!=index_n.end()) return false;
-index_n[key_n] = node(data_n);         // Nope - shove it in
-N_dirty = true;                        // Node map has changed
+index_n.insert(pair<NKT,node>(key_n,node(data_n)));// Nope - shove it in
+N_dirty = true;                                    // Node map has changed
 return true;
 }
 
@@ -577,7 +619,7 @@ PDIGRAPH_ bool _PDIGRAPH::RemoveNode(const NKT & key_n)
 // The pins will go automatically with the node.
 // We can't just walk the fani/fano multimaps and kill stuff, because we'll
 // be incrementing a map iterator for something we've just deleted, so we have
-// to copy the iterators into a local vector and kill the whole lot in a 
+// to copy the iterators into a local vector and kill the whole lot in a
 // seperate pass
 {
 TPn_it n = index_n.find(key_n);        // Find it
@@ -598,16 +640,18 @@ return true;
 
 PDIGRAPH_ unsigned _PDIGRAPH::SizeInPins(const NKT & key_n)
 {
-if (index_n.find(key_n)==index_n.end()) return 0;
-return index_n[key_n].fani.size();
+TPn_it s=index_n.find(key_n);
+if (s==index_n.end()) return 0;
+return s->second.fani.size();
 }
 
 //------------------------------------------------------------------------------
 
 PDIGRAPH_ unsigned  _PDIGRAPH::SizeOutPins(const NKT & key_n)
 {
-if (index_n.find(key_n)==index_n.end()) return 0;
-return index_n[key_n].fano.size();
+TPn_it s=index_n.find(key_n);
+if (s==index_n.end()) return 0;
+return s->second.fano.size();
 }
 
 //------------------------------------------------------------------------------
@@ -662,4 +706,3 @@ WALKMAP(NKT,node,index_n,i) if (f!=0) {
 }
 
 //------------------------------------------------------------------------------
-

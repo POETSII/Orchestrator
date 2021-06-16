@@ -1,9 +1,9 @@
 /* Defines placer (see the accompanying header for further information). */
 
+#include "DevT_t.h"
 #include "Placer.h"
 
-Placer::Placer(){engine = PNULL;}
-
+Placer::Placer():engine(PNULL),cache(PNULL),outFilePath(""){}
 Placer::Placer(P_engine* engine):engine(engine),cache(PNULL){}
 
 Placer::~Placer()
@@ -12,11 +12,26 @@ Placer::~Placer()
 
     /* Free memory for each constraint and algorithm. */
     std::list<Constraint*>::iterator constraintIt;
-    std::map<P_task*, Algorithm*>::iterator algorithmIt;
+    std::map<GraphI_t*, Algorithm*>::iterator algorithmIt;
     for (constraintIt = constraints.begin(); constraintIt != constraints.end();
          constraintIt++) delete (*constraintIt);
-    for (algorithmIt = placedTasks.begin(); algorithmIt != placedTasks.end();
+    for (algorithmIt = placedGraphs.begin(); algorithmIt != placedGraphs.end();
          algorithmIt++) delete algorithmIt->second;
+
+    /* Free all supervisors. Freeing supervisors is a litle complicated, as
+     * they can be deleted when their GraphI_t object is deleted, and can also
+     * be deleted when placement is destroyed, so beware. */
+    std::map<GraphI_t*, Algorithm*>::iterator graphIt;
+    for (graphIt = placedGraphs.begin(); graphIt != placedGraphs.end();
+         graphIt++)
+    {
+        if ((graphIt->first)->pSupI != PNULL)
+        {
+            delete (graphIt->first)->pSupI;
+            (graphIt->first)->pSupI = PNULL; /* Now the GraphI_t won't
+                                             * double-delete */
+        }
+    }
 }
 
 /* Given a string and a set of arguments, creates an instance of a "derived
@@ -28,9 +43,12 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
         output = new SimulatedAnnealing(this, true);  /* With disorder. */
     if (colloquialDescription.substr(0, 2) == "gc")
         output = new SimulatedAnnealing(this, false);  /* Without disorder. */
-    if (colloquialDescription == "buck") output = new BucketFilling(this);
-    if (colloquialDescription == "link") output = new BucketFilling(this);
+    if (colloquialDescription.substr(0, 3) == "app" or
+        colloquialDescription == "buck" or
+        colloquialDescription == "tfil" or
+        colloquialDescription == "link") output = new ThreadFilling(this);
     if (colloquialDescription == "rand") output = new SmartRandom(this);
+    if (colloquialDescription == "spre") output = new SpreadFilling(this);
 
     if (output == PNULL)
     {
@@ -43,26 +61,60 @@ Algorithm* Placer::algorithm_from_string(std::string colloquialDescription)
     return output;
 }
 
+/* A simple filter:
+ *
+ * - if `unknown` is the name of an algorithm, returns true and sets
+ *   `isAlgorithm` to true.
+ *
+ * - if `unknown` is the name of an argumetn, returns true and sets
+ *   `isAlgorithm` to false.
+ *
+ * - if `unknown` is neither an algorithm nor argument, returns false and does
+ *   not set `isAlgorithm`. */
+bool Placer::algorithm_or_argument(std::string unknown, bool& isAlgorithm)
+{
+    if (unknown == "app" or   /* Default */
+        unknown == "buck" or  /* Thread filling */
+        unknown == "gc" or    /* Gradient climber */
+        unknown == "link" or  /* Default */
+        unknown == "rand" or  /* Smart-Random */
+        unknown == "sa" or    /* Simulated Annealing */
+        unknown == "tfil")    /* Thread filling */
+    {
+        isAlgorithm = true;
+        return true;
+    }
+
+    else if (unknown == "inpl" or  /* In place */
+             unknown == "iter")    /* Maximum number of iterations */
+    {
+        isAlgorithm = false;
+        return true;
+    }
+
+    return false;
+}
+
 /* Returns true if all core pairs (or single cores, if that's how the model is
  * configured) have devices of one (or zero) type mapped to them, and false
  * otherwise. Arguments:
  *
- * - task: Task to scan for devices.
+ * - gi: Application graph instance to scan for devices.
  *
  * - badCoresToDeviceTypes: Map of cores to device types, where the vectors are
  *   more than one element in length. Cleared before being populated. */
-bool Placer::are_all_core_pairs_device_locked(P_task* task,
+bool Placer::are_all_core_pairs_device_locked(GraphI_t* gi,
     std::map<std::pair<P_core*, P_core*>,
-             std::set<P_devtyp*>>* badCoresToDeviceTypes)
+             std::set<UniqueDevT> >* badCoresToDeviceTypes)
 {
     /* Sanity. */
     badCoresToDeviceTypes->clear();
 
     /* Build a map of cores to devices, by iterating through all placed
      * threads. */
-    std::map<P_core*, std::set<P_device*>> coreToDevices;
-    std::map<P_thread*, std::list<P_device*>>::iterator threadDevsIt;
-    std::list<P_device*>::iterator deviceIt;
+    std::map<P_core*, std::set<DevI_t*> > coreToDevices;
+    std::map<P_thread*, std::list<DevI_t*> >::iterator threadDevsIt;
+    std::list<DevI_t*>::iterator deviceIt;
 
     for (threadDevsIt = threadToDevices.begin();
          threadDevsIt != threadToDevices.end(); threadDevsIt++)
@@ -79,7 +131,7 @@ bool Placer::are_all_core_pairs_device_locked(P_task* task,
      * of that set is less than two, remove it. (This means we effectively
      * check each pair twice, but this beats the time required to search for
      * the corresponding pair as the number of cores grows.) */
-    std::map<P_core*, std::set<P_device*>>::iterator coreIt;
+    std::map<P_core*, std::set<DevI_t*> >::iterator coreIt;
     std::map<AddressComponent, P_thread*>::iterator threadIt;
     P_core* firstCore;
     P_core* secondCore;
@@ -93,13 +145,13 @@ bool Placer::are_all_core_pairs_device_locked(P_task* task,
 
         std::pair<P_core*, P_core*> corePair =
             std::make_pair(firstCore, secondCore);
-        std::set<P_devtyp*>* devTypSet = &((*badCoresToDeviceTypes)[corePair]);
+        std::set<UniqueDevT>* devTypSet = &((*badCoresToDeviceTypes)[corePair]);
 
         /* From each thread in the first core... */
         for (threadIt = firstCore->P_threadm.begin();
              threadIt != firstCore->P_threadm.end(); threadIt++)
         {
-            std::list<P_device*>* devList =
+            std::list<DevI_t*>* devList =
                 &(threadToDevices[threadIt->second]);
 
             /* ...from each device mapped to that thread... */
@@ -107,7 +159,10 @@ bool Placer::are_all_core_pairs_device_locked(P_task* task,
                  deviceIt++)
             {
                 /* ...get its device type. */
-                devTypSet->insert((*deviceIt)->pP_devtyp);
+                UniqueDevT tmpTyp;
+                tmpTyp.gi = gi;
+                tmpTyp.pT = (*deviceIt)->pT;
+                devTypSet->insert(tmpTyp);
             }
         }
 
@@ -117,7 +172,7 @@ bool Placer::are_all_core_pairs_device_locked(P_task* task,
             for (threadIt = secondCore->P_threadm.begin();
                  threadIt != secondCore->P_threadm.end(); threadIt++)
             {
-                std::list<P_device*>* devList =
+                std::list<DevI_t*>* devList =
                     &(threadToDevices[threadIt->second]);
 
                 /* ...from each device mapped to that thread... */
@@ -125,7 +180,10 @@ bool Placer::are_all_core_pairs_device_locked(P_task* task,
                      deviceIt++)
                 {
                     /* ...get its device type. */
-                    devTypSet->insert((*deviceIt)->pP_devtyp);
+                    UniqueDevT tmpTyp;
+                    tmpTyp.gi = gi;
+                    tmpTyp.pT = (*deviceIt)->pT;
+                    devTypSet->insert(tmpTyp);
                 }
             }
         }
@@ -137,30 +195,30 @@ bool Placer::are_all_core_pairs_device_locked(P_task* task,
     return badCoresToDeviceTypes->empty();
 }
 
-/* Returns true if all of the devices in a task are mapped to a thread, and
- * false otherwise. Arguments:
+/* Returns true if all of the devices in an application graph instance are
+ * mapped to a thread, and false otherwise. Arguments:
  *
- * - task: Task to scan for devices.
+ * - gi: Application graph instance to scan for devices.
  *
  * - unmapped: Vector populated with unmapped devices (for further
  *   diagnosis). Cleared before being populated. */
-bool Placer::are_all_devices_mapped(P_task* task,
-                                    std::vector<P_device*>* unmapped)
+bool Placer::are_all_devices_mapped(GraphI_t* gi,
+                                    std::vector<DevI_t*>* unmapped)
 {
     /* Sanity. */
     unmapped->clear();
 
-    /* Iterate through each device in the task. */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
+    /* Iterate through each device in the gi. */
+    WALKPDIGRAPHNODES(unsigned, DevI_t*, unsigned, EdgeI_t*, unsigned,
+                      PinI_t*, gi->G, deviceIterator)
     {
-        P_device* device = task->pD->G.NodeData(deviceIterator);
+        DevI_t* device = gi->G.NodeData(deviceIterator);
 
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pP_devtyp->pOnRTS)) continue;
+        /* Ignore if it's not a normal device (we don't map those). */
+        if (device->devTyp != 'D') continue;
 
         /* If it's mapped, we move on. If not, we add it to unmapped. */
-        std::map<P_device*, P_thread*>::iterator deviceFinder;
+        std::map<DevI_t*, P_thread*>::iterator deviceFinder;
         deviceFinder = deviceToThread.find(device);
         if (deviceFinder == deviceToThread.end()) unmapped->push_back(device);
     }
@@ -168,21 +226,21 @@ bool Placer::are_all_devices_mapped(P_task* task,
     return unmapped->empty();
 }
 
-/* Returns true if no hard constraints are broken, and false
- * otherwise.
+/* Returns true if no hard constraints are broken, and false otherwise.
  *
  * Optionally uses the delta method if devices are defined. Arguments:
  *
- * - task: Task to match constraints against (don't care about constraints that
- *   only apply to other tasks). If PNULL, checks against all tasks.
+ * - gi: Application graph instance to match constraints against (don't care
+ *   about constraints that only apply to other gis). If PNULL, checks against
+ *   all application graph instances in the placer.
  *
- * - broken: Vector populated with constraints that are not
- *   satisfied. Cleared before being populated.
+ * - broken: Vector populated with constraints that are not satisfied. Cleared
+ *   before being populated.
  *
  * - devices: Series of device pointers; delta computation is performed using
  *   these devices if this container is not empty. */
-bool Placer::are_all_hard_constraints_satisfied(P_task* task,
-    std::vector<Constraint*>* broken, std::vector<P_device*> devices)
+bool Placer::are_all_hard_constraints_satisfied(GraphI_t* gi,
+    std::vector<Constraint*>* broken, std::vector<DevI_t*> devices)
 {
     /* Sanity. */
     broken->clear();
@@ -192,11 +250,12 @@ bool Placer::are_all_hard_constraints_satisfied(P_task* task,
     for (constraintIterator = constraints.begin();
          constraintIterator != constraints.end(); constraintIterator++)
     {
-        /* Ignore constraints whose task doesn't match this task. Skip this
-         * check if the task input argument is PNULL. */
-        if (task == PNULL or
-            (*constraintIterator)->task == PNULL or
-            (*constraintIterator)->task == task)
+        /* Ignore constraints whose application graph instance doesn't match
+         * this graph instance. Skip this check if the graph instance input
+         * argument is PNULL. */
+        if (gi == PNULL or
+            (*constraintIterator)->gi == PNULL or
+            (*constraintIterator)->gi == gi)
         {
             /* Ignore soft constraints. */
             if ((*constraintIterator)->mandatory)
@@ -226,25 +285,25 @@ bool Placer::are_all_hard_constraints_satisfied(P_task* task,
     return broken->empty();
 }
 
-/* Checks the integrity of the placement of a given task. In order, this
- * method:
+/* Checks the integrity of the placement of a given application graph
+ * instance. In order, this method:
  *
  * 1) Checks that all devices have been mapped to a thread.
  *
  * 2) Checks that no hard constraints have been violated.
  *
- * 3) Checks that all core pairs have devices of only one (or zero) types.
+ * 3) Checks that all core pairs have devices of one or fewer types.
  *
  * Throws a BadIntegrityException if a check fails. */
-void Placer::check_integrity(P_task* task, Algorithm* algorithm)
+void Placer::check_integrity(GraphI_t* gi, Algorithm* algorithm)
 {
     /* Step 1: Check all devices have been mapped. */
-    std::vector<P_device*> unmappedDevices;
-    if (!are_all_devices_mapped(task, &unmappedDevices))
+    std::vector<DevI_t*> unmappedDevices;
+    if (!are_all_devices_mapped(gi, &unmappedDevices))
     {
         /* Prepare a nice printout of the devices that weren't mapped. */
         std::string devicePrint;
-        std::vector<P_device*>::iterator deviceIt;
+        std::vector<DevI_t*>::iterator deviceIt;
         for (deviceIt = unmappedDevices.begin();
              deviceIt != unmappedDevices.end(); deviceIt++)
         {
@@ -254,16 +313,16 @@ void Placer::check_integrity(P_task* task, Algorithm* algorithm)
 
         /* Toys out of the pram. */
         throw BadIntegrityException(dformat(
-            "[ERROR] Use of algorithm '%s' on the task from file '%s' "
-            "resulted in some normal devices not being placed "
+            "[ERROR] Use of algorithm '%s' on application graph instance '%s' "
+            "from file '%s' resulted in some normal devices not being placed "
             "correctly. These devices are:%s\n",
-            algorithm->result.method.c_str(), task->filename.c_str(),
-            devicePrint.c_str()));
+            algorithm->result.method.c_str(), gi->Name().c_str(),
+            gi->par->filename.c_str(), devicePrint.c_str()));
     }
 
     /* Step 2: Check for any violated hard constraints. */
     std::vector<Constraint*> brokenConstraints;
-    if (!are_all_hard_constraints_satisfied(task, &brokenConstraints))
+    if (!are_all_hard_constraints_satisfied(gi, &brokenConstraints))
     {
         /* Prepare a nice printout of the constraints that weren't
          * satisfied. */
@@ -279,21 +338,22 @@ void Placer::check_integrity(P_task* task, Algorithm* algorithm)
         /* Toys out of the pram. */
         throw BadIntegrityException(dformat(
             "[ERROR] Hard constraints were violated when using algorithm '%s' "
-            "on the task from file '%s'. The violated constraints are:%s\n",
-            algorithm->result.method.c_str(), task->filename.c_str(),
-            constraintPrint.c_str()));
+            "on the application graph instance '%s' from file '%s'. The "
+            "violated constraints are:%s\n",
+            algorithm->result.method.c_str(), gi->Name().c_str(),
+            gi->par->filename.c_str(), constraintPrint.c_str()));
     }
 
     /* Step 3: Check device types. */
     std::map<std::pair<P_core*, P_core*>,
-             std::set<P_devtyp*>> badCoresToDeviceTypes;
-    if (!are_all_core_pairs_device_locked(task, &badCoresToDeviceTypes))
+             std::set<UniqueDevT> > badCoresToDeviceTypes;
+    if (!are_all_core_pairs_device_locked(gi, &badCoresToDeviceTypes))
     {
         /* Prepare a nice printout of core pairs with multiple device types. */
         std::string corePrint;
         std::map<std::pair<P_core*, P_core*>,
-                 std::set<P_devtyp*>>::iterator badCoreIt;
-        std::set<P_devtyp*>::iterator devTypIt;
+                 std::set<UniqueDevT> >::iterator badCoreIt;
+        std::set<UniqueDevT>::iterator devTypIt;
 
         /* For each entry in the map... */
         for (badCoreIt = badCoresToDeviceTypes.begin();
@@ -326,17 +386,18 @@ void Placer::check_integrity(P_task* task, Algorithm* algorithm)
                     corePrint.append(",");
                 }
                 corePrint.append(dformat(" '%s'",
-                                         (*devTypIt)->Name().c_str()));
+                                         (*devTypIt).pT->Name().c_str()));
             }
         }
 
         /* Toys out of the pram. */
         throw BadIntegrityException(dformat(
             "[ERROR] Some core pairs have multiple device types associated "
-            "with them when using algorithm '%s' on the task from file '%s'. "
-            "The core pairs and their device types are:%s\n",
-            algorithm->result.method.c_str(), task->filename.c_str(),
-            corePrint.c_str()));
+            "with them when using algorithm '%s' on the application graph "
+            "instance '%s' from file '%s'. The core pairs and their device "
+            "types are:%s\n",
+            algorithm->result.method.c_str(), gi->Name().c_str(),
+            gi->par->filename.c_str(), corePrint.c_str()));
     }
 }
 
@@ -344,26 +405,26 @@ void Placer::check_integrity(P_task* task, Algorithm* algorithm)
  *
  * Adds the weights of all edges involving the passed device, where that device
  * has an entry in deviceToGraphKey (this is assumed). These weights are
- * looked up from taskEdgeCosts. Also includes the thread-loading delta.
+ * looked up from giEdgeCosts. Also includes the thread-loading delta.
  *
  * Note that this method doesn't consider constraints.
  *
  * Arguments:
  *
- * - task: The device must be owned by this task.
+ * - gi: The device must be owned by this application graph instance.
  *
  * - device: The device to investigate. */
-float Placer::compute_fitness(P_task* task, P_device* device)
+float Placer::compute_fitness(GraphI_t* gi, DevI_t* device)
 {
     /* Grab the device pair from each edge. */
-    std::vector<std::pair<P_device*, P_device*>> devicePairs;
-    get_edges_for_device(task, device, &devicePairs);
+    std::vector<std::pair<DevI_t*, DevI_t*> > devicePairs;
+    get_edges_for_device(gi, device, &devicePairs);
 
     /* Reduce! */
     float fitness = 0;
-    std::vector<std::pair<P_device*, P_device*>>::iterator devicePairIt;
+    std::vector<std::pair<DevI_t*, DevI_t*> >::iterator devicePairIt;
     for (devicePairIt = devicePairs.begin(); devicePairIt != devicePairs.end();
-         devicePairIt++) fitness += taskEdgeCosts[task][*devicePairIt];
+         devicePairIt++) fitness += giEdgeCosts[gi][*devicePairIt];
 
     /* Thread loading cost for this device. This can be interpreted as the
      * amount contributed to the total fitness by this device with regards to
@@ -380,7 +441,7 @@ float Placer::compute_fitness(P_task* task, P_device* device)
     return fitness;
 }
 
-/* Computes the fitness for a task.
+/* Computes the fitness for an application graph instance.
  *
  * Fitness is the sum of:
  *
@@ -391,30 +452,28 @@ float Placer::compute_fitness(P_task* task, P_device* device)
  * Low fitness is good. This evaluation does not factor in broken hard
  * constraints. Arguments:
  *
- *  - task: Task to evaluate the fitness of.
+ *  - gi: Application graph instance to evaluate the fitness of.
  *
  * Returns the fitness as a float. */
-float Placer::compute_fitness(P_task* task)
+float Placer::compute_fitness(GraphI_t* gi)
 {
     float fitness = 0;
 
-    /* Iterate through each edge in the task, and add its weight to it. Note
-     * that algorithms are responsible for updating the edge weights. */
-    std::map<std::pair<P_device*, P_device*>, float>::iterator edgeIt;
-    for (edgeIt = taskEdgeCosts[task].begin();
-         edgeIt != taskEdgeCosts[task].end(); edgeIt++)
-    {
-        fitness += edgeIt->second;
-    }
+    /* Iterate through each edge in the application graph instance, and add its
+     * weight to it. Note that algorithms are responsible for updating the edge
+     * weights. */
+    std::map<std::pair<DevI_t*, DevI_t*>, float>::iterator edgeIt;
+    for (edgeIt = giEdgeCosts[gi].begin(); edgeIt != giEdgeCosts[gi].end();
+         edgeIt++) fitness += edgeIt->second;
 
-    /* Iterate through each thread used by the task and, for each of those
-     * threads, increase fitness for each device on that thread beyond the
-     * first.
+    /* Iterate through each thread used by the application graph instance and,
+     * for each of those threads, increase fitness for each device on that
+     * thread beyond the first.
      *
      * We do this by going through each thread in threadToDevices and, if that
-     * thread holds devices of a type that are part of this task, then we
-     * increase the fitness based off the number of devices mapped to that
-     * thread.
+     * thread holds devices of a type that are part of this application graph
+     * instance, then we increase the fitness based off the number of devices
+     * mapped to that thread.
      *
      * The increase is equal to the square of the number of devices placed on
      * the thread, subject to a scaling factor (otherwise it completely
@@ -432,16 +491,16 @@ float Placer::compute_fitness(P_task* task)
      * benefit of "sprading the load" is traded off fairly with the edge
      * weights, which want the application to be as tightly packed as
      * possible. */
-    std::map<P_thread*, std::list<P_device*>>::iterator threadIt;
+    std::map<P_thread*, std::list<DevI_t*> >::iterator threadIt;
     for (threadIt = threadToDevices.begin(); threadIt != threadToDevices.end();
          threadIt++)
     {
         /* Ignore empty threads. */
         if (threadIt->second.empty()) continue;
 
-        /* Does the first device's task match the task passed to this function
-         * as argument? */
-        if ((*threadIt->second.begin())->par->par == task)
+        /* Does the first device's application graph instance match the graph
+         * instance passed to this function as argument? */
+        if ((*threadIt->second.begin())->par == gi)
         {
             /* If so, we count it. */
             fitness += threadIt->second.size() * threadIt->second.size() *
@@ -455,9 +514,10 @@ float Placer::compute_fitness(P_task* task)
     for (constraintIterator = constraints.begin();
          constraintIterator != constraints.end(); constraintIterator++)
     {
-        /* Ignore constraints whose task doesn't match this task. */
-        if ((*constraintIterator)->task == PNULL or
-            (*constraintIterator)->task == task)
+        /* Ignore constraints whose application graph instance doesn't match
+         * this graph instance. */
+        if ((*constraintIterator)->gi == PNULL or
+            (*constraintIterator)->gi == gi)
         {
             /* Ignore satisfied constraints. */
             if (not (*constraintIterator)->is_satisfied(this))
@@ -472,8 +532,8 @@ float Placer::compute_fitness(P_task* task)
 
 /* Returns the maximum number of devices permitted to be placed on a thread
  * such that no maxDevicesPerThread constraints are violated that apply either
- * globally, or to a given task. */
-unsigned Placer::constrained_max_devices_per_thread(P_task* task)
+ * globally, or to a given application graph instance. */
+unsigned Placer::constrained_max_devices_per_thread(GraphI_t* gi)
 {
     unsigned maximumSoFar = UINT_MAX;
 
@@ -489,10 +549,10 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
         if (constraint->category == maxDevicesPerThread)
         {
             /* Only care about constraints that are global, or that match our
-             * task. */
-            if (constraint->task == task or constraint->task == PNULL)
+             * application graph instance. */
+            if (constraint->gi == gi or constraint->gi == PNULL)
             {
-                /* Accept the strictest. */
+                /* Accept the most strict. */
                 unsigned thisMaximum = \
                     dynamic_cast<MaxDevicesPerThread*>(constraint)->maximum;
                 if (thisMaximum < maximumSoFar) maximumSoFar = thisMaximum;
@@ -507,8 +567,8 @@ unsigned Placer::constrained_max_devices_per_thread(P_task* task)
 
 /* Returns the maximum number of threads that can be used on a core, such that
  * no maxThreadsPerCore constraints are violated that apply either globally, or
- * to a given task. */
-unsigned Placer::constrained_max_threads_per_core(P_task* task)
+ * to a given application graph instance. */
+unsigned Placer::constrained_max_threads_per_core(GraphI_t* gi)
 {
     unsigned maximumSoFar = UINT_MAX;
 
@@ -524,8 +584,8 @@ unsigned Placer::constrained_max_threads_per_core(P_task* task)
         if (constraint->category == maxThreadsPerCore)
         {
             /* Only care about constraints that are global, or that match our
-             * task. */
-            if (constraint->task == task or constraint->task == PNULL)
+             * gi. */
+            if (constraint->gi == gi or constraint->gi == PNULL)
             {
                 /* Accept the strictest. */
                 unsigned thisMaximum = \
@@ -537,28 +597,30 @@ unsigned Placer::constrained_max_threads_per_core(P_task* task)
     return maximumSoFar;
 }
 
-
 /* Populates a map with information about which devices can be placed
  * where. Useful for algorithms. */
-void Placer::define_valid_cores_map(P_task* task,
-        std::map<P_devtyp*, std::set<P_core*>>* validCoresForDeviceType)
+void Placer::define_valid_cores_map(GraphI_t* gi,
+        std::map<UniqueDevT, std::set<P_core*> >* validCoresForDeviceType)
 {
     /* Firstly, populate the map with an entry for each core and each device
-     * type in this task. NB: It would be handy if the task a container of
-     * pointers to each device type, but it doesn't, so we walk the devices
-     * instead (won't take too long). */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
+     * type in this application graph instance. NB: It would be handy if the
+     * application graph instance held a container of pointers to each device
+     * type, but it doesn't, so we walk the devices instead (won't take too
+     * long). */
+    WALKPDIGRAPHNODES(unsigned, DevI_t*, unsigned, EdgeI_t*, unsigned,
+                      PinI_t*, gi->G, deviceIterator)
     {
-        P_device* device = task->pD->G.NodeData(deviceIterator);
+        DevI_t* device = gi->G.NodeData(deviceIterator);
 
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pP_devtyp->pOnRTS)) continue;
+        /* Ignore if it's not a normal device (we don't map those). */
+        if (device->devTyp != 'D') continue;
 
         /* Skip if an entry in the map already exists for a device of this
          * type */
-        P_devtyp* deviceType = device->pP_devtyp;
-        std::map<P_devtyp*, std::set<P_core*>>::iterator devTypFinder;
+        UniqueDevT deviceType;
+        deviceType.gi = gi;
+        deviceType.pT = device->pT;
+        std::map<UniqueDevT, std::set<P_core*> >::iterator devTypFinder;
         devTypFinder = validCoresForDeviceType->find(deviceType);
         if (devTypFinder == validCoresForDeviceType->end())
         {
@@ -577,13 +639,16 @@ void Placer::define_valid_cores_map(P_task* task,
     }
 
     /* Secondly, remove entries for each placed device (including those from
-     * other tasks! We don't want to interact with them at all...) */
-    std::map<P_device*, P_thread*>::iterator deviceIterator;
-    std::map<P_devtyp*, std::set<P_core*>>::iterator bigScaryMapIterator;
+     * other application graph instances! We don't want to interact with them
+     * at all...) */
+    std::map<DevI_t*, P_thread*>::iterator deviceIterator;
+    std::map<UniqueDevT, std::set<P_core*> >::iterator bigScaryMapIterator;
     for (deviceIterator = deviceToThread.begin();
          deviceIterator != deviceToThread.end(); deviceIterator++)
     {
-        P_devtyp* deviceType = deviceIterator->first->pP_devtyp;
+        UniqueDevT deviceType;
+        deviceType.gi = deviceIterator->first->par;
+        deviceType.pT = deviceIterator->first->pT;
 
         /* Remove the placed core from each device type entry... */
         for (bigScaryMapIterator = validCoresForDeviceType->begin();
@@ -601,52 +666,59 @@ void Placer::define_valid_cores_map(P_task* task,
     }
 }
 
-/* Dumps placement information for a task. Assumes the task has been
- * placed. See the documentation. */
-void Placer::dump(P_task* task)
+/* Dumps placement information for an application graph instance. Assumes the
+ * graph instance has been placed. See the documentation. */
+void Placer::dump(GraphI_t* gi)
 {
     /* If the score is zero, we're naturally quite suspicious. For example, if
-     * the task was placed using bucket-filling (i.e. the algorithm that works
-     * the fastest but doesn't care about the score), we need to compute the
-     * score now. */
-    std::map<P_task*, Algorithm*>::iterator tasksIt = placedTasks.find(task);
-    if (tasksIt->second->result.score == 0)
+     * the application graph instance was placed using thread-filling (i.e. the
+     * algorithm that works fast but doesn't care about the score), we need to
+     * compute the score now. */
+    std::map<GraphI_t*, Algorithm*>::iterator gisIt = placedGraphs.find(gi);
+    if (gisIt->second->result.score == 0)
     {
         /* Build the cost cache. */
         if (cache == PNULL) cache = new CostCache(engine);
 
-        /* Define edge weights for the task graph. */
-        populate_edge_weights(task);
+        /* Define edge weights for the gi graph. */
+        populate_edge_weights(gi);
 
         /* Compute the score. */
-        float score = compute_fitness(task);
+        float score = compute_fitness(gi);
 
         /* Fill in fields for the result structure. */
-        populate_result_structures(&(tasksIt->second->result), task, score);
+        populate_result_structures(&(gisIt->second->result), gi, score);
     }
 
     /* Get the time. */
     std::string timeBuf = timestamp();
 
     /* Figure out paths. */
-    std::string costPath = dformat("placement_task_edges_%s_%s.csv",
-                                   task->Name().c_str(), timeBuf.c_str());
-    std::string diagPath = dformat("placement_diagnostics_%s_%s.txt",
-                                   task->Name().c_str(), timeBuf.c_str());
-    std::string mapPath = dformat("placement_task_to_hardware_%s_%s.csv",
-                                  task->Name().c_str(), timeBuf.c_str());
-    std::string cachePath = dformat("placement_edge_cache_%s.txt",
-                                    timeBuf.c_str());
-    std::string nodeLoadPath = dformat("placement_node_loading_%s.csv",
-                                       timeBuf.c_str());
-    std::string edgeLoadPath = dformat("placement_edge_loading_%s.csv",
-                                       timeBuf.c_str());
+    std::string costPath = dformat("%splacement_gi_edges_%s_%s.csv",
+                                   outFilePath.c_str(), gi->Name().c_str(),
+                                   timeBuf.c_str());
+    std::string diagPath = dformat("%splacement_diagnostics_%s_%s.txt",
+                                   outFilePath.c_str(), gi->Name().c_str(),
+                                   timeBuf.c_str());
+    std::string mapPath = dformat("%splacement_gi_to_hardware_%s_%s.csv",
+                                  outFilePath.c_str(), gi->Name().c_str(),
+                                  timeBuf.c_str());
+    std::string mapRevPath = dformat("%splacement_hardware_to_gi_%s_%s.csv",
+                                     outFilePath.c_str(), gi->Name().c_str(),
+                                     timeBuf.c_str());
+    std::string cachePath = dformat("%splacement_edge_cache_%s.txt",
+                                    outFilePath.c_str(), timeBuf.c_str());
+    std::string nodeLoadPath = dformat("%splacement_node_loading_%s.csv",
+                                       outFilePath.c_str(), timeBuf.c_str());
+    std::string edgeLoadPath = dformat("%splacement_edge_loading_%s.csv",
+                                       outFilePath.c_str(), timeBuf.c_str());
 
     /* Call subordinate dumping methods. */
-    dump_costs(task, costPath.c_str());
-    dump_diagnostics(task, diagPath.c_str());
+    dump_costs(gi, costPath.c_str());
+    dump_diagnostics(gi, diagPath.c_str());
     dump_edge_loading(edgeLoadPath.c_str());
-    dump_map(task, mapPath.c_str());
+    dump_map(gi, mapPath.c_str());
+    dump_map_reverse(gi, mapRevPath.c_str());
     dump_node_loading(nodeLoadPath.c_str());
 
     FILE* cacheFile = fopen(cachePath.c_str(), "w");
@@ -654,14 +726,14 @@ void Placer::dump(P_task* task)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    cachePath.c_str(), POETS::getSysErrorString(errno)));
+                    cachePath.c_str(), OSFixes::getSysErrorString(errno)));
     }
     cache->Dump(cacheFile);
     fclose(cacheFile);
 }
 
-/* Dumps the cost of each edge for a task. */
-void Placer::dump_costs(P_task* task, const char* path)
+/* Dumps the cost of each edge for an application graph instance. */
+void Placer::dump_costs(GraphI_t* gi, const char* path)
 {
     /* File setup. */
     std::ofstream out;
@@ -670,13 +742,13 @@ void Placer::dump_costs(P_task* task, const char* path)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    path, POETS::getSysErrorString(errno).c_str()));
+                    path, OSFixes::getSysErrorString(errno).c_str()));
     }
 
-    /* Iterate through each edge in the task. */
-    std::map<std::pair<P_device*, P_device*>, float>::iterator edgeIt;
-    for (edgeIt = taskEdgeCosts[task].begin();
-         edgeIt != taskEdgeCosts[task].end(); edgeIt++)
+    /* Iterate through each edge in the application graph instance. */
+    std::map<std::pair<DevI_t*, DevI_t*>, float>::iterator edgeIt;
+    for (edgeIt = giEdgeCosts[gi].begin();
+         edgeIt != giEdgeCosts[gi].end(); edgeIt++)
     {
         out << edgeIt->first.first->FullName() << ","
             << edgeIt->first.second->FullName() << ","
@@ -686,8 +758,8 @@ void Placer::dump_costs(P_task* task, const char* path)
     out.close();
 }
 
-/* Dumps diagnostic placement information for a task. */
-void Placer::dump_diagnostics(P_task* task, const char* path)
+/* Dumps diagnostic placement information for an application graph instance. */
+void Placer::dump_diagnostics(GraphI_t* gi, const char* path)
 {
     /* File setup. */
     std::ofstream out;
@@ -696,12 +768,12 @@ void Placer::dump_diagnostics(P_task* task, const char* path)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    path, POETS::getSysErrorString(errno).c_str()));
+                    path, OSFixes::getSysErrorString(errno).c_str()));
     }
 
-    /* Get the result object address (Placer::dump checks that the task has
-     * already been placed). */
-    Result* result = &(placedTasks[task]->result);
+    /* Get the result object address (Placer::dump checks that the graph
+     * instance has already been placed). */
+    Result* result = &(placedGraphs[gi]->result);
 
     out << "maxDevicesPerThread:" << result->maxDevicesPerThread << std::endl;
     out << "maxEdgeCost:" << result->maxEdgeCost << std::endl;
@@ -709,6 +781,13 @@ void Placer::dump_diagnostics(P_task* task, const char* path)
     out << "startTime:" << result->startTime << std::endl;
     out << "endTime:" << result->endTime << std::endl;
     out << "score:" << result->score << std::endl;
+
+    /* Args at the end, as key:value pairs. */
+    out << "argCount:" << result->args.size() << std::endl;
+    std::map<std::string, std::string>::iterator argIt;
+    for (argIt = result->args.begin(); argIt != result->args.end(); argIt++)
+        out << argIt->first << ":" << argIt->second << std::endl;
+
     out.close();
 }
 
@@ -722,24 +801,24 @@ void Placer::dump_edge_loading(const char* path)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    path, POETS::getSysErrorString(errno).c_str()));
+                    path, OSFixes::getSysErrorString(errno).c_str()));
     }
 
-    std::map<P_mailbox*, std::map<P_mailbox*, unsigned>> edgeLoading;
+    std::map<P_mailbox*, std::map<P_mailbox*, unsigned> > edgeLoading;
 
-    /* Iterate over each task. */
-    P_device* fromDevice;
-    P_device* toDevice;
+    /* Iterate over each application graph instance. */
+    DevI_t* fromDevice;
+    DevI_t* toDevice;
     P_mailbox* fromMailbox;
     P_mailbox* toMailbox;
 
-    std::map<P_task*, Algorithm*>::iterator taskIt;
-    for (taskIt = placedTasks.begin(); taskIt != placedTasks.end(); taskIt++)
+    std::map<GraphI_t*, Algorithm*>::iterator giIt;
+    for (giIt = placedGraphs.begin(); giIt != placedGraphs.end(); giIt++)
     {
-        /* Iterate over each edge for that task. */
-        std::map<std::pair<P_device*, P_device*>, float>::iterator edgeIt;
-        for (edgeIt = taskEdgeCosts[taskIt->first].begin();
-             edgeIt != taskEdgeCosts[taskIt->first].end(); edgeIt++)
+        /* Iterate over each edge for that application graph instance. */
+        std::map<std::pair<DevI_t*, DevI_t*>, float>::iterator edgeIt;
+        for (edgeIt = giEdgeCosts[giIt->first].begin();
+             edgeIt != giEdgeCosts[giIt->first].end(); edgeIt++)
         {
             /* Ignore edges with supervisor devices. <!> Long-term, we
              * obviously don't want to do this - we want to impose a location
@@ -748,8 +827,8 @@ void Placer::dump_edge_loading(const char* path)
              * so. */
             fromDevice = edgeIt->first.first;
             toDevice = edgeIt->first.second;
-            if (!(fromDevice->pP_devtyp->pOnRTS)) continue;
-            if (!(toDevice->pP_devtyp->pOnRTS)) continue;
+            if (fromDevice->devTyp != 'D') continue;
+            if (toDevice->devTyp != 'D') continue;
 
             /* Grab the mailboxes. */
             fromMailbox = deviceToThread[fromDevice]->parent->parent;
@@ -776,7 +855,8 @@ void Placer::dump_edge_loading(const char* path)
     }
 
     /* Writeout. */
-    std::map<P_mailbox*, std::map<P_mailbox*, unsigned>>::iterator edgeOuterIt;
+    std::map<P_mailbox*, std::map<P_mailbox*, unsigned> >::iterator \
+        edgeOuterIt;
     std::map<P_mailbox*, unsigned>::iterator edgeInnerIt;
     for (edgeOuterIt = edgeLoading.begin(); edgeOuterIt != edgeLoading.end();
          edgeOuterIt++)
@@ -793,8 +873,8 @@ void Placer::dump_edge_loading(const char* path)
 }
 
 
-/* Dumps mapping information for a task. */
-void Placer::dump_map(P_task* task, const char* path)
+/* Dumps mapping information for an application graph instance. */
+void Placer::dump_map(GraphI_t* gi, const char* path)
 {
     /* File setup. */
     std::ofstream out;
@@ -803,23 +883,65 @@ void Placer::dump_map(P_task* task, const char* path)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    path, POETS::getSysErrorString(errno).c_str()));
+                    path, OSFixes::getSysErrorString(errno).c_str()));
     }
 
-    /* Iterate through each device in the task. */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
+    /* Iterate through each device in the application graph instance. */
+    WALKPDIGRAPHNODES(unsigned, DevI_t*, unsigned, EdgeI_t*, unsigned,
+                      PinI_t*, gi->G, deviceIterator)
     {
-        P_device* device = task->pD->G.NodeData(deviceIterator);
+        DevI_t* device = gi->G.NodeData(deviceIterator);
 
         /* If it's mapped, add it. If not, ignore it (good for non-normal
          * devices). */
-        std::map<P_device*, P_thread*>::iterator deviceFinder;
+        std::map<DevI_t*, P_thread*>::iterator deviceFinder;
         deviceFinder = deviceToThread.find(device);
         if (deviceFinder == deviceToThread.end()) continue;
         P_thread* thread = deviceFinder->second;
 
         out << device->FullName() << "," << thread->FullName() << std::endl;
+    }
+
+    out.close();  /* We out, yo. */
+}
+
+/* As with dump_map, but puts the hardware nodes first. */
+void Placer::dump_map_reverse(GraphI_t* gi, const char* path)
+{
+    /* File setup. */
+    std::ofstream out;
+    out.open(path);
+    if (!out.is_open())
+    {
+        throw FileOpenException(
+            dformat("File: %s. Message: %s",
+                    path, OSFixes::getSysErrorString(errno).c_str()));
+    }
+
+    /* Iterate through each thread in the hardware model. */
+    HardwareIterator hardwareIt(engine);
+    P_thread* thread = hardwareIt.get_thread();
+    while (!hardwareIt.has_wrapped())
+    {
+        /* Only care about this thread if the application owning the first
+         * device on this thread matches with the `gi` argument. */
+        std::list<DevI_t*>* devsOnThread;
+        devsOnThread = &(threadToDevices[thread]);
+        if (!devsOnThread->empty())
+        {
+            if ((*(devsOnThread->begin()))->par == gi)
+            {
+                /* For each device on this thread, write an entry. */
+                std::list<DevI_t*>::iterator deviceIt;
+                for (deviceIt = devsOnThread->begin();
+                     deviceIt != devsOnThread->end(); deviceIt++)
+                {
+                    out << thread->FullName() << ","
+                        << (*deviceIt)->FullName() << std::endl;
+                }
+            }
+        }
+        thread = hardwareIt.next_thread();
     }
 
     out.close();  /* We out, yo. */
@@ -836,7 +958,7 @@ void Placer::dump_node_loading(const char* path)
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    path, POETS::getSysErrorString(errno).c_str()));
+                    path, OSFixes::getSysErrorString(errno).c_str()));
     }
 
     std::map<P_core*, unsigned> coreLoading;
@@ -845,7 +967,7 @@ void Placer::dump_node_loading(const char* path)
     std::map<P_mailbox*, unsigned>::iterator mailboxIt;
 
     /* Iterate over each placed device. */
-    std::map<P_device*, P_thread*>::iterator threadIt;
+    std::map<DevI_t*, P_thread*>::iterator threadIt;
     for (threadIt = deviceToThread.begin(); threadIt != deviceToThread.end();
          threadIt++)
     {
@@ -872,18 +994,19 @@ void Placer::dump_node_loading(const char* path)
     out.close();
 }
 
-/* Grabs all boxes associated with a given task in this placer's
- * engine. Arguments:
+/* Grabs all boxes associated with a given application graph instance in this
+ * placer's engine. Arguments:
  *
- * - task: Task to search for.
+ * - gi: Application graph instance to search for.
  * - boxes: Set to populate with box addresses found. */
-void Placer::get_boxes_for_task(P_task* task, std::set<P_box*>* boxes)
+void Placer::get_boxes_for_gi(GraphI_t* gi, std::set<P_box*>* boxes)
 {
     boxes->clear();
 
-    /* For each core associated with this task, add its box to the set. */
+    /* For each core associated with this application graph instance, add its
+     * box to the set. */
     std::set<P_core*>::iterator coreIterator;
-    std::set<P_core*>* setToScan = &(taskToCores[task]);
+    std::set<P_core*>* setToScan = &(giToCores[gi]);
     for (coreIterator = setToScan->begin(); coreIterator != setToScan->end();
          coreIterator++)
     {
@@ -891,18 +1014,49 @@ void Placer::get_boxes_for_task(P_task* task, std::set<P_box*>* boxes)
     }
 }
 
+/* Grabs all of the cores that are contained in the box passed as argument, and
+ * that have devices placed upon them from a given graph instance. Arguments:
+ *
+ * - gi: Application graph instance to filter on.
+ * - box: Box in the hardware model to filter on.
+ * - cores: Set to populate with cores (cleared before use). */
+void Placer::get_cores_for_gi_in_box(GraphI_t* gi, P_box* box,
+                                     std::set<P_core*>& cores)
+{
+    cores.clear();
+
+    /* Start by getting all of the cores used by a graph instance. If none,
+     * return quickly. */
+    std::set<P_core*>* coresInApp;
+    std::map<GraphI_t*, std::set<P_core*> >::iterator coresFinder;
+    coresFinder = giToCores.find(gi);
+    if (coresFinder == giToCores.end()) return;
+    else coresInApp = &(coresFinder->second);
+
+    /* For each core in the resulting search, add it to the output set if it's
+     * box is the same as the box passed as argument. */
+    for (std::set<P_core*>::iterator coreIt = coresInApp->begin();
+         coreIt != coresInApp->end(); coreIt++)
+    {
+        /* Sorry */
+        if ((*coreIt)->parent->parent->parent == box) cores.insert(*coreIt);
+    }
+
+    return;
+}
+
 /* Grabs all of the device pairs for each edge in the application graph that
  * involves the given device. */
-void Placer::get_edges_for_device(P_task* task, P_device* device,
-    std::vector<std::pair<P_device*, P_device*>>* devicePairs)
+void Placer::get_edges_for_device(GraphI_t* gi, DevI_t* device,
+    std::vector<std::pair<DevI_t*, DevI_t*> >* devicePairs)
 {
     devicePairs->clear();
 
-    /* Get all of the arcs in the task graph that involve this device, in both
-     * directions. */
+    /* Get all of the arcs in the application graph instance that involve this
+     * device, in both directions. */
     std::vector<unsigned> arcKeysIn;
     std::vector<unsigned> arcKeysOut;
-    task->pD->G.FindArcs(deviceToGraphKey[device], arcKeysIn, arcKeysOut);
+    gi->G.FindArcs(deviceToGraphKey[device], arcKeysIn, arcKeysOut);
 
     /* Treat each arc the same, regardless of its direction. */
     std::vector<unsigned> arcKeys;  /* All */
@@ -916,11 +1070,11 @@ void Placer::get_edges_for_device(P_task* task, P_device* device,
     {
         unsigned firstDeviceKey = 0;
         unsigned secondDeviceKey = 0;
-        task->pD->G.FindNodes(*arcKeyIt, firstDeviceKey, secondDeviceKey);
+        gi->G.FindNodes(*arcKeyIt, firstDeviceKey, secondDeviceKey);
         devicePairs->push_back(
             std::make_pair(
-                *(task->pD->G.FindNode(firstDeviceKey)),
-                *(task->pD->G.FindNode(secondDeviceKey))));
+                *(gi->G.FindNode(firstDeviceKey)),
+                *(gi->G.FindNode(secondDeviceKey))));
     }
 }
 
@@ -930,17 +1084,17 @@ void Placer::get_edges_for_device(P_task* task, P_device* device,
  * does move the device from it's previous location if it was there before.
  *
  * I mean, it just updates the placer maps. */
-void Placer::link(P_thread* thread, P_device* device)
+void Placer::link(P_thread* thread, DevI_t* device)
 {
     /* If this device has already been placed on a thread, remove the device
      * from the thread's threadToDevices entry. */
-    std::map<P_device*, P_thread*>::iterator threadFinder;
+    std::map<DevI_t*, P_thread*>::iterator threadFinder;
     threadFinder = deviceToThread.find(device);
     if (threadFinder != deviceToThread.end())
     {
-        std::list<P_device*>* listToEraseFrom;
+        std::list<DevI_t*>* listToEraseFrom;
         listToEraseFrom = &(threadToDevices[threadFinder->second]);
-        std::list<P_device*>::iterator deviceFinder;
+        std::list<DevI_t*>::iterator deviceFinder;
         deviceFinder = std::find(listToEraseFrom->begin(),
                                  listToEraseFrom->end(), device);
 
@@ -957,145 +1111,165 @@ void Placer::link(P_thread* thread, P_device* device)
     deviceToThread[device] = thread;
 }
 
-/* Maps a task to the engine associated with this placer, using a certain
- * algorithm.  Arguments:
+/* Maps an application graph instance to the engine associated with this
+ * placer, using a certain algorithm.  Arguments:
  *
- * - task: Pointer to task to map.
+ * - gi: Pointer to the application graph instance to map.
  *
  * - algorithmDescription: Type of algorithm to use (see
  *   algorithm_from_string).
  *
  * Returns the solution fitness, if appropriate (otherwise returns zero). */
-float Placer::place(P_task* task, std::string algorithmDescription)
+float Placer::place(GraphI_t* gi, std::string algorithmDescription)
 {
     /* Grab an algorithm, may throw. */
     Algorithm* algorithm = algorithm_from_string(algorithmDescription);
 
-    return place(task, algorithm);
+    return place(gi, algorithm);
 }
 
-/* Maps a task to the engine associated with this placer, using a certain
- * algorithm.  Arguments:
+/* Maps an application graph instance to the engine associated with this
+ * placer, using a certain algorithm. Arguments:
  *
- * - task: Pointer to task to map.
+ * - gi: Pointer to the application graph instance to map.
  *
  * - algorithm: An algorithm instance on the heap.
  *
  * Returns the solution fitness, if appropriate (otherwise returns zero). */
-float Placer::place(P_task* task, Algorithm* algorithm)
+float Placer::place(GraphI_t* gi, Algorithm* algorithm)
 {
     /* Danger Will Robinson! (seriously though, how did you get here? --MLV) */
     if (engine == PNULL) throw NoEngineException(
-        "You've attempted to place a task without defining an engine pointer "
-        "in the placer. If you're running this from OrchBase, how did you get "
-        "here?");
+        "You've attempted to place an application graph instance without "
+        "defining an engine pointer in the placer. If you're running this "
+        "from OrchBase, how did you get here?");
 
-    /* Complain if the task has already been placed (by memory address). */
-    if (placedTasks.find(task) != placedTasks.end())
+    /* Check that the options set by the operator make sense for the algorithm
+     * being used. May throw. */
+    args.validate_args(algorithm->result.method);
+
+    /* Complain if the application graph instance has already been placed (by
+     * memory address). Don't do this if an in-place approach is requested. */
+    bool inPlace = false;
+    if (args.is_set("inpl")) inPlace = args.get_bool("inpl");
+
+    if (placedGraphs.find(gi) != placedGraphs.end() and !inPlace)
     {
         delete algorithm;
         throw AlreadyPlacedException(dformat(
-            "[ERROR] Task from file '%s' has already been placed.",
-            task->filename.c_str()));
+            "[ERROR] Application graph instance '%s' from file '%s' has "
+            "already been placed.",
+            gi->Name().c_str(), gi->par->filename.c_str()));
     }
 
-    /* Define deviceToGraphKey for devices in this task. */
-    populate_device_to_graph_key_map(task);
+    /* Define deviceToGraphKey for devices in this application graph
+     * instance. */
+    populate_device_to_graph_key_map(gi);
 
-    /* Run the algorithm on the task. */
-    float score = algorithm->do_it(task);
+    /* Run the algorithm on the application graph instance. */
+    float score = algorithm->do_it(gi);
+
+    /* Write input arguments to the algorithm's result object, then clear
+     * them. */
+    args.copy_to(algorithm->result.args);
+    args.clear();
 
     /* Check placement integrity, throwing if there's a problem. */
-    check_integrity(task, algorithm);
+    check_integrity(gi, algorithm);
 
-    /* Update task-keyed maps. */
-    placedTasks[task] = algorithm;
-    update_task_to_cores_map(task);
+    /* Update gi-keyed maps. */
+    placedGraphs[gi] = algorithm;
+    update_gi_to_cores_map(gi);
 
     /* Update result structure for this algorithm object. */
-    populate_result_structures(&algorithm->result, task, score);
+    populate_result_structures(&algorithm->result, gi, score);
 
-    /* Update software addresses for each device placed in this task. */
-    update_software_addresses(task);
+    /* Update software addresses for each device placed in this graph
+     * instance. */
+    update_software_addresses(gi);
 
-    /* Tell the task it's been placed. */
-    task->LinkFlag();
-
+    /* Create supervisor binary.
+     *
+     * NB: This supervisor binary is not mapped to boxes (because for now,
+     * nobody actually cares). Later on, graph instances will need a map of box
+     * keys to supervisor values, for when supervisors differ across boxes. */
+    if (gi->pSupI == PNULL) gi->pSupI = new P_super;
     return score;
 }
 
 /* Load a previously-placed configuration. Is pretty unsafe. Arguments:
  *
- * - task: Pointer to task to map.
+ * - gi: Pointer to the application graph instance to map.
  *
  * - path: String denoting path to placement information to load
- *   (e.g. placement_task_to_hardware_file_...)
+ *   (e.g. placement_gi_to_hardware_file_...)
  *
  * Returns the solution fitness, if appropriate (otherwise returns zero). */
-float Placer::place_load(P_task* task, std::string path)
+float Placer::place_load(GraphI_t* gi, std::string path)
 {
-    return place(task, new PlacementLoader(this, path));
+    return place(gi, new PlacementLoader(this, path));
 }
 
-/* For each device in the task, define the placer's reverse-map so that edges
- * can be looked up as a function of device in the task graph. */
-void Placer::populate_device_to_graph_key_map(P_task* task)
+/* For each device in the application graph instance, define the placer's
+ * reverse-map so that edges can be looked up as a function of device in the
+ * application graph instance */
+void Placer::populate_device_to_graph_key_map(GraphI_t* gi)
 {
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
+    WALKPDIGRAPHNODES(unsigned, DevI_t*, unsigned, EdgeI_t*, unsigned,
+                      PinI_t*, gi->G, deviceIterator)
     {
-        deviceToGraphKey[task->pD->G.NodeData(deviceIterator)] = \
-            task->pD->G.NodeKey(deviceIterator);
+        deviceToGraphKey[gi->G.NodeData(deviceIterator)] = \
+            gi->G.NodeKey(deviceIterator);
     }
 }
 
-/* Given a pair of devices connected in the task graph and an initialised cost
- * cache, populates the weight on the edge connecting them. */
-void Placer::populate_edge_weight(P_task* task, P_device* from, P_device* to)
+/* Given a pair of devices connected in the application graph instance and an
+ * initialised cost cache, populates the weight on the edge connecting them. */
+void Placer::populate_edge_weight(GraphI_t* gi, DevI_t* from, DevI_t* to)
 {
     /* Skip this edge if one of the devices is a supervisor device. */
-    if (!(from)->pP_devtyp->pOnRTS) return;
-    if (!(to)->pP_devtyp->pOnRTS) return;
+    if (from->devTyp != 'D') return;
+    if (to->devTyp != 'D') return;
 
     /* Store the weight. */
     float weight = cache->compute_cost(deviceToThread[from],
                                        deviceToThread[to]);
-    taskEdgeCosts[task][std::make_pair(from, to)] = weight;
+    giEdgeCosts[gi][std::make_pair(from, to)] = weight;
 }
 
 /* Given the placement maps and an initialised cost cache, populates the
- * weights on each edge of the application graph for a given task that involves
- * a given device. */
-void Placer::populate_edge_weights(P_task* task, P_device* device)
+ * weights for each edge of a given application graph instance that involves a
+ * given device. */
+void Placer::populate_edge_weights(GraphI_t* gi, DevI_t* device)
 {
     /* Grab the device pair from each edge. */
-    std::vector<std::pair<P_device*, P_device*>> devicePairs;
-    get_edges_for_device(task, device, &devicePairs);
+    std::vector<std::pair<DevI_t*, DevI_t*> > devicePairs;
+    get_edges_for_device(gi, device, &devicePairs);
 
     /* Populate */
-    std::vector<std::pair<P_device*, P_device*>>::iterator devicePairIt;
+    std::vector<std::pair<DevI_t*, DevI_t*> >::iterator devicePairIt;
     for (devicePairIt = devicePairs.begin(); devicePairIt != devicePairs.end();
          devicePairIt++)
     {
-        populate_edge_weight(task, devicePairIt->first, devicePairIt->second);
+        populate_edge_weight(gi, devicePairIt->first, devicePairIt->second);
     }
 }
 
 /* Given the placement maps and an initialised cost cache, populates the
- * weights on each edge of the application graph for a given task. */
-void Placer::populate_edge_weights(P_task* task)
+ * weights for each edge in an application graph instance. */
+void Placer::populate_edge_weights(GraphI_t* gi)
 {
-    WALKPDIGRAPHARCS(unsigned, P_device*, unsigned, P_message*, unsigned,
-                     P_pin*, task->pD->G, edgeIt)
+    WALKPDIGRAPHARCS(unsigned, DevI_t*, unsigned, EdgeI_t*, unsigned,
+                     PinI_t*, gi->G, edgeIt)
     {
-        populate_edge_weight(task,
-                             task->pD->G.NodeData(edgeIt->second.fr_n),
-                             task->pD->G.NodeData(edgeIt->second.to_n));
+        populate_edge_weight(gi,
+                             gi->G.NodeData(edgeIt->second.fr_n),
+                             gi->G.NodeData(edgeIt->second.to_n));
     }
 }
 
 /* Defines the contents of the result struct of an algorithm. */
-void Placer::populate_result_structures(Result* result, P_task* task,
+void Placer::populate_result_structures(Result* result, GraphI_t* gi,
                                         float score)
 {
     /* Time! */
@@ -1109,11 +1283,11 @@ void Placer::populate_result_structures(Result* result, P_task* task,
     result->score = score;
 
     /* Maximum number of devices per thread - compute by going through the
-     * cores assigned to this task. */
+     * cores assigned to this application graph instance. */
     result->maxDevicesPerThread = 0;  /* Optimistic. */
 
     std::set<P_core*>::iterator coreIt;
-    std::set<P_core*>* targetSet = &(taskToCores[task]);
+    std::set<P_core*>* targetSet = &(giToCores[gi]);
     for (coreIt = targetSet->begin(); coreIt != targetSet->end(); coreIt++)
     {
         /* Iterate through each thread on this core. */
@@ -1132,9 +1306,9 @@ void Placer::populate_result_structures(Result* result, P_task* task,
      * application graph. */
     result->maxEdgeCost = 0;  /* Again, mindless optimism. */
 
-    std::map<std::pair<P_device*, P_device*>, float>::iterator edgeIt;
-    for (edgeIt = taskEdgeCosts[task].begin();
-         edgeIt != taskEdgeCosts[task].end(); edgeIt++)
+    std::map<std::pair<DevI_t*, DevI_t*>, float>::iterator edgeIt;
+    for (edgeIt = giEdgeCosts[gi].begin();
+         edgeIt != giEdgeCosts[gi].end(); edgeIt++)
     {
         /* If the weight on the edge is greater than the current stored
          * maximum, update the maximum. */
@@ -1146,20 +1320,23 @@ void Placer::populate_result_structures(Result* result, P_task* task,
  * across those threads. Remainder devices are placed on threads earlier in the
  * map.
  *
+ * Optionally, respect MaxThreadsPerCore constraints imposed on a particular
+ * graph instance.
+ *
  * Does not check if any threads are overloaded (which is a valid assumption,
  * given that none of the thread are overloaded before this operation). */
-void Placer::redistribute_devices_in_core(P_core* core)
+void Placer::redistribute_devices_in_core(P_core* core, GraphI_t* gi)
 {
     /* Get all devices in the threads in this core. We don't have to unplace
      * them, because `link` does that. */
-    std::vector<P_device*> devices;
-    std::list<P_device*>* devicesOnThread;
+    std::vector<DevI_t*> devices;
+    std::list<DevI_t*>* devicesOnThread;
     std::map<AddressComponent, P_thread*>::iterator threadIt;
     for (threadIt = core->P_threadm.begin(); threadIt != core->P_threadm.end();
          threadIt++)
     {
         devicesOnThread = &(threadToDevices[threadIt->second]);
-        std::list<P_device*>::iterator deviceIt;
+        std::list<DevI_t*>::iterator deviceIt;
         for (deviceIt = devicesOnThread->begin();
              deviceIt != devicesOnThread->end(); deviceIt++)
         {
@@ -1169,31 +1346,35 @@ void Placer::redistribute_devices_in_core(P_core* core)
     }
 
     /* Deal one device to each thread in turn, until no devices remain (a bit
-     * like holdem). */
+     * like hold'em). */
     threadIt = core->P_threadm.begin();
-    std::vector<P_device*>::iterator deviceIt;
+    unsigned threadNum = 1;  /* heresy */
+    unsigned threadMax = constrained_max_threads_per_core(gi);
+    std::vector<DevI_t*>::iterator deviceIt;
     for (deviceIt = devices.begin(); deviceIt != devices.end(); deviceIt++)
     {
         link(threadIt->second, *deviceIt);
         threadIt++;
 
         /* Thread wraparound. */
-        if (threadIt == core->P_threadm.end())
+        if (threadIt == core->P_threadm.end() or threadNum == threadMax)
         {
             threadIt = core->P_threadm.begin();
+            threadNum = 1;
         }
+        else threadNum++;
     }
 }
 
-/* Redistribute all devices placed on threads in a core for each core in a
- * task. */
-void Placer::redistribute_devices_in_task(P_task* task)
+/* Redistribute all devices placed on threads in a core for each core in an
+ * application graph instance. */
+void Placer::redistribute_devices_in_gi(GraphI_t* gi)
 {
-    std::set<P_core*>* cores = &(taskToCores[task]);
+    std::set<P_core*>* cores = &(giToCores[gi]);
     std::set<P_core*>::iterator coreIt;
     for (coreIt = cores->begin(); coreIt != cores->end(); coreIt++)
     {
-        redistribute_devices_in_core(*coreIt);
+        redistribute_devices_in_core(*coreIt, gi);
     }
 }
 
@@ -1203,21 +1384,22 @@ std::string Placer::timestamp()
     time_t timeNtv;  /* "Native" */
     time(&timeNtv);
     char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
-    strftime(timeBuf, sizeof timeBuf, "%FT%T", localtime(&timeNtv));
+    strftime(timeBuf, sizeof timeBuf,
+             "%Y-%m-%dT%H-%M-%S", localtime(&timeNtv));
     return timeBuf;
 }
 
-/* Removes all device-thread relations for all devices in a task, and removes
- * constraints imposed by this task.
+/* Removes all device-thread relations for all devices in an application graph
+ * instance, and removes constraints imposed on this graph instance.
  *
  * It's slow and, due the the data structures involved, inefficient. We're fine
  * with this, because unplacing is quite rare.
  *
  * This implementation assumes that each thread contains only devices belonging
- * to a given task (to save many extra list.erases). */
-void Placer::unplace(P_task* task, bool andConstraints)
+ * to a given graph instance (to save many extra list.erases). */
+void Placer::unplace(GraphI_t* gi, bool andConstraints)
 {
-    /* Remove task-imposed constraints (unless explicitly told otherwise). NB:
+    /* Remove graph-imposed constraints (unless explicitly told otherwise). NB:
      * This is not a for loop, because elements are removed from the container
      * within the loop. */
     if (andConstraints)
@@ -1227,7 +1409,7 @@ void Placer::unplace(P_task* task, bool andConstraints)
         while (constraintIterator != constraints.end())
         {
             /* Say goodbye! */
-            if ((*constraintIterator)->task == task)
+            if ((*constraintIterator)->gi == gi)
             {
                 delete *constraintIterator;
                 constraintIterator = constraints.erase(constraintIterator);
@@ -1238,16 +1420,17 @@ void Placer::unplace(P_task* task, bool andConstraints)
         }
     }
 
-    /* Clear the maps - iterate through each device in the task. */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
+    /* Clear the maps - iterate through each device in the application graph
+     * instance. */
+    WALKPDIGRAPHNODES(unsigned, DevI_t*, unsigned, EdgeI_t*, unsigned,
+                      PinI_t*, gi->G, deviceIterator)
     {
-        P_device* device = task->pD->G.NodeData(deviceIterator);
+        DevI_t* device = gi->G.NodeData(deviceIterator);
 
         /* Is the device placed? If so grab the thread. If not, skip. We don't
          * complain, because we should be cool with unplacing a
-         * partially-placed task. */
-        std::map<P_device*, P_thread*>::iterator deviceFinder;
+         * partially-placed application graph instance. */
+        std::map<DevI_t*, P_thread*>::iterator deviceFinder;
         deviceFinder = deviceToThread.find(device);
         if (deviceFinder == deviceToThread.end()) continue;
         P_thread* thread = deviceFinder->second;
@@ -1256,52 +1439,57 @@ void Placer::unplace(P_task* task, bool andConstraints)
         deviceToThread.erase(deviceFinder);
 
         /* Remove the entry from threadToDevices (erasure by key). Note that
-         * this is safe because each thread is associated with one task (device
-         * type) at a time. */
+         * this is safe because each thread is associated with one graph
+         * instance (device type). */
         threadToDevices.erase(thread);
     }
 
-    /* Clear the appropriate entry in placedTasks. */
-    std::map<P_task*, Algorithm*>::iterator placedTaskFinder;
-    placedTaskFinder = placedTasks.find(task);
-    if (placedTaskFinder != placedTasks.end())
+    /* Clear the appropriate entry in placedGraphs. */
+    std::map<GraphI_t*, Algorithm*>::iterator placedGraphFinder;
+    placedGraphFinder = placedGraphs.find(gi);
+    if (placedGraphFinder != placedGraphs.end())
     {
-        delete placedTaskFinder->second;
-        placedTasks.erase(placedTaskFinder);
+        delete placedGraphFinder->second;
+        placedGraphs.erase(placedGraphFinder);
     }
 
-    /* Clear the appropriate entry in taskToCores. */
-    std::map<P_task*, std::set<P_core*>>::iterator taskToCoresFinder;
-    taskToCoresFinder = taskToCores.find(task);
-    if (taskToCoresFinder != taskToCores.end())
+    /* Clear the appropriate entry in giToCores. */
+    std::map<GraphI_t*, std::set<P_core*> >::iterator giToCoresFinder;
+    giToCoresFinder = giToCores.find(gi);
+    if (giToCoresFinder != giToCores.end())
     {
-        taskToCores.erase(taskToCoresFinder);
+        giToCores.erase(giToCoresFinder);
     }
 
-    /* Clear the appropriate entry in taskEdgeCosts. */
-    std::map<P_task*, std::map<std::pair<P_device*, P_device*>,
-                               float>>::iterator edgeCostsFinder;
-    edgeCostsFinder = taskEdgeCosts.find(task);
-    if (edgeCostsFinder != taskEdgeCosts.end())
+    /* Clear the appropriate entry in giEdgeCosts. */
+    std::map<GraphI_t*, std::map<std::pair<DevI_t*, DevI_t*>,
+                               float> >::iterator edgeCostsFinder;
+    edgeCostsFinder = giEdgeCosts.find(gi);
+    if (edgeCostsFinder != giEdgeCosts.end())
     {
-        taskEdgeCosts.erase(edgeCostsFinder);
+        giEdgeCosts.erase(edgeCostsFinder);
     }
+
+    /* No more supervisor. */
+    delete gi->pSupI;
+    gi->pSupI = PNULL;
 }
 
-/* Updates the software addresses of each device in a task, clearing it if it
- * is not currently placed (for example, if the task has been unplaced. */
-void Placer::update_software_addresses(P_task* task)
+/* Updates the software addresses of each device in an application graph
+ * instance, clearing it if it is not currently placed (for example, if the
+ * graph instance has been unplaced. */
+void Placer::update_software_addresses(GraphI_t* gi)
 {
-    std::map<P_device*, P_thread*>::iterator deviceFinder;
-    std::map<P_thread*, std::list<P_device*>>::iterator threadFinder;
+    std::map<DevI_t*, P_thread*>::iterator deviceFinder;
+    std::map<P_thread*, std::list<DevI_t*> >::iterator threadFinder;
     bool found;  /* Is this device currently placed? */
 
-    /* Iterate through each device in the task. */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
+    /* Iterate through each device in the application graph instance. */
+    WALKPDIGRAPHNODES(unsigned, DevI_t*, unsigned, EdgeI_t*, unsigned,
+                      PinI_t*, gi->G, deviceIterator)
     {
         /* Grab the device, for readability. */
-        P_device* device = task->pD->G.NodeData(deviceIterator);
+        DevI_t* device = gi->G.NodeData(deviceIterator);
 
         /* Determine whether or not the device currently placed. */
         found = false;
@@ -1321,52 +1509,58 @@ void Placer::update_software_addresses(P_task* task)
             /* Get the index of the device within the list associated with the
              * current thread (in order to define the device component of the
              * address object). */
-            std::list<P_device*>::iterator first, found;
+            std::list<DevI_t*>::iterator first, found;
             first = threadFinder->second.begin();
             found = std::find(threadFinder->second.begin(),
                               threadFinder->second.end(), device);
 
             /* Define the device component of the address object in the
              * device. */
-            device->addr.SetDevice(threadFinder->second.size() - 1);
-            device->addr.SetDevice(std::distance(first, found));
-
-            /* Define the other components of the address object in the
-             * device. */
-            threadFinder->first->get_hardware_address()->
-                populate_a_software_address(&(device->addr), false);
+            device->addr.set_ismothership(0);
+            device->addr.set_iscnc(0);
+            device->addr.set_device(std::distance(first, found));
         }
 
         /* If the device has not been placed, and is a supervisor device, set
-         * the device component of the address (a P_builder special case). */
-        else if (!(device->pP_devtyp->pOnRTS))
+         * the Mothership and CNC component of the address. */
+        else if (device->devTyp == 'S')
         {
-            device->addr.SetDevice(P_device::super_idx);
+            device->addr.set_ismothership(1);
+            device->addr.set_iscnc(1);
+            device->addr.set_device(0);
         }
 
         /* If the device has not been placed and is not a supervisor device,
          * clear the address. */
-        else device->addr.Reset();
+        else
+        {
+            device->addr.set_ismothership(0);
+            device->addr.set_iscnc(0);
+            device->addr.set_device(0);
+        }
+
+        device->addr.set_opcode(0);
+        device->addr.set_task(0);
     }
 }
 
-/* Updates taskToCores with the entries of a task, which has been placed
- * correctly. Doesn't check much. */
-void Placer::update_task_to_cores_map(P_task* task)
+/* Updates giToCores with the entries of an application graph instance, which
+ * has been placed correctly. Doesn't check much. */
+void Placer::update_gi_to_cores_map(GraphI_t* gi)
 {
     /* Grab the set we're inserting into. */
     std::set<P_core*>* coreSet;
-    coreSet = &(taskToCores[task]);
+    coreSet = &(giToCores[gi]);
 
     /* Iterate through each device. */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
+    WALKPDIGRAPHNODES(unsigned, DevI_t*, unsigned, EdgeI_t*, unsigned,
+                      PinI_t*, gi->G, deviceIterator)
     {
         /* Grab the device, for readability. */
-        P_device* device = task->pD->G.NodeData(deviceIterator);
+        DevI_t* device = gi->G.NodeData(deviceIterator);
 
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pP_devtyp->pOnRTS)) continue;
+        /* Ignore if it's not a normal device (we don't map those). */
+        if (device->devTyp != 'D') continue;
 
         /* Assume the device is placed - grab the core it's placed on. */
         coreSet->insert(deviceToThread[device]->parent);

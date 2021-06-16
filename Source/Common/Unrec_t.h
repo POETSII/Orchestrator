@@ -1,16 +1,17 @@
 #ifndef __Unrec_tH__H
 #define __Unrec_tH__H
 
+#include <stdexcept>
 #include <string>
 using namespace std;
 
 //==============================================================================
 
-class Unrec_t
+class Unrec_t : public runtime_error
 {
 public:
           Unrec_t(unsigned,string,string);
-virtual ~ Unrec_t();
+          ~Unrec_t() throw() {};
 void      Post();
 
 private:
@@ -21,5 +22,5 @@ string    r;                           // Throwing routine
 };
 
 //==============================================================================
-   
+
 #endif

@@ -1,10 +1,12 @@
 #include "Mothership.h"
+#include "SupervisorModes.h"
 
 Mothership::Mothership(int argc, char** argv):
     CommonBase(argc, argv, std::string(csMOTHERSHIPproc),
                std::string(__FILE__)),
     backend(PNULL),
-    threading(ThreadComms(this))
+    threading(ThreadComms(this)),
+    userOutDir(".orchestrator/app_output/") /* Sensible default */
 {
     try
     {
@@ -18,8 +20,20 @@ Mothership::Mothership(int argc, char** argv):
 
 Mothership::~Mothership()
 {
-    /* Tear down MPI function map. */
-    WALKVECTOR(FnMap_t*, FnMapx, F) delete *F;
+    /* Stop all running supervisors, because we're nice like that. */
+    DebugPrint("[MOTHERSHIP] Stopping all running applications...\n");
+    for (AppInfoIt appIt = appdb.appInfos.begin();
+         appIt != appdb.appInfos.end(); appIt++)
+    {
+        if (appIt->second.state == RUNNING)
+        {
+            DebugPrint("[MOTHERSHIP] Stopping application '%s'...\n",
+                       appIt->first.c_str());
+            stop_application(&(appIt->second));
+            DebugPrint("[MOTHERSHIP] Stopped application '%s'.\n",
+                       appIt->first.c_str());
+        }
+    }
 
     /* Tear down backend. */
     if (backend != PNULL)
@@ -36,7 +50,7 @@ Mothership::~Mothership()
  * there's no portable way to interface the two). See the dump handler. */
 void Mothership::dump(std::ofstream* stream)
 {
-    *stream << "Mothership (" << POETS::get_hostname() << ") dump:\n";
+    *stream << "Mothership (" << OSFixes::get_hostname() << ") dump:\n";
     appdb.dump(stream);
     superdb.dump(stream);
 }
@@ -71,27 +85,32 @@ void Mothership::load_backend()
      * one-Mothership-over-many-boxes case, but do we even want to support that
      * once we're multi-box? (It was sarcasm - we don't). */
     DebugPrint("[MOTHERSHIP] Loading Tinsel backend...\n");
-    
-    /* Tinsel 0.8 requires hostlink to be called with a parameters argument to 
+
+    /* Tinsel 0.8 requires hostlink to be called with a parameters argument to
      * enable the additional send slot (which we need for supervisor messages)
-     * in the tinsel cores. This also means that we need to provide the size of 
+     * in the tinsel cores. This also means that we need to provide the size of
      * the cluster that we are using, which may have been overidden by
-     * environment variables. The below is essentially reproduced from the 
-     * default Hostlink constructor with the exception of "useExtraSendSlot"
-     * being set to true. */
-    /* This is horrible and we will change it (hostlink) when time allows */ 
-    char* str = getenv("HOSTLINK_BOXES_X");
-    int x = str ? atoi(str) : 1;
-    str = getenv("HOSTLINK_BOXES_Y");
-    int y = str ? atoi(str) : 1;
+     * environment variables. This is horrible and we will change it (hostlink)
+     * when time allows. */
     HostLinkParams params;
-    params.numBoxesX = x;
-    params.numBoxesY = y;
     params.useExtraSendSlot = true;
-    
+
+    /* In single-supervisor mode, only one Mothership is running. As a
+     * consequence of this, we claim the entire cluster available according to
+     * Tinsel. In multi-supervisor mode, each Mothership hosts only one box. */
+    char* strX = getenv("HOSTLINK_BOXES_X");
+    char* strY = getenv("HOSTLINK_BOXES_Y");
+#if SINGLE_SUPERVISOR_MODE
+    params.numBoxesX = strX ? atoi(strX) : TinselBoxMeshXLen;
+    params.numBoxesY = strY ? atoi(strY) : TinselBoxMeshYLen;
+#else
+    params.numBoxesX = strX ? atoi(strX) : 1;
+    params.numBoxesY = strY ? atoi(strY) : 1;
+#endif
+
     pthread_mutex_lock(&(threading.mutex_backend_api));
     if (backend != PNULL) delete backend;
-    backend = new HostLink(params); // Call hostlink with the parameters
+    backend = new HostLink(params);
     pthread_mutex_unlock(&(threading.mutex_backend_api));
     DebugPrint("[MOTHERSHIP] Tinsel backend loaded.\n");
 }
@@ -131,24 +150,51 @@ bool Mothership::debug_post(int code, unsigned numArgs, ...)
     #endif
 }
 
+/* Defines OnIdle behaviour for the Mothership (ala CommonBase) - this
+ * currently just calls the idle handler for one supervisor, skipping
+ * supervisors that are not already being called, and skipping supervisors for
+ * applications that are not running. */
+void Mothership::OnIdle()
+{
+    /* Get next supervisor to use. */
+    std::string name;
+    SuperHolder* chosenOne = superdb.get_next_idle(name);
+    if (chosenOne == PNULL) return;
+
+    /* Ignore if its application is not running. Note that supervisors should
+     * have a corresponding appdb entry, but we add a guard here just in
+     * case. */
+    AppInfoIt appFinder = appdb.appInfos.find(name);
+    if (appFinder == appdb.appInfos.end()) return;
+    if (appFinder->second.state != RUNNING) return;
+
+    /* Ignore if it's locked. */
+    if (pthread_mutex_trylock(&(chosenOne->lock)) != 0) return;
+
+    /* Call idle method for this supervisor. */
+    superdb.idle_supervisor(name);
+
+    /* Unlock the mutex we've claimed. */
+    pthread_mutex_unlock(&(chosenOne->lock));
+}
+
 /* Sets up the function map for MPI communications. See the CommonBase
  * documentation for more information on how this is expected to work. */
 void Mothership::setup_mpi_hooks()
 {
     DebugPrint("[MOTHERSHIP] Setting up MPI hooks.\n");
-    FnMapx.push_back(new FnMap_t);
-    (*FnMapx[0])[PMsg_p::KEY(Q::EXIT)] = &Mothership::handle_msg_exit;
-    (*FnMapx[0])[PMsg_p::KEY(Q::SYST,Q::KILL)] =
-        &Mothership::handle_msg_syst_kill;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SPEC)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::DIST)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::APP,Q::SUPD)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RECL)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::INIT)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::RUN)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::STOP)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::CNC)] = &Mothership::handle_msg_cnc;
-    (*FnMapx[0])[PMsg_p::KEY(Q::BEND,Q::SUPR)] = &Mothership::handle_msg_app;
-    (*FnMapx[0])[PMsg_p::KEY(Q::PKTS)] = &Mothership::handle_msg_app;
-    (*FnMapx[0])[PMsg_p::KEY(Q::DUMP)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::EXIT)] = &Mothership::handle_msg_exit;
+    FnMap[PMsg_p::KEY(Q::SYST,Q::KILL)] = &Mothership::handle_msg_syst_kill;
+    FnMap[PMsg_p::KEY(Q::APP,Q::SPEC)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::APP,Q::DIST)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::APP,Q::SUPD)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::CMND,Q::RECL)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::CMND,Q::INIT)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::CMND,Q::RUN)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::CMND,Q::STOP)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::BEND,Q::CNC)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::BEND,Q::SUPR)] = &Mothership::handle_msg_app;
+    FnMap[PMsg_p::KEY(Q::PATH)] = &Mothership::handle_msg_path;
+    FnMap[PMsg_p::KEY(Q::PKTS)] = &Mothership::handle_msg_app;
+    FnMap[PMsg_p::KEY(Q::DUMP)] = &Mothership::handle_msg_cnc;
 }

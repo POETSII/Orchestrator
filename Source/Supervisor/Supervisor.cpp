@@ -1,64 +1,81 @@
 #include "Supervisor.h"
 
-#ifdef _APPLICATION_SUPERVISOR_
 
-/* note that by enclosing the entire extern declaration in braces, variables
-   still have internal linkage. The alternative, no braces around the extern
-   declaration, makes the variables external as well. May need some
-   experimentation if this doesn't work.
-*/
 extern "C"
 {
-    int SupervisorCall(PMsg_p* In, PMsg_p* Out)
-    {
-        int sentErr = 0;
-        char outPktBuf[P_PKT_MAX_SIZE];
+    SupervisorApi* GetSupervisorApi(){return &(Supervisor::__api);}
 
-        std::vector<P_Pkt_t> pkts; // packets are packed in Tinsel packet format
-        In->Put<P_Pkt_t>();
-        In->Get(1, pkts);
-        WALKVECTOR(P_Pkt_t, pkts, pkt) // and they're sent blindly
+    int SupervisorInit(){return Supervisor::OnInit();}
+
+    int SupervisorCall(std::vector<P_Pkt_t>& In, std::vector<P_Addr_Pkt_t>& Out)
+    {
+#ifdef _APPLICATION_SUPERVISOR_
+        int sentErr = 0;
+        uint8_t op;
+
+        WALKVECTOR(P_Pkt_t, In, pkt)
         {
-            uint8_t pin = (((pkt->header.pinAddr) & P_HD_TGTPIN_MASK)
-                           >> P_HD_TGTPIN_SHIFT);
-            if (pin >= Supervisor::inputs.size()) return -1; // invalid pin
-            supInputPin* dest = Supervisor::inputs[pin];
-            sentErr += dest->OnReceive(dest->properties, dest->state, &*pkt,
-                                       Out, outPktBuf);
+            op = (pkt->header.swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT;
+            if (op == P_CNC_IMPL) sentErr += Supervisor::OnImplicit(&*pkt, Out);
+            else sentErr += Supervisor::OnPkt(&*pkt, Out);
         }
         return sentErr;
-    }
-
-    int SupervisorExit()
-    {
-        for (std::vector<supInputPin*>::iterator ipin = Supervisor::inputs.begin();
-             ipin != Supervisor::inputs.end(); ipin++) delete *ipin;
-        for (std::vector<supOutputPin*>::iterator opin = Supervisor::outputs.begin();
-             opin != Supervisor::outputs.end(); opin++) delete *opin;
-        return 0;
-    }
-}
-
-#else
-extern "C"
-{
-    int SupervisorCall(PMsg_p* In, PMsg_p* Out){return -1;}
-    int SupervisorExit(){return 0;}
-    int SupervisorInit(){return 0;}
-}
-
 #endif
+        return -1;
+    }
 
-supInputPin::supInputPin(Sup_OnReceive_t recvHandler,
-                         Sup_PinTeardown_t pinTeardown,
-                         const void* props, void* st)
-{
-    OnReceive = recvHandler;
-    PinTeardown = pinTeardown;
-    properties = props;
-    state = st;
+    int SupervisorIdle(){return Supervisor::OnIdle();}
+
+    int SupervisorCtl(){return Supervisor::OnCtl();}
+
+    int SupervisorRTCL(){return Supervisor::OnRTCL();}
+
+    int SupervisorExit(){return Supervisor::OnStop();}
+    
+    // Return the full symbolic address of the given index
+    uint64_t SupervisorIdx2Addr(uint32_t idx)
+    {
+        uint64_t ret = 0;
+
+        if(idx >= Supervisor::DeviceVector.size())
+        {
+            //out of range Idx
+            return UINT64_MAX;
+        }
+
+        ret = Supervisor::DeviceVector[idx].HwAddr;
+        ret = ret << 32;
+        ret |= Supervisor::DeviceVector[idx].SwAddr;
+
+        return ret;
+    }
+    
+    // Return a pointer to the SupervisorDeviceInstance for the given index
+    const SupervisorDeviceInstance_t* SupervisorIdx2Inst(uint32_t idx)
+    {
+        if(idx >= Supervisor::DeviceVector.size()) return PNULL;    // OOR
+        
+        return &(Supervisor::DeviceVector[idx]);
+    }
+    
+    // Return the name of the given index
+    std::string SupervisorIdx2Name(uint32_t idx)
+    {
+        if(idx >= Supervisor::DeviceVector.size())
+        {
+            //out of range Idx
+            return "";
+        }
+        
+        return Supervisor::DeviceVector[idx].Name;
+    }
+    
+    // "return" a copy of the device vector.
+    void GetSupervisorAddresses(std::vector<SupervisorDeviceInstance_t>& devV)
+    {
+        devV = Supervisor::DeviceVector;
+    }
+
 }
 
-supInputPin::~supInputPin(){if(PinTeardown) PinTeardown(properties, state);}
-supOutputPin::supOutputPin(Sup_OnSend_t sendHandler){OnSend = sendHandler;}
-supOutputPin::~supOutputPin(){}
+#include "supervisor_generated.cpp"

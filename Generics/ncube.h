@@ -76,7 +76,7 @@ struct _N {                            // Node primitive
   int    id;                           // Ordinal number
   void * p;                            // Payload (i)
   template<class T> T * P()               { return static_cast<T *>(p);      }
-//  template<class T> void setP (T * value) { p = static_cast<void *> (value); }
+  template<class T> void setP (T * value) { p = static_cast<void *> (value); }
   void setP (void * value)                { p = static_cast<void *> (value); }
   int    val;                          // Payload (ii)
   vector<pair<_L *,_L *> > links;

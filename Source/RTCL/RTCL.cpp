@@ -42,11 +42,9 @@ return NULL;
 RTCL::RTCL(int argc,char * argv[],string d):
   CommonBase(argc,argv,d,string(__FILE__))
 {
-FnMapx.push_back(new FnMap_t);    // create a new event map in the derived class
-
                                        // Load the message map
-(*FnMapx[0])[PMsg_p::KEY(Q::RTCL,Q::N000,Q::N000,Q::N000)] = &RTCL::OnRTCL;
-(*FnMapx[0])[PMsg_p::KEY(Q::CMND,Q::EXIT,Q::N000,Q::N000)] = &RTCL::OnExit;
+FnMap[PMsg_p::KEY(Q::RTCL,Q::N000,Q::N000,Q::N000)] = &RTCL::OnRTCL;
+FnMap[PMsg_p::KEY(Q::CMND,Q::EXIT,Q::N000,Q::N000)] = &RTCL::OnExit;
 
 comms.pthis  = this;
 comms.tick   = 1.0;
@@ -72,69 +70,55 @@ comms.l_kill = true;                   // Kill the clock thread
                                        // to be. Setting the cancel type to asynchronous
                                        // could avoid this, with possibly nasty
                                        // side effects.
-printf("********* RTC rank %d on the way out\n",Urank); fflush(stdout);
 }
 
 //------------------------------------------------------------------------------
 
 RTCL::~RTCL()
 {
-WALKVECTOR(FnMap_t*, FnMapx, F)
-    delete *F;
 
 //printf("********* RTC rank %d destructor\n",Urank); fflush(stdout);
 }
 
 //------------------------------------------------------------------------------
 
-void RTCL::Dump(FILE * fp)
+void RTCL::Dump(unsigned off,FILE * fp)
 {
-fprintf(fp,"RTCL dump++++++++++++++++++++++++++++++++++\n");  fflush(stdout);
-unsigned cIdx = 0;
-WALKVECTOR(FnMap_t*,FnMapx,F)
+string s(off,' ');
+const char * os = s.c_str();
+fprintf(fp,"%sRTCL dump ++++++++++++++++++++++++++++++++++++++++++++++++\n",os);
+fprintf(fp,"%sKey        Method\n",os);
+WALKMAP(unsigned,pMeth,FnMap,i)
 {
-fprintf(fp,"Function table for comm %d:\n", cIdx++);
-fprintf(fp,"Key        Method\n");
-WALKMAP(unsigned,pMeth,(**F),i)
-{
-  //fprintf(fp,"%#010x 0x%#016x\n",(*i).first,(*i).second);
-  fprintf(fp,"%#010x ",(*i).first);
-  
-  // Now for a horrible double type cast to get us a sensible function pointer.
-  // void*s are only meant to point to objects, not functions. So we get to a 
-  // void** as a pointer to a function pointer is an object pointer. We can then
-  // follow this pointer to get to the void*, which we then reinterpret to get 
-  // the function's address as a uint64_t.
-  fprintf(fp,"%" PTR_FMT "\n",reinterpret_cast<uint64_t>(
-                                *(reinterpret_cast<void**>(&((*i).second))))
-          );
+  fprintf(fp,"%s%#010x %" PTR_FMT "\n",os,(*i).first,
+                        OSFixes::getAddrAsUint((*i).second));
 }
-}
-fprintf(fp,"Communication pool:\n");
-fprintf(fp,"pthis   : %p\n",static_cast<void*>(comms.pthis));
-fprintf(fp,"tick    : %e\n",comms.tick);
-fprintf(fp,"l_stop  : %c\n",comms.l_stop ? 'T' : 'F');
-fprintf(fp,"t_stop  : %e\n",comms.t_stop);
-fprintf(fp,"l_kill  : %c\n",comms.l_kill ? 'T' : 'F');
-fprintf(fp,"d_stop  : %e\n",comms.d_stop);
-fprintf(fp,"d_start : %e\n",comms.t_start);
-fprintf(fp,"RTCL dump----------------------------------\n");  fflush(stdout);
-CommonBase::Dump(fp);
+fprintf(fp,"%sCommunication pool:\n",os);
+fprintf(fp,"%spthis   : %p\n",os,static_cast<void*>(comms.pthis));
+fprintf(fp,"%stick    : %e\n",os,comms.tick);
+fprintf(fp,"%sl_stop  : %c\n",os,comms.l_stop ? 'T' : 'F');
+fprintf(fp,"%st_stop  : %e\n",os,comms.t_stop);
+fprintf(fp,"%sl_kill  : %c\n",os,comms.l_kill ? 'T' : 'F');
+fprintf(fp,"%sd_stop  : %e\n",os,comms.d_stop);
+fprintf(fp,"%sd_start : %e\n",os,comms.t_start);
+CommonBase::Dump(off+2,fp);
+fprintf(fp,"%sRTCL dump ------------------------------------------------\n",os);
+fflush(stdout);
 }
 
 //------------------------------------------------------------------------------
 
-unsigned RTCL::OnExit(PMsg_p * Z, unsigned cIdx)
+unsigned RTCL::OnExit(PMsg_p * Z)
 // Exit command received from Root: we need to close down the RTC thread before
 // the RTC process itself
 {
 comms.l_kill = true;                   // Set the "die" flag in the comms pool
-return CommonBase::OnExit(Z,cIdx);          // Drop to the base class exit handler
+return CommonBase::OnExit(Z);          // Drop to the base class exit handler
 }
 
 //------------------------------------------------------------------------------
 
-unsigned RTCL::OnRTCL(PMsg_p * Z, unsigned cIdx)
+unsigned RTCL::OnRTCL(PMsg_p * Z)
 // RTCL control
 // RTCL|   -|   -|   -|(1:string)Originating command line string
 // The monkey command line has passed lex and syntax, but possibly not semantics
@@ -150,12 +134,12 @@ WALKVECTOR(Cli::Cl_t,Cl.Cl_v,i) {
   string sCl = (*i).Cl;
   if (sCl=="tick") {                   // Not 1 value for tick ?
     if ((*i).Pa_v.size()!=1) if (Post(51,Cl.Co,(*i).Cl))continue;
-    comms.tick = str2dble((*i).Pa_v[0].Val,1.0);// Ignore any sign, default to 1.0
+    comms.tick = str2dble((*i).Pa_v[0].Va_v[0],1.0);// Ignore any sign, default to 1.0
     Post(52,Cl.Co,(*i).Cl,dbl2str(comms.tick));
   }
   if (sCl=="stop") {                   // Not 1 value for stop
     if ((*i).Pa_v.size()!=1) if (Post(51,Cl.Co,(*i).Cl)) continue;
-    comms.d_stop = str2dble((*i).Pa_v[0].Val,10.0);
+    comms.d_stop = str2dble((*i).Pa_v[0].Va_v[0],10.0);
     Post(52,Cl.Co,(*i).Cl,dbl2str(comms.d_stop));
   }
   if (sCl=="star") {                   // Not 0 values for start

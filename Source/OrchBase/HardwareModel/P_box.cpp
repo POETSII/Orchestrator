@@ -8,6 +8,7 @@
  * - name: Name of this box object (see namebase) */
 P_box::P_box(std::string name)
 {
+    parent = PNULL;
     Name(name);
 }
 
@@ -79,7 +80,7 @@ void P_box::Dump(FILE* file)
     DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
-    NameBase::Dump(file);
+    NameBase::Dump(0,file);
 
     /* About contained items, if any. */
     DumpUtils::open_breaker(file, "Boards in this box");

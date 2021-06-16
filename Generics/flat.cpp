@@ -1,6 +1,7 @@
 //------------------------------------------------------------------------------
 
 #include "flat.h"
+#include <climits>
 
 // In this file, certain functions are decorated with calls to "ignore_rc"
 // below. This ludicrous wrapper is needed to suppress GCC 7.4.0 unused result
@@ -36,7 +37,7 @@ return cmp_noc(s1,string(s2));
 }
 
 //------------------------------------------------------------------------------
- 
+
 uint32 GET4(uchar * p1)
 // The input is a pointer to some position in a byte array. (Which is assumed to
 // exist at least three bytes into the future). This byte and the subsequent
@@ -56,7 +57,7 @@ return U.out;
 
 void PUT4(uchar * pout,uint32 in)
 // Converse of GET4. The input is a uint32, which is mapped onto the four bytes
-// starting at pout. These four bytes are assumed to exist. 
+// starting at pout. These four bytes are assumed to exist.
 {
 union {
   uint32 in;
@@ -69,8 +70,7 @@ for(int i=0;i<4;i++) pout[i] = U.out[i];
 
 //------------------------------------------------------------------------------
 
-
-// I couldn't face the source reorgansiation necessary to make these functions
+// I couldn't face the source reorganisation necessary to make these functions
 // into templates. There are only two of each, anyway. Been there, drunk the
 // beer. Templates are over-rated.
 
@@ -211,7 +211,7 @@ bool D[8] = {
   true ,        // 2  Lexer token trace
   true ,        // 3  Token trace in GetBehavOp
   true ,        // 4  Invocation tree skeleton build
-  true ,        // 5  Blob clone constructor hierarchy 
+  true ,        // 5  Blob clone constructor hierarchy
   true ,        // 6  Module invariant scanner
   false};       // 7
 return D[i];
@@ -234,6 +234,7 @@ bool file_exists(const char *filename)
 // BUT it doesn't seem to do what it says on the packet, so we bodge...
 {
 //int mode = 0;
+
 //return (access(filename,mode)==0);
 FILE * fp = fopen(filename,"r");
 if (fp != 0) {
@@ -309,7 +310,7 @@ return &buf[0];
 }
 */
 //.GetDate......................................................................
-              
+
 long Time2long(const string & str)
 // Bit of a bodge - it turns a time string into a long integer of 10ms's's's.
 // It gets unhappy if the string is in the wrong format.
@@ -447,7 +448,7 @@ return U[domain];                      // Either way...
 //long unsigned int a = i++;
 //return a;
 }
-  
+
 //------------------------------------------------------------------------------
 
 string bool2str(bool b)
@@ -586,11 +587,20 @@ return ans;
 //------------------------------------------------------------------------------
 
 unsigned str2uint(const string & str,unsigned def)
-// I figured it was actually quicker to write this than look one up
+// Deep sigh. There appears to be no way of detecting a translation overflow
+// from C. Any departure from what I consider to be reality causes the default
+// to be returned.
 {
-unsigned ans=def;
-sscanf(str.c_str(),"%u",&ans);
-return ans;
+unsigned t=0;
+unsigned u0 = unsigned('0');
+for(unsigned i=0;i<str.size();i++) {
+  unsigned char uc = str[i];
+  if (!isdigit(uc)) return def;
+  unsigned d = unsigned(uc) - u0;
+  if (t<((ULONG_MAX-d)/10)) t = (t*10)+d;
+  else return def;
+}
+return t;
 }
 
 //------------------------------------------------------------------------------
@@ -623,6 +633,19 @@ return ans;
 
 //------------------------------------------------------------------------------
 
+unsigned str2bin(string & str)
+{
+unsigned out=0;
+unsigned pow=0;
+for(string::reverse_iterator rit=str.rbegin();rit!=str.rend(); rit++) {
+  if(*rit=='1') out+=1<<pow;
+  pow++;
+}
+return out;
+}
+
+//------------------------------------------------------------------------------
+
 char * GetTime()
 // Stroustrup p905; Schildt p176
 // There seems to be no way to get absolute time to a precision of ms, even
@@ -631,14 +654,14 @@ char * GetTime()
 // So: we use time() and gmtime() to get absolute hours:mins:secs, then clock()
 // to get the milliseconds since the program started. This latter number simply
 // increases monotonically, so we do some dirt and turn it into the decimal
-// absolute seconds. It's not actually absolutely correct, but it will deliver
+// absolute seconds. Its' not actually absolutely correct, but it will deliver
 // correct timing *intervals*.
 // Note we could up the timing accuracy from 10ms to 1 ms.... to do.....
 {
 const int SIZE = 64;
 static char buf[SIZE];
 time_t x = time(0);                    // Low-precision absolute time
-strftime(buf,SIZE,"%H:%M:%S",gmtime(&x));
+strftime(buf,SIZE,"%H:%M:%S",localtime(&x));
                                        // Fast clock there?
 if (clock()==clock_t(-1)) return &buf[0];
                                        // High-precision relative time
@@ -665,7 +688,7 @@ string GetStr(FILE * fb)
 // Pull in a string from the binary file. If the name is too long for the buffer
 // it is at least truncated
 {
-const unsigned LEN = 512;              // UNCOOL UNCOOL UNCOOL but probably OK
+const unsigned LEN = 512+1;            // UNCOOL UNCOOL UNCOOL but probably OK
 char buf[LEN];
 unsigned len = 0;
 if (fb==0) return string();
@@ -684,25 +707,6 @@ fwrite(&len,2,1,fb);
 fwrite(str.c_str(),sizeof(char),len+1,fb);
 }
 
-//------------------------------------------------------------------------------
-
-
-    /*
-int sV2uV(vector<string> & IN,vector<unsigned> & OUT)
-// Routine to take a vector of strings and convert them into a vector of
-// unsigned integers. The return value is the number of strings that did not
-// convert. (They are written as 0.)
-{
-int ans = 0;
-unsigned out;
-WALKVECTOR(string,IN,i) {
-  out = 0;
-  if (sscanf((*i).c_str(),"%u",&out)==0) ans++;
-  OUT.push_back(out);
-}
-return ans;
-}
-                */
 //==============================================================================
 
 int FindFirst(const char * name,struct FindData_t * fdata)
@@ -838,6 +842,22 @@ DiskData->DF_bytes_per_sector    = diskdata.bytes_per_sector;
 return;
 }
 
+//------------------------------------------------------------------------------
+
+int patMatch(const char * pat,const char * str)
+// Case insensitive pattern match.
+{
+switch (pat[0]) {
+  case '*'  : return patMatch(pat+1,str) || (str[0] && patMatch(pat,str+1));
+  case '?'  : return str[0] && patMatch(pat+1,str+1);
+  case '\0' : return !str[0];
+  default   : return (pat[0]==str[0]) && patMatch(pat+1,str+1);
+// Or, to make it case insensitive (apart from the obvious way):
+//  default : return (toupper(pat[0])==toupper(str[0]))&&patMatch(pat+1,str+1);
+}
+
+}
+
 //==============================================================================
 
 void freadstr(string & name,FILE * fp)
@@ -901,6 +921,31 @@ for(unsigned row=0;;row++) {           // One row at a time...
   if (i>=len) break;                   // Final line exit
 }
 fprintf(fp,"\n");
+}
+
+//------------------------------------------------------------------------------
+
+string sBank(map<string,unsigned> & rm,unsigned i,string s)
+// String bank:
+// If the input string is less than i characters, it goes straight out again
+// Otherwise it gets aliassed onto a unique unsigned.
+// Just helps the pretty-print
+{
+if (s.size()<i) return s;
+rm[s] = UniU(1001);
+return "{" + uint2str(rm[s]) + "}";
+}
+
+//------------------------------------------------------------------------------
+
+void sBankShow(FILE * fo,map<string,unsigned> & rm)
+// And this lets you pretty-print the stringbank alias map
+{
+if (rm.empty()) return;
+WALKMAP(string,unsigned,rm,i)
+  fprintf(fo,"{%3u} == %s\n",(*i).second,(*i).first.c_str());
+rm.clear();
+fprintf(fo,"\n");
 }
 
 //------------------------------------------------------------------------------

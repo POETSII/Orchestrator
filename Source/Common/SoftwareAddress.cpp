@@ -23,6 +23,12 @@ SoftwareAddress::SoftwareAddress(
     set_device(device);
 }
 
+/* Alternatively, construct a software address from a uint32_t. */
+SoftwareAddress::SoftwareAddress(uint32_t address){
+    definitions = SOFTWARE_ADDRESS_FULLY_DEFINED_MASK;
+    raw = address;
+}
+
 /* Alternatively, construct a software address without explicitly priming it
  * with values. */
 SoftwareAddress::SoftwareAddress(){
@@ -110,13 +116,19 @@ void SoftwareAddress::set_device(DeviceComponent value)
     set_defined(4);
 }
 
+/* Construct a software address from a uint32_t. */
+void SoftwareAddress::from_uint(uint32_t address){
+    definitions = SOFTWARE_ADDRESS_FULLY_DEFINED_MASK;
+    raw = address;
+}
+
 /* Write debug and diagnostic information using dumpchan. Arguments:
  *
  * - file: File to dump to. */
-void SoftwareAddress::Dump(FILE* file)
+void SoftwareAddress::Dump(unsigned off,FILE* file)
 {
-    std::string prefix = dformat("Software address at %#018lx",
-                                 (uint64_t) this);
+    std::string prefix = dformat("%d Software address at %#018lx",
+                                 off, (uint64_t) this);
     DumpUtils::open_breaker(file, prefix);
 
     /* The raw address. */

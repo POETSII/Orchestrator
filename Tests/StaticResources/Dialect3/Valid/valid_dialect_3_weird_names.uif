@@ -4,8 +4,8 @@
 [header("N6b06b723")]
 +author="Mark Vousden"
 +dialect=3
-+datetime=20200909134000
-+version="0.5.0"
++datetime=20210106134500
++version="0.5.1"
 +file="valid_dialect_3_weird_names.uif"
 
 // Sums to 16 bits, leading bits are not used.

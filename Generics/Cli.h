@@ -16,6 +16,9 @@ command /clause0=[op]par0,[op]par1.... /clause1=[op]par0,[op]par1....
 bails. It doesn't attempt error recovery. problem.lin comes from lex.h and is
 always 1 in this object.)
 
+There is an alternative constructor for program command line arguments that
+concatenates arguments 1..all into one huge string (with ' ' spacers)
+
 The entire datastructure of the class is designed to be burgled; there is
 nothing private and there are no release access functions, apart from Err().
 
@@ -27,9 +30,12 @@ class Cli {
 public:
                    Cli();
                    Cli(string);
+                   Cli(int,char *[]);
 virtual ~          Cli(void);
-void               Dump(FILE * = stdout);
-bool               Err(int &,int &);   // Direct copy of problem struct
+void               DoIt(string);
+void               Dump(unsigned = 0,FILE * = stdout);
+bool               Empty() { return Co.empty(); }
+void               Err(int &,int &);   // Direct copy of problem struct
 vector<Cli>        Expand();           // Expand the clauses -> own command
 string             GetC(unsigned=0,string=string());
 static list<Cli>   File(string,bool=false);  // Create a Cli vector from a file
@@ -38,26 +44,27 @@ static bool        StrEq(string,string,unsigned=4); // Equality test
 void               Trim(unsigned=4);   // Regularise the strings
 
 string             Orig;               // Copy of input string
+string             Cmnt;               // Any terminating comment
 string             Co;                 // Command
-vector<string>     Co_v;               // Compound command
 struct Pa_t {                          // Parameter holder
   Pa_t(){}
-  Pa_t(string _O,string _V):Op(_O),Val(_V){}
+  Pa_t(string _O,string _V):Op(_O) { Va_v.push_back(_V); }
+  string           Concatenate();      // Returns concatenated copy
   void             Dump(FILE * = stdout,unsigned=0);
   string           Op;                 // Parameter operator
-  string           Val;                // Parameter name
+  vector<string>   Va_v;               // Parameter name vector
 };
 struct Cl_t {                          // Clause holder
   void             Dump(FILE * = stdout,unsigned=0);
-  string           GetO(unsigned=0,string=string());// Get indexed parameter operator
-  string           GetP(unsigned=0,string=string());// Get indexed parameter
+  string           GetO(unsigned=0,string=string());  // Indexed param operator
+  string           GetP(unsigned=0,string=string());  // Zeroth compound name
+  vector<string>   GetPv(unsigned=0,string=string()); // Indexed param vector
   string           Cl;                 // Clause name
   vector<Pa_t>     Pa_v;               // Bunch of parameters
 };
 vector<Cl_t>       Cl_v;               // Bunch of clauses in command
 struct prob_t {                        // Problem structure
-  prob_t():prob(false),lin(-1),col(-1){}
-  bool             prob;               // There is/isn't a problem
+  prob_t():lin(-1),col(-1){}
   int              lin;                // On line (1, here)
   int              col;                // Guess
 } problem;                             // The error holder itself

@@ -3,7 +3,6 @@
 #include <cstring>
 #include "stdint.h"
 
-
 void softswitch_init(ThreadCtxt_t* ThreadContext)
 {
 #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION
@@ -44,6 +43,12 @@ void softswitch_init(ThreadCtxt_t* ThreadContext)
     }
 }
 
+// <!> You know it's a hack when the "pragma GCC" comes out.
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
+void softswitch_delay(){for (uint32_t i=0; i<500; i++);}
+#pragma GCC pop_options
+
 
 /*------------------------------------------------------------------------------
  * softswitch_barrier: Block until told to continue by the mothership
@@ -67,8 +72,7 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
 
     // and then issue the packet indicating this thread's startup is complete.
     tinselSetLen((p_hdr_size() - 1) >> TinselLogBytesPerFlit);
-
-    tinselSend(tinselMyBridgeId(), send_buf);
+    SUPER_SEND(send_buf);
 
     // second phase of barrier: wait for the supervisor's response
     ThreadContext->ctlEnd = 1;
@@ -86,12 +90,14 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
             // *Debug: send packet out to show we have passed the barrier*
             // softswitch_alive(send_buf);
             // and once it's been received, process it as a startup packet
-            softswitch_onReceive(ThreadContext, recv_buf);
-            ThreadContext->ctlEnd = 0;
-        }
 
+            ThreadContext->ctlEnd = 0;
+
+            // Sleep for X to allow everything to start
+        }
         tinselFree(recv_buf);
     }
+    softswitch_delay();     // Delay to let other softswitches pass the barrier
 }
 //------------------------------------------------------------------------------
 
@@ -222,7 +228,7 @@ void softswitch_finalise(ThreadCtxt_t* ThreadContext)
     {
         uint32_t rtsStart = ThreadContext->rtsStart;
 
-        ThreadContext->rtsBuf[rtsStart]->idxTgts = 0;
+        ThreadContext->rtsBuf[rtsStart]->idxEdges = 0;
         ThreadContext->rtsBuf[rtsStart]->sendPending = 0;
         ThreadContext->rtsBuf[rtsStart] = PNULL;
 
@@ -256,9 +262,9 @@ inline void device_init(devInst_t* device, ThreadCtxt_t* ThreadContext)
         outPin_t* o_pin = &device->outputPins[out];
 
         o_pin->device = device;
-        for (uint32_t tgt = 0; tgt < o_pin->numTgts; tgt++)
+        for (uint32_t edge = 0; edge < o_pin->numEdges; edge++)
         {
-            outEdge_t* i_tgt = &o_pin->targets[tgt];
+            outEdge_t* i_tgt = &o_pin->outEdges[edge];
             i_tgt->pin = o_pin;
         }
     }
@@ -268,11 +274,17 @@ inline void device_init(devInst_t* device, ThreadCtxt_t* ThreadContext)
         inPin_t* i_pin = &device->inputPins[pkt_typ];
 
         i_pin->device = device;
-        for (uint32_t src = 0; src < i_pin->numSrcs; src++)
+        for (uint32_t src = 0; src < i_pin->numEdges; src++)
         {
-            inEdge_t* i_src = &i_pin->sources[src];
+            inEdge_t* i_src = &i_pin->inEdges[src];
             i_src->pin = i_pin;
         }
+    }
+
+    // Execute the OnInit handler
+    if(device->devType->OnInit_Handler(ThreadContext->properties, device))
+    {
+        softswitch_onRTS(ThreadContext, device);  // Call RTS for device
     }
 }
 //------------------------------------------------------------------------------
@@ -344,8 +356,7 @@ inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile voi
     // Send it
     uint32_t len = p_hdr_size() + p_instrpkt_pyld_size;
     tinselSetLen((len - 1) >> TinselLogBytesPerFlit);    // Set the packet length
-    tinselSend(tinselHostId(), send_buf); // Send it
-
+    SUPER_SEND(send_buf);
 
     // Reset fields.
     ThreadContext->lastCycles = cycles;
@@ -383,22 +394,30 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
 
     // Pointers of convenience
     devInst_t* device = pin->device;                                // Get the Device
-    const outEdge_t* target = &pin->targets[pin->idxTgts];          // Get the target
-    volatile char* buf = static_cast<volatile char*>(send_buf);    // Send Buffer
+    const outEdge_t* target = &pin->outEdges[pin->idxEdges];        // Get the edge
+    volatile char* buf = static_cast<volatile char*>(send_buf);     // Send Buffer
     volatile P_Pkt_Hdr_t* hdr = static_cast<volatile P_Pkt_Hdr_t*>(send_buf); // Header
 
     size_t hdrSize = p_hdr_size(); //Size of the header.
 
-    if(pin->numTgts > 0)     // Sanity check: make sure the pin has targets
+    if(pin->numEdges > 0)     // Sanity check: make sure the pin has edges
     {
         //--------------------------------------------------------------------------
         // First target, need to run pin's OnSend.
         //--------------------------------------------------------------------------
-        if(pin->idxTgts == 0)
+        if(pin->idxEdges == 0)
         {
             char* pkt = const_cast<char*>(buf)+hdrSize; // Pointer to the packet, after headers, etc.
+
+#ifdef BUFFERING_SOFTSWITCH
+            // Copy the packet from the packet buffer to the send slot
+            memcpy(pkt, ThreadContext->pktBuf[ThreadContext->rtsStart],
+                        pin->pinType->sz_pkt);
+#else
+            // Build the packet in the send slot
             pin->pinType->Send_Handler(ThreadContext->properties, device, pkt);
             ThreadContext->txHandlerCount++;         // Increment SendHandler count
+#endif
         }
         //--------------------------------------------------------------------------
 
@@ -413,7 +432,7 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
 
         if(hdr->swAddr & P_SW_MOTHERSHIP_MASK)
         {   // Message to the Supervisor or External (this goes via the Supervisor)
-            tinselSend(tinselHostId(), send_buf);   // Goes to the tinselHost
+            SUPER_SEND(send_buf);  // Goes to the tinselHost
             ThreadContext->superCount++;         // Increment Supervisor Pkt count
         }
         else
@@ -434,17 +453,17 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
             last[15] = device->deviceID;
 
             tinselSetLen(TinselMaxFlitsPerMsg-1);
-            tinselSend(tinselHostId(), send_buf);
+            SUPER_SEND(send_buf);
             */
         }
         //--------------------------------------------------------------------------
     }
 
-    pin->idxTgts++;     // Increment the target index.
+    pin->idxEdges++;     // Increment the target index.
 
-    if(pin->idxTgts >= pin->numTgts)  // Reached the end of the send list.
+    if(pin->idxEdges >= pin->numEdges)  // Reached the end of the send list.
     {
-        pin->idxTgts = 0;       // Reset index,
+        pin->idxEdges = 0;       // Reset index,
         pin->sendPending = 0;   // Reset pending
 
         // Move the circular RTS buffer index
@@ -457,7 +476,7 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
         softswitch_onRTS(ThreadContext, device); // Run the Device's RTS handler. This could be conditional.
     }
 
-    return pin->idxTgts;
+    return pin->idxEdges;
 }
 //------------------------------------------------------------------------------
 
@@ -494,13 +513,15 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
         recvDevEnd = recvDevBegin + 1;
     }
     else
-    {
-        handler_log(5, "dIDX OOR %d", devAdr);
-        return;    // Message target is out of range. //TODO: - log/flag
+    {   // Log to indicate out of range. Pretend to be the first device.
+        __handler_log(ThreadContext->devInsts[0].deviceIdx, 5, 
+                        "dIDX OOR %d", devAdr);
+        return;
     }
 
 
-    if((recvHdr->swAddr & P_SW_CNC_MASK) && (opcode > P_CNC_MAX_USER))
+    if((recvHdr->swAddr & P_SW_CNC_MASK) && (opcode != P_CNC_IMPL)
+                                         && (opcode > P_CNC_MAX_USER))
     {   // Check for reserved Opcodes
         switch(opcode)
         {
@@ -512,67 +533,63 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
                 ThreadContext->pendCycles = 1;
                 break;
 #endif
-            case P_CNC_BARRIER:
-                // **BODGE BODGE BODGE** not so temporary handler for dealing
-                // with __init__. This works ONLY because the __init__ pin on
-                // all devices that have it in existing XML happens to be pin 0
-                // (which means that a Supervisor can guess what the pin number
-                // is supposed to be). In any case, this should route it through
-                // the __init__ handler. Luckily packet types are globally
-                // unique, or likewise this wouldn't work if the device had no
-                // __init__ pin. This test should be removed as soon as __init__
-                // pins lose any special meaning in existing XML!
-                for (devInst_t* device = recvDevBegin; device != recvDevEnd; device++)
-                {
-                    inPin_t* pin = &device->inputPins[pinIdx];    // Get the pin
-                    pin->pinType->Recv_handler(ThreadContext->properties, device, 0,
-                                                static_cast<const uint8_t*>(
-                                                const_cast<const void*>(recv_buf)
-                                                )+p_hdr_size());
-                }
-                break;
-            default:            // Unused reserved Opcode - log it.
-                                handler_log(5, "BAD-OP %d", opcode);
-
+            default:    // Unused reserved Opcode - log it.
+                        __handler_log(ThreadContext->devInsts[0].deviceIdx, 5, 
+                                        "BAD-OP %d", opcode);
+                        break;
         }
         return;
     }
 
     // Loop through each target device (1 unless a broadcast packet)
-    for (devInst_t* device = recvDevBegin; device != recvDevEnd; device++)
+    for (devInst_t* dev = recvDevBegin; dev != recvDevEnd; dev++)
     {
-        if(pinIdx >= device->numInputs)
-        {   // Sanity check the pin index
-            handler_log(5, "pIDX OOR %d %d", device, pinIdx);
-            continue;               //TODO: - log/flag
-        }
-        inPin_t* pin = &device->inputPins[pinIdx];    // Get the pin
-
         ThreadContext->rxHandlerCount++;     // Increment received handler count
-
-
-        // Supervisor/CNC/Control Message
-        if(recvHdr->swAddr & P_SW_CNC_MASK)
+        
+        // If it is an implicit packet from the supervisor
+        if(opcode == P_CNC_IMPL)
+        {
+            dev->devType->OnImpl_Handler(ThreadContext, dev,
+                                            static_cast<const uint8_t*>(
+                                            const_cast<const void*>(recv_buf)
+                                                )+p_hdr_size());
+        }
+        
+        // If the received packet is a control packet, process it
+        else if(recvHdr->swAddr & P_SW_CNC_MASK)
         {  // Trigger OnCtl. Strip volatile at this point.
-            device->devType->OnCtl_Handler(ThreadContext, device, opcode,
+            dev->devType->OnCtl_Handler(ThreadContext, dev, opcode,
                                                static_cast<const uint8_t*>(
                                                const_cast<const void*>(recv_buf)
                                                )+p_hdr_size());
         }
+        
+        // Handle as a normal packet
         else
-        {   // Handle as a normal packet
-            if(edgeIdx >= pin->numSrcs)
-            {   // Sanity check the Edge Index
-                handler_log(5, "eIDX OOR %d %d %d", device, pinIdx, edgeIdx);
+        {
+            // Sanity check the pin index
+            if(pinIdx >= dev->numInputs)
+            {   
+                __handler_log(dev->deviceIdx, 5, "pIDX OOR %d %d", dev, pinIdx);
                 continue;               //TODO: - log/flag
             }
-            pin->pinType->Recv_handler(ThreadContext->properties, device,
-                                        &pin->sources[edgeIdx],
+            inPin_t* pin = &dev->inputPins[pinIdx];    // Get the pin
+
+            // Sanity check the Edge Index
+            if(edgeIdx >= pin->numEdges)
+            {
+                __handler_log(dev->deviceIdx,5,"eIDX OOR %d %d",pinIdx,edgeIdx);
+                continue;               //TODO: - log/flag
+            }
+            
+            pin->pinType->Recv_handler(ThreadContext->properties, dev,
+                                        &pin->inEdges[edgeIdx],
                                         static_cast<const uint8_t*>(
                                         const_cast<const void*>(recv_buf)
                                         )+p_hdr_size());
         }
-        softswitch_onRTS(ThreadContext, device);    // Run OnRTS for the device
+        
+        softswitch_onRTS(ThreadContext, dev);    // Run OnRTS for the device
     }
 }
 //------------------------------------------------------------------------------
@@ -641,22 +658,53 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
             {
                 // Get a pointer to the active pin
                 outPin_t* output_pin = &device->outputPins[pin];
-
-                //If the pin has targets and is not already pending,
-                if(output_pin->numTgts && output_pin->sendPending == 0)
+#ifdef BUFFERING_SOFTSWITCH
+                // Calculate the remaining space in the packet buffer.
+                uint32_t buffRem;
+                buffRem = (ThreadContext->rtsEnd >= ThreadContext->rtsStart)   ?
+                        (((ThreadContext->rtsBuffSize - ThreadContext->rtsEnd) +
+                                    ThreadContext->rtsStart))                  :
+                            (ThreadContext->rtsStart - ThreadContext->rtsEnd);
+                
+                // If the pin has edges and there is space in the buffer
+                if(output_pin->numEdges && (buffRem > 1))
+                {
+                    //output_pin->sendPending++;
+#else
+                //If the pin has edges and is not already pending,
+                if(output_pin->numEdges && output_pin->sendPending == 0)
                 {
                     // Flag that pin is pending
                     output_pin->sendPending = 1;
+#endif
 
                     // Add pin to RTS list and update end
                     ThreadContext->rtsBuf[ThreadContext->rtsEnd] = output_pin;
+
+#ifdef BUFFERING_SOFTSWITCH
+                    // Build the packet in the Packet buffer
+                    output_pin->pinType->Send_Handler(ThreadContext->properties,
+                          device, ThreadContext->pktBuf[ThreadContext->rtsEnd]);
+                    ThreadContext->txHandlerCount++;    // ++ SendHandler count
+#endif
 
                     ThreadContext->rtsEnd++;
                     if(ThreadContext->rtsEnd == ThreadContext->rtsBuffSize)
                     {
                         ThreadContext->rtsEnd = 0;
                     }
+#ifdef BUFFERING_SOFTSWITCH
                 }
+#else
+                }
+                else if((output_pin->sendPending == 1) && 
+                        (ThreadContext->rtsStart == ThreadContext->rtsEnd))
+                {   // Sanity check to catch buffer overflow
+                    __handler_log(device->deviceIdx,5,"rtsBuff Broken %d %d %d",
+                                    device->deviceIdx, ThreadContext->rtsStart,
+                                    ThreadContext->rtsEnd);
+                }
+#endif
             }
         }
     }

@@ -18,7 +18,6 @@
 export RISCV_PATH="{{ RISCV_DIR }}"
 export MPICH_PATH="{{ MPICH_DIR }}"
 export PATH="{{ MPICH_DIR }}/bin:{{ RISCV_BIN_DIR }}:$PATH"
-export TRIVIAL_LOG_HANDLER=1
 
 # Quartus
 QUARTUS_SETUP_SCRIPT="/local/ecad/setup-quartus17v0.bash"
@@ -29,10 +28,9 @@ fi
 
 # Paths for dynamically-linked libraries.
 MPI_LIB_DIR="{{ MPICH_LIB_DIR }}"
-QT_LIB_DIR="{{ QT_LIB_DIR }}"
 GCC_LIB_DIR="{{ GCC_LIB_DIR }}"
 CR_LIB_DIR="{{ CR_LIB_DIR }}"
-INTERNAL_LIB_PATH="$QT_LIB_DIR":"$MPI_LIB_DIR":"$GCC_LIB_DIR":
+INTERNAL_LIB_PATH="$MPI_LIB_DIR":"$GCC_LIB_DIR":
 
 # Paths for dynamically-linked libraries required by MPI.
 export LD_LIBRARY_PATH="$CR_LIB_DIR":"$MPI_LIB_DIR":"$LD_LIBRARY_PATH":./
@@ -117,7 +115,12 @@ done
 
 # Run the launcher from the build directory.
 pushd "{{ EXECUTABLE_DIR }}" > /dev/null
-./orchestrate /p = "\"$INTERNAL_LIB_PATH\"" $ARGS
+if ! command -v rlwrap &> /dev/null; then
+    ./orchestrate /p = "\"$INTERNAL_LIB_PATH\"" $ARGS
+else
+    rlwrap --remember --history-filename ../.orch_history \
+        ./orchestrate /p = "\"$INTERNAL_LIB_PATH\"" $ARGS
+fi
 if [ $GNU_HELP -eq 1 ]; then
     printf "\nNote that there is limited support for short-form GNU-style switches (e.g. '-h -f FILE').\n"
 fi

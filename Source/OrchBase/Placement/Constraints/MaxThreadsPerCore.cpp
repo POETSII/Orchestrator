@@ -1,8 +1,8 @@
 #include "MaxThreadsPerCore.h"
 
 MaxThreadsPerCore::MaxThreadsPerCore(
-    bool mandatory, float penalty, P_task* task, unsigned maximum):
-    Constraint(category, mandatory, penalty, task),
+    bool mandatory, float penalty, GraphI_t* gi, unsigned maximum):
+    Constraint(category, mandatory, penalty, gi),
     maximum(maximum)
 {
     Name(dformat(
@@ -43,9 +43,9 @@ bool MaxThreadsPerCore::is_satisfied(Placer* placer)
 /* Returns true if the cores that the devices are placed do not have more
  * than the "maximum" number of threads in use, and false otherwise. */
 bool MaxThreadsPerCore::is_satisfied_delta(Placer* placer,
-                                             std::vector<P_device*> devices)
+                                             std::vector<DevI_t*> devices)
 {
-    std::vector<P_device*>::iterator deviceIt;
+    std::vector<DevI_t*>::iterator deviceIt;
     for (deviceIt = devices.begin(); deviceIt != devices.end(); deviceIt++)
     {
         /* Given one device, get the core that contains it. From that core,
@@ -83,8 +83,8 @@ void MaxThreadsPerCore::Dump(FILE* file)
     else fprintf(file,
                  "This is a soft constraint with penalty %f.\n", penalty);
 
-    if (task == PNULL) fprintf(file, "Task: None\n");
-    else fprintf(file, "Task: %s\n", task->Name().c_str());
+    if (gi == PNULL) fprintf(file, "Graph instance: None\n");
+    else fprintf(file, "Graph instance: %s\n", gi->Name().c_str());
 
     /* Close breaker and flush the dump. */
     DumpUtils::close_breaker(file, prefix);

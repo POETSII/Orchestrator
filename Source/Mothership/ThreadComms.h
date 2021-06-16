@@ -35,7 +35,7 @@ void ThreadComms::START_THREAD_FN_NAME(THREAD_NAME)() \
     if(result) \
     { \
         throw ThreadException(dformat("'THREAD_NAME': %s", \
-            POETS::getSysErrorString(result).c_str())); \
+            OSFixes::getSysErrorString(result).c_str())); \
     } \
 }
 
@@ -46,7 +46,7 @@ void ThreadComms::JOIN_THREAD_FN_NAME(THREAD_NAME)() \
     if(result) \
     { \
         throw ThreadException(dformat("'THREAD_NAME': %s", \
-            POETS::getSysErrorString(result).c_str())); \
+            OSFixes::getSysErrorString(result).c_str())); \
     } \
 }
 
@@ -74,10 +74,10 @@ public:
     void push_MPI_app_queue(PMsg_p);
     void push_MPI_app_queue(std::vector<PMsg_p>*);
 
-    bool pop_backend_out_queue(std::pair<uint32_t, P_Pkt_t>*);
-    bool pop_backend_out_queue(std::vector<std::pair<uint32_t, P_Pkt_t> >*);
-    void push_backend_out_queue(std::pair<uint32_t, P_Pkt_t>);
-    void push_backend_out_queue(std::vector<std::pair<uint32_t, P_Pkt_t> >*);
+    bool pop_backend_out_queue(P_Addr_Pkt_t*);
+    bool pop_backend_out_queue(std::vector<P_Addr_Pkt_t>*);
+    void push_backend_out_queue(P_Addr_Pkt_t);
+    void push_backend_out_queue(std::vector<P_Addr_Pkt_t>*);
 
     bool pop_backend_in_queue(P_Pkt_t*);
     bool pop_backend_in_queue(std::vector<P_Pkt_t>*);
@@ -128,7 +128,7 @@ private:
     /* Queues */
     std::queue<PMsg_p> MPICncQueue;
     std::queue<PMsg_p> MPIAppQueue;
-    std::queue<std::pair<uint32_t, P_Pkt_t> > BackendOutputQueue;
+    std::queue<P_Addr_Pkt_t> BackendOutputQueue;
     std::queue<P_Pkt_t> BackendInputQueue;
     std::queue<P_Debug_Pkt_t> DebugInputQueue;
 };

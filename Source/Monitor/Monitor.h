@@ -7,18 +7,17 @@
 
 class Monitor : public CommonBase
 {
-
 public:
                     Monitor(int,char **,string);
 virtual ~           Monitor();
 
+typedef unsigned    (Monitor::*pMeth)(PMsg_p *);
+map<unsigned,pMeth> FnMap;
+
 private:
 #include            "Decode.cpp"
-void                Dump(FILE * = stdout);
+void                Dump(unsigned = 0,FILE * = stdout);
 unsigned            Onxxxx(PMsg_p *);
-
-typedef unsigned    (Monitor::*pMeth)(PMsg_p *);
-map<unsigned,pMeth> FnMapx;
 
 };
 

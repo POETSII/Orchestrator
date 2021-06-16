@@ -49,7 +49,8 @@ MinBin(fr,to);
 printf("MinBin [%4u-%-4u] : %5d\n",fr,to,(*(D.begin())).second);
 MaxBin(fr,to);
 printf("MaxBin [%4u-%-4u] : %5d\n",fr,to,(*(--D.end())).second);
-printf("Mean bin size      : %5d\n",Mean());
+printf("Mean bin size      : %10.2e\n",Mean());
+printf("Variance           : %10.2e\n",Variance());
 unsigned cnt = 0;
 WALKMAP(unsigned,int,D,i)
   fprintf(fp,"%03u:[%4u-%-4u] : %5d\n",
@@ -173,10 +174,10 @@ double v = 0.0;
 double m = Mean();
 WALKMAP(unsigned,int,D,i) {
   double val = double((*i).second);
-  v += (m-val)*(m-val);
+  v += ((m-val)*(m-val));
 }
 
-return v;
+return v/(double)(D.size());
 }
 
 //------------------------------------------------------------------------------

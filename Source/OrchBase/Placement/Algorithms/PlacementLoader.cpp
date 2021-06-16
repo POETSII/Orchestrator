@@ -10,22 +10,22 @@ PlacementLoader::PlacementLoader(Placer* placer,
     load_file();
 }
 
-float PlacementLoader::do_it(P_task* task)
+float PlacementLoader::do_it(GraphI_t* gi)
 {
-    P_device* device;
+    DevI_t* device;
     std::string threadName;
     HardwareIterator* hwIt;
 
     /* Go over each device in turn */
-    WALKPDIGRAPHNODES(unsigned, P_device*, unsigned, P_message*, unsigned,
-                      P_pin*, task->pD->G, deviceIterator)
+    WALKPDIGRAPHNODES(unsigned, DevI_t*, unsigned, EdgeI_t*, unsigned,
+                      PinI_t*, gi->G, deviceIterator)
     {
         hwIt = new HardwareIterator(placer->engine);
 
-        device = task->pD->G.NodeData(deviceIterator);
+        device = gi->G.NodeData(deviceIterator);
 
-        /* Ignore if it's a supervisor device (we don't map those). */
-        if (!(device->pP_devtyp->pOnRTS)) continue;
+        /* Ignore if it's not a normal device (we don't map those). */
+        if (device->devTyp != 'D') continue;
 
         /* Get the thread name. */
         threadName = dataFromFile[device->FullName()];
@@ -55,12 +55,12 @@ void PlacementLoader::load_file()
     std::string recordBuffer, device, thread;
     std::stringstream recordStream;
     std::ifstream dataStream;
-    dataStream.open(filePath);
+    dataStream.open(filePath.c_str());
     if (!dataStream.is_open())
     {
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    filePath, POETS::getSysErrorString(errno).c_str()));
+                    filePath, OSFixes::getSysErrorString(errno).c_str()));
     }
 
     /* For each line... */

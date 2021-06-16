@@ -65,6 +65,7 @@ bool   debug_trace(int);
 
 typedef unsigned int  uint;
 typedef unsigned int  uint32;
+//typedef unsigned int  uint32_t;
 typedef unsigned int  uint16;
 typedef long int      lint;
 typedef unsigned char uchar;
@@ -115,6 +116,7 @@ unsigned     str2uint(const string &,unsigned=0);
 lint         str2long(const string &);
 bool         str2bool(const string &);
 unsigned     str2hex(const string &);
+unsigned     str2bin(string &);
 //int          sV2uV(vector<string> &,vector<unsigned> &);
 string          GetStr(FILE *);
 void            PutStr(FILE *,string);
@@ -195,6 +197,10 @@ For a given drive:
 */
 
 // Finding files in a directory:
+/* There is all sorts of dynamic weirdness going on under these routines, which
+is opaque to us mortals, but ultimately means you can't nest directory-walking
+loops. AS soon as the inner loop terminates, all the outer ones do too. Bum.
+*/
 //
 // A useful (and easy) intersection of the Borland and u$oft structures:
 struct FindData_t {
@@ -224,9 +230,12 @@ void DiskFree(unsigned,struct DiskFree_t *);
 
 //------------------------------------------------------------------------------
 
+int patMatch(const char *,const char *);
 void freadstr(string &,FILE *);
 void fwritestr(string,FILE *);
 void HexDump(FILE *,unsigned char *,unsigned);
+string sBank(map<string,unsigned> &,unsigned,string);
+void sBankShow(FILE *,map<string,unsigned> &);
 
 //------------------------------------------------------------------------------
 

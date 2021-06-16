@@ -85,7 +85,7 @@ void CostCache::build_cache()
      *
      * Alternatively, if we're duressed into running in serial, we simply spawn
      * a single thread spanning the entire engine. */
-    std::vector<std::pair<P_mailbox*, P_mailbox*>> threadRanges;
+    std::vector<std::pair<P_mailbox*, P_mailbox*> > threadRanges;
     P_mailbox* first;
     P_mailbox* last;
     if (SERIAL_FLOYD_WARSHALL)
@@ -266,8 +266,8 @@ void* CostCache::inner_floyd_warshall(void* arg)
     P_mailbox* inner;
     HardwareIterator innerIt = HardwareIterator(args->engine);
 
-    std::map<P_mailbox*, std::map<P_mailbox*, float>>* costs = args->costs;
-    std::map<P_mailbox*, std::map<P_mailbox*, P_mailbox*>>* pathNext =
+    std::map<P_mailbox*, std::map<P_mailbox*, float> >* costs = args->costs;
+    std::map<P_mailbox*, std::map<P_mailbox*, P_mailbox*> >* pathNext =
         args->pathNext;
 
     /* Move the middle iterator to middleStart. */
@@ -582,7 +582,7 @@ void CostCache::Dump(FILE* file)
 {
     std::string prefix = "Cost cache matrix";
     DumpUtils::open_breaker(file, prefix);
-    std::map<P_mailbox*, std::map<P_mailbox*, float>>::iterator outerCostsIt;
+    std::map<P_mailbox*, std::map<P_mailbox*, float> >::iterator outerCostsIt;
     std::map<P_mailbox*, float>::iterator innerCostsIt;
     for (outerCostsIt = costs.begin(); outerCostsIt != costs.end();
          outerCostsIt++)
@@ -600,7 +600,7 @@ void CostCache::Dump(FILE* file)
 
     prefix = "Path matrix";
     DumpUtils::open_breaker(file, prefix);
-    std::map<P_mailbox*, std::map<P_mailbox*, P_mailbox*>>::iterator
+    std::map<P_mailbox*, std::map<P_mailbox*, P_mailbox*> >::iterator
         outerPathsIt;
     std::map<P_mailbox*, P_mailbox*>::iterator innerPathsIt;
     for (outerPathsIt = pathNext.begin(); outerPathsIt != pathNext.end();

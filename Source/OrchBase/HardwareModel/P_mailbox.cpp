@@ -8,6 +8,7 @@
  * - name: Name of this mailbox object (see namebase) */
 P_mailbox::P_mailbox(std::string name)
 {
+    parent = PNULL;
     Name(name);
 }
 
@@ -80,7 +81,7 @@ void P_mailbox::Dump(FILE* file)
     DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
-    NameBase::Dump(file);
+    NameBase::Dump(0,file);
 
     /* About contained items, if any. */
     DumpUtils::open_breaker(file, "Cores in this mailbox");

@@ -25,34 +25,45 @@ float SimulatedAnnealing::acceptance_probability(float fitnessBefore,
 
 /* Computes the disorder value as a function of the iteration number, between
  * half (at iteration=0) and zero (lim iteration ->inf). Decrease must be
- * monotonic. For now, it's a simple exponential decay.
+ * monotonic. For now, it's a simple exponential decay with half life of a
+ * third of the number of iterations (thats what the factor 3 is for).
  *
  * In the case of simulated annealing that only accepts better
  * configurations, disorder is always zero. */
 float SimulatedAnnealing::compute_disorder()
 {
-    if (disorder) return 0.5 * exp(DISORDER_DECAY * iteration);
+    if (disorder) return 0.5 * exp(log(0.5) * 3 * iteration / maxIteration);
     else return 0;
 }
 
-/* Places a task onto the engine held by a placer using a simulated annealing
+/* Places a gi onto the engine held by a placer using a simulated annealing
  * algorithm.
  *
  * Returns the placement score. */
-float SimulatedAnnealing::do_it(P_task* task)
+float SimulatedAnnealing::do_it(GraphI_t* gi)
 {
     std::string time = placer->timestamp();
 
+    /* Grab arguments, if any are set. */
+    bool inPlace = false;
+    if (placer->args.is_set("inpl")) inPlace = placer->args.get_bool("inpl");
+
+    maxIteration = ITERATION_MAX_DEFAULT;
+    if (placer->args.is_set("iter"))
+        maxIteration = placer->args.get_uint("iter");
+
+    /* Generic setup. */
     std::string algorithmName;
     if (disorder) algorithmName = "simulated_annealing";
     else algorithmName = "gradientless_climber";
 
-    std::string fPath = dformat("%s_%s_%s.txt", algorithmName.c_str(),
-                                task->Name().c_str(), time.c_str());
+    std::string fPath = dformat("%s%s_%s_%s.txt", placer->outFilePath.c_str(),
+                                algorithmName.c_str(), gi->Name().c_str(),
+                                time.c_str());
     FILE* log = fopen(fPath.c_str(), "w");
     if (log == PNULL) throw FileOpenException(
         dformat("File: %s. Message: %s",
-                fPath.c_str(), POETS::getSysErrorString(errno).c_str()));
+                fPath.c_str(), OSFixes::getSysErrorString(errno).c_str()));
 
     result.startTime = time;
     fprintf(log, "[I] Placement starting at %s.\n", time.c_str());
@@ -77,52 +88,66 @@ float SimulatedAnnealing::do_it(P_task* task)
         }
     }
 
-    /* Initial placement using smart-random. Note that we rely on this being a
-     * valid placement in order for this algorithm to select across the
-     * domain. (MLV never writes broken code! >_>). If it doesn't work, fall
-     * back to bucket filling (which is more stiff and harder to "anneal", but
-     * is generally safer). */
-    fprintf(log, "[I] Performing initial placement (smart-random).\n");
-    SmartRandom initialAlgorithm = SmartRandom(placer);
-    if (initialAlgorithm.do_it(task) == -1)
+    /* If the caller requests an in-place anneal, check if the graph is
+     * placed. If it's not, issue a warning. */
+    std::map<GraphI_t*, Algorithm*>::iterator algorithmIt;
+    algorithmIt = placer->placedGraphs.find(gi);
+    if (algorithmIt == placer->placedGraphs.end())  /* Not placed. */
     {
-        fprintf(log, "[I] It failed. Trying bucket-filling instead...\n");
-        placer->unplace(task, false);  /* Leave the constraints alone. */
-        BucketFilling otherInitialAlgorithm = BucketFilling(placer);
-        otherInitialAlgorithm.do_it(task);
+        if (inPlace) fprintf(log, "[W] Initial placement requested, but this "
+                                  "graph instance has not been placed.\n");
+
+        /* Initial placement using smart-random. Note that we rely on this
+         * being a valid placement in order for this algorithm to select across
+         * the domain. (MLV never writes broken code! >_>). If it doesn't work,
+         * fall back to thread-filling, which is generally safer. */
+        fprintf(log, "[I] Performing initial placement (smart-random).\n");
+        SmartRandom initialAlgorithm = SmartRandom(placer);
+        if (initialAlgorithm.do_it(gi) == -1)
+        {
+            fprintf(log, "[I] It failed. Trying spread-filling instead...\n");
+            placer->unplace(gi, false);  /* Leave the constraints alone. */
+            ThreadFilling otherInitialAlgorithm = ThreadFilling(placer);
+            otherInitialAlgorithm.do_it(gi);
+        }
+    }
+    else if (inPlace)  /* Was already placed, as user intended. */
+    {
+        fprintf(log, "[I] Annealing on an existing placement.\n");
+        delete algorithmIt->second;  /* Clear old algorithm object. */
     }
 
     /* Compute fitness of initial placement. */
-    placer->populate_edge_weights(task);
+    placer->populate_edge_weights(gi);
 
     /* Compute the fitness score. */
-    float fitness = placer->compute_fitness(task);
+    float fitness = placer->compute_fitness(gi);
 
     fprintf(log, "[I] Initial placement complete with fitness score %f.\n",
         fitness);
 
     /* Define the valid-cores map. */
-    placer->define_valid_cores_map(task, &validCoresForDeviceType);
+    placer->define_valid_cores_map(gi, &validCoresForDeviceType);
 
     /* Define the number of devices allowed per thread before constraints are
      * violated - used during selection. */
-    devicesPerThreadSoftMax = placer->constrained_max_devices_per_thread(task);
+    devicesPerThreadSoftMax = placer->constrained_max_devices_per_thread(gi);
 
     /* Define the number of threads used per core before constraints are
      * violated - used during selection. */
-    threadsPerCoreSoftMax = placer->constrained_max_threads_per_core(task);
+    threadsPerCoreSoftMax = placer->constrained_max_threads_per_core(gi);
 
     /* Iteration loop - we exit when the termination condition is satisfied.
      *
-     * Also note that, if there are no normal devices in the task, we don't
+     * Also note that, if there are no normal devices in the gi, we don't
      * anneal (because it will cause selection to fall over). */
     bool trivialGraph = true;
-    WALKPDIGRAPHNODES(unsigned, P_device*,
-                      unsigned, P_message*,
-                      unsigned, P_pin*, task->pD->G, thisDevice)
+    WALKPDIGRAPHNODES(unsigned, DevI_t*,
+                      unsigned, EdgeI_t*,
+                      unsigned, PinI_t*, gi->G, thisDevice)
     {
         /* Are you a normal device? */
-        if ((*thisDevice).second.data->pP_devtyp->pOnRTS)
+        if ((*thisDevice).second.data->devTyp == 'D')
         {
             trivialGraph = false;
             break;
@@ -134,17 +159,18 @@ float SimulatedAnnealing::do_it(P_task* task)
     std::list<Constraint*> dissatisfiedConstraints;
     std::list<Constraint*> satisfiedConstraints;
     std::list<Constraint*>::iterator constraintIt;
-    P_device* selectedDevice;
+    DevI_t* selectedDevice;
     P_thread* selectedThread;
     P_thread* previousThread;
-    P_device* swapDevice;
+    DevI_t* swapDevice;
     bool revert;
     float fitnessChange;  /* Negative represents "before the transformation",
                            * and positive represents "after the
                            * transformation" */
 
-    fPath = dformat("%s_fitness_graph_%s_%s.csv", algorithmName.c_str(),
-                    task->Name().c_str(), time.c_str());
+    fPath = dformat("%s%s_fitness_graph_%s_%s.csv",
+                    placer->outFilePath.c_str(), algorithmName.c_str(),
+                    gi->Name().c_str(), time.c_str());
     FILE* data = fopen(fPath.c_str(), "w");
     if (data == PNULL)
     {
@@ -153,13 +179,13 @@ float SimulatedAnnealing::do_it(P_task* task)
         fclose(log);
         throw FileOpenException(
             dformat("File: %s. Message: %s",
-                    fPath.c_str(), POETS::getSysErrorString(err).c_str()));
+                    fPath.c_str(), OSFixes::getSysErrorString(err).c_str()));
     }
 
     if (trivialGraph)
     {
         fprintf(log, "[I] ...hang on, there are no normal devices in this "
-                "task! There's nothing to anneal!\n");
+                "gi! There's nothing to anneal!\n");
     }
     else while (!is_finished())
     {
@@ -170,7 +196,7 @@ float SimulatedAnnealing::do_it(P_task* task)
 
         /* Select a device, a thread, and (optionally) another device on that
          * thread to swap with. */
-        select(task, &selectedDevice, &selectedThread, &swapDevice);
+        select(gi, &selectedDevice, &selectedThread, &swapDevice);
 
         /* Panic if we chose a device, but there was nowhere to put it. */
         if (selectedThread == PNULL)
@@ -178,7 +204,7 @@ float SimulatedAnnealing::do_it(P_task* task)
             fprintf(log, "[W]     Selected device '%s' of type '%s' can't "
                     "be put anywhere. Choosing a different device...\n",
                     selectedDevice->Name().c_str(),
-                    selectedDevice->pP_devtyp->Name().c_str());
+                    selectedDevice->pT->Name().c_str());
             iteration++;
             continue;
         }
@@ -194,7 +220,7 @@ float SimulatedAnnealing::do_it(P_task* task)
             /* Compute the fitness from device-device connections before the
              * move. Note the sign convention (see the comment where
              * fitnessChange is declared). */
-            fitnessChange -= placer->compute_fitness(task, selectedDevice);
+            fitnessChange -= placer->compute_fitness(gi, selectedDevice);
 
             /* Grab the thread for this device to allow reversion, (in case
              * determination rejects the transformed state), and to allow
@@ -205,33 +231,33 @@ float SimulatedAnnealing::do_it(P_task* task)
 
             /* Apply transformation. */
             placer->link(selectedThread, selectedDevice);
-            placer->populate_edge_weights(task, selectedDevice);
+            placer->populate_edge_weights(gi, selectedDevice);
 
             /* If any hard constraints are broken, decline the
              * transformation without computing fitness. */
             revert = !placer->are_all_hard_constraints_satisfied(
-                task, &brokenHardConstraints,
-                std::vector<P_device*>(1, selectedDevice));
+                gi, &brokenHardConstraints,
+                std::vector<DevI_t*>(1, selectedDevice));
 
             if (revert) fprintf(log, "[D]     Hard constraint violated!\n");
             else
             {
                 /* Compute the fitness from device-device connections after the
                  * move. */
-                fitnessChange += placer->compute_fitness(task, selectedDevice);
+                fitnessChange += placer->compute_fitness(gi, selectedDevice);
 
                 /* Compute constraint change, storing changed constraints in a
                  * pair of maps. */
                 dissatisfiedConstraints.clear();
                 satisfiedConstraints.clear();
 
-                /* For each soft constraint whose task matches our task (or
-                 * that applies to all tasks)... */
+                /* For each soft constraint whose gi matches our gi (or
+                 * that applies to all gis)... */
                 for (constraintIt = placer->constraints.begin();
                      constraintIt != placer->constraints.end(); constraintIt++)
                 {
-                    if (((*constraintIt)->task == PNULL or
-                         (*constraintIt)->task == task)
+                    if (((*constraintIt)->gi == PNULL or
+                         (*constraintIt)->gi == gi)
                         and !(*constraintIt)->mandatory)
                     {
                         /* We only care about:
@@ -240,7 +266,7 @@ float SimulatedAnnealing::do_it(P_task* task)
                          * - constraints that were not satisfied, but now
                          *   are. */
                         bool delta = (*constraintIt)->is_satisfied_delta(
-                            placer, std::vector<P_device*>(1, selectedDevice));
+                            placer, std::vector<DevI_t*>(1, selectedDevice));
                         if (delta && !(*constraintIt)->satisfied)
                         {
                             satisfiedConstraints.push_back(*constraintIt);
@@ -284,7 +310,7 @@ float SimulatedAnnealing::do_it(P_task* task)
             {
                 fprintf(log, "[D]     [FAIL]\n");
                 placer->link(previousThread, selectedDevice);
-                placer->populate_edge_weights(task, selectedDevice);
+                placer->populate_edge_weights(gi, selectedDevice);
             }
 
             /* Otherwise, we need to update some structures... */
@@ -312,7 +338,7 @@ float SimulatedAnnealing::do_it(P_task* task)
                 }
 
                 /* Update validCoresForDeviceType, for selection. */
-                std::map<P_devtyp*, std::set<P_core*>>::iterator devtypIt;
+                std::map<UniqueDevT, std::set<P_core*> >::iterator devtypIt;
                 P_core* firstCore = previousThread->parent;
                 P_core* secondCore = firstCore->pair;  /* May be PNULL. */
 
@@ -377,7 +403,7 @@ float SimulatedAnnealing::do_it(P_task* task)
                      devtypIt != validCoresForDeviceType.end();
                      devtypIt++)
                 {
-                    if (devtypIt->first != selectedDevice->pP_devtyp)
+                    if (devtypIt->first.pT != selectedDevice->pT)
                     {
                         devtypIt->second.erase(firstCore);
                         if (secondCore != PNULL)
@@ -399,16 +425,16 @@ float SimulatedAnnealing::do_it(P_task* task)
     }
 
     /* Redistribute devices in cores to evenly load threads. */
-    placer->redistribute_devices_in_task(task);
+    placer->redistribute_devices_in_gi(gi);
 
     /* Write our result structure, and leave. We don't mind that there is a
      * small difference between the many millions of fitness deltas and the
      * actual fitness - the difference is relatively small, and is due to
      * rounding. */
-    float finalFitness = placer->compute_fitness(task);
+    float finalFitness = placer->compute_fitness(gi);
     time = placer->timestamp();
     result.endTime = time;
-    placer->populate_result_structures(&result, task, finalFitness);
+    placer->populate_result_structures(&result, gi, finalFitness);
     fprintf(log, "[I] Final fitness from deltas: %f, Iteration count: %d, "
             "actual final fitness: %f\n",
             fitness, iteration, finalFitness);
@@ -421,11 +447,11 @@ float SimulatedAnnealing::do_it(P_task* task)
 /* Returns true if the termination condition holds, and false otherwise. It's
  * pretty simple - for now we're just counting iterations - but this probably
  * will change as we become more curious. */
-bool SimulatedAnnealing::is_finished(){return iteration >= ITERATION_MAX;}
+bool SimulatedAnnealing::is_finished(){return iteration >= maxIteration;}
 
 /* Performs the selection operation for simulated annealing. Arguments
  *
- * - task: Holds the graph from which devices are selected.
+ * - gi: Holds the graph from which devices are selected.
  *
  * - device: Pointer to a device pointer to select for the atomic
  *   transformation.
@@ -435,28 +461,31 @@ bool SimulatedAnnealing::is_finished(){return iteration >= ITERATION_MAX;}
  *
  * - swapDevice: If the operation is a swap operation, points to the device to
  *   swap with. If not, is set to PNULL. */
-void SimulatedAnnealing::select(P_task* task, P_device** device,
-                                P_thread** thread, P_device** swapDevice)
+void SimulatedAnnealing::select(GraphI_t* gi, DevI_t** device,
+                                P_thread** thread, DevI_t** swapDevice)
 {
     /* Sanity. */
     *device = PNULL;
     *thread = PNULL;
     *swapDevice = PNULL;
 
-    /* Choose a non-supervisor device. Note that this will loop infinitely if
-     * there are only supervisor devices in this task (but I'm assuming nobody
-     * is going to call this without checking the task first...) */
+    /* Choose a normal device (i.e. not a supervisor or external). Note that
+     * this will loop infinitely if there are only supervisor devices in this
+     * gi (but I'm assuming nobody is going to call this without checking the
+     * gi first...) */
     do
     {
         unsigned nodeKey;  /* Unused */
-        task->pD->G.RandomNode(nodeKey, *device);
-    } while (!((*device)->pP_devtyp->pOnRTS));
+        gi->G.RandomNode(nodeKey, *device);
+    } while ((*device)->devTyp != 'D');
 
     /* Choose a (valid) core. If there are no valid cores, set thread to NULL
      * and leave. */
     P_core* core;
-    P_devtyp* deviceType = (*device)->pP_devtyp;
-    std::map<P_devtyp*, std::set<P_core*>>::iterator bigScaryMapIterator;
+    UniqueDevT deviceType;
+    deviceType.gi = gi;
+    deviceType.pT = (*device)->pT;
+    std::map<UniqueDevT, std::set<P_core*> >::iterator bigScaryMapIterator;
     bigScaryMapIterator = validCoresForDeviceType.find(deviceType);
     if (bigScaryMapIterator->second.empty()) return;
 
@@ -496,7 +525,7 @@ void SimulatedAnnealing::select(P_task* task, P_device** device,
     /* Define swapDevice appropriately. */
     if (swapDeviceIndex <= placer->threadToDevices[*thread].size())  /* Swap */
     {
-        std::list<P_device*>::iterator swapDeviceIterator;
+        std::list<DevI_t*>::iterator swapDeviceIterator;
         swapDeviceIterator = placer->threadToDevices[*thread].begin();
         std::advance(swapDeviceIterator, swapDeviceIndex);
         swapDevice = &(*swapDeviceIterator);

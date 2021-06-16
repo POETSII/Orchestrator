@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "Debug.h"
 #include "Mothership.h"
 #include "OSFixes.hpp"
 #include "Unrec_t.h"
@@ -22,13 +23,21 @@ int main(int argc, char** argv)
         unrecoverable.Post();
     }
 
+    catch (OrchestratorException& e)
+    {
+        fprintf(stderr, "MOTHERSHIP INTERNAL UNHANDLED EXCEPTION: %s\n",
+                e.message.c_str());
+    }
+
     catch (...)
     {
         fprintf(stderr, "MOTHERSHIP UNHANDLED EXCEPTION!\n");
     }
 
-    printf("%s (%s) Main closing down\n", csMOTHERSHIPproc,
-           POETS::get_hostname().c_str());
+    #ifdef ORCHESTRATOR_DEBUG
+    printf("%s (%s) Main closing down.\n", csMOTHERSHIPproc,
+           OSFixes::get_hostname().c_str());
+    #endif
 
     return 0;
 }

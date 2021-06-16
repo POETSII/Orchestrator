@@ -8,6 +8,7 @@
  * - name: Name of this board object (see namebase) */
 P_board::P_board(std::string name)
 {
+    parent = PNULL;
     arcKey = 0;
     portKey = 0;
     Name(name);
@@ -16,7 +17,7 @@ P_board::P_board(std::string name)
     struct GraphCallbacks {
         GRAPH_CALLBACK all_keys(unsigned int const& key)
         {
-            fprintf(dfp, "%u", key);
+            fprintf(P_board::dfp, "%u", key);
         }
         GRAPH_CALLBACK node(P_mailbox* const& mailbox)
         {
@@ -28,7 +29,7 @@ P_board::P_board(std::string name)
         }
         GRAPH_CALLBACK port(P_port* const& port)
         {
-            fprintf(dfp, "%#018lx", (uint64_t) port);
+            fprintf(P_board::dfp, "%#018lx", (uint64_t) port);
         }
     };
 
@@ -199,7 +200,7 @@ void P_board::Dump(FILE* file)
     DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
-    NameBase::Dump(file);
+    NameBase::Dump(0,file);
 
     /* About the mailbox graph. */
     DumpUtils::open_breaker(file, "Mailbox connectivity");

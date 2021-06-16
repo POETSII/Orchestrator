@@ -48,8 +48,8 @@ void                    Id(int);
 unsigned                Key();
 void                    Key(byte,byte=0x00,byte=0x00,byte=0x00);
 static unsigned         KEY(byte=0x00,byte=0x00,byte=0x00,byte=0x00);
-byte                    L(int);
-void                    L(int,byte);
+byte                    L(unsigned);
+void                    L(unsigned,byte);
 int                     Length();
 int                     Mode();
 void                    Mode(int);
@@ -85,7 +85,7 @@ template <class Z> void pushB(vector<byte> &,Z);
 string                  pullS(int &);
 void                    pushS(vector<byte> &,string);
 
-protected :
+public :
 void                    Load(byte *,int);
 
 struct SS {                            // One of these for each stored data item

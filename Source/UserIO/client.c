@@ -50,7 +50,7 @@ int s,len,slen,i = 0,err;
         port = &buf[i];
         SERVER_PORT = atoi(port);
         printf("UserIO-client: external server is on %s at port %d (in text %s)\n",host,SERVER_PORT,port);
-        if(!(hp=gethostbyname(buf))){	
+        if(!(hp=gethostbyname(buf))){
           printf("UserIO-client: %s is unknown\n",buf);
           continue;
         }
@@ -62,7 +62,7 @@ int s,len,slen,i = 0,err;
         sin.sin_family=AF_INET;
         bcopy(hp->h_addr,(char*)&sin.sin_addr,hp->h_length);
         sin.sin_port=htons(SERVER_PORT);
-  
+
   /*
   	open as active
   */
@@ -70,14 +70,14 @@ int s,len,slen,i = 0,err;
           printf("UserIO-client: socket creation error: %s",strerror(errno));
           continue;
         }
-  
+
   /*
   	connect socket to address
   */
         if(connect(s,(struct sockaddr*)&sin, sizeof(sin))<0) {
           printf("UserIO-client: socket connection error: %s",strerror(errno));
           close(s);
-          continue; 
+          continue;
         }
         printf("UserIO-client: is connected to %s at port %d\n",buf,SERVER_PORT);
 
@@ -86,14 +86,14 @@ int s,len,slen,i = 0,err;
         pfd.fd = s, pfd.events = POLLOUT, pfd.revents = 0;
 /*
   test the connection by sending something back
-*/ 
+*/
          char* test = "hello from mpi client";
          len = strlen(test) + 1;
          send(s,test,len,0);
       }
-      if(SOURCE == UserIO_Responder)  {    
+      if(SOURCE == UserIO_Responder)  {
   /*wait for a message from the responder then send it on to the external server*/
-   
+
         MPI_Get_count(&Rstatus,MPI_UNSIGNED_CHAR,&len);
         buf[len+1] = '\0';
         printf("UserIO-client: recieved %s from UserIO-responder, which is of length %d\n",buf,len);
@@ -118,7 +118,7 @@ int s,len,slen,i = 0,err;
           sockOK = 0;
      }
   }
-}    	
-	  		
-	
-  
+}
+
+
+

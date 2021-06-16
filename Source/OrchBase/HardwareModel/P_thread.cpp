@@ -8,6 +8,7 @@
  * - name: Name of this thread object (see namebase) */
 P_thread::P_thread(std::string name)
 {
+    parent = PNULL;
     Name(name);
 }
 
@@ -21,7 +22,7 @@ void P_thread::Dump(FILE* file)
     DumpUtils::open_breaker(file, prefix);
 
     /* About this object and its parent, if any. */
-    NameBase::Dump(file);
+    NameBase::Dump(0,file);
 
     /* Close breaker and flush the dump. */
     DumpUtils::close_breaker(file, prefix);

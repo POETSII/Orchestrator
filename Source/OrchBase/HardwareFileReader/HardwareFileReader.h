@@ -70,6 +70,8 @@
 #include <string.h>
 #include <vector>
 
+class Dialect1Deployer;
+
 #include "Dialect1Deployer.h"
 #include "HardwareAddressFormat.h"
 #include "HardwareAddress.h"
@@ -149,6 +151,7 @@ private:
     void d3_catastrophic_failure(P_engine* engine);
     bool d3_create_cores_and_threads_for_mailbox(P_mailbox* mailbox,
                                                  unsigned coreQuantity,
+                                                 unsigned addrOffset,
                                                  bool pairCores);
     bool d3_define_board_fields_from_section(P_board* board,
                                              UIF::Node* sectionNode);
@@ -185,7 +188,7 @@ private:
      * is, and the value is another map whose value is the "type" of the
      * section, and whose value id the UIF node that corresponds to that
      * section. */
-    std::map<std::string, std::map<std::string, UIF::Node*>> typedSections;
+    std::map<std::string, std::map<std::string, UIF::Node*> > typedSections;
 
     /* Holds, for a (former) section, the type-specific section that defines
      * how items created in the former section behave. The key is the section
@@ -239,8 +242,8 @@ private:
 
     /* Holds a default mailbox-mailbox cost, if defined. Relevant only for the
      * current board. */
-    float defaultMailboxMailboxCost = 0;
-    bool isDefaultMailboxCostDefined = false;
+    float defaultMailboxMailboxCost;
+    bool isDefaultMailboxCostDefined;
 
     /* Holds boards that have been declared to exist within a box in
      * [engine_box], but which have not (yet) been created from parsing

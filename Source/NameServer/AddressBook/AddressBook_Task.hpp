@@ -11,15 +11,15 @@
 #if (__cplusplus >= 201103) && (\
     (defined (__STDC_VERSION__) && (__STDC_VERSION__ >= 201112L)) ||\
     defined (__unix__) || (defined (__APPLE__) && defined (__MACH__)))
- //C++11+ and C11+ or POSIX: 
+ //C++11+ and C11+ or POSIX:
  //     fprintf is thread safe so let's thread stuff!
  #include <thread>
  #include <atomic>
  #define AB_THREADING
 
  // We need Atomic types if we are using threading.
- #define AB_UNSIGNED std::atomic<unsigned> 
- #define AB_ULONG    std::atomic<unsigned long> 
+ #define AB_UNSIGNED std::atomic<unsigned>
+ #define AB_ULONG    std::atomic<unsigned long>
 #else
  #define AB_UNSIGNED unsigned
  #define AB_ULONG    unsigned long
@@ -53,7 +53,7 @@ struct TaskData_t {
 	TaskData_t();
     TaskData_t(std::string &N, std::string &P, std::string &X, std::string &E,
                 TaskState_t S, unsigned long DC, unsigned long EC);
-                
+
     int size() const;                   // Get the size (in bytes) of the TaskData
 
     std::string Name; // = "";
@@ -80,7 +80,7 @@ public:
     TaskRecord_t(TaskData_t &Data);
 
     unsigned Integrity(bool Verbose = false, FILE * = stdout);
-    
+
     int size() const;             // Get the size (in bytes) of the TaskData
 
 
@@ -122,18 +122,18 @@ public:
     bool LinkValid; // = true;          // Indicate whether the Device > Address links are valid
 
 private:
-    void IntegDevices(bool Verbose, FILE * fp, unsigned long DStart, 
-                        unsigned long DEnd, IntegVals_t &retVal, 
+    void IntegDevices(bool Verbose, FILE * fp, unsigned long DStart,
+                        unsigned long DEnd, IntegVals_t &retVal,
                         AB_ULONG &ExtConCnt);
 
-    void IntegExternals(bool Verbose, FILE * fp, unsigned long EStart, 
+    void IntegExternals(bool Verbose, FILE * fp, unsigned long EStart,
                         unsigned long EEnd, IntegVals_t &retVal);
 
-    void IntegSupervisors(bool Verbose, FILE * fp, unsigned long SStart, 
-                        unsigned long SEnd, IntegVals_t &retVal, 
+    void IntegSupervisors(bool Verbose, FILE * fp, unsigned long SStart,
+                        unsigned long SEnd, IntegVals_t &retVal,
                         AB_UNSIGNED &MappedSupervisors);
 
-    void IntegDevTypeMap(bool Verbose, FILE * fp, unsigned long DTStart, 
+    void IntegDevTypeMap(bool Verbose, FILE * fp, unsigned long DTStart,
                         unsigned long DTEnd, IntegVals_t &retVal);
 };
 

@@ -480,7 +480,7 @@ p->leaf.clear();                       // Tidy up
 void UIF::DefECB(void * pThis,void * p,int id)
 // Default error callback
 // pThis is the object address, which is n/u in this here default handler
-// Never called with id=0, which is jusrt as well, 'cos Node::Dump() is
+// Never called with id=0, which is just as well, 'cos Node::Dump() is
 // expecting a string argument.....
 {
 FILE * chan = stdout;
@@ -534,7 +534,7 @@ WALKMAP(string,string,argMap,i) {
   fprintf(df,"%10s -> %10s\n",(*i).first.c_str(),(*i).second.c_str());
 }
 if (UIF_root!=0)UIF_root->Dump(df);
-fprintf(df,"\n-----------------------------------------\n");
+fprintf(df,"\n-----------------------------------------\n\n");
 if (!dumpfile.empty()) fclose(df);
 }
 
@@ -851,7 +851,7 @@ Lex::tokdat & UIF::Query(bool * pe)
 if (pe!=0) *pe = Lx.IsError(Td);
 return Td;
 }
-
+             
 //------------------------------------------------------------------------------
 
 void UIF::RCB()
@@ -1454,7 +1454,7 @@ p->P()=0;                              // Disconnect parent pointer
 void UIF::Node::Dump(FILE * df,string s0)
 {
 fprintf(df,"\n---\n%sDumping node %p (par %p) type |%s|\n",
-        s0.c_str(),(void*)this,(void*)par,Notype_str[typ]);
+           s0.c_str(),(void*)this,(void*)par,Notype_str[typ]);
 fprintf(df,"%sOpcode |%s|\n",s0.c_str(),Lex::Sytype_str[qop]);
 fprintf(df,"%sString |%s|\n",s0.c_str(),str.c_str());
 fprintf(df,"%sPos %d\n",s0.c_str(),pos);
@@ -1471,7 +1471,7 @@ void UIF::Node::Dumpt(FILE * fp)
 // Tiny inline Node dump
 {
 fprintf(fp,"%6p(%2d) %s:%s[%s]\n",
-        (void*)this,pos,Notype_str[typ],str.c_str(),Lex::Sytype_str[qop]);
+       (void*)this,pos,Notype_str[typ],str.c_str(),Lex::Sytype_str[qop]);
 }
 
 //------------------------------------------------------------------------------
@@ -1503,7 +1503,7 @@ switch (typ) {
 
 //------------------------------------------------------------------------------
 
-bool UIF::Node::IsEx()
+bool UIF::Node::IsEx()                                         
 {
 return typ == No_e_ex;
 }
@@ -1555,7 +1555,7 @@ return par;
 }
 
 //------------------------------------------------------------------------------
-
+ 
 UIF::Node * & UIF::Node::R()
 // As above; node[2] is the right child.
 {
@@ -1650,3 +1650,4 @@ return pN;
 }
 
 //==============================================================================
+

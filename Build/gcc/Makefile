@@ -9,9 +9,9 @@ SHELL = /bin/bash
 # Smart directory creation.
 MKDIR = mkdir --parents
 
-# Software dependencies (MPI, Qt, etc.) are largely hardcoded, because I'm too
-# short on time to write an autoconf wrapper or some other dependency
-# management system.
+# Software dependencies (e.g. MPI) are largely hardcoded, because I'm too short
+# on time to write an autoconf wrapper or some other dependency management
+# system.
 #
 # If you are a user, you should modify the Makefile.dependencies file in this
 # directory to correctly path to the dependencies required to build the
@@ -38,8 +38,8 @@ EXECUTABLE_DIR := $(ROOT_DIR)/bin
 # Test binaries are built to here:
 TEST_EXECUTABLE_DIR := $(ROOT_DIR)/test_bin
 
-# The application staging environment is built here:
-APPLICATION_STAGING_DIR := $(ROOT_DIR)/application_staging
+# Composer links and binaries are built to here:
+COMPOSER_ENV_DIR := $(ROOT_DIR)/Output/Composer
 
 # A note on dependency handling: we couple gcc's various -M flags with Make's
 # ability to import dependency files to manage build dependencies. For more
@@ -69,6 +69,8 @@ include $(shell find $(DEPENDENCY_DIR) -name "*.d" ! -name "*.temp.d")
 INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/Common \
                 -I$(SOURCE_DIR)/OrchBase \
+                -I$(SOURCE_DIR)/OrchBase/AppStructures \
+                -I$(SOURCE_DIR)/OrchBase/Handlers \
                 -I$(SOURCE_DIR)/OrchBase/HardwareFileReader \
                 -I$(SOURCE_DIR)/OrchBase/HardwareConfigurationDeployment \
                 -I$(SOURCE_DIR)/OrchBase/Placement \
@@ -77,6 +79,7 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/OrchBase/Placement/Exceptions \
                 -I$(SOURCE_DIR)/OrchBase/HardwareModel \
                 -I$(SOURCE_DIR)/Launcher \
+                -I$(SOURCE_DIR)/OrchBase/XMLProcessing \
                 -I$(SOURCE_DIR)/Injector \
                 -I$(SOURCE_DIR)/Parser \
                 -I$(SOURCE_DIR)/Root \
@@ -85,21 +88,15 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/Softswitch/inc \
                 -I$(SOURCE_DIR)/Supervisor \
                 -I$(MPICH_INC_DIR) \
-                -I$(QT_INC_DIR) \
-                -I$(QT_INC_DIR)/QtCore \
                 -I$(TINSEL_INC_DIR) \
                 -I$(TINSEL_HOSTLINK_DIR)
 
-# All flags to be used in compilation. We're not complying with C++98 yet due
-# to the hostlink and some other minor changes, though nobody has studied this
-# comprehensively.
-#
-# Trivial log handler is defined for now - we need to think about this more.
+# All flags to be used in compilation.
 CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
-           -std=c++11 -Wall -fPIC -pthread -pedantic -O3 -DTRIVIAL_LOG_HANDLER
+           -std=c++98 -Wall -fPIC -pthread -pedantic -O3 -DTRIVIAL_LOG_HANDLER
 
 # Debugging!
-DEBUGFLAGS = -g3 -Og
+DEBUGFLAGS = -g3 -O0
 
 # Debug target logic.
 debug: CXXFLAGS += $(DEBUGFLAGS) -DORCHESTRATOR_DEBUG=1
@@ -114,18 +111,17 @@ LAUNCHER_EXECUTABLE = $(EXECUTABLE_DIR)/orchestrate
 ROOT_EXECUTABLE = $(EXECUTABLE_DIR)/root
 DUMMY_EXECUTABLE = $(EXECUTABLE_DIR)/dummy
 LOGSERVER_EXECUTABLE = $(EXECUTABLE_DIR)/logserver
-LOGSERVER_MESSAGE_FILE = $(EXECUTABLE_DIR)/OrchestratorMessages.txt
 RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
 
 all: orchestrate launcher root dummy logserver rtcl injector mothership \
-     application_staging_environment
+     composer_environment
 launcher: $(LAUNCHER_EXECUTABLE)
 orchestrate: $(ORCHESTRATE_SCRIPT)
 root: $(ROOT_EXECUTABLE)
 dummy: $(DUMMY_EXECUTABLE)
-logserver: $(LOGSERVER_EXECUTABLE) $(LOGSERVER_MESSAGE_FILE)
+logserver: $(LOGSERVER_EXECUTABLE)
 rtcl: $(RTCL_EXECUTABLE)
 injector: $(INJECTOR_EXECUTABLE)
 mothership: $(MOTHERSHIP_EXECUTABLE)
@@ -146,17 +142,15 @@ tests: $(ALL_TESTS) $(TEST_SCRIPT)
 $(LAUNCHER_EXECUTABLE) $(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) \
 $(LOGSERVER_EXECUTABLE) $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
-	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
-        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
+	$(CXX) -pthread -L$(MPICH_LIB_DIR) -L/usr/lib \
         -o $@ $^ \
-        -lQt5Core -lmpi -lpthread
+        -lmpi -lpthread
 
 $(ALL_TESTS):
 	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
-	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
-        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
+	$(CXX) -pthread -L$(MPICH_LIB_DIR) -L/usr/lib \
         -o $@ $^ \
-        -lQt5Core -lmpi -lpthread
+        -lmpi -lpthread
 
 $(TEST_SCRIPT): $(TEST_SCRIPT_RESOURCE)
 	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
@@ -164,11 +158,9 @@ $(TEST_SCRIPT): $(TEST_SCRIPT_RESOURCE)
 
 $(MOTHERSHIP_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
-	$(CXX) -pthread -Wl,-rpath-link=$(QT_LIB_DIR) \
-        -Wl,-export-dynamic \
-        -L$(MPICH_LIB_DIR) -L$(QT_LIB_DIR) -L/usr/lib \
+	$(CXX) -pthread -Wl,-export-dynamic -L$(MPICH_LIB_DIR) -L/usr/lib \
         -o $@ $^ $(TINSEL_HOSTLINK_DIR)/*.o \
-        -lQt5Core -lmpi -lpthread -ldl
+        -lmpi -lpthread -ldl
 
 # Object generation. Note: The move command installs the assembled dependency
 # file (see *Note 1*). The touch updates the timestamp on the target (to avoid
@@ -182,12 +174,6 @@ endef
 
 $(OBJECT_DIR)/%.o: $(ROOT_DIR)/%.cpp $(DEPENDENCY_DIR)/%.d
 	$(build-object)
-
-# Files to be copied to the execution directory in order for various components
-# of the Orchestrator to function.
-$(LOGSERVER_MESSAGE_FILE): $(LOGSERVER_MESSAGE_FILE_ORIGIN)
-	@$(MKDIR) $$(dirname $@)
-	cp "$<" "$@"
 
 # Building the orchestrate script, used to setup the runtime environment for
 # the Orchestrator, and to start it. The build process is largely
@@ -205,7 +191,6 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 	declare -A SUBSTITUTIONS=(\
         ["MPICH_DIR"]="$(realpath $(MPICH_DIR))" \
 		["MPICH_LIB_DIR"]="$(realpath $(MPICH_LIB_DIR))" \
-		["QT_LIB_DIR"]="$(realpath $(QT_LIB_DIR))" \
 		["GCC_LIB_DIR"]="$(realpath $(GCC_LIB_DIR))" \
 		["CR_LIB_DIR"]="$(realpath $(CR_LIB_DIR))" \
 		["RISCV_DIR"]="$(realpath $(RISCV_DIR))" \
@@ -222,61 +207,53 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 	rm "$(ORCHESTRATE_TMP)"
 	rmdir "$(dir $(ORCHESTRATE_TMP))"
 
-# Building the staging environment for XML applications to be used in the
-# Orchestrator. Users will place their XML applications in the xml directory
-# within the structure created by this process.
-application_staging_environment: $(APPLICATION_STAGING_DIR)/xml \
-$(APPLICATION_STAGING_DIR)/Orchestrator/Source \
-$(APPLICATION_STAGING_DIR)/Orchestrator/Generics \
-$(APPLICATION_STAGING_DIR)/Orchestrator/Source/Common \
-$(APPLICATION_STAGING_DIR)/Softswitch \
-$(APPLICATION_STAGING_DIR)/Tinsel \
-$(APPLICATION_STAGING_DIR)/Makefile \
-$(APPLICATION_STAGING_DIR)/Supervisor.cpp \
-$(APPLICATION_STAGING_DIR)/Supervisor.h
+# Building the environment for XML applications to be composed in the
+# Orchestrator. Made of a bunch of symlinks.
+COMPOSER_ENV_DEPENDENCIES := \
+	$(COMPOSER_ENV_DIR)/Orchestrator/Generics \
+	$(COMPOSER_ENV_DIR)/Orchestrator/Source/Common \
+	$(COMPOSER_ENV_DIR)/Softswitch \
+	$(COMPOSER_ENV_DIR)/Tinsel \
+	$(COMPOSER_ENV_DIR)/Makefile \
+	$(COMPOSER_ENV_DIR)/Supervisor.cpp \
+	$(COMPOSER_ENV_DIR)/Supervisor.h \
+	$(COMPOSER_ENV_DIR)/SupervisorApi.h \
+	$(COMPOSER_ENV_DIR)/SupervisorApiEntrypoints.h
 
-$(APPLICATION_STAGING_DIR)/Orchestrator/Source \
-$(APPLICATION_STAGING_DIR)/xml:
-	$(MKDIR) "$@"
+composer_environment: $(COMPOSER_ENV_DEPENDENCIES)
 
-$(APPLICATION_STAGING_DIR)/Orchestrator/Generics:
+$(COMPOSER_ENV_DIR)/Orchestrator/Generics:
 	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic "$(abspath $(GENERICS_DIR))" "$@"
 
-$(APPLICATION_STAGING_DIR)/Orchestrator/Source/Common:
+$(COMPOSER_ENV_DIR)/Orchestrator/Source/Common:
 	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Common)" "$@"
 
-$(APPLICATION_STAGING_DIR)/Softswitch:
+$(COMPOSER_ENV_DIR)/Softswitch:
 	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch)" "$@"
 
-$(APPLICATION_STAGING_DIR)/Tinsel:
+$(COMPOSER_ENV_DIR)/Tinsel:
 	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic "$(abspath $(TINSEL_DIR))" "$@"
 
-$(APPLICATION_STAGING_DIR)/Makefile:
+$(COMPOSER_ENV_DIR)/Makefile:
 	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic "$(abspath $(SOURCE_DIR)/Softswitch/Makefile)" "$@"
 
-$(APPLICATION_STAGING_DIR)/Supervisor.cpp $(APPLICATION_STAGING_DIR)/Supervisor.h:
+$(COMPOSER_ENV_DIR)/SupervisorApi.h:
+	ln --force --symbolic \
+	"$(abspath $(SOURCE_DIR)/Supervisor/SupervisorApi$(suffix $@))" "$@"
+
+$(COMPOSER_ENV_DIR)/SupervisorApiEntrypoints.h:
+	ln --force --symbolic \
+	"$(abspath $(SOURCE_DIR)/Supervisor/SupervisorApiEntrypoints$(suffix $@))" "$@"
+
+$(COMPOSER_ENV_DIR)/Supervisor.cpp $(COMPOSER_ENV_DIR)/Supervisor.h:
 	$(MKDIR) "$(dir $@)"
 	ln --force --symbolic \
-		"$(abspath $(SOURCE_DIR)/Supervisor/Supervisor$(suffix $@))" "$@"
-
-# Tearing down the environment (for 'clean'), leaving the xml directory for the
-# user. Only tear it down if $(APPLICATION_STAGING_DIR) exists. NB:
-#
-#  - Single quotes needed for the regex predicate, because the path is
-#    relative. Consequently, the "." from "../../" should not be interpreted as
-#    a character.
-application_staging_environment_teardown:
-	if [ -d "$(APPLICATION_STAGING_DIR)" ]; then \
-		find "$(APPLICATION_STAGING_DIR)" \
-			! -regex '$(APPLICATION_STAGING_DIR)/xml.*' \
-			! -wholename "$(APPLICATION_STAGING_DIR)" \
-			-exec rm --force --recursive {} +; \
-	fi
+	"$(abspath $(SOURCE_DIR)/Supervisor/Supervisor$(suffix $@))" "$@"
 
 # Dependency files have no build instructions (Make must not fall over if the
 # dependency file is not there), because they are created from the compilation
@@ -285,17 +262,16 @@ application_staging_environment_teardown:
 $(DEPENDENCY_DIR)/%.d:
 	@$(MKDIR) $$(dirname $@)
 
-clean: application_staging_environment_teardown
+clean:
 	rm --force --recursive $(OBJECT_DIR) $(DEPENDENCY_DIR) $(EXECUTABLE_DIR) \
-	$(ORCHESTRATE_SCRIPT) $(TEST_EXECUTABLE_DIR)
+	$(ORCHESTRATE_SCRIPT) $(TEST_EXECUTABLE_DIR) $(COMPOSER_ENV_DEPENDENCIES)
 
 # Dependency files must not be removed by Make (unless explicitly cleaned).
 .PRECIOUS: $(DEPENDENCY_DIR)/%.d
 
 # Non-builtin targets that do not explicitly represent files that are created.
 .PHONY: all clean debug tests orchestrate root dummy logserver rtcl injector \
-    mothership application_staging_environment \
-    application_staging_environment_teardown
+    mothership
 
 # The "all" target should be the default.
 .DEFAULT_GOAL := all
