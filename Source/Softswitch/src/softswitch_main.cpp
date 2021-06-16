@@ -10,7 +10,9 @@
 #define BACKEND_DEINIT()
 #endif
 
-void softswitch_main()
+#include "softswitch_common.cpp"    // Include the CPP for translation unit massaging
+
+inline void softswitch_main()
 {
     // The thread context will reside at the base of the DRAM memory area.
     PThreadContext* ThreadContext = static_cast<PThreadContext*>(tinselHeapBase());

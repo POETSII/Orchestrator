@@ -3,7 +3,7 @@
 #include <cstring>
 #include "stdint.h"
 
-void softswitch_init(ThreadCtxt_t* ThreadContext)
+inline void softswitch_init(ThreadCtxt_t* ThreadContext)
 {
 #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION
     // Initialise instrumentation
@@ -46,21 +46,21 @@ void softswitch_init(ThreadCtxt_t* ThreadContext)
 // <!> You know it's a hack when the "pragma GCC" comes out.
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
-void softswitch_delay(){for (uint32_t i=0; i<500; i++);}
+inline void softswitch_delay(){for (uint32_t i=0; i<500; i++);}
 #pragma GCC pop_options
 
 
 /*------------------------------------------------------------------------------
  * softswitch_barrier: Block until told to continue by the mothership
  *----------------------------------------------------------------------------*/
-void softswitch_barrier(ThreadCtxt_t* ThreadContext)
+inline void softswitch_barrier(ThreadCtxt_t* ThreadContext)
 {
     // Create RX buffer pointer and get Tinsel Slots
-    volatile void *recv_buf = PNULL;
-    volatile void *send_buf = tinselSendSlotExtra();     // Supervisor Send slot
+    volatile void *recvBuff = PNULL;
+    volatile void *sendBuff = tinselSendSlotExtra();     // Supervisor Send slot
 
     // first phase of barrier: set up a standard packet to send to the supervisor
-    volatile P_Pkt_Hdr_t* hdr = static_cast<volatile P_Pkt_Hdr_t*>(send_buf); // Header
+    volatile P_Pkt_Hdr_t* hdr = static_cast<volatile P_Pkt_Hdr_t*>(sendBuff); // Header
 
     // block until we can send it,
     while (!tinselCanSend());
@@ -72,7 +72,7 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
 
     // and then issue the packet indicating this thread's startup is complete.
     tinselSetLen((p_hdr_size() - 1) >> TinselLogBytesPerFlit);
-    SUPER_SEND(send_buf);
+    SUPER_SEND(sendBuff);
 
     // second phase of barrier: wait for the supervisor's response
     ThreadContext->ctlEnd = 1;
@@ -80,22 +80,22 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
     {
         // by blocking awaiting a receive.
         while (!tinselCanRecv());
-        recv_buf = tinselRecv();
+        recvBuff = tinselRecv();
 
-        volatile P_Pkt_t* rcv_pkt = static_cast<volatile P_Pkt_t*>(recv_buf);
+        volatile P_Pkt_t* rcv_pkt = static_cast<volatile P_Pkt_t*>(recvBuff);
         // look for barrier packet
         if (((rcv_pkt->header.swAddr & P_SW_OPCODE_MASK) >> P_SW_OPCODE_SHIFT)
                 == P_CNC_BARRIER)
         {
             // *Debug: send packet out to show we have passed the barrier*
-            // softswitch_alive(send_buf);
+            // softswitch_alive(sendBuff);
             // and once it's been received, process it as a startup packet
 
             ThreadContext->ctlEnd = 0;
 
             // Sleep for X to allow everything to start
         }
-        tinselFree(recv_buf);
+        tinselFree(recvBuff);
     }
     softswitch_delay();     // Delay to let other softswitches pass the barrier
 }
@@ -107,11 +107,11 @@ void softswitch_barrier(ThreadCtxt_t* ThreadContext)
  * Two utility inline functions to reduce code duplication when configuring
  * loop execution order.
  *----------------------------------------------------------------------------*/
-inline void receiveInline(ThreadCtxt_t* ThreadContext, volatile void* recvBuffer)
+inline void receiveInline(ThreadCtxt_t* ThreadContext, volatile void* recvBuff)
 {
-    recvBuffer=tinselRecv();
-    softswitch_onReceive(ThreadContext, recvBuffer); // decode the receive and handle
-    tinselFree(recvBuffer); // return control of the receive buffer to the hardware
+    recvBuff=tinselRecv();
+    softswitch_onReceive(ThreadContext, recvBuff); // decode the receive and handle
+    tinselFree(recvBuff); // return control of the receive buffer to the hardware
 }
 
 inline void sendInline(ThreadCtxt_t* ThreadContext, volatile void* sendBuffer)
@@ -133,10 +133,10 @@ inline void sendInline(ThreadCtxt_t* ThreadContext, volatile void* sendBuffer)
 /*------------------------------------------------------------------------------
  * softswitch_loop: Where the work happens
  *----------------------------------------------------------------------------*/
-void softswitch_loop(ThreadCtxt_t* ThreadContext)
+inline void softswitch_loop(ThreadCtxt_t* ThreadContext)
 {
     // Create RX buffer pointer and get Tinsel Slots
-    volatile void *recvBuffer = PNULL;
+    volatile void *recvBuff = PNULL;
     volatile void *sendBuffer = tinselSendSlot();       // Send slot
     volatile void *superBuffer = tinselSendSlotExtra(); // Supervisor send slot
 
@@ -179,7 +179,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
         }
         else if (tinselCanRecv())
         {   // Something to receive
-            receiveInline(ThreadContext, recvBuffer);
+            receiveInline(ThreadContext, recvBuff);
         }
         else if (ThreadContext->rtsStart != ThreadContext->rtsEnd)
         {   // Something to send
@@ -190,7 +190,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
 // Default order: RX, Send Instrumentation, TX
         if (tinselCanRecv())
         {   // Something to receive
-            receiveInline(ThreadContext, recvBuffer);
+            receiveInline(ThreadContext, recvBuff);
         }
     #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION
         else if(ThreadContext->pendCycles && tinselCanSend())
@@ -220,7 +220,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
 /*------------------------------------------------------------------------------
  * softswitch_finalise: Gracefully tear everything down
  *----------------------------------------------------------------------------*/
-void softswitch_finalise(ThreadCtxt_t* ThreadContext)
+inline void softswitch_finalise(ThreadCtxt_t* ThreadContext)
 {
     // Loop through everything in the RTS buffer and clear it
     uint32_t maxIdx = ThreadContext->rtsBuffSize;   // # devices we are looping through
@@ -314,11 +314,11 @@ inline void deviceType_init(uint32_t deviceType_num, ThreadCtxt_t* ThreadContext
  /*------------------------------------------------------------------------------
  * softswitch_instrumentation: Sends instrumentation to the Mothership
  *----------------------------------------------------------------------------*/
-inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
+inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile void* sendBuff)
 {
     uint32_t cycles = tinselCycleCount();
 
-    P_Pkt_t* pkt = static_cast<P_Pkt_t*>(const_cast<void*>(send_buf));
+    P_Pkt_t* pkt = static_cast<P_Pkt_t*>(const_cast<void*>(sendBuff));
     P_Pkt_Hdr_t* hdr = &(pkt->header);
     P_Instr_Pkt_Pyld_t* pyld = reinterpret_cast<P_Instr_Pkt_Pyld_t*>(pkt->payload);
 
@@ -356,7 +356,7 @@ inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile voi
     // Send it
     uint32_t len = p_hdr_size() + p_instrpkt_pyld_size;
     tinselSetLen((len - 1) >> TinselLogBytesPerFlit);    // Set the packet length
-    SUPER_SEND(send_buf);
+    SUPER_SEND(sendBuff);
 
     // Reset fields.
     ThreadContext->lastCycles = cycles;
@@ -386,17 +386,17 @@ inline void softswitch_instrumentation(ThreadCtxt_t* ThreadContext, volatile voi
  * softswitch_onSend: Executed any time there is an entry in the RTS list.
  *
  * tinselCanSend() has already been passed prior to this method being called,
- * so we can futz with send_buf as much as we want and send when ready.
+ * so we can futz with sendBuff as much as we want and send when ready.
  *----------------------------------------------------------------------------*/
-inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* send_buf)
+inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* sendBuff)
 {
     outPin_t* pin = ThreadContext->rtsBuf[ThreadContext->rtsStart]; // Get the next pin
 
     // Pointers of convenience
     devInst_t* device = pin->device;                                // Get the Device
     const outEdge_t* target = &pin->outEdges[pin->idxEdges];        // Get the edge
-    volatile char* buf = static_cast<volatile char*>(send_buf);     // Send Buffer
-    volatile P_Pkt_Hdr_t* hdr = static_cast<volatile P_Pkt_Hdr_t*>(send_buf); // Header
+    volatile char* buf = static_cast<volatile char*>(sendBuff);     // Send Buffer
+    volatile P_Pkt_Hdr_t* hdr = static_cast<volatile P_Pkt_Hdr_t*>(sendBuff); // Header
 
     size_t hdrSize = p_hdr_size(); //Size of the header.
 
@@ -432,17 +432,17 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
 
         if(hdr->swAddr & P_SW_MOTHERSHIP_MASK)
         {   // Message to the Supervisor or External (this goes via the Supervisor)
-            SUPER_SEND(send_buf);  // Goes to the tinselHost
+            SUPER_SEND(sendBuff);  // Goes to the tinselHost
             ThreadContext->superCount++;         // Increment Supervisor Pkt count
         }
         else
         {   // Message to another device.
-            tinselSend(target->hwAddr, send_buf);   // Goes to the target's hwAddr
+            tinselSend(target->hwAddr, sendBuff);   // Goes to the target's hwAddr
             ThreadContext->txCount++;            // Increment normal Pkt count
 
             /*
             //TEMPORARY DEBUGGING BODGE: echo packet to supervisor
-            volatile uint32_t* last = static_cast<volatile uint32_t*>(send_buf); // TEMPORARY BODGE:
+            volatile uint32_t* last = static_cast<volatile uint32_t*>(sendBuff); // TEMPORARY BODGE:
 
             while(!tinselCanSend());
             tinselSetLen(TinselMaxFlitsPerMsg-1);    // Set the packet length
@@ -453,7 +453,7 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
             last[15] = device->deviceID;
 
             tinselSetLen(TinselMaxFlitsPerMsg-1);
-            SUPER_SEND(send_buf);
+            SUPER_SEND(sendBuff);
             */
         }
         //--------------------------------------------------------------------------
@@ -484,7 +484,7 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
 /*------------------------------------------------------------------------------
  * softswitch_onReceive: Executed any time a packet is received.
  *----------------------------------------------------------------------------*/
-void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
+inline void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recvBuff)
 {
     devInst_t* recvDevBegin;
     devInst_t* recvDevEnd;
@@ -492,7 +492,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
     ThreadContext->rxCount++;                  // Increment received packet count
 
     // Grab the packet header
-    volatile P_Pkt_Hdr_t* recvHdr = static_cast<volatile P_Pkt_Hdr_t*>(recv_buf);
+    volatile P_Pkt_Hdr_t* recvHdr = static_cast<volatile P_Pkt_Hdr_t*>(recvBuff);
 
     // Decode the header
     uint32_t devAdr = (recvHdr->swAddr & P_SW_DEVICE_MASK) >> P_SW_DEVICE_SHIFT;
@@ -551,7 +551,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
         {
             dev->devType->OnImpl_Handler(ThreadContext, dev,
                                             static_cast<const uint8_t*>(
-                                            const_cast<const void*>(recv_buf)
+                                            const_cast<const void*>(recvBuff)
                                                 )+p_hdr_size());
         }
         
@@ -560,7 +560,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
         {  // Trigger OnCtl. Strip volatile at this point.
             dev->devType->OnCtl_Handler(ThreadContext, dev, opcode,
                                                static_cast<const uint8_t*>(
-                                               const_cast<const void*>(recv_buf)
+                                               const_cast<const void*>(recvBuff)
                                                )+p_hdr_size());
         }
         
@@ -585,7 +585,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
             pin->pinType->Recv_handler(ThreadContext->properties, dev,
                                         &pin->inEdges[edgeIdx],
                                         static_cast<const uint8_t*>(
-                                        const_cast<const void*>(recv_buf)
+                                        const_cast<const void*>(recvBuff)
                                         )+p_hdr_size());
         }
         
