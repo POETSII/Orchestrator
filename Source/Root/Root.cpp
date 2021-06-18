@@ -79,6 +79,7 @@ FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)] = &Root::OnMshipAck;
 
 // Mothership requests
 FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP)] = &Root::OnMshipReq;
+FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::BRKN)] = &Root::OnMshipReq;
 
 // Spin off a thread to handle keyboard
 void * args = this;
@@ -403,14 +404,20 @@ unsigned Root::OnMshipAck(PMsg_p * Z)
 //------------------------------------------------------------------------------
 
 unsigned Root::OnMshipReq(PMsg_p * Z)
-// Handles requests from Motherships to central control. Currently, just stops
-// applications.
+// Handles requests from Motherships to central control. Stops applications and
+// manages error propagation.
 {
     unsigned key = Z->Key();
     string appName;
     Z->Get(0, appName);
     if (key == PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP))
+    {
         MshipCommand(Cli("stop /app = " + appName).Cl_v[0], "stop");
+    }
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::REQ, Q::BRKN))
+    {
+        deplStat[appName] == "ERROR";
+    }
     else Post(183, hex2str(key), int2str(Z->Src()), int2str(Z->Tgt()));
     return 0;
 }
