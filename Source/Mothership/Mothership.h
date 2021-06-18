@@ -54,6 +54,7 @@ public:
     unsigned handle_msg_app_spec(PMsg_p* message);
     unsigned handle_msg_app_dist(PMsg_p* message);
     unsigned handle_msg_app_supd(PMsg_p* message);
+    unsigned handle_msg_cmnd_brkn(PMsg_p* message);
     unsigned handle_msg_cmnd_recl(PMsg_p* message);
     unsigned handle_msg_cmnd_init(PMsg_p* message);
     unsigned handle_msg_cmnd_run(PMsg_p* message);

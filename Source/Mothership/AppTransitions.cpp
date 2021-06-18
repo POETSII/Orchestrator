@@ -146,7 +146,7 @@ void Mothership::stop_application(AppInfo* app)
     app->state = STOPPING;
     send_cnc_packet_to_all(app, P_CNC_STOP);
     superdb.exit_supervisor(appName);
-    if(!superdb.reload_supervisor(appName, &errorMessage))
+    if (!superdb.reload_supervisor(appName, &errorMessage))
     {
         Post(503, appName, errorMessage);
         tell_root_app_is_broken(appName);
@@ -154,7 +154,7 @@ void Mothership::stop_application(AppInfo* app)
     }
 
     /* On (re)loading the supervisor, provision its API. */
-    if(!provision_supervisor_api(appName))
+    if (!provision_supervisor_api(appName))
     {
         Post(525, appName);
         tell_root_app_is_broken(appName);

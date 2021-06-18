@@ -416,7 +416,19 @@ unsigned Root::OnMshipReq(PMsg_p * Z)
     }
     else if (key == PMsg_p::KEY(Q::MSHP, Q::REQ, Q::BRKN))
     {
+        /* It's broken! Tell all Motherships. */
         deplStat[appName] == "ERROR";
+        vector<ProcMap::ProcMap_t*>::iterator mothershipIt;
+        PMsg_p sadTidings;
+        sadTidings.Src(Urank);
+        sadTidings.Put<std::string>(0, &appName);
+        sadTidings.Key(Q::CMND, Q::BRKN);
+        for (mothershipIt = deplInfo[appName].begin();
+             mothershipIt != deplInfo[appName].end(); mothershipIt++)
+        {
+            sadTidings.Tgt((*mothershipIt)->P_rank);
+            sadTidings.Send();
+        }
     }
     else Post(183, hex2str(key), int2str(Z->Src()), int2str(Z->Tgt()));
     return 0;

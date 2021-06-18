@@ -62,6 +62,8 @@ unsigned Mothership::handle_msg_cnc(PMsg_p* message)
         key = "Q::APP,Q::DIST";
     else if (message->Key() == PMsg_p::KEY(Q::APP,Q::SUPD))
         key = "Q::APP,Q::SUPD";
+    else if (message->Key() == PMsg_p::KEY(Q::CMND,Q::BRKN))
+        key = "Q::CMND,Q::BRKN";
     else if (message->Key() == PMsg_p::KEY(Q::CMND,Q::RECL))
         key = "Q::CMND,Q::RECL";
     else if (message->Key() == PMsg_p::KEY(Q::CMND,Q::INIT))
@@ -320,6 +322,42 @@ unsigned Mothership::handle_msg_cmnd_recl(PMsg_p* message)
     /* Mark it as recalled, and check for state transitions. */
     appInfo->stage_recl();
     if (appInfo->should_we_recall()) recall_application(appInfo);
+    return 0;
+}
+
+unsigned Mothership::handle_msg_cmnd_brkn(PMsg_p* message)
+{
+    AppInfo* appInfo;
+
+    /* Pull message contents. */
+    std::string appName;
+    if (!decode_string_message(message, &appName))
+    {
+        debug_post(597, 3, "Q::CMND,Q::BRKN", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
+        return 0;
+    }
+
+    debug_post(597, 3, "Q::CMND,Q::BRKN", hex2str(message->Key()).c_str(),
+               dformat("appName=%s", appName.c_str()).c_str());
+
+    /* Get the application */
+    appInfo = appdb.check_create_app(appName);
+
+    /* If the app is running, stop it. */
+    if (appInfo->state == RUNNING)
+    {
+        appInfo->stage_stop();
+        stop_application(appInfo);
+    }
+
+    /* Mark it as broken (even if it is already marked as such). Note that,
+     * while the app is stopping, it will have state "STOPPING". After all of
+     * the devices have reported back, it will have state "BROKEN" again.
+     *
+     * Breaking in this way does not inform Root, because otherwise we would be
+     * bouncing messages forever. */
+    appInfo->state = BROKEN;
     return 0;
 }
 

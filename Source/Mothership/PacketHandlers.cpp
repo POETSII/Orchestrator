@@ -164,7 +164,8 @@ void Mothership::handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop)
     else
     {
         Post(534, int2str(Urank), appName);
-        appInfo->state = STOPPED;
+        /* If it's broken, leave it broken. */
+        if (appInfo->state != BROKEN) appInfo->state = STOPPED;
         acknowledgement.Key(Q::MSHP, Q::ACK, Q::STOP);
     }
     queue_mpi_message(&acknowledgement);
