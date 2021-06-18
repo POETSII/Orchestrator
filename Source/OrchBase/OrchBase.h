@@ -81,13 +81,13 @@ map<GraphI_t *,vector<ProcMap::ProcMap_t *> > deplInfo;
 //  - RECALLING
 //  - ERROR
 map<GraphI_t *,string> deplStat;
-// Holds acknowledgement states from Motherships. Maps rank-appname pairs to
-// one of:
+// Holds acknowledgement states from Motherships. Maps appnames to maps of
+// ranks to one of:
 //  - DEFINED
 //  - READY
 //  - RUNNING
 //  - STOPPED
-map<pair<int, string>, string> mshipAcks;
+map<string,map<int,string> > mshipAcks;
 
 CmCall *               pCmCall;
 CmComp *               pCmComp;

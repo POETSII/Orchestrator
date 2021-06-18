@@ -355,23 +355,48 @@ return ret;
 
 unsigned Root::OnMshipAck(PMsg_p * Z)
 // Updates the mothership acknowledgement table. The table is primarily
-// intended as a debugging tool, but will be invaluable for orchestrating POETS
-// jobs over multiple boxes.
+// intended as a debugging and logging tool, but will be invaluable for
+// orchestrating POETS jobs over multiple boxes.
 {
+    map<int,string>::iterator ackIt;
     unsigned key = Z->Key();
+    bool acksMatch = false;
     string appName;
+    string ackName;
     Z->Get(0, appName);
-    pair<int, string> mshipApp = make_pair(Z->Src(), appName);
-    if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD))
-        mshipAcks[mshipApp] = "DEFINED";
-    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD))
-        mshipAcks[mshipApp] = "READY";
-    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN))
-        mshipAcks[mshipApp] = "RUNNING";
-    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP))
-        mshipAcks[mshipApp] = "STOPPED";
+
+    // Figure out what the acknowledgement is.
+    if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD)) ackName = "DEFINED";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)) ackName = "READY";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN)) ackName = "RUNNING";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)) ackName = "STOPPED";
     else
+    {
         Post(183, hex2str(key), int2str(Z->Src()), int2str(Z->Tgt()));
+        return 0;
+    }
+
+    // Store it
+    mshipAcks[appName][Z->Src()] = ackName;
+
+    // If all Motherships have changed state correctly, post about it.
+    for (ackIt = mshipAcks[appName].begin(); ackIt != mshipAcks[appName].end();
+         ackIt++)
+    {
+        if (ackIt->second != ackName)
+        {
+            acksMatch = false;
+            break;
+        }
+    }
+    if (acksMatch)
+    {
+        if (ackName == "DEFINED") Post(186, appName, "successfully deployed");
+        if (ackName == "READY") Post(186, appName, "ready to start");
+        if (ackName == "RUNNING") Post(186, appName, "running");
+        if (ackName == "STOPPED") Post(186, appName, "stopped");
+    }
+
     return 0;
 }
 
