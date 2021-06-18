@@ -2,10 +2,15 @@
  - [X] Consume Mothership deployed/ready/running/stopped acknowledgements, and
    print a nice message when they're all received by root (counting in some
    persistent data structure I haven't made yet).
- - [ ] Set up Mothership acknowledgement on error, and update deplStat in Root.
- - [ ] Allow recall to break through error.
+ - [X] Set up Mothership acknowledgement on error, and update deplStat in Root.
  - [ ] When one Mothership sends an error, propagate that to other Motherships.
+ - [ ] Allow recall to break through error, and clear that error state in Root
+   once all Motherships have acknowledged.
+ - [ ] Strongly consider abstracting all of this Mothership-communication logic
+   (in Root and OrchBase) into a class of its own, and incorporate it into the
+   Mothership documentation.
+ - [ ] Test above functionality.
  - [ ] Update user guide with new outputs
  - [ ] Update Mothership documentation to explain what the acknowledgements are
    used for.
- - [ ] Add 'error request' packet to Mothership documentation.
+ - [ ] Add error request (MSHP,REQ,BRKN) packet to Mothership documentation.
