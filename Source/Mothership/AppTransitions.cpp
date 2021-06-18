@@ -149,6 +149,7 @@ void Mothership::stop_application(AppInfo* app)
     if(!superdb.reload_supervisor(appName, &errorMessage))
     {
         Post(503, appName, errorMessage);
+        tell_root_app_is_broken(appName);
         app->state = BROKEN;
     }
 
@@ -156,6 +157,7 @@ void Mothership::stop_application(AppInfo* app)
     if(!provision_supervisor_api(appName))
     {
         Post(525, appName);
+        tell_root_app_is_broken(appName);
         app->state = BROKEN;
     }
 }

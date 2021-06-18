@@ -121,6 +121,9 @@ private:
     bool provision_supervisor_api(std::string appName);
     void supervisor_api_stop_application(std::string appName);
 
+    /* An app is broken! */
+    void tell_root_app_is_broken(std::string appName);
+
     /* Supervisor spinning (virtual from CommonBase). */
     void OnIdle();
 };

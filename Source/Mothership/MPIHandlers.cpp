@@ -189,6 +189,7 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
     if (!appInfo->increment_dist_count_current())
     {
         Post(524, appName, uint2str(appInfo->distCountExpected));
+        tell_root_app_is_broken(appName);
         appInfo->state = BROKEN;
         return 0;
     }
@@ -254,6 +255,7 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
     if(!superdb.load_supervisor(appName, soPath, &errorMessage))
     {
         Post(503, appName, errorMessage);
+        tell_root_app_is_broken(appName);
         appInfo->state = BROKEN;
         return 0;
     }
@@ -262,6 +264,7 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
     if(!provision_supervisor_api(appName))
     {
         Post(525, appName);
+        tell_root_app_is_broken(appName);
         appInfo->state = BROKEN;
         return 0;
     }
@@ -271,6 +274,7 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
     if (!appInfo->increment_dist_count_current())
     {
         Post(524, appName, uint2str(appInfo->distCountExpected));
+        tell_root_app_is_broken(appName);
         appInfo->state = BROKEN;
         return 0;
     }
