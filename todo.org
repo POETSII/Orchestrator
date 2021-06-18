@@ -5,3 +5,7 @@
  - [ ] Set up Mothership acknowledgement on error, and update deplStat in Root.
  - [ ] Allow recall to break through error.
  - [ ] When one Mothership sends an error, propagate that to other Motherships.
+ - [ ] Update user guide with new outputs
+ - [ ] Update Mothership documentation to explain what the acknowledgements are
+   used for.
+ - [ ] Add 'error request' packet to Mothership documentation.
