@@ -6,6 +6,10 @@
  - [X] When one Mothership sends an error, propagate that to other Motherships.
  - [ ] Allow recall to break through error, and clear that error state in Root
    once all Motherships have acknowledged.
+ - [ ] After deployment, initialisation, and stopping on a given Mothership,
+   warn the user that it's taking a while if it's taking a while. How long is a
+   while? It's dependent on user code. Alright, maybe just do it for deployment
+   then.
  - [ ] Strongly consider abstracting all of this Mothership-communication logic
    (in Root and OrchBase) into a class of its own, and incorporate it into the
    Mothership documentation.
