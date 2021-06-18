@@ -1,4 +1,4 @@
- - [ ] Make Motherships post on app state transition.
+ - [X] Make Motherships post on app state transition.
  - [ ] Consume Mothership deployed/ready/running/stopped acknowledgements, and
    print a nice message when they're all received by root (counting in some
    persistent data structure I haven't made yet).

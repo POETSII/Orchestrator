@@ -150,18 +150,20 @@ void Mothership::handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop)
         (stop and !(appInfo->coresLoaded.empty()))) return;
 
     /* Otherwise, all threads on all cores have responded. Mark the application
-     * as READY (or STOPPED) and report back to Root. */
+     * as READY (or STOPPED), report back to Root, and Post. */
     PMsg_p acknowledgement;
     acknowledgement.Src(Urank);
     acknowledgement.Put<std::string>(0, &(appInfo->name));
     acknowledgement.Tgt(pPmap->U.Root);
     if (!stop)
     {
+        Post(531, int2str(Urank), appName);
         appInfo->state = READY;
         acknowledgement.Key(Q::MSHP, Q::ACK, Q::LOAD);
     }
     else
     {
+        Post(534, int2str(Urank), appName);
         appInfo->state = STOPPED;
         acknowledgement.Key(Q::MSHP, Q::ACK, Q::STOP);
     }

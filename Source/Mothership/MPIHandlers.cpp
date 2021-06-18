@@ -116,8 +116,17 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
     appInfo->distCountExpected = distCount;
 
     /* Check for being fully defined (transition from UNDERDEFINED to
-     * DEFINED). */
-    appInfo->check_update_defined_state();
+     * DEFINED). If it is, report back to Root and Post. */
+    if (appInfo->check_update_defined_state())
+    {
+        Post(529, int2str(Urank), appInfo->name);
+        PMsg_p acknowledgement;
+        acknowledgement.Src(Urank);
+        acknowledgement.Put<std::string>(0, &(appInfo->name));
+        acknowledgement.Tgt(pPmap->U.Root);
+        acknowledgement.Key(Q::MSHP, Q::ACK, Q::DEFD);
+        queue_mpi_message(&acknowledgement);
+    }
 
     /* Check for further state transitions. */
     if (appInfo->should_we_recall()) recall_application(appInfo);
@@ -199,9 +208,10 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
     }
 
     /* Check for being fully defined (transition from UNDERDEFINED to
-     * DEFINED). If it is, report back to Root. */
+     * DEFINED). If it is, report back to Root and Post. */
     if (appInfo->check_update_defined_state())
     {
+        Post(529, int2str(Urank), appInfo->name);
         PMsg_p acknowledgement;
         acknowledgement.Src(Urank);
         acknowledgement.Put<std::string>(0, &(appInfo->name));
@@ -266,8 +276,17 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
     }
 
     /* Check for being fully defined (transition from UNDERDEFINED to
-     * DEFINED). */
-    appInfo->check_update_defined_state();
+     * DEFINED). If it is, report back to Root and Post. */
+    if (appInfo->check_update_defined_state())
+    {
+        Post(529, int2str(Urank), appInfo->name);
+        PMsg_p acknowledgement;
+        acknowledgement.Src(Urank);
+        acknowledgement.Put<std::string>(0, &(appInfo->name));
+        acknowledgement.Tgt(pPmap->U.Root);
+        acknowledgement.Key(Q::MSHP, Q::ACK, Q::DEFD);
+        queue_mpi_message(&acknowledgement);
+    }
 
     /* Check for further state transitions. */
     if (appInfo->should_we_recall()) recall_application(appInfo);

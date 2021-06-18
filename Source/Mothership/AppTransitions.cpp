@@ -35,7 +35,7 @@ void Mothership::initialise_application(AppInfo* app)
     /* Modes to reduce code repetition between steps 2 and 3. */
     bool mode;
 
-    debug_post(596, 1, app->name.c_str());
+    Post(530, int2str(Urank), app->name.c_str());
 
     app->state = LOADING;  /* 0: Set the application state to LOADING, duh. */
 
@@ -112,7 +112,7 @@ void Mothership::initialise_application(AppInfo* app)
  * softswitch, commands all of the executors under its command to start. */
 void Mothership::run_application(AppInfo* app)
 {
-    debug_post(595, 1, app->name.c_str());
+    Post(532, int2str(Urank), app->name.c_str());
 
     app->state = RUNNING;
     send_cnc_packet_to_all(app, P_CNC_BARRIER);
@@ -142,7 +142,7 @@ void Mothership::stop_application(AppInfo* app)
     std::string appName = app->name;
     std::string errorMessage;
 
-    debug_post(594, 1, appName.c_str());
+    Post(533, int2str(Urank), appName.c_str());
     app->state = STOPPING;
     send_cnc_packet_to_all(app, P_CNC_STOP);
     superdb.exit_supervisor(appName);
@@ -215,7 +215,9 @@ void Mothership::send_cnc_packet_to_all(AppInfo* app, uint8_t opcode)
  * as cores and threads associated with it. */
 void Mothership::recall_application(AppInfo* app)
 {
-    debug_post(593, 1, app->name.c_str());
-    superdb.unload_supervisor(app->name);
-    appdb.recall_app(app);
+    std::string appName = app->name;
+    Post(535, int2str(Urank), appName);
+    superdb.unload_supervisor(appName);
+    appdb.recall_app(app);  /* Clears the name as well! */
+    Post(536, int2str(Urank), appName);
 }
