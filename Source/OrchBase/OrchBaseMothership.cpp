@@ -94,7 +94,7 @@ void OrchBase::MshipCommand(Cli::Cl_t clause, std::string command)
              * to see acknowledgements from the Mothership process(es). Those
              * acknowledgements will remove their appropriate process from the
              * deployment information structure. */
-            deplStat[*graphIt] = "RECALLING";
+            deplStat[(*graphIt)->Name()] = "RECALLING";
         }
         else if (command == "init") message.Key(Q::CMND, Q::INIT);
         else if (command == "run") message.Key(Q::CMND,Q::RUN);

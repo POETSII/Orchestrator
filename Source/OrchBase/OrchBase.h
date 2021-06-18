@@ -73,14 +73,14 @@ ProcMap::ProcMap_t * loneMothership;
 map2<P_box *, ProcMap::ProcMap_t *> P_SCMm2;
 #endif
 // Holds deployment information (which Motherships are hosting a graph
-// instance).
-map<GraphI_t *,vector<ProcMap::ProcMap_t *> > deplInfo;
-// Holds deployment state, one of:
+// instance by name).
+map<string,vector<ProcMap::ProcMap_t *> > deplInfo;
+// Holds deployment state for an application by name, one of:
 //  - UNSET
 //  - DEPLOYING/ED
 //  - RECALLING
 //  - ERROR
-map<GraphI_t *,string> deplStat;
+map<string,string> deplStat;
 // Holds acknowledgement states from Motherships. Maps appnames to maps of
 // ranks to one of:
 //  - DEFINED

@@ -52,7 +52,7 @@ void CmDepl::Cm_App(Cli::Cl_t clause)
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
         /* Sanity */
-        if (par->deplStat[*graphIt] == "ERROR")
+        if (par->deplStat[(*graphIt)->Name()] == "ERROR")
         {
             fprintf(par->fd, "ERROR: Unable to deploy graph instance '%s' - "
                     "it is in an error state from a previously-failed "
@@ -60,7 +60,7 @@ void CmDepl::Cm_App(Cli::Cl_t clause)
             par->Post(185, (*graphIt)->Name());
         }
 
-        else if (par->deplStat[*graphIt] == "RECALLING")
+        else if (par->deplStat[(*graphIt)->Name()] == "RECALLING")
         {
             fprintf(par->fd, "Just waiting for a bit - this application is "
                     "recalling. I assume the operator wants to wait until "
@@ -68,7 +68,7 @@ void CmDepl::Cm_App(Cli::Cl_t clause)
             OSFixes::sleep(3000);  /* Three seconds. */
         }
 
-        if (par->deplStat[*graphIt] != "UNSET")
+        if (par->deplStat[(*graphIt)->Name()] != "UNSET")
         {
             fprintf(par->fd, "Unable to deploy graph instance '%s' - it is "
                     "already deployed! Aborting.\n",
@@ -82,7 +82,8 @@ void CmDepl::Cm_App(Cli::Cl_t clause)
         if (DeployGraph(*graphIt) != 0)
         {
             /* Failure */
-            par->deplInfo[*graphIt].clear();  /* Clears deployment information. */
+            par->deplInfo[(*graphIt)->Name()].clear();  /* Clears deployment
+                                                         * information. */
             par->Post(185, (*graphIt)->Name());
             return;
         }
@@ -231,8 +232,8 @@ int CmDepl::DeployGraph(GraphI_t* gi)
 
             /* Store this process in a persistent deployment information
              * object. */
-            par->deplInfo[gi].push_back(mothershipProc);
-            par->deplStat[gi] = "DEPLOYING/ED";
+            par->deplInfo[gi->Name()].push_back(mothershipProc);
+            par->deplStat[gi->Name()] = "DEPLOYING/ED";
 
             /* Define the payload for a DIST message for this core. */
             mothershipPayloads[rank].push_back(DistPayload());
