@@ -52,44 +52,45 @@ void CmDepl::Cm_App(Cli::Cl_t clause)
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
         /* Sanity */
-        if (deplStat == "ERROR")
+        if (par->deplStat[*graphIt] == "ERROR")
         {
             fprintf(par->fd, "ERROR: Unable to deploy graph instance '%s' - "
                     "it is in an error state from a previously-failed "
-                    "command. Aborting.\n", graphIt->Name().c_str());
-            par->Post(185, graphIt->Name());
+                    "command. Aborting.\n", (*graphIt)->Name().c_str());
+            par->Post(185, (*graphIt)->Name());
         }
 
-        else if (deplStat == "RECALLING")
+        else if (par->deplStat[*graphIt] == "RECALLING")
         {
-            fprintf(par->fd, "Just waiting for a bit - this application is
-                    "recalling. I assume the operator wants to wait until it's"
-                    "recalled before deploying.\n");
+            fprintf(par->fd, "Just waiting for a bit - this application is "
+                    "recalling. I assume the operator wants to wait until "
+                    "it's recalled before deploying.\n");
             OSFixes::sleep(3000);  /* Three seconds. */
         }
 
-        if (deplStat != "UNSET")
+        if (par->deplStat[*graphIt] != "UNSET")
         {
             fprintf(par->fd, "Unable to deploy graph instance '%s' - it is "
-                    "already deployed! Aborting.\n", graphIt->Name().c_str());
-            par->Post(185, graphIt->Name());
+                    "already deployed! Aborting.\n",
+                    (*graphIt)->Name().c_str());
+            par->Post(185, (*graphIt)->Name());
         }
 
         /* Let's try it. */
         fprintf(par->fd, "Staging deployment of graph instance '%s'...\n",
-                graphIt->Name().c_str());  /* Microlog */
+                (*graphIt)->Name().c_str());  /* Microlog */
         if (DeployGraph(*graphIt) != 0)
         {
             /* Failure */
-            deplInfo[*graphIt].clear();  /* Clears deployment information. */
-            par->Post(185, graphIt->Name());
+            par->deplInfo[*graphIt].clear();  /* Clears deployment information. */
+            par->Post(185, (*graphIt)->Name());
             return;
         }
 
         fprintf(par->fd, "Deployment of graph instance '%s' staged. Wait for "
                 "Mothership(s) to acknowledge receipt (they will Post).\n\n",
-                graphIt->Name().c_str());
-        par->Post(184, graphIt->Name());  /* We good, yo. */
+                (*graphIt)->Name().c_str());
+        par->Post(184, (*graphIt)->Name());  /* We good, yo. */
     }
 }
 
@@ -225,13 +226,13 @@ int CmDepl::DeployGraph(GraphI_t* gi)
                 return 1;
             }
             else rank = mothershipProc->P_rank;
-            fprintf(par->fd, "Selecting Mothership at MPI rank %z as a "
+            fprintf(par->fd, "Selecting Mothership at MPI rank %d as a "
                     "deployment target.\n", rank);
 
             /* Store this process in a persistent deployment information
              * object. */
-            deplInfo[gi].push_back(mothershipProc);
-            deplStat[gi] = "DEPLOYING/ED";
+            par->deplInfo[gi].push_back(mothershipProc);
+            par->deplStat[gi] = "DEPLOYING/ED";
 
             /* Define the payload for a DIST message for this core. */
             mothershipPayloads[rank].push_back(DistPayload());
@@ -284,7 +285,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
          * commands-to-be-run in a vector. */
         if (rootMachineName == mothershipProc->P_proc)
         {
-            fprintf(par->fd, "The Mothership at rank %z is running on the "
+            fprintf(par->fd, "The Mothership at rank %d is running on the "
                     "same box as the Root process.\n", rank);
             commands.push_back(dformat("rm -r -f %s", target.c_str()));
             commands.push_back(dformat("mkdir -p %s", target.c_str()));
@@ -298,7 +299,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
          * SCP. */
         else
         {
-            fprintf(par->fd, "The Mothership at rank %z is running a "
+            fprintf(par->fd, "The Mothership at rank %d is running a "
                     "different box from the Root process.\n", rank);
             host = dformat("%s@%s", mothershipProc->P_user,
                            mothershipProc->P_proc);
@@ -372,21 +373,21 @@ int CmDepl::DeployGraph(GraphI_t* gi)
         specMessage.Put<unsigned>(1, &distCount);
         specMessage.Put<unsigned char>(2,
             static_cast<unsigned char*>(&appNumber));
-        fprintf("Sending SPEC message to Mothership rank %z, with "
+        fprintf(par->fd, "Sending SPEC message to Mothership rank %d, with "
                 "appNumber=%u and distCount=%u...",
                 mothershipPayloadsIt->first, appNumber, distCount);
         specMessage.Send();
-        fprintf(" message sent.\n")
+        fprintf(par->fd, " message sent.\n");
 
         /* Customise and send the SUPD message. */
         soPath = getenv("HOME") + std::string("/") +  par->pCmPath->pathMshp +
             graphPathName + "/" + gi->pSupI->binPath;
         supdMessage.Put(1, &soPath);
-        fprintf("Sending SUPD message to Mothership rank %z, with "
+        fprintf(par->fd, "Sending SUPD message to Mothership rank %d, with "
                 "soPath=%s...",
                 mothershipPayloadsIt->first, soPath.c_str());
         supdMessage.Send();
-        fprintf(" message sent.\n")
+        fprintf(par->fd, " message sent.\n");
 
         /* Customise and send the DIST messages (one per core) */
         for (payloadIt = mothershipPayloadsIt->second.begin();
@@ -397,14 +398,28 @@ int CmDepl::DeployGraph(GraphI_t* gi)
             distMessage.Put<unsigned>(3, &(payloadIt->coreAddr));
             distMessage.Put<unsigned>
                 (4, &(payloadIt->threadsExpected));
-            fprintf("Sending DIST message to Mothership rank %z, with "
-                    "codePath=%s, dataPath=%s, coreAddr=%u, and "
-                    "threadsExpected=%u...",
+
+            /* Microlog, for the people. */
+            fprintf(par->fd, "Sending DIST message to Mothership rank %d, "
+                    "with codePath=%s, dataPath=%s, coreAddr=%u, and "
+                    "threadsExpected=[",
                     mothershipPayloadsIt->first, payloadIt->codePath.c_str(),
-                    payloadIt->dataPath.c_str(), payloadIt->coreAddr,
-                    payloadIt->threadsExpected);
+                    payloadIt->dataPath.c_str(), payloadIt->coreAddr);
+            std::vector<AddressComponent>::iterator threadIt;
+            for (threadIt = payloadIt->threadsExpected.begin();
+                 threadIt != payloadIt->threadsExpected.end(); threadIt++)
+            {
+                fprintf(par->fd, "%s%x",
+                        threadIt != payloadIt->threadsExpected.begin() \
+                            ? ", " : "",
+                        *threadIt);
+            }
+            fprintf(par->fd, "] (size=%lu).\n",
+                    payloadIt->threadsExpected.size());
+
+            /* And away we go. */
             distMessage.Send();
-            fprintf(" message sent.\n")
+            fprintf(par->fd, " message sent.\n");
         }
     }
 

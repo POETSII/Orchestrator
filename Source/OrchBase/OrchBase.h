@@ -80,7 +80,7 @@ map<GraphI_t *,vector<ProcMap::ProcMap_t *> > deplInfo;
 //  - DEPLOYING/ED
 //  - RECALLING
 //  - ERROR
-map<GraphI_t *,string> deplStat
+map<GraphI_t *,string> deplStat;
 // Holds acknowledgement states from Motherships. Maps rank-appname pairs to
 // one of:
 //  - DEFINED
