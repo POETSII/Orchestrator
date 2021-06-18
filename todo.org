@@ -1,0 +1,7 @@
+ - [ ] Make Motherships post on app state transition.
+ - [ ] Consume Mothership deployed/ready/running/stopped acknowledgements, and
+   print a nice message when they're all received by root (counting in some
+   persistent data structure I haven't made yet).
+ - [ ] Set up Mothership acknowledgement on error, and update deplStat in Root.
+ - [ ] Allow recall to break through error.
+ - [ ] When one Mothership sends an error, propagate that to other Motherships.

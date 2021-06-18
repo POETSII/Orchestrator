@@ -105,12 +105,14 @@
 175(W) : "Application '%s' has no graph instance named '%s'. Not operating on any applications."
 176(W) : "Encountered unusual application parameter '%s'. Not operating on any applications."
 177(E) : "System command '%s' ran unsuccessfully. Aborting deployment."
-178(E) : "Not enough mothership processes exist to deploy task %s. Is a mothership running?"
+178(E) : "Not enough mothership processes exist to deploy application %s. Is a mothership running?"
 179(E) : "System command '%s' ran unsuccessfully with message '%s'. Aborting deployment."
 180(W) : "Ignoring clauses in 'dump /plac' command - dumping all files to '%s'."
 181(W) : "No application graph instances have been placed. Not dumping anything."
 182(I) : "Placement information dumped to '%s'."
 183(E) : "Received MPI message with unrecognised key '%s'. Source rank: %s. Destination rank: %s.
+184(I) : "Deployment of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
+185(W) : "Deployment of graph instance '%s' failed. See microlog for more information."
 
 196(E) : "%s structural faults found in application %s (file %s) load"
 

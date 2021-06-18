@@ -90,6 +90,11 @@ void OrchBase::MshipCommand(Cli::Cl_t clause, std::string command)
         {
             message.Key(Q::CMND, Q::RECL);
             (*graphIt)->deployed = false;
+            /* Note we don't clear deployment information here, because we want
+             * to see acknowledgements from the Mothership process(es). Those
+             * acknowledgements will remove their appropriate process from the
+             * deployment information structure. */
+            deplState[*graphIt] = "RECALLING";
         }
         else if (command == "init") message.Key(Q::CMND, Q::INIT);
         else if (command == "run") message.Key(Q::CMND,Q::RUN);

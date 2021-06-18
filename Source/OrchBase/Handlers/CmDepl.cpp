@@ -51,7 +51,45 @@ void CmDepl::Cm_App(Cli::Cl_t clause)
     /* Deploy each graph instance in sequence, failing fast. */
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
-        if (DeployGraph(*graphIt) != 0) return;
+        /* Sanity */
+        if (deplStat == "ERROR")
+        {
+            fprintf(par->fd, "ERROR: Unable to deploy graph instance '%s' - "
+                    "it is in an error state from a previously-failed "
+                    "command. Aborting.\n", graphIt->Name().c_str());
+            par->Post(185, graphIt->Name());
+        }
+
+        else if (deplStat == "RECALLING")
+        {
+            fprintf(par->fd, "Just waiting for a bit - this application is
+                    "recalling. I assume the operator wants to wait until it's"
+                    "recalled before deploying.\n");
+            OSFixes::sleep(3000);  /* Three seconds. */
+        }
+
+        if (deplStat != "UNSET")
+        {
+            fprintf(par->fd, "Unable to deploy graph instance '%s' - it is "
+                    "already deployed! Aborting.\n", graphIt->Name().c_str());
+            par->Post(185, graphIt->Name());
+        }
+
+        /* Let's try it. */
+        fprintf(par->fd, "Staging deployment of graph instance '%s'...\n",
+                graphIt->Name().c_str());  /* Microlog */
+        if (DeployGraph(*graphIt) != 0)
+        {
+            /* Failure */
+            deplInfo[*graphIt].clear();  /* Clears deployment information. */
+            par->Post(185, graphIt->Name());
+            return;
+        }
+
+        fprintf(par->fd, "Deployment of graph instance '%s' staged. Wait for "
+                "Mothership(s) to acknowledge receipt (they will Post).\n\n",
+                graphIt->Name().c_str());
+        par->Post(184, graphIt->Name());  /* We good, yo. */
     }
 }
 
@@ -124,7 +162,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
     {
 #if SINGLE_SUPERVISOR_MODE
         /* Grab the only Mothership (which may be invalid). We don't exit
-         * immediatelyif there is no Mothership (we fail later). */
+         * immediately if there is no Mothership (we fail later). */
         mothershipProc = par->loneMothership;
 #else
         /* Grab the Mothership for this box (which may be invalid). We don't
@@ -181,10 +219,19 @@ int CmDepl::DeployGraph(GraphI_t* gi)
              * instance can still execute as expected. */
             if (mothershipProc == PNULL)
             {
+                fprintf(par->fd, "ERROR: Not enough Motherships to deploy "
+                        "this application.\n");
                 par->Post(178, graphName);
                 return 1;
             }
             else rank = mothershipProc->P_rank;
+            fprintf(par->fd, "Selecting Mothership at MPI rank %z as a "
+                    "deployment target.\n", rank);
+
+            /* Store this process in a persistent deployment information
+             * object. */
+            deplInfo[gi].push_back(mothershipProc);
+            deplStat[gi] = "DEPLOYING/ED";
 
             /* Define the payload for a DIST message for this core. */
             mothershipPayloads[rank].push_back(DistPayload());
@@ -237,16 +284,22 @@ int CmDepl::DeployGraph(GraphI_t* gi)
          * commands-to-be-run in a vector. */
         if (rootMachineName == mothershipProc->P_proc)
         {
+            fprintf(par->fd, "The Mothership at rank %z is running on the "
+                    "same box as the Root process.\n", rank);
             commands.push_back(dformat("rm -r -f %s", target.c_str()));
             commands.push_back(dformat("mkdir -p %s", target.c_str()));
             commands.push_back(dformat("cp -r %s %s", sourceBinaries.c_str(),
                                        target.c_str()));
+            fprintf(par->fd, "Copying binaries from '%s' to '%s' on the local "
+                    "filesystem...\n", sourceBinaries.c_str(), target.c_str());
         }
 
         /* Note that, if the machine is different, we deploy binaries using
          * SCP. */
         else
         {
+            fprintf(par->fd, "The Mothership at rank %z is running a "
+                    "different box from the Root process.\n", rank);
             host = dformat("%s@%s", mothershipProc->P_user,
                            mothershipProc->P_proc);
             commands.push_back(dformat("ssh %s \"rm -r -f %s\"",
@@ -256,6 +309,8 @@ int CmDepl::DeployGraph(GraphI_t* gi)
             commands.push_back(dformat("scp -r %s %s:%s",
                                        sourceBinaries.c_str(), host.c_str(),
                                        target.c_str()));
+            fprintf(par->fd, "Copying binaries from '%s' to '%s' using "
+                    "SSH...\n ", sourceBinaries.c_str(), target.c_str());
         }
 
         /* Run each staged command, failing fast if one of them breaks. */
@@ -264,6 +319,8 @@ int CmDepl::DeployGraph(GraphI_t* gi)
             if (system(command->c_str()) > 0)
             {
                 /* Command failed, cancelling deployment. */
+                fprintf(par->fd, "ERROR: Command '%s' failed, cancelling "
+                        "deployment.\n", command->c_str());
                 if (errno == 0)
                 {
                     par->Post(177, command->c_str());
@@ -276,6 +333,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
                 return 1;
             }
         }
+        fprintf(par->fd, "Binaries copied successfully.\n");
     }
 
     /* Send SPEC, DIST, and SUPD messages to each Mothership for this
@@ -308,19 +366,27 @@ int CmDepl::DeployGraph(GraphI_t* gi)
         }
 
         /* Customise and send the SPEC message. */
-        distCount = mothershipPayloadsIt->second.size() + 1;  /* +1 for SUPD */
         appNumber = 0;  /* This is terrible - only one graph instance can be
                          * loaded at a time! <!> TODO */
+        distCount = mothershipPayloadsIt->second.size() + 1;  /* +1 for SUPD */
         specMessage.Put<unsigned>(1, &distCount);
         specMessage.Put<unsigned char>(2,
             static_cast<unsigned char*>(&appNumber));
+        fprintf("Sending SPEC message to Mothership rank %z, with "
+                "appNumber=%u and distCount=%u...",
+                mothershipPayloadsIt->first, appNumber, distCount);
         specMessage.Send();
+        fprintf(" message sent.\n")
 
         /* Customise and send the SUPD message. */
         soPath = getenv("HOME") + std::string("/") +  par->pCmPath->pathMshp +
             graphPathName + "/" + gi->pSupI->binPath;
         supdMessage.Put(1, &soPath);
+        fprintf("Sending SUPD message to Mothership rank %z, with "
+                "soPath=%s...",
+                mothershipPayloadsIt->first, soPath.c_str());
         supdMessage.Send();
+        fprintf(" message sent.\n")
 
         /* Customise and send the DIST messages (one per core) */
         for (payloadIt = mothershipPayloadsIt->second.begin();
@@ -331,8 +397,14 @@ int CmDepl::DeployGraph(GraphI_t* gi)
             distMessage.Put<unsigned>(3, &(payloadIt->coreAddr));
             distMessage.Put<unsigned>
                 (4, &(payloadIt->threadsExpected));
+            fprintf("Sending DIST message to Mothership rank %z, with "
+                    "codePath=%s, dataPath=%s, coreAddr=%u, and "
+                    "threadsExpected=%u...",
+                    mothershipPayloadsIt->first, payloadIt->codePath.c_str(),
+                    payloadIt->dataPath.c_str(), payloadIt->coreAddr,
+                    payloadIt->threadsExpected);
             distMessage.Send();
-
+            fprintf(" message sent.\n")
         }
     }
 
