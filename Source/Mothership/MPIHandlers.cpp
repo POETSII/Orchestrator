@@ -457,26 +457,25 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
         return 0;
     }
 
-    /* Set up a vector of packets for the supervisor entry point to modify.
-     * If the vector comes back with entries, then we have packets to send.
+    /* Set up a vector of packets for the supervisor entry point to modify. If
+     * the vector comes back with entries, then we have packets to send.
      */
     std::vector<P_Pkt_t> inputPackets;
     std::vector<P_Addr_Pkt_t> outputPackets;
-    
-    // Get the input packets.
+
+    /* Get the input packets. */
     decode_packets_message(message, &inputPackets, 1);
 
     /* Invoke the supervisor, send the message if instructed to do so, and
      * propagate errors. */
     rc = superdb.call_supervisor(appName, inputPackets, outputPackets);
-    if (outputPackets.size() > 0) 
+    if (outputPackets.size() > 0)
     {
         PMsg_p outputMessage;
         outputMessage.Tgt(Urank);
         outputMessage.Src(Urank);
         outputMessage.Key(Q::PKTS);
         outputMessage.Put<P_Addr_Pkt_t> (0, &(outputPackets));
-        
         queue_mpi_message(&outputMessage);
     }
     if (rc < 0) Post(515, appName);

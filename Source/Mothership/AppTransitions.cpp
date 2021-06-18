@@ -205,7 +205,6 @@ void Mothership::send_cnc_packet_to_all(AppInfo* app, uint8_t opcode)
             P_Addr_Pkt_t pkt;
             pkt.hwAddr = *threadAddressIt;
             pkt.packet = packet;
-            
             allPackets.push_back(pkt);
         }
     threading.push_backend_out_queue(&allPackets);
