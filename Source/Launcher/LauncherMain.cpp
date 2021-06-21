@@ -131,14 +131,19 @@ void BuildCommand(bool useMotherships, std::string internalPath,
                                                                << " ";
     *(hydraProcesses.back()) << localBinDir << "/" << execLogserver;
 
-    /* Clock */
-    hydraProcesses.push_back(new std::stringstream);
-    orderedHosts.push_back(ourHostname);
-    *(hydraProcesses.back()) << "-n 1 ";
-    if (gdbProcs[execClock]) *(hydraProcesses.back()) << execGdb << " ";
-    if (valgrindProcs[execClock]) *(hydraProcesses.back()) << execValgrind
-                                                           << " ";
-    *(hydraProcesses.back()) << localBinDir << "/" << execClock;
+    /* Clock - optionally disabled. */
+    if (USE_CLOCK)
+    {
+        hydraProcesses.push_back(new std::stringstream);
+        orderedHosts.push_back(ourHostname);
+        *(hydraProcesses.back()) << "-n 1 ";
+        if (gdbProcs[execClock]) *(hydraProcesses.back()) << execGdb << " ";
+        if (valgrindProcs[execClock]) *(hydraProcesses.back()) << execValgrind
+                                                               << " ";
+        *(hydraProcesses.back()) << localBinDir << "/" << execClock;
+    }
+    else DebugPrint("%sThe real-time clock is currently DISABLED.\n",
+                    debugHeader);
 
     /* Adding motherships... */
     if (useMotherships)
