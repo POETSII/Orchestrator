@@ -213,7 +213,7 @@ void Mothership::send_cnc_packet_to_all(AppInfo* app, uint8_t opcode)
 }
 
 /* Purges all mention of an application in Mothership datastructures, as well
- * as cores and threads associated with it. */
+ * as cores and threads associated with it. Let Root know when done. */
 void Mothership::recall_application(AppInfo* app)
 {
     std::string appName = app->name;
@@ -221,4 +221,13 @@ void Mothership::recall_application(AppInfo* app)
     superdb.unload_supervisor(appName);
     appdb.recall_app(app);  /* Clears the name as well! */
     Post(536, int2str(Urank), appName);
+
+    /* Send "acknowledgement" message to root. */
+    PMsg_p acknowledgement;
+    acknowledgement.Src(Urank);
+    acknowledgement.Key(Q::MSHP, Q::ACK, Q::RECL);
+    acknowledgement.Put<std::string>(0, &(app->name));
+    acknowledgement.Tgt(pPmap->U.Root);
+    queue_mpi_message(&acknowledgement);
+
 }

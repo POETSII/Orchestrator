@@ -371,6 +371,7 @@ unsigned Root::OnMshipAck(PMsg_p * Z)
     else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)) ackName = "READY";
     else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN)) ackName = "RUNNING";
     else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)) ackName = "STOPPED";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RECL)) ackName = "RECALLED";
     else
     {
         Post(183, hex2str(key), int2str(Z->Src()), int2str(Z->Tgt()));
@@ -396,6 +397,15 @@ unsigned Root::OnMshipAck(PMsg_p * Z)
         if (ackName == "READY") Post(186, appName, "ready to start");
         if (ackName == "RUNNING") Post(186, appName, "running");
         if (ackName == "STOPPED") Post(186, appName, "stopped");
+        if (ackName == "RECALLED")
+        {
+            Post(186, appName, "recalled");
+            /* If all Motherships have forgotten about it, it's not deployed
+             * any more. */
+            deplInfo[appName].clear();
+            deplStat[appName].clear();
+            mshipAcks[appName].clear();
+        }
     }
 
     return 0;

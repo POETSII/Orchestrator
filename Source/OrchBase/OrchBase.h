@@ -87,6 +87,7 @@ map<string,string> deplStat;
 //  - READY
 //  - RUNNING
 //  - STOPPED
+//  - RECALLED
 map<string,map<int,string> > mshipAcks;
 
 CmCall *               pCmCall;
