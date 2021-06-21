@@ -6,10 +6,6 @@
  - [X] When one Mothership sends an error, propagate that to other Motherships.
  - [X] Allow recall to break through error, and clear that error state in Root
    once all Motherships have acknowledged.
- - [ ] After deployment, initialisation, and stopping on a given Mothership,
-   warn the user that it's taking a while if it's taking a while. How long is a
-   while? It's dependent on user code. Alright, maybe just do it for deployment
-   then.
  - [ ] Strongly consider abstracting all of this Mothership-communication logic
    (in Root and OrchBase) into a class of its own, and incorporate it into the
    Mothership documentation.
@@ -21,3 +17,11 @@
  - [ ] Add error propagation (CMND,BRKN) message to Mothership documentation.
  - [ ] Add recall acknowledgement (MSHP,ACK,RECL) message to Mothership
    documentation.
+ - [ ] After deployment, initialisation, and stopping on a given Mothership,
+   warn the user that it's taking a while if it's taking a while. How long is a
+   while? It's dependent on user code. Alright, maybe just do it for deployment
+   then. Actually, this is looking like a bit too much work. It requires
+   deployment to write times to a struct in shared memory (in the Mothership
+   class, probably), and for the Mothership's OnIdle logic to poll it, while
+   also managing the Supervisor's OnIdle logic. Too easy to make a hard-to-find
+   mistake for a tiny UX benefit, so I'm shelving this.
