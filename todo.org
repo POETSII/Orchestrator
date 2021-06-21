@@ -6,9 +6,6 @@
  - [X] When one Mothership sends an error, propagate that to other Motherships.
  - [X] Allow recall to break through error, and clear that error state in Root
    once all Motherships have acknowledged.
- - [ ] Strongly consider abstracting all of this Mothership-communication logic
-   (in Root and OrchBase) into a class of its own, and incorporate it into the
-   Mothership documentation.
  - [ ] Test above functionality.
  - [ ] Update user guide with new outputs
  - [ ] Update Mothership documentation to explain what the acknowledgements are
@@ -25,3 +22,10 @@
    class, probably), and for the Mothership's OnIdle logic to poll it, while
    also managing the Supervisor's OnIdle logic. Too easy to make a hard-to-find
    mistake for a tiny UX benefit, so I'm shelving this.
+ - [ ] Strongly consider abstracting all of this Mothership-communication logic
+   (in Root and OrchBase) into a class of its own, and incorporate it into the
+   Mothership documentation. So I considered it, but this system is too damn
+   entangled to make the approach worth it. The class would need to have access
+   to commonbase members (for Post), and OrchBase's app structure to have a
+   chance, not to mention that Root would need to hook into the class'
+   methods. I drew a picture. It's a soup.
