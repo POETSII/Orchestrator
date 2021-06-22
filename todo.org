@@ -6,8 +6,8 @@
  - [X] When one Mothership sends an error, propagate that to other Motherships.
  - [X] Allow recall to break through error, and clear that error state in Root
    once all Motherships have acknowledged.
- - [ ] Test above functionality.
- - [ ] Update user guide with new outputs
+ - [X] Test above functionality.
+ - [X] Update user guide with new outputs
  - [ ] Update Mothership documentation to explain what the acknowledgements are
    used for.
  - [ ] Add error request (MSHP,REQ,BRKN) message to Mothership documentation.
