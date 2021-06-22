@@ -85,6 +85,8 @@ FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::BRKN)] = &Root::OnMshipReq;
 
 // Set up exit flags
 exitOnEmpty = false;
+exitOnStop = false;
+appJustStopped = false;
 
 // Spin off a thread to handle keyboard
 void * args = this;
@@ -223,7 +225,7 @@ if (pC != PNULL) WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
           exitOnEmpty = true;
           Post(67);
       }
-      if (p=="stop")
+      else if (p=="stop")
       {
           exitOnStop = true;
           Post(69);
@@ -333,29 +335,28 @@ if (!Cm.Empty())                       // If so, act on it.
   if (Cm.Co[0]=='*') pCmCall->stack.pop_back();
   else ProcCmnd(&Cm);                  // Handle ordinary batch command
 }
-else                                   // Nothing there, check exit conditions
+
+// Nothing there, check exit conditions.
+if ((Cm.Empty() and exitOnEmpty) or (appJustStopped and exitOnStop))
 {
-  // Exit on empty queue, if staged.
-  if (exitOnEmpty)
-  {
-      // Post before we go. Delay to ensure this gets there before the exit
-      // message.
-      Post(68);
-      OSFixes::sleep(100);
+    // Post before we go. Delay to ensure this gets there before the exit
+    // message.
+    Post(68);
+    OSFixes::sleep(100);
 
-      // Message ourselves to get out of MPISpinner.
-      PMsg_p exitMsg;
-      exitMsg.Key(Q::EXIT);
-      exitMsg.Src(Urank);
-      exitMsg.Send(Urank);
+    // Message ourselves to get out of MPISpinner.
+    PMsg_p exitMsg;
+    exitMsg.Key(Q::EXIT);
+    exitMsg.Src(Urank);
+    exitMsg.Send(Urank);
 
-      // Cancel the keyboard thread (breaks out of fgets).
-      pthread_cancel(kb_thread);
+    // Cancel the keyboard thread (breaks out of fgets).
+    pthread_cancel(kb_thread);
 
-      // Send exit to other processes.
-      CmExit(0);
-  }
+    // Send exit to other processes.
+    CmExit(0);
 }
+appJustStopped = false;
 return;
 }
 
@@ -436,7 +437,11 @@ unsigned Root::OnMshipAck(PMsg_p * Z)
         if (ackName == "DEFINED") Post(186, appName, "successfully deployed");
         if (ackName == "READY") Post(186, appName, "ready to start");
         if (ackName == "RUNNING") Post(186, appName, "running");
-        if (ackName == "STOPPED") Post(186, appName, "stopped");
+        if (ackName == "STOPPED")
+        {
+            Post(186, appName, "stopped");
+            appJustStopped = true;
+        }
         if (ackName == "RECALLED")
         {
             Post(186, appName, "recalled");
