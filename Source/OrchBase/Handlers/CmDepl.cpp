@@ -68,7 +68,7 @@ void CmDepl::Cm_App(Cli::Cl_t clause)
             OSFixes::sleep(3000);  /* Three seconds. */
         }
 
-        if (par->deplStat[(*graphIt)->Name()] != "UNSET")
+        if (par->deplStat[(*graphIt)->Name()] != "")
         {
             fprintf(par->fd, "Unable to deploy graph instance '%s' - it is "
                     "already deployed! Aborting.\n",

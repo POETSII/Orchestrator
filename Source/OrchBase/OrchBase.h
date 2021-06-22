@@ -76,7 +76,6 @@ map2<P_box *, ProcMap::ProcMap_t *> P_SCMm2;
 // instance by name).
 map<string,vector<ProcMap::ProcMap_t *> > deplInfo;
 // Holds deployment state for an application by name, one of:
-//  - UNSET
 //  - DEPLOYING/ED
 //  - RECALLING
 //  - ERROR
