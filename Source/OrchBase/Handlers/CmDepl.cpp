@@ -415,7 +415,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
                             ? ", " : "",
                         *threadIt);
             }
-            fprintf(par->fd, "] (size=%lu).\n",
+            fprintf(par->fd, "] (size=%lu)...",
                     payloadIt->threadsExpected.size());
 
             /* And away we go. */
