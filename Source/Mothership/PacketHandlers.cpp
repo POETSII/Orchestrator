@@ -153,7 +153,7 @@ void Mothership::handle_pkt_barrier_or_stop(P_Pkt_t* packet, bool stop)
      * as READY (or STOPPED), report back to Root, and Post. */
     PMsg_p acknowledgement;
     acknowledgement.Src(Urank);
-    acknowledgement.Put<std::string>(0, &(appInfo->name));
+    acknowledgement.Put(0, &(appInfo->name));
     acknowledgement.Tgt(pPmap->U.Root);
     if (!stop)
     {

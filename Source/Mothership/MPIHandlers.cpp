@@ -121,10 +121,10 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
      * DEFINED). If it is, report back to Root and Post. */
     if (appInfo->check_update_defined_state())
     {
-        Post(529, int2str(Urank), appInfo->name);
+        Post(529, int2str(Urank), appName);
         PMsg_p acknowledgement;
         acknowledgement.Src(Urank);
-        acknowledgement.Put<std::string>(0, &(appInfo->name));
+        acknowledgement.Put(0, &appName);
         acknowledgement.Tgt(pPmap->U.Root);
         acknowledgement.Key(Q::MSHP, Q::ACK, Q::DEFD);
         queue_mpi_message(&acknowledgement);
@@ -214,10 +214,10 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
      * DEFINED). If it is, report back to Root and Post. */
     if (appInfo->check_update_defined_state())
     {
-        Post(529, int2str(Urank), appInfo->name);
+        Post(529, int2str(Urank), appName);
         PMsg_p acknowledgement;
         acknowledgement.Src(Urank);
-        acknowledgement.Put<std::string>(0, &(appInfo->name));
+        acknowledgement.Put(0, &appName);
         acknowledgement.Tgt(pPmap->U.Root);
         acknowledgement.Key(Q::MSHP, Q::ACK, Q::DEFD);
         queue_mpi_message(&acknowledgement);
@@ -285,10 +285,10 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
      * DEFINED). If it is, report back to Root and Post. */
     if (appInfo->check_update_defined_state())
     {
-        Post(529, int2str(Urank), appInfo->name);
+        Post(529, int2str(Urank), appName);
         PMsg_p acknowledgement;
         acknowledgement.Src(Urank);
-        acknowledgement.Put<std::string>(0, &(appInfo->name));
+        acknowledgement.Put(0, &appName);
         acknowledgement.Tgt(pPmap->U.Root);
         acknowledgement.Key(Q::MSHP, Q::ACK, Q::DEFD);
         queue_mpi_message(&acknowledgement);

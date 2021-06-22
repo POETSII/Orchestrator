@@ -155,7 +155,7 @@ void Mothership::tell_root_app_is_broken(std::string appName)
 {
     PMsg_p sadTidings;
     sadTidings.Src(Urank);
-    sadTidings.Put<std::string>(0, &appName);
+    sadTidings.Put(0, &appName);
     sadTidings.Tgt(pPmap->U.Root);
     sadTidings.Key(Q::MSHP, Q::REQ, Q::BRKN);
     queue_mpi_message(&sadTidings);

@@ -121,7 +121,7 @@ void Mothership::run_application(AppInfo* app)
     PMsg_p acknowledgement;
     acknowledgement.Src(Urank);
     acknowledgement.Key(Q::MSHP, Q::ACK, Q::RUN);
-    acknowledgement.Put<std::string>(0, &(app->name));
+    acknowledgement.Put(0, &(app->name));
     acknowledgement.Tgt(pPmap->U.Root);
     queue_mpi_message(&acknowledgement);
 }
@@ -226,7 +226,7 @@ void Mothership::recall_application(AppInfo* app)
     PMsg_p acknowledgement;
     acknowledgement.Src(Urank);
     acknowledgement.Key(Q::MSHP, Q::ACK, Q::RECL);
-    acknowledgement.Put<std::string>(0, &(app->name));
+    acknowledgement.Put(0, &(app->name));
     acknowledgement.Tgt(pPmap->U.Root);
     queue_mpi_message(&acknowledgement);
 

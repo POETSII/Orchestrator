@@ -361,12 +361,12 @@ unsigned Root::OnMshipAck(PMsg_p * Z)
 {
     map<int,string>::iterator ackIt;
     unsigned key = Z->Key();
-    bool acksMatch = false;
+    bool acksMatch;
     string appName;
     string ackName;
     Z->Get(0, appName);
 
-    // Figure out what the acknowledgement is.
+    // Figure out what the acknowledgement is and store it, if valid.
     if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD)) ackName = "DEFINED";
     else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)) ackName = "READY";
     else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN)) ackName = "RUNNING";
@@ -377,20 +377,12 @@ unsigned Root::OnMshipAck(PMsg_p * Z)
         Post(183, hex2str(key), int2str(Z->Src()), int2str(Z->Tgt()));
         return 0;
     }
-
-    // Store it
     mshipAcks[appName][Z->Src()] = ackName;
 
-    // If all Motherships have changed state correctly, post about it.
+    // If all Motherships now have the same state for this app, post about it.
+    acksMatch = true;
     for (ackIt = mshipAcks[appName].begin(); ackIt != mshipAcks[appName].end();
-         ackIt++)
-    {
-        if (ackIt->second != ackName)
-        {
-            acksMatch = false;
-            break;
-        }
-    }
+         ackIt++) if (ackIt->second != ackName) acksMatch = false;
     if (acksMatch)
     {
         if (ackName == "DEFINED") Post(186, appName, "successfully deployed");
@@ -400,8 +392,8 @@ unsigned Root::OnMshipAck(PMsg_p * Z)
         if (ackName == "RECALLED")
         {
             Post(186, appName, "recalled");
-            /* If all Motherships have forgotten about it, it's not deployed
-             * any more. */
+            // If all Motherships have forgotten about it, it's not deployed
+            // any more.
             deplInfo[appName].clear();
             deplStat[appName].clear();
             mshipAcks[appName].clear();
