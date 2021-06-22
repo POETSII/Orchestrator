@@ -34,10 +34,7 @@ int main(int argc, char** argv)
         fprintf(stderr, "MOTHERSHIP UNHANDLED EXCEPTION!\n");
     }
 
-    #ifdef ORCHESTRATOR_DEBUG
-    printf("%s (%s) Main closing down.\n", csMOTHERSHIPproc,
-           OSFixes::get_hostname().c_str());
-    #endif
-
+    DebugPrint("%s (%s) Main closing down.\n", csMOTHERSHIPproc,
+               OSFixes::get_hostname().c_str());
     return 0;
 }
