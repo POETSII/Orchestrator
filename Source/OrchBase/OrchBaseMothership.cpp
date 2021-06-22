@@ -86,9 +86,27 @@ void OrchBase::MshipCommand(Cli::Cl_t clause, std::string command)
 
         /* Set up the message given the input arguments (catching an invalid
          * command input from somewhere). */
-        if (command == "reca")
+        int postIndex = 999;  /* These defaults can never be used. */
+        byte commandKey = Q::N000;
+        if (command == "init")
         {
-            message.Key(Q::CMND, Q::RECL);
+            commandKey = Q::INIT;
+            postIndex = 187;  /* Search string: Post(187 */
+        }
+        else if (command == "run")
+        {
+            commandKey = Q::RUN;
+            postIndex = 188;  /* Search string: Post(188 */
+        }
+        else if (command == "stop")
+        {
+            commandKey = Q::STOP;
+            postIndex = 189;  /* Search string: Post(189 */
+        }
+        else if (command == "reca")
+        {
+            commandKey = Q::RECL;
+            postIndex = 190;
             (*graphIt)->deployed = false;
             /* Note we don't clear deployment information here, because we want
              * to see acknowledgements from the Mothership process(es). Those
@@ -96,9 +114,8 @@ void OrchBase::MshipCommand(Cli::Cl_t clause, std::string command)
              * deployment information structure. */
             deplStat[(*graphIt)->Name()] = "RECALLING";
         }
-        else if (command == "init") message.Key(Q::CMND, Q::INIT);
-        else if (command == "run") message.Key(Q::CMND,Q::RUN);
-        else if (command == "stop") message.Key(Q::CMND,Q::STOP);
+
+        message.Key(Q::CMND, commandKey);
         message.Src(Urank);
         message.Put(0, &graphName);
 
@@ -119,5 +136,6 @@ void OrchBase::MshipCommand(Cli::Cl_t clause, std::string command)
             message.Send();
         }
 #endif
+        Post(postIndex, (*graphIt)->Name());
     }
 }

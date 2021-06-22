@@ -114,6 +114,10 @@
 184(I) : "Deployment of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
 185(W) : "Deployment of graph instance '%s' failed. See microlog for more information."
 186(I) : "Application '%s' %s on all Motherships it is mapped to."
+187(I) : "Initialisation of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
+188(I) : "Run of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
+189(I) : "Stop of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
+189(I) : "Recall of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
 
 196(E) : "%s structural faults found in application %s (file %s) load"
 
