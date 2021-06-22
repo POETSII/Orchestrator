@@ -16,6 +16,8 @@
 
 #include <stdlib.h>
 
+#define USE_CLOCK false
+
 namespace Launcher
 {
     const char* debugHeader = "[LAUNCHER] ";
