@@ -221,6 +221,11 @@ if (pC != PNULL) WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
           exitOnEmpty = true;
           Post(67);
       }
+      if (p=="stop")
+      {
+          exitOnStop = true;
+          Post(69);
+      }
       else Post(66,p);
   }
   else Post(25,i->Cl,"exit");           // Unrecognised clause
