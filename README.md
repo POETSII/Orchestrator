@@ -27,12 +27,10 @@ in order to use the Orchestrator.
 
  - MPICH 3.2.1. Used for multiprocess communication.
 
- - Qt 5.6.3. Used by the XML parser.
-
  - GCC 7.3.0: Used to compile C extracted by the XML parser into supervisor
    binaries.
 
  - RISCV GCC: Must support the rv32imf target.
 
- - Tinsel 0.6+: For running applications on POETS hardware
+ - Tinsel 0.7+: For running applications on POETS hardware
    (https://github.com/poetsii/tinsel).

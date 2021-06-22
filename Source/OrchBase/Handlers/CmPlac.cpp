@@ -33,6 +33,14 @@ unsigned CmPlac::operator()(Cli* cli)
          * clause). */
         bool isClauseValid = true;
         clauseRoot = clause->Cl.substr(0, 4);
+
+        /* The following might not make sense, but before we enter our
+         * conditional hell, we want to be able to disambiguate between clauses
+         * that invoke algorithms, and clauses that set arguments. */
+        bool isAlgorithm;
+        bool isSomething = par->pPlacer->algorithm_or_argument(clauseRoot,
+                                                               isAlgorithm);
+
         if (clauseRoot == "dump") PlacementDump(*clause);
         else if (clauseRoot == "unpl") PlacementUnplace(*clause);
 
@@ -52,16 +60,29 @@ unsigned CmPlac::operator()(Cli* cli)
         /* Are we loading a placement spec? */
         else if (clauseRoot == "load") PlacementLoad(*clause);
 
-        /* If nothing is appropriate, assume it's a placement algorithm. */
-        else isClauseValid = PlacementDoIt(*clause);
+        /* If nothing is appropriate, the operator is either setting an
+         * argument or wanting to run a placement algorithm (or they're an
+         * idiot). */
+        if (isSomething)
+        {
+            if (isAlgorithm)
+                isClauseValid = PlacementDoIt(*clause);
+            else
+                isClauseValid = PlacementSetArg(*clause);
+        }
 
-        /* If it isn't a placement algorithm, we whinge. */
-        if (!isClauseValid) par->Post(25, clause->Cl, "placement");
+        /* If we don't know what it is, we whinge. The second predicate is for
+         * safety (safety nets cost little, bad UX costs a lot). */
+        if (!isSomething and !isClauseValid) par->Post(25, clause->Cl,
+                                                       "placement");
     }
     return 0;
 }
 
-/* Dumps the command object, not placement information. */
+/* Dumps the command object, not placement information. Since it's stateless,
+ * this is a bit pointless, but continuity matters. If you want to dump
+ * placement information, try 'placement /dump = *', or 'show /placement' for
+ * something more digestible. */
 void CmPlac::Dump(FILE * fp)
 {
 fprintf(fp,"CmPlac+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
@@ -197,6 +218,8 @@ bool CmPlac::PlacementDoIt(Cli::Cl_t clause)
                                              e.message);}
     catch (FileOpenException& e) {par->Post(318, (*graphIt)->Name(),
                                             e.message);}
+    catch (InvalidArgumentException& e) {par->Post(325, (*graphIt)->Name(),
+                                                   clause.Cl, e.message);}
     catch (NoEngineException&) {par->Post(305, (*graphIt)->Name());}
     catch (NoSpaceToPlaceException&) {par->Post(306, (*graphIt)->Name());}
     return true;
@@ -291,6 +314,34 @@ void CmPlac::PlacementLoad(Cli::Cl_t clause)
     return;
 }
 
+/* Returns true if the clause was valid (or some other error happened), and
+ * false otherwise. */
+bool CmPlac::PlacementSetArg(Cli::Cl_t clause)
+{
+    /* Skip (and post) if there is not exactly one parameter (argument
+     * value) */
+    if (clause.Pa_v.size() != 1)
+    {
+        par->Post(47, clause.Cl, "placement", "1");
+        return true;
+    }
+
+    /* Have a go. */
+    std::string proposed = clause.Pa_v[0].Op + clause.Pa_v[0].Concatenate();
+    try
+    {
+        par->pPlacer->args.set(clause.Cl, proposed);
+        par->Post(326, clause.Cl, proposed);  /* Success */
+    }
+
+    catch (InvalidArgumentException& e)
+    {
+        par->Post(327, clause.Cl, proposed, e.message);  /* Failure */
+    }
+
+    return true;  /* The clause was valid (we checked earlier) */
+}
+
 void CmPlac::PlacementUnplace(Cli::Cl_t clause)
 {
     /* Grab the graph instances of interest. */
@@ -306,20 +357,4 @@ void CmPlac::PlacementUnplace(Cli::Cl_t clause)
         par->pPlacer->unplace(*graphIt);
         par->Post(307, (*graphIt)->Name());
     }
-}
-
-/* Synopsis of placement information. */
-void CmPlac::Show(FILE* fp)
-{
-    fprintf(fp,
-            "\nPlacement subsystem attributes and state:\n"
-            "Number of graphs placed: %lu\n"
-            "Number of devices placed: %lu\n"
-            "Number of threads used for placement: %lu\n"
-            "Number of explicit constraints defined: %lu\n",
-            par->pPlacer->placedGraphs.size(),
-            par->pPlacer->deviceToThread.size(),
-            par->pPlacer->threadToDevices.size(),
-            par->pPlacer->constraints.size());
-    fflush(fp);
 }

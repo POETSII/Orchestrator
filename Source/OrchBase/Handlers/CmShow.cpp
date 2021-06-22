@@ -37,6 +37,41 @@ void CmShow::Cm_Engine(FILE* fp)
 
 //------------------------------------------------------------------------------
 
+void CmShow::Cm_Plac(FILE* fp)
+{
+    if (par->pPlacer == PNULL)
+    {
+        fprintf(fp, "No engine (hardware model) loaded.\n");
+    }
+    else
+    {
+        fprintf(fp,
+                "\nPlacement subsystem attributes and state:\n"
+                "Number of graphs placed: %lu\n"
+                "Number of devices placed: %lu\n"
+                "Number of threads used for placement: %lu\n"
+                "Number of explicit constraints defined: %lu\n",
+                par->pPlacer->placedGraphs.size(),
+                par->pPlacer->deviceToThread.size(),
+                par->pPlacer->threadToDevices.size(),
+                par->pPlacer->constraints.size());
+        if (par->pPlacer->args.size() == 0) fprintf(fp, "No staged arguments.\n");
+        else
+        {
+            fprintf(fp, "Staged arguments:\n");
+            std::map<std::string, std::string> args;
+            par->pPlacer->args.copy_to(args);
+            std::map<std::string, std::string>::iterator argIt;
+            for (argIt = args.begin(); argIt != args.end(); argIt++)
+                fprintf(fp, " - %s: %s\n",
+                        argIt->first.c_str(), argIt->second.c_str());
+        }
+        fflush(fp);
+    }
+}
+
+//------------------------------------------------------------------------------
+
 void CmShow::Dump(FILE * fp)
 {
 fprintf(fp,"CmShow+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
@@ -66,7 +101,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="name") { par->Post(247,sCo,sCl,sPa);  continue;  }
   if (sCl=="pars") { par->pCmLoad->Show(f);       continue;  }
   if (sCl=="path") { par->pCmPath->Show(f);       continue;  }
-  if (sCl=="plac") { par->Post(247,sCo,sCl,sPa);  continue;  }
+  if (sCl=="plac") { Cm_Plac(f);                  continue;  }
   if (sCl=="syst") {
     par->pPmap->Show(f);
     dynamic_cast<Root *>(par)->pOC->Show(f);

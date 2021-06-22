@@ -52,8 +52,9 @@ WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i) {
 WALKSET(PinI_t *,DelSet,i) delete *i;  // Kill the "to be deleted" set
                                        // Lose any metadata
 WALKVECTOR(Meta_t *,Meta_v,i) delete *i;
-
 if (pPropsI!=0) delete pPropsI;
+
+Dmap.clear();                          // Kill the device name->key map
 
 /* Freeing supervisors is a litle complicated, as they can be deleted when
  * their GraphI_t object is deleted, and can also be deleted when placement is
@@ -156,20 +157,20 @@ string GraphI_t::GetCompoundName(bool path)
 
 DevI_t * GraphI_t::GetDevice(string & rname)
 // Search the graph *by name* for a device.
-// If there isn't one there already, make one.
+// If there isn't one there already (which is perfectly OK), make one.
 {
-unsigned key = Dmap[rname];            // Device name
-DevI_t ** ppD = G.FindNode(key);       // Device key
-DevI_t * pD = 0;                       // RAII
-if (ppD!=0) {                          // Not in graph?
-  pD = *ppD;                           // Yes - get device address
-  if (pD!=0) return pD;                // And hand it back
-  FILE * fd = par->par->fd;            // Unrecoverable: detail output file
-  fprintf(fd,"U. Device %s has *entry* in GraphI_t::G, but zero address\n",
-          rname.c_str());
-}
-pD = new DevI_t(this,rname);           // No sign of it - make one
-pD->devTyp = 'U';                      // As yet....
+if (Dmap.find(rname)!=Dmap.end()) {    // The name is there: so far, so good
+  unsigned key = Dmap[rname];
+  DevI_t ** ppD = G.FindNode(key);
+  if (ppD!=0) return *ppD;             // It's in the graph
+  par->par->Post(995,rname);           // Paranoia: Device *address* null?
+}                                      // No realistic way out from here; drop
+                                       // through will (at least) prevent a GPF
+
+DevI_t * pD = new DevI_t(this,rname);  // No sign of it - so make one
+pD->Key = UniU();                      // Cosmically unique key
+Dmap[rname] = pD->Key;                 // Store the *inverse* key
+G.InsertNode(pD->Key,pD);              // Shove it in the graph: undef, unref
 return pD;
 }
 
@@ -232,7 +233,7 @@ return lecnt;
 
 //------------------------------------------------------------------------------
 
-void GraphI_t::UndefDevs()
+void GraphI_t::UndefDevs(unsigned & wcnt,unsigned & ecnt)
 // Called at the END of a GraphInstance definition. There are three distinct
 // things done here:
 // Walk through the graph, and
@@ -247,21 +248,24 @@ unsigned cnt = 0;                      // (User) error count
 WALKPDIGRAPHNODES(unsigned,DevI_t *,unsigned,EdgeI_t *,unsigned,PinI_t *,G,i) {
   DevI_t * pD = G.NodeData(i);
   if (pD->Def()==0) {                  // Is it defined?
+    ecnt++;
     fprintf(fd,"E%3u. Device %s is not defined but referenced on line(s)\n",
                 ++cnt,pD->FullName().c_str());
-    vector<unsigned> v = *pRef();
+    vector<unsigned> * v = pD->pRef();
     unsigned l = 0;
-    WALKVECTOR(unsigned,v,j) fprintf(fd,"       %u.%u : %u\n",cnt,++l,*j);
+    WALKVECTOR(unsigned,(*v),j) fprintf(fd,"       %u.%u : %u\n",cnt,++l,*j);
   }
   unsigned pins = 0;                   // Walk the scaffold map
   WALKMAP(string,PinI_t *,pD->Pmap,j)
     pins += (*j).second->Key_v.size(); // Integrate pin count
   unsigned kD = G.NodeKey(i);
-  if (pins != G.SizeInPins(kD) + G.SizeOutPins(kD))
+  if (pins != G.SizeInPins(kD) + G.SizeOutPins(kD)) {
+    ecnt++;
     fprintf(fd,"U. Device %s has scaffolding for %u pins "
                "but only %u input pins and %u output pins in the graph\n",
                pD->FullName().c_str(),pins,G.SizeInPins(kD),G.SizeOutPins(kD));
-  
+  }
+
   // Either way, we're done with scaffold by design, BUT we need this map for
   // Composer, so we don't clear it.
   //pD->Pmap.clear();

@@ -48,7 +48,7 @@ WALKMAP(string,Apps_t *,Apps_t::Apps_m,i) {
   unsigned wcnt = Xi.WarCnt();
   par->Post(251,(*i).first,uint2str(ecnt),uint2str(wcnt),long2str(mTimer(t1)));
 }
-par->Post(254,long2str(mTimer(t0)));
+par->Post(253,long2str(mTimer(t0)));
 }
 
 //------------------------------------------------------------------------------
