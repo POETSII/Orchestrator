@@ -62,6 +62,8 @@ unsigned Mothership::handle_msg_cnc(PMsg_p* message)
         key = "Q::APP,Q::DIST";
     else if (message->Key() == PMsg_p::KEY(Q::APP,Q::SUPD))
         key = "Q::APP,Q::SUPD";
+    else if (message->Key() == PMsg_p::KEY(Q::CMND,Q::BRKN))
+        key = "Q::CMND,Q::BRKN";
     else if (message->Key() == PMsg_p::KEY(Q::CMND,Q::RECL))
         key = "Q::CMND,Q::RECL";
     else if (message->Key() == PMsg_p::KEY(Q::CMND,Q::INIT))
@@ -116,8 +118,17 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
     appInfo->distCountExpected = distCount;
 
     /* Check for being fully defined (transition from UNDERDEFINED to
-     * DEFINED). */
-    appInfo->check_update_defined_state();
+     * DEFINED). If it is, report back to Root and Post. */
+    if (appInfo->check_update_defined_state())
+    {
+        Post(529, int2str(Urank), appName);
+        PMsg_p acknowledgement;
+        acknowledgement.Src(Urank);
+        acknowledgement.Put(0, &appName);
+        acknowledgement.Tgt(pPmap->U.Root);
+        acknowledgement.Key(Q::MSHP, Q::ACK, Q::DEFD);
+        queue_mpi_message(&acknowledgement);
+    }
 
     /* Check for further state transitions. */
     if (appInfo->should_we_recall()) recall_application(appInfo);
@@ -180,6 +191,7 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
     if (!appInfo->increment_dist_count_current())
     {
         Post(524, appName, uint2str(appInfo->distCountExpected));
+        tell_root_app_is_broken(appName);
         appInfo->state = BROKEN;
         return 0;
     }
@@ -199,12 +211,13 @@ unsigned Mothership::handle_msg_app_dist(PMsg_p* message)
     }
 
     /* Check for being fully defined (transition from UNDERDEFINED to
-     * DEFINED). If it is, report back to Root. */
+     * DEFINED). If it is, report back to Root and Post. */
     if (appInfo->check_update_defined_state())
     {
+        Post(529, int2str(Urank), appName);
         PMsg_p acknowledgement;
         acknowledgement.Src(Urank);
-        acknowledgement.Put<std::string>(0, &(appInfo->name));
+        acknowledgement.Put(0, &appName);
         acknowledgement.Tgt(pPmap->U.Root);
         acknowledgement.Key(Q::MSHP, Q::ACK, Q::DEFD);
         queue_mpi_message(&acknowledgement);
@@ -244,6 +257,7 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
     if(!superdb.load_supervisor(appName, soPath, &errorMessage))
     {
         Post(503, appName, errorMessage);
+        tell_root_app_is_broken(appName);
         appInfo->state = BROKEN;
         return 0;
     }
@@ -252,6 +266,7 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
     if(!provision_supervisor_api(appName))
     {
         Post(525, appName);
+        tell_root_app_is_broken(appName);
         appInfo->state = BROKEN;
         return 0;
     }
@@ -261,13 +276,23 @@ unsigned Mothership::handle_msg_app_supd(PMsg_p* message)
     if (!appInfo->increment_dist_count_current())
     {
         Post(524, appName, uint2str(appInfo->distCountExpected));
+        tell_root_app_is_broken(appName);
         appInfo->state = BROKEN;
         return 0;
     }
 
     /* Check for being fully defined (transition from UNDERDEFINED to
-     * DEFINED). */
-    appInfo->check_update_defined_state();
+     * DEFINED). If it is, report back to Root and Post. */
+    if (appInfo->check_update_defined_state())
+    {
+        Post(529, int2str(Urank), appName);
+        PMsg_p acknowledgement;
+        acknowledgement.Src(Urank);
+        acknowledgement.Put(0, &appName);
+        acknowledgement.Tgt(pPmap->U.Root);
+        acknowledgement.Key(Q::MSHP, Q::ACK, Q::DEFD);
+        queue_mpi_message(&acknowledgement);
+    }
 
     /* Check for further state transitions. */
     if (appInfo->should_we_recall()) recall_application(appInfo);
@@ -297,6 +322,42 @@ unsigned Mothership::handle_msg_cmnd_recl(PMsg_p* message)
     /* Mark it as recalled, and check for state transitions. */
     appInfo->stage_recl();
     if (appInfo->should_we_recall()) recall_application(appInfo);
+    return 0;
+}
+
+unsigned Mothership::handle_msg_cmnd_brkn(PMsg_p* message)
+{
+    AppInfo* appInfo;
+
+    /* Pull message contents. */
+    std::string appName;
+    if (!decode_string_message(message, &appName))
+    {
+        debug_post(597, 3, "Q::CMND,Q::BRKN", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
+        return 0;
+    }
+
+    debug_post(597, 3, "Q::CMND,Q::BRKN", hex2str(message->Key()).c_str(),
+               dformat("appName=%s", appName.c_str()).c_str());
+
+    /* Get the application */
+    appInfo = appdb.check_create_app(appName);
+
+    /* If the app is running, stop it. */
+    if (appInfo->state == RUNNING)
+    {
+        appInfo->stage_stop();
+        stop_application(appInfo);
+    }
+
+    /* Mark it as broken (even if it is already marked as such). Note that,
+     * while the app is stopping, it will have state "STOPPING". After all of
+     * the devices have reported back, it will have state "BROKEN" again.
+     *
+     * Breaking in this way does not inform Root, because otherwise we would be
+     * bouncing messages forever. */
+    appInfo->state = BROKEN;
     return 0;
 }
 
@@ -438,26 +499,25 @@ unsigned Mothership::handle_msg_bend_supr(PMsg_p* message)
         return 0;
     }
 
-    /* Set up a vector of packets for the supervisor entry point to modify.
-     * If the vector comes back with entries, then we have packets to send.
+    /* Set up a vector of packets for the supervisor entry point to modify. If
+     * the vector comes back with entries, then we have packets to send.
      */
     std::vector<P_Pkt_t> inputPackets;
     std::vector<P_Addr_Pkt_t> outputPackets;
-    
-    // Get the input packets.
+
+    /* Get the input packets. */
     decode_packets_message(message, &inputPackets, 1);
 
     /* Invoke the supervisor, send the message if instructed to do so, and
      * propagate errors. */
     rc = superdb.call_supervisor(appName, inputPackets, outputPackets);
-    if (outputPackets.size() > 0) 
+    if (outputPackets.size() > 0)
     {
         PMsg_p outputMessage;
         outputMessage.Tgt(Urank);
         outputMessage.Src(Urank);
         outputMessage.Key(Q::PKTS);
         outputMessage.Put<P_Addr_Pkt_t> (0, &(outputPackets));
-        
         queue_mpi_message(&outputMessage);
     }
     if (rc < 0) Post(515, appName);

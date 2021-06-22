@@ -109,12 +109,19 @@
 175(W) : "Application '%s' has no graph instance named '%s'. Not operating on any applications."
 176(W) : "Encountered unusual application parameter '%s'. Not operating on any applications."
 177(E) : "System command '%s' ran unsuccessfully. Aborting deployment."
-178(E) : "Not enough mothership processes exist to deploy task %s. Is a mothership running?"
+178(E) : "Not enough mothership processes exist to deploy application %s. Is a mothership running?"
 179(E) : "System command '%s' ran unsuccessfully with message '%s'. Aborting deployment."
 180(W) : "Ignoring clauses in 'dump /plac' command - dumping all files to '%s'."
 181(W) : "No application graph instances have been placed. Not dumping anything."
 182(I) : "Placement information dumped to '%s'."
 183(E) : "Received MPI message with unrecognised key '%s'. Source rank: %s. Destination rank: %s.
+184(I) : "Deployment of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
+185(W) : "Deployment of graph instance '%s' failed. See microlog for more information."
+186(I) : "Application '%s' %s on all Motherships it is mapped to."
+187(I) : "Initialisation of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
+188(I) : "Run of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
+189(I) : "Stop of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
+190(I) : "Recall of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
 
 196(E) : "%s structural faults found in application %s (file %s) load"
 
@@ -219,6 +226,14 @@
 526(I) : "Mothership: Supervisor for application '%s' has requested it to be stopped."
 527(I) : "Mothership: Message from supervisor for application '%s': %s
 528(E) : "Error creating directory '%s' for application '%s': %s"
+529(I) : "Mothership (rank %s): Deployment of application '%s' (to this Mothership) complete."
+530(I) : "Mothership (rank %s): Initialising fully-defined application '%s'."
+531(I) : "Mothership (rank %s): Initialisation of application '%s' (to this Mothership) complete."
+532(I) : "Mothership (rank %s): Starting (running) fully-initialised application '%s'."
+533(I) : "Mothership (rank %s): Stopping application '%s' (which has been started)."
+534(I) : "Mothership (rank %s): All devices on this Mothership for application '%s' have stopped."
+535(I) : "Mothership (rank %s): Recalling application '%s'."
+536(I) : "Mothership (rank %s): Application '%s' recalled. This Mothership has forgotten everything about this application."
 
 580(E) : "Mothership: Received a log packet with an invalid device index 0x%s."
 581(I) : "Mothership: Consuming log packet from device address 0x%s with name %s."
@@ -233,10 +248,7 @@
 590(I) : "Mothership: On draining the Backend Input Queue of packets, the Backend Input Broker Thread has sent queued a Q::BEND,Q:CNC message containing %s packets.
 591(I) : "Mothership: Pushing packet with hardware address 0x%s into the compute fabric."
 592(I) : "Mothership: The %s queue is empty, so the %s Thread is spinning slowly."
-593(I) : "Mothership: Recalling application '%s'."
-594(I) : "Mothership: Stopping application '%s' (which has been started)."
-595(I) : "Mothership: Starting (running) fully-initialised application '%s'."
-596(I) : "Mothership: Initialising fully-defined application '%s'."
+
 597(I) : "Mothership: Processing '%s' (0x%s) message. Fields: %s"
 598(I) : "Mothership: Received '%s' message. %s"
 599(I) : "Mothership: Received '%s' message. Pushing it to the '%s' queue."

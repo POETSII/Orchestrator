@@ -72,6 +72,22 @@ ProcMap::ProcMap_t * loneMothership;
 // their procmap entry. Yes, the name is an attempt at facetiousness.
 map2<P_box *, ProcMap::ProcMap_t *> P_SCMm2;
 #endif
+// Holds deployment information (which Motherships are hosting a graph
+// instance by name).
+map<string,vector<ProcMap::ProcMap_t *> > deplInfo;
+// Holds deployment state for an application by name, one of:
+//  - DEPLOYING/ED
+//  - RECALLING
+//  - ERROR
+map<string,string> deplStat;
+// Holds acknowledgement states from Motherships. Maps appnames to maps of
+// ranks to one of:
+//  - DEFINED
+//  - READY
+//  - RUNNING
+//  - STOPPED
+//  - RECALLED
+map<string,map<int,string> > mshipAcks;
 
 CmCall *               pCmCall;
 CmComp *               pCmComp;
