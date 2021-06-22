@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include "NameBase.h"
-#include "P_addr.h"
 #include "DefRef.h"
 #include "DumpChan.h"
 class Meta_t;
@@ -23,7 +22,6 @@ static void        EdgDat_cb(EdgeI_t * const &);
 static void        EdgKey_cb(unsigned const &);
 void               Par(GraphI_t * _p) { par = _p; }
 
-P_addr             addr;
 GraphI_t *         par;
 unsigned           Key;                // Graph key
 size_t             Idx;                // Index of this edge in PinI_t->key_v

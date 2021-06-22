@@ -3,7 +3,6 @@
 #include "OrchBase.h"
 #include "FileName.h"
 #include "P_core.h"
-#include "Ns_el.h"
 #include "P_super.h"
 
 //==============================================================================
