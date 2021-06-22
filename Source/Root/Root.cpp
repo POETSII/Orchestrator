@@ -222,6 +222,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
       else Post(66,p);
   }
   else Post(25,i->Cl,"exit");           // Unrecognised clause
+  return 0;
 }
                                        // Normal exit coming from batch?
 if (!pCmCall->stack.empty()&&(!exitOnEmpty)) {
@@ -243,7 +244,6 @@ Post(50,Sderived,int2str(Urank));      // Root is going anyway
 Pkt.Send(pL);
 
 return CommonBase::OnExit(&Pkt);           // Run the base class exit handler
-// return 1;                                 // Return closedown flag
 }
 
 //------------------------------------------------------------------------------
