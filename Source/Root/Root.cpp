@@ -25,7 +25,8 @@ void * kb_func(void * pPar)
 // the MPI spinner.
 {
 int len = 0;                           // Characters in buffer
-for(;;) {                              // Superloop
+while(!(static_cast<Root*>(pPar)->exitTriggered))  // exit from elsewhere
+{
   if (len==0) Root::Prompt();          // Console prompt
   static const unsigned SIZE = 512;
   char buf[SIZE];
@@ -49,8 +50,6 @@ for(;;) {                              // Superloop
   if (strcmp(buf,"exit")==0) break;    // "exit" typed
   if (buf[0]==char(0)) break;          // ctrl-d in linux-land
   if (buf[0]==char(4)) break;          // ctrl-d in u$oft-land
-  // "exit" from elsewhere
-  if (static_cast<Root*>(pPar)->exitTriggered) break;
 }
 // Tell the user we're leaving immediately.
 Root::promptOn = false;
@@ -329,6 +328,12 @@ else                                   // Nothing there, check exit conditions
 {
   // Exit on empty queue, if staged.
   if (exitOnEmpty) exitTriggered = true;
+
+  // Message ourselves to get out of MPISpinner.
+  PMsg_p exitMsg;
+  exitMsg.Key(Q::EXIT);
+  exitMsg.Src(Urank);
+  exitMsg.Send(Urank);
 }
 return;
 }
