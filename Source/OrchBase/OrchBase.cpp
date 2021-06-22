@@ -38,8 +38,6 @@ pCmTlin = new CmTlin(this);
 pCmUnlo = new CmUnlo(this);
 pCmUnpl = new CmUnpl(this);
 pCmUntl = new CmUntl(this);
-
-taskpath  = string(" ");
 }
 
 //------------------------------------------------------------------------------
@@ -301,7 +299,6 @@ string s(off,' ');
 const char * os = s.c_str();
 fprintf(fp,"%sOrchBase dump+++++++++++++++++++++++++++++++\n",os);
 fprintf(fp,"%sNameBase %s\n",os,FullName().c_str());
-fprintf(fp,"%sTask path %s\n",os,taskpath.c_str());
 fprintf(fp,"%sHARDWARE++++++++++++++++++++++++++++++++++++\n",os);
 if (pE==0) fprintf(fp,"%sNo hardware topology loaded\n",os);
 else pE->Dump(fp);

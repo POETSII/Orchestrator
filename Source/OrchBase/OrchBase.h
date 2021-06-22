@@ -95,11 +95,6 @@ CmTlin *               pCmTlin;
 CmUnlo *               pCmUnlo;
 CmUnpl *               pCmUnpl;
 CmUntl *               pCmUntl;
-
-// Legacy members retained for a (hopefully) smoother transition
-string                 taskpath;       // Absolute file path for task commands
-string                 topopath;       // Absolute file path for topo commands
-map<string,P_super *>  P_superm;       // Container of supervisor devices
 };
 
 //==============================================================================
