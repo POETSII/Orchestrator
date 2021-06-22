@@ -25,7 +25,7 @@ void * kb_func(void * pPar)
 // the MPI spinner.
 {
 int len = 0;                           // Characters in buffer
-while(!(static_cast<Root*>(pPar)->exitTriggered))  // exit from elsewhere
+for(;;)
 {
   if (len==0) Root::Prompt();          // Console prompt
   static const unsigned SIZE = 512;
@@ -83,11 +83,9 @@ FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP)] = &Root::OnMshipReq;
 
 // Set up exit flags
 exitOnEmpty = false;
-exitTriggered = false;
 
 // Spin off a thread to handle keyboard
 void * args = this;
-pthread_t kb_thread;
 if(pthread_create(&kb_thread,NULL,kb_func,args))
   fprintf(stdout,"Error creating kb_thread\n");
 fflush(stdout);
@@ -213,7 +211,7 @@ unsigned Root::CmExit(Cli * pC)
 {
 
                                        // Act on staging clauses.
-WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
+if (pC != PNULL) WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
   if (i->Cl=="at")
   {
       string p = i->GetP(0);
@@ -327,13 +325,24 @@ if (!Cm.Empty())                       // If so, act on it.
 else                                   // Nothing there, check exit conditions
 {
   // Exit on empty queue, if staged.
-  if (exitOnEmpty) exitTriggered = true;
+  if (exitOnEmpty)
+  {
+      // Message ourselves to get out of MPISpinner.
+      PMsg_p exitMsg;
+      exitMsg.Key(Q::EXIT);
+      exitMsg.Src(Urank);
+      exitMsg.Send(Urank);
 
-  // Message ourselves to get out of MPISpinner.
-  PMsg_p exitMsg;
-  exitMsg.Key(Q::EXIT);
-  exitMsg.Src(Urank);
-  exitMsg.Send(Urank);
+      // Cancel the keyboard thread (breaks out of fgets).
+      pthread_cancel(kb_thread);
+
+      // Tell the user we're leaving now.
+      Root::promptOn = false;
+      printf("Exiting...\n");
+
+      // Send exit to other processes.
+      CmExit(0);
+  }
 }
 return;
 }
