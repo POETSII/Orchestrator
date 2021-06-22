@@ -117,7 +117,7 @@
 187(I) : "Initialisation of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
 188(I) : "Run of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
 189(I) : "Stop of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
-189(I) : "Recall of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
+190(I) : "Recall of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
 
 196(E) : "%s structural faults found in application %s (file %s) load"
 

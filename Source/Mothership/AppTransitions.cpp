@@ -112,7 +112,8 @@ void Mothership::initialise_application(AppInfo* app)
  * softswitch, commands all of the executors under its command to start. */
 void Mothership::run_application(AppInfo* app)
 {
-    Post(532, int2str(Urank), app->name.c_str());
+    std::string appName = app->name;
+    Post(532, int2str(Urank), appName);
 
     app->state = RUNNING;
     send_cnc_packet_to_all(app, P_CNC_BARRIER);
@@ -121,7 +122,7 @@ void Mothership::run_application(AppInfo* app)
     PMsg_p acknowledgement;
     acknowledgement.Src(Urank);
     acknowledgement.Key(Q::MSHP, Q::ACK, Q::RUN);
-    acknowledgement.Put(0, &(app->name));
+    acknowledgement.Put(0, &appName);
     acknowledgement.Tgt(pPmap->U.Root);
     queue_mpi_message(&acknowledgement);
 }
@@ -226,8 +227,7 @@ void Mothership::recall_application(AppInfo* app)
     PMsg_p acknowledgement;
     acknowledgement.Src(Urank);
     acknowledgement.Key(Q::MSHP, Q::ACK, Q::RECL);
-    acknowledgement.Put(0, &(app->name));
+    acknowledgement.Put(0, &appName);
     acknowledgement.Tgt(pPmap->U.Root);
     queue_mpi_message(&acknowledgement);
-
 }

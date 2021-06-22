@@ -52,28 +52,31 @@ void CmDepl::Cm_App(Cli::Cl_t clause)
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
     {
         /* Sanity */
-        if (par->deplStat[(*graphIt)->Name()] == "ERROR")
+        if (par->deplStat[(*graphIt)->GetCompoundName()] == "ERROR")
         {
             fprintf(par->fd, "ERROR: Unable to deploy graph instance '%s' - "
                     "it is in an error state from a previously-failed "
                     "command. Aborting.\n", (*graphIt)->Name().c_str());
             par->Post(185, (*graphIt)->Name());
+            continue;
         }
 
-        else if (par->deplStat[(*graphIt)->Name()] == "RECALLING")
+        else if (par->deplStat[(*graphIt)->GetCompoundName()] == "RECALLING")
         {
-            fprintf(par->fd, "Just waiting for a bit - this application is "
-                    "recalling. I assume the operator wants to wait until "
-                    "it's recalled before deploying.\n");
-            OSFixes::sleep(3000);  /* Three seconds. */
+            fprintf(par->fd, "ERROR: Unable to deploy graph instance '%s' - "
+                    "it is still being recalled.\n",
+                    (*graphIt)->Name().c_str());
+            par->Post(185, (*graphIt)->Name());
+            continue;
         }
 
-        if (par->deplStat[(*graphIt)->Name()] != "")
+        if (par->deplStat[(*graphIt)->GetCompoundName()] != "")
         {
             fprintf(par->fd, "Unable to deploy graph instance '%s' - it is "
                     "already deployed! Aborting.\n",
                     (*graphIt)->Name().c_str());
             par->Post(185, (*graphIt)->Name());
+            continue;
         }
 
         /* Let's try it. */
@@ -81,9 +84,8 @@ void CmDepl::Cm_App(Cli::Cl_t clause)
                 (*graphIt)->Name().c_str());  /* Microlog */
         if (DeployGraph(*graphIt) != 0)
         {
-            /* Failure */
-            par->deplInfo[(*graphIt)->Name()].clear();  /* Clears deployment
-                                                         * information. */
+            /* Failure, clear deployment information. */
+            par->deplInfo[(*graphIt)->GetCompoundName()].clear();
             par->Post(185, (*graphIt)->Name());
             return;
         }
@@ -232,8 +234,8 @@ int CmDepl::DeployGraph(GraphI_t* gi)
 
             /* Store this process in a persistent deployment information
              * object. */
-            par->deplInfo[gi->Name()].push_back(mothershipProc);
-            par->deplStat[gi->Name()] = "DEPLOYING/ED";
+            par->deplInfo[gi->GetCompoundName()].push_back(mothershipProc);
+            par->deplStat[gi->GetCompoundName()] = "DEPLOYING/ED";
 
             /* Define the payload for a DIST message for this core. */
             mothershipPayloads[rank].push_back(DistPayload());
