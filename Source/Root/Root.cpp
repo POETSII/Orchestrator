@@ -216,7 +216,11 @@ if (pC != PNULL) WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
   {
       string p = i->GetP(0);
       if (p.empty()) Post(47,i->Cl,"exit","1");
-      if (p=="end") exitOnEmpty = true;
+      if (p=="end")
+      {
+          exitOnEmpty = true;
+          Post(67);
+      }
       else Post(66,p);
   }
   else Post(25,i->Cl,"exit");           // Unrecognised clause
@@ -327,6 +331,11 @@ else                                   // Nothing there, check exit conditions
   // Exit on empty queue, if staged.
   if (exitOnEmpty)
   {
+      // Post before we go. Delay to ensure this gets there before the exit
+      // message.
+      Post(68);
+      OSFixes::sleep(100);
+
       // Message ourselves to get out of MPISpinner.
       PMsg_p exitMsg;
       exitMsg.Key(Q::EXIT);
@@ -335,10 +344,6 @@ else                                   // Nothing there, check exit conditions
 
       // Cancel the keyboard thread (breaks out of fgets).
       pthread_cancel(kb_thread);
-
-      // Tell the user we're leaving now.
-      Root::promptOn = false;
-      printf("Exiting...\n");
 
       // Send exit to other processes.
       CmExit(0);
