@@ -97,12 +97,18 @@ for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/apps/*.xml ; do
         TODO_compile $i "Bug #232 needs to be fixed."
     elif [[ "$i" == */betweeness_centrality_16_16_20_20_v4.xml ]] ; then
         TODO_compile $i "orchestrator needs indexed sends."
+    elif [[ "$i" == */example_device_idle.xml ]] ; then
+        TODO_compile $i "orchestrator needs requestIdle."
     else 
         test_compile_success $i
     fi
 done 
 for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/tests/valid/*/*.xml ; do
-    test_compile_success $i
+    if [[ "$i" == */L4-run-time/external-*.xml ]] ; then
+        TODO_compile $i "No support for externals."
+    else
+        test_compile_success $i
+    fi
 done 
 
 for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/tests/invalid/L3-compilation/*.xml ; do
