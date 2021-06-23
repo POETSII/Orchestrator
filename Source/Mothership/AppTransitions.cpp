@@ -161,6 +161,18 @@ void Mothership::stop_application(AppInfo* app)
         tell_root_app_is_broken(appName);
         app->state = BROKEN;
     }
+
+    /* Send "acknowledgement" message to root, if the application is not
+     * broken. */
+    if (app->state != BROKEN)
+    {
+        PMsg_p acknowledgement;
+        acknowledgement.Src(Urank);
+        acknowledgement.Key(Q::MSHP, Q::ACK, Q::STOP);
+        acknowledgement.Put(0, &appName);
+        acknowledgement.Tgt(pPmap->U.Root);
+        queue_mpi_message(&acknowledgement);
+    }
 }
 
 /* Sends a CNC packet with a given opcode to each thread in an application. */
