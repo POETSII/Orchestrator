@@ -25,8 +25,7 @@ void * kb_func(void * pPar)
 // the MPI spinner.
 {
 int len = 0;                           // Characters in buffer
-for(;;)
-{
+for(;;) {
   if (len==0) Root::Prompt();          // Console prompt
   static const unsigned SIZE = 512;
   char buf[SIZE];
