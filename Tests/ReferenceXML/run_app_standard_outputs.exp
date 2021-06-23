@@ -1,0 +1,65 @@
+#!/usr/bin/env expect
+
+# https://stackoverflow.com/a/23287132
+variable SCRIPT_PATH [file normalize [info script]]
+set HERE [file dirname $SCRIPT_PATH]
+
+set script [lindex $argv 0]
+send_user "Relative xml path = $script\n"
+
+set script [file normalize $script]
+send_user "Absolute xml path = $script\n"
+
+# Capture stderr too
+spawn sh -c "$HERE/../../orchestrate.sh 2>&1"
+
+expect {
+    default { send_user "Orchestrator didn't make it to prompt.\n" ; exit 1; }   
+    "Can't connect to  " { send_user "RETRY:HostLink is locked or no hardware.\n"; exit 1; }
+    "POETS>"
+}
+
+send "load /app = \"$script\"\n"
+
+expect {
+    default { send_user "Timeout or unexpected outcome while loading app.\n" ; exit 1; }   
+    "unintelligible" { send_user "Command was invalid." ; exit 1; }
+    "failed validation with" { send_user "The XML file could not be validated.\n"; exit 1; }
+    -re ".*Application file .* loaded in .* ms."
+
+}
+
+send "tlink /app = *\n"
+send "place /tfill = *\n"
+
+expect {
+    default { send_user "Timeout or unexpected outcome while linking/placing app.\n" ; exit 1; }   
+    "unintelligible" { send_user "Command was invalid." ; exit 1; }
+    -re "Graph instance .+ placed successfully."
+}
+
+
+set timeout 60
+send "compose /app = *\n\n"
+
+expect {
+    default { send_user "Timeout or unexpected outcome while composing app.\n" ; exit 1; }   
+    "unintelligible" { send_user "Command was invalid." ; exit 1; }
+    -re "Graph instance .+ composed successfully."
+}
+
+send_user "Graph appears to have loaded and compiled!"
+
+set timeout 60
+send "deploy /app = *\n\n"
+send "initialise /app = *\n\n"
+send "run /app = *\n\n"
+
+expect {
+    default { send_user "Timeout or unexpected outcome while composing app.\n" ; exit 1; }   
+    "unintelligible" { send_user "Command was invalid." ; exit 1; }
+    -re "_HANDLER_EXIT_FAIL_9be65737_" { send_user "Received explicit failure from devices."; exit 1; }
+    -re "_HANDLER_EXIT_SUCCESS_9be65737_" { send_user "Received success from devices."; exit 0; }
+}
+
+exit 0;

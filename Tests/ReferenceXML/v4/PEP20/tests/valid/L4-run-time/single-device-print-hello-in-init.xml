@@ -11,8 +11,11 @@
                 <Properties><![CDATA[]]></Properties>
                 <State><![CDATA[]]></State>
                 <SharedCode><![CDATA[]]></SharedCode>
+                <ReadyToSend><![CDATA[
+                *readyToSend=0;
+                ]]></ReadyToSend>
                 <OnInit><![CDATA[
-                    handler_log(0, "Init/dt1!");
+                handler_log(0, "_HANDLER_EXIT_SUCCESS_9be65737_");
                 ]]></OnInit>
                 <OnHardwareIdle/>
                 <OnDeviceIdle/>
