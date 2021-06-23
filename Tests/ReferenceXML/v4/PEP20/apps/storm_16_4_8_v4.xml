@@ -40,7 +40,7 @@ uint32_t totalCredit;
           <State/>
           <OnReceive><![CDATA[
 		  deviceState->credit += message->credit;
-			handler_log(4, "Received %u credit, local credit is %u", message->credit, deviceState->credit);
+			//handler_log(4, "Received %u credit, local credit is %u", message->credit, deviceState->credit);
 			if(deviceProperties->isRoot && deviceState->credit==deviceState->totalCredit){
 				fake_handler_exit(0);
 			}
@@ -66,7 +66,7 @@ uint32_t totalCredit;
 			message->credit=perDevice;
 			deviceState->credit -= perDevice*deviceProperties->degree;
 		}
-		handler_log(4, "Sending %u credit wide, local credit is %u", message->credit, deviceState->credit);
+		//handler_log(4, "Sending %u credit wide, local credit is %u", message->credit, deviceState->credit);
 		]]></OnSend>
         </OutputPin>
         <OutputPin name="narrow" messageTypeId="exchange" indexed="false">
@@ -75,7 +75,7 @@ uint32_t totalCredit;
 		assert(deviceState->credit > 0);
 		message->credit=(deviceState->credit+1)/2;
 		deviceState->credit -= message->credit;
-		handler_log(4, "Sending %u credit narrow, local credit is %u", message->credit, deviceState->credit);
+		//handler_log(4, "Sending %u credit narrow, local credit is %u", message->credit, deviceState->credit);
 
 		]]></OnSend>
         </OutputPin>
@@ -98,7 +98,8 @@ uint32_t totalCredit;
 				}
 			}
 		]]></ReadyToSend>
-        <OnInit><![CDATA[]]></OnInit>
+        <OnInit><![CDATA[
+        ]]></OnInit>
         <OnHardwareIdle/>
         <OnDeviceIdle/>
       </DeviceType>
