@@ -10,7 +10,7 @@ send_user "Relative xml path = $script\n"
 set script [file normalize $script]
 send_user "Absolute xml path = $script\n"
 
-spawn "$HERE/../../orchestrate.sh"
+spawn "$HERE/../../orchestrate.sh" -n
 
 expect {
     default { send_user "Orchestrator didn't make it to prompt.\n" ; exit 1; }   
