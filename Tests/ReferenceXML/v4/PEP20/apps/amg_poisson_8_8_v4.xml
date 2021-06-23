@@ -23,6 +23,9 @@
             _do_handler_exit(code); \
         }
 
+      // Temporary hack
+        #define verbose_handler_log(...) (void)0
+
 ]]></SharedCode>
     <MessageTypes>
       <MessageType id="linear_problem">
@@ -74,7 +77,7 @@ float fineMaxResidual;
             deviceState->fineSeen++;
             deviceState->fineAcc += edgeProperties->R*message->b;
             deviceState->fineMaxResidual = std::max(deviceState->fineMaxResidual, message->max_r);
-            handler_log(3, "maxMaxResidual=%g", deviceState->fineMaxResidual);
+            verbose_handler_log(3, "maxMaxResidual=%g", deviceState->fineMaxResidual);
             ]]></OnReceive>
         </InputPin>
         <OutputPin name="fine_down" messageTypeId="coarse_to_fine" indexed="false">
@@ -83,7 +86,7 @@ float fineMaxResidual;
 
             message->x = deviceState->fineAcc * deviceProperties->inv_Adiag;
             message->max_r = deviceState->fineMaxResidual;
-            handler_log(3, "msg.maxMaxResidual=%g", deviceState->fineMaxResidual);
+            verbose_handler_log(3, "msg.maxMaxResidual=%g", deviceState->fineMaxResidual);
 
             deviceState->fineSeen=0;
             deviceState->fineAcc=0;
@@ -92,7 +95,7 @@ float fineMaxResidual;
         </OutputPin>
         <ReadyToSend><![CDATA[
         *readyToSend = deviceState->fineSeen == deviceProperties->fineTotal ? RTS_FLAG_fine_down : 0;
-        handler_log(2, "root RTS : 0x%x", *readyToSend);
+        //verbose_handler_log(2, "root RTS : 0x%x", *readyToSend);
         ]]></ReadyToSend>
         <OnInit><![CDATA[]]></OnInit>
         <OnHardwareIdle/>
@@ -154,7 +157,7 @@ float postSmoothAcc;
             deviceState->fineAcc+=edgeProperties->R * message->b;
             deviceState->fineMaxResidual=std::max(deviceState->fineMaxResidual, message->max_r);
 
-            handler_log(2, "fineSeen=%d, fineAcc=%f", deviceState->fineSeen, deviceState->fineAcc);
+            verbose_handler_log(4, "fineSeen=%d, fineAcc=%f", deviceState->fineSeen, deviceState->fineAcc);
             ]]></OnReceive>
         </InputPin>
         <InputPin name="peer_in" messageTypeId="jacobi_exchange">
@@ -200,7 +203,7 @@ float postSmoothAcc;
             deviceState->coarseAcc += edgeProperties->P * message->x;
             deviceState->max_r = message->max_r;
 
-            handler_log(2, "coarseSeen=%d", deviceState->coarseSeen);
+            verbose_handler_log(4, "coarseSeen=%d", deviceState->coarseSeen);
             ]]></OnReceive>
         </InputPin>
         <OutputPin name="peer_out" messageTypeId="jacobi_exchange" indexed="false">
@@ -218,7 +221,7 @@ float postSmoothAcc;
                 message->tag=State_PreSmooth;
 
                 deviceState->state=State_PreSmooth;
-                handler_log(2, "Idle->Pre");
+                verbose_handler_log(2, "Idle->Pre");
             }else if(deviceState->state==State_PreSmooth){
                 assert(deviceState->preSmoothSeen==deviceProperties->peerCount);
 
@@ -233,7 +236,7 @@ float postSmoothAcc;
                 message->tag=State_PreResidual;
 
                 deviceState->state=State_PreResidual;
-                handler_log(2, "PreSmooth->PreResidual");
+                verbose_handler_log(2, "PreSmooth->PreResidual");
             }else if(deviceState->state==State_Coarse){
                 assert(deviceState->coarseSeen == deviceProperties->coarseCount);
 
@@ -244,7 +247,7 @@ float postSmoothAcc;
                 message->x=deviceState->x;
                 message->tag=State_PostSmooth;
 
-                handler_log(2, "Coarse->PostSmooth");
+                verbose_handler_log(4, "Coarse->PostSmooth");
                 deviceState->state=State_PostSmooth;
             }else{
                 assert(0);
@@ -268,7 +271,7 @@ float postSmoothAcc;
             deviceState->max_r = -1;
             deviceState->state=State_Coarse;
 
-            handler_log(2, "PreResidual->Coarse");
+            verbose_handler_log(4, "PreResidual->Coarse");
             ]]></OnSend>
         </OutputPin>
         <OutputPin name="fine_down" messageTypeId="coarse_to_fine" indexed="false">
@@ -283,7 +286,7 @@ float postSmoothAcc;
             deviceState->postSmoothSeen=0;
             deviceState->postSmoothAcc=0;
             deviceState->state=State_Idle;
-            handler_log(2, "Post->Idle");
+            verbose_handler_log(4, "Post->Idle");
 
             message->x = deviceState->x;
             message->max_r = deviceState->max_r;
@@ -423,7 +426,7 @@ float coarseAcc;
                 message->tag=State_PreSmooth;
 
                 deviceState->state=State_PreSmooth;
-                handler_log(2, "Idle->Pre");
+                verbose_handler_log(4, "Idle->Pre");
             }else if(deviceState->state==State_PreSmooth){
                 assert(deviceState->preSmoothSeen==deviceProperties->peerCount);
 
@@ -438,7 +441,7 @@ float coarseAcc;
                 message->tag=State_PreResidual;
 
                 deviceState->state=State_PreResidual;
-                handler_log(2, "PreSmooth->PreResidual");
+                verbose_handler_log(4, "PreSmooth->PreResidual");
             }else if(deviceState->state==State_Coarse){
                 assert(deviceState->coarseSeen == deviceProperties->coarseCount);
                 assert(deviceState->r > graphProperties->residualTol); // Otherwise we would be sending the solution down
@@ -450,7 +453,7 @@ float coarseAcc;
                 message->x=deviceState->x;
                 message->tag=State_PreSmooth;
 
-                handler_log(2, "Coarse->PreSmooth");
+                verbose_handler_log(4, "Coarse->PreSmooth");
                 deviceState->state=State_PreSmooth;
             }else{
                 assert(0);
@@ -521,7 +524,7 @@ float coarseAcc;
                 assert(0);
                 break;
             }
-            handler_log(3, "state=%d, coarseSeen=%d, coarseCount=%d", deviceState->state, deviceState->coarseSeen, deviceProperties->coarseCount);
+            verbose_handler_log(3, "state=%d, coarseSeen=%d, coarseCount=%d", deviceState->state, deviceState->coarseSeen, deviceProperties->coarseCount);
         ]]></ReadyToSend>
         <OnInit><![CDATA[]]></OnInit>
         <OnHardwareIdle/>
@@ -549,7 +552,7 @@ float x[8];
 
             assert( (r>=0) && (r<graphProperties->residualTol) );
 
-            handler_log(3, " iter=%d, x=%g (dx=%g), r=%g, i=%d\n\n\n", deviceState->i/2, x, std::abs(x-rx), r, i);
+            verbose_handler_log(3, " iter=%d, x=%g (dx=%g), r=%g, i=%d\n\n\n", deviceState->i/2, x, std::abs(x-rx), r, i);
 
             deviceState->i++;
             ]]></OnReceive>
@@ -578,7 +581,7 @@ float x[8];
         }else if(deviceState->i == 16){
             *readyToSend=RTS_FLAG_finished;
         }
-        handler_log(2, "test RTS : 0x%x", *readyToSend);
+        //verbose_handler_log(2, "test RTS : 0x%x", *readyToSend);
         ]]></ReadyToSend>
         <OnInit><![CDATA[]]></OnInit>
         <OnHardwareIdle/>
