@@ -35,8 +35,6 @@ fprintf(fp,"%sNameBase       %s\n",os,FullName().c_str());
 fprintf(fp,"%sMe,Parent      0x%#018lx,0x%#018lx\n",
             os,(uint64_t)this,(uint64_t)par);
 if (par!=0) fprintf(fp,"%s...%s\n",os,par->FullName().c_str());
-fprintf(fp,"%sP-address :\n",os);
-addr.Dump(off+2,fp);
 fprintf(fp,"%sGraph key      %u\n",os,Key);
 fprintf(fp,"%sProperties initialiser %#018lx\n",os,(uint64_t)pPropsI);
 if (pPropsI!=0) pPropsI->Dump(off+2,fp);
