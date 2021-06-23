@@ -197,13 +197,22 @@ void* ThreadComms::backend_output_broker(void* mothershipArg)
             numberOfFlitsForThisPacket = p_hdr_size() >> TinselLogBytesPerFlit;
             if (numberOfFlitsForThisPacket == 0) ++numberOfFlitsForThisPacket;
 
-            /* Send the packet (with that number of flits) */
-            pthread_mutex_lock(&(mothership->threading.mutex_backend_api));
-            mothership->backend->send(packetIt->hwAddr,
-                                      numberOfFlitsForThisPacket,
-                                      &(packetIt->packet), true);
-            pthread_mutex_unlock(&(mothership->threading.mutex_backend_api));
-
+            /* Send the packet (with that number of flits). If the network
+             * pushes back, then take a short holiday. Did you enjoy it?
+             * Alright, back to work. */
+            bool sendResult = true;
+            do
+            {
+                if (!sendResult) OSFixes::sleep(SLOW_SPIN_SLEEP_PERIOD);
+                pthread_mutex_lock(
+                    &(mothership->threading.mutex_backend_api));
+                sendResult = mothership->backend->trySend(
+                    packetIt->hwAddr,
+                    numberOfFlitsForThisPacket,
+                    &(packetIt->packet));
+                pthread_mutex_unlock(
+                    &(mothership->threading.mutex_backend_api));
+            } while (!sendResult);
         }
     }
 
@@ -243,8 +252,10 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
          * packets to fit into an MPI message. */
         pthread_mutex_lock(&(mothership->threading.mutex_backend_api));
         canRecv = mothership->backend->canRecv();
+        pthread_mutex_unlock(&(mothership->threading.mutex_backend_api));
         if (canRecv and !mothership->threading.is_backend_in_queue_full())
         {
+            pthread_mutex_lock(&(mothership->threading.mutex_backend_api));
             mothership->backend->recv(receiveBuffer);
             pthread_mutex_unlock(&(mothership->threading.mutex_backend_api));
 
@@ -271,8 +282,6 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
          * therein. */
         else
         {
-            pthread_mutex_unlock(&(mothership->threading.mutex_backend_api));
-
             /* Shortcut - if there's nothing to do. */
             if (!(mothership->threading.pop_backend_in_queue(&packets)))
                 continue;
@@ -425,7 +434,10 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
     while (!mothership->threading.is_it_time_to_go())
     {
         /* Drain the debug channel as quickly as possible, until there's
-         * nothing left. */
+         * nothing left. Locking the backend is not necessary here (at least
+         * for Tinsel), but may be necessary for other, non-thread-safe
+         * backends. */
+        /* pthread_mutex_lock(&(mothership->threading.mutex_backend_api)); */
         while (debug->canGet())
         {
             debug->get(&brdX, &brdY, &coreId, &threadId, &payload);
@@ -434,6 +446,7 @@ void* ThreadComms::debug_input_broker(void* mothershipArg)
             debugPacket.payload = payload;
             mothership->threading.push_debug_in_queue(debugPacket);
         }
+        /* pthread_mutex_unlock(&(mothership->threading.mutex_backend_api)); */
 
         /* If the queue is empty, it means we've not received anything on the
          * debug channel. We chill, because debug output is not time
