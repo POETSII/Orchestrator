@@ -27,6 +27,13 @@ done
 
 TN=0
 
+function TODO_compile {
+    F="$1"
+    RR=$(realpath --relative-to="$ORCHROOT" "$F")
+    echo "not ok $TN - # TODO Compile $RR, $2"
+    TN=$((TN+1))
+}
+
 ############################################
 ## Compilation
 
