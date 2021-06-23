@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<Graphs xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" formatMinorVersion="0">
+    <GraphType id="tiniest">
+        <Metadata key="grarr" value="gr
+        
+        &lt;hello!&gt;
+        
+        rr"/>
+        <Metadata key="bleb" value="grrr"/>
+        <Properties/>
+        <SharedCode />
+        <MessageTypes/>
+        <DeviceTypes />
+    </GraphType>
+    <GraphInstance id='tiniest_inst' graphTypeId="tiniest">
+        <Metadata key="grarr" value="grrr"/>
+        <DeviceInstances />
+        <EdgeInstances />
+    </GraphInstance>
+</Graphs>
