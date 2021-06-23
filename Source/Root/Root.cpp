@@ -51,7 +51,8 @@ for(;;)
   if (buf[0]==char(0)) break;          // ctrl-d in linux-land
   if (buf[0]==char(4)) break;          // ctrl-d in u$oft-land
 }
-// Tell the user we're leaving immediately.
+// Tell the user now that we're closing down. Note that the exit command will
+// trigger an exit via ProcCmnd (OnIdle), so we don't need to call CmExit here.
 Root::promptOn = false;
 printf("Exiting...\n");
 pthread_exit(NULL);                    // Kill the keyboard thread
