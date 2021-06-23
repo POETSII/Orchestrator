@@ -387,7 +387,8 @@ MsgT_t * DS_XML::_MsgT_t(GraphT_t * pGT,xnode * pn)
 string mname = pn->FindAttr("id");
 MsgT_t * pM = new MsgT_t(pGT,mname);
 pM->Def(pn->lin);
-pM->pPropsD = _CFrag(pn);
+xnode *cc=pn->FindChild("Message");
+pM->pPropsD = _CFrag(cc);
 return pM;
 }
 
