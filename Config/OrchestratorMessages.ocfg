@@ -112,6 +112,8 @@
 182(I) : "Placement information dumped to '%s'."
 183(E) : "Received MPI message with unrecognised key '%s'. Source rank: %s. Destination rank: %s.
 
+196(E) : "%s structural faults found in application %s (file %s) load"
+
 201(E) : "... failed %s with %s errors in %s msecs"
 202(I) : "Task: %s file: %s returns %s errors."
 203(S) : "Application %s build ended with %s errors in %s msecs"
@@ -130,7 +132,7 @@
 231(I) : "Note backlinks to other graphs are NOT checked"
 232(S) : "%s %s has %s out of range"
 233(S) : "%s %s has %s corrupt"
-234(I) : "Application %s typelink..."
+234(I) : "Typelinking graph instance '%s'...
 235(I) : "Application file %s loading..."
 236(I) : "Application %s validation log file %s removed"
 237(I) : "Application %s typelink log file %s removed"
@@ -145,11 +147,15 @@
 246(W) : "Cannot open %s for detailed output. Path invalid?"
 247(I) : "Handler stub for command %s /%s = ..."
 248(I) : "Application %s...."
-249(I) : "... typelink succeeded (%s warnings) in %s msecs"
+249(I) : "Successfully typelinked graph instance '%s'."
 250(W) : "Clause %s must have one parameter"
 251(W) : "... integrity check on %s generated %s(%s) errors(warnings) in %s msecs"
 252(I) : "Starting integrity check on application %s"
 253(I) : "System wide integrity check took %s ms"
+254(W) : "Failed to typelink graph instance '%s' (%s errors)."
+255(I) : "Un-typelinking graph instance '%s'...
+256(I) : "Graph instance '%s' is no longer typelinked."
+257(E) : "Attempt to use unimplemented functionality in %s block: %s on line %s"
 
 300(W) : "Unable to invoke the placement system - no hardware model has been loaded."
 301(W) : "Unable to identify graph instance '%s' (the first parameter should be of the form 'APPNAME::GRAPHINSTANCENAME')."
@@ -176,6 +182,9 @@
 322(I) : "Constraining the maximum number of placed devices per thread in the hardware model to %s."
 323(I) : "Constraining the maximum number of threads used for placement on each core in the hardware model to %s."
 324(W) : "Graph instance '%s' has not been type-linked. Not %s."
+325(W) : "Unable to place graph instance '%s' using the '%s' method - %s"
+326(I) : "Placement argument '%s' set to value '%s'."
+327(W) : "Could not set value of placement argument '%s' to '%s' - %s"
 
 500(F) : "Mothership: Could not create pthread %s. Exiting."
 501(F) : "Mothership: Could not join to pthread %s. Exiting."
@@ -271,7 +280,7 @@
 929(U) : "DS_integ::DS_integ: App name %s has disappeared"
 930(U) : "DS_XML::PBuild: incoming .tag field non-null"
 931(U) : "DS_XML::_EdgeI_t: pathDecode returns error code %s"
-996(U) : "CmLoad::Cm_App: DS_XML returns %s errors"
+995(U) : "GraphI_t::GetDevice: graph instance corrupt - device %s has zero address"
 997(U) : "File %s line %s: .........."
 998(U) : "File %s line %s: Unknown XML element %s should have caught by the validator"
 999(X) : "OINK ARGH OOK %s"
