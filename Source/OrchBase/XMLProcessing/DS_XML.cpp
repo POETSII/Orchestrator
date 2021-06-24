@@ -19,6 +19,8 @@
 #include "Pglobals.h"
 #include "OrchBase.h"
 
+#include <iostream>
+
 //==============================================================================
 
 DS_XML::DS_XML(OrchBase * _par)
@@ -40,6 +42,7 @@ DS_map["InputPin"]         = cInputPin;
 DS_map["MessageType"]      = cMessageType;
 DS_map["MessageTypes"]     = cMessageTypes;
 DS_map["MetaData"]         = cMetaData;
+DS_map["Metadata"]         = cMetaData;
 DS_map["OnCTL"]            = cOnCTL;
 DS_map["OnDeviceIdle"]     = cOnDeviceIdle;
 DS_map["DevI"]             = cDevI;
@@ -77,7 +80,19 @@ DS_XML::~DS_XML()
 void DS_XML::_Apps_t(xnode * pn)
 // XML::Graphs
 {
-aname = pn->FindAttr("appname");       // Get (and store) the application name
+string aname = pn->FindAttr("appname");// Get the app name
+if(aname.empty()){
+  xnode *c=pn->FindChild("GraphInstance");
+  if(c){
+    string id=c->FindAttr("id");
+    if(id!=""){
+      aname=id;
+    }
+  }
+  if(aname.empty()){
+    par->Post(932, pn->par->ename ); // Filename is root element name (?).
+  }
+}
 Apps_t * pAP = new Apps_t(par,aname);  // Uniquely knits itself into skyhook
 pAP->Def(pn->lin);                     // Defined on line...
 pAP->filename = pn->par->ename;        // Filename is root element name
@@ -116,6 +131,51 @@ Cstr = "// Line " + int2str(pn->lin) + "\n" + Cstr;
 return new CFrag(Cstr);
 }
 
+static const char *match_curly_braces(const char *begin, const char *end)
+{
+  assert(*begin == '{');
+  ++begin;
+  while(begin<end){
+    char ch=*begin;
+    if(ch=='}'){
+      return begin;
+    }else if(ch=='{'){
+      const char *n=match_curly_braces(begin, end);
+      if(n==0){
+        return 0; // No matching curly inside.
+      }
+      assert(n<end);
+      begin=n+1;
+    }else{
+      begin++;
+    }
+  }
+  return 0; // No matching curly
+}
+
+bool has_single_top_level_curlies(const char *begin, const char *end)
+{
+  int curlies=0;
+  while(begin<end){
+    char ch=*begin;
+    if(isspace(ch)){
+      begin++;
+    }else if(ch=='{'){
+      const char *n=match_curly_braces(begin, end);
+      if(n==0){
+        // malformed
+        return 0;
+      }
+      curlies++;
+      begin=n+1;
+    }else{
+      // We have a comma or something else at the top-level. Must not have single top-level curly
+      return false;
+    }
+  }
+  return curlies==1;
+}
+
 CFrag * DS_XML::_CFrag(std::string Cstr)
 // Create a CFrag from an attribute string.
 // This is intended for initialiser lists (of which there may be many) so
@@ -123,6 +183,17 @@ CFrag * DS_XML::_CFrag(std::string Cstr)
 // If the attribute is empty, we don't create a CFrag for it - simples.
 {
 if(Cstr == "") return 0;
+
+// HACK : heuristic to deal with brace surrounded variants. If the
+// string has the form "\s*{.*" then we assume it is brace surrounded.
+// See https://github.com/POETSII/Orchestrator/issues/225
+  if(has_single_top_level_curlies(Cstr.c_str(), Cstr.c_str()+Cstr.size())){
+    int left=Cstr.find('{');
+    int right=Cstr.find_last_of('}');
+    std::string rr=Cstr.substr(left+1, right-left-1);
+    Cstr=rr;
+  }
+
 return new CFrag(Cstr);
 }
 
@@ -387,7 +458,9 @@ MsgT_t * DS_XML::_MsgT_t(GraphT_t * pGT,xnode * pn)
 string mname = pn->FindAttr("id");
 MsgT_t * pM = new MsgT_t(pGT,mname);
 pM->Def(pn->lin);
-pM->pPropsD = _CFrag(pn);
+xnode *cc=pn->FindChild("Message");
+pM->pPropsD = _CFrag(cc);
+fprintf(stderr, "Msg: %s = '%s'\n", mname.c_str(), pM->pPropsD->C_src().c_str());
 return pM;
 }
 
@@ -410,6 +483,14 @@ WALKVECTOR(xnode *,pn->vnode,i) {
 PinT_t * DS_XML::_PinT_t(DevT_t * pD,xnode * pn)
 // XML::PinType
 {
+// Hack to reject indexed pins while they are not supported
+string indexed = pn->FindAttr("indexed");
+if(!indexed.empty()){
+  if(indexed!="false" && indexed!="0"){
+    par->Post(933,__FILE__,int2str(__LINE__));
+  }
+}
+
 string pname = pn->FindAttr("name");
 unsigned line = pn->lin;               // Go get file location
 PinT_t * pP;

@@ -37,6 +37,14 @@ CCACHE = $(shell command -v ccache)
 CC = $(CCACHE) $(MPICH_DIR)/bin/mpicc
 CXX = $(CCACHE) $(MPICH_DIR)/bin/mpicxx
 
+# If ccache is installed then use it. Even if ccache is set up for
+# g++ and gcc, it won't be for the custom install of mpi
+CCACHE_PATH := $(strip $(shell which ccachee 2> /dev/null))
+ifneq ($(CCACHE_PATH),)
+CC := $(CCACHE_PATH) $(CC)
+CXX := $(CCACHE_PATH) $(CXX)
+endif
+
 # GCC, not used for building the Orchestrator, but necessary for the
 # Mothership. Immediate-set, because it's used by the shell.
 GCC_LIB_DIR := $(ORCHESTRATOR_DEPENDENCIES_DIR)/gcc-7.3.0/lib64:/usr/lib64

@@ -52,3 +52,4 @@ run-all-tests.sh
 *.exe
 *.out
 *.app
+*.tmp

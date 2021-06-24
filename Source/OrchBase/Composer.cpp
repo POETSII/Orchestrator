@@ -1954,7 +1954,7 @@ void Composer::formDevTStrings(ComposerGraphI_t* builderGraphI, DevT_t* devT)
 
         formHandlerPreamble(dTypStrs);
         formDevTHandlers(dTypStrs);
-        formDevTPropsDStateD(dTypStrs);
+        formDevTPropsDStateD(builderGraphI->graphI, dTypStrs);
         formDevTInputPinHandlers(dTypStrs);
         formDevTOutputPinHandlers(dTypStrs);
 
@@ -2196,10 +2196,12 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
 /******************************************************************************
  * Form Device Type Properties and State declarations
  *****************************************************************************/
-void Composer::formDevTPropsDStateD(devTypStrings_t* dTypStrs)
+void Composer::formDevTPropsDStateD(GraphI_t *graph,  devTypStrings_t* dTypStrs)
 {
     DevT_t* devT = dTypStrs->devT;  // grab a local copy of the devtype
     std::string devTName = devT->Name();  // grab a local copy of the name
+
+    std::string graphTName=graph->pT->Name();
 
     std::stringstream vars_h("");
 
@@ -2209,6 +2211,8 @@ void Composer::formDevTPropsDStateD(devTypStrings_t* dTypStrs)
         vars_h << "typedef struct " << devTName << "_properties_t \n{\n";
         vars_h << devT->pPropsD->C_src();
         vars_h << "\n} devtyp_" << devTName << "_props_t;\n\n";
+
+        vars_h << "typedef devtyp_" << devTName << "_props_t "<<graphTName<<"_"<<devTName<<"_properties_t;\n\n";
     }
 
     // Write State declaration
@@ -2217,6 +2221,8 @@ void Composer::formDevTPropsDStateD(devTypStrings_t* dTypStrs)
         vars_h << "typedef struct " << devTName << "_state_t \n{\n";
         vars_h << devT->pStateD->C_src();
         vars_h << "\n} devtyp_" << devTName << "_state_t;\n\n";
+
+        vars_h << "typedef devtyp_" << devTName << "_state_t "<<graphTName<<"_"<<devTName<<"_state_t;\n\n";
     }
 
     // Append to the strings
@@ -2400,6 +2406,7 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
         if ((*pinO)->pMsg->pPropsD)
         {
             handlers_cpp << "   pkt_" << (*pinO)->pMsg->Name();
+
             handlers_cpp << "_pyld_t* message";
             handlers_cpp << " OS_ATTRIBUTE_UNUSED= ";
             handlers_cpp << "static_cast<pkt_";

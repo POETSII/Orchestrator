@@ -1,0 +1,611 @@
+<?xml version="1.0"?>
+<Graphs xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" formatMinorVersion="0">
+<GraphType xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" id="betweeness_centrality">
+  <Metadata key="wibble" value="Wobble" />
+  <Properties><![CDATA[
+    uint32_t max_steps;
+    uint32_t initial_walks;
+  ]]></Properties>
+  <SharedCode><![CDATA[
+    /*
+        Should assume that the bits are equally spread, rather than concentrated at low indices
+        NOTE: further evidence suggesting an lmo instruction would be really useful
+    */
+    unsigned pick_bit(uint32_t x)
+    {
+        uint32_t ox=x;
+        assert(x);
+        unsigned res=0;
+        if(!(x& 0xFFFF)){ res+=16; x>>=16; }
+        if(!(x& 0xFF)){   res+=8;  x>>=8; }
+        if(!(x& 0xF)){    res+=4;  x>>=4; }
+        if(!(x& 0x3)){    res+=2;  x>>=2; }
+        if(!(x& 0x1)){    res+=1;  x>>=1; }
+        assert( ox&(1u<<res));
+        return res;
+    }
+
+    void assert_ready_1k_invariants(
+        uint32_t l0, // Single 32-bit mask
+        const uint32_t l1[32], // Array of 32 bit-masks
+        const uint32_t c2[1024], // Array of 1024 counters
+        unsigned max // Max exclusive
+    ){
+#ifndef NDEBUG
+        for(unsigned i=0; i<max; i++){
+            assert( !(c2[i]) == !((l1[i/32]>>(i%32))&1) );
+        }
+        for(unsigned i=max; i<1024; i++){
+            assert(c2[i]==0);
+        }
+        for(unsigned i=0; i<32; i++){
+            assert( !(l0& (1u<<i)) ==  !l1[i] );
+        }
+#endif
+    }
+
+    int find_ready_1k(
+        uint32_t l0,    // 32 bits
+        const uint32_t l1[32]    // 1024 bits
+    ){
+        if(l0==0){
+            return -1;
+        }
+        unsigned s0=pick_bit(l0);
+        uint32_t m1=l1[s0];
+        assert(m1);
+        return (s0<<5) | pick_bit(m1);
+    }
+
+    void remove_ready_1k(
+        uint32_t &l0, // Single 32-bit mask
+        uint32_t l1[32], // Array of 32 bit-masks
+        uint32_t c2[1024], // Array of 1024 counters
+        unsigned sel
+    ){
+        assert(c2[sel]>0);
+        assert(l1[sel/32] & (1u<<(sel%32)));
+        assert(l0 & (1u<<(sel/32)));
+
+        uint32_t nc= --c2[sel];
+        if(nc){
+            return;
+        }
+        uint32_t m1= (l1[sel/32] &= ~(1u<<(sel%32)));
+        if(m1){
+            return;
+        }
+        l0 &= ~(1u<<(sel/32));
+    }
+
+    unsigned remove_all_ready_1k(
+        uint32_t &l0, // Single 32-bit mask
+        uint32_t l1[32], // Array of 32 bit-masks
+        uint32_t c2[1024], // Array of 1024 counters
+        unsigned sel
+    ){
+        assert(c2[sel]>0);
+        assert(l1[sel/32] & (1u<<(sel%32)));
+        assert(l0 & (1u<<(sel/32)));
+
+        unsigned pc=c2[sel];
+        c2[sel]=0;
+        
+        uint32_t m1= (l1[sel/32] &= ~(1u<<(sel%32)));
+        if(!m1){
+            l0 &= ~(1u<<(sel/32));
+        }
+
+        return pc;
+    }
+
+    unsigned find_and_remove_ready_1k(
+        uint32_t &l0,
+        uint32_t l1[32],
+        uint32_t c2[1024]
+    ){
+        assert(l0);
+        unsigned s0=pick_bit(l0);
+        uint32_t m1=l1[s0];
+        assert(m1);
+        unsigned sel=(s0<<5)|pick_bit(m1);
+        assert(c2[sel]>0);
+        
+        auto nc = --c2[sel];
+        if(!nc){
+            m1 &= ~(1u<<(sel%32));
+            l1[sel/32]=m1;
+            if(!m1){
+                l0 &= ~(1u<<(sel/32));
+            }
+        }
+
+        return sel;
+    }
+
+    void add_ready_1k(
+        uint32_t &l0,
+        uint32_t l1[32],
+        uint32_t c2[1024],
+        unsigned sel,
+        unsigned count=1
+    ){
+        assert(sel<1024);
+        assert(count>0);
+
+        uint32_t pc=c2[sel];
+        c2[sel]+=count;
+        if(pc){
+            return;
+        }
+        uint32_t m1 = (l1[sel/32] |= (1u<<(sel%32)));
+        // Might as well do it unconditionally, probably saves both time and instruction space
+        l0 |= (1u<<(sel/32));
+    }
+
+        #ifdef POETS_LEGACY_HAS_HANDLER_EXIT
+        #define _do_handler_exit(code) handler_exit(code)
+        #else
+        #define _do_handler_exit(code) ((void)0)
+        #endif
+
+        #define fake_handler_exit(code) \
+        { \
+            if((code)==0){ \
+                handler_log(0, "_HANDLER_EXIT_SUCCESS_9be65737_"); \
+            }else{ \
+                handler_log(0, "_HANDLER_EXIT_FAIL_9be65737_"); \
+            } \
+            _do_handler_exit(code); \
+        }
+]]></SharedCode>
+  <MessageTypes>
+    <MessageType id="walk">
+      <Message><![CDATA[
+        uint32_t timestep;
+        uint32_t count;
+      ]]></Message>
+    </MessageType>
+    <MessageType id="terminate">
+      <Message><![CDATA[
+        uint32_t count;
+        uint32_t node_id;
+        uint32_t total_visits;
+      ]]></Message>
+    </MessageType>
+  </MessageTypes>
+  <DeviceTypes>
+    <DeviceType id="node">
+      <Properties><![CDATA[
+        uint32_t node_id;
+        uint32_t degree;
+        uint32_t seed;
+      ]]></Properties>
+      <State><![CDATA[
+        uint32_t seed;
+        uint32_t total_visits;
+        uint32_t degree_shift;
+        uint32_t non_final_count;
+        uint32_t walks_mask_l0;
+        uint32_t walks_mask_l1[32];
+        uint32_t walks_by_timestep[1024];
+      ]]></State>
+      <SharedCode />
+      <InputPin name="walk_arrive" messageTypeId="walk">
+        <Properties/>
+        <State/>
+        <OnReceive><![CDATA[
+		  assert(message->timestep <= graphProperties->max_steps);
+          assert_ready_1k_invariants(deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep, graphProperties->max_steps+1);
+          
+          assert(message->count > 0);
+          deviceState->total_visits += message->count;
+          
+          add_ready_1k(
+            deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep,
+            message->timestep, message->count
+          );
+          if(message->timestep < graphProperties->max_steps){
+            deviceState->non_final_count += message->count;
+          }
+
+          handler_log(3, "Received %u at time %u, nonFinalCount=%u", message->count, message->timestep, deviceState->non_final_count);
+
+          assert_ready_1k_invariants(deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep, graphProperties->max_steps+1);
+		  ]]></OnReceive>
+      </InputPin>
+      <OutputPin name="walk_continue" messageTypeId="walk" indexed="true">
+        <OnSend><![CDATA[
+            assert_ready_1k_invariants(deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep, graphProperties->max_steps+1);
+
+            // Always succeeds (unless program is corrupt)
+            unsigned sel=find_and_remove_ready_1k(
+                deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep
+            );
+            // If we had sel == graphProperties->max_steps we shouldn't be in this handler
+            assert(sel < graphProperties->max_steps);
+
+            message->count=1;
+            message->timestep=sel+1;
+            do{
+                deviceState->seed=deviceState->seed*1664525+1013904223ul;
+                *sendIndex = (deviceState->seed) >> (deviceState->degree_shift);
+            }while(*sendIndex >= deviceProperties->degree);
+
+            --deviceState->non_final_count;
+
+            handler_log(3, "Sending %u to time %u, dest=%u, nonFinalCount=%u", message->count, message->timestep, *sendIndex, deviceState->non_final_count);
+
+            assert_ready_1k_invariants(deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep, graphProperties->max_steps+1);
+		]]></OnSend>
+      </OutputPin>
+      <OutputPin name="walk_finish" messageTypeId="terminate">
+        <OnSend><![CDATA[
+            assert_ready_1k_invariants(deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep, graphProperties->max_steps+1);
+
+            unsigned count=remove_all_ready_1k(
+                deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep,
+                graphProperties->max_steps
+            );
+            assert(count>0); // If there was nothing at max_steps then shouldn't be in this handler
+
+            message->count=count;
+            message->node_id=deviceProperties->node_id;
+            message->total_visits=deviceState->total_visits;
+
+            assert_ready_1k_invariants(deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep, graphProperties->max_steps+1);
+		]]></OnSend>
+      </OutputPin>
+      <ReadyToSend><![CDATA[
+            assert_ready_1k_invariants(deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep, graphProperties->max_steps+1);
+
+			*readyToSend = 0;
+            if(deviceState->walks_mask_l0){
+                if(deviceState->non_final_count){
+                    *readyToSend=RTS_FLAG_walk_continue;
+                }else{
+                    *readyToSend=RTS_FLAG_walk_finish;
+                }
+            }
+		]]></ReadyToSend>
+          <OnInit><![CDATA[
+        assert(graphProperties->max_steps < 1024);
+
+        uint32_t bits=1;
+        uint32_t mask=1;
+        while(deviceProperties->degree >= mask){
+            bits++;
+            mask=(mask<<1)|1;
+        }
+        deviceState->degree_shift=32-bits;
+
+        deviceState->seed=deviceProperties->seed;
+
+        add_ready_1k(
+            deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep,
+            0, graphProperties->initial_walks
+        );
+        deviceState->non_final_count+=graphProperties->initial_walks;
+
+        assert_ready_1k_invariants(deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep, graphProperties->max_steps+1);
+        
+        ]]></OnInit>
+
+    <OnHardwareIdle />
+    <OnDeviceIdle />
+    </DeviceType>
+    <DeviceType id="collector">
+      <Properties><![CDATA[
+        uint32_t graph_size;
+      ]]></Properties>
+      <State><![CDATA[
+        uint32_t expected;
+        uint32_t collected;
+        uint32_t max_visited;
+      ]]></State>
+      <SharedCode />
+      <InputPin name="finished_walk" messageTypeId="terminate">
+        <Properties />
+        <State />
+        <OnReceive><![CDATA[
+            deviceState->collected+=message->count;
+            deviceState->max_visited=std::max(deviceState->max_visited, message->total_visits);
+            handler_log(2, "collected=%u, exepect4d=%u", deviceState->collected, deviceState->expected);
+
+            if(deviceState->collected==deviceState->expected){
+                handler_log(1, "max_visited=%u", deviceState->max_visited);
+                fake_handler_exit(0);
+            }
+            ]]></OnReceive>
+      </InputPin>
+        <ReadyToSend><![CDATA[
+            *readyToSend=0;
+        ]]></ReadyToSend>
+      <OnInit><![CDATA[
+            deviceState->expected=graphProperties->initial_walks * deviceProperties->graph_size;
+        ]]></OnInit>
+    <OnHardwareIdle />
+    <OnDeviceIdle />
+    </DeviceType>
+  </DeviceTypes>
+</GraphType>
+ <GraphInstance id="betweeness_centrality_16_16_20_20" graphTypeId="betweeness_centrality" P="{20,20}">
+  <DeviceInstances>
+   <DevI id="n0" type="node" P="{0,15,460635229}" />
+   <DevI id="n1" type="node" P="{1,15,727769857}" />
+   <DevI id="n2" type="node" P="{2,15,453597968}" />
+   <DevI id="n3" type="node" P="{3,15,2186900517}" />
+   <DevI id="n4" type="node" P="{4,15,2867224608}" />
+   <DevI id="n5" type="node" P="{5,15,4039030615}" />
+   <DevI id="n6" type="node" P="{6,15,1162629879}" />
+   <DevI id="n7" type="node" P="{7,15,2854065766}" />
+   <DevI id="n8" type="node" P="{8,15,3901813828}" />
+   <DevI id="n9" type="node" P="{9,15,2292871819}" />
+   <DevI id="n10" type="node" P="{10,15,2582004343}" />
+   <DevI id="n11" type="node" P="{11,15,177472486}" />
+   <DevI id="n12" type="node" P="{12,15,886743160}" />
+   <DevI id="n13" type="node" P="{13,15,1419876785}" />
+   <DevI id="n14" type="node" P="{14,15,716753078}" />
+   <DevI id="n15" type="node" P="{15,15,3997608929}" />
+   <DevI id="c" type="collector" P="{16}" />
+  </DeviceInstances>
+  <EdgeInstances>
+   <EdgeI path="n0:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n1:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n4:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n9:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n11:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n0:walk_continue" />
+   <EdgeI path="n15:walk_arrive-n0:walk_continue" />
+   <EdgeI path="c:finished_walk-n0:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n1:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n4:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n9:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n10:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n1:walk_continue" />
+   <EdgeI path="n15:walk_arrive-n1:walk_continue" />
+   <EdgeI path="c:finished_walk-n1:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n4:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n9:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n10:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n11:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n2:walk_continue" />
+   <EdgeI path="n15:walk_arrive-n2:walk_continue" />
+   <EdgeI path="c:finished_walk-n2:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n1:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n4:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n9:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n11:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n3:walk_continue" />
+   <EdgeI path="n15:walk_arrive-n3:walk_continue" />
+   <EdgeI path="c:finished_walk-n3:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n4:walk_continue" sendIndex="0"></EdgeI>
+   <EdgeI path="n1:walk_arrive-n4:walk_continue" sendIndex="1"></EdgeI>
+   <EdgeI path="n2:walk_arrive-n4:walk_continue" sendIndex="2"></EdgeI>
+   <EdgeI path="n3:walk_arrive-n4:walk_continue" sendIndex="3"></EdgeI>
+   <EdgeI path="n4:walk_arrive-n4:walk_continue" sendIndex="4"></EdgeI>
+   <EdgeI path="n5:walk_arrive-n4:walk_continue" sendIndex="5"></EdgeI>
+   <EdgeI path="n6:walk_arrive-n4:walk_continue" sendIndex="6"></EdgeI>
+   <EdgeI path="n7:walk_arrive-n4:walk_continue" sendIndex="7"></EdgeI>
+   <EdgeI path="n8:walk_arrive-n4:walk_continue" sendIndex="8"></EdgeI>
+   <EdgeI path="n9:walk_arrive-n4:walk_continue" sendIndex="9"></EdgeI>
+   <EdgeI path="n10:walk_arrive-n4:walk_continue" sendIndex="10"></EdgeI>
+   <EdgeI path="n12:walk_arrive-n4:walk_continue" sendIndex="11"></EdgeI>
+   <EdgeI path="n13:walk_arrive-n4:walk_continue" sendIndex="12"></EdgeI>
+   <EdgeI path="n14:walk_arrive-n4:walk_continue" sendIndex="13"></EdgeI>
+   <EdgeI path="n15:walk_arrive-n4:walk_continue" sendIndex="14"></EdgeI>
+   <EdgeI path="c:finished_walk-n4:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n1:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n4:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n9:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n11:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n5:walk_continue" />
+   <EdgeI path="n15:walk_arrive-n5:walk_continue" />
+   <EdgeI path="c:finished_walk-n5:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n1:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n4:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n10:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n11:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n6:walk_continue" />
+   <EdgeI path="n15:walk_arrive-n6:walk_continue" />
+   <EdgeI path="c:finished_walk-n6:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n1:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n4:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n9:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n10:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n11:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n7:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n7:walk_continue" />
+   <EdgeI path="c:finished_walk-n7:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n1:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n4:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n9:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n11:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n8:walk_continue" />
+   <EdgeI path="n15:walk_arrive-n8:walk_continue" />
+   <EdgeI path="c:finished_walk-n8:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n9:walk_continue" sendIndex="0"></EdgeI>
+   <EdgeI path="n1:walk_arrive-n9:walk_continue" sendIndex="1"></EdgeI>
+   <EdgeI path="n2:walk_arrive-n9:walk_continue" sendIndex="2"></EdgeI>
+   <EdgeI path="n3:walk_arrive-n9:walk_continue" sendIndex="3"></EdgeI>
+   <EdgeI path="n4:walk_arrive-n9:walk_continue" sendIndex="4"></EdgeI>
+   <EdgeI path="n5:walk_arrive-n9:walk_continue" sendIndex="5"></EdgeI>
+   <EdgeI path="n6:walk_arrive-n9:walk_continue" sendIndex="6"></EdgeI>
+   <EdgeI path="n8:walk_arrive-n9:walk_continue" sendIndex="7"></EdgeI>
+   <EdgeI path="n9:walk_arrive-n9:walk_continue" sendIndex="8"></EdgeI>
+   <EdgeI path="n10:walk_arrive-n9:walk_continue" sendIndex="9"></EdgeI>
+   <EdgeI path="n11:walk_arrive-n9:walk_continue" sendIndex="10"></EdgeI>
+   <EdgeI path="n12:walk_arrive-n9:walk_continue" sendIndex="11"></EdgeI>
+   <EdgeI path="n13:walk_arrive-n9:walk_continue" sendIndex="12"></EdgeI>
+   <EdgeI path="n14:walk_arrive-n9:walk_continue" sendIndex="13"></EdgeI>
+   <EdgeI path="n15:walk_arrive-n9:walk_continue" sendIndex="14"></EdgeI>
+   <EdgeI path="c:finished_walk-n9:walk_finish" />
+   <EdgeI path="n1:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n4:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n9:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n10:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n11:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n10:walk_continue" />
+   <EdgeI path="n15:walk_arrive-n10:walk_continue" />
+   <EdgeI path="c:finished_walk-n10:walk_finish" />
+   <EdgeI path="n1:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n4:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n9:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n10:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n11:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n11:walk_continue" />
+   <EdgeI path="n15:walk_arrive-n11:walk_continue" />
+   <EdgeI path="c:finished_walk-n11:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n4:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n9:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n10:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n11:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n12:walk_continue" />
+   <EdgeI path="n15:walk_arrive-n12:walk_continue" />
+   <EdgeI path="c:finished_walk-n12:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n1:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n2:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n3:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n5:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n6:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n7:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n8:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n9:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n10:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n11:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n12:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n13:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n14:walk_arrive-n13:walk_continue" />
+   <EdgeI path="n15:walk_arrive-n13:walk_continue" />
+   <EdgeI path="c:finished_walk-n13:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n14:walk_continue" sendIndex="0"></EdgeI>
+   <EdgeI path="n1:walk_arrive-n14:walk_continue" sendIndex="1"></EdgeI>
+   <EdgeI path="n2:walk_arrive-n14:walk_continue" sendIndex="2"></EdgeI>
+   <EdgeI path="n3:walk_arrive-n14:walk_continue" sendIndex="3"></EdgeI>
+   <EdgeI path="n4:walk_arrive-n14:walk_continue" sendIndex="4"></EdgeI>
+   <EdgeI path="n6:walk_arrive-n14:walk_continue" sendIndex="5"></EdgeI>
+   <EdgeI path="n7:walk_arrive-n14:walk_continue" sendIndex="6"></EdgeI>
+   <EdgeI path="n8:walk_arrive-n14:walk_continue" sendIndex="7"></EdgeI>
+   <EdgeI path="n9:walk_arrive-n14:walk_continue" sendIndex="8"></EdgeI>
+   <EdgeI path="n10:walk_arrive-n14:walk_continue" sendIndex="9"></EdgeI>
+   <EdgeI path="n11:walk_arrive-n14:walk_continue" sendIndex="10"></EdgeI>
+   <EdgeI path="n12:walk_arrive-n14:walk_continue" sendIndex="11"></EdgeI>
+   <EdgeI path="n13:walk_arrive-n14:walk_continue" sendIndex="12"></EdgeI>
+   <EdgeI path="n14:walk_arrive-n14:walk_continue" sendIndex="13"></EdgeI>
+   <EdgeI path="n15:walk_arrive-n14:walk_continue" sendIndex="14"></EdgeI>
+   <EdgeI path="c:finished_walk-n14:walk_finish" />
+   <EdgeI path="n0:walk_arrive-n15:walk_continue" sendIndex="0"></EdgeI>
+   <EdgeI path="n1:walk_arrive-n15:walk_continue" sendIndex="1"></EdgeI>
+   <EdgeI path="n3:walk_arrive-n15:walk_continue" sendIndex="2"></EdgeI>
+   <EdgeI path="n4:walk_arrive-n15:walk_continue" sendIndex="3"></EdgeI>
+   <EdgeI path="n5:walk_arrive-n15:walk_continue" sendIndex="4"></EdgeI>
+   <EdgeI path="n6:walk_arrive-n15:walk_continue" sendIndex="5"></EdgeI>
+   <EdgeI path="n7:walk_arrive-n15:walk_continue" sendIndex="6"></EdgeI>
+   <EdgeI path="n8:walk_arrive-n15:walk_continue" sendIndex="7"></EdgeI>
+   <EdgeI path="n9:walk_arrive-n15:walk_continue" sendIndex="8"></EdgeI>
+   <EdgeI path="n10:walk_arrive-n15:walk_continue" sendIndex="9"></EdgeI>
+   <EdgeI path="n11:walk_arrive-n15:walk_continue" sendIndex="10"></EdgeI>
+   <EdgeI path="n12:walk_arrive-n15:walk_continue" sendIndex="11"></EdgeI>
+   <EdgeI path="n13:walk_arrive-n15:walk_continue" sendIndex="12"></EdgeI>
+   <EdgeI path="n14:walk_arrive-n15:walk_continue" sendIndex="13"></EdgeI>
+   <EdgeI path="n15:walk_arrive-n15:walk_continue" sendIndex="14"></EdgeI>
+   <EdgeI path="c:finished_walk-n15:walk_finish" />
+  </EdgeInstances>
+ </GraphInstance>
+</Graphs>

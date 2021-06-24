@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<Graphs xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" formatMinorVersion="0">
+    <GraphType id="l4_single_device_loopback_once_succeed_recv">
+        <Properties><![CDATA[
+        ]]></Properties>
+        <SharedCode />
+        <MessageTypes>
+            <MessageType id="m">
+                <Message />
+            </MessageType>
+        </MessageTypes>
+        <DeviceTypes>
+            <DeviceType id="dt1">
+                <Properties><![CDATA[]]></Properties>
+                <State><![CDATA[
+                uint32_t sent;
+                ]]></State>
+                <SharedCode><![CDATA[]]></SharedCode>
+                <ReadyToSend><![CDATA[
+                if(deviceState->sent){
+                    *readyToSend=0;
+                }else{
+                    *readyToSend=RTS_FLAG_out;
+                }
+                ]]></ReadyToSend>
+                <OnInit><![CDATA[
+                    
+                ]]></OnInit>
+                <OnHardwareIdle/>
+                <OnDeviceIdle/>
+                <OutputPin name="out" messageTypeId="m">
+                    <OnSend><![CDATA[
+                    deviceState->sent=1;
+                    handler_log(0, "Message sent.");
+                    ]]></OnSend>
+                </OutputPin>
+                <InputPin name="in" messageTypeId="m">
+                    <OnReceive><![CDATA[
+                    handler_log(0, "_HANDLER_EXIT_SUCCESS_9be65737_");
+                    ]]></OnReceive>
+                </InputPin>
+            </DeviceType>
+        </DeviceTypes>
+    </GraphType>
+    <GraphInstance id="gi" graphTypeId="l4_single_device_loopback_once_succeed_recv" P="{}">
+        <DeviceInstances>
+            <DevI id="di1" type="dt1" />
+        </DeviceInstances>
+        <EdgeInstances>
+            <EdgeI path="di1:in-di1:out" />
+        </EdgeInstances>
+    </GraphInstance>
+</Graphs>
