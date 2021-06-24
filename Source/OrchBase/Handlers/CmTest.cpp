@@ -44,6 +44,15 @@ void CmTest::Cm_Echo(Cli::Cl_t cl)
 
 //------------------------------------------------------------------------------
 
+void CmTest::Cm_Sleep(Cli::Cl_t cl)
+// Pass an unsigned integer, we kip for a bit. Pass something else, nothing
+// will happen (probably).
+{
+    OSFixes::sleep(str2uint(cl.Pa_v.begin()->Concatenate()));
+}
+
+//------------------------------------------------------------------------------
+
 void CmTest::Dump(FILE * fp)
 {
 fprintf(fp,"CmTest+++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
@@ -73,6 +82,7 @@ if (pC==0) return 0;                   // Paranoia
 WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   string sCl = (*i).Cl;                // Pull out clause name
   if (strcmp(sCl.c_str(),"echo")==0) {Cm_Echo(*i); continue;}
+  if (strcmp(sCl.c_str(),"slee")==0) {Cm_Sleep(*i); continue;}
   par->Post(25,sCl,"test");           // Unrecognised clause
 }
 return 0;                              // Legitimate command exit

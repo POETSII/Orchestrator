@@ -62,6 +62,11 @@ struct injData_t {
 }                              injData;
 
 OrchConfig *                   pOC;
+
+pthread_t                      kb_thread;
+bool                           exitOnEmpty;   // exit /at = end
+bool                           exitOnStop;    // exit /at = stop
+bool                           appJustStopped;
 };
 
 //==============================================================================

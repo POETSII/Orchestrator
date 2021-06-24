@@ -25,7 +25,7 @@ void * kb_func(void * pPar)
 // the MPI spinner.
 {
 int len = 0;                           // Characters in buffer
-for(;;) {                              // Superloop
+for(;;) {
   if (len==0) Root::Prompt();          // Console prompt
   static const unsigned SIZE = 512;
   char buf[SIZE];
@@ -50,7 +50,8 @@ for(;;) {                              // Superloop
   if (buf[0]==char(0)) break;          // ctrl-d in linux-land
   if (buf[0]==char(4)) break;          // ctrl-d in u$oft-land
 }
-// Tell the user we're leaving immediately.
+// Tell the user now that we're closing down. Note that the exit command will
+// trigger an exit via ProcCmnd (OnIdle), so we don't need to call CmExit here.
 Root::promptOn = false;
 printf("Exiting...\n");
 pthread_exit(NULL);                    // Kill the keyboard thread
@@ -82,9 +83,13 @@ FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RECL)] = &Root::OnMshipAck;
 FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP)] = &Root::OnMshipReq;
 FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::BRKN)] = &Root::OnMshipReq;
 
+// Set up exit flags
+exitOnEmpty = false;
+exitOnStop = false;
+appJustStopped = false;
+
 // Spin off a thread to handle keyboard
 void * args = this;
-pthread_t kb_thread;
 if(pthread_create(&kb_thread,NULL,kb_func,args))
   fprintf(stdout,"Error creating kb_thread\n");
 fflush(stdout);
@@ -209,8 +214,29 @@ unsigned Root::CmExit(Cli * pC)
 // console
 {
 
-                                       // Coming from batch?
-if (!pCmCall->stack.empty()) {
+                                       // Act on staging clauses.
+if (pC != PNULL) WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
+  if (i->Cl=="at")
+  {
+      string p = i->GetP(0);
+      if (p.empty()) Post(47,i->Cl,"exit","1");
+      if (p=="end")
+      {
+          exitOnEmpty = true;
+          Post(67);
+      }
+      else if (p=="stop")
+      {
+          exitOnStop = true;
+          Post(69);
+      }
+      else Post(66,p);
+  }
+  else Post(25,i->Cl,"exit");           // Unrecognised clause
+  return 0;
+}
+                                       // Normal exit coming from batch?
+if (!pCmCall->stack.empty()&&(!exitOnEmpty)) {
   Post(35);
   return 0;
 }
@@ -229,7 +255,6 @@ Post(50,Sderived,int2str(Urank));      // Root is going anyway
 Pkt.Send(pL);
 
 return CommonBase::OnExit(&Pkt);           // Run the base class exit handler
-// return 1;                                 // Return closedown flag
 }
 
 //------------------------------------------------------------------------------
@@ -301,15 +326,38 @@ fflush(fp);
 void Root::OnIdle()
 {
 Cli Cm = pCmCall->Front();             // Anything in the batch queue?
-if (Cm.Empty()) return;                // No - bail                                      // Command comment echo to logserver?
-
-if ((pCmCall->echo)&&(!Cm.Orig.empty())) {
-  Post(22);
-  Post(36,Cm.Orig);
+if (!Cm.Empty())                       // If so, act on it.
+{
+  if ((pCmCall->echo)&&(!Cm.Orig.empty())) {
+    Post(22);
+    Post(36,Cm.Orig);
+  }                                    // EOF marker? - remove from call stack
+  if (Cm.Co[0]=='*') pCmCall->stack.pop_back();
+  else ProcCmnd(&Cm);                  // Handle ordinary batch command
 }
-                                       // EOF marker? - remove from call stack
-if (Cm.Co[0]=='*') pCmCall->stack.pop_back();
-else ProcCmnd(&Cm);                    // Handle ordinary batch command
+
+// Nothing there, check exit conditions.
+if ((Cm.Empty() and exitOnEmpty) or (appJustStopped and exitOnStop))
+{
+    // Post before we go. Delay to ensure this gets there before the exit
+    // message.
+    Post(68);
+    OSFixes::sleep(100);
+
+    // Message ourselves to get out of MPISpinner.
+    PMsg_p exitMsg;
+    exitMsg.Key(Q::EXIT);
+    exitMsg.Src(Urank);
+    exitMsg.Send(Urank);
+
+    // Cancel the keyboard thread (breaks out of fgets).
+    pthread_cancel(kb_thread);
+
+    // Send exit to other processes.
+    CmExit(0);
+}
+appJustStopped = false;
+return;
 }
 
 //------------------------------------------------------------------------------
@@ -389,7 +437,11 @@ unsigned Root::OnMshipAck(PMsg_p * Z)
         if (ackName == "DEFINED") Post(186, appName, "successfully deployed");
         if (ackName == "READY") Post(186, appName, "ready to start");
         if (ackName == "RUNNING") Post(186, appName, "running");
-        if (ackName == "STOPPED") Post(186, appName, "stopped");
+        if (ackName == "STOPPED")
+        {
+            Post(186, appName, "stopped");
+            appJustStopped = true;
+        }
         if (ackName == "RECALLED")
         {
             Post(186, appName, "recalled");

@@ -42,6 +42,10 @@
 063(S) : "%s"
 064(W) : "Application %s is not present in the database"
 065(I) : "Application file %s loaded in %s ms."
+066(E) : "Exit trigger '%s' not defined. Ignoring."
+067(I) : "Exit trigger staged - will exit when the command queue is empty."
+068(I) : "Exit trigger hit - closing down the Orchestrator. The prompt is disabled."
+069(I) : "Exit trigger staged - will exit when the next application is completely stopped."
 
 090(I) : "TEST|MSG received by UserO, payload component %s is %s"
 091(W) : "TEST|MSG received by UserO, addressed to unknown owner (%s)"
