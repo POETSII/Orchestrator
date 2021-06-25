@@ -8,6 +8,9 @@
 #  2: The tests passed, but failed when Valgrind was watching.
 #  3: The tests passed, but Valgrind could not be found.
 
+# Paths for dynamically-linked libraries.
+export LD_LIBRARY_PATH="{{ MPICH_LIB_DIR }}":"$LD_LIBRARY_PATH":./
+
 # Verify all tests pass.
 LOGFILE="tests.log"
 FAILURE=0
