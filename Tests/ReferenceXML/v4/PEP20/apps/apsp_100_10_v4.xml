@@ -20,6 +20,8 @@
             } \
             _do_handler_exit(code); \
         }
+
+        #define quiet_handler_log(...) (void)0
 	
 ]]></SharedCode>
     <MessageTypes>
@@ -61,7 +63,7 @@ uint8_t requestIsNewRound;
           <Properties/>
           <State/>
           <OnReceive><![CDATA[
-            handler_log(3, "requestValid=%d, stateRound=%d, messageRound=%d, messageIsNewRound=%d", deviceState->requestValid, deviceState->round, message->round, message->isNewRound);
+            quiet_handler_log(3, "requestValid=%d, stateRound=%d, messageRound=%d, messageIsNewRound=%d", deviceState->requestValid, deviceState->round, message->round, message->isNewRound);
             assert(!deviceState->requestValid);
             assert(deviceState->responseSeen==0);
             deviceState->requestValid=1;
@@ -78,7 +80,7 @@ uint8_t requestIsNewRound;
           <Properties/>
           <State/>
           <OnReceive><![CDATA[
-            handler_log(3, "responseSeen=%d, degree=%d", deviceState->responseSeen, deviceProperties->degree);
+            quiet_handler_log(3, "responseSeen=%d, degree=%d", deviceState->responseSeen, deviceProperties->degree);
             assert(!deviceState->requestValid);
             assert(deviceState->responseSeen<deviceProperties->degree);
             assert(message->round==deviceState->round);
@@ -153,7 +155,7 @@ uint8_t controlPending;
                 deviceState->dist=0;
                 deviceState->distDirty=1;
             }
-            handler_log(2, "New round=%u", message->round);
+            quiet_handler_log(2, "New round=%u", message->round);
         }
         ]]></OnReceive>
         </InputPin>
@@ -162,19 +164,19 @@ uint8_t controlPending;
 ]]></Properties>
           <State/>
           <OnReceive><![CDATA[
-          handler_log(2, "Got dist=%u, round=%u", message->distance, message->round);
+          quiet_handler_log(2, "Got dist=%u, round=%u", message->distance, message->round);
 		  if(message->round!=deviceState->round){
                 deviceState->round=message->round;
                 deviceState->dist=0xFFFFFFFFul;
                 deviceState->sentCount=0;
                 deviceState->receivedCount=0;
-                handler_log(2, "New round=%u", message->round);
+                quiet_handler_log(2, "New round=%u", message->round);
           }
           auto newDist=message->distance + edgeProperties->w;
           if(newDist < deviceState->dist){
                 deviceState->dist = newDist;
                 deviceState->distDirty = true;
-                handler_log(2, "New dist=%u, ew=%u", deviceState->dist, edgeProperties->w);
+                quiet_handler_log(2, "New dist=%u, ew=%u", deviceState->dist, edgeProperties->w);
           }
           deviceState->receivedCount++;
 		  ]]></OnReceive>
@@ -238,7 +240,7 @@ uint32_t sumSumDist;
           <OnReceive><![CDATA[
         assert(!deviceState->controlPending);
 
-        handler_log(2, "Round %u : sendCount=%u, recvCount=%u, messageRound=%u", deviceState->round, message->sent, message->received, message->round);
+        quiet_handler_log(2, "Round %u : sendCount=%u, recvCount=%u, messageRound=%u", deviceState->round, message->sent, message->received, message->round);
 
         assert(deviceState->round==message->round);
 
@@ -256,8 +258,8 @@ uint32_t sumSumDist;
                 deviceState->roundBegin=1;
 
                 if(deviceState->round==deviceProperties->node_count){
-                    handler_log(1, "refSumSumDist=%d, gotSumSumDist=%d", deviceProperties->refSumSumDist, deviceState->sumSumDist);
-                    handler_log(1, "refSumMaxDist=%d, gotSumMaxDist=%d", deviceProperties->refSumMaxDist, deviceState->sumMaxDist);
+                    quiet_handler_log(1, "refSumSumDist=%d, gotSumSumDist=%d", deviceProperties->refSumSumDist, deviceState->sumSumDist);
+                    quiet_handler_log(1, "refSumMaxDist=%d, gotSumMaxDist=%d", deviceProperties->refSumMaxDist, deviceState->sumMaxDist);
                     deviceState->controlPending=0;
                     auto ok=deviceState->sumSumDist==deviceProperties->refSumSumDist || deviceProperties->refSumSumDist==0;
                     ok = ok && (deviceState->sumMaxDist==deviceProperties->refSumMaxDist || deviceProperties->refSumMaxDist==0);
