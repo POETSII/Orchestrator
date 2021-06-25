@@ -22,6 +22,8 @@
             } \
             _do_handler_exit(code); \
         }
+
+      #define quiet_handler_log(...) (void)0
   
   int32_t abs_diff(int32_t a, int32_t b)
   {
@@ -132,7 +134,7 @@
         <State/>
         <OnReceive><![CDATA[
       if(deviceProperties->x == message->x && deviceProperties->y == message->y){
-        handler_log(2, "modification of (%u,%u) -> boundary=%u, initial=%d", message->x, message->y, message->boundary, message->heat);
+        quiet_handler_log(5, "modification of (%u,%u) -> boundary=%u, initial=%d", message->x, message->y, message->boundary, message->heat);
 
         deviceState->nextVersion+=1;
         deviceState->sent=0;
@@ -407,7 +409,7 @@
         <OnReceive><![CDATA[
       assert(message->index==0); // Root doesn't do any merging
 
-      handler_log(2, "version=%u, count=%u (of %u), sent=%u, received=%u, totalSentHi=%u, totalSentLo=%u",
+      quiet_handler_log(5, "version=%u, count=%u (of %u), sent=%u, received=%u, totalSentHi=%u, totalSentLo=%u",
           message->version, message->count, deviceProperties->totalCells, message->sent, message->received,
           uint32_t(message->totalSent>>32), uint32_t(message->totalSent&0xFFFFFFFFul) 
           );
@@ -415,7 +417,7 @@
       if(message->count==deviceProperties->totalCells && message->sent==message->received){
         deviceState->steps++;
 
-        handler_log(1, "steps = %u, max_steps = %u, totalSentHi=%u, totalSentLo=%u",
+        quiet_handler_log(3, "steps = %u, max_steps = %u, totalSentHi=%u, totalSentLo=%u",
             deviceState->steps, deviceProperties->max_steps,
             uint32_t(message->totalSent>>32), uint32_t(message->totalSent&0xFFFFFFFFul)
         );
