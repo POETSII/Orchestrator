@@ -7,6 +7,7 @@ ORCHROOT="$(realpath $HERE/../..)"
 
 VERBOSE=0
 ABORT_ON_ERROR=0
+RUN_TIMEOUT=60
 
 while [[ $# -gt 0 ]] ; do
     case $1 in
@@ -50,7 +51,7 @@ function test_run_success {
     while [[ $TRIES -lt 5 ]] ; do
 
         F="$1"
-        OUTPUT=$($HERE/run_app_standard_outputs.exp $F )
+        OUTPUT=$($HERE/run_app_standard_outputs.exp $F ${RUN_TIMEOUT} )
         RES=$?
 
         if [[ $RES -ne 0 ]] ; then
@@ -68,6 +69,8 @@ function test_run_success {
         fi
     done
         
+    STATS=$(echo "$OUTPUT" | sed -n '/STATS_fba956f3/p' )
+    echo "# $STATS"
 
     RR=$(realpath --relative-to="$ORCHROOT" "$F")
 
