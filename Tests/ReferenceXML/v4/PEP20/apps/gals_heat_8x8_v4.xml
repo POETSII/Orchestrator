@@ -22,6 +22,9 @@
             _do_handler_exit(code); \
         }
 
+        #define quiet_handler_log(...) \
+          (void)0
+
       //#include <cmath>
 
       float silly_sin(float x)
@@ -62,7 +65,7 @@
         <Properties/>
         <State/>
         <OnReceive><![CDATA[
-			handler_log(3, "m=(t=%d,v=%.4f) tNow=%d, sNow=%d, aNow=%.4f, sNext=%d, aNext=%f", message->t, message->v, deviceState->t, deviceState->cs, deviceState->ns);
+			quiet_handler_log(3, "m=(t=%d,v=%.4f) tNow=%d, sNow=%d, aNow=%.4f, sNext=%d, aNext=%f", message->t, message->v, deviceState->t, deviceState->cs, deviceState->ns);
 
 			if(message->t==deviceState->t){
 				deviceState->cs++;
@@ -144,7 +147,7 @@
         ]]></Properties>
         <State />
         <OnReceive><![CDATA[
-			handler_log(3, "m=(t=%d,v=%.4f) tNow=%d, sNow=%d, aNow=%.4f, sNext=%d, aNext=%f", message->t, message->v, deviceState->t, deviceState->cs, deviceState->ca, deviceState->ns, deviceState->na);
+			quiet_handler_log(3, "m=(t=%d,v=%.4f) tNow=%d, sNow=%d, aNow=%.4f, sNext=%d, aNext=%f", message->t, message->v, deviceState->t, deviceState->cs, deviceState->ca, deviceState->ns, deviceState->na);
 		  if(message->t==deviceState->t){
 				deviceState->ca += edgeProperties->w * message->v;
 				deviceState->cs++;
@@ -169,7 +172,7 @@
       <OutputPin name="out" messageTypeId="update">
         <OnSend><![CDATA[
 
-		  handler_log(3, "tNow=%d, sNow=%d, aNow=%.4f, sNext=%d, aNext=%f", deviceState->t, deviceState->cs, deviceState->ca, deviceState->ns, deviceState->na);
+		  quiet_handler_log(3, "tNow=%d, sNow=%d, aNow=%.4f, sNext=%d, aNext=%f", deviceState->t, deviceState->cs, deviceState->ca, deviceState->ns, deviceState->na);
 
 			assert(deviceState->cs == deviceProperties->nhood);
 
@@ -213,7 +216,7 @@
 		  deviceState->ns=0;
 		  deviceState->na=0;
 
-		  handler_log(3, "value = %f", deviceState->v);
+		  quiet_handler_log(3, "value = %f", deviceState->v);
 		  ]]></OnInit>
       <OnHardwareIdle />
       <OnDeviceIdle />
@@ -231,7 +234,7 @@
         <Properties />
         <State />
         <OnReceive><![CDATA[
-				deviceState->done++;
+        deviceState->done++;
 				if(deviceState->done == deviceProperties->fanin){
 					fake_handler_exit(0);
 				}
@@ -240,7 +243,9 @@
       <ReadyToSend><![CDATA[
 			*readyToSend=0;
 			]]></ReadyToSend>
-      <OnInit />
+      <OnInit><![CDATA[
+      deviceState->done=0;
+      ]]></OnInit>
       <OnHardwareIdle />
       <OnDeviceIdle />
     </DeviceType>
@@ -308,7 +313,7 @@
    <DevI id="v_7_4" type="dirichlet_variable" P="{0,1.0,1,0.1879882812,1} "></DevI>
    <DevI id="v_7_5" type="dirichlet_variable" P="{0,1.0,1,0.205078125,1} "></DevI>
    <DevI id="v_7_6" type="dirichlet_variable" P="{0,1.0,1,0.2221679688,1} "></DevI>
-   <DevI id="finished" type="exit_node" />
+   <DevI id="finished" type="exit_node" P="{60}" />
   </DeviceInstances>
   <EdgeInstances>
    <EdgeI path="v_0_1:in-c_1_1:out" />
