@@ -34,3 +34,8 @@ in order to use the Orchestrator.
 
  - Tinsel 0.7+: For running applications on POETS hardware
    (https://github.com/poetsii/tinsel).
+
+## For Testing
+
+To test the reference XML, you'll need `expect`
+(https://core.tcl-lang.org/expect/index).
