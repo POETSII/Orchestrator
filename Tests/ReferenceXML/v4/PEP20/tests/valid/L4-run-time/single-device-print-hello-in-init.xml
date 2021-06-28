@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<Graphs xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" formatMinorVersion="0">
+    <GraphType id="l4_single_device_print_hello">
+        <Properties><![CDATA[
+        ]]></Properties>
+        <SharedCode />
+        <MessageTypes>
+        </MessageTypes>
+        <DeviceTypes>
+            <DeviceType id="dt1">
+                <Properties><![CDATA[]]></Properties>
+                <State><![CDATA[]]></State>
+                <SharedCode><![CDATA[]]></SharedCode>
+                <ReadyToSend><![CDATA[
+                *readyToSend=0;
+                ]]></ReadyToSend>
+                <OnInit><![CDATA[
+                handler_log(0, "_HANDLER_EXIT_SUCCESS_9be65737_");
+                ]]></OnInit>
+                <OnHardwareIdle/>
+                <OnDeviceIdle/>
+            </DeviceType>
+        </DeviceTypes>
+    </GraphType>
+    <GraphInstance id="gi" graphTypeId="l4_single_device_print_hello" P="{}">
+        <DeviceInstances>
+            <DevI id="di1" type="dt1" />
+        </DeviceInstances>
+        <EdgeInstances>
+        </EdgeInstances>
+    </GraphInstance>
+</Graphs>

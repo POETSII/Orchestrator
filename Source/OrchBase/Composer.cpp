@@ -1897,12 +1897,14 @@ void Composer::writeGlobalPropsI(GraphI_t* graphI, std::ofstream& props_cpp)
     if(graphI->pT->pPropsD)
     {
         props_cpp << "const global_props_t GraphProperties ";
-        props_cpp << "OS_ATTRIBUTE_UNUSED= {";
+        props_cpp << "OS_ATTRIBUTE_UNUSED= ";
         if(graphI->pPropsI)
         {
             props_cpp << graphI->pPropsI->C_src();
+        }else{
+            props_cpp << "{}";
         }
-        props_cpp << "};\n";
+        props_cpp << ";\n";
         props_cpp << "OS_PRAGMA_UNUSED(GraphProperties)\n";
     }
 }
@@ -3234,12 +3236,12 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
             devII << "&Thread_" << threadAddr << "_DeviceProperties[";
             devII << devIdx << "],";
 
-            devPIStrs[devIdx] = "{";
+            // Default is {}
             if(devI->pPropsI)
             {
-                devPIStrs[devIdx] += devI->pPropsI->C_src();
+                devPIStrs[devIdx] = devI->pPropsI->C_src() + ",";
             }
-            devPIStrs[devIdx] += "},";
+            
         }
         else
         {
@@ -3252,12 +3254,10 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
             devII << "&Thread_" << threadAddr << "_DeviceState[";
             devII << devIdx << "]},";
 
-            devSIStrs[devIdx] = "{";
             if(devI->pStateI)
             {
-                devSIStrs[devIdx] += devI->pStateI->C_src();
+                devSIStrs[devIdx] = devI->pStateI->C_src()+",";
             }
-            devSIStrs[devIdx] += "},";
         }
         else
         {
@@ -3488,12 +3488,10 @@ void Composer::writeDevIInputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
                 inEdgeInit << "&" << thrDevName << "_Pin_" << pinI->pT->Name();
                 inEdgeInit << "_InEdgeProps[" << edgeI->Idx << "],";
 
-                inEdgePropsIStrs[edgeI->Idx] = "{";
                 if(edgeI->pPropsI)
                 {
-                    inEdgePropsIStrs[edgeI->Idx] += edgeI->pPropsI->C_src();
+                    inEdgePropsIStrs[edgeI->Idx] = edgeI->pPropsI->C_src() + ",";
                 }
-                inEdgePropsIStrs[edgeI->Idx] += "},";
             }
             else
             {
@@ -3505,12 +3503,10 @@ void Composer::writeDevIInputPinEdgeDefs(GraphI_t* graphI, PinI_t* pinI,
                 inEdgeInit << "&" << thrDevName << "_Pin_" << pinI->pT->Name();
                 inEdgeInit << "_InEdgeStates[" << edgeI->Idx << "]},";
 
-                inEdgeStatesIStrs[edgeI->Idx] = "{";
                 if(edgeI->pStateI)
                 {
-                    inEdgeStatesIStrs[edgeI->Idx] += edgeI->pStateI->C_src();
+                    inEdgeStatesIStrs[edgeI->Idx] = edgeI->pStateI->C_src() + ",";
                 }
-                inEdgeStatesIStrs[edgeI->Idx] += "},";
             }
             else
             {
