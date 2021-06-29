@@ -200,13 +200,10 @@ int CmDepl::DeployGraph(GraphI_t* gi)
             /* Skip this core if either nothing is placed on it, or if the
              * devices placed on it are owned by a different graph
              * instance. Recall that all devices within a core service the same
-             * graph instance.
-             *
-             * Note the deliberate use of indexing instead of `at` for the
-             * first predicate. */
+             * graph instance. */
             if (par->pPlacer->threadToDevices[thread].empty() or
-                par->pPlacer->giToCores.at(gi).find(core) ==
-                par->pPlacer->giToCores.at(gi).end())
+                par->pPlacer->giToCores[gi].find(core) ==
+                par->pPlacer->giToCores[gi].end())
             {
                 continue;
             }
@@ -258,8 +255,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
             for (threadIt = core->P_threadm.begin();
                  threadIt != core->P_threadm.end(); threadIt++)
             {
-                if (!(par->pPlacer->threadToDevices
-                      .at(threadIt->second).empty()))
+                if (!(par->pPlacer->threadToDevices[threadIt->second].empty()))
                     payload->threadsExpected.push_back(
                         threadIt->second->get_hardware_address()->as_uint());
             }
