@@ -43,6 +43,13 @@
 #endif
 
 /* =============================================================================
+ * Permit alternative operator spellings for Borland
+ * ===========================================================================*/
+#ifdef __BORLANDC__
+#include <iso646.h>
+#endif
+
+/* =============================================================================
  * Pointer/Address formatting depends on C++ & Compiler version.
  *
  * C++98 doesn't necessarily know about long-long and long is not 64-bits on all
