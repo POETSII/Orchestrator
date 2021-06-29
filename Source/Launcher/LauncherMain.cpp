@@ -611,7 +611,7 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
 
     /* Defines help string, printed when user calls with `-h`. */
     std::string helpDoc = dformat(
-"Usage: %s [/b=FILE] [/d] [/f=FILE] [/h] [/g=PROCESS] [/n] [/o=HOST] [/p=PATH] [/v=PROCESS]\n"
+"Usage: %s [/b=FILE] [/d] [/f=FILE] [/h] [/g=PROCESS] [/n] [/o=HOST] [/p=PATH] [/q] [/v=PROCESS]\n"
 "\n"
 "This is the Orchestrator launcher. It starts the following Orchestrator processes:\n"
 "\n"
