@@ -300,8 +300,10 @@ void* CostCache::inner_floyd_warshall(void* arg)
     while (middle != middleEnd && middleIt.next_mailbox());
 
     /* How we exit depends on whether or not this was called from a thread. */
-    if (SERIAL_FLOYD_WARSHALL) return PNULL;
-    else pthread_exit(PNULL);
+#if SERIAL_FLOYD_WARSHALL == false
+    pthread_exit(PNULL);
+#endif
+    return PNULL;
 }
 
 /* Defines a combined graph from the engine's board graph, and each board's
