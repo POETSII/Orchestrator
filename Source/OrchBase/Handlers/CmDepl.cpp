@@ -336,6 +336,14 @@ int CmDepl::DeployGraph(GraphI_t* gi)
         fprintf(par->fd, "Binaries copied successfully.\n");
     }
 
+    /* If we get to here and no Motherships are requested for use, we've got a
+     * problem. Just a sanity check... */
+    if (mothershipPayloads.empty())
+    {
+        par->Post(191, graphName);
+        return 0;
+    }
+
     /* Send SPEC, DIST, and SUPD messages to each Mothership for this
      * graph instance. Order does not matter. */
 
