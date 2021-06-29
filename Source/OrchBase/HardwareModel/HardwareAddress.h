@@ -25,7 +25,6 @@
 #include "DumpUtils.h"
 #include "HardwareAddressFormat.h"
 #include "InvalidAddressException.h"
-#include "P_addr.h"
 #include <cmath>  /* For validating address components. */
 #include <stdint.h>
 
@@ -81,8 +80,6 @@ public:
     /* Access */
     HardwareAddressInt get_hardware_address();
     inline HardwareAddressInt as_uint(){return get_hardware_address();}
-    void populate_a_software_address(P_addr* target, bool resetFirst = true);
-    void populate_from_software_address(P_addr* source);
     void Dump(FILE* = stdout);
 
     /* Defines whether or not the hardware address is fully defined, ignoring

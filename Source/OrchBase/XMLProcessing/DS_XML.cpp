@@ -39,7 +39,7 @@ DS_map["GraphType"]        = cGraphType;
 DS_map["InputPin"]         = cInputPin;
 DS_map["MessageType"]      = cMessageType;
 DS_map["MessageTypes"]     = cMessageTypes;
-DS_map["MetaData"]         = cMetaData;
+DS_map["Metadata"]         = cMetaData;
 DS_map["OnCTL"]            = cOnCTL;
 DS_map["OnDeviceIdle"]     = cOnDeviceIdle;
 DS_map["DevI"]             = cDevI;
@@ -387,7 +387,8 @@ MsgT_t * DS_XML::_MsgT_t(GraphT_t * pGT,xnode * pn)
 string mname = pn->FindAttr("id");
 MsgT_t * pM = new MsgT_t(pGT,mname);
 pM->Def(pn->lin);
-pM->pPropsD = _CFrag(pn);
+xnode *cc=pn->FindChild("Message");
+pM->pPropsD = _CFrag(cc);
 return pM;
 }
 
@@ -410,6 +411,13 @@ WALKVECTOR(xnode *,pn->vnode,i) {
 PinT_t * DS_XML::_PinT_t(DevT_t * pD,xnode * pn)
 // XML::PinType
 {
+string indexed = pn->FindAttr("indexed");
+if(!indexed.empty()){
+  if(indexed!="false" && indexed!="0"){
+    par->Post(933,__FILE__,int2str(__LINE__));
+  }
+}
+
 string pname = pn->FindAttr("name");
 unsigned line = pn->lin;               // Go get file location
 PinT_t * pP;

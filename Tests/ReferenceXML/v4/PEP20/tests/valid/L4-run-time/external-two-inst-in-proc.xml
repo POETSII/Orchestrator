@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<Graphs xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" formatMinorVersion="0">
+    <GraphType id="external_two_inst_in_proc">
+        <Metadata key="uri:imperial.ac.uk/poets/external/in_proc_external_source" value="external-two-inst-in-proc.external.cpp" />
+        <Properties/>
+        <SharedCode />
+        <MessageTypes>
+            <MessageType id="ping4">
+                <Message><![CDATA[
+                uint32_t value;
+                ]]></Message>
+            </MessageType>
+        </MessageTypes>
+        <DeviceTypes>
+            <ExternalType id="ping">
+                <Properties />
+                <InputPin name="in" messageTypeId="ping4" />
+                <OutputPin name="out" messageTypeId="ping4" />
+            </ExternalType>
+            <DeviceType id="driver">
+                <Properties />
+                <State><![CDATA[
+                uint32_t sent;
+                uint32_t received;
+                uint32_t sum;
+                ]]></State>
+                <SharedCode />
+                <InputPin name="in" messageTypeId="ping4">
+                    <Properties />
+                    <State />
+                    <OnReceive><![CDATA[
+                    deviceState->received++;
+                    deviceState->sum+=message->value;
+                    assert(deviceState->sum == (deviceState->received+1)*deviceState->received/2);
+                    if(deviceState->received==100){
+                        handler_log(0,"_HANDLER_EXIT_SUCCESS_9be65737_");
+                    }
+                    ]]></OnReceive>
+                </InputPin>
+                <OutputPin name="out" messageTypeId="ping4">
+                    <OnSend><![CDATA[
+                    deviceState->sent++;
+                    message->value=deviceState->sent;
+                    handler_log(2, "Sending %d", message->value);
+                    ]]></OnSend>
+                </OutputPin>
+                <ReadyToSend><![CDATA[
+                *readyToSend=deviceState->sent==deviceState->received ? RTS_FLAG_out : 0;
+                ]]></ReadyToSend>
+                <OnInit />
+                <OnHardwareIdle />
+                <OnDeviceIdle />
+            </DeviceType>
+        </DeviceTypes>
+    </GraphType>
+    <GraphInstance id="external_two_inst_in_proc_inst" graphTypeId="external_two_inst_in_proc">
+        <DeviceInstances>
+            <ExtI id="ext0" type="ping" />
+            <ExtI id="ext1" type="ping" />
+            <DevI id="int0" type="driver" />
+        </DeviceInstances>
+        <EdgeInstances>
+            <EdgeI path="ext0:in-int0:out" />
+            <EdgeI path="ext1:in-ext0:out" />
+            <EdgeI path="int0:in-ext1:out" />
+        </EdgeInstances>
+    </GraphInstance>
+</Graphs>

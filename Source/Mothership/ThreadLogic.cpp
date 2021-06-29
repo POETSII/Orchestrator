@@ -61,10 +61,12 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
                 mothership->handle_msg_app_dist(&*messageIt);
             else if (key == PMsg_p::KEY(Q::APP, Q::SUPD))
                 mothership->handle_msg_app_supd(&*messageIt);
-            else if (key == PMsg_p::KEY(Q::CMND, Q::RECL))
-                mothership->handle_msg_cmnd_recl(&*messageIt);
+            else if (key == PMsg_p::KEY(Q::CMND, Q::BRKN))
+                mothership->handle_msg_cmnd_brkn(&*messageIt);
             else if (key == PMsg_p::KEY(Q::CMND, Q::INIT))
                 mothership->handle_msg_cmnd_init(&*messageIt);
+            else if (key == PMsg_p::KEY(Q::CMND, Q::RECL))
+                mothership->handle_msg_cmnd_recl(&*messageIt);
             else if (key == PMsg_p::KEY(Q::CMND, Q::RUN))
                 mothership->handle_msg_cmnd_run(&*messageIt);
             else if (key == PMsg_p::KEY(Q::CMND, Q::STOP))

@@ -1,0 +1,121 @@
+#!/usr/bin/env expect
+
+# https://stackoverflow.com/a/23287132
+variable SCRIPT_PATH [file normalize [info script]]
+set HERE [file dirname $SCRIPT_PATH]
+
+set script [lindex $argv 0]
+send_user "Relative xml path = $script\n"
+
+set script [file normalize $script]
+send_user "Absolute xml path = $script\n"
+
+set timeout_length 15
+if {$argc>1} {
+    set timeout_length [lindex $argv 1]
+}
+set timeout $timeout_length
+
+set load_time -1
+set place_time -1
+set compile_time -1
+set run_time -1
+
+# Used to avoid HostLink startup time skewing results
+set pre_run_pause_time 15
+
+proc end_program {msg code} {
+    variable load_time
+    variable place_time
+    variable compile_time
+    variable run_time
+
+    set load_time [expr $load_time / 1000000.0 ]
+    set place_time [expr $place_time / 1000000.0 ]
+    set compile_time [expr $compile_time / 1000000.0 ]
+    set run_time [expr $run_time / 1000000.0 ]
+
+    send_user "\nSTATS_fba956f3: load:$load_time, place:$place_time, compile:$compile_time, run:$run_time\n\n"
+    send_user $msg
+    exit $code
+}
+
+# Capture stderr too
+spawn sh -c "$HERE/../../orchestrate.sh 2>&1"
+
+expect {
+    default { end_program "Orchestrator didn't make it to prompt.\n" 1 }   
+    "Can't connect to  " { end_program "RETRY:HostLink is locked or no hardware.\n" 1 }
+    "POETS>"
+}
+
+set prompt_start_time [clock microseconds]
+
+set start [clock microseconds]
+send "load /app = \"$script\"\n"
+
+expect {
+    default { end_program "Timeout or unexpected outcome while loading app.\n"  1; }   
+    "unintelligible" { end_program "Command was invalid."  1; }
+    "failed validation with" { end_program "The XML file could not be validated.\n" 1; }
+    -re ".*Application file .* loaded in .* ms."
+}
+set load_time [expr [clock microseconds] - $start]
+
+
+set start [clock microseconds]
+send "tlink /app = *\n"
+send "place /tfill = *\n"
+
+expect {
+    default { end_program "Timeout or unexpected outcome while linking/placing app.\n"  1; }   
+    "unintelligible" { end_program "Command was invalid." 1; }
+    -re "Graph instance .+ placed successfully."
+}
+set place_time [expr [clock microseconds] - $start]
+
+
+set start [clock microseconds]
+send "compose /app = *\n\n"
+
+expect {
+    default { end_program "Timeout or unexpected outcome while composing app.\n" 1; }   
+    "unintelligible" { end_program "Command was invalid."  1; }
+    -re "Graph instance .+ composed successfully."
+}
+set compile_time [expr [clock microseconds] - $start]
+
+send_user "Graph appears to have loaded and compiled!"
+
+set elapsed_secs [expr ( [clock microseconds] - $prompt_start_time ) / 1000000.0]
+set dt_secs [expr ceil( $pre_run_pause_time - $elapsed_secs )]
+if { $dt_secs > 0} {
+    send_user "\n\nWaiting for $dt_secs seconds to let HostLink init\n"
+    after [expr int($dt_secs * 1000) ]
+}
+
+set timeout_length 15
+set start [clock microseconds]
+send "deploy /app = *\n\n"
+send "initialise /app = *\n\n"
+send "run /app = *\n\n"
+
+set timeout 
+expect {
+    default {
+        set run_time [expr [clock microseconds] - $start]
+        end_program "Timeout while running app, timeout=$timeout.\n"  1;
+    }   
+    "unintelligible" { end_program "Command was invalid." 1; }
+    -re "_HANDLER_EXIT_FAIL_9be65737_" {
+        set run_time [expr [clock microseconds] - $start]
+        end_program "Received explicit failure from devices." 1;
+    }
+    -re "_HANDLER_EXIT_SUCCESS_9be65737_" {
+        set run_time [expr [clock microseconds] - $start]
+        end_program "Received success from devices." 0;
+    }
+}
+
+exit 0;
+

@@ -17,6 +17,7 @@ public:
 virtual ~     CmTest();
 
 void          Cm_Echo(Cli::Cl_t);
+void          Cm_Sleep(Cli::Cl_t);
 
 void          Dump(FILE * = stdout);
 void          Show(FILE * = stdout);

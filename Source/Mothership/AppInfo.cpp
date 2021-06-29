@@ -96,7 +96,8 @@ bool AppInfo::should_we_recall()
     if (state == DEFINED or
         state == READY or
         state == RUNNING or
-        state == STOPPED)
+        state == STOPPED or
+        state == BROKEN)
     {
         return is_recl_staged();
     }
