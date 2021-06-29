@@ -2,6 +2,9 @@
  * information). */
 
 #include "CostCache.h"
+#if SERIAL_FLOYD_WARSHALL == false
+#include "pthread.h"
+#endif
 
 CostCache::CostCache(P_engine* engine):engine(engine){build_cache();}
 
@@ -88,30 +91,28 @@ void CostCache::build_cache()
     std::vector<std::pair<P_mailbox*, P_mailbox*> > threadRanges;
     P_mailbox* first;
     P_mailbox* last;
-    if (SERIAL_FLOYD_WARSHALL)
+
+#if SERIAL_FLOYD_WARSHALL == true
+    /* Look how easy pdigraph is to use! :p */
+    first = engine->G.index_n.begin()->second.data->
+        G.index_n.begin()->second.data;
+    last = engine->G.index_n.rbegin()->second.data->
+        G.index_n.rbegin()->second.data;
+    threadRanges.push_back(std::make_pair(first, last));
+#else
+    WALKPDIGRAPHNODES(AddressComponent, P_board*,
+                      unsigned, P_link*,
+                      unsigned, P_port*, engine->G, boardNode)
     {
-        /* Look how easy pdigraph is to use! :p */
-        first = engine->G.index_n.begin()->second.data->
-            G.index_n.begin()->second.data;
-        last = engine->G.index_n.rbegin()->second.data->
-            G.index_n.rbegin()->second.data;
+        first = boardNode->second.data->G.index_n.begin()->second.data;
+        last = boardNode->second.data->G.index_n.rbegin()->second.data;
         threadRanges.push_back(std::make_pair(first, last));
-    }
-    else
-    {
-        WALKPDIGRAPHNODES(AddressComponent, P_board*,
-                          unsigned, P_link*,
-                          unsigned, P_port*, engine->G, boardNode)
-        {
-            first = boardNode->second.data->G.index_n.begin()->second.data;
-            last = boardNode->second.data->G.index_n.rbegin()->second.data;
-            threadRanges.push_back(std::make_pair(first, last));
-        }
     }
 
     /* We'll need an object to hold all of the pthread_ts we're going to start
      * creating... as well as their arguments. */
     std::vector<pthread_t> threads(threadRanges.size(), 0);
+#endif
 
     /* O(node^3) loop of death. */
     std::vector<FWThreadArg*> threadArgs;
@@ -122,7 +123,7 @@ void CostCache::build_cache()
     {
         /* Here's the parallel O(node^2) loop - spawn one thread to deal with
          * all mailboxes per board. */
-        for (unsigned threadIndex = 0; threadIndex < threads.size();
+        for (unsigned threadIndex = 0; threadIndex < threadRanges.size();
              threadIndex++)
         {
             /* Kick off a thread. */
@@ -134,48 +135,42 @@ void CostCache::build_cache()
             threadArgs.back()->costs = &costs;
             threadArgs.back()->pathNext = &pathNext;
 
+#if SERIAL_FLOYD_WARSHALL == true
             /* If we're in serial, just call the method. */
-            if (SERIAL_FLOYD_WARSHALL)
-            {
-                inner_floyd_warshall((void*)threadArgs.back());
-            }
+            inner_floyd_warshall((void*)threadArgs.back());
+        }
 
-            /* Parallel land */
-            else
-            {
-                /* Create thread. */
-                int rc = pthread_create(&(threads[threadIndex]), PNULL,
-                                        inner_floyd_warshall,
-                                        (void*)threadArgs.back());
+#else
+            /* Parallel land! Create thread. */
+            int rc = pthread_create(&(threads[threadIndex]), PNULL,
+                                    inner_floyd_warshall,
+                                    (void*)threadArgs.back());
 
-                /* Check that the thread could be created. If not, join to all
-                 * of the successfully-created threads, and error out. */
-                if (rc)
+            /* Check that the thread could be created. If not, join to all of
+             * the successfully-created threads, and error out. */
+            if (rc)
+            {
+                for (unsigned errThreadIndex = 0;
+                     errThreadIndex < threadIndex; errThreadIndex++)
                 {
-                    for (unsigned errThreadIndex = 0;
-                         errThreadIndex < threadIndex; errThreadIndex++)
-                    {
-                        pthread_join(threads[errThreadIndex], PNULL);
-                    }
-
-                    /* Cleanup heaped threadArgs elements. */
-                    for (argIt = threadArgs.begin(); argIt != threadArgs.end();
-                         argIt++) delete *argIt;
-
-                    throw PthreadException(uint2str(rc));
+                    pthread_join(threads[errThreadIndex], PNULL);
                 }
+
+                /* Cleanup heaped threadArgs elements. */
+                for (argIt = threadArgs.begin(); argIt != threadArgs.end();
+                     argIt++) delete *argIt;
+
+                throw PthreadException(uint2str(rc));
             }
         }
 
         /* Thread barrier. */
-        if (!SERIAL_FLOYD_WARSHALL)
+        for (std::vector<pthread_t>::iterator threadIt = threads.begin();
+             threadIt != threads.end(); threadIt++)
         {
-            for (std::vector<pthread_t>::iterator threadIt = threads.begin();
-                 threadIt != threads.end(); threadIt++)
-            {
-                pthread_join(*threadIt, PNULL);
-            }
+            pthread_join(*threadIt, PNULL);
         }
+#endif
 
         /* Cleanup */
         for (argIt = threadArgs.begin(); argIt != threadArgs.end();
