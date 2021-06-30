@@ -617,6 +617,12 @@ inline bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
             notIdle = true;       // return 1 as "something" has happened
             break;
         }
+        
+#ifndef NOREQUESTIDLE_SOFTSWITCH
+        // Softswitch respects requestIdle in the RTS handler.
+        if(device->requestIdle)
+        {
+#endif   
 
         if (device->devType->OnIdle_Handler(ThreadContext->properties, device))
         {
@@ -625,6 +631,11 @@ inline bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
             softswitch_onRTS(ThreadContext, device);  // Call RTS for device
         }
         ThreadContext->idleHandlerCount++;       // Increment Idle Handler count
+
+#ifndef NOREQUESTIDLE_SOFTSWITCH
+        }
+        device->requestIdle = false;
+#endif   
 
         if(idleIdx < maxIdx) ++idleIdx;     // Increment the index,
         else idleIdx = 0;                   // or reset it to wrap.

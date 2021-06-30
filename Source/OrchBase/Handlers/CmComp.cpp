@@ -320,6 +320,29 @@ void CmComp::Cm_SoftswitchBufferMode(Cli::Cl_t clause, bool mode = false)
 
 //------------------------------------------------------------------------------
 
+void CmComp::Cm_SoftswitchReqIdleMode(Cli::Cl_t clause, bool mode = true)
+{
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "requestIdle");
+        return;
+    }
+
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+    
+    /* Set the softswitch requestIdle mode for each app in sequence. */
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        par->pComposer->setReqIdleMode(*graphIt, mode);
+    }
+}
+
+//------------------------------------------------------------------------------
+
 void CmComp::Cm_SoftswitchInstrMode(Cli::Cl_t clause, bool mode = false)
 {
     /* Shout if no hardware model is loaded (i.e. there is no placer) */
@@ -527,6 +550,8 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="logl" ) { Cm_SoftswitchLogLevel(*i);           continue; }
   if (sCl=="inst" ) { Cm_SoftswitchInstrMode(*i, true);    continue; }
   if (sCl=="noin" ) { Cm_SoftswitchInstrMode(*i, false);   continue; }
+  if (sCl=="reqi" ) { Cm_SoftswitchReqIdleMode(*i, true);  continue; }
+  if (sCl=="nore" ) { Cm_SoftswitchReqIdleMode(*i, false);  continue; }
   if (sCl=="rtsb" ) { Cm_SoftswitchSetRTSBuffSize(*i);     continue; }
   if (sCl=="args" ) { Cm_SoftswitchAddFlags(*i);           continue; }
   
