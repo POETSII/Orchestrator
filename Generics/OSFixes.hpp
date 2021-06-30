@@ -1,5 +1,6 @@
 #ifndef __OSFIXES__H
 #define __OSFIXES__H
+#include <stdio.h>
 #include <string>
 #include <string.h>
 
