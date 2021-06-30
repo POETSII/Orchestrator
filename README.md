@@ -38,4 +38,4 @@ in order to use the Orchestrator.
 ## For Testing
 
 To test the reference XML, you'll need `expect`
-(https://core.tcl-lang.org/expect/index).
+(https://core.tcl-lang.org/expect/index). Also see the `orchestrator-ci` repo.
