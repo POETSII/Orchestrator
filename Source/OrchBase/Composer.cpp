@@ -16,6 +16,7 @@ const string COREMAKECLEAN = "make clean 2>&1 >> clean_errs.txt";
 const unsigned int MAX_RTSBUFFSIZE = 4096;
 const unsigned int MIN_RTSBUFFSIZE = 10;
 
+typedef std::vector<unsigned> SVU;    // Typedef to appease Borland with WALKMAP
 
 
 /******************************************************************************
@@ -3386,7 +3387,7 @@ void Composer::writeDevIInputPinDefs(GraphI_t* graphI, DevT_t* devT,
         inPinTIStrs.push_back(inPinInit.str());
     }
 
-    WALKMAP(PinI_t*, std::vector<unsigned>, iPinIArcKMap, pinIItr)
+    WALKMAP(PinI_t*, SVU, iPinIArcKMap, pinIItr)
     {
         unsigned pinIdx;
         unsigned edgeCnt = pinIItr->first->Key_v.size();
@@ -3645,7 +3646,7 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
     }
 
 
-    WALKMAP(PinI_t*, std::vector<unsigned>, oPinIArcKMap, pinIItr)
+    WALKMAP(PinI_t*, SVU, oPinIArcKMap, pinIItr)
     {
         unsigned pinIdx;
         unsigned edgeCnt = pinIItr->first->Key_v.size();
