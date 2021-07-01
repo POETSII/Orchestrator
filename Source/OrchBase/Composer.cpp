@@ -55,6 +55,7 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
     softswitchLogHandler = trivial;     // Default to the trivial log handler 
     softswitchLogLevel = 2;             // Default to a log level of 2
     softswitchLoopMode = standard;      // Default to the standard loop mode
+    softswitchRequestIdle = true;       // Default to respecting requestIdle
     
     compilationFlags = "";
     provenanceCache = "";
@@ -2116,8 +2117,8 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
     handlers_cpp << dTypStrs->handlerPreamble;
     handlers_cpp << dTypStrs->handlerPreambleCS;
     
-    handlers_cpp << "bool* requestIdle = &(deviceInstance->requestIdle);\n";
-    handlers_cpp << "OS_PRAGMA_UNUSED(requestIdle)\n";
+    handlers_cpp << "    bool* requestIdle = &deviceInstance->requestIdle;\n";
+    handlers_cpp << "    OS_PRAGMA_UNUSED(requestIdle)\n";
     
     if (devT->pOnRTS != 0) handlers_cpp << devT->pOnRTS->C_src() << "\n";
     // we assume here the return value is intended to be an RTS bitmap.

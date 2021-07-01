@@ -551,7 +551,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="inst" ) { Cm_SoftswitchInstrMode(*i, true);    continue; }
   if (sCl=="noin" ) { Cm_SoftswitchInstrMode(*i, false);   continue; }
   if (sCl=="reqi" ) { Cm_SoftswitchReqIdleMode(*i, true);  continue; }
-  if (sCl=="nore" ) { Cm_SoftswitchReqIdleMode(*i, false);  continue; }
+  if (sCl=="nore" ) { Cm_SoftswitchReqIdleMode(*i, false); continue; }
   if (sCl=="rtsb" ) { Cm_SoftswitchSetRTSBuffSize(*i);     continue; }
   if (sCl=="args" ) { Cm_SoftswitchAddFlags(*i);           continue; }
   
