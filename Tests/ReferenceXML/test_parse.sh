@@ -37,7 +37,7 @@ function TODO_parse {
     RR=$(realpath --relative-to="$ORCHROOT" "$F")
     echo "not ok $TN - # TODO Parse $RR, $2"
     TN=$((TN+1))
-    return 1
+    return 0
 }
 
 function test_parse_success {

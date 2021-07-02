@@ -37,7 +37,7 @@ function TODO_compile {
     RR=$(realpath --relative-to="$ORCHROOT" "$F")
     echo "not ok $TN - # TODO Compile $RR, $2"
     TN=$((TN+1))
-    return 1
+    return 0
 }
 
 function test_compile_success {
