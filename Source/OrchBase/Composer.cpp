@@ -1668,6 +1668,7 @@ int Composer::generateSupervisor(ComposerGraphI_t* builderGraphI)
     // Include the generated global props and messages for all supervisors. 
     supervisor_h << "#include \"GlobalProperties.h\"\n";
     supervisor_h << "#include \"MessageFormats.h\"\n\n";
+    supervisor_h << "#include \"DeviceStructs.h\"\n\n";
     
     if(graphI->pT->pSup)    // If we have a non-default Supervisor, build it.
     {
