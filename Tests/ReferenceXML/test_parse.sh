@@ -5,8 +5,6 @@ echo "TAP version 13"
 HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 ORCHROOT="$(realpath $HERE/../..)"
 
-echo $HERE
-echo $ORCHROOT
 VERBOSE=0
 ABORT_ON_ERROR=0
 
