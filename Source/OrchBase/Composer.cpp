@@ -2004,7 +2004,7 @@ void Composer::writeMessageTypes(GraphI_t* graphI, std::ofstream& pkt_h)
 
     pkt_h << "#include <cstdint>\n";
     
-    //pkt_h <<  "#pragma pack(push,1)\n";
+    pkt_h <<  "#pragma pack(push,1)\n";
     
     WALKVECTOR(MsgT_t*,graphT->MsgT_v,msg)
     {
@@ -2014,7 +2014,7 @@ void Composer::writeMessageTypes(GraphI_t* graphI, std::ofstream& pkt_h)
         pkt_h << "\n} pkt_" << (*msg)->Name() << "_pyld_t;\n\n";
     }
     
-    //pkt_h <<  "#pragma pack(pop)\n";
+    pkt_h <<  "#pragma pack(pop)\n";
     
     pkt_h << "#endif /*_MESSAGETYPES_H_*/\n\n";
 }
