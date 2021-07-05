@@ -12,7 +12,8 @@
 # substitute in variable names to create the executable. There should be no
 # double-curly braces in the output version of this file.
 #
-# Call with the -h argument for usage.
+# Call with the -h argument for usage. Also call with -no-rlwrap to disable
+# rlwrap (useful for CI).
 
 # Setup for building applications
 export RISCV_PATH="{{ RISCV_DIR }}"
@@ -49,6 +50,7 @@ export LD_LIBRARY_PATH="$CR_LIB_DIR":"$MPI_LIB_DIR":"$LD_LIBRARY_PATH":./
 # Whereas GNU options are of the form:
 #   -d
 #   -f FILE
+TRY_RLWRAP=1
 GNU_HELP=0
 THIS_ARG_MODE=""
 while [ $# -gt 0 ]; do
@@ -103,6 +105,10 @@ while [ $# -gt 0 ]; do
         ARGS="$ARGS /h"
         [ "$THIS_ARG_MODE" == "GNU" ] && GNU_HELP=1
 
+    # Respect rlwrap preference.
+    elif [ "$SWITCH" == "/no-rlwrap" ] || [ "$SWITCH" == "/-no-rlwrap" ]; then
+        TRY_RLWRAP=0
+
     # Otherwise, concatenate the command normally.
     else
         if [ -z "$VALUE" ]; then
@@ -115,7 +121,7 @@ done
 
 # Run the launcher from the build directory.
 pushd "{{ EXECUTABLE_DIR }}" > /dev/null
-if ! command -v rlwrap &> /dev/null; then
+if [ ! command -v rlwrap &> /dev/null ] || [ "$TRY_RLWRAP" -eq 0 ]; then
     ./orchestrate /p = "\"$INTERNAL_LIB_PATH\"" $ARGS
 else
     rlwrap --remember --history-filename ../.orch_history \
