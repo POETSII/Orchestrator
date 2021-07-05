@@ -399,28 +399,30 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
     volatile P_Pkt_Hdr_t* hdr = static_cast<volatile P_Pkt_Hdr_t*>(send_buf); // Header
 
     size_t hdrSize = p_hdr_size(); //Size of the header.
-
-    if(pin->numEdges > 0)     // Sanity check: make sure the pin has edges
+    
+    //--------------------------------------------------------------------------
+    // First target, need to run pin's OnSend. This is run whether there are
+    // targets or not.
+    //--------------------------------------------------------------------------
+    if(pin->idxEdges == 0)
     {
-        //--------------------------------------------------------------------------
-        // First target, need to run pin's OnSend.
-        //--------------------------------------------------------------------------
-        if(pin->idxEdges == 0)
-        {
-            char* pkt = const_cast<char*>(buf)+hdrSize; // Pointer to the packet, after headers, etc.
+        char* pkt = const_cast<char*>(buf)+hdrSize; // Pointer to the packet, after headers, etc.
 
 #ifdef BUFFERING_SOFTSWITCH
-            // Copy the packet from the packet buffer to the send slot
-            memcpy(pkt, ThreadContext->pktBuf[ThreadContext->rtsStart],
-                        pin->pinType->sz_pkt);
+        // Copy the packet from the packet buffer to the send slot
+        memcpy(pkt, ThreadContext->pktBuf[ThreadContext->rtsStart],
+                    pin->pinType->sz_pkt);
 #else
-            // Build the packet in the send slot
-            pin->pinType->Send_Handler(ThreadContext->properties, device, pkt);
-            ThreadContext->txHandlerCount++;         // Increment SendHandler count
+        // Build the packet in the send slot
+        pin->pinType->Send_Handler(ThreadContext->properties, device, pkt);
+        ThreadContext->txHandlerCount++;         // Increment SendHandler count
 #endif
-        }
-        //--------------------------------------------------------------------------
-
+    }
+    //--------------------------------------------------------------------------
+    
+    
+    if(pin->numEdges > 0)     // Sanity check: make sure the pin has edges
+    {
         //--------------------------------------------------------------------------
         // Set the addresses and send the packet
         //--------------------------------------------------------------------------
@@ -666,13 +668,13 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
                                     ThreadContext->rtsStart))                  :
                             (ThreadContext->rtsStart - ThreadContext->rtsEnd);
                 
-                // If the pin has edges and there is space in the buffer
-                if(output_pin->numEdges && (buffRem > 1))
+                // If there is space in the buffer
+                if(buffRem > 1)                     //(output_pin->numEdges && )
                 {
                     //output_pin->sendPending++;
 #else
-                //If the pin has edges and is not already pending,
-                if(output_pin->numEdges && output_pin->sendPending == 0)
+                //If the pin is not already pending,
+                if(output_pin->sendPending == 0)    // output_pin->numEdges && 
                 {
                     // Flag that pin is pending
                     output_pin->sendPending = 1;

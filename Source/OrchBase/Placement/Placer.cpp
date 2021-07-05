@@ -79,6 +79,7 @@ bool Placer::algorithm_or_argument(std::string unknown, bool& isAlgorithm)
         unknown == "link" or  /* Default */
         unknown == "rand" or  /* Smart-Random */
         unknown == "sa" or    /* Simulated Annealing */
+        unknown == "spre" or  /* Spread filling */
         unknown == "tfil")    /* Thread filling */
     {
         isAlgorithm = true;

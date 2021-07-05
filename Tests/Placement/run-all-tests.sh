@@ -14,7 +14,7 @@ PLACEMENT_DUMP_DIR="./Output/Placement"
 # The caller needs to:
 #
 #  - Run this script from the root directory of the Orchestrator repository,
-#    and where the Orchestrator has been built.
+#    and where the Orchestrator has been built without debug mode.
 #
 #  - Define PLACEMENT_TEST_DIR in the environment of this script, as the
 #    absolute path to the placement tests directory. Don't add a trailing slash
@@ -74,22 +74,17 @@ for TEST in ${TESTS[@]}; do
     ./orchestrate.sh -n -b "${THIS_TEST_FILE_BASENAME}.poets" 2>&1 > /dev/null &
     ORCH_PID=$!
 
-    # When the placement dump files are created, or TEST_MAX_TIME has passed,
-    # kill the Orchestrator, and wait for a bit afterwards for the OS to catch
-    # up. Yeah, it's hacky. Sorry about that.
+    # When TEST_MAX_TIME has passed, kill the Orchestrator, and wait for a bit
+    # afterwards for the OS to catch up. Escape early if the Orchestrator is closed.
     START_TIME=$SECONDS
-    while true; do
-        TMP=("${PLACEMENT_DUMP_DIR}/placement_"*)
-        if [ -e "${TMP[0]}" ]; then
-            TMP=""
-            break
-        elif [ $((SECONDS - START_TIME)) -gt $TEST_MAX_TIME ]; then
+    while $(kill -0 "${ORCH_PID}" 2> /dev/null); do
+        if [ $((SECONDS - START_TIME)) -gt $TEST_MAX_TIME ]; then
+            pkill --full "${PWD}/bin"  # Dangerous
+            sleep 0.1
             break
         fi
         sleep 0.1
     done
-    pkill --full "${PWD}/bin"  # Dangerous
-    sleep 0.1
 
     # Copy file of interest, if it's there. If it's not there, the comparison
     # logic (later) will complain.
