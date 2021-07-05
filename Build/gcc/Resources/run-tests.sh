@@ -32,7 +32,7 @@ else
 fi
 
 # Exit if Valgrind is not wanted.
-if [ "$1" != "--valgrind" ] then;
+if [ "$1" != "--valgrind" ]; then
    exit 0
 fi
 
