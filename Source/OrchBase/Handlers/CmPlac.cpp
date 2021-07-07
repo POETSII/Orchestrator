@@ -31,7 +31,6 @@ unsigned CmPlac::operator()(Cli* cli)
     {
         /* Call the appropriate method (from the first four characters of the
          * clause). */
-        bool isClauseValid = true;
         clauseRoot = clause->Cl.substr(0, 4);
 
         /* The following might not make sense, but before we enter our
@@ -63,6 +62,7 @@ unsigned CmPlac::operator()(Cli* cli)
         /* If nothing is appropriate, the operator is either setting an
          * argument or wanting to run a placement algorithm (or they're an
          * idiot). */
+        bool isClauseValid = false;
         if (isSomething)
         {
             if (isAlgorithm)
