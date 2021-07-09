@@ -36,6 +36,10 @@ INTERNAL_LIB_PATH="$MPI_LIB_DIR":"$GCC_LIB_DIR":
 # Paths for dynamically-linked libraries required by MPI.
 export LD_LIBRARY_PATH="$CR_LIB_DIR":"$MPI_LIB_DIR":"$LD_LIBRARY_PATH":./
 
+# Is rlwrap installed? If so, try to use it (set to 1).
+command -v rlwrap &> /dev/null
+TRY_RLWRAP=$((1-$?))
+
 # Transform input arguments:
 #
 # Grab the file and batch (/f, /b) command line arguments, put them in
@@ -50,7 +54,6 @@ export LD_LIBRARY_PATH="$CR_LIB_DIR":"$MPI_LIB_DIR":"$LD_LIBRARY_PATH":./
 # Whereas GNU options are of the form:
 #   -d
 #   -f FILE
-TRY_RLWRAP=1
 GNU_HELP=0
 THIS_ARG_MODE=""
 while [ $# -gt 0 ]; do
@@ -121,7 +124,7 @@ done
 
 # Run the launcher from the build directory.
 pushd "{{ EXECUTABLE_DIR }}" > /dev/null
-if [ ! command -v rlwrap &> /dev/null ] || [ "$TRY_RLWRAP" -eq 0 ]; then
+if [ "$TRY_RLWRAP" -eq 0 ]; then
     ./orchestrate /p = "\"$INTERNAL_LIB_PATH\"" $ARGS
 else
     rlwrap --remember --history-filename ../.orch_history \
