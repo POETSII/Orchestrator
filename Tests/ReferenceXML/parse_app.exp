@@ -10,7 +10,7 @@ send_user "Relative xml path = $script\n"
 set script [file normalize $script]
 send_user "Absolute xml path = $script\n"
 
-spawn "$HERE/../../orchestrate.sh" -n
+spawn "$HERE/../../orchestrate.sh" --no-rlwrap -n
 
 proc end_program {msg} {
     send "exit\n";
