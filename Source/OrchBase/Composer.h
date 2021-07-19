@@ -47,6 +47,7 @@ typedef struct devTypStrings_t
     std::string handlersH;
     std::string handlersC;
     std::string varsHCommon;
+    std::string typesH;
 } devTypStrings_t;
 
 typedef enum softswitchLogHandler_t
@@ -163,13 +164,15 @@ void writeGlobalPropsD(GraphI_t*, std::ofstream&);
 void writeGlobalPropsI(GraphI_t*, std::ofstream&);
 void writeMessageTypes(GraphI_t*, std::ofstream&);
 
+void writeDeviceStructTypesPreamble(std::ofstream&);
+void writeDeviceStructTypes(DevT_t*, std::ofstream&);
+void writeDeviceStructTypesPostamble(std::ofstream&);
 
 // Device Type writers
 void formDevTStrings(ComposerGraphI_t*, DevT_t*);
 void populatePinTIdxMap(DevT_t*);
 void formHandlerPreamble(devTypStrings_t*);
 void formDevTHandlers(devTypStrings_t*);
-void formDevTPropsDStateD(devTypStrings_t*);
 void formDevTInputPinHandlers(devTypStrings_t* dTypStrs);
 void formDevTOutputPinHandlers(devTypStrings_t* dTypStrs);
 
