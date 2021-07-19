@@ -46,15 +46,15 @@ HardwareAddressInt HardwareAddress::get_hardware_address()
     HardwareAddressInt returnValue = 0;
     unsigned offset = 0;
     returnValue += threadComponent;
-    offset += format->threadWordLength;
+    offset += format->get_thread_word_length();
     returnValue += coreComponent << offset;
-    offset += format->coreWordLength;
+    offset += format->get_core_word_length();
     returnValue += mailboxComponent << offset;
-    offset += format->mailboxWordLength;
+    offset += format->get_mailbox_word_length();
     returnValue += boardComponent << offset;
     if (!IGNORE_BOX_ADDRESS_COMPONENT)
     {
-        offset += format->boardWordLength;
+        offset += format->get_board_word_length();
         returnValue += boxComponent << offset;
     }
     return returnValue;
@@ -71,12 +71,12 @@ void HardwareAddress::set_box(AddressComponent value)
     /* Validate */
     if (!IGNORE_BOX_ADDRESS_COMPONENT)
     {
-        if (value >= std::pow(2, format->boxWordLength))
+        if (value >= format->get_box_max_value())
         {
             throw InvalidAddressException(
                 dformat("[ERROR] Box component value \"%d\" does not fit "
                         "format with box length \"%d\".",
-                        value, format->boxWordLength));
+                        value, format->get_box_word_length()));
         }
     }
 
@@ -88,12 +88,12 @@ void HardwareAddress::set_box(AddressComponent value)
 void HardwareAddress::set_board(AddressComponent value)
 {
     /* Validate */
-    if (value >= std::pow(2, format->boardWordLength))
+    if (value >= format->get_board_max_value())
     {
         throw InvalidAddressException(
             dformat("[ERROR] Board component value \"%d\" does not fit format "
                     "with board length \"%d\".",
-                    value, format->boardWordLength));
+                    value, format->get_board_word_length()));
     }
 
     /* Set */
@@ -104,12 +104,12 @@ void HardwareAddress::set_board(AddressComponent value)
 void HardwareAddress::set_mailbox(AddressComponent value)
 {
     /* Validate */
-    if (value >= std::pow(2, format->mailboxWordLength))
+    if (value >= format->get_mailbox_max_value())
     {
         throw InvalidAddressException(
             dformat("[ERROR] Mailbox component value \"%d\" does not fit "
                     "format with mailbox length \"%d\".",
-                    value, format->mailboxWordLength));
+                    value, format->get_mailbox_word_length()));
     }
 
     /* Set */
@@ -120,12 +120,12 @@ void HardwareAddress::set_mailbox(AddressComponent value)
 void HardwareAddress::set_core(AddressComponent value)
 {
     /* Validate */
-    if (value >= std::pow(2, format->coreWordLength))
+    if (value >= format->get_core_max_value())
     {
         throw InvalidAddressException(
             dformat("[ERROR] Core component value \"%d\" does not fit format "
                     "with core length \"%d\".",
-                    value, format->coreWordLength));
+                    value, format->get_core_word_length()));
     }
 
     /* Set */
@@ -136,12 +136,12 @@ void HardwareAddress::set_core(AddressComponent value)
 void HardwareAddress::set_thread(AddressComponent value)
 {
     /* Validate */
-    if (value >= std::pow(2, format->threadWordLength))
+    if (value >= format->get_thread_max_value())
     {
         throw InvalidAddressException(
             dformat("[ERROR] Thread component value \"%d\" does not fit "
                     "format with thread length \"%d\".",
-                    value, format->threadWordLength));
+                    value, format->get_thread_word_length()));
     }
 
     /* Set */

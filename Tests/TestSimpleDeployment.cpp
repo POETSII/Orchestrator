@@ -18,20 +18,20 @@ TEST_CASE("Simple deployment to an empty engine", "[Simple]")
 
     SECTION("Check the hardware address format in the engine is populated correctly", "[Simple]")
     {
-        REQUIRE(engine.addressFormat.boxWordLength ==
+        REQUIRE(engine.addressFormat.get_box_word_length() ==
                 deployer.boxWordLength);
-        REQUIRE(engine.addressFormat.coreWordLength ==
+        REQUIRE(engine.addressFormat.get_core_word_length() ==
                 deployer.coreWordLength);
-        REQUIRE(engine.addressFormat.threadWordLength ==
+        REQUIRE(engine.addressFormat.get_thread_word_length() ==
                 deployer.threadWordLength);
 
         /* Sum-reduce the formats that are defined as vectors. */
-        engine.addressFormat.boardWordLength =
+        REQUIRE(engine.addressFormat.get_board_word_length() ==
             std::accumulate(deployer.boardWordLengths.begin(),
-                            deployer.boardWordLengths.end(), 0);
-        engine.addressFormat.mailboxWordLength =
+                            deployer.boardWordLengths.end(), 0));
+        REQUIRE(engine.addressFormat.get_mailbox_word_length() ==
             std::accumulate(deployer.mailboxWordLengths.begin(),
-                            deployer.mailboxWordLengths.end(), 0);
+                            deployer.mailboxWordLengths.end(), 0));
     }
 
     SECTION("Check engine contains the correct number of boxes", "[Simple]")

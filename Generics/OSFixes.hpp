@@ -1,5 +1,6 @@
 #ifndef __OSFIXES__H
 #define __OSFIXES__H
+#include <stdio.h>
 #include <string>
 #include <string.h>
 
@@ -40,6 +41,13 @@
     #endif
   #endif
  #include <sstream>
+#endif
+
+/* =============================================================================
+ * Permit alternative operator spellings for Borland
+ * ===========================================================================*/
+#ifdef __BORLANDC__
+#include <iso646.h>
 #endif
 
 /* =============================================================================

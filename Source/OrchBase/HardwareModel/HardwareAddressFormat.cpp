@@ -10,16 +10,74 @@ HardwareAddressFormat::HardwareAddressFormat(unsigned boxWordLength,
                           unsigned mailboxWordLength,
                           unsigned coreWordLength,
                           unsigned threadWordLength)
-    :boxWordLength(boxWordLength),
-     boardWordLength(boardWordLength),
-     mailboxWordLength(mailboxWordLength),
-     coreWordLength(coreWordLength),
-     threadWordLength(threadWordLength){}
+{
+    set_box_word_length(boxWordLength);
+    set_board_word_length(boardWordLength);
+    set_mailbox_word_length(mailboxWordLength);
+    set_core_word_length(coreWordLength);
+    set_thread_word_length(threadWordLength);
+}
 
 /* Constructs without populating. You really don't want to use this without
  * populating it first (either by passing it to a deployer, or setting the
  * values yourself later). */
 HardwareAddressFormat::HardwareAddressFormat(){}
+
+/* Getters/setters. Oh the games we play. Part of me wanted to use the
+ * preprocessor to do this, but then I was concerned that nobody could read it
+ * (including me)... */
+void HardwareAddressFormat::set_box_word_length(const unsigned value)
+{
+    boxWordLength = value;
+    boxMaxValue = max_from_length(value);
+}
+unsigned HardwareAddressFormat::get_box_word_length(){return boxWordLength;}
+unsigned HardwareAddressFormat::get_box_max_value(){return boxMaxValue;}
+/* --- */
+void HardwareAddressFormat::set_board_word_length(const unsigned value)
+{
+    boardWordLength = value;
+    boardMaxValue = max_from_length(value);
+}
+unsigned HardwareAddressFormat::get_board_word_length()
+{return boardWordLength;}
+unsigned HardwareAddressFormat::get_board_max_value(){return boardMaxValue;}
+/* --- */
+void HardwareAddressFormat::set_mailbox_word_length(const unsigned value)
+{
+    mailboxWordLength = value;
+    mailboxMaxValue = max_from_length(value);
+}
+unsigned HardwareAddressFormat::get_mailbox_word_length()
+{return mailboxWordLength;}
+unsigned HardwareAddressFormat::get_mailbox_max_value()
+{return mailboxMaxValue;}
+/* --- */
+void HardwareAddressFormat::set_core_word_length(const unsigned value)
+{
+    coreWordLength = value;
+    coreMaxValue = max_from_length(value);
+}
+unsigned HardwareAddressFormat::get_core_word_length(){return coreWordLength;}
+unsigned HardwareAddressFormat::get_core_max_value(){return coreMaxValue;}
+/* --- */
+void HardwareAddressFormat::set_thread_word_length(const unsigned value)
+{
+    threadWordLength = value;
+    threadMaxValue = max_from_length(value);
+}
+unsigned HardwareAddressFormat::get_thread_word_length()
+{return threadWordLength;}
+unsigned HardwareAddressFormat::get_thread_max_value(){return threadMaxValue;}
+
+/* Given a length, returns the maximum value that can fit in that length. It's
+ * just 2 ** value... */
+unsigned HardwareAddressFormat::max_from_length(const unsigned length)
+{
+    unsigned out = 1;
+    for (unsigned repeat = 0; repeat < length; repeat++) out *= 2;
+    return out;
+}
 
 /* Write debug and diagnostic information using dumpchan. Arguments:
  *

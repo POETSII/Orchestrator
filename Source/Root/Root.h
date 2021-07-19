@@ -21,6 +21,7 @@ methods). The more complex ones go to dedicated classes (Cm****_t)
 #include "Injector.h"
 #include <string>
 #include "OSFixes.hpp"
+#include "pthread.h"
 using namespace std;
 
 //==============================================================================
