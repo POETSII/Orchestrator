@@ -106,6 +106,12 @@ fprintf(fp,"%sRTCL dump ------------------------------------------------\n",os);
 fflush(stdout);
 }
 
+bool RTCL::HaveIdleWork()
+{
+  // We don't have OnIdle, so must never have work.
+  return false;
+}
+
 //------------------------------------------------------------------------------
 
 unsigned RTCL::OnExit(PMsg_p * Z)

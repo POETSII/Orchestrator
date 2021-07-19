@@ -23,6 +23,8 @@ void                Dump(unsigned = 0,FILE * = stdout);
 unsigned            OnExit(PMsg_p *);
 unsigned            OnRTCL(PMsg_p *);
 
+bool                HaveIdleWork();
+
 public:
 struct comms_t {
   RTCL * pthis;

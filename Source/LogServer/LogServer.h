@@ -22,6 +22,7 @@ string              Assemble(int,vector<string> &);
 void                Dump(unsigned = 0,FILE * = stdout);
 void                InitFile();
 void                LoadMessages(string);
+bool                HaveIdleWork();
 void                OnIdle();
 unsigned            OnLoad(PMsg_p *);
 unsigned            OnLogP(PMsg_p *);
