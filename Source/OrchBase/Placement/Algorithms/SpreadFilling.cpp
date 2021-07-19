@@ -58,12 +58,12 @@ float SpreadFilling::do_it(GraphI_t* gi)
     unsigned deviceCount = gi->DevicesByType(deviceOfTypeCount);
 
     /* 2. Get every unused core in the engine. */
-    std::set<P_core*> unusedCores;
+    std::vector<P_core*> unusedCores;
     HardwareIterator coreIterator = HardwareIterator(placer->engine);
     P_core* currentCore = coreIterator.get_core();
     while (!coreIterator.has_wrapped())
     {
-        unusedCores.insert(currentCore);
+        unusedCores.push_back(currentCore);
         currentCore = coreIterator.next_core();
     }
 
@@ -71,7 +71,7 @@ float SpreadFilling::do_it(GraphI_t* gi)
      * them. */
     std::map<GraphI_t*, std::set<P_core*> >::iterator giIt;
     std::set<P_core*>::iterator coreIt;
-    std::set<P_core*>::iterator coresToRemove[2];
+    std::vector<P_core*>::iterator coresToRemove[2];
     for (giIt = placer->giToCores.begin();
          giIt != placer->giToCores.end(); giIt++)
     {
@@ -104,7 +104,7 @@ float SpreadFilling::do_it(GraphI_t* gi)
      *
      * We can use the same algorithm for both the paired and unpaired cases, by
      * dividing the number of cores to distribute by two. */
-    std::set<P_core*>::size_type coreCount = unusedCores.size();
+    std::vector<P_core*>::size_type coreCount = unusedCores.size();
     if (currentCore->pair != PNULL) coreCount /= 2;  /* (:A:) this is a search
                                                       * marker. */
 
@@ -226,16 +226,20 @@ float SpreadFilling::do_it(GraphI_t* gi)
     /* 5. For each normal device type, get a vector of cores to "deal" devices
      * to. We keep all devices of the same type close together - if that's not
      * suitable, change the logic that follows to distribute the devices across
-     * the compute fabric. Could be a configuration option, perhaps. */
+     * the compute fabric. Could be a configuration option, perhaps.
+     *
+     * This iteration respects the declared order of device types in the graph
+     * instance - earlier-occurences of device types will be placed on
+     * "earlier" cores. */
     std::map<DevT_t*, std::vector<P_core*> > coreAllocs;
     coreIterator.reset_all_iterators();  /* A fresh hardware model walker */
-    for (devTypeIt = coreAllocCounts.begin();
-         devTypeIt != coreAllocCounts.end(); devTypeIt++)
+    for (std::vector<DevT_t*>::iterator devTVIt = gi->pT->DevT_v.begin();
+         devTVIt != gi->pT->DevT_v.end(); devTVIt++)
     {
-        unsigned coresRemaining = devTypeIt->second;
+        unsigned coresRemaining = coreAllocCounts[*devTVIt];
         while (coresRemaining > 0)
         {
-            coreAllocs[devTypeIt->first].push_back(coreIterator.get_core());
+            coreAllocs[*devTVIt].push_back(coreIterator.get_core());
             coresRemaining--;
             coreIterator.next_core();
         }
@@ -284,8 +288,9 @@ float SpreadFilling::do_it(GraphI_t* gi)
     }
 
     /* 7. Redistribute devices in cores to evenly load threads. */
-    for (coreIt = unusedCores.begin(); coreIt != unusedCores.end(); coreIt++)
-        placer->redistribute_devices_in_core(*coreIt, gi);
+    std::vector<P_core*>::iterator corevIt;
+    for (corevIt = unusedCores.begin(); corevIt != unusedCores.end(); corevIt++)
+        placer->redistribute_devices_in_core(*corevIt, gi);
 
     /* We out */
     result.endTime = placer->timestamp();

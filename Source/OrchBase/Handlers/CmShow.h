@@ -17,6 +17,7 @@ public:
 virtual ~     CmShow();
 
 void          Cm_Engine(FILE*);
+void          Cm_Plac(FILE*);
 
 void          Dump(FILE * = stdout);
 unsigned      operator()(Cli *);

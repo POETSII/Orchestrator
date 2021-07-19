@@ -39,7 +39,7 @@ DS_map["GraphType"]        = cGraphType;
 DS_map["InputPin"]         = cInputPin;
 DS_map["MessageType"]      = cMessageType;
 DS_map["MessageTypes"]     = cMessageTypes;
-DS_map["MetaData"]         = cMetaData;
+DS_map["Metadata"]         = cMetaData;
 DS_map["OnCTL"]            = cOnCTL;
 DS_map["OnDeviceIdle"]     = cOnDeviceIdle;
 DS_map["DevI"]             = cDevI;
@@ -77,7 +77,7 @@ DS_XML::~DS_XML()
 void DS_XML::_Apps_t(xnode * pn)
 // XML::Graphs
 {
-string aname = pn->FindAttr("appname");// Get the app name
+aname = pn->FindAttr("appname");       // Get (and store) the application name
 Apps_t * pAP = new Apps_t(par,aname);  // Uniquely knits itself into skyhook
 pAP->Def(pn->lin);                     // Defined on line...
 pAP->filename = pn->par->ename;        // Filename is root element name
@@ -117,7 +117,7 @@ return new CFrag(Cstr);
 }
 
 CFrag * DS_XML::_CFrag(std::string Cstr)
-// Create a CFrag from an attribute string. 
+// Create a CFrag from an attribute string.
 // This is intended for initialiser lists (of which there may be many) so
 // the line number is not included to help keep generated file size down.
 // If the attribute is empty, we don't create a CFrag for it - simples.
@@ -341,7 +341,7 @@ WALKVECTOR(xnode *,pn->vnode,i) {
                                        // Report undefined devices;
                                        // Minor integrity check;
                                        // Dismantle a bit of scaffold
-pGI->UndefDevs();
+pGI->UndefDevs(wcnt,ecnt);
 return pGI;
 }
 
@@ -387,7 +387,8 @@ MsgT_t * DS_XML::_MsgT_t(GraphT_t * pGT,xnode * pn)
 string mname = pn->FindAttr("id");
 MsgT_t * pM = new MsgT_t(pGT,mname);
 pM->Def(pn->lin);
-pM->pPropsD = _CFrag(pn);
+xnode *cc=pn->FindChild("Message");
+pM->pPropsD = _CFrag(cc);
 return pM;
 }
 
@@ -410,6 +411,13 @@ WALKVECTOR(xnode *,pn->vnode,i) {
 PinT_t * DS_XML::_PinT_t(DevT_t * pD,xnode * pn)
 // XML::PinType
 {
+string indexed = pn->FindAttr("indexed");
+if(!indexed.empty()){
+  if(indexed!="false" && indexed!="0"){
+    par->Post(933,__FILE__,int2str(__LINE__));
+  }
+}
+
 string pname = pn->FindAttr("name");
 unsigned line = pn->lin;               // Go get file location
 PinT_t * pP;
@@ -464,6 +472,12 @@ WALKVECTOR(xnode *,pn->vnode,i) {
     case cOnCTL            : pS->pOnCTL   = _CFrag(*i);               break;
     case cOnInit           : pS->pOnInit = _CFrag(*i);                break;
     case cMetaData         : pS->Meta_v.push_back(_Meta(*i));         break;
+
+    // Uninplemented functionality: throw an E
+    case cInputPin         : //Intentional fall-through
+    case cOutputPin        : par->Post(257,"SupervisorType",(*i)->ename,
+                                int2str(pn->lin));                    break;
+    // Paranoid U catch-all
     default                : par->Post(998,__FILE__,int2str(__LINE__),
                                        (*i)->ename);
   }

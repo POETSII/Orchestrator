@@ -37,7 +37,6 @@ SOFTWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/Common/SoftwareAddress.cpp \
 HARDWARE_ADDRESS_SOURCES = $(SOURCE_DIR)/OrchBase/HardwareModel/HardwareAddress.cpp \
                            $(SOURCE_DIR)/OrchBase/HardwareModel/HardwareAddressFormat.cpp \
                            $(SOURCE_DIR)/Common/DumpUtils.cpp \
-                           $(SOURCE_DIR)/OrchBase/P_addr.cpp \
                            $(GENERICS_DIR)/flat.cpp \
                            $(GENERICS_DIR)/dfprintf.cpp \
                            $(GENERICS_DIR)/DumpChan.cpp
@@ -85,6 +84,7 @@ XML_PARSER_SOURCES += $(wildcard $(SOURCE_DIR)/OrchBase/XMLProcessing/*.cpp)
 
 # Sources used by placement
 PLACEMENT_SOURCES = $(SOURCE_DIR)/OrchBase/Placement/CostCache.cpp \
+                    $(SOURCE_DIR)/OrchBase/Placement/PlaceArgs.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Placer.cpp \
                     $(SOURCE_DIR)/Common/SoftwareAddress.cpp \
                     $(SOURCE_DIR)/OrchBase/Placement/Algorithms/PlacementLoader.cpp \
@@ -148,8 +148,7 @@ ROOT_SOURCES = $(SOURCE_DIR)/Root/RootMain.cpp \
                $(GENERICS_DIR)/lex.cpp \
                $(GENERICS_DIR)/rand.cpp \
                $(GENERICS_DIR)/xmlP.cpp \
-               $(GENERICS_DIR)/XMLTreeDump.cpp \
-               $(SOURCE_DIR)/NameServer/Ns_el.cpp
+               $(GENERICS_DIR)/XMLTreeDump.cpp
 
 ROOT_SOURCES += $(TRULY_COMMON_SOURCES)
 ROOT_SOURCES += $(HARDWARE_FILE_READER_SOURCES)

@@ -56,7 +56,6 @@ static void                 Prompt(FILE * = stdout);
 void                        WriteUheader(Cli *);
 
 public:
-map<pair<int, string>, string> mshipAcks;
 static const char *            prompt;
 static bool                    promptOn;
 struct injData_t {
@@ -64,6 +63,11 @@ struct injData_t {
 }                              injData;
 
 OrchConfig *                   pOC;
+
+pthread_t                      kb_thread;
+bool                           exitOnEmpty;   // exit /at = end
+bool                           exitOnStop;    // exit /at = stop
+bool                           appJustStopped;
 };
 
 //==============================================================================

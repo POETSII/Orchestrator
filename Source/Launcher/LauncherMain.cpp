@@ -58,6 +58,7 @@ bool AreWeRunningOnAPoetsBox()
  *   containing the executable to run (-wdir).
  * - gdbProcs: Process names to run GDB on.
  * - valgrindProcs: Process names to run Valgrind on.
+ * - quietValgrind: Whether or not to pass '--quiet' to Valgrind.
  * - command: Output, where the command is written to. It's up to the caller to
      examine and run it as they desire. */
 void BuildCommand(bool useMotherships, std::string internalPath,
@@ -67,7 +68,7 @@ void BuildCommand(bool useMotherships, std::string internalPath,
                   std::map<std::string, std::string> executablePaths,
                   std::map<std::string, bool> gdbProcs,
                   std::map<std::string, bool> valgrindProcs,
-                  std::string* command)
+                  bool quietValgrind, std::string* command)
 {
     std::stringstream commandStream;
 
@@ -98,6 +99,13 @@ void BuildCommand(bool useMotherships, std::string internalPath,
     std::string localBinDir = OSFixes::dirname(OSFixes::get_executable_path());
     hydraProcesses.push_back(new std::stringstream);
 
+    /* Setup valgrind flags */
+    std::string custValgrindFlags;
+    if (quietValgrind)
+        custValgrindFlags = std::string(flagsValgrind) +
+                            " " + quietFlagValgrind;
+    else custValgrindFlags = flagsValgrind;
+
     /* Root */
     orderedHosts.push_back(ourHostname);
     *(hydraProcesses.back()) << "-n 1 ";
@@ -105,7 +113,7 @@ void BuildCommand(bool useMotherships, std::string internalPath,
                                                      << flagsGdb << " ";
     if (valgrindProcs[execRoot]) *(hydraProcesses.back()) << execValgrind
                                                           << " "
-                                                          << flagsValgrind
+                                                          << custValgrindFlags
                                                           << " ";
     *(hydraProcesses.back()) << localBinDir << "/" << execRoot;
 
@@ -127,18 +135,27 @@ void BuildCommand(bool useMotherships, std::string internalPath,
     orderedHosts.push_back(ourHostname);
     *(hydraProcesses.back()) << "-n 1 ";
     if (gdbProcs[execLogserver]) *(hydraProcesses.back()) << execGdb << " ";
-    if (valgrindProcs[execLogserver]) *(hydraProcesses.back()) << execValgrind
-                                                               << " ";
+    if (valgrindProcs[execLogserver])
+        *(hydraProcesses.back()) << execValgrind
+                                 << " "
+                                 << custValgrindFlags
+                                 << " ";
     *(hydraProcesses.back()) << localBinDir << "/" << execLogserver;
 
-    /* Clock */
-    hydraProcesses.push_back(new std::stringstream);
-    orderedHosts.push_back(ourHostname);
-    *(hydraProcesses.back()) << "-n 1 ";
-    if (gdbProcs[execClock]) *(hydraProcesses.back()) << execGdb << " ";
-    if (valgrindProcs[execClock]) *(hydraProcesses.back()) << execValgrind
-                                                           << " ";
-    *(hydraProcesses.back()) << localBinDir << "/" << execClock;
+    /* Clock - optionally disabled. */
+    if (USE_CLOCK)
+    {
+        hydraProcesses.push_back(new std::stringstream);
+        orderedHosts.push_back(ourHostname);
+        *(hydraProcesses.back()) << "-n 1 ";
+        if (gdbProcs[execClock]) *(hydraProcesses.back()) << execGdb << " ";
+        if (valgrindProcs[execClock])
+            *(hydraProcesses.back()) << execValgrind
+                                     << " ";
+        *(hydraProcesses.back()) << localBinDir << "/" << execClock;
+    }
+    else DebugPrint("%sThe real-time clock is currently DISABLED.\n",
+                    debugHeader);
 
     /* Adding motherships... */
     if (useMotherships)
@@ -163,8 +180,11 @@ void BuildCommand(bool useMotherships, std::string internalPath,
             *(hydraProcesses.back()) << "-n 1 ";
             if (gdbProcs[execMothership]) *(hydraProcesses.back()) <<
                                               execGdb << " ";
-            if (valgrindProcs[execMothership]) *(hydraProcesses.back()) <<
-                                                   execValgrind << " ";
+            if (valgrindProcs[execMothership])
+                *(hydraProcesses.back()) << execValgrind
+                                         << " "
+                                         << custValgrindFlags
+                                         << " ";
             *(hydraProcesses.back()) << localBinDir << "/" << execMothership;
         }
 
@@ -427,6 +447,7 @@ int Launch(int argc, char** argv)
     std::string hdfPath;
     bool useMotherships;
     bool dryRun;
+    bool quietValgrind = false;
     std::string overrideHost;
     std::string internalPath;
     std::map<std::string, bool> gdbProcs;
@@ -441,7 +462,7 @@ int Launch(int argc, char** argv)
     valgrindProcs["mothership"] = false;
 
     if (ParseArgs(argc, argv, &batchPath, &hdfPath, &useMotherships, &dryRun,
-                  &overrideHost, &internalPath, &gdbProcs,
+                  &quietValgrind, &overrideHost, &internalPath, &gdbProcs,
                   &valgrindProcs) > 0) return 1;
 
     /* If the default hardware description file path has a file there, and we
@@ -532,7 +553,7 @@ int Launch(int argc, char** argv)
     DebugPrint("%sBuilding command...\n", debugHeader);
     BuildCommand(useMotherships, internalPath, overrideHost, batchPath,
                  hdfPath, hosts, deployedPaths, gdbProcs, valgrindProcs,
-                 &command);
+                 quietValgrind, &command);
 
     /* Run the MPI command, or not. */
     DebugPrint("%sRunning this command: %s\n", debugHeader, command.c_str());
@@ -565,6 +586,7 @@ int Launch(int argc, char** argv)
  *   disabled.
  * - dryRun: Output, true if the caller wants to just see what would be
  *   run. Still deploys binaries.
+ * - quietValgrind: Output, true if caller wants valgrind to run quietly.
  * - overrideHost: Output, populated with the name of the host to run a
  *   mothership on, regardless of whether or not an input file has been passed
  *   in (or empty if not defined).
@@ -576,7 +598,8 @@ int Launch(int argc, char** argv)
  * Returns non-zero if a fast exit is needed. */
 int ParseArgs(int argc, char** argv, std::string* batchPath,
               std::string* hdfPath, bool* useMotherships, bool* dryRun,
-              std::string* overrideHost, std::string* internalPath,
+              bool* quietValgrind, std::string* overrideHost,
+              std::string* internalPath,
               std::map<std::string, bool>* gdbProcs,
               std::map<std::string, bool>* valgrindProcs)
 {
@@ -602,6 +625,7 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
     argKeys["noMotherships"] = "n";
     argKeys["override"] = "o";
     argKeys["internalPath"] = "p";
+    argKeys["quietValgrind"] = "q";
     argKeys["valgrind"] = "v";
 
     /* Defines help string, printed when user calls with `-h`. */
@@ -632,6 +656,9 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
 "\t/%s=HOST: Override all Mothership hosts, specified from a hardware description file, with HOST. Using this option will only spawn one mothership process (unless /%s is used, in which case no mothership processes are spawned).\n"
 "\n"
 "\t/%s=PATH: Define an LD_LIBRARY_PATH environment variable for all spawned processes. This is useful for defining where shared object files can be found by children.\n"
+"\n"
+"\t/%s: If valgrind is requested, make it run in quiet mode.\n"
+"\n"
 "\t/%s: Points valgrind (%s) at one of the processes listed above, except motherships spawned via a host list. Combine with /%s at your own risk.\n"
 "\n"
 "If you are still bamboozled, or you're a developer, check out the Orchestrator documentation.\n",
@@ -644,6 +671,7 @@ argKeys["gdb"].c_str(), execGdb,
 argKeys["noMotherships"].c_str(),
 argKeys["override"].c_str(), argKeys["noMotherships"].c_str(),
 argKeys["internalPath"].c_str(),
+argKeys["quietValgrind"].c_str(),
 argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str());
 
     /* Parse the input arguments. */
@@ -768,6 +796,19 @@ argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str());
             }
         }
 
+        if (currentArg == argKeys["quietValgrind"])
+        {
+            if (!(*quietValgrind))
+            {
+                *quietValgrind = true;
+            }
+            else
+            {
+                printf("[WARN] Launcher: Ignoring duplicate 'quiet valgrind' "
+                       "argument.\n");
+            }
+        }
+
         if (currentArg == argKeys["internalPath"])
         {
             if (internalPath->empty())
@@ -838,6 +879,16 @@ argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str());
     else
     {
         DebugPrint("%s%sMotherships: disabled\n", debugHeader, debugIndent);
+    }
+    if (*quietValgrind)
+    {
+        DebugPrint("%s%sIf requested, valgrind will be run quietly.",
+                   debugHeader, debugIndent);
+    }
+    else
+    {
+        DebugPrint("%s%sIf requested, valgrind will not be run quietly.",
+                   debugHeader, debugIndent);
     }
     if (*dryRun)
     {

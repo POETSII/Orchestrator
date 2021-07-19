@@ -152,10 +152,6 @@ $(ALL_TESTS):
         -o $@ $^ \
         -lmpi -lpthread
 
-$(TEST_SCRIPT): $(TEST_SCRIPT_RESOURCE)
-	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
-	cp "$(TEST_SCRIPT_RESOURCE)" "$(TEST_SCRIPT)"
-
 $(MOTHERSHIP_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-export-dynamic -L$(MPICH_LIB_DIR) -L/usr/lib \
@@ -206,6 +202,28 @@ $(ORCHESTRATE_SCRIPT): $(ORCHESTRATE_TEMPLATE)
 	@# Remove staging file and directory, carefully.
 	rm "$(ORCHESTRATE_TMP)"
 	rmdir "$(dir $(ORCHESTRATE_TMP))"
+
+# Build test script in a similar manner to the above.
+$(TEST_SCRIPT): TEST_SCRIPT_TMP:=$(shell mktemp --directory)/$(TEST_SCRIPT_BASENAME)
+$(TEST_SCRIPT): $(TEST_SCRIPT_RESOURCE)
+	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
+
+	@# Create staging file space for subtitutions.
+	cp "$<" "$(TEST_SCRIPT_TMP)"
+
+	@# Create hashtable and perform substitutions, all in the same shell.
+	declare -A SUBSTITUTIONS=(\
+		["MPICH_LIB_DIR"]="$(realpath $(MPICH_LIB_DIR))");\
+	for KEY in "$${!SUBSTITUTIONS[@]}"; do \
+		sed -i "s|{{ $$KEY }}|$${SUBSTITUTIONS[$$KEY]}|" "$(TEST_SCRIPT_TMP)";\
+	done
+
+	@# Deploy
+	cp "$(TEST_SCRIPT_TMP)" "$@"
+
+	@# Remove staging file and directory, carefully.
+	rm "$(TEST_SCRIPT_TMP)"
+	rmdir "$(dir $(TEST_SCRIPT_TMP))"
 
 # Building the environment for XML applications to be composed in the
 # Orchestrator. Made of a bunch of symlinks.

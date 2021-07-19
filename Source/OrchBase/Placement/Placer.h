@@ -46,6 +46,7 @@ struct Result;
 #include "GraphI_t.h"
 #include "HardwareModel.h"
 #include "OSFixes.hpp"
+#include "PlaceArgs.h"
 #include "UniqueDevT.h"
 
 #define THREAD_LOADING_SCALING_FACTOR 0.01
@@ -85,6 +86,13 @@ public:
     /* Path to write output files to (e.g. dumps, results). At its best with a
      * trailing slash (yay C++98) */
     std::string outFilePath;
+
+    /* Staged arguments for the next algorithm. */
+    PlaceArgs args;
+
+    /* Identify whether an input string is an algorithm or an argument. Also
+     * see the private algorithm_from_string method. */
+    bool algorithm_or_argument(std::string unknown, bool& isAlgorithm);
 
     /* Check integrity of a placed graph instance. */
     void check_integrity(GraphI_t* gi, Algorithm* algorithm);
@@ -151,7 +159,9 @@ public:
     std::string timestamp();
 
 private:
-    Algorithm* algorithm_from_string(std::string);
+    Algorithm* algorithm_from_string(std::string);  /* Also see the public
+                                                     * algorithm_or_argument
+                                                     * method. */
     void update_gi_to_cores_map(GraphI_t* gi);
 
     void populate_device_to_graph_key_map(GraphI_t* gi);

@@ -16,6 +16,8 @@
 
 #include <stdlib.h>
 
+#define USE_CLOCK false
+
 namespace Launcher
 {
     const char* debugHeader = "[LAUNCHER] ";
@@ -36,6 +38,7 @@ namespace Launcher
     const char* flagsGdb = "--args";
     const char* execValgrind = "/usr/bin/valgrind";
     const char* flagsValgrind = "--leak-check=full --track-origins=yes";
+    const char* quietFlagValgrind = "--quiet";
 
     bool AreWeRunningOnAPoetsBox();
     void BuildCommand(bool useMotherships, std::string internalPath,
@@ -43,17 +46,17 @@ namespace Launcher
                       std::string hdfPath,
                       std::set<std::string> mothershipHosts,
                       std::map<std::string, std::string> executablePaths,
-                      std::string* command);
+                      bool quietValgrind, std::string* command);
     int DeployBinaries(std::set<std::string>* hosts,
                        std::map<std::string, std::string>* paths);
     int GetHosts(std::string hdfPath, std::set<std::string>* hosts);
     int Launch(int argc, char** argv);
     int ParseArgs(int argc, char** argv, std::string* batchPath,
                   std::string* hdfPath, bool* useMotherships, bool* dryRun,
-                  std::string* overrideHost, std::string* internalPath,
+                  bool* quietValgrind, std::string* overrideHost,
+                  std::string* internalPath,
                   std::map<std::string, bool>* gdbProcs,
                   std::map<std::string, bool>* valgrindProcs);
-
 }
 
 #endif

@@ -39,7 +39,7 @@ template<typename... F> inline void __handler_log(uint32_t src, int level,
 {  
 #ifdef TRIVIAL_LOG_HANDLER
     // Call a truly trivial log handler.
-    if(level >= P_LOG_LEVEL) softswitch_trivial_log_handler(src, pkt);
+    if(level <= P_LOG_LEVEL) softswitch_trivial_log_handler(src, pkt);
     return;
 #else
     // No log handler, do nothing

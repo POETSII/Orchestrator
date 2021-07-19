@@ -60,38 +60,6 @@ HardwareAddressInt HardwareAddress::get_hardware_address()
     return returnValue;
 }
 
-/* Populates a software address object with information from this hardware
- * address object. Arguments:
- *
- * - target: Software address object to populate.
- * - resetFirst: Whether or not to reset the target software address before
- *               populating it. May have a default defined in the accompanying
- *               header. */
-void HardwareAddress::populate_a_software_address(P_addr* target,
-                                                  bool resetFirst)
-{
-    if (resetFirst){target->Reset();}
-    if (is_box_defined()){target->SetBox(get_box());}
-    if (is_board_defined()){target->SetBoard(get_board());}
-    if (is_mailbox_defined()){target->SetMailbox(get_mailbox());}
-    if (is_core_defined()){target->SetCore(get_core());}
-    if (is_thread_defined()){target->SetThread(get_thread());}
-}
-
-/* Populates this hardware address object with information from a software
- * address object. Software-specific information is lost. Arguments:
- *
- * - source: Software address object to read from. */
-void HardwareAddress::populate_from_software_address(P_addr* source)
-{
-    AddressComponent staging;
-    if (source->GetBox(staging) == 0){set_box(staging);}
-    if (source->GetBoard(staging) == 0){set_board(staging);}
-    if (source->GetMailbox(staging) == 0){set_mailbox(staging);}
-    if (source->GetCore(staging) == 0){set_core(staging);}
-    if (source->GetThread(staging) == 0){set_thread(staging);}
-}
-
 /* Setters, which set the address component with a value.
  *
  * Also updates the "definitions" word. Raises if the input does not fit within

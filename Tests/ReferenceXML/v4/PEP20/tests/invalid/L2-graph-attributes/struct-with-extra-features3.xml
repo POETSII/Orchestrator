@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<Graphs xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" formatMinorVersion="0">
+    <GraphType id="onedev">
+        <Properties><![CDATA[
+            uint32_t x;
+        ]]></Properties>
+        <SharedCode><![CDATA[
+            typedef int x_t;
+        ]]></SharedCode>
+        <MessageTypes>
+            <MessageType id="x">
+                <Message><![CDATA[
+                    x_t bloh;
+                ]]></Message>
+            </MessageType>
+        </MessageTypes>
+        <DeviceTypes>
+            <DeviceType id="dt1">
+                <Properties />
+                <State />
+                <SharedCode />
+                <InputPin name="i1" messageTypeId="mt1">
+                    <Properties />
+                    <State />
+                    <OnReceive />
+                </InputPin>
+                <OutputPin name="o1" messageTypeId="mt1">
+                    <OnSend />
+                </OutputPin>
+                <ReadyToSend />
+                <OnInit />
+                <OnHardwareIdle />
+                <OnDeviceIdle />  
+            </DeviceType>
+        </DeviceTypes>
+    </GraphType>
+    <GraphInstance id="ondev_inst" graphTypeId="onedev">
+        <DeviceInstances>
+            <DevI id="di1" type="dt1" />
+            <DevI id="di2" type="dt1" />
+        </DeviceInstances>
+        <EdgeInstances>
+            <EdgeI path="di1:i1-di2:o1" />
+        </EdgeInstances>
+    </GraphInstance>
+</Graphs>

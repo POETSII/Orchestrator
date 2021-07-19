@@ -25,7 +25,7 @@ void * kb_func(void * pPar)
 // the MPI spinner.
 {
 int len = 0;                           // Characters in buffer
-for(;;) {                              // Superloop
+for(;;) {
   if (len==0) Root::Prompt();          // Console prompt
   static const unsigned SIZE = 512;
   char buf[SIZE];
@@ -50,7 +50,8 @@ for(;;) {                              // Superloop
   if (buf[0]==char(0)) break;          // ctrl-d in linux-land
   if (buf[0]==char(4)) break;          // ctrl-d in u$oft-land
 }
-// Tell the user we're leaving immediately.
+// Tell the user now that we're closing down. Note that the exit command will
+// trigger an exit via ProcCmnd (OnIdle), so we don't need to call CmExit here.
 Root::promptOn = false;
 printf("Exiting...\n");
 pthread_exit(NULL);                    // Kill the keyboard thread
@@ -76,13 +77,19 @@ FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD)] = &Root::OnMshipAck;
 FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)] = &Root::OnMshipAck;
 FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN )] = &Root::OnMshipAck;
 FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)] = &Root::OnMshipAck;
+FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RECL)] = &Root::OnMshipAck;
 
 // Mothership requests
 FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP)] = &Root::OnMshipReq;
+FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::BRKN)] = &Root::OnMshipReq;
+
+// Set up exit flags
+exitOnEmpty = false;
+exitOnStop = false;
+appJustStopped = false;
 
 // Spin off a thread to handle keyboard
 void * args = this;
-pthread_t kb_thread;
 if(pthread_create(&kb_thread,NULL,kb_func,args))
   fprintf(stdout,"Error creating kb_thread\n");
 fflush(stdout);
@@ -207,8 +214,29 @@ unsigned Root::CmExit(Cli * pC)
 // console
 {
 
-                                       // Coming from batch?
-if (!pCmCall->stack.empty()) {
+                                       // Act on staging clauses.
+if (pC != PNULL) WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {
+  if (i->Cl=="at")
+  {
+      string p = i->GetP(0);
+      if (p.empty()) Post(47,i->Cl,"exit","1");
+      if (p=="end")
+      {
+          exitOnEmpty = true;
+          Post(67);
+      }
+      else if (p=="stop")
+      {
+          exitOnStop = true;
+          Post(69);
+      }
+      else Post(66,p);
+  }
+  else Post(25,i->Cl,"exit");           // Unrecognised clause
+  return 0;
+}
+                                       // Normal exit coming from batch?
+if (!pCmCall->stack.empty()&&(!exitOnEmpty)) {
   Post(35);
   return 0;
 }
@@ -227,7 +255,6 @@ Post(50,Sderived,int2str(Urank));      // Root is going anyway
 Pkt.Send(pL);
 
 return CommonBase::OnExit(&Pkt);           // Run the base class exit handler
-// return 1;                                 // Return closedown flag
 }
 
 //------------------------------------------------------------------------------
@@ -307,15 +334,38 @@ bool Root::HaveIdleWork()
 void Root::OnIdle()
 {
 Cli Cm = pCmCall->Front();             // Anything in the batch queue?
-if (Cm.Empty()) return;                // No - bail                                      // Command comment echo to logserver?
-
-if ((pCmCall->echo)&&(!Cm.Orig.empty())) {
-  Post(22);
-  Post(36,Cm.Orig);
+if (!Cm.Empty())                       // If so, act on it.
+{
+  if ((pCmCall->echo)&&(!Cm.Orig.empty())) {
+    Post(22);
+    Post(36,Cm.Orig);
+  }                                    // EOF marker? - remove from call stack
+  if (Cm.Co[0]=='*') pCmCall->stack.pop_back();
+  else ProcCmnd(&Cm);                  // Handle ordinary batch command
 }
-                                       // EOF marker? - remove from call stack
-if (Cm.Co[0]=='*') pCmCall->stack.pop_back();
-else ProcCmnd(&Cm);                    // Handle ordinary batch command
+
+// Nothing there, check exit conditions.
+if ((Cm.Empty() and exitOnEmpty) or (appJustStopped and exitOnStop))
+{
+    // Post before we go. Delay to ensure this gets there before the exit
+    // message.
+    Post(68);
+    OSFixes::sleep(100);
+
+    // Message ourselves to get out of MPISpinner.
+    PMsg_p exitMsg;
+    exitMsg.Key(Q::EXIT);
+    exitMsg.Src(Urank);
+    exitMsg.Send(Urank);
+
+    // Cancel the keyboard thread (breaks out of fgets).
+    pthread_cancel(kb_thread);
+
+    // Send exit to other processes.
+    CmExit(0);
+}
+appJustStopped = false;
+return;
 }
 
 //------------------------------------------------------------------------------
@@ -363,37 +413,86 @@ return ret;
 
 unsigned Root::OnMshipAck(PMsg_p * Z)
 // Updates the mothership acknowledgement table. The table is primarily
-// intended as a debugging tool, but will be invaluable for orchestrating POETS
-// jobs over multiple boxes.
+// intended as a debugging and logging tool, but will be invaluable for
+// orchestrating POETS jobs over multiple boxes.
 {
+    map<int,string>::iterator ackIt;
     unsigned key = Z->Key();
+    bool acksMatch;
     string appName;
+    string ackName;
     Z->Get(0, appName);
-    pair<int, string> mshipApp = make_pair(Z->Src(), appName);
-    if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD))
-        mshipAcks[mshipApp] = "DEFINED";
-    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD))
-        mshipAcks[mshipApp] = "READY";
-    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN))
-        mshipAcks[mshipApp] = "RUNNING";
-    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP))
-        mshipAcks[mshipApp] = "STOPPED";
+
+    // Figure out what the acknowledgement is and store it, if valid.
+    if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::DEFD)) ackName = "DEFINED";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::LOAD)) ackName = "READY";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RUN)) ackName = "RUNNING";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::STOP)) ackName = "STOPPED";
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RECL)) ackName = "RECALLED";
     else
+    {
         Post(183, hex2str(key), int2str(Z->Src()), int2str(Z->Tgt()));
+        return 0;
+    }
+    mshipAcks[appName][Z->Src()] = ackName;
+
+    // If all Motherships now have the same state for this app, post about it.
+    acksMatch = true;
+    for (ackIt = mshipAcks[appName].begin(); ackIt != mshipAcks[appName].end();
+         ackIt++) if (ackIt->second != ackName) acksMatch = false;
+    if (acksMatch)
+    {
+        if (ackName == "DEFINED") Post(186, appName, "successfully deployed");
+        if (ackName == "READY") Post(186, appName, "ready to start");
+        if (ackName == "RUNNING") Post(186, appName, "running");
+        if (ackName == "STOPPED")
+        {
+            Post(186, appName, "stopped");
+            appJustStopped = true;
+        }
+        if (ackName == "RECALLED")
+        {
+            Post(186, appName, "recalled");
+            // If all Motherships have forgotten about it, it's not deployed
+            // any more.
+            deplInfo[appName].clear();
+            deplStat[appName].clear();
+            mshipAcks[appName].clear();
+        }
+    }
+
     return 0;
 }
 
 //------------------------------------------------------------------------------
 
 unsigned Root::OnMshipReq(PMsg_p * Z)
-// Handles requests from Motherships to central control. Currently, just stops
-// applications.
+// Handles requests from Motherships to central control. Stops applications and
+// manages error propagation.
 {
     unsigned key = Z->Key();
     string appName;
     Z->Get(0, appName);
     if (key == PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP))
+    {
         MshipCommand(Cli("stop /app = " + appName).Cl_v[0], "stop");
+    }
+    else if (key == PMsg_p::KEY(Q::MSHP, Q::REQ, Q::BRKN))
+    {
+        /* It's broken! Tell all Motherships. */
+        deplStat[appName] == "ERROR";
+        vector<ProcMap::ProcMap_t*>::iterator mothershipIt;
+        PMsg_p sadTidings;
+        sadTidings.Src(Urank);
+        sadTidings.Put<std::string>(0, &appName);
+        sadTidings.Key(Q::CMND, Q::BRKN);
+        for (mothershipIt = deplInfo[appName].begin();
+             mothershipIt != deplInfo[appName].end(); mothershipIt++)
+        {
+            sadTidings.Tgt((*mothershipIt)->P_rank);
+            sadTidings.Send();
+        }
+    }
     else Post(183, hex2str(key), int2str(Z->Src()), int2str(Z->Tgt()));
     return 0;
 }

@@ -150,6 +150,17 @@ bool Mothership::debug_post(int code, unsigned numArgs, ...)
     #endif
 }
 
+/* Sends a message to Root explaining that an app is broken. */
+void Mothership::tell_root_app_is_broken(std::string appName)
+{
+    PMsg_p sadTidings;
+    sadTidings.Src(Urank);
+    sadTidings.Put(0, &appName);
+    sadTidings.Tgt(pPmap->U.Root);
+    sadTidings.Key(Q::MSHP, Q::REQ, Q::BRKN);
+    queue_mpi_message(&sadTidings);
+}
+
 /* Defines OnIdle behaviour for the Mothership (ala CommonBase) - this
  * currently just calls the idle handler for one supervisor, skipping
  * supervisors that are not already being called, and skipping supervisors for

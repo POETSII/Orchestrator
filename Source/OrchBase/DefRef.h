@@ -23,7 +23,7 @@ virtual ~          DefRef(){}
 
 unsigned           Def()             { return def;          } // Return def
 void               Def(unsigned u)   { def = u;             } // Definition
-void               Dump(unsigned=0,FILE * = stdout);      // Developer-facing ...
+void               Dump(unsigned=0,FILE * = stdout);     // Developer-facing ...
 void               clDef()           { def = 0;             } // Kill def
 void               clRef()           { ref_v.clear();       } // Kill refs
 void               clRef1(unsigned);                          // Remove 1 ref

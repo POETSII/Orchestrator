@@ -3,10 +3,14 @@
 # Runs all tests in this directory. If they all pass, runs Valgrind against
 # them, and writes some logging output. Exit codes:
 #
-#  0: The tests passed, both with and without Valgrind watching over them.
+#  0: The tests passed. If --valgrind was passed they all passed both with and
+#      without Valgrind watching over them.
 #  1: The tests failed.
 #  2: The tests passed, but failed when Valgrind was watching.
 #  3: The tests passed, but Valgrind could not be found.
+
+# Paths for dynamically-linked libraries.
+export LD_LIBRARY_PATH="{{ MPICH_LIB_DIR }}":"$LD_LIBRARY_PATH":./
 
 # Verify all tests pass.
 LOGFILE="tests.log"
@@ -25,6 +29,11 @@ if [ $FAILURE -ne 0 ]; then
     exit 1
 else
     echo "All tests passed."
+fi
+
+# Exit if Valgrind is not wanted.
+if [ "$1" != "--valgrind" ]; then
+   exit 0
 fi
 
 # Check for Valgrind's existence.
