@@ -35,6 +35,7 @@ ComposerGraphI_t::ComposerGraphI_t()
     softswitchLogHandler = trivial;     // Default to the trivial log handler
     softswitchLogLevel = 2;             // Default to a log level of 2
     softswitchLoopMode = standard;      // Default to the standard loop mode
+    softswitchRequestIdle = true;       // Default to respecting requestIdle
     
     compilationFlags = "";
     provenanceCache = "";
@@ -55,6 +56,7 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
     softswitchLogHandler = trivial;     // Default to the trivial log handler 
     softswitchLogLevel = 2;             // Default to a log level of 2
     softswitchLoopMode = standard;      // Default to the standard loop mode
+    softswitchRequestIdle = true;       // Default to respecting requestIdle
     
     compilationFlags = "";
     provenanceCache = "";
@@ -104,6 +106,8 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
                         bufferingSoftswitch ? "true" : "false");
     fprintf(file, "  Softswitch Instrumentation: %s \n",
                         softswitchInstrumentation ? "true" : "false");
+    fprintf(file, "  Softswitch requestIdle: %s \n",
+                        softswitchRequestIdle ? "true" : "false");
                         
     fprintf(file, "  Softswitch log handler:     ");
     switch(softswitchLogHandler)
@@ -136,6 +140,10 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
     if(bufferingSoftswitch)
     {   // Softswitch needs to be built in buffering mode
         makeArgs += "SOFTSWITCH_BUFFERING=1 ";
+    }
+    if(!(softswitchRequestIdle))
+    {   // Softswitch needs to be built without requestIdle
+        makeArgs += "SOFTSWITCH_NOREQUESTIDLE=1 ";
     }
     if(!(softswitchInstrumentation))
     {   // Softswitch needs to be built with instrumentation disabled
@@ -348,6 +356,40 @@ int Composer::setRTSSize(GraphI_t* graphI, unsigned long rtsSize)
     }
     
     builderGraphI->rtsBuffSizeMax = rtsSize;
+    
+    return 0;
+}
+
+/******************************************************************************
+ * Set the buffering mode for the softswitch
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::setReqIdleMode(GraphI_t* graphI, bool reqIdleMode)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchRequestIdle = reqIdleMode;
     
     return 0;
 }
@@ -831,6 +873,11 @@ int Composer::compile(GraphI_t* graphI)
     if(builderGraphI->bufferingSoftswitch)
     {   // Softswitch needs to be built in buffering mode
         makeArgs += "SOFTSWITCH_BUFFERING=1 ";
+    }
+    
+    if(!(builderGraphI->softswitchRequestIdle))
+    {   // Softswitch needs to be built without requestIdle
+        makeArgs += "SOFTSWITCH_NOREQUESTIDLE=1 ";
     }
     
     if(!(builderGraphI->softswitchInstrumentation))
@@ -2070,6 +2117,10 @@ void Composer::formDevTHandlers(devTypStrings_t* dTypStrs)
     handlers_cpp << "void* __Device, uint32_t* readyToSend)\n";
     handlers_cpp << dTypStrs->handlerPreamble;
     handlers_cpp << dTypStrs->handlerPreambleCS;
+    
+    handlers_cpp << "    bool* requestIdle = &deviceInstance->requestIdle;\n";
+    handlers_cpp << "    OS_PRAGMA_UNUSED(requestIdle)\n";
+    
     if (devT->pOnRTS != 0) handlers_cpp << devT->pOnRTS->C_src() << "\n";
     // we assume here the return value is intended to be an RTS bitmap.
     handlers_cpp << "    return *readyToSend;\n";
@@ -3253,7 +3304,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
         if(devI->pT->pStateD)
         {
             devII << "&Thread_" << threadAddr << "_DeviceState[";
-            devII << devIdx << "]},";
+            devII << devIdx << "],";
 
             if(devI->pStateI)
             {
@@ -3262,8 +3313,11 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
         }
         else
         {
-            devII << "PNULL},";
+            devII << "PNULL,";
         }
+        
+        // Initialise requestIdle
+        devII << "false},";
 
         // populate the DevIIStrs with the initialiser
         devIIStrs[devIdx] = devII.str();

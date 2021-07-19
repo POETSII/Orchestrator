@@ -27,17 +27,18 @@ done
 
 TN=0
 
+############################################
+## Compilation
+
+PLOG_FILTER='s/^.*will be written to '\''([^'\'']+[.]plog)'\''.+$/\1/p'
+
 function TODO_compile {
     F="$1"
     RR=$(realpath --relative-to="$ORCHROOT" "$F")
     echo "not ok $TN - # TODO Compile $RR, $2"
     TN=$((TN+1))
+    return 0
 }
-
-############################################
-## Compilation
-
-PLOG_FILTER='s/^.*will be written to '\''([^'\'']+[.]plog)'\''.+$/\1/p'
 
 function test_compile_success {
     F="$1"
@@ -49,9 +50,9 @@ function test_compile_success {
             PLOG_LINE=$(echo $OUTPUT |  tr -dc '[[:print:]]' | sed -r -n "${PLOG_FILTER}" )
             echo ""
             echo "#Validation of $F Failed."
-            echo "$OUTPUT" | while read l ; do 
+            echo "$OUTPUT" | while read l ; do
                 echo "# > $l"
-            done 
+            done
             echo "# plog is in ${PLOG_LINE}"
             echo ""
             while read l ; do
@@ -66,14 +67,16 @@ function test_compile_success {
 
     if [[ $RES -eq 0 ]] ; then
         echo "ok $TN - Compile $RR"
+        TN=$((TN+1))
+        return 0
     else
         echo "not ok $TN - Compile $RR"
         if [[ $ABORT_ON_ERROR -eq 1 ]] ; then
             exit 1
         fi
+        TN=$((TN+1))
+        return 1
     fi
-
-    TN=$((TN+1))
 }
 
 function test_compile_failure {
@@ -85,13 +88,16 @@ function test_compile_failure {
 
     if [[ $RES -ne 0 ]] ; then
         echo "ok $TN - Should fail to compile $RR"
+        TN=$((TN+1))
+        return 0
     else
         echo "not ok $TN - Should fail to compile $RR"
+        TN=$((TN+1))
+        return 1
     fi
-
-    TN=$((TN+1))
 }
 
+RC=0
 for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/apps/*.xml ; do
     if [[ "$i" == */apsp_vec_barrier_150_10.xml ]] ; then
         TODO_compile $i "Bug #232 needs to be fixed."
@@ -99,18 +105,22 @@ for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/apps/*.xml ; do
         TODO_compile $i "orchestrator needs indexed sends."
     elif [[ "$i" == */example_device_idle.xml ]] ; then
         TODO_compile $i "orchestrator needs requestIdle."
-    else 
+    else
         test_compile_success $i
     fi
-done 
+    if [ $? -ne 0 ]; then RC=1; fi
+done
 for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/tests/valid/*/*.xml ; do
     if [[ "$i" == */L4-run-time/external-*.xml ]] ; then
         TODO_compile $i "No support for externals."
     else
         test_compile_success $i
     fi
-done 
+    if [ $? -ne 0 ]; then RC=1; fi
+done
 
 for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/tests/invalid/L3-compilation/*.xml ; do
     test_compile_failure $i
-done 
+    if [ $? -ne 0 ]; then RC=1; fi
+done
+exit $RC

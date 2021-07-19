@@ -140,6 +140,7 @@ typedef struct PDeviceInstance
     outPin_t*           outputPins;      // Pointer to the outputPin array
     const void*         properties;      // Pointer to the device's properties
     void*               state;           // Pointer to the device's state
+    bool                requestIdle;     // Bool to indicate whether Idle should happen
 } devInst_t;
 
 typedef struct PThreadContext

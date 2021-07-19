@@ -95,6 +95,7 @@ typedef struct ComposerGraphI_t
     ssLogHandler_t softswitchLogHandler;
     unsigned long softswitchLogLevel;
     ssLoopMode_t softswitchLoopMode;
+    bool softswitchRequestIdle;
     
     // Constructors/Destructors
     ComposerGraphI_t();
@@ -127,6 +128,7 @@ void        setOutputPath(std::string);
 void        setPlacer(Placer*);
 
 int         setBuffMode(GraphI_t*, bool);
+int         setReqIdleMode(GraphI_t*, bool);
 int         setRTSSize(GraphI_t*, unsigned long);
 int         enableInstr(GraphI_t*, bool);
 int         setLogHandler(GraphI_t*, ssLogHandler_t);
