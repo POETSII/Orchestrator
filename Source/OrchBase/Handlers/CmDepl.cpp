@@ -320,7 +320,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
         /* Run each staged command, failing fast if one of them breaks. */
         for (command = commands.begin(); command != commands.end(); command++)
         {
-            if (system(command->c_str()) > 0)
+            if (system(command->c_str()) != 0)
             {
                 /* Command failed, cancelling deployment. */
                 fprintf(par->fd, "ERROR: Command '%s' failed, cancelling "
