@@ -153,7 +153,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
 #endif
 
     // We abuse the fact that we have a single device type for idle handling
-    devInst_t* device = &ThreadContext->devInsts[idleIdx];
+    devInst_t* device = &ThreadContext->devInsts[0];
 
     while (!ThreadContext->ctlEnd)
     {
@@ -208,15 +208,15 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
 #endif
 
         // Idle handling
-        else if(device->devType->OnIdle_handler 
+        else if(device->devType->OnIdle_Handler 
                 && !softswitch_onIdle(ThreadContext))
         {   // We have an idle handler and nothing interesting happened in it
             
-            if(device->devType->OnHWIdle_handler)
+            if(device->devType->OnHWIdle_Handler)
             {   // We have hardware idle
                 if(tinselIdle(true))
                 {   // returned from a synchronisation point
-                    softswitch_onHWIdle(ThreadContext)
+                    softswitch_onHWIdle(ThreadContext);
                 }
             }
             else
@@ -663,7 +663,7 @@ inline bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
 /* Routine called if tinselIdle returns true. This loops over all hosted devices
  * and calls the device type's OnHWIdle handler followed by ReadyToSend.
  */
-inline void softswitch_onHWIdle(ThreadCtxt_t* thr_ctxt)
+inline void softswitch_onHWIdle(ThreadCtxt_t* ThreadContext)
 {
     for(uint32_t i = 0; i < ThreadContext->numDevInsts; i++)
     {
