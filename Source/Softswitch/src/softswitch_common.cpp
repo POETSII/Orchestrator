@@ -152,6 +152,9 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
  #endif
 #endif
 
+    // We abuse the fact that we have a single device type for idle handling
+    devInst_t* device = &ThreadContext->devInsts[idleIdx];
+
     while (!ThreadContext->ctlEnd)
     {
     #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION
@@ -204,13 +207,22 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
         }
 #endif
 
-
-        // Nothing to RX, nothing to TX: iterate through all devices until
-        // something happens or all OnComputes have returned 0.
-        //softswitch_onIdle(ThreadContext);
-        else if(!softswitch_onIdle(ThreadContext))
-        {
-            tinselWaitUntil(TINSEL_CAN_RECV);
+        // Idle handling
+        else if(device->devType->OnIdle_handler 
+                && !softswitch_onIdle(ThreadContext))
+        {   // We have an idle handler and nothing interesting happened in it
+            
+            if(device->devType->OnHWIdle_handler)
+            {   // We have hardware idle
+                if(tinselIdle(true))
+                {   // returned from a synchronisation point
+                    softswitch_onHWIdle(ThreadContext)
+                }
+            }
+            else
+            {   // No hardware idle, sleep untill we can receive
+                tinselWaitUntil(TINSEL_CAN_RECV);
+            }
         }
     }
 }
@@ -234,7 +246,7 @@ void softswitch_finalise(ThreadCtxt_t* ThreadContext)
 
         ThreadContext->rtsStart++;
         if(ThreadContext->rtsStart == maxIdx)
-        {
+        { 
             ThreadContext->rtsStart = 0;
         }
     }
@@ -647,6 +659,19 @@ inline bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
     return notIdle;
 }
 
+
+/* Routine called if tinselIdle returns true. This loops over all hosted devices
+ * and calls the device type's OnHWIdle handler followed by ReadyToSend.
+ */
+inline void softswitch_onHWIdle(ThreadCtxt_t* thr_ctxt)
+{
+    for(uint32_t i = 0; i < ThreadContext->numDevInsts; i++)
+    {
+        devInst_t* device = &ThreadContext->devInsts[i];
+        device->devType->OnHWIdle_Handler(ThreadContext->properties, device);
+        softswitch_onRTS(ThreadContext, device);  // Call RTS for device
+    }
+}
 
 inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
 {

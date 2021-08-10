@@ -3007,12 +3007,15 @@ void Composer::writeDevTDeclInit(AddressComponent threadAddr, DevT_t* devT,
     vars_cpp << "= {";
     vars_cpp << "&devtyp_" << devT->Name() << "_RTS_handler,";                  // RTS_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnInit_handler,";               // OnInit_Handler
-    vars_cpp << "&devtyp_" << devT->Name() << "_OnIdle_handler,";               // OnIdle_Handler
-    vars_cpp << "&devtyp_" << devT->Name() << "_OnHWIdle_handler,";             // OnHWIdle_Handler
+    
+    if(devT->pOnDeId) vars_cpp <<"&devtyp_"<<devT->Name()<<"_OnIdle_handler,";  // OnIdle_Handler
+    else vars_cpp << "0,";
+    
+    if(devT->pOnHWId) vars_cpp <<"&devtyp_"<<devT->Name()<<"_OnHWIdle_handler,";// OnHWIdle_Handler
+    else vars_cpp << "0,";
+    
     vars_cpp << "&devtyp_" << devT->Name() << "_OnImpl_handler,";               // OnImpl_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnCtl_handler,";                // OnCtl_Handler
-
-    //TODO: Add v4 handlers
 
     if(devT->pPropsD)
     {
