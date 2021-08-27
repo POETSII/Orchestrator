@@ -51,6 +51,7 @@ public:
     void recall_application(AppInfo*);
 
     /* Methods for handling MPI messages (called by consumer threads). */
+    unsigned handle_msg_app_empt(PMsg_p* message);
     unsigned handle_msg_app_spec(PMsg_p* message);
     unsigned handle_msg_app_dist(PMsg_p* message);
     unsigned handle_msg_app_supd(PMsg_p* message);
@@ -95,6 +96,8 @@ private:
 
     /* Methods for safely decoding MPI messages with certain field
      * configurations. */
+    bool decode_app_empt_message(PMsg_p* message, std::string* codePath,
+                                 std::string* dataPath);
     bool decode_app_dist_message(PMsg_p* message, std::string* appName,
                                  std::string* codePath, std::string* dataPath,
                                  uint32_t* coreAddr,

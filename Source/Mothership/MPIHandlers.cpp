@@ -55,7 +55,7 @@ unsigned Mothership::handle_msg_cnc(PMsg_p* message)
     #if ORCHESTRATOR_DEBUG
     std::string key = "Unknown";
     if (message->Key() == PMsg_p::KEY(Q::APP,Q::SPEC))
-        key = "Q::APP,Q::SPEC";
+        key = "Q::APP,Q::EMPT";
     else if (message->Key() == PMsg_p::KEY(Q::APP,Q::SPEC))
         key = "Q::APP,Q::SPEC";
     else if (message->Key() == PMsg_p::KEY(Q::APP,Q::DIST))
@@ -76,6 +76,27 @@ unsigned Mothership::handle_msg_cnc(PMsg_p* message)
     debug_post(599, 2, key.c_str(), "MPI Command-and-control");
     #endif
     threading.push_MPI_cnc_queue(*message);
+    return 0;
+}
+
+unsigned Mothership::handle_msg_app_empt(PMsg_p* message)
+{
+    /* Pull message contents. */
+    std::string codePath;
+    std::string dataPath;
+    if (!decode_app_empt_message(message, &codePath, &dataPath))
+    {
+        debug_post(597, 3, "Q::APP,Q::EMPT", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
+        return 0;
+    }
+
+    debug_post(597, 3, "Q::APP,Q::EMPT", hex2str(message->Key()).c_str(),
+               dformat("codePath=%s, dataPath=%s",
+                       codePath.c_str(), dataPath.c_str()));
+
+    /* gogogo */
+    backend->loadAll(codePath.c_str(), dataPath.c_str());
     return 0;
 }
 

@@ -10,6 +10,16 @@
 
 #include "Mothership.h"
 
+bool Mothership::decode_app_empt_message(
+    PMsg_p* message, std::string* codePath, std::string* dataPath)
+{
+    codePath->clear();
+    dataPath->clear();
+    if(!decode_string_message(message, codePath)) return false;
+    if(!decode_string_message(message, dataPath, 1)) return false;
+    return true;
+}
+
 bool Mothership::decode_app_dist_message(
     PMsg_p* message, std::string* appName, std::string* codePath,
     std::string* dataPath, uint32_t* coreAddr,
