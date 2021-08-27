@@ -79,9 +79,9 @@ bool Mothership::decode_addressed_packets_message(PMsg_p* message,
     message->Put<P_Addr_Pkt_t>();  // Tell the message its type
 
     packets->clear();
-    
+
     message->Get<P_Addr_Pkt_t>(index, *packets);
-    
+
     if (packets->empty())
     {
         Post(516, hex2str(message->Key()), uint2str(index));
@@ -140,7 +140,7 @@ bool Mothership::decode_packets_message(PMsg_p* message,
     packets->clear();
 
     message->Get<P_Pkt_t>(index, *packets);
-    
+
     // If the packet vector has come back empty, there is an error.
     if (packets->empty())
     {
