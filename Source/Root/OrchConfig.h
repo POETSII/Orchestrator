@@ -41,6 +41,7 @@ string                   Placement()   { return setup_files.placement;         }
 string                   RemoteMshp()  { return default_paths.remote_mship;    }
 string                   RemoteOut()   { return default_paths.remote_outdir;   }
 string                   Trace()       { return default_paths.trace;           }
+bool                     SingleApp()   { return modes.single_app_mode;         }
 string                   Stage()       { return default_paths.stage;           }
 string                   Supervisors() { return default_paths.supervisors;     }
 string                   Ulog()        { return default_paths.ulog;            }
@@ -85,6 +86,10 @@ struct setup_files_t {
 struct flags_t {
   string build;                        // Default x-compiler flags
 } flags;
+
+struct modes_t {
+  bool single_app_mode;                // Hardware-idle friendly?
+} modes;
 
 };
 

@@ -27,8 +27,8 @@ ecnt = 0;                              // So far, so good, then. No errors
 JNJ P(WhereAmI);                      // Parse defining file
 ecnt = P.ErrCnt();                     // Syntax cockups?
 if (ecnt!=0) {                         // If so, bail
-  if (P.Td.t==Lex::S_0) IncErr(0,6);
-  else IncErr(0,7);
+  if (P.Td.t==Lex::S_0) IncErr(0,7);
+  else IncErr(0,8);
   return;
 }
 vH sects;
@@ -97,6 +97,20 @@ WALKVECTOR(UIF::Node *,sects,i) {      // Walk the sections
       if (valus.empty()) s.clear();
       else s = valus[0]->str;
       if ((*k)->str=="build"   ) flags.build    = s;
+    }
+  }
+  if (sn=="modes") {
+    P.GetVari(*i,varis);
+    WALKVECTOR(UIF::Node *,varis,k) {
+      P.LocValu(*k,valus);
+      if (valus.size()>1) IncErr(P.FndRecd(*k),6);
+      if (valus.empty()) s.clear();
+      else s = valus[0]->str;
+      if ((*k)->str=="single_app_mode") {
+        if (s=="false") modes.single_app_mode = false;
+        else if (s=="true") modes.single_app_mode = true;
+        else IncErr(P.FndRecd(*k),6);
+      }
     }
   }
 }
