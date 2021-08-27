@@ -378,6 +378,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
         {
             /* TODO: GMB to plonk binary paths here (or at least some way to
              * grab them). <!> */
+            #warning GMB to define these paths somewhere.
             std::string codePath;
             std::string dataPath;
 
