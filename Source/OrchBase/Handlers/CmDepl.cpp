@@ -1,8 +1,8 @@
 //------------------------------------------------------------------------------
 
 #include "CmDepl.h"
-#include "OrchBase.h"
 #include "Pglobals.h"
+#include "Root.h"  /* Grabs Orchestrator config, and OrchBase. */
 #include "SupervisorModes.h"
 
 //==============================================================================
@@ -376,9 +376,12 @@ int CmDepl::DeployGraph(GraphI_t* gi)
         specMessage.Put<unsigned>(1, &distCount);
         specMessage.Put<unsigned char>(2,
             static_cast<unsigned char*>(&appNumber));
+        bool soloApp = dynamic_cast<Root *>(par)->pOC->SingleApp();
+        specMessage.Put<bool>(3,&soloApp);
         fprintf(par->fd, "Sending SPEC message to Mothership rank %d, with "
-                "appNumber=%u and distCount=%u...",
-                mothershipPayloadsIt->first, appNumber, distCount);
+                "appNumber=%u, distCount=%u, and soloApp=%s...",
+                mothershipPayloadsIt->first, appNumber, distCount,
+                soloApp ? "true" : "false");
         specMessage.Send();
         fprintf(par->fd, " message sent.\n");
 

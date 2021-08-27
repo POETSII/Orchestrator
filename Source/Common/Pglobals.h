@@ -82,6 +82,8 @@ EXIT |-    |-    |-    | (None)
 SYST |KILL |-    |-    | (None)
 APP  |SPEC |-    |-    | (0:string)Application name
                          (1:uint32_t)Number of expected distribution messages
+                         (2:uint8_t)Application number
+                         (3:bool)Hardware-idle application?
 APP  |DIST |-    |-    | (0:string)Application name
                          (1:string)Code path for this core
                          (2:string)Data path for this core

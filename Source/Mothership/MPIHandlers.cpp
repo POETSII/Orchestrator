@@ -87,8 +87,9 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
     std::string appName;
     uint32_t distCount;
     uint8_t appNumber;
+    bool soloApp;
     if (!decode_app_spec_message(message, &appName, &distCount,
-                                 &appNumber))
+                                 &appNumber, &soloApp))
     {
         debug_post(597, 3, "Q::APP,Q::SPEC", hex2str(message->Key()).c_str(),
                    "Failed to decode.");
@@ -96,12 +97,13 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
     }
 
     debug_post(597, 3, "Q::APP,Q::SPEC", hex2str(message->Key()).c_str(),
-               dformat("appName=%s, distCount=%u, appNumber=%u",
-                       appName.c_str(), distCount, appNumber).c_str());
+               dformat("appName=%s, distCount=%u, appNumber=%u, soloApp=%s",
+                       appName.c_str(), distCount, appNumber,
+                       soloApp ? "true" : "false").c_str());
 
     /* Ensure application existence idempotently (it might have been created by
      * an AppDist message). */
-    appInfo = appdb.check_create_app(appName, distCount);
+    appInfo = appdb.check_create_app(appName, distCount, soloApp);
 
     /* If the application is not in the UNDERDEFINED state, post bossily and do
      * nothing else. */

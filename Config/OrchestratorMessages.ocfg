@@ -234,7 +234,10 @@
 534(I) : "Mothership (rank %s): All devices on this Mothership for application '%s' have stopped."
 535(I) : "Mothership (rank %s): Recalling application '%s'."
 536(I) : "Mothership (rank %s): Application '%s' recalled. This Mothership has forgotten everything about this application."
+537(E) : "Mothership: Error decoding MPI message with key '0x%s': Expected bool in field %s. Ignoring message."
 
+578(I) : "Mothership: Calling backend->go."
+579(I) : "Mothership: Calling backend->startAll."
 580(E) : "Mothership: Received a log packet with an invalid device index 0x%s."
 581(I) : "Mothership: Consuming log packet from device address 0x%s with name %s."
 582(I) : "Mothership: Received a message containing packets for a supervisor device for application '%s' that is not running (it may be in the process of stopping). Ignoring these packets."

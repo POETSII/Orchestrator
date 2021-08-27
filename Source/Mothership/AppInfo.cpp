@@ -1,9 +1,10 @@
 #include "AppInfo.h"
 
 /* This constructor is used by SPEC messages. */
-AppInfo::AppInfo(std::string name, uint32_t distCountExpected):
+AppInfo::AppInfo(std::string name, uint32_t distCountExpected, bool soloApp):
     name(name),
-    distCountExpected(distCountExpected)
+    distCountExpected(distCountExpected),
+    soloApp(soloApp)
 {
     pendingCommands = 0;
     distCountCurrent = 0;
