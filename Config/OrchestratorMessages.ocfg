@@ -330,7 +330,7 @@
 310(I) : "Dump of graph instance '%s' complete."
 311(W) : "Unable to dump graph instance '%s' - it's not been placed."
 312(I) : "Starting to dump graph instance '%s' - this might take a while, because the fitness score needs to be computed."
-313(E) : "Unable to create a pthread when building the placement cost cache. pthread_create returned %s. Look at the manual page to decode this problem (from experience, it's always a problem involving exceeing the stack-size limit."
+313(E) : "Unable to create a pthread when building the placement cost cache. pthread_create returned %s. Look at the manual page to decode this problem (from experience, it's always a problem involving exceeding the stack-size limit."
 314(I) : "Attempting to load '%s' to place graph instance '%s'..."
 315(W) : "Unable to reset a portion of the placement system. Did you mean 'unplace'?"
 316(W) : "Unable to place graph instance '%s' - could not generate a cost cache for this engine, which is required for this placement algorithm. Try a different engine or placement algorithm. Details: %s"
