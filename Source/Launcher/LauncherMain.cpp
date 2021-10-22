@@ -882,12 +882,12 @@ argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str());
     }
     if (*quietValgrind)
     {
-        DebugPrint("%s%sIf requested, valgrind will be run quietly.",
+        DebugPrint("%s%sIf requested, valgrind will be run quietly.\n",
                    debugHeader, debugIndent);
     }
     else
     {
-        DebugPrint("%s%sIf requested, valgrind will not be run quietly.",
+        DebugPrint("%s%sIf requested, valgrind will not be run quietly.\n",
                    debugHeader, debugIndent);
     }
     if (*dryRun)
