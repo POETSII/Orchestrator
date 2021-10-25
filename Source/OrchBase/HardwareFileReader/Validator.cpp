@@ -335,7 +335,7 @@ bool Validator::is_node_value_natural(UIF::Node* valueNode)
 bool Validator::is_node_variable_true_in_map(
     std::map<std::string, bool>* mapToSearch, UIF::Node* variableNode)
 {
-    return mapToSearch->at(variableNode->str);
+    return (*mapToSearch)[variableNode->str];
 }
 
 /* Returns whether the name at a node is a valid type name (i.e. must satisfy

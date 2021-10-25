@@ -1387,7 +1387,7 @@ std::string Placer::timestamp()
     char timeBuf[sizeof "YYYY-MM-DDTHH:MM:SS"];
     strftime(timeBuf, sizeof timeBuf,
              "%Y-%m-%dT%H-%M-%S", localtime(&timeNtv));
-    return timeBuf;
+    return std::string(timeBuf);
 }
 
 /* Removes all device-thread relations for all devices in an application graph
