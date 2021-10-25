@@ -98,6 +98,9 @@ typedef struct ComposerGraphI_t
     ssLoopMode_t softswitchLoopMode;
     bool softswitchRequestIdle;
     
+    std::string idleInstructionBinary;   // Dummy instruction binary for HW Idle
+    std::string idleDataBinary;          // Dummy data binary for HW Idle
+    
     // Constructors/Destructors
     ComposerGraphI_t();
     ComposerGraphI_t(GraphI_t*, std::string&);

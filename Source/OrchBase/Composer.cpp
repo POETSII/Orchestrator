@@ -126,6 +126,11 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
         default:        fprintf(file, "**INVALID**\n");
     }
     
+    
+    fprintf(file, "  Hardware Idle Instructions: %s\n",
+                    idleInstructionBinary.c_str());
+    fprintf(file, "  Hardware Idle Data:         %s\n",idleDataBinary.c_str());
+    
     fprintf(file, "\nNitty gritty details:\n");
     fprintf(file, "  Device type strs map size:  %lu \n",
                         static_cast<unsigned long>(devTStrsMap.size()));
@@ -1210,6 +1215,37 @@ int Composer::checkBinaries(ComposerGraphI_t* builderGraphI)
     
     std::string taskDir(builderGraphI->outputDir);
     std::string elfPath(taskDir + "/bin");
+    
+    
+    // Check that the "dummy" binaries for HW idle were generated.
+    FILE* dummyBinary;
+    
+    // Check Dummy Instruction binary and add to GraphI
+    std::string dummyPath = elfPath + "/dummy_code.v";
+    dummyBinary = fopen(dummyPath.c_str(), "r");
+    if(dummyBinary == PNULL)
+    { // Failed to open binary
+        fprintf(fd,"\tFailed to open dummy instruction binary %s after compilation\n",
+                    dummyPath.c_str());
+        return -1;
+    }
+    fclose(dummyBinary);
+    builderGraphI->idleInstructionBinary = dummyPath;
+    
+    
+    // Check Dummy Data binary and add to GraphI
+    dummyPath = elfPath + "/threadCtxInit_data.v";
+    dummyBinary = fopen(dummyPath.c_str(), "r");
+    if(dummyBinary == PNULL)
+    { // Failed to open binary
+        fprintf(fd,"\tFailed to open dummy data binary %s after compilation\n",
+                    dummyPath.c_str());
+        return -1;
+    }
+    fclose(dummyBinary);
+    builderGraphI->idleDataBinary = dummyPath;
+    
+    
     
     // Check that the core binaries were made and link to each core.
     WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
