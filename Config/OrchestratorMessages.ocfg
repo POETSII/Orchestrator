@@ -224,7 +224,7 @@
 188(I) : "Run of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
 189(I) : "Stop of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
 190(I) : "Recall of graph instance '%s' staged. Waiting for Mothership(s) to acknowledge receipt in the background."
-191(U) : "MLV: Allocated but as yet unused"
+191(E) : "No motherships mapped to deploy graph instance '%s'."
 192(U) : "MLV: Allocated but as yet unused"
 193(U) : "MLV: Allocated but as yet unused"
 194(U) : "GMB: Allocated but as yet unused"

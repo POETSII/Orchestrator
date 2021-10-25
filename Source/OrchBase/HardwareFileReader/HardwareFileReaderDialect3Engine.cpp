@@ -54,9 +54,9 @@ bool HardwareFileReader::d3_populate_validate_address_format(P_engine* engine)
      * together). */
     std::vector<std::string> values;
     std::vector<std::string>::iterator valueIterator;
-    unsigned* accumulationTarget;  /* This will point to a _WordLength member
-                                    * of the address format object owned by the
-                                    * engine. */
+    unsigned accumulationTarget;  /* This will map to a _WordLength member of
+                                   * the address format object owned by the
+                                   * engine. */
 
     /* Iterate through all record nodes in this section. */
     std::vector<UIF::Node*> recordNodes;
@@ -104,7 +104,6 @@ bool HardwareFileReader::d3_populate_validate_address_format(P_engine* engine)
         if (variable == "box" or variable == "core" or
             variable == "thread")
         {
-
             /* Complaints */
             if (!(complain_if_record_is_multivalue(&valueNodes) and
                   complain_if_value_not_natural(valueNodes[0])))
@@ -116,18 +115,18 @@ bool HardwareFileReader::d3_populate_validate_address_format(P_engine* engine)
             /* We bind! */
             if (variable == "box")
             {
-                engine->addressFormat.boxWordLength =
-                    str2unsigned(valueNodes[0]->str);
+                engine->addressFormat.set_box_word_length(
+                    str2unsigned(valueNodes[0]->str));
             }
             else if (variable == "core")
             {
-                engine->addressFormat.coreWordLength =
-                    str2unsigned(valueNodes[0]->str);
+                engine->addressFormat.set_core_word_length(
+                    str2unsigned(valueNodes[0]->str));
             }
             else /* Must be thread */
             {
-                engine->addressFormat.threadWordLength =
-                    str2unsigned(valueNodes[0]->str);
+                engine->addressFormat.set_thread_word_length(
+                    str2unsigned(valueNodes[0]->str));
             }
         }
 
@@ -156,22 +155,22 @@ bool HardwareFileReader::d3_populate_validate_address_format(P_engine* engine)
                 }
             }
 
-            /* We bind! (is either board or mailbox) */
-
-            /* Determine target */
-            accumulationTarget =
-                &(variable == "board" ?
-                  engine->addressFormat.boardWordLength :
-                  engine->addressFormat.mailboxWordLength);
-            *accumulationTarget = 0;  /* Reset target */
-
             /* Add values to target. The total word length is (simply) the sum
              * of its multidimensional constituents. */
+            accumulationTarget = 0;
             for (valueIterator=values.begin(); valueIterator!=values.end();
                  valueIterator++)
             {
-                *accumulationTarget += str2unsigned(*valueIterator);
+                accumulationTarget += str2unsigned(*valueIterator);
             }
+
+            /* We set! (is either board or mailbox) */
+            if (variable == "board")
+                engine->addressFormat.set_board_word_length(
+                    accumulationTarget);
+            else
+                engine->addressFormat.set_mailbox_word_length(
+                    accumulationTarget);
         }
     }
 

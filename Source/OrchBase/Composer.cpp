@@ -16,6 +16,7 @@ const string COREMAKECLEAN = "make clean 2>&1 >> clean_errs.txt";
 const unsigned int MAX_RTSBUFFSIZE = 4096;
 const unsigned int MIN_RTSBUFFSIZE = 10;
 
+typedef std::vector<unsigned> SVU;    // Typedef to appease Borland with WALKMAP
 
 
 /******************************************************************************
@@ -2701,12 +2702,12 @@ unsigned Composer::writeThreadVars(ComposerGraphI_t* builderGraphI,
     AddressComponent coreAddr = thread->parent->get_hardware_address()->as_uint();
     AddressComponent threadAddr = thread->get_hardware_address()->get_thread();
 
-    DevI_t* dev = (*(placer->threadToDevices.at(thread).begin()));
+    DevI_t* dev = (*(placer->threadToDevices[thread].begin()));
     DevT_t* devT = dev->pT;
 
 
     std::list<DevI_t*>::size_type numberOfDevices =
-        placer->threadToDevices.at(thread).size();  // Get the thread dev count
+        placer->threadToDevices[thread].size();  // Get the thread dev count
 
 
 
@@ -2765,7 +2766,7 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
     
     AddressComponent threadAddr = thread->get_hardware_address()->get_thread();
     std::list<DevI_t*>::size_type numberOfDevices =
-        placer->threadToDevices.at(thread).size();  // Get the thread dev count
+        placer->threadToDevices[thread].size();  // Get the thread dev count
 
     size_t outTypCnt = devT->PinTO_v.size();      // Number of output pins
     bool rtsOF = false;                           // Flag to indicate RTS sz OF
@@ -2822,7 +2823,7 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
 
         if (outTypCnt) // If we have output pins
         {              // Iterate through devices counting connected output pins
-            WALKLIST(DevI_t*, placer->threadToDevices.at(thread), dev)
+            WALKLIST(DevI_t*, placer->threadToDevices[thread], dev)
             {
                 /* The below relies on the Pmap in the device instance to find 
                  * output pins with reference to the Pin's PinT_t. 
@@ -3190,7 +3191,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
     DevT_t* devT = PNULL;
 
     // Iterate through all of the devices
-    WALKLIST(DevI_t*, placer->threadToDevices.at(thread), dev)
+    WALKLIST(DevI_t*, placer->threadToDevices[thread], dev)
     {
         unsigned devIdx = (*dev)->addr.get_device();
 
@@ -3440,7 +3441,7 @@ void Composer::writeDevIInputPinDefs(GraphI_t* graphI, DevT_t* devT,
         inPinTIStrs.push_back(inPinInit.str());
     }
 
-    WALKMAP(PinI_t*, std::vector<unsigned>, iPinIArcKMap, pinIItr)
+    WALKMAP(PinI_t*, SVU, iPinIArcKMap, pinIItr)
     {
         unsigned pinIdx;
         unsigned edgeCnt = pinIItr->first->Key_v.size();
@@ -3699,7 +3700,7 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
     }
 
 
-    WALKMAP(PinI_t*, std::vector<unsigned>, oPinIArcKMap, pinIItr)
+    WALKMAP(PinI_t*, SVU, oPinIArcKMap, pinIItr)
     {
         unsigned pinIdx;
         unsigned edgeCnt = pinIItr->first->Key_v.size();

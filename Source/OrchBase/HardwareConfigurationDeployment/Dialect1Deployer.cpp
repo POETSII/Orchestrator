@@ -117,15 +117,17 @@ void Dialect1Deployer::assign_metadata_to_engine(P_engine* engine)
 void Dialect1Deployer::assign_sizes_to_address_format(
     HardwareAddressFormat* format)
 {
-    format->boxWordLength = boxWordLength;
-    format->coreWordLength = coreWordLength;
-    format->threadWordLength = threadWordLength;
+    format->set_box_word_length(boxWordLength);
+    format->set_core_word_length(coreWordLength);
+    format->set_thread_word_length(threadWordLength);
 
     /* Sum-reduce the formats that are defined as vectors. */
-    format->boardWordLength = std::accumulate(boardWordLengths.begin(),
-                                              boardWordLengths.end(), 0);
-    format->mailboxWordLength = std::accumulate(mailboxWordLengths.begin(),
-                                                mailboxWordLengths.end(), 0);
+    format->set_board_word_length(
+        std::accumulate(boardWordLengths.begin(),
+                        boardWordLengths.end(), 0));
+    format->set_mailbox_word_length(
+        std::accumulate(mailboxWordLengths.begin(),
+                        mailboxWordLengths.end(), 0));
 }
 
 /* Donates all boards in the boardMap to the engine, and connects them
