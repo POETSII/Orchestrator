@@ -376,11 +376,11 @@ int CmDepl::DeployGraph(GraphI_t* gi)
         bool soloApp = dynamic_cast<Root *>(par)->pOC->SingleApp();
         if (soloApp)
         {
-            /* TODO: GMB to plonk binary paths here (or at least some way to
-             * grab them). <!> */
-            #warning GMB to define these paths somewhere.
             std::string codePath;
             std::string dataPath;
+            
+            // Get the dummy binary paths
+            par->pComposer->getDummyPaths(gi, codePath, dataPath);
 
             emptMessage.Put(0, &codePath);
             emptMessage.Put(1, &dataPath);
