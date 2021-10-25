@@ -142,8 +142,8 @@ VDTARGETS := $(patsubst $(GENINC)/vars_%.h,$(BINDIR)/softswitch_data_%.v,$(wildc
 # targets for thread-local variables
 THREADVARS := $(patsubst $(GENSRC)/%.cpp,%.o,$(wildcard $(GENSRC)/vars_*_*.cpp))
 
-.PHONY: all clean printvars supervisor
-all : $(TARGETS) $(VCTARGETS) $(VDTARGETS) supervisor
+.PHONY: all clean printvars supervisor dummy
+all : $(TARGETS) $(VCTARGETS) $(VDTARGETS) supervisor dummy
 
 # This line can be given a target/prerequisite (tgt : $(TARGETS)) if needed
 #	$(foreach TARGET,$<,cp $(TARGET) $(BINDIR)/$(TARGET))
@@ -155,9 +155,11 @@ SupervisorData.o : supervisor.bin
 	ld -r -b binary -o $@ supervisor.bin
 	rm supervisor.bin
 
+# Supervisor shared object.
 $(BINDIR)/libSupervisor.so: Supervisor.cpp Supervisor.h supervisor_generated.cpp supervisor_generated.h SupervisorApi.h SupervisorApiEntrypoints.h SupervisorData.o
-	$(MPICXX) $(MPICFLAGS) $(MPILDFLAGS) -O3 -Wl,-soname,libSupervisor.so -o $@ $< SupervisorData.o
+	$(MPICXX) $(MPICFLAGS) -pipe $(MPILDFLAGS) -O3 -Wl,-soname,libSupervisor.so -o $@ $< SupervisorData.o
 
+# Split out the code and data from the elf.
 $(BINDIR)/softswitch_code_%.v: $(BINDIR)/softswitch_%.elf
 	$(TINSELBIN)/checkelf.sh $<
 	$(RV_OBJCOPY) -O verilog --only-section=.text $< $@
@@ -176,7 +178,7 @@ io.o : io.c io.h tinsel.h $(TINSELINC)/config.h
 
 ## the pattern substitution should find all vars_x_y.o created from vars_x_y.cpp
 .SECONDEXPANSION:
-$(BINDIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o softswitch.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link_%.ld entry.o libc.a libgcc.a
+$(BINDIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o softswitch.o softswitch_vars.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link_%.ld entry.o libc.a libgcc.a
 	$(RV_LD) $(LDFLAGS) -T link_$(notdir $*).ld -o $@ $(filter-out link_$(notdir $*).ld, $^)
 
 # this convoluted rule (we hope) will establish as a prerequisite for any file
@@ -205,5 +207,28 @@ link_%.ld : genld.sh
 $(HL)/%.o :
 	make -C $(TINSELHL)
 
+
+# Rules to build the dummy binaries for Hardware Idle detection.
+dummy: $(BINDIR)/threadCtxInit_data.v $(BINDIR)/dummy_code.v
+
+threadCtxInitGenerator : threadCtxInitGenerator.cpp
+	$(MPICXX) -I$(TINSELINC) -std=c++14 -o $@ $<
+
+dummy.o : dummy.cpp
+	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
+
+$(BINDIR)/dummy.elf : dummy.o link_0.ld entry.o libc.a libgcc.a
+	$(RV_LD) $(LDFLAGS) -T link_0.ld -o $@ $(filter-out link_0.ld, $^)
+
+$(BINDIR)/dummy_code.v : $(BINDIR)/dummy.elf
+	$(TINSELBIN)/checkelf.sh $<
+	$(RV_OBJCOPY) -O verilog --only-section=.text $< $@
+
+$(BINDIR)/threadCtxInit_data.v : threadCtxInitGenerator
+	./$<
+	mv threadCtxInit_data.v $@
+
+
+# Cleanup on aisle 3
 clean :
-	rm -f *.o *.elf link.ld $(BINDIR)/*.elf $(BINDIR)/*.v $(BINDIR)/libSupervisor.so
+	rm -f *.o *.elf link.ld link_*.ld $(BINDIR)/*.elf $(BINDIR)/*.v $(BINDIR)/libSupervisor.so threadCtxInitGenerator
