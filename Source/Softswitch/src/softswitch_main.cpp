@@ -14,6 +14,11 @@ void softswitch_main()
 {
     // The thread context will reside at the base of the DRAM memory area.
     PThreadContext* ThreadContext = static_cast<PThreadContext*>(tinselHeapBase());
+    
+    if(ThreadContext->numDevInsts == 0)
+    {   // We have no devices loaded, so should do nothing.
+        while(true) tinselIdle(1);
+    }
 
     // Configure rtsBuf
     outPin_t* rtsBuf[ThreadContext->rtsBuffSize+1];

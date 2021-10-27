@@ -98,6 +98,9 @@ typedef struct ComposerGraphI_t
     ssLoopMode_t softswitchLoopMode;
     bool softswitchRequestIdle;
     
+    std::string idleInstructionBinary;   // Dummy instruction binary for HW Idle
+    std::string idleDataBinary;          // Dummy data binary for HW Idle
+    
     // Constructors/Destructors
     ComposerGraphI_t();
     ComposerGraphI_t(GraphI_t*, std::string&);
@@ -139,6 +142,8 @@ int         addFlags(GraphI_t*, std::string&);
 
 bool        isGenerated(GraphI_t*);
 bool        isCompiled(GraphI_t*);
+
+bool        getDummyPaths(GraphI_t*, std::string&, std::string&);   // Get the hardware idle binary names 
 
 void        Show(FILE * = stdout);
 void        Dump(unsigned = 0,FILE * = stdout);

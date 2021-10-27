@@ -38,6 +38,9 @@ ComposerGraphI_t::ComposerGraphI_t()
     
     compilationFlags = "";
     provenanceCache = "";
+    
+    idleInstructionBinary = "";
+    idleDataBinary = "";
 }
 
 ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
@@ -59,6 +62,9 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
     
     compilationFlags = "";
     provenanceCache = "";
+    
+    idleInstructionBinary = "";
+    idleDataBinary = "";
 }
 
 ComposerGraphI_t::~ComposerGraphI_t()
@@ -125,6 +131,11 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
         case priInstr:  fprintf(file, "prioritise instrumentation\n");    break;
         default:        fprintf(file, "**INVALID**\n");
     }
+    
+    
+    fprintf(file, "  Hardware Idle Instructions: %s\n",
+                    idleInstructionBinary.c_str());
+    fprintf(file, "  Hardware Idle Data:         %s\n",idleDataBinary.c_str());
     
     fprintf(file, "\nNitty gritty details:\n");
     fprintf(file, "  Device type strs map size:  %lu \n",
@@ -1013,6 +1024,34 @@ bool Composer::isCompiled(GraphI_t* graphI)
 }
 
 /******************************************************************************
+ * Public method to get the paths for the HW Idle binaries
+ *****************************************************************************/
+bool Composer::getDummyPaths(GraphI_t* graphI, std::string& instrBin, 
+                                std::string& dataBin)
+{
+    ComposerGraphI_t* builderGraphI;
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, so not compiled.
+        return false;
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->idleInstructionBinary == "" || 
+        builderGraphI->idleDataBinary == "")
+    {   // We are missing a binary path, return false.
+        return false;
+    }
+    
+    instrBin = builderGraphI->idleInstructionBinary;
+    dataBin = builderGraphI->idleDataBinary;
+    return true;
+}
+
+/******************************************************************************
  * Invoke a clean and then a degenerate
  *****************************************************************************/
 int Composer::decompose(GraphI_t* graphI)
@@ -1210,6 +1249,37 @@ int Composer::checkBinaries(ComposerGraphI_t* builderGraphI)
     
     std::string taskDir(builderGraphI->outputDir);
     std::string elfPath(taskDir + "/bin");
+    
+    
+    // Check that the "dummy" binaries for HW idle were generated.
+    FILE* dummyBinary;
+    
+    // Check Dummy Instruction binary and add to GraphI
+    std::string dummyPath = elfPath + "/dummy_code.v";
+    dummyBinary = fopen(dummyPath.c_str(), "r");
+    if(dummyBinary == PNULL)
+    { // Failed to open binary
+        fprintf(fd,"\tFailed to open dummy instruction binary %s after compilation\n",
+                    dummyPath.c_str());
+        return -1;
+    }
+    fclose(dummyBinary);
+    builderGraphI->idleInstructionBinary = dummyPath;
+    
+    
+    // Check Dummy Data binary and add to GraphI
+    dummyPath = elfPath + "/threadCtxInit_data.v";
+    dummyBinary = fopen(dummyPath.c_str(), "r");
+    if(dummyBinary == PNULL)
+    { // Failed to open binary
+        fprintf(fd,"\tFailed to open dummy data binary %s after compilation\n",
+                    dummyPath.c_str());
+        return -1;
+    }
+    fclose(dummyBinary);
+    builderGraphI->idleDataBinary = dummyPath;
+    
+    
     
     // Check that the core binaries were made and link to each core.
     WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
