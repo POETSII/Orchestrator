@@ -133,7 +133,7 @@
 // Loading, typelinking
 
 100(U) : "MLV: Allocated but as yet unused"
-101(S) : "Decoder in %s (PID %s) has dropped a packet from %s(rank %s) to %s(rank %s) with key 0x%s"
+101(S) : "Decoder in %s (rank %s) has dropped a packet from %s (rank %s) with key 0x%s."
 102(I) : "Task graph default file path is ||%s||"
 103(I) : "New path is ||%s||"
 104(W) : "Filename %s does not parse correctly"
