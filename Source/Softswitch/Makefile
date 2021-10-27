@@ -212,7 +212,7 @@ $(HL)/%.o :
 dummy: $(BINDIR)/threadCtxInit_data.v $(BINDIR)/dummy_code.v
 
 threadCtxInitGenerator : threadCtxInitGenerator.cpp
-	$(MPICXX) -I$(TINSELINC) -std=c++14 -o $@ $<
+	$(MPICXX) -I$(TINSELINC) -L$(MPICHLIB) -std=c++14 -o $@ $<
 
 dummy.o : dummy.cpp
 	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<
