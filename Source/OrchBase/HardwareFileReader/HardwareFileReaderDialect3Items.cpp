@@ -1814,7 +1814,15 @@ bool HardwareFileReader::d3_populate_validate_engine_box(P_engine* engine)
         boxFromName[boxName] = box;
 
         /* Into the engine with ye! */
-        engine->contain(address, box);
+        try
+        {
+            engine->contain(address, box);
+        }
+        catch (OwnershipException& e)
+        {
+            delete box;
+            throw;
+        }
 
         /* For each board in the box definition line, add it to
          * undefinedBoards. */
