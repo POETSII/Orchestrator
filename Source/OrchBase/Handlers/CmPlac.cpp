@@ -39,6 +39,7 @@ unsigned CmPlac::operator()(Cli* cli)
         bool isAlgorithm;
         bool isSomething = par->pPlacer->algorithm_or_argument(clauseRoot,
                                                                isAlgorithm);
+        bool isClauseValid = true;  /* Default */
 
         if (clauseRoot == "dump") PlacementDump(*clause);
         else if (clauseRoot == "unpl") PlacementUnplace(*clause);
@@ -59,10 +60,11 @@ unsigned CmPlac::operator()(Cli* cli)
         /* Are we loading a placement spec? */
         else if (clauseRoot == "load") PlacementLoad(*clause);
 
+        else isClauseValid = false;  /* But it's not over yet... */
+
         /* If nothing is appropriate, the operator is either setting an
          * argument or wanting to run a placement algorithm (or they're an
          * idiot). */
-        bool isClauseValid = false;
         if (isSomething)
         {
             if (isAlgorithm)
