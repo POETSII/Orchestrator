@@ -490,7 +490,7 @@
 574(U) : "MLV: Allocated but as yet unused"
 575(U) : "MLV: Allocated but as yet unused"
 576(U) : "MLV: Allocated but as yet unused"
-577(U) : "MLV: Allocated but as yet unused"
+577(I) : "Mothership: Calling backend->loadAll."
 578(I) : "Mothership: Calling backend->go."
 579(I) : "Mothership: Calling backend->startAll."
 580(E) : "Mothership: Received a log packet with an invalid device index 0x%s."
