@@ -32,12 +32,9 @@ if (CommonBase::FnMap.find(pPkt->Key())!=CommonBase::FnMap.end()) {
                                        // Nope. Kick.
                                        // Pull out the unknown key and post what
                                        // little we know to the LogServer
-Post(101,Sderived,int2str(pPkt->Src()),pPmap->vPmap[pPkt->Src()].P_class,int2str(pPkt->Tgt()),
-     pPmap->vPmap[pPkt->Tgt()].P_class,hex2str(pPkt->Key()));
+Post(101,Sderived,int2str(pPkt->Tgt()),pPmap->vPmap[pPkt->Src()].P_class,
+     int2str(pPkt->Src()),hex2str(pPkt->Key()));
 return 0;                              // Return "keep going" value
 }
 
 //==============================================================================
-
-
-

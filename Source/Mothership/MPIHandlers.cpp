@@ -54,7 +54,7 @@ unsigned Mothership::handle_msg_cnc(PMsg_p* message)
 {
     #if ORCHESTRATOR_DEBUG
     std::string key = "Unknown";
-    if (message->Key() == PMsg_p::KEY(Q::APP,Q::SPEC))
+    if (message->Key() == PMsg_p::KEY(Q::APP,Q::EMPT))
         key = "Q::APP,Q::EMPT";
     else if (message->Key() == PMsg_p::KEY(Q::APP,Q::SPEC))
         key = "Q::APP,Q::SPEC";
@@ -93,9 +93,10 @@ unsigned Mothership::handle_msg_app_empt(PMsg_p* message)
 
     debug_post(597, 3, "Q::APP,Q::EMPT", hex2str(message->Key()).c_str(),
                dformat("codePath=%s, dataPath=%s",
-                       codePath.c_str(), dataPath.c_str()));
+                       codePath.c_str(), dataPath.c_str()).c_str());
 
     /* gogogo */
+    debug_post(577, 0);
     backend->loadAll(codePath.c_str(), dataPath.c_str());
     return 0;
 }
