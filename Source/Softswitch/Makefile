@@ -178,7 +178,7 @@ io.o : io.c io.h tinsel.h $(TINSELINC)/config.h
 
 ## the pattern substitution should find all vars_x_y.o created from vars_x_y.cpp
 .SECONDEXPANSION:
-$(BINDIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o softswitch.o softswitch_vars.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link_%.ld entry.o libc.a libgcc.a
+$(BINDIR)/softswitch_%.elf : softswitch_main.o softswitch_common.o softswitch.o vars_%.o $$(patsubst $$(SECEXPCPPS),$$(SECEXPOS),$$(wildcard $(GENSRC)/vars_$$*_*.cpp)) handlers_%.o io.o link_%.ld entry.o libc.a libgcc.a
 	$(RV_LD) $(LDFLAGS) -T link_$(notdir $*).ld -o $@ $(filter-out link_$(notdir $*).ld, $^)
 
 # this convoluted rule (we hope) will establish as a prerequisite for any file
@@ -212,7 +212,7 @@ $(HL)/%.o :
 dummy: $(BINDIR)/threadCtxInit_data.v $(BINDIR)/dummy_code.v
 
 threadCtxInitGenerator : threadCtxInitGenerator.cpp
-	$(MPICXX) -I$(TINSELINC) -std=c++14 -o $@ $<
+	$(MPICXX) -I$(TINSELINC) -L$(MPICHLIB) -std=c++14 -o $@ $<
 
 dummy.o : dummy.cpp
 	$(RV_CPPC) $(CFLAGS) -Wall -c -o $@ $<

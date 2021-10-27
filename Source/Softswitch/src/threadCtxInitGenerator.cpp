@@ -33,7 +33,7 @@ int main(void)
 
     // Populate the bin
     uint32_t i = 0;
-    for(int coreNum = 0; coreNum<CoresPerDRAM; coreNum++)
+    for(uint32_t coreNum = 0; coreNum<CoresPerDRAM; coreNum++)
     {
         for(int threadNum = 1; threadNum<=TinselThreadsPerCore; threadNum++)
         {
