@@ -907,6 +907,9 @@ int Composer::compile(GraphI_t* graphI)
     // Form the Softswitch compilation control string
     //TODO: Make these const strings at the top
     std::string makeArgs = "";
+	
+	//TODO: make this configurable
+	makeArgs += "SOFTSWITCH_HWIDLE_BARRIER=1 ";
 
     if(builderGraphI->bufferingSoftswitch)
     {   // Softswitch needs to be built in buffering mode

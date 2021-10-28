@@ -43,12 +43,21 @@ void softswitch_init(ThreadCtxt_t* ThreadContext)
     }
 }
 
-// <!> You know it's a hack when the "pragma GCC" comes out.
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-void softswitch_delay(){for (uint32_t i=0; i<500; i++);}
-#pragma GCC pop_options
-
+/*------------------------------------------------------------------------------
+ * softswitch_delay: Wait for other threads to start so that we don't break sync
+ *----------------------------------------------------------------------------*/
+#ifdef SOFTSWITCH_HWIDLE_BARRIER
+void softswitch_delay(){
+    // Block on a tinselIdle call untill all threads have started
+    tinselIdle(true);        
+}
+#else
+  // <!> You know it's a hack when the "pragma GCC" comes out.
+  #pragma GCC push_options
+  #pragma GCC optimize ("O0")
+void softswitch_delay(){for (uint32_t i=0; i<500; i++);}    // Delay for an arbitary period
+  #pragma GCC pop_options
+#endif
 
 /*------------------------------------------------------------------------------
  * softswitch_barrier: Block until told to continue by the mothership
@@ -141,7 +150,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
     volatile void *superBuffer = tinselSendSlotExtra(); // Supervisor send slot
 
 #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION
-    uint32_t cycles = tinselCycleCount();		// cycle counter is per-core
+    uint32_t cycles = tinselCycleCount();        // cycle counter is per-core
     ThreadContext->lastCycles = cycles;         // save initial cycle count
  #if TinselEnablePerfCount == true
     // Save initial extended instrumentation counts.
