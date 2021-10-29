@@ -325,10 +325,14 @@ fflush(fp);
 
 bool Root::HaveIdleWork()
 {
-  if(pCmCall->IsEmpty()){
-    return false;
+  // If a scheduled exit condition is satisfied, we have work to do.
+  if((pCmCall->IsEmpty() and exitOnEmpty) or (appJustStopped and exitOnStop)){
+    return true;
   }
-  return true;
+
+  // Otherwise, simply check the queue.
+  if(pCmCall->IsEmpty()) return false;
+  else return true;
 }
 
 void Root::OnIdle()
