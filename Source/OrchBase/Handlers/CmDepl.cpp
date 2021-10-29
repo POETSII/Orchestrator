@@ -272,7 +272,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
          * binaries to appropriate locations for the Mothership to find
          * them. To do this, we naively copy all binaries to all Motherships
          * for now. */
-        target = dformat("%s/%s/%s", getenv("HOME"),
+        target = dformat("%s/%s%s", getenv("HOME"),
                          par->pCmPath->pathMshp.c_str(),
                          graphPathName.c_str());
         sourceBinaries = dformat("%s%s/bin/*",
