@@ -331,8 +331,7 @@ bool Root::HaveIdleWork()
   }
 
   // Otherwise, simply check the queue.
-  if(pCmCall->IsEmpty()) return false;
-  else return true;
+  return !pCmCall->IsEmpty();
 }
 
 void Root::OnIdle()
