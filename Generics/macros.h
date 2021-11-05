@@ -10,7 +10,7 @@
 #define BYTESPERUNSIGNED 4
 
 #define TN typename
-#if (defined  _MSC_VER || defined __BORLANDC__)
+#if (defined  _MSC_VER || defined __BORLANDC__ || defined __clang__)
 #undef  TN
 #define TN
 #endif
