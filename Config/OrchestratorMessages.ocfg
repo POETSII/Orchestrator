@@ -516,8 +516,8 @@
 
 600(I) : "%s"
 601(I) : "Core %s: (part %s): %s"
-602(U) : "MLV: Allocated but as yet unused"
-603(U) : "MLV: Allocated but as yet unused"
+602(I) : "Sending a bad packet to Mothership at rank %s."
+603(E) : "Unable to send bad packet - can only do this in SINGLE_SUPERVISOR_MODE."
 604(U) : "MLV: Allocated but as yet unused"
 605(U) : "MLV: Allocated but as yet unused"
 606(U) : "MLV: Allocated but as yet unused"

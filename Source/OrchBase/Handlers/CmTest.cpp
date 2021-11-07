@@ -2,6 +2,7 @@
 
 #include "CmTest.h"
 #include "OrchBase.h"
+#include "Pglobals.h"
 
 //==============================================================================
 
@@ -14,6 +15,38 @@ par->fd = stdout;
 
 CmTest::~CmTest()
 {
+}
+
+//------------------------------------------------------------------------------
+
+void CmTest::Cm_BadPacket()
+{
+    /* Sends a message to a Mothership. The message claims to be a log packet
+     * from the compute fabric, but has an invalid task ID. Tries to replicate
+     * issue #291. */
+    PMsg_p message;
+    message.Key(Q::BEND, Q::CNC);
+    message.Src(par->Urank);
+
+#if SINGLE_SUPERVISOR_MODE
+    /* Grab the only Mothership. */
+    int mothershipRank = par->loneMothership->P_rank;
+#else
+    /* We're unhappy. */
+    par->Post(603);
+    return;
+#endif
+    message.Tgt(mothershipRank);
+
+    /* A packet. There's no payload. */
+    uint8_t spoofTaskId = 63;
+    P_Pkt_t badPacket;
+    set_pkt_hdr(1, 1, spoofTaskId, P_CNC_KILL, 0, 0, 0, 0, &badPacket.header);
+    message.Put<P_Pkt_t>(0, &badPacket);
+
+    /* Off we pop. */
+    par->Post(602, int2str(mothershipRank));
+    message.Send();
 }
 
 //------------------------------------------------------------------------------
@@ -81,6 +114,7 @@ unsigned CmTest::operator()(Cli * pC)
 if (pC==0) return 0;                   // Paranoia
 WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   string sCl = (*i).Cl;                // Pull out clause name
+  if (strcmp(sCl.c_str(),"badp")==0) {Cm_BadPacket(); continue;}
   if (strcmp(sCl.c_str(),"echo")==0) {Cm_Echo(*i); continue;}
   if (strcmp(sCl.c_str(),"slee")==0) {Cm_Sleep(*i); continue;}
   par->Post(25,sCl,"test");           // Unrecognised clause
