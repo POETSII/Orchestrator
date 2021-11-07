@@ -41,7 +41,7 @@ void CmTest::Cm_BadPacket()
     /* A packet. There's no payload. */
     uint8_t spoofTaskId = 63;
     P_Pkt_t badPacket;
-    set_pkt_hdr(1, 1, spoofTaskId, P_CNC_KILL, 0, 0, 0, 0, &badPacket.header);
+    set_pkt_hdr(1, 1, spoofTaskId, P_CNC_LOG, 0, 0, 0, 0, &badPacket.header);
     message.Put<P_Pkt_t>(0, &badPacket);
 
     /* Off we pop. */
