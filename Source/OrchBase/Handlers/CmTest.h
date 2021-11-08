@@ -16,6 +16,7 @@ public:
               CmTest(OrchBase *);
 virtual ~     CmTest();
 
+void          Cm_BadPacket();
 void          Cm_Echo(Cli::Cl_t);
 void          Cm_Sleep(Cli::Cl_t);
 
