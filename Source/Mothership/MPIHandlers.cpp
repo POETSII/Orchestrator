@@ -54,8 +54,8 @@ unsigned Mothership::handle_msg_cnc(PMsg_p* message)
 {
     #if ORCHESTRATOR_DEBUG
     std::string key = "Unknown";
-    if (message->Key() == PMsg_p::KEY(Q::APP,Q::SPEC))
-        key = "Q::APP,Q::SPEC";
+    if (message->Key() == PMsg_p::KEY(Q::APP,Q::EMPT))
+        key = "Q::APP,Q::EMPT";
     else if (message->Key() == PMsg_p::KEY(Q::APP,Q::SPEC))
         key = "Q::APP,Q::SPEC";
     else if (message->Key() == PMsg_p::KEY(Q::APP,Q::DIST))
@@ -79,6 +79,28 @@ unsigned Mothership::handle_msg_cnc(PMsg_p* message)
     return 0;
 }
 
+unsigned Mothership::handle_msg_app_empt(PMsg_p* message)
+{
+    /* Pull message contents. */
+    std::string codePath;
+    std::string dataPath;
+    if (!decode_app_empt_message(message, &codePath, &dataPath))
+    {
+        debug_post(597, 3, "Q::APP,Q::EMPT", hex2str(message->Key()).c_str(),
+                   "Failed to decode.");
+        return 0;
+    }
+
+    debug_post(597, 3, "Q::APP,Q::EMPT", hex2str(message->Key()).c_str(),
+               dformat("codePath=%s, dataPath=%s",
+                       codePath.c_str(), dataPath.c_str()).c_str());
+
+    /* gogogo */
+    debug_post(577, 0);
+    backend->loadAll(codePath.c_str(), dataPath.c_str());
+    return 0;
+}
+
 unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
 {
     AppInfo* appInfo;
@@ -87,8 +109,9 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
     std::string appName;
     uint32_t distCount;
     uint8_t appNumber;
+    bool soloApp;
     if (!decode_app_spec_message(message, &appName, &distCount,
-                                 &appNumber))
+                                 &appNumber, &soloApp))
     {
         debug_post(597, 3, "Q::APP,Q::SPEC", hex2str(message->Key()).c_str(),
                    "Failed to decode.");
@@ -96,12 +119,13 @@ unsigned Mothership::handle_msg_app_spec(PMsg_p* message)
     }
 
     debug_post(597, 3, "Q::APP,Q::SPEC", hex2str(message->Key()).c_str(),
-               dformat("appName=%s, distCount=%u, appNumber=%u",
-                       appName.c_str(), distCount, appNumber).c_str());
+               dformat("appName=%s, distCount=%u, appNumber=%u, soloApp=%s",
+                       appName.c_str(), distCount, appNumber,
+                       soloApp ? "true" : "false").c_str());
 
     /* Ensure application existence idempotently (it might have been created by
      * an AppDist message). */
-    appInfo = appdb.check_create_app(appName, distCount);
+    appInfo = appdb.check_create_app(appName, distCount, soloApp);
 
     /* If the application is not in the UNDERDEFINED state, post bossily and do
      * nothing else. */

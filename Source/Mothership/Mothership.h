@@ -51,6 +51,7 @@ public:
     void recall_application(AppInfo*);
 
     /* Methods for handling MPI messages (called by consumer threads). */
+    unsigned handle_msg_app_empt(PMsg_p* message);
     unsigned handle_msg_app_spec(PMsg_p* message);
     unsigned handle_msg_app_dist(PMsg_p* message);
     unsigned handle_msg_app_supd(PMsg_p* message);
@@ -95,6 +96,8 @@ private:
 
     /* Methods for safely decoding MPI messages with certain field
      * configurations. */
+    bool decode_app_empt_message(PMsg_p* message, std::string* codePath,
+                                 std::string* dataPath);
     bool decode_app_dist_message(PMsg_p* message, std::string* appName,
                                  std::string* codePath, std::string* dataPath,
                                  uint32_t* coreAddr,
@@ -102,12 +105,14 @@ private:
     bool decode_app_supd_message(PMsg_p* message, std::string* appName,
                                  std::string* soPath);
     bool decode_app_spec_message(PMsg_p* message, std::string* appName,
-                                 uint32_t* distCount, uint8_t* appNumber);
+                                 uint32_t* distCount, uint8_t* appNumber,
+                                 bool* soloApp);
     bool decode_addresses_message(PMsg_p* message,
                                   std::vector<uint32_t>* addresses,
                                   unsigned index=0);
     bool decode_addressed_packets_message(PMsg_p* message,
         std::vector<P_Addr_Pkt_t>* packets, unsigned index=0);
+    bool decode_bool_message(PMsg_p* message, bool* result, unsigned index=0);
     bool decode_char_message(PMsg_p* message, unsigned char* result,
                              unsigned index=0);
     bool decode_packets_message(PMsg_p* message,
