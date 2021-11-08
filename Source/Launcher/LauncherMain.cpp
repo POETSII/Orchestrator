@@ -667,9 +667,9 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
 "\n"
 "\t/%s: Points valgrind (%s) at one of the processes listed above, except motherships spawned via a host list. Combine with /%s at your own risk.\n"
 "\n"
-"\t/%s=VALUE: Commands Motherships to operate with a horizontal cluster size of VALUE.\n"
+"\t/%s=VALUE: Commands Motherships to operate with a horizontal cluster size of VALUE, using environment variable %s.\n"
 "\n"
-"\t/%s=VALUE: Commands Motherships to operate with a vertical cluster size of VALUE.\n"
+"\t/%s=VALUE: Commands Motherships to operate with a vertical cluster size of VALUE, using environment variable %s.\n"
 "\n"
 "If you are still bamboozled, or you're a developer, check out the Orchestrator documentation.\n",
 argv[0],
@@ -683,8 +683,8 @@ argKeys["override"].c_str(), argKeys["noMotherships"].c_str(),
 argKeys["internalPath"].c_str(),
 argKeys["quietValgrind"].c_str(),
 argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str(),
-argKeys["boxHoriz"].c_str(),
-argKeys["boxVerti"].c_str());
+argKeys["boxHoriz"].c_str(), horizBoxEnv,
+argKeys["boxVerti"].c_str(), vertiBoxEnv);
 
     /* Parse the input arguments. */
     std::string concatenatedArgs;
@@ -869,7 +869,7 @@ argKeys["boxVerti"].c_str());
                        "integer. Continuing anyway, but this may cause the "
                        "Mothership or Tinsel to fall over.\n");
             }
-            setenv("HOSTLINK_BOXES_X", boxHoriz.c_str(), 1);
+            setenv(horizBoxEnv, boxHoriz.c_str(), 1);
         }
 
         if (currentArg == argKeys["boxVerti"])
@@ -881,7 +881,7 @@ argKeys["boxVerti"].c_str());
                        "integer. Continuing anyway, but this may cause the "
                        "Mothership or Tinsel to fall over.\n");
             }
-            setenv("HOSTLINK_BOXES_Y", boxVerti.c_str(), 1);
+            setenv(vertiBoxEnv, boxVerti.c_str(), 1);
         }
     }
 
