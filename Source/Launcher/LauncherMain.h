@@ -40,6 +40,9 @@ namespace Launcher
     const char* flagsValgrind = "--leak-check=full --track-origins=yes";
     const char* quietFlagValgrind = "--quiet";
 
+    const char* horizBoxEnv = "HOSTLINK_BOXES_X";
+    const char* vertiBoxEnv = "HOSTLINK_BOXES_Y";
+
     bool AreWeRunningOnAPoetsBox();
     void BuildCommand(bool useMotherships, std::string internalPath,
                       std::string overrideHost, std::string batchPath,
