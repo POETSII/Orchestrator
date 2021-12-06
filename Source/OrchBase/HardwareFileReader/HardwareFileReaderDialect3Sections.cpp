@@ -372,7 +372,7 @@ bool HardwareFileReader::d3_load_validate_sections()
                 ruleFailure[currentRule] = true;
                 errors.push_back(dformat(
                     "L%u: Section '%s' has a type, when it should not.",
-                    (*nodeIterator)->pos, *nameIterator));
+                    (*nodeIterator)->pos, nameIterator->c_str()));
             }
         }
     }

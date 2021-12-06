@@ -90,6 +90,7 @@ typedef struct ComposerGraphI_t
     bool generated;
     bool compiled;
     
+    bool softswitchHWIdleBarrier;
     bool bufferingSoftswitch;
     unsigned long rtsBuffSizeMax;
     bool softswitchInstrumentation;
@@ -131,6 +132,7 @@ int         clean(GraphI_t*);      // Get rid of built files (e.g. a make clean)
 void        setOutputPath(std::string);
 void        setPlacer(Placer*);
 
+int         setBarrierMode(GraphI_t*, bool);
 int         setBuffMode(GraphI_t*, bool);
 int         setReqIdleMode(GraphI_t*, bool);
 int         setRTSSize(GraphI_t*, unsigned long);

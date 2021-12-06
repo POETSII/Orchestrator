@@ -16,6 +16,7 @@ const string COREMAKECLEAN = "make clean 2>&1 >> clean_errs.txt";
 const unsigned int MAX_RTSBUFFSIZE = 4096;
 const unsigned int MIN_RTSBUFFSIZE = 10;
 
+typedef std::vector<unsigned> SVU;    // Typedef to appease Borland with WALKMAP
 
 
 /******************************************************************************
@@ -29,6 +30,7 @@ ComposerGraphI_t::ComposerGraphI_t()
     
     // Softswitch control.
     rtsBuffSizeMax = MAX_RTSBUFFSIZE;
+    softswitchHWIdleBarrier = true;     // Default to using Hardware Idle for barrier
     bufferingSoftswitch = false;        // Default to a non-buffering softswitch
     softswitchInstrumentation = true;   // Default to enable instrumentation
     softswitchLogHandler = trivial;     // Default to the trivial log handler
@@ -53,6 +55,7 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
     
     // Softswitch control.
     rtsBuffSizeMax = MAX_RTSBUFFSIZE;
+    softswitchHWIdleBarrier = true;     // Default to using Hardware Idle for barrier
     bufferingSoftswitch = false;        // Default to a non-buffering softswitch
     softswitchInstrumentation = true;   // Default to enable instrumentation
     softswitchLogHandler = trivial;     // Default to the trivial log handler 
@@ -107,11 +110,13 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
     
     fprintf(file, "\nSoftswitch generation/compilation control:\n");
     fprintf(file, "  Maximum RTS buffer size:    %lu \n",rtsBuffSizeMax);
+    fprintf(file, "  Hardware Idle Barrier:      %s \n",
+                        softswitchHWIdleBarrier ? "true" : "false");
     fprintf(file, "  Buffering Softswitch:       %s \n",
                         bufferingSoftswitch ? "true" : "false");
     fprintf(file, "  Softswitch Instrumentation: %s \n",
                         softswitchInstrumentation ? "true" : "false");
-    fprintf(file, "  Softswitch requestIdle: %s \n",
+    fprintf(file, "  Softswitch requestIdle:     %s \n",
                         softswitchRequestIdle ? "true" : "false");
                         
     fprintf(file, "  Softswitch log handler:     ");
@@ -145,8 +150,12 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
     fprintf(file, "  Provenance string cache:\n%s \n\n",provenanceCache.c_str());
     
     
-    // Form the Softswitch compilation control string
     std::string makeArgs = "";
+    // Form the Softswitch compilation control string
+    if(softswitchHWIdleBarrier)
+    {   // Softswitch needs to be built with a hardware idle barrier
+        makeArgs += "SOFTSWITCH_HWIDLE_BARRIER=1 ";
+    }
     if(bufferingSoftswitch)
     {   // Softswitch needs to be built in buffering mode
         makeArgs += "SOFTSWITCH_BUFFERING=1 ";
@@ -294,6 +303,40 @@ void Composer::setPlacer(Placer* plc)
         delete graphISrch->second;
     }
     graphIMap.clear();
+}
+
+/******************************************************************************
+ * Set the barrier mode for the softswitch. true = HWIdle, false = Packet based
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::setBarrierMode(GraphI_t* graphI, bool barrierMode)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchHWIdleBarrier = barrierMode;
+    
+    return 0;
 }
 
 
@@ -913,6 +956,12 @@ int Composer::compile(GraphI_t* graphI)
     // Form the Softswitch compilation control string
     //TODO: Make these const strings at the top
     std::string makeArgs = "";
+	
+    //TODO: make this configurable
+    if(builderGraphI->softswitchHWIdleBarrier)
+    {   // Softswitch needs to be built with a hardware idle barrier
+        makeArgs += "SOFTSWITCH_HWIDLE_BARRIER=1 ";
+    }
 
     if(builderGraphI->bufferingSoftswitch)
     {   // Softswitch needs to be built in buffering mode
@@ -1392,6 +1441,9 @@ void Composer::formFileProvenance(ComposerGraphI_t* builderGraphI)
     
     
     provStr << " * Softswitch control:\n";
+    provStr << " *   Hardware Idle Barrier:\t";
+    provStr << (builderGraphI->softswitchHWIdleBarrier?"true":"false") << "\n";
+    
     provStr << " *   Buffering mode:\t\t";
     provStr << (builderGraphI->bufferingSoftswitch ? "true" : "false") << "\n";
     
@@ -2840,12 +2892,12 @@ unsigned Composer::writeThreadVars(ComposerGraphI_t* builderGraphI,
     AddressComponent coreAddr = thread->parent->get_hardware_address()->as_uint();
     AddressComponent threadAddr = thread->get_hardware_address()->get_thread();
 
-    DevI_t* dev = (*(placer->threadToDevices.at(thread).begin()));
+    DevI_t* dev = (*(placer->threadToDevices[thread].begin()));
     DevT_t* devT = dev->pT;
 
 
     std::list<DevI_t*>::size_type numberOfDevices =
-        placer->threadToDevices.at(thread).size();  // Get the thread dev count
+        placer->threadToDevices[thread].size();  // Get the thread dev count
 
 
 
@@ -2904,7 +2956,7 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
     
     AddressComponent threadAddr = thread->get_hardware_address()->get_thread();
     std::list<DevI_t*>::size_type numberOfDevices =
-        placer->threadToDevices.at(thread).size();  // Get the thread dev count
+        placer->threadToDevices[thread].size();  // Get the thread dev count
 
     size_t outTypCnt = devT->PinTO_v.size();      // Number of output pins
     bool rtsOF = false;                           // Flag to indicate RTS sz OF
@@ -2961,7 +3013,7 @@ void Composer::writeThreadContextInitialiser(ComposerGraphI_t* builderGraphI,
 
         if (outTypCnt) // If we have output pins
         {              // Iterate through devices counting connected output pins
-            WALKLIST(DevI_t*, placer->threadToDevices.at(thread), dev)
+            WALKLIST(DevI_t*, placer->threadToDevices[thread], dev)
             {
                 /* The below relies on the Pmap in the device instance to find 
                  * output pins with reference to the Pin's PinT_t. 
@@ -3352,7 +3404,7 @@ void Composer::writeThreadDevIDefs(ComposerGraphI_t* builderGraphI,
     DevT_t* devT = PNULL;
 
     // Iterate through all of the devices
-    WALKLIST(DevI_t*, placer->threadToDevices.at(thread), dev)
+    WALKLIST(DevI_t*, placer->threadToDevices[thread], dev)
     {
         unsigned devIdx = (*dev)->addr.get_device();
 
@@ -3600,7 +3652,7 @@ void Composer::writeDevIInputPinDefs(GraphI_t* graphI, DevT_t* devT,
         inPinTIStrs.push_back(inPinInit.str());
     }
 
-    WALKMAP(PinI_t*, std::vector<unsigned>, iPinIArcKMap, pinIItr)
+    WALKMAP(PinI_t*, SVU, iPinIArcKMap, pinIItr)
     {
         unsigned pinIdx;
         unsigned edgeCnt = pinIItr->first->Key_v.size();
@@ -3860,7 +3912,7 @@ void Composer::writeDevIOutputPinDefs(ComposerGraphI_t* builderGraphI,
     }
 
 
-    WALKMAP(PinI_t*, std::vector<unsigned>, oPinIArcKMap, pinIItr)
+    WALKMAP(PinI_t*, SVU, oPinIArcKMap, pinIItr)
     {
         unsigned pinIdx;
         unsigned edgeCnt = pinIItr->first->Key_v.size();

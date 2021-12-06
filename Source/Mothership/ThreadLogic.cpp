@@ -387,6 +387,7 @@ void* ThreadComms::backend_input_broker(void* mothershipArg)
                     if (appFinder == mothership->appdb.numberToApp.end())
                     {
                         mothership->Post(520, hex2str(appIt->first));
+                        continue;
                     }
 
                     /* Put the app name. */

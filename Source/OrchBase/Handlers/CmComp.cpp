@@ -297,6 +297,29 @@ void CmComp::Cm_Reset(Cli::Cl_t clause)
 
 //------------------------------------------------------------------------------
 
+void CmComp::Cm_SoftswitchBarrierMode(Cli::Cl_t clause, bool mode = true)
+{
+    /* Shout if no hardware model is loaded (i.e. there is no placer) */
+    if (par->pPlacer == PNULL)
+    {
+        par->Post(805, "HWIdleBarrier");
+        return;
+    }
+
+    /* Grab the graph instances of interest. */
+    std::set<GraphI_t*> graphs;
+    if (par->GetGraphIs(clause, graphs) == 1) return;
+    
+    /* Set the softswitch buffering mode for each app in sequence. */
+    std::set<GraphI_t*>::iterator graphIt;
+    for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
+    {
+        par->pComposer->setBarrierMode(*graphIt, mode);
+    }
+}
+
+//------------------------------------------------------------------------------
+
 void CmComp::Cm_SoftswitchBufferMode(Cli::Cl_t clause, bool mode = false)
 {
     /* Shout if no hardware model is loaded (i.e. there is no placer) */
@@ -544,6 +567,8 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="rese" ) { Cm_Reset(*i);         continue; }
   
   // Softswitch control commands
+  if (sCl=="hwba" ) { Cm_SoftswitchBarrierMode(*i, true);   continue; }
+  if (sCl=="swba" ) { Cm_SoftswitchBarrierMode(*i, false);   continue; }
   if (sCl=="buff" ) { Cm_SoftswitchBufferMode(*i, true);   continue; }
   if (sCl=="nobu" ) { Cm_SoftswitchBufferMode(*i, false);  continue; }
   if (sCl=="logh" ) { Cm_SoftswitchLogHandler(*i);         continue; }
