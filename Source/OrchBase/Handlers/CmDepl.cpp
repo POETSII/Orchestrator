@@ -1,8 +1,8 @@
 //------------------------------------------------------------------------------
 
 #include "CmDepl.h"
-#include "OrchBase.h"
 #include "Pglobals.h"
+#include "Root.h"  /* Grabs Orchestrator config, and OrchBase. */
 #include "SupervisorModes.h"
 
 //==============================================================================
@@ -145,6 +145,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
     PMsg_p specMessage;
     PMsg_p distMessage;
     PMsg_p supdMessage;
+    PMsg_p emptMessage;
     std::vector<PMsg_p*> messages;
     std::vector<PMsg_p*>::iterator messageIt;
 
@@ -351,6 +352,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
     messages.push_back(&specMessage);
     messages.push_back(&distMessage);
     messages.push_back(&supdMessage);
+    messages.push_back(&emptMessage);
     for (messageIt = messages.begin(); messageIt != messages.end();
          messageIt++)
     {
@@ -360,6 +362,7 @@ int CmDepl::DeployGraph(GraphI_t* gi)
     specMessage.Key(Q::APP, Q::SPEC);
     distMessage.Key(Q::APP, Q::DIST);
     supdMessage.Key(Q::APP, Q::SUPD);
+    emptMessage.Key(Q::APP, Q::EMPT);
 
     /* Iterate through participating Motherships. */
     for (mothershipPayloadsIt = mothershipPayloads.begin();
@@ -373,6 +376,31 @@ int CmDepl::DeployGraph(GraphI_t* gi)
             (*messageIt)->Tgt(mothershipPayloadsIt->first);
         }
 
+        /* Customise and send the EMPT message, if configured to use them. */
+        bool soloApp = dynamic_cast<Root *>(par)->pOC->SingleApp();
+        if (soloApp)
+        {
+            std::string codePath;
+            std::string dataPath;
+            
+            // Get the dummy binary paths
+            par->pComposer->getDummyPaths(gi, codePath, dataPath);
+
+            emptMessage.Put(0, &codePath);
+            emptMessage.Put(1, &dataPath);
+            fprintf(par->fd, "Sending EMPT message to Mothership rank %d, "
+                    "with codepath=%s and dataPath=%s...",
+                    mothershipPayloadsIt->first, codePath.c_str(),
+                    dataPath.c_str());
+            emptMessage.Send();
+            fprintf(par->fd, " message sent.\n");
+        }
+        else
+        {
+            fprintf(par->fd, "Not sending EMPT message, as Orchestrator is "
+                    "not configured to operate in single-application mode.\n");
+        }
+
         /* Customise and send the SPEC message. */
         appNumber = 0;  /* This is terrible - only one graph instance can be
                          * loaded at a time! <!> TODO */
@@ -380,9 +408,11 @@ int CmDepl::DeployGraph(GraphI_t* gi)
         specMessage.Put<unsigned>(1, &distCount);
         specMessage.Put<unsigned char>(2,
             static_cast<unsigned char*>(&appNumber));
+        specMessage.Put<bool>(3,&soloApp);
         fprintf(par->fd, "Sending SPEC message to Mothership rank %d, with "
-                "appNumber=%u and distCount=%u...",
-                mothershipPayloadsIt->first, appNumber, distCount);
+                "appNumber=%u, distCount=%u, and soloApp=%s...",
+                mothershipPayloadsIt->first, appNumber, distCount,
+                soloApp ? "true" : "false");
         specMessage.Send();
         fprintf(par->fd, " message sent.\n");
 

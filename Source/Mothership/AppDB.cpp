@@ -1,10 +1,12 @@
 #include "AppDB.h"
 
 /* Checks appInfos for an application of a given name. If it doesn't exist,
- * AppDB creates it and returns a pointer to it (passing distCountExpected to
- * it as an argument). If it already exists, returns a pointer to the existing
- * application, and does not use distCountExpected. */
-AppInfo* AppDB::check_create_app(std::string name, uint32_t distCountExpected)
+ * AppDB creates it and returns a pointer to it (passing distCountExpected and
+ * soloApp to it as an argument). If it already exists, returns a pointer to
+ * the existing application, does not use distCountExpected, but sets
+ * soloApp. */
+AppInfo* AppDB::check_create_app(std::string name, uint32_t distCountExpected,
+                                 bool soloApp)
 {
     AppInfoIt appFinder = appInfos.find(name);
 
@@ -21,7 +23,7 @@ AppInfo* AppDB::check_create_app(std::string name, uint32_t distCountExpected)
         else
         {
             appInfos.insert(std::pair<std::string, AppInfo>
-                            (name, AppInfo(name, distCountExpected)));
+                            (name, AppInfo(name, distCountExpected, soloApp)));
         }
 
         return &(appInfos.find(name)->second);
@@ -37,7 +39,7 @@ AppInfo* AppDB::check_create_app(std::string name, uint32_t distCountExpected)
 /* Sub-synonym. */
 AppInfo* AppDB::check_create_app(std::string name)
 {
-    return check_create_app(name, 0);
+    return check_create_app(name, 0, false);  /* soloApp argument not used. */
 }
 
 /* Checks appInfos for an application of a given name, returning true if such

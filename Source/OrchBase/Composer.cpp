@@ -39,6 +39,9 @@ ComposerGraphI_t::ComposerGraphI_t()
     
     compilationFlags = "";
     provenanceCache = "";
+    
+    idleInstructionBinary = "";
+    idleDataBinary = "";
 }
 
 ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
@@ -60,6 +63,9 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
     
     compilationFlags = "";
     provenanceCache = "";
+    
+    idleInstructionBinary = "";
+    idleDataBinary = "";
 }
 
 ComposerGraphI_t::~ComposerGraphI_t()
@@ -1019,6 +1025,34 @@ bool Composer::isCompiled(GraphI_t* graphI)
     }
 
     return builderGraphI->compiled;
+}
+
+/******************************************************************************
+ * Public method to get the paths for the HW Idle binaries
+ *****************************************************************************/
+bool Composer::getDummyPaths(GraphI_t* graphI, std::string& instrBin, 
+                                std::string& dataBin)
+{
+    ComposerGraphI_t* builderGraphI;
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, so not compiled.
+        return false;
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->idleInstructionBinary == "" || 
+        builderGraphI->idleDataBinary == "")
+    {   // We are missing a binary path, return false.
+        return false;
+    }
+    
+    instrBin = builderGraphI->idleInstructionBinary;
+    dataBin = builderGraphI->idleDataBinary;
+    return true;
 }
 
 /******************************************************************************

@@ -58,44 +58,62 @@ void Mothership::initialise_application(AppInfo* app)
                                  meshX, meshY, coreId);
     }
 
-    /* 2: For each core, kick off the threads (mode=false).
-     * 3: For each core, start execution (mode=true). */
-    mode = false;
-    do
+    /* 2: For each core, kick off the threads.
+     * 3: For each core, start execution. */
+
+    /* In solo-app mode, use backend's available global start and go
+     * methods. */
+    if (app->soloApp)
     {
-        for (coreIt = app->coreInfos.begin(); coreIt != app->coreInfos.end();
-             coreIt++)
+        debug_post(579, 0);
+        backend->startAll();  /* 2 */
+        debug_post(578, 0);
+        backend->go();  /* 3 */
+    }
+
+    /* Otherwise, things get more complicated... */
+    else
+    {
+        mode = false;  /* 2 when false, 3 when true. */
+        do  /* Simple loop to reduce code duplication (see comment accompanying
+             * this function definition). */
         {
-            backend->fromAddr(coreIt->first, &meshX, &meshY, &coreId,
-                              &threadId);
-
-            if (!mode)  /* 2 */
+            for (coreIt = app->coreInfos.begin();
+                 coreIt != app->coreInfos.end(); coreIt++)
             {
-                debug_post(
-                    587, 4, hex2str(meshX).c_str(), hex2str(meshY).c_str(),
-                    hex2str(coreId).c_str(),
-                    uint2str(coreIt->second.threadsExpected.size()).c_str());
-                /* Note that startOne can hang for the Tinsel backend if the
-                 * number of threads expected is greater than the number of
-                 * threads that the core will start - this is because startOne
-                 * waits for an acknowledgement message from the core that
-                 * varies as a function of the number of threads. If you find
-                 * the above 587 being the last message you see from the MPI
-                 * CNC Resolver thread (for example), this is most likely your
-                 * issue. */
-                backend->startOne(meshX, meshY, coreId,
-                                  coreIt->second.threadsExpected.size());
-            }
-            else  /* 3 */
-            {
-                debug_post(586, 3, hex2str(meshX).c_str(),
-                           hex2str(meshY).c_str(), hex2str(coreId).c_str());
-                backend->goOne(meshX, meshY, coreId);
-            }
-        }
+                backend->fromAddr(coreIt->first, &meshX, &meshY, &coreId,
+                                  &threadId);
 
-        mode = !mode;
-    } while (mode);
+                if (!mode)  /* 2 */
+                {
+                    debug_post(
+                        587, 4, hex2str(meshX).c_str(), hex2str(meshY).c_str(),
+                        hex2str(coreId).c_str(),
+                        uint2str(coreIt->second.threadsExpected.size())
+                        .c_str());
+                    /* Note that startOne can hang for the Tinsel backend if
+                     * the number of threads expected is greater than the
+                     * number of threads that the core will start - this is
+                     * because startOne waits for an acknowledgement message
+                     * from the core that varies as a function of the number of
+                     * threads. If you find the above 587 being the last
+                     * message you see from the MPI CNC Resolver thread (for
+                     * example), this is most likely your issue. */
+                    backend->startOne(meshX, meshY, coreId,
+                                      coreIt->second.threadsExpected.size());
+                }
+                else  /* 3 */
+                {
+                    debug_post(586, 3, hex2str(meshX).c_str(),
+                               hex2str(meshY).c_str(),
+                               hex2str(coreId).c_str());
+                    backend->goOne(meshX, meshY, coreId);
+                }
+            }
+
+            mode = !mode;
+        } while (mode);
+    }
 
     /* Good stuff. Now the cores will spin up and send BARRIER messages to the
      * Mothership. */

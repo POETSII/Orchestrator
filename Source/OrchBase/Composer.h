@@ -143,6 +143,8 @@ int         addFlags(GraphI_t*, std::string&);
 bool        isGenerated(GraphI_t*);
 bool        isCompiled(GraphI_t*);
 
+bool        getDummyPaths(GraphI_t*, std::string&, std::string&);   // Get the hardware idle binary names 
+
 void        Show(FILE * = stdout);
 void        Dump(unsigned = 0,FILE * = stdout);
 
