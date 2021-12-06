@@ -615,6 +615,10 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
     DebugPrint("%s\n", debugHeader);
     #endif
 
+    /* For temporarily holding box sizes. */
+    std::string boxHoriz;
+    std::string boxVerti;
+
     /* Argument map. */
     std::map<std::string, std::string> argKeys;
     argKeys["batchPath"] = "b";
@@ -627,10 +631,12 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
     argKeys["internalPath"] = "p";
     argKeys["quietValgrind"] = "q";
     argKeys["valgrind"] = "v";
+    argKeys["boxHoriz"] = "x";
+    argKeys["boxVerti"] = "y";
 
     /* Defines help string, printed when user calls with `-h`. */
     std::string helpDoc = dformat(
-"Usage: %s [/b=FILE] [/d] [/f=FILE] [/h] [/g=PROCESS] [/n] [/o=HOST] [/p=PATH] [/v=PROCESS]\n"
+"Usage: %s [/b=FILE] [/d] [/f=FILE] [/h] [/g=PROCESS] [/n] [/o=HOST] [/p=PATH] [/v=PROCESS] [/x=WIDTH] [/y=HEIGHT]\n"
 "\n"
 "This is the Orchestrator launcher. It starts the following Orchestrator processes:\n"
 "\n"
@@ -661,6 +667,10 @@ int ParseArgs(int argc, char** argv, std::string* batchPath,
 "\n"
 "\t/%s: Points valgrind (%s) at one of the processes listed above, except motherships spawned via a host list. Combine with /%s at your own risk.\n"
 "\n"
+"\t/%s=VALUE: Commands Motherships to operate with a horizontal cluster size of VALUE, using environment variable %s.\n"
+"\n"
+"\t/%s=VALUE: Commands Motherships to operate with a vertical cluster size of VALUE, using environment variable %s.\n"
+"\n"
 "If you are still bamboozled, or you're a developer, check out the Orchestrator documentation.\n",
 argv[0],
 argKeys["batchPath"].c_str(),
@@ -672,7 +682,9 @@ argKeys["noMotherships"].c_str(),
 argKeys["override"].c_str(), argKeys["noMotherships"].c_str(),
 argKeys["internalPath"].c_str(),
 argKeys["quietValgrind"].c_str(),
-argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str());
+argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str(),
+argKeys["boxHoriz"].c_str(), horizBoxEnv,
+argKeys["boxVerti"].c_str(), vertiBoxEnv);
 
     /* Parse the input arguments. */
     std::string concatenatedArgs;
@@ -847,6 +859,30 @@ argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str());
             /* If it is, it's true! */
             else (*valgrindProcs)[currentProcess] = true;
         }
+
+        if (currentArg == argKeys["boxHoriz"])
+        {
+            boxHoriz = (*argIt).GetP(0);
+            if (str2int(boxHoriz) == 0)
+            {
+                printf("[WARN] Launcher: Horizontal box dimension is not an "
+                       "integer. Continuing anyway, but this may cause the "
+                       "Mothership or Tinsel to fall over.\n");
+            }
+            setenv(horizBoxEnv, boxHoriz.c_str(), 1);
+        }
+
+        if (currentArg == argKeys["boxVerti"])
+        {
+            boxVerti = (*argIt).GetP(0);
+            if (str2int(boxVerti) == 0)
+            {
+                printf("[WARN] Launcher: Vertical box dimension is not an "
+                       "integer. Continuing anyway, but this may cause the "
+                       "Mothership or Tinsel to fall over.\n");
+            }
+            setenv(vertiBoxEnv, boxVerti.c_str(), 1);
+        }
     }
 
     /* Print what happened, if anyone is listening. */
@@ -899,6 +935,30 @@ argKeys["valgrind"].c_str(), execValgrind, argKeys["gdb"].c_str());
     {
         DebugPrint("%s%sWe are going to run the generated command.\n",
                    debugHeader, debugIndent);
+    }
+    if (boxHoriz.empty() and boxVerti.empty())
+    {
+        DebugPrint("%s%sUsing system-default cluster size.\n",
+                   debugHeader, debugIndent);
+    }
+    else if (boxHoriz.empty())
+    {
+        DebugPrint("%s%sUsing system-default horizontal cluster size, and "
+                   "vertical cluster size of '%s'.\n",
+                   debugHeader, debugIndent, boxVerti.c_str());
+    }
+    else if (boxVerti.empty())
+    {
+        DebugPrint("%s%sUsing system-default vertical cluster size, and "
+                   "horizontal cluster size of '%s'.\n",
+                   debugHeader, debugIndent, boxHoriz.c_str());
+    }
+    else
+    {
+        DebugPrint("%s%sUsing an override horizontal ('%s') and vertical "
+                   "('%s') cluster size.\n",
+                   debugHeader, debugIndent, boxHoriz.c_str(),
+                   boxVerti.c_str());
     }
 
     DebugPrint("%s\n", debugHeader);
