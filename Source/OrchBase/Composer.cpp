@@ -30,6 +30,7 @@ ComposerGraphI_t::ComposerGraphI_t()
     
     // Softswitch control.
     rtsBuffSizeMax = MAX_RTSBUFFSIZE;
+    softswitchHWIdleBarrier = true;     // Default to using Hardware Idle for barrier
     bufferingSoftswitch = false;        // Default to a non-buffering softswitch
     softswitchInstrumentation = true;   // Default to enable instrumentation
     softswitchLogHandler = trivial;     // Default to the trivial log handler
@@ -54,6 +55,7 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
     
     // Softswitch control.
     rtsBuffSizeMax = MAX_RTSBUFFSIZE;
+    softswitchHWIdleBarrier = true;     // Default to using Hardware Idle for barrier
     bufferingSoftswitch = false;        // Default to a non-buffering softswitch
     softswitchInstrumentation = true;   // Default to enable instrumentation
     softswitchLogHandler = trivial;     // Default to the trivial log handler 
@@ -108,11 +110,13 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
     
     fprintf(file, "\nSoftswitch generation/compilation control:\n");
     fprintf(file, "  Maximum RTS buffer size:    %lu \n",rtsBuffSizeMax);
+    fprintf(file, "  Hardware Idle Barrier:      %s \n",
+                        softswitchHWIdleBarrier ? "true" : "false");
     fprintf(file, "  Buffering Softswitch:       %s \n",
                         bufferingSoftswitch ? "true" : "false");
     fprintf(file, "  Softswitch Instrumentation: %s \n",
                         softswitchInstrumentation ? "true" : "false");
-    fprintf(file, "  Softswitch requestIdle: %s \n",
+    fprintf(file, "  Softswitch requestIdle:     %s \n",
                         softswitchRequestIdle ? "true" : "false");
                         
     fprintf(file, "  Softswitch log handler:     ");
@@ -146,8 +150,12 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
     fprintf(file, "  Provenance string cache:\n%s \n\n",provenanceCache.c_str());
     
     
-    // Form the Softswitch compilation control string
     std::string makeArgs = "";
+    // Form the Softswitch compilation control string
+    if(softswitchHWIdleBarrier)
+    {   // Softswitch needs to be built with a hardware idle barrier
+        makeArgs += "SOFTSWITCH_HWIDLE_BARRIER=1 ";
+    }
     if(bufferingSoftswitch)
     {   // Softswitch needs to be built in buffering mode
         makeArgs += "SOFTSWITCH_BUFFERING=1 ";
@@ -295,6 +303,40 @@ void Composer::setPlacer(Placer* plc)
         delete graphISrch->second;
     }
     graphIMap.clear();
+}
+
+/******************************************************************************
+ * Set the barrier mode for the softswitch. true = HWIdle, false = Packet based
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::setBarrierMode(GraphI_t* graphI, bool barrierMode)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchHWIdleBarrier = barrierMode;
+    
+    return 0;
 }
 
 
@@ -916,7 +958,10 @@ int Composer::compile(GraphI_t* graphI)
     std::string makeArgs = "";
 	
     //TODO: make this configurable
-    makeArgs += "SOFTSWITCH_HWIDLE_BARRIER=1 ";
+    if(builderGraphI->softswitchHWIdleBarrier)
+    {   // Softswitch needs to be built with a hardware idle barrier
+        makeArgs += "SOFTSWITCH_HWIDLE_BARRIER=1 ";
+    }
 
     if(builderGraphI->bufferingSoftswitch)
     {   // Softswitch needs to be built in buffering mode
@@ -1396,6 +1441,9 @@ void Composer::formFileProvenance(ComposerGraphI_t* builderGraphI)
     
     
     provStr << " * Softswitch control:\n";
+    provStr << " *   Hardware Idle Barrier:\t";
+    provStr << (builderGraphI->softswitchHWIdleBarrier?"true":"false") << "\n";
+    
     provStr << " *   Buffering mode:\t\t";
     provStr << (builderGraphI->bufferingSoftswitch ? "true" : "false") << "\n";
     
