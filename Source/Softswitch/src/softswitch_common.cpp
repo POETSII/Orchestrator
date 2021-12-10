@@ -233,6 +233,21 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
                 tinselWaitUntil(TINSEL_CAN_RECV);
             }
         }
+        
+        // We don't have an idle handler, but we do have a Hardware Idle handler
+        else if(device->devType->OnHWIdle_Handler)
+        {   // We have hardware idle
+            if(tinselIdle(true))
+            {   // returned from a synchronisation point
+                softswitch_onHWIdle(ThreadContext);
+            }
+        }
+        
+        // We don't have an idle handler or a Hardware Idle handler
+        else
+        {   // No hardware idle, sleep untill we can receive
+            tinselWaitUntil(TINSEL_CAN_RECV);
+        }
     }
 }
 //------------------------------------------------------------------------------
