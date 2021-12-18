@@ -95,11 +95,19 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
 CXXFLAGS = $(DEPENDENCY_FLAGS) $(INCLUDE_FLAGS) \
            -std=c++98 -Wall -fPIC -pthread -pedantic -O3 -DTRIVIAL_LOG_HANDLER
 
+# Sanitize flags (used only during debugging)
+SANITIZEFLAGS = -fsanitize=address -fsanitize=undefined \
+                -fno-sanitize=alignment  # Msg_p uses these deliberately
+
 # Debugging!
-DEBUGFLAGS = -g3 -O0
+DEBUGFLAGS = -g3 -O0 $(SANITIZEFLAGS)
+
+# Flags on top of default linking flags used in rules.
+POSTLINKFLAGS =
 
 # Debug target logic.
 debug: CXXFLAGS += $(DEBUGFLAGS) -DORCHESTRATOR_DEBUG=1
+debug: POSTLINKFLAGS += $(SANITIZEFLAGS)
 debug: all
 
 # Handy aliases for building executables, scripts, and libraries. Order doesn't
@@ -144,19 +152,22 @@ $(LOGSERVER_EXECUTABLE) $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -L$(MPICH_LIB_DIR) -L/usr/lib \
         -o $@ $^ \
-        -lmpi -lpthread
+        -lmpi -lpthread \
+        $(POSTLINKFLAGS)
 
 $(ALL_TESTS):
 	@$(shell $(MKDIR) $(TEST_EXECUTABLE_DIR))
 	$(CXX) -pthread -L$(MPICH_LIB_DIR) -L/usr/lib \
         -o $@ $^ \
-        -lmpi -lpthread
+        -lmpi -lpthread \
+        $(POSTLINKFLAGS)
 
 $(MOTHERSHIP_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -Wl,-export-dynamic -L$(MPICH_LIB_DIR) -L/usr/lib \
         -o $@ $^ $(TINSEL_HOSTLINK_DIR)/*.o \
-        -lmpi -lpthread -ldl
+        -lmpi -lpthread -ldl \
+        $(POSTLINKFLAGS)
 
 # Object generation. Note: The move command installs the assembled dependency
 # file (see *Note 1*). The touch updates the timestamp on the target (to avoid
