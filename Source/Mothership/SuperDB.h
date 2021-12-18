@@ -58,6 +58,7 @@ HANDLE_SUPERVISOR_DECL(exit)
 HANDLE_SUPERVISOR_DECL(idle)
 
 private:
+    pthread_mutex_t mapLock;
     std::map<std::string, SuperHolder*> supervisors;
     std::map<std::string, SuperHolder*>::iterator nextIdle;
 };
