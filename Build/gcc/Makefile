@@ -142,6 +142,7 @@ include Makefile.test_prerequisites
 TEST_SCRIPT_BASENAME = run-tests.sh
 TEST_SCRIPT = $(TEST_EXECUTABLE_DIR)/$(TEST_SCRIPT_BASENAME)
 tests: CXXFLAGS += $(DEBUGFLAGS)
+tests: POSTLINKFLAGS += $(SANITIZEFLAGS)
 tests: $(ALL_TESTS) $(TEST_SCRIPT)
 
 # Linking targets (to generate executables). See
