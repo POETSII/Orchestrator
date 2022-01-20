@@ -30,6 +30,7 @@ ComposerGraphI_t::ComposerGraphI_t()
     
     // Softswitch control.
     rtsBuffSizeMax = MAX_RTSBUFFSIZE;
+    softswitchHWIdleBarrier = true;     // Default to using Hardware Idle for barrier
     bufferingSoftswitch = false;        // Default to a non-buffering softswitch
     softswitchInstrumentation = true;   // Default to enable instrumentation
     softswitchLogHandler = trivial;     // Default to the trivial log handler
@@ -39,6 +40,9 @@ ComposerGraphI_t::ComposerGraphI_t()
     
     compilationFlags = "";
     provenanceCache = "";
+    
+    idleInstructionBinary = "";
+    idleDataBinary = "";
 }
 
 ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
@@ -51,6 +55,7 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
     
     // Softswitch control.
     rtsBuffSizeMax = MAX_RTSBUFFSIZE;
+    softswitchHWIdleBarrier = true;     // Default to using Hardware Idle for barrier
     bufferingSoftswitch = false;        // Default to a non-buffering softswitch
     softswitchInstrumentation = true;   // Default to enable instrumentation
     softswitchLogHandler = trivial;     // Default to the trivial log handler 
@@ -60,6 +65,9 @@ ComposerGraphI_t::ComposerGraphI_t(GraphI_t* graphIIn, std::string& outputPath)
     
     compilationFlags = "";
     provenanceCache = "";
+    
+    idleInstructionBinary = "";
+    idleDataBinary = "";
 }
 
 ComposerGraphI_t::~ComposerGraphI_t()
@@ -102,11 +110,13 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
     
     fprintf(file, "\nSoftswitch generation/compilation control:\n");
     fprintf(file, "  Maximum RTS buffer size:    %lu \n",rtsBuffSizeMax);
+    fprintf(file, "  Hardware Idle Barrier:      %s \n",
+                        softswitchHWIdleBarrier ? "true" : "false");
     fprintf(file, "  Buffering Softswitch:       %s \n",
                         bufferingSoftswitch ? "true" : "false");
     fprintf(file, "  Softswitch Instrumentation: %s \n",
                         softswitchInstrumentation ? "true" : "false");
-    fprintf(file, "  Softswitch requestIdle: %s \n",
+    fprintf(file, "  Softswitch requestIdle:     %s \n",
                         softswitchRequestIdle ? "true" : "false");
                         
     fprintf(file, "  Softswitch log handler:     ");
@@ -127,6 +137,11 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
         default:        fprintf(file, "**INVALID**\n");
     }
     
+    
+    fprintf(file, "  Hardware Idle Instructions: %s\n",
+                    idleInstructionBinary.c_str());
+    fprintf(file, "  Hardware Idle Data:         %s\n",idleDataBinary.c_str());
+    
     fprintf(file, "\nNitty gritty details:\n");
     fprintf(file, "  Device type strs map size:  %lu \n",
                         static_cast<unsigned long>(devTStrsMap.size()));
@@ -135,8 +150,12 @@ void ComposerGraphI_t::Dump(unsigned off,FILE* file)
     fprintf(file, "  Provenance string cache:\n%s \n\n",provenanceCache.c_str());
     
     
-    // Form the Softswitch compilation control string
     std::string makeArgs = "";
+    // Form the Softswitch compilation control string
+    if(softswitchHWIdleBarrier)
+    {   // Softswitch needs to be built with a hardware idle barrier
+        makeArgs += "SOFTSWITCH_HWIDLE_BARRIER=1 ";
+    }
     if(bufferingSoftswitch)
     {   // Softswitch needs to be built in buffering mode
         makeArgs += "SOFTSWITCH_BUFFERING=1 ";
@@ -284,6 +303,40 @@ void Composer::setPlacer(Placer* plc)
         delete graphISrch->second;
     }
     graphIMap.clear();
+}
+
+/******************************************************************************
+ * Set the barrier mode for the softswitch. true = HWIdle, false = Packet based
+ *
+ * Changing this requires a compiled app to be recompiled.
+ *****************************************************************************/
+int Composer::setBarrierMode(GraphI_t* graphI, bool barrierMode)
+{
+    ComposerGraphI_t* builderGraphI;
+    //FILE * fd = graphI->par->par->fd;              // Detail output file
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, map it.
+        builderGraphI = new ComposerGraphI_t(graphI, outputPath);
+
+        // Insert the GraphI
+        std::pair<ComposerGraphIMap_t::iterator, bool> insertedGraphI;
+        insertedGraphI = graphIMap.insert(ComposerGraphIMap_t::value_type
+                                                (graphI, builderGraphI));
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->compiled)
+    {   // Already compiled, need to decompile
+        clean(graphI);
+    }
+    
+    builderGraphI->softswitchHWIdleBarrier = barrierMode;
+    
+    return 0;
 }
 
 
@@ -903,6 +956,12 @@ int Composer::compile(GraphI_t* graphI)
     // Form the Softswitch compilation control string
     //TODO: Make these const strings at the top
     std::string makeArgs = "";
+	
+    //TODO: make this configurable
+    if(builderGraphI->softswitchHWIdleBarrier)
+    {   // Softswitch needs to be built with a hardware idle barrier
+        makeArgs += "SOFTSWITCH_HWIDLE_BARRIER=1 ";
+    }
 
     if(builderGraphI->bufferingSoftswitch)
     {   // Softswitch needs to be built in buffering mode
@@ -1011,6 +1070,34 @@ bool Composer::isCompiled(GraphI_t* graphI)
     }
 
     return builderGraphI->compiled;
+}
+
+/******************************************************************************
+ * Public method to get the paths for the HW Idle binaries
+ *****************************************************************************/
+bool Composer::getDummyPaths(GraphI_t* graphI, std::string& instrBin, 
+                                std::string& dataBin)
+{
+    ComposerGraphI_t* builderGraphI;
+
+    ComposerGraphIMap_t::iterator srch = graphIMap.find(graphI);
+    if (srch == graphIMap.end())
+    {   // The Graph Instance has not been seen before, so not compiled.
+        return false;
+
+    } else {
+        builderGraphI = srch->second;
+    }
+    
+    if(builderGraphI->idleInstructionBinary == "" || 
+        builderGraphI->idleDataBinary == "")
+    {   // We are missing a binary path, return false.
+        return false;
+    }
+    
+    instrBin = builderGraphI->idleInstructionBinary;
+    dataBin = builderGraphI->idleDataBinary;
+    return true;
 }
 
 /******************************************************************************
@@ -1212,6 +1299,37 @@ int Composer::checkBinaries(ComposerGraphI_t* builderGraphI)
     std::string taskDir(builderGraphI->outputDir);
     std::string elfPath(taskDir + "/bin");
     
+    
+    // Check that the "dummy" binaries for HW idle were generated.
+    FILE* dummyBinary;
+    
+    // Check Dummy Instruction binary and add to GraphI
+    std::string dummyPath = elfPath + "/dummy_code.v";
+    dummyBinary = fopen(dummyPath.c_str(), "r");
+    if(dummyBinary == PNULL)
+    { // Failed to open binary
+        fprintf(fd,"\tFailed to open dummy instruction binary %s after compilation\n",
+                    dummyPath.c_str());
+        return -1;
+    }
+    fclose(dummyBinary);
+    builderGraphI->idleInstructionBinary = dummyPath;
+    
+    
+    // Check Dummy Data binary and add to GraphI
+    dummyPath = elfPath + "/threadCtxInit_data.v";
+    dummyBinary = fopen(dummyPath.c_str(), "r");
+    if(dummyBinary == PNULL)
+    { // Failed to open binary
+        fprintf(fd,"\tFailed to open dummy data binary %s after compilation\n",
+                    dummyPath.c_str());
+        return -1;
+    }
+    fclose(dummyBinary);
+    builderGraphI->idleDataBinary = dummyPath;
+    
+    
+    
     // Check that the core binaries were made and link to each core.
     WALKSET(P_core*,(*(builderGraphI->cores)),coreNode)
     {
@@ -1323,6 +1441,9 @@ void Composer::formFileProvenance(ComposerGraphI_t* builderGraphI)
     
     
     provStr << " * Softswitch control:\n";
+    provStr << " *   Hardware Idle Barrier:\t";
+    provStr << (builderGraphI->softswitchHWIdleBarrier?"true":"false") << "\n";
+    
     provStr << " *   Buffering mode:\t\t";
     provStr << (builderGraphI->bufferingSoftswitch ? "true" : "false") << "\n";
     
@@ -2467,12 +2588,12 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
         handlers_h << "uint32_t devtyp_" << devTName;
         handlers_h << "_Supervisor_Implicit_OutPin";
         handlers_h << "_Send_handler (const void* __GraphProps, ";
-        handlers_h << "void* __Device, void* pkt);\n";
+        handlers_h << "void* __Device, void* pkt, bool* doSend);\n";
 
         handlers_cpp << "uint32_t devtyp_" << devTName;
         handlers_cpp << "_Supervisor_Implicit_OutPin";
         handlers_cpp << "_Send_handler (const void* __GraphProps, ";
-        handlers_cpp << "void* __Device, void* pkt)\n";
+        handlers_cpp << "void* __Device, void* pkt, bool* doSend)\n";
 
         handlers_cpp << dTypStrs->handlerPreamble;
         handlers_cpp << dTypStrs->handlerPreambleS;
@@ -2508,12 +2629,12 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
         handlers_h << "uint32_t devtyp_" << devTName;
         handlers_h << "_OutPin_" << pinOName;
         handlers_h << "_Send_handler (const void* __GraphProps, ";
-        handlers_h << "void* __Device, void* pkt);\n";
+        handlers_h << "void* __Device, void* pkt, bool* doSend);\n";
 
         handlers_cpp << "uint32_t devtyp_" << devTName;
         handlers_cpp << "_OutPin_" << pinOName;
         handlers_cpp << "_Send_handler (const void* __GraphProps, ";
-        handlers_cpp << "void* __Device, void* pkt)\n";
+        handlers_cpp << "void* __Device, void* pkt, bool* doSend)\n";
 
         handlers_cpp << dTypStrs->handlerPreamble;
         handlers_cpp << dTypStrs->handlerPreambleS;
@@ -3008,12 +3129,15 @@ void Composer::writeDevTDeclInit(AddressComponent threadAddr, DevT_t* devT,
     vars_cpp << "= {";
     vars_cpp << "&devtyp_" << devT->Name() << "_RTS_handler,";                  // RTS_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnInit_handler,";               // OnInit_Handler
-    vars_cpp << "&devtyp_" << devT->Name() << "_OnIdle_handler,";               // OnIdle_Handler
-    vars_cpp << "&devtyp_" << devT->Name() << "_OnHWIdle_handler,";             // OnHWIdle_Handler
+    
+    if(devT->pOnDeId) vars_cpp <<"&devtyp_"<<devT->Name()<<"_OnIdle_handler,";  // OnIdle_Handler
+    else vars_cpp << "0,";
+    
+    if(devT->pOnHWId) vars_cpp <<"&devtyp_"<<devT->Name()<<"_OnHWIdle_handler,";// OnHWIdle_Handler
+    else vars_cpp << "0,";
+    
     vars_cpp << "&devtyp_" << devT->Name() << "_OnImpl_handler,";               // OnImpl_Handler
     vars_cpp << "&devtyp_" << devT->Name() << "_OnCtl_handler,";                // OnCtl_Handler
-
-    //TODO: Add v4 handlers
 
     if(devT->pPropsD)
     {

@@ -39,11 +39,12 @@ enum AppState{UNDERDEFINED,  /* We're still receiving DIST messages. */
 class AppInfo
 {
 public:
-    AppInfo(std::string nameArg, uint32_t distCountExpected);
+    AppInfo(std::string nameArg, uint32_t distCountExpected, bool soloApp);
     AppInfo(std::string nameArg);
 
     std::string name;
     uint32_t distCountExpected;
+    bool soloApp;
     AppState state;
     std::map<uint32_t, CoreInfo> coreInfos;
     std::set<uint32_t> coresLoaded;

@@ -196,6 +196,7 @@ void Mothership::setup_mpi_hooks()
     DebugPrint("[MOTHERSHIP] Setting up MPI hooks.\n");
     FnMap[PMsg_p::KEY(Q::EXIT)] = &Mothership::handle_msg_exit;
     FnMap[PMsg_p::KEY(Q::SYST,Q::KILL)] = &Mothership::handle_msg_syst_kill;
+    FnMap[PMsg_p::KEY(Q::APP,Q::EMPT)] = &Mothership::handle_msg_cnc;
     FnMap[PMsg_p::KEY(Q::APP,Q::SPEC)] = &Mothership::handle_msg_cnc;
     FnMap[PMsg_p::KEY(Q::APP,Q::DIST)] = &Mothership::handle_msg_cnc;
     FnMap[PMsg_p::KEY(Q::APP,Q::SUPD)] = &Mothership::handle_msg_cnc;

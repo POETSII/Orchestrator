@@ -43,12 +43,21 @@ void softswitch_init(ThreadCtxt_t* ThreadContext)
     }
 }
 
-// <!> You know it's a hack when the "pragma GCC" comes out.
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
-void softswitch_delay(){for (uint32_t i=0; i<500; i++);}
-#pragma GCC pop_options
-
+/*------------------------------------------------------------------------------
+ * softswitch_delay: Wait for other threads to start so that we don't break sync
+ *----------------------------------------------------------------------------*/
+#ifdef SOFTSWITCH_HWIDLE_BARRIER
+void softswitch_delay(){
+    // Block on a tinselIdle call untill all threads have started
+    tinselIdle(true);        
+}
+#else
+  // <!> You know it's a hack when the "pragma GCC" comes out.
+  #pragma GCC push_options
+  #pragma GCC optimize ("O0")
+void softswitch_delay(){for (uint32_t i=0; i<500; i++);}    // Delay for an arbitary period
+  #pragma GCC pop_options
+#endif
 
 /*------------------------------------------------------------------------------
  * softswitch_barrier: Block until told to continue by the mothership
@@ -141,7 +150,7 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
     volatile void *superBuffer = tinselSendSlotExtra(); // Supervisor send slot
 
 #ifndef DISABLE_SOFTSWITCH_INSTRUMENTATION
-    uint32_t cycles = tinselCycleCount();		// cycle counter is per-core
+    uint32_t cycles = tinselCycleCount();        // cycle counter is per-core
     ThreadContext->lastCycles = cycles;         // save initial cycle count
  #if TinselEnablePerfCount == true
     // Save initial extended instrumentation counts.
@@ -151,6 +160,9 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
     ThreadContext->lastCPUIdleCount = tinselCPUIdleCount();
  #endif
 #endif
+
+    // We abuse the fact that we have a single device type for idle handling
+    devInst_t* device = &ThreadContext->devInsts[0];
 
     while (!ThreadContext->ctlEnd)
     {
@@ -204,12 +216,36 @@ void softswitch_loop(ThreadCtxt_t* ThreadContext)
         }
 #endif
 
-
-        // Nothing to RX, nothing to TX: iterate through all devices until
-        // something happens or all OnComputes have returned 0.
-        //softswitch_onIdle(ThreadContext);
-        else if(!softswitch_onIdle(ThreadContext))
-        {
+        // Idle handling
+        else if(device->devType->OnIdle_Handler 
+                && !softswitch_onIdle(ThreadContext))
+        {   // We have an idle handler and nothing interesting happened in it
+            
+            if(device->devType->OnHWIdle_Handler)
+            {   // We have hardware idle
+                if(tinselIdle(true))
+                {   // returned from a synchronisation point
+                    softswitch_onHWIdle(ThreadContext);
+                }
+            }
+            else
+            {   // No hardware idle, sleep untill we can receive
+                tinselWaitUntil(TINSEL_CAN_RECV);
+            }
+        }
+        
+        // We don't have an idle handler, but we do have a Hardware Idle handler
+        else if(device->devType->OnHWIdle_Handler)
+        {   // We have hardware idle
+            if(tinselIdle(true))
+            {   // returned from a synchronisation point
+                softswitch_onHWIdle(ThreadContext);
+            }
+        }
+        
+        // We don't have an idle handler or a Hardware Idle handler
+        else
+        {   // No hardware idle, sleep untill we can receive
             tinselWaitUntil(TINSEL_CAN_RECV);
         }
     }
@@ -234,7 +270,7 @@ void softswitch_finalise(ThreadCtxt_t* ThreadContext)
 
         ThreadContext->rtsStart++;
         if(ThreadContext->rtsStart == maxIdx)
-        {
+        { 
             ThreadContext->rtsStart = 0;
         }
     }
@@ -414,8 +450,26 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
                     pin->pinType->sz_pkt);
 #else
         // Build the packet in the send slot
-        pin->pinType->Send_Handler(ThreadContext->properties, device, pkt);
+        bool doSnd = true;  // doSend bool
+        
         ThreadContext->txHandlerCount++;         // Increment SendHandler count
+        pin->pinType->Send_Handler(ThreadContext->properties,device,pkt,&doSnd);
+        
+        if(!doSnd)
+        { // If DoSend is false, skip the actual sending and cleanup
+            pin->idxEdges = 0;       // Reset index,
+            pin->sendPending = 0;   // Reset pending
+
+            // Move the circular RTS buffer index
+            ThreadContext->rtsStart++;
+            if(ThreadContext->rtsStart == ThreadContext->rtsBuffSize)
+            {
+                ThreadContext->rtsStart = 0;
+            }
+
+            softswitch_onRTS(ThreadContext, device); // Run the Device's RTS handler.
+            return 0;
+        }
 #endif
     }
     //--------------------------------------------------------------------------
@@ -648,6 +702,19 @@ inline bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
 }
 
 
+/* Routine called if tinselIdle returns true. This loops over all hosted devices
+ * and calls the device type's OnHWIdle handler followed by ReadyToSend.
+ */
+inline void softswitch_onHWIdle(ThreadCtxt_t* ThreadContext)
+{
+    for(uint32_t i = 0; i < ThreadContext->numDevInsts; i++)
+    {
+        devInst_t* device = &ThreadContext->devInsts[i];
+        device->devType->OnHWIdle_Handler(ThreadContext->properties, device);
+        softswitch_onRTS(ThreadContext, device);  // Call RTS for device
+    }
+}
+
 inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
 {
     // Essentially:
@@ -683,6 +750,17 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
                 if(buffRem > 1)                     //(output_pin->numEdges && )
                 {
                     //output_pin->sendPending++;
+                    // Build the packet in the Packet buffer
+                    bool doSnd = true;  // doSend bool
+                    output_pin->pinType->Send_Handler(ThreadContext->properties,
+                          device, ThreadContext->pktBuf[ThreadContext->rtsEnd],
+                          &doSnd);
+                    ThreadContext->txHandlerCount++;    // ++ SendHandler count
+                    
+                    if(!doSnd)
+                    { // If DoSend is false, skip adding to the packet buffer
+                        continue;
+                    }
 #else
                 //If the pin is not already pending,
                 if(output_pin->sendPending == 0)    // output_pin->numEdges && 
@@ -694,22 +772,14 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
                     // Add pin to RTS list and update end
                     ThreadContext->rtsBuf[ThreadContext->rtsEnd] = output_pin;
 
-#ifdef BUFFERING_SOFTSWITCH
-                    // Build the packet in the Packet buffer
-                    output_pin->pinType->Send_Handler(ThreadContext->properties,
-                          device, ThreadContext->pktBuf[ThreadContext->rtsEnd]);
-                    ThreadContext->txHandlerCount++;    // ++ SendHandler count
-#endif
-
                     ThreadContext->rtsEnd++;
                     if(ThreadContext->rtsEnd == ThreadContext->rtsBuffSize)
                     {
                         ThreadContext->rtsEnd = 0;
                     }
-#ifdef BUFFERING_SOFTSWITCH
+
                 }
-#else
-                }
+#ifndef BUFFERING_SOFTSWITCH
                 else if((output_pin->sendPending == 1) && 
                         (ThreadContext->rtsStart == ThreadContext->rtsEnd))
                 {   // Sanity check to catch buffer overflow

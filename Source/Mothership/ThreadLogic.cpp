@@ -55,7 +55,9 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
              messageIt++)
         {
             key = messageIt->Key();
-            if (key == PMsg_p::KEY(Q::APP, Q::SPEC))
+            if (key == PMsg_p::KEY(Q::APP, Q::EMPT))
+                mothership->handle_msg_app_empt(&*messageIt);
+            else if (key == PMsg_p::KEY(Q::APP, Q::SPEC))
                 mothership->handle_msg_app_spec(&*messageIt);
             else if (key == PMsg_p::KEY(Q::APP, Q::DIST))
                 mothership->handle_msg_app_dist(&*messageIt);

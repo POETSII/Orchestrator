@@ -53,7 +53,8 @@ typedef uint32_t (*Recv_handler_t)
 typedef uint32_t (*Send_handler_t)
 (   const void* __GraphProps,
     void*       __Device,
-    void*       pkt
+    void*       pkt,
+    bool*       doSend
 );
 
 typedef struct PInputType
@@ -198,6 +199,7 @@ void softswitch_instrumentation(ThreadCtxt_t* thr_ctxt, volatile void* send_buf)
 uint32_t softswitch_onSend(ThreadCtxt_t* thr_ctxt, volatile void* send_buf);
 void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf);
 bool softswitch_onIdle(ThreadCtxt_t* thr_ctxt);
+void softswitch_onHWIdle(ThreadCtxt_t* thr_ctxt);
 uint32_t softswitch_onRTS(ThreadCtxt_t* thr_ctxt, devInst_t* device);
 
 

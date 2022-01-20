@@ -10,6 +10,16 @@
 
 #include "Mothership.h"
 
+bool Mothership::decode_app_empt_message(
+    PMsg_p* message, std::string* codePath, std::string* dataPath)
+{
+    codePath->clear();
+    dataPath->clear();
+    if(!decode_string_message(message, codePath)) return false;
+    if(!decode_string_message(message, dataPath, 1)) return false;
+    return true;
+}
+
 bool Mothership::decode_app_dist_message(
     PMsg_p* message, std::string* appName, std::string* codePath,
     std::string* dataPath, uint32_t* coreAddr,
@@ -38,12 +48,14 @@ bool Mothership::decode_app_supd_message(PMsg_p* message, std::string* appName,
 
 bool Mothership::decode_app_spec_message(PMsg_p* message, std::string* appName,
                                          uint32_t* distCount,
-                                         uint8_t* appNumber)
+                                         uint8_t* appNumber,
+                                         bool* soloApp)
 {
     *distCount = 0;
     if(!decode_string_message(message, appName)) return false;
     if(!decode_unsigned_message(message, distCount, 1)) return false;
     if(!decode_char_message(message, appNumber, 2)) return false;
+    if(!decode_bool_message(message, soloApp, 3)) return false;
     return true;
 }
 
@@ -77,15 +89,33 @@ bool Mothership::decode_addressed_packets_message(PMsg_p* message,
     message->Put<P_Addr_Pkt_t>();  // Tell the message its type
 
     packets->clear();
-    
+
     message->Get<P_Addr_Pkt_t>(index, *packets);
-    
+
     if (packets->empty())
     {
         Post(516, hex2str(message->Key()), uint2str(index));
         return false;
     }
 
+    return true;
+}
+
+bool Mothership::decode_bool_message(PMsg_p* message, bool* result,
+                                     unsigned index)
+{
+    int countBuffer;
+    bool* resultBuffer;
+
+    /* Get and check for errors. */
+    resultBuffer = message->Get<bool>(index, countBuffer);
+    if (resultBuffer == PNULL)
+    {
+        *result = 0;
+        Post(537, hex2str(message->Key()), uint2str(index));
+        return false;
+    }
+    *result = *resultBuffer;
     return true;
 }
 
@@ -120,7 +150,7 @@ bool Mothership::decode_packets_message(PMsg_p* message,
     packets->clear();
 
     message->Get<P_Pkt_t>(index, *packets);
-    
+
     // If the packet vector has come back empty, there is an error.
     if (packets->empty())
     {

@@ -22,7 +22,7 @@ public:
     std::map<uint32_t, uint32_t> threadToCoreAddr;
     std::map<uint8_t, std::string> numberToApp;
 
-    AppInfo* check_create_app(std::string, uint32_t);
+    AppInfo* check_create_app(std::string, uint32_t, bool);
     AppInfo* check_create_app(std::string);
     bool check_defined_app(std::string);
     void recall_app(AppInfo*);

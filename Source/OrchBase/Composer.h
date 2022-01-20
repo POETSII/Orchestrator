@@ -90,6 +90,7 @@ typedef struct ComposerGraphI_t
     bool generated;
     bool compiled;
     
+    bool softswitchHWIdleBarrier;
     bool bufferingSoftswitch;
     unsigned long rtsBuffSizeMax;
     bool softswitchInstrumentation;
@@ -97,6 +98,9 @@ typedef struct ComposerGraphI_t
     unsigned long softswitchLogLevel;
     ssLoopMode_t softswitchLoopMode;
     bool softswitchRequestIdle;
+    
+    std::string idleInstructionBinary;   // Dummy instruction binary for HW Idle
+    std::string idleDataBinary;          // Dummy data binary for HW Idle
     
     // Constructors/Destructors
     ComposerGraphI_t();
@@ -128,6 +132,7 @@ int         clean(GraphI_t*);      // Get rid of built files (e.g. a make clean)
 void        setOutputPath(std::string);
 void        setPlacer(Placer*);
 
+int         setBarrierMode(GraphI_t*, bool);
 int         setBuffMode(GraphI_t*, bool);
 int         setReqIdleMode(GraphI_t*, bool);
 int         setRTSSize(GraphI_t*, unsigned long);
@@ -139,6 +144,8 @@ int         addFlags(GraphI_t*, std::string&);
 
 bool        isGenerated(GraphI_t*);
 bool        isCompiled(GraphI_t*);
+
+bool        getDummyPaths(GraphI_t*, std::string&, std::string&);   // Get the hardware idle binary names 
 
 void        Show(FILE * = stdout);
 void        Dump(unsigned = 0,FILE * = stdout);
