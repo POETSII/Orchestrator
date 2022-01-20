@@ -2588,12 +2588,12 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
         handlers_h << "uint32_t devtyp_" << devTName;
         handlers_h << "_Supervisor_Implicit_OutPin";
         handlers_h << "_Send_handler (const void* __GraphProps, ";
-        handlers_h << "void* __Device, void* pkt);\n";
+        handlers_h << "void* __Device, void* pkt, bool* doSend);\n";
 
         handlers_cpp << "uint32_t devtyp_" << devTName;
         handlers_cpp << "_Supervisor_Implicit_OutPin";
         handlers_cpp << "_Send_handler (const void* __GraphProps, ";
-        handlers_cpp << "void* __Device, void* pkt)\n";
+        handlers_cpp << "void* __Device, void* pkt, bool* doSend)\n";
 
         handlers_cpp << dTypStrs->handlerPreamble;
         handlers_cpp << dTypStrs->handlerPreambleS;
@@ -2629,12 +2629,12 @@ void Composer::formDevTOutputPinHandlers(devTypStrings_t* dTypStrs)
         handlers_h << "uint32_t devtyp_" << devTName;
         handlers_h << "_OutPin_" << pinOName;
         handlers_h << "_Send_handler (const void* __GraphProps, ";
-        handlers_h << "void* __Device, void* pkt);\n";
+        handlers_h << "void* __Device, void* pkt, bool* doSend);\n";
 
         handlers_cpp << "uint32_t devtyp_" << devTName;
         handlers_cpp << "_OutPin_" << pinOName;
         handlers_cpp << "_Send_handler (const void* __GraphProps, ";
-        handlers_cpp << "void* __Device, void* pkt)\n";
+        handlers_cpp << "void* __Device, void* pkt, bool* doSend)\n";
 
         handlers_cpp << dTypStrs->handlerPreamble;
         handlers_cpp << dTypStrs->handlerPreambleS;

@@ -53,7 +53,8 @@ typedef uint32_t (*Recv_handler_t)
 typedef uint32_t (*Send_handler_t)
 (   const void* __GraphProps,
     void*       __Device,
-    void*       pkt
+    void*       pkt,
+    bool*       doSend
 );
 
 typedef struct PInputType
