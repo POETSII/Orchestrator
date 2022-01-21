@@ -2115,7 +2115,7 @@ void Composer::writeGlobalPropsI(GraphI_t* graphI, std::ofstream& props_cpp)
 
 
 /******************************************************************************
- * Write the Message structs to a common header
+ * Write the Message structs and "global" RTS consts to a common header
  *****************************************************************************/
 void Composer::writeMessageTypes(GraphI_t* graphI, std::ofstream& pkt_h)
 {
@@ -2124,8 +2124,42 @@ void Composer::writeMessageTypes(GraphI_t* graphI, std::ofstream& pkt_h)
     pkt_h << "#ifndef _MESSAGETYPES_H_\n";
     pkt_h << "#define _MESSAGETYPES_H_\n\n";
 
-    pkt_h << "#include <cstdint>\n";
+    pkt_h << "#include <cstdint>\n\n";
+    pkt_h << "// Global RTS flags and indicies for all device types\n";
     
+    // Write the global RTS Flags/indicies
+    WALKVECTOR(DevT_t*,graphI->pT->DevT_v,devT)
+    {
+        if((*devT)->devTyp == 'D')
+        {
+            std::string devTName = (*devT)->Name();  // grab copy of the name
+            if((*devT)->pPinTSO)
+            {
+                pkt_h << "const uint32_t RTS_SUPER_IMPLICIT_SEND_INDEX_";
+                pkt_h << devTName << " = " << (*devT)->PinTO_v.size();
+                pkt_h << ";\n";
+                
+                pkt_h << "const uint32_t RTS_SUPER_IMPLICIT_SEND_FLAG_";
+                pkt_h << devTName << " = 0x1 << " << (*devT)->PinTO_v.size();
+                pkt_h << ";\n";
+            }
+            // Other output pins
+            WALKVECTOR(PinT_t*,(*devT)->PinTO_v,pinO)
+            {
+                std::string pinOName = (*pinO)->Name();
+                uint32_t pinIdx = (*pinO)->Idx;
+            
+                pkt_h << "const uint32_t RTS_INDEX_" << devTName << "_";
+                pkt_h << pinOName << " = " << pinIdx << ";\n";
+                
+                pkt_h << "const uint32_t RTS_FLAG_" << devTName << "_";
+                pkt_h << pinOName << " = 0x1 << " << pinIdx << ";\n";
+            }
+        }
+    }
+    
+    // Now write all of the message structs
+    pkt_h <<  "\n// Message type structs for all messages\n";
     pkt_h <<  "#pragma pack(push,1)\n";
     
     WALKVECTOR(MsgT_t*,graphT->MsgT_v,msg)
