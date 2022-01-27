@@ -98,15 +98,26 @@ void CommonBase::MPISpinner()
 
 int MSGBUFSIZ = 1024;                  // Individual incoming message buffer
 char * MSGBUF = new char[MSGBUFSIZ];   // Pull it off the heap
+
+const int MAX_PROBE_IDLE_BACKOFF_US=100000; // Maximum is 100,000us, i.e. 10hz
+int probe_idle_backoff_us=0;
 for (;;) {
 // See if there are any MPI packets coming down the pipe
   MPI_Status status;                   // Note the multi-threaded MPI probe
   int flag;
   MPI_Iprobe(MPI_ANY_SOURCE,MPI_ANY_TAG,MPI_COMM_WORLD,&flag,&status);
   if (flag==0) {                       // Nothing there....
-    OnIdle();                          // Guess
+    if(HaveIdleWork()){
+      OnIdle();                          // Guess
+    }else{
+      probe_idle_backoff_us=std::min<int>(MAX_PROBE_IDLE_BACKOFF_US, std::max<int>(10, (probe_idle_backoff_us*5)/4));
+      OSFixes::sleep( probe_idle_backoff_us / 1000 );
+    }
     continue;                          // And try again
   }
+
+  probe_idle_backoff_us=0;
+
   int count;
   MPI_Get_count(&status,MPI_CHAR,&count);
   if (count > MSGBUFSIZ) {             // Ensure we have the space for it
@@ -138,6 +149,13 @@ return 1;                              // Return != 0 means close spinner
 void CommonBase::OnIdle()
 {
 
+}
+
+//------------------------------------------------------------------------------
+
+bool CommonBase::HaveIdleWork()
+{
+  return true; // For compatibility with existing users of OnIdle
 }
 
 //------------------------------------------------------------------------------

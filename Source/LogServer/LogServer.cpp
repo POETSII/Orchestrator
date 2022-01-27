@@ -155,14 +155,27 @@ while (recd!=0) {                      // Walk the records in the section
 
 //------------------------------------------------------------------------------
 
+// DT10 : This was previously a static within LogServer::OnIdle. A static
+// global here seems as problematic as there, so moved it out. It looked
+// like a hack anyway.
+static bool OnIdle_flag0 = false;             // All the processes registered?
+
+bool LogServer::HaveIdleWork()
+{
+  if(logfp==0) return false;
+  if((OnIdle_flag0==false)&&(pPmap->vPmap.size()>=unsigned(Usize))){
+    return true;
+  }
+  return false;
+}
+
 void LogServer::OnIdle()
 {
 if (logfp==0) return;                  // May not yet have an output channel
-static bool flag0 = false;             // All the processes registered?
-if ((flag0==false)&&(pPmap->vPmap.size()>=unsigned(Usize))) {
+if ((OnIdle_flag0==false)&&(pPmap->vPmap.size()>=unsigned(Usize))) {
   if (pPmap->vPmap.size()>unsigned(Usize))Post(113);
   pPmap->Show(logfp);
-  flag0 = true;                        // Make sure we just do this once
+  OnIdle_flag0 = true;                        // Make sure we just do this once
 }
 CommonBase::OnIdle();                  // Any base actions?
 }

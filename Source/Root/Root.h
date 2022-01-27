@@ -43,6 +43,7 @@ unsigned                    CmRetu(Cli *);
 bool                        Config();
 #include                    "Decode.cpp"
 void                        Dump(unsigned = 0,FILE * = stdout);
+bool                        HaveIdleWork();
 void                        OnIdle();
 unsigned                    OnInje(PMsg_p *);
 unsigned                    OnKeyb(PMsg_p *);

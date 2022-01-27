@@ -323,6 +323,17 @@ fflush(fp);
 
 //------------------------------------------------------------------------------
 
+bool Root::HaveIdleWork()
+{
+  // If a scheduled exit condition is satisfied, we have work to do.
+  if((pCmCall->IsEmpty() and exitOnEmpty) or (appJustStopped and exitOnStop)){
+    return true;
+  }
+
+  // Otherwise, simply check the queue.
+  return !pCmCall->IsEmpty();
+}
+
 void Root::OnIdle()
 {
 Cli Cm = pCmCall->Front();             // Anything in the batch queue?
