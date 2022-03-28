@@ -90,10 +90,30 @@ void P_super::Detach(P_board* targetBoard)
     // If we didn't find it, it's already been cleared. Let's not worry then.
     if (supervisorIterator == parentBox->P_superv.end()){return;}
 
-    // Remove the supervisor from the board, by its index in the box.
+    // Remove the supervisor from the board, by its index in the box. NB: Can't
+    // use std::remove because (in Borland), it clashes with cstdio's remove
+    // for some mysterious reason. Note that this replacement is woefully
+    // inefficient, but sup_offv is small anyway. Here's the equivalent
+    // std::remove line.
+    //
+    // std::remove(targetBoard->sup_offv.begin(), targetBoard->sup_offv.end(),
+    //             superIndex);
     unsigned superIndex = supervisorIterator - parentBox->P_superv.begin();
-    std::remove(targetBoard->sup_offv.begin(), targetBoard->sup_offv.end(),
-                superIndex);
+    bool removed;
+    do
+    {
+        removed = false;
+        WALKVECTOR(unsigned, targetBoard->sup_offv, indexIterator)
+        {
+            if (*indexIterator == superIndex)
+            {
+                targetBoard->sup_offv.erase(indexIterator);
+                removed = true;
+                break;  // Iterator now invalid - start again.
+            }
+        }
+    } while (!removed);  // Removes all instances of superIndex, if many exist.
+
 
     // Remove the board from this P_super object.
     WALKVECTOR(P_board*, P_boardv, boardIterator)
