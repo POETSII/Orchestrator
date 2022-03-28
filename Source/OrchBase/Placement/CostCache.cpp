@@ -111,7 +111,7 @@ void CostCache::build_cache()
 
     /* We'll need an object to hold all of the pthread_ts we're going to start
      * creating... as well as their arguments. */
-    std::vector<pthread_t> threads(threadRanges.size(), 0);
+    std::vector<pthread_t> threads(threadRanges.size());
 #endif
 
     /* O(node^3) loop of death. */
