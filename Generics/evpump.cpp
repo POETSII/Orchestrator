@@ -281,7 +281,7 @@ sB   = true;                           // Yes we care
 }
 
 //------------------------------------------------------------------------------
-      
+
 void EvPump::_StopCond::SetS_now(unsigned t_now)
 // Set the current simulation time
 {

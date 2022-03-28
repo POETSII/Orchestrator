@@ -22,7 +22,7 @@ Timer_t::~Timer_t()
 }
 
 //------------------------------------------------------------------------------
-         
+
 void Timer_t::Clock(double(* pC)(void))
 {
 pClock = pC;                           // Attach the clock

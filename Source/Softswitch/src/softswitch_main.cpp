@@ -41,9 +41,9 @@ void softswitch_main()
 int main(int argc, char** argv)
 {
     BACKEND_INIT(argv)     // Backend initialisation. May not be defined.
-    
+
     softswitch_main();
-    
+
     BACKEND_DEINIT()       // Backend deinitialisation. May not be defined.
     return 0;
 }

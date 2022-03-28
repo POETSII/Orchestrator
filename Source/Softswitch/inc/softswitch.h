@@ -34,9 +34,9 @@ void softswitch_trivial_log_handler(uint32_t src, const char* &logStr);
 // User-facing macro that pulls in the device index.
 #define handler_log(...)   __handler_log(deviceInstance->deviceIdx, __VA_ARGS__)
 
-template<typename... F> inline void __handler_log(uint32_t src, int level, 
+template<typename... F> inline void __handler_log(uint32_t src, int level,
                                             const char * pkt, F... args)
-{  
+{
 #ifdef TRIVIAL_LOG_HANDLER
     // Call a truly trivial log handler.
     if(level <= P_LOG_LEVEL) softswitch_trivial_log_handler(src, pkt);

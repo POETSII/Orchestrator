@@ -74,5 +74,5 @@ bool operator != (Msg_p &,Msg_p &);
 
 //==============================================================================
 
-#include "msg_p.tpp"  
+#include "msg_p.tpp"
 #endif

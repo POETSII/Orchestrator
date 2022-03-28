@@ -43,7 +43,7 @@ typedef struct devTypStrings_t
     std::string handlerPreamble;
     std::string handlerPreambleS;
     std::string handlerPreambleCS;
-    
+
     std::string handlersH;
     std::string handlersC;
     std::string varsHCommon;
@@ -62,34 +62,34 @@ typedef enum softswitchLoopMode_t
     priInstr
 } ssLoopMode_t;
 
-/* THE structure that keeps track of the status of, and all of the values, etc. 
+/* THE structure that keeps track of the status of, and all of the values, etc.
  * that are involved in composing, an application/graph instance.
  *
- * The Composer class holds a map of these, with one entry for each graph 
+ * The Composer class holds a map of these, with one entry for each graph
  * instance that has been seen by the Composer.
  */
 typedef struct ComposerGraphI_t
 {
     GraphI_t* graphI;
     std::set<P_core*>* cores;    // Cores used by the GraphInstance
-    
+
     // Maps/vector filled during generation. These are only valid if "generated"
     devTStrsMap_t devTStrsMap;              // Common strings for each DeVT
-    std::vector<DevI_t*> supevisorDevIVect; // Supervisor Edge Index handling. 
-    devISuperIdxMap_t   devISuperIdxMap;    // Supervisor Edge Index handling. 
+    std::vector<DevI_t*> supevisorDevIVect; // Supervisor Edge Index handling.
+    devISuperIdxMap_t   devISuperIdxMap;    // Supervisor Edge Index handling.
     // TODO: This is inherently single-supervisor for now and needs modifying to
     // have one vector per supervisor.
-    
+
     std::string outputDir;
-    
+
     std::string provenanceCache;
-    
+
     std::string compilationFlags;
-    
+
     //State flags
     bool generated;
     bool compiled;
-    
+
     bool bufferingSoftswitch;
     unsigned long rtsBuffSizeMax;
     bool softswitchInstrumentation;
@@ -97,12 +97,12 @@ typedef struct ComposerGraphI_t
     unsigned long softswitchLogLevel;
     ssLoopMode_t softswitchLoopMode;
     bool softswitchRequestIdle;
-    
+
     // Constructors/Destructors
     ComposerGraphI_t();
     ComposerGraphI_t(GraphI_t*, std::string&);
     ~ComposerGraphI_t();
-    
+
     void clearDevTStrsMap();
     void Dump(unsigned = 0,FILE * = stdout);
 } ComposerGraphI_t;
@@ -114,7 +114,7 @@ public:
 
 Composer(Placer*);
 Composer();
-~Composer();    
+~Composer();
 
 int         compose(GraphI_t*);  // Generate and compile
 int         generate(GraphI_t*); // Generate Source Files
@@ -144,7 +144,7 @@ void        Show(FILE * = stdout);
 void        Dump(unsigned = 0,FILE * = stdout);
 
 private:
-    
+
 Placer*     placer;
 std::string outputPath;
 
@@ -180,7 +180,7 @@ void formDevTOutputPinHandlers(devTypStrings_t* dTypStrs);
 
 int createCoreFiles(P_core*, ComposerGraphI_t*, std::ofstream&,
                     std::ofstream&, std::ofstream&, std::ofstream&);
-void writeCoreSrc(P_core*, devTypStrings_t*, std::ofstream&, 
+void writeCoreSrc(P_core*, devTypStrings_t*, std::ofstream&,
                     std::ofstream&, std::ofstream&, std::ofstream&);
 
 void writeCoreVarsHead(unsigned, std::ofstream&, std::ofstream&);
@@ -193,13 +193,13 @@ void writeCoreHandlerFoot(unsigned, std::ofstream&, std::ofstream&);
 int createThreadFile(P_thread*, ComposerGraphI_t*, std::ofstream&);
 
 unsigned writeThreadVars(ComposerGraphI_t*, P_thread*, ofstream&, ofstream&);
-void writeThreadVarsCommon(AddressComponent, AddressComponent, 
+void writeThreadVarsCommon(AddressComponent, AddressComponent,
                             std::ofstream&, std::ofstream&);
 void writeThreadContextInitialiser(ComposerGraphI_t*, P_thread*, DevT_t*,
                             std::ofstream&, std::ofstream&);
 void writeDevTDeclInit(AddressComponent, DevT_t*,
                             std::ofstream&, std::ofstream&);
-void writeInputPinInit(AddressComponent, DevT_t*, 
+void writeInputPinInit(AddressComponent, DevT_t*,
                             std::ofstream&, std::ofstream&);
 void writeOutputPinInit(AddressComponent, DevT_t*,
                             std::ofstream&, std::ofstream&);
@@ -223,7 +223,7 @@ void writeDevIOutPinsDecl(std::string&, size_t, std::ofstream&);
 void writeDevIOutputPinDefs(ComposerGraphI_t*, DevI_t*, AddressComponent,
                                 std::string&, std::vector<unsigned>&,
                                 std::ofstream&, std::ofstream&);
-void writeDevIOutputPinEdgeDefs(GraphI_t*, PinI_t*, std::string&, 
+void writeDevIOutputPinEdgeDefs(GraphI_t*, PinI_t*, std::string&,
                                 std::vector<unsigned>&,
                                 std::ofstream&, std::ofstream&);
 
@@ -235,7 +235,7 @@ void writeDevTOnDeIdHandler(devTypStrings_t*, std::ofstream&, std::ofstream&);
 void writeDevTOnHWIdHandler(devTypStrings_t*, std::ofstream&, std::ofstream&);
 void writeDevTOnRTSHandler(devTypStrings_t*, std::ofstream&, std::ofstream&);
 void writeDevTOnInitHandler(devTypStrings_t*, std::ofstream&, std::ofstream&);
-              
+
 void writeDevTPropsDStateD(DevT_t*, std::ofstream&);
 
 
@@ -250,6 +250,6 @@ void writeGlobalSharedCode(DevT_t*, std::ofstream&);
 void writeMessageTypedefs(DevT_t*, std::ofstream&);
 void writeGeneralHandlers(DevT_t*, std::ofstream&);
 void writeDeviceTypeDecls(DevT_t*, std::ofstream&);
-    
+
 };
 #endif  // __ComposerH__H

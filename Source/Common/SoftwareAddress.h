@@ -62,7 +62,7 @@ public:
     SoftwareAddress(IsMothershipComponent isMothership, IsCncComponent isCnc,
                     TaskComponent task, OpCodeComponent opCode,
                     DeviceComponent device);
-    SoftwareAddress(uint32_t address);                
+    SoftwareAddress(uint32_t address);
     SoftwareAddress();
 
     /* Getters and setters. */
@@ -77,7 +77,7 @@ public:
     void set_task(TaskComponent value);
     void set_opcode(OpCodeComponent value);
     void set_device(DeviceComponent value);
-    
+
     void from_uint(uint32_t address);
 
     /* Access */

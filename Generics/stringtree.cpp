@@ -145,7 +145,7 @@ pstream = buffer;
 smap.clear();                          // Clear the streaming address map
 nfc = 0;                               // Next free cell in buffer
 WalkStream(root);                      // Build string
-pstream = 0;                           // Disconnect it 
+pstream = 0;                           // Disconnect it
 }
 
 //------------------------------------------------------------------------------

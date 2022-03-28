@@ -68,7 +68,7 @@ function test_run_success {
             break
         fi
     done
-        
+
     STATS=$(echo "$OUTPUT" | sed -n '/STATS_fba956f3/p' )
     echo "# $STATS"
 
@@ -78,13 +78,13 @@ function test_run_success {
         echo "ok $TN - Run $RR"
     else
         PLOG_LINE=$(echo $OUTPUT |  tr -dc '[[:print:]]' | sed -r -n "${PLOG_FILTER}" )
-        
+
         if [[ $VERBOSE -ne 0 ]] ; then
             echo ""
             echo "#Execution of $F Failed."
-            echo "$OUTPUT" | while read l ; do 
+            echo "$OUTPUT" | while read l ; do
                 echo "# > $l"
-            done 
+            done
             #echo "# plog is in ${PLOG_LINE}"
             #echo ""
         # while read l ; do

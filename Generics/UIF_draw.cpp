@@ -154,7 +154,7 @@ void UIF_DRAW::Draw(vector<DC> &dv,UIF::Node * nd,int lev)
 // drawing routine). We start at the node "nd", and go down "lev" levels
 // NOTE THAT the drawing vector takes only *pointers* to strings, so it is
 // ESSENTIAL that the UIF_DRAW object is still in scope at the receiving end
-// when the stuff is unpacked. 
+// when the stuff is unpacked.
 {
 size_0 s(nd);                          // Initialise the bounding rectangle
 Size0(nd,s);                           // Calculate the bounding rectangle
@@ -410,7 +410,7 @@ WALKVECTOR(Node *,p->leaf,i)
 }
 
 //------------------------------------------------------------------------------
- 
+
 void UIF_DRAW::Size0(UIF::Node * p,size_0 & s)
 {
 draw_0 * d0 = static_cast<draw_0 *>(p->tag);

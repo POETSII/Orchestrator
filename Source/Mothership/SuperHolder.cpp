@@ -18,7 +18,7 @@ SuperHolder::SuperHolder(std::string path, std::string appName):
     }
 
     /* Load hooks. */
-    call = reinterpret_cast<int (*)(std::vector<P_Pkt_t>&, 
+    call = reinterpret_cast<int (*)(std::vector<P_Pkt_t>&,
                                     std::vector<P_Addr_Pkt_t>&)>
                                         (dlsym(so, "SupervisorCall"));
     if (call == NULL) error = true;
@@ -28,7 +28,7 @@ SuperHolder::SuperHolder(std::string path, std::string appName):
     if (idle == NULL) error = true;
     init = reinterpret_cast<int (*)()>(dlsym(so, "SupervisorInit"));
     if (init == NULL) error = true;
-    
+
     getAddr = reinterpret_cast<uint64_t(*)(uint32_t)>(dlsym(so,
                                                         "SupervisorIdx2Addr"));
     if (getAddr == NULL) error = true;

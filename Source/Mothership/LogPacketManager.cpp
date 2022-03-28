@@ -5,8 +5,8 @@
 /* Take a packet and add it to the data section. If a message has been
  * completed by this operation, write the message to 'out' ('out' is cleared
  * otherwise). */
-void LogPacketManager::consume_log_packet(P_Pkt_t* packet, 
-                                    const SupervisorDeviceInstance_t* instance, 
+void LogPacketManager::consume_log_packet(P_Pkt_t* packet,
+                                    const SupervisorDeviceInstance_t* instance,
                                     std::string* out)
 {
 

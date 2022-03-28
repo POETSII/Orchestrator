@@ -44,7 +44,7 @@ proc end_program {msg code} {
 spawn sh -c "$HERE/../../orchestrate.sh 2>&1"
 
 expect {
-    default { end_program "Orchestrator didn't make it to prompt.\n" 1 }   
+    default { end_program "Orchestrator didn't make it to prompt.\n" 1 }
     "Can't connect to  " { end_program "RETRY:HostLink is locked or no hardware.\n" 1 }
     "POETS>"
 }
@@ -55,7 +55,7 @@ set start [clock microseconds]
 send "load /app = \"$script\"\n"
 
 expect {
-    default { end_program "Timeout or unexpected outcome while loading app.\n"  1; }   
+    default { end_program "Timeout or unexpected outcome while loading app.\n"  1; }
     "unintelligible" { end_program "Command was invalid."  1; }
     "failed validation with" { end_program "The XML file could not be validated.\n" 1; }
     -re ".*Application file .* loaded in .* ms."
@@ -68,7 +68,7 @@ send "tlink /app = *\n"
 send "place /tfill = *\n"
 
 expect {
-    default { end_program "Timeout or unexpected outcome while linking/placing app.\n"  1; }   
+    default { end_program "Timeout or unexpected outcome while linking/placing app.\n"  1; }
     "unintelligible" { end_program "Command was invalid." 1; }
     -re "Graph instance .+ placed successfully."
 }
@@ -79,7 +79,7 @@ set start [clock microseconds]
 send "compose /app = *\n\n"
 
 expect {
-    default { end_program "Timeout or unexpected outcome while composing app.\n" 1; }   
+    default { end_program "Timeout or unexpected outcome while composing app.\n" 1; }
     "unintelligible" { end_program "Command was invalid."  1; }
     -re "Graph instance .+ composed successfully."
 }
@@ -100,12 +100,12 @@ send "deploy /app = *\n\n"
 send "initialise /app = *\n\n"
 send "run /app = *\n\n"
 
-set timeout 
+set timeout
 expect {
     default {
         set run_time [expr [clock microseconds] - $start]
         end_program "Timeout while running app, timeout=$timeout.\n"  1;
-    }   
+    }
     "unintelligible" { end_program "Command was invalid." 1; }
     -re "_HANDLER_EXIT_FAIL_9be65737_" {
         set run_time [expr [clock microseconds] - $start]

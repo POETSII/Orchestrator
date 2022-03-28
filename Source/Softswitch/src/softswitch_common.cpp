@@ -399,7 +399,7 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
     volatile P_Pkt_Hdr_t* hdr = static_cast<volatile P_Pkt_Hdr_t*>(send_buf); // Header
 
     size_t hdrSize = p_hdr_size(); //Size of the header.
-    
+
     //--------------------------------------------------------------------------
     // First target, need to run pin's OnSend. This is run whether there are
     // targets or not.
@@ -419,8 +419,8 @@ inline uint32_t softswitch_onSend(ThreadCtxt_t* ThreadContext, volatile void* se
 #endif
     }
     //--------------------------------------------------------------------------
-    
-    
+
+
     if(pin->numEdges > 0)     // Sanity check: make sure the pin has edges
     {
         //--------------------------------------------------------------------------
@@ -516,7 +516,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
     }
     else
     {   // Log to indicate out of range. Pretend to be the first device.
-        __handler_log(ThreadContext->devInsts[0].deviceIdx, 5, 
+        __handler_log(ThreadContext->devInsts[0].deviceIdx, 5,
                         "dIDX OOR %d", devAdr);
         return;
     }
@@ -536,7 +536,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
                 break;
 #endif
             default:    // Unused reserved Opcode - log it.
-                        __handler_log(ThreadContext->devInsts[0].deviceIdx, 5, 
+                        __handler_log(ThreadContext->devInsts[0].deviceIdx, 5,
                                         "BAD-OP %d", opcode);
                         break;
         }
@@ -547,7 +547,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
     for (devInst_t* dev = recvDevBegin; dev != recvDevEnd; dev++)
     {
         ThreadContext->rxHandlerCount++;     // Increment received handler count
-        
+
         // If it is an implicit packet from the supervisor
         if(opcode == P_CNC_IMPL)
         {
@@ -556,7 +556,7 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
                                             const_cast<const void*>(recv_buf)
                                                 )+p_hdr_size());
         }
-        
+
         // If the received packet is a control packet, process it
         else if(recvHdr->swAddr & P_SW_CNC_MASK)
         {  // Trigger OnCtl. Strip volatile at this point.
@@ -565,13 +565,13 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
                                                const_cast<const void*>(recv_buf)
                                                )+p_hdr_size());
         }
-        
+
         // Handle as a normal packet
         else
         {
             // Sanity check the pin index
             if(pinIdx >= dev->numInputs)
-            {   
+            {
                 __handler_log(dev->deviceIdx, 5, "pIDX OOR %d %d", dev, pinIdx);
                 continue;               //TODO: - log/flag
             }
@@ -583,14 +583,14 @@ void softswitch_onReceive(ThreadCtxt_t* ThreadContext, volatile void* recv_buf)
                 __handler_log(dev->deviceIdx,5,"eIDX OOR %d %d",pinIdx,edgeIdx);
                 continue;               //TODO: - log/flag
             }
-            
+
             pin->pinType->Recv_handler(ThreadContext->properties, dev,
                                         &pin->inEdges[edgeIdx],
                                         static_cast<const uint8_t*>(
                                         const_cast<const void*>(recv_buf)
                                         )+p_hdr_size());
         }
-        
+
         softswitch_onRTS(ThreadContext, dev);    // Run OnRTS for the device
     }
 }
@@ -617,13 +617,13 @@ inline bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
             notIdle = true;       // return 1 as "something" has happened
             break;
         }
-        
+
 #ifndef NOREQUESTIDLE_SOFTSWITCH
         // Softswitch respects requestIdle in the RTS handler.
         if(device->requestIdle)
         {
             device->requestIdle = false;    // Clear flag now as it may be set again by RTS
-#endif   
+#endif
 
         if (device->devType->OnIdle_Handler(ThreadContext->properties, device))
         {
@@ -635,7 +635,7 @@ inline bool softswitch_onIdle(ThreadCtxt_t* ThreadContext)
 
 #ifndef NOREQUESTIDLE_SOFTSWITCH
         }
-#endif   
+#endif
 
         if(idleIdx < maxIdx) ++idleIdx;     // Increment the index,
         else idleIdx = 0;                   // or reset it to wrap.
@@ -678,14 +678,14 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
                         (((ThreadContext->rtsBuffSize - ThreadContext->rtsEnd) +
                                     ThreadContext->rtsStart))                  :
                             (ThreadContext->rtsStart - ThreadContext->rtsEnd);
-                
+
                 // If there is space in the buffer
                 if(buffRem > 1)                     //(output_pin->numEdges && )
                 {
                     //output_pin->sendPending++;
 #else
                 //If the pin is not already pending,
-                if(output_pin->sendPending == 0)    // output_pin->numEdges && 
+                if(output_pin->sendPending == 0)    // output_pin->numEdges &&
                 {
                     // Flag that pin is pending
                     output_pin->sendPending = 1;
@@ -710,7 +710,7 @@ inline uint32_t softswitch_onRTS(ThreadCtxt_t* ThreadContext, devInst_t* device)
                 }
 #else
                 }
-                else if((output_pin->sendPending == 1) && 
+                else if((output_pin->sendPending == 1) &&
                         (ThreadContext->rtsStart == ThreadContext->rtsEnd))
                 {   // Sanity check to catch buffer overflow
                     __handler_log(device->deviceIdx,5,"rtsBuff Broken %d %d %d",

@@ -27,33 +27,33 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     AddressBook::AddressBook AddrBook
         = AddressBook::AddressBook(std::string("AddressBookMain"));
     AddressBook::TaskData_t taskData;
-    
+
     //Create a Supervisor devicetype record and add some messagetypes
     AddressBook::DevTypeRecord_t SuperDTR("Super");
     SuperDTR.InMsgs.push_back(1);
     SuperDTR.OuMsgs.push_back(2);
-    
+
     //Create a Cell devicetype record and add some messagetytpes
     AddressBook::DevTypeRecord_t CellDTR("Cell");
     CellDTR.InMsgs.push_back(0);
     CellDTR.InMsgs.push_back(2);
     CellDTR.OuMsgs.push_back(0);
     CellDTR.OuMsgs.push_back(1);
-    
+
     //Create a Fixed node devicetype record and add some messagetytpes
     AddressBook::DevTypeRecord_t FixedDTR("Fixed");
     FixedDTR.InMsgs.push_back(2);
     FixedDTR.OuMsgs.push_back(0);
     FixedDTR.OuMsgs.push_back(1);
-    
-    
-    
+
+
+
     //==========================================================================
     // Add a task (and check that it added correctly)
     //==========================================================================
     std::string t1Name = "Task1";
     AddressBook::TaskData_t T1Data;
-    
+
     T1Data.DeviceCount = 5;
     T1Data.ExternalCount = 2;
     T1Data.Path = "/local/extra/Orchestrator/application_staging/xml";
@@ -62,55 +62,55 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     T1Data.MessageTypes.push_back("Update");
     T1Data.MessageTypes.push_back("Fin");
     T1Data.MessageTypes.push_back("Done");
-    
+
     T1Data.DeviceTypes.push_back(SuperDTR);
     T1Data.DeviceTypes.push_back(CellDTR);
     T1Data.DeviceTypes.push_back(FixedDTR);
     T1Data.AttributeTypes.push_back("Test");
-    
+
     // Add the task to the AddressBook
-    int t1Ret = AddrBook.AddTask(t1Name, T1Data);  
+    int t1Ret = AddrBook.AddTask(t1Name, T1Data);
     REQUIRE(t1Ret == AddressBook::SUCCESS);
-    
+
     SECTION("Check that a task added correctly", "[Simple]")
     {
         REQUIRE(AddrBook.GetTaskCount() == 1);      // We should have one task,
         REQUIRE(AddrBook.IntegCheck() == 0);        // that passes integrity.
-        
+
         // Get the task for running tests on
         t1Ret = AddrBook.GetTask(t1Name, taskData);
         REQUIRE(t1Ret == AddressBook::SUCCESS);
-        
+
         REQUIRE(taskData.Name == t1Name);                // Check the task name.
         REQUIRE(taskData.Path == T1Data.Path);          // Check the path string.
         REQUIRE(taskData.XML == T1Data.XML);            // Check the XML string.
         REQUIRE(taskData.ExecutablePath == T1Data.ExecutablePath);   // Check the executable path string.
-        
+
         REQUIRE(taskData.State == AddressBook::Loaded); // Check the task state.
-        
+
         REQUIRE(taskData.DeviceTypes.size() == T1Data.DeviceTypes.size());
         REQUIRE(taskData.DeviceTypes.size() == 3);      // with 5 device types,
         REQUIRE(taskData.MessageTypes.size() == 3);     // with 3 message types,
         REQUIRE(taskData.AttributeTypes.size() == 1);   // and 1 attribute type.
-        
+
         REQUIRE(taskData.DeviceCount == T1Data.DeviceCount); // Expecting 10000 devices
         REQUIRE(taskData.DeviceCountLd == 0);           // With none loaded.
-        
+
         REQUIRE(taskData.ExternalCount == T1Data.ExternalCount);   // Expecting 1 external device
         REQUIRE(taskData.ExternalCountLd == 0);         // With none loaded.
-        
+
         REQUIRE(taskData.SupervisorCount == 0);     // Should have no supervisors.
     }
     //==========================================================================
-    
-    
-    
+
+
+
     //==========================================================================
     // Add another task
     //==========================================================================
     std::string t2Name = "Task2";
     AddressBook::TaskData_t T2Data;
-    
+
     T2Data.DeviceCount = 5;
     T2Data.ExternalCount = 2;
     T2Data.Path = "/local/extra/Orchestrator/application_staging/xml";
@@ -119,49 +119,49 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
     T2Data.MessageTypes.push_back("Update");
     T2Data.MessageTypes.push_back("Fin");
     T2Data.MessageTypes.push_back("Done");
-    
+
     T2Data.DeviceTypes.push_back(SuperDTR);
     T2Data.DeviceTypes.push_back(CellDTR);
     T2Data.DeviceTypes.push_back(FixedDTR);
-    
+
     // Add the task to the AddressBook
-    int t2Ret = AddrBook.AddTask(t2Name, T2Data);  
+    int t2Ret = AddrBook.AddTask(t2Name, T2Data);
     REQUIRE(t2Ret == AddressBook::SUCCESS);
-    
-    
+
+
     SECTION("Check that a second task added correctly", "[Simple]")
     {
         REQUIRE(AddrBook.GetTaskCount() == 2);      // We should have two tasks,
         REQUIRE(AddrBook.IntegCheck() == 0);        // that pass integrity.
-        
+
         // Get the task for running tests on
         t2Ret = AddrBook.GetTask(t2Name, taskData);
         REQUIRE(t2Ret == AddressBook::SUCCESS);
-        
+
         REQUIRE(taskData.Name == t2Name);                // Check the task name.
         REQUIRE(taskData.Path == T2Data.Path);          // Check the path string.
         REQUIRE(taskData.XML == T2Data.XML);            // Check the XML string.
         REQUIRE(taskData.ExecutablePath == T2Data.ExecutablePath);   // Check the executable path string.
-        
+
         REQUIRE(taskData.State == AddressBook::Loaded); // Check the task state.
-        
+
         REQUIRE(taskData.DeviceTypes.size() == T2Data.DeviceTypes.size());
         REQUIRE(taskData.DeviceTypes.size() == 3);      // with 5 device types,
         REQUIRE(taskData.MessageTypes.size() == 3);     // with 3 message types,
         REQUIRE(taskData.AttributeTypes.size() == 0);   // and no attribute types.
-        
+
         REQUIRE(taskData.DeviceCount == T2Data.DeviceCount); // Expecting 10000 devices
         REQUIRE(taskData.DeviceCountLd == 0);           // With none loaded.
-        
+
         REQUIRE(taskData.ExternalCount == T2Data.ExternalCount);   // Expecting 1 external device
         REQUIRE(taskData.ExternalCountLd == 0);         // With none loaded.
-        
+
         REQUIRE(taskData.SupervisorCount == 0);     // Should have no supervisors.
     }
     //==========================================================================
-    
-    
-    
+
+
+
     //==========================================================================
     // Check that we can't add a duplicate task
     //==========================================================================
@@ -173,9 +173,9 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         REQUIRE(AddrBook.IntegCheck() == 0);    // that pass integrity.
     }
     //==========================================================================
-    
-    
-    
+
+
+
     //==========================================================================
     // Delete a task
     //==========================================================================
@@ -187,14 +187,14 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         REQUIRE(AddrBook.IntegCheck() == 0);    // that passes integrity.
     }
     //==========================================================================
-    
-    
-    
+
+
+
     SECTION("Check device handling", "[Simple]")
     {
         // Get the task
         AddrBook.GetTask(t1Name, taskData);
-        
+
         // Add a supervisor
         AddressBook::Record_t SData1;
         SData1.Name = "";
@@ -211,8 +211,8 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
             std::cin.get();
         }
         REQUIRE(AddrBook.GetSupervisorCount(t1Name) == 1);
-        
-        
+
+
         // Add another Supervisor
         AddressBook::Record_t SData2;
         SData2.Name = "";
@@ -229,8 +229,8 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
             std::cin.get();
         }
         REQUIRE(AddrBook.GetSupervisorCount(t1Name) == 2);
-        
-        
+
+
         // Add an External
         AddressBook::Record_t EData1;
         EData1.Name = "E_0,0";
@@ -246,16 +246,16 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
             std::cin.get();
         }
         REQUIRE(AddrBook.GetLoadedExternalCount(t1Name) == 1);
-        
-        
+
+
         // Setup common device data
         AddressBook::Record_t DData1;
         DData1.Supervisor = 0xFFFF0001;
         DData1.DeviceType = 1;
         DData1.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::Device);
         AddressBook::SymAddr_t BaseAddr = 0x00000000;
-        
-        
+
+
         // Add a Device
         DData1.Name = "C_0,0";
         DData1.Address = BaseAddr++;
@@ -272,8 +272,8 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
             std::cin.get();
         }
         REQUIRE(AddrBook.GetLoadedDeviceCount(t1Name) == 1);
-        
-        
+
+
         // Add another Device
         DData1.Name = "C_0,1";
         DData1.Address = BaseAddr++;
@@ -290,8 +290,8 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
             std::cin.get();
         }
         REQUIRE(AddrBook.GetLoadedDeviceCount(t1Name) == 2);
-        
-        
+
+
         // Add another Device
         DData1.Name = "C_0,2";
         DData1.Address = BaseAddr++;
@@ -308,8 +308,8 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
             std::cin.get();
         }
         REQUIRE(AddrBook.GetLoadedDeviceCount(t1Name) == 3);
-        
-        
+
+
         // Add another Device
         DData1.Name = "C_0,3";
         DData1.Address = BaseAddr++;
@@ -326,14 +326,14 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
             std::cin.get();
         }
         REQUIRE(AddrBook.GetLoadedDeviceCount(t1Name) == 4);
-        
-        
+
+
         // Check duplicate device handling
         int DDupeRet = AddrBook.AddDevice(t1Name, DData1);
         REQUIRE(AddrBook.GetLoadedDeviceCount(t1Name) == 4);      // We should have 4 devices
         REQUIRE(AddrBook.IntegTask(t1Name, false) == 0);    // and pass integrity.
-        
-        
+
+
         // Check that invalid Device types are picked up on
         DData1.DeviceType = 5;
         DData1.Name = "C_0,4";
@@ -348,19 +348,19 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
             std::cin.get();
         }
         REQUIRE(AddrBook.GetLoadedDeviceCount(t1Name) == 4);
-        
-        
+
+
         // Check that the task is valid
         REQUIRE(AddrBook.TaskValid(t1Name) == true);
         REQUIRE(AddrBook.TaskMapValid(t1Name) == true);
         REQUIRE(AddrBook.TaskLinkValid(t1Name) == true);
-        
+
         // Check that the rest of the data structure is valid
         REQUIRE(AddrBook.GetTaskCount() == 2);  // We should have two tasks,
         REQUIRE(AddrBook.IntegCheck() == 0);    // that passes integrity.
-        
-        
-        
+
+
+
         // Add a device that forces another Supervisor
         REQUIRE(AddrBook.GetMappedSupervisorCount(t1Name) == 2);
         DData1.Supervisor = 0xFFFF0005;
@@ -383,7 +383,7 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         REQUIRE(AddrBook.GetMappedSupervisorCount(t1Name) == 3);    // But 3 in the map.
         REQUIRE(AddrBook.IntegCheck() != 0);    // this fails integrity.
         REQUIRE(AddrBook.TaskLinkValid(t1Name) == false);   // and the link is invalid
-        
+
         // Add the missing Supervisor
         AddressBook::Record_t SData3;
         SData3.Name = "";
@@ -400,13 +400,13 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
             std::cin.get();
         }
         REQUIRE(AddrBook.GetLoadedDeviceCount(t1Name) == 5);
-        REQUIRE(AddrBook.GetSupervisorCount(t1Name) == 3);    
+        REQUIRE(AddrBook.GetSupervisorCount(t1Name) == 3);
         REQUIRE(AddrBook.GetMappedSupervisorCount(t1Name) == 3);
         REQUIRE(AddrBook.IntegCheck() == 0);    // Should now pass integrity.
 #ifdef RECOVERABLEINTEGRITY
         // If RECOVERABLEINTEGRITY is defined, the link should be valid.
         REQUIRE(AddrBook.TaskLinkValid(t1Name) == true);
-#else   
+#else
         // Otherwise it is invalid and we need to relink.
         REQUIRE(AddrBook.TaskLinkValid(t1Name) == false);
         REQUIRE(AddrBook.BuildLink(t1Name) == AddressBook::SUCCESS);
@@ -415,26 +415,26 @@ TEST_CASE("AddressBook Small Tests", "[Simple]")
         // Check that the rest of the task is valid
         REQUIRE(AddrBook.TaskValid(t1Name) == true);
         REQUIRE(AddrBook.TaskMapValid(t1Name) == true);
-        
-        
+
+
     }
-    
-    
+
+
     //TODO: Add more checks to:
         //  Check that adding too many devices is handled
         //  Check that adding too many externals is handled
         //  Check that adding too many Supervisors is handled
-        
+
         // Update a device
-        
+
         // Find by Supervisor
         // Find by Attribute
         // Find by Messages
         // Clear Task
         // Task States
-            
+
         // Intentionally mess with message links
-        
+
         // Rebuild Map
         // Rebuild Task
         // Integrity check after futzing
@@ -447,11 +447,11 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     // Create the AddressBook instance
     AddressBook::AddressBook AddrBook
         = AddressBook::AddressBook(std::string("AddressBookMain"));
-    
+
     std::string tName = "plate_1000x1000";
     AddressBook::TaskData_t taskData;
-    
-    
+
+
     //==========================================================================
     // Create a "fake" 1000x1000 heated plate.
     //==========================================================================
@@ -465,31 +465,31 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     TData.MessageTypes.push_back("Update");
     TData.MessageTypes.push_back("Fin");
     TData.MessageTypes.push_back("Done");
-    
+
     //Create a Supervisor devicetype record and add some messagetypes
     AddressBook::DevTypeRecord_t SuperDTR("Super");
     SuperDTR.InMsgs.push_back(1);
     SuperDTR.OuMsgs.push_back(2);
-    
+
     //Create a Cell devicetype record and add some messagetytpes
     AddressBook::DevTypeRecord_t CellDTR("Cell");
     CellDTR.InMsgs.push_back(0);
     CellDTR.InMsgs.push_back(2);
     CellDTR.OuMsgs.push_back(0);
     CellDTR.OuMsgs.push_back(1);
-    
+
     //Create a Fixed node devicetype record and add some messagetytpes
     AddressBook::DevTypeRecord_t FixedDTR("Fixed");
     FixedDTR.InMsgs.push_back(2);
     FixedDTR.OuMsgs.push_back(0);
     FixedDTR.OuMsgs.push_back(1);
-    
+
     //Create a Router devicetype record and add some messagetytpes
     AddressBook::DevTypeRecord_t RouterDTR("Router");
     RouterDTR.InMsgs.push_back(1);
     RouterDTR.OuMsgs.push_back(1);
     RouterDTR.OuMsgs.push_back(2);
-    
+
     //Create a Extern devicetype record and add some messagetytpes
     AddressBook::DevTypeRecord_t ExternDTR("Extern");
     ExternDTR.InMsgs.push_back(2);
@@ -501,53 +501,53 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     TData.DeviceTypes.push_back(FixedDTR);
     TData.DeviceTypes.push_back(RouterDTR);
     TData.DeviceTypes.push_back(ExternDTR);
-    
+
     // Add an attribute
     TData.AttributeTypes.push_back("Test");
-    
+
     // Add the task to the AddressBook
     AddrBook.AddTask(tName, TData);
     //==========================================================================
-    
-    
+
+
     // Get the task for running tests on
     AddrBook.GetTask(tName, taskData);
-    
-    
-    
-    
-    
+
+
+
+
+
     //==========================================================================
     //Check that the task was added and read correctly
     //==========================================================================
     SECTION("Check that we have the right number of devices in the task data", "[Simple]")
     {
         REQUIRE(AddrBook.GetTaskCount() == 1);          // We should have one task,
-        
+
         REQUIRE(taskData.Name == tName);                // Check the task name.
         REQUIRE(taskData.Path == TData.Path);           // Check the path string.
         REQUIRE(taskData.XML == TData.XML);             // Check the XML string.
         REQUIRE(taskData.ExecutablePath == TData.ExecutablePath);   // Check the executable path string.
-        
+
         REQUIRE(taskData.State == AddressBook::Loaded); // Check the task state.
-        
+
         REQUIRE(taskData.DeviceTypes.size() == TData.DeviceTypes.size());
         REQUIRE(taskData.DeviceTypes.size() == 5);      // with 5 device types,
         REQUIRE(taskData.MessageTypes.size() == 3);     // with 3 message types,
         REQUIRE(taskData.AttributeTypes.size() == 1);   // and 1 attribute type.
-        
+
         REQUIRE(taskData.DeviceCount == TData.DeviceCount); // Expecting 10000 devices
         REQUIRE(taskData.DeviceCountLd == 0);           // With none loaded.
-        
+
         REQUIRE(taskData.ExternalCount == 1);           // Expecting 1 external device
         REQUIRE(taskData.ExternalCountLd == 0);         // With none loaded.
-        
+
         REQUIRE(taskData.SupervisorCount == 0);     // Should have no supervisors.
     }
     //==========================================================================
-    
-    
-    
+
+
+
     //==========================================================================
     // Add a supervisor
     //==========================================================================
@@ -557,7 +557,7 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     SData1.Rank = 5;
     SData1.DeviceType = 0;  // SuperDTR
     SData1.RecordType = static_cast<AddressBook::RecordType_t>(AddressBook::Supervisor);
-    
+
     REQUIRE(taskData.DeviceTypes.size() == 5);      // with 5 device types,
 
     try {
@@ -569,8 +569,8 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
         std::cin.get();
     }
     //==========================================================================
-    
-    
+
+
     //==========================================================================
     // Add two fixed nodes
     //==========================================================================
@@ -589,8 +589,8 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
         std::cerr << std::endl << "ERROR adding FData1: " << msg << std::endl;
         std::cin.get();
     }
-    
-    
+
+
     AddressBook::Record_t FData2;
     FData2.Name = "C_255,255";
     FData2.Address = 0xFFE00001;
@@ -607,8 +607,8 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
         std::cin.get();
     }
     //==========================================================================
-    
-    
+
+
     //==========================================================================
     // Add an External
     //==========================================================================
@@ -627,8 +627,8 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
         std::cin.get();
     }
     //==========================================================================
-    
-    
+
+
     //==========================================================================
     // Add 999998 Cells
     //==========================================================================
@@ -664,45 +664,45 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
                 }
             }
         }
-    }    
+    }
     //==========================================================================
-    
-    
+
+
     // Get the task for running tests on
     AddrBook.GetTask(tName, taskData);
-    
+
     //==========================================================================
     //Check that the task hasn't been altered by adding devices
     //==========================================================================
     SECTION("Check that we have the right number of devices in the task data after adding", "[Simple]")
     {
         REQUIRE(AddrBook.GetTaskCount() == 1);          // We should have one task,
-    
+
         REQUIRE(taskData.Name == tName);                // Check the task name.
         REQUIRE(taskData.Path == TData.Path);           // Check the path string.
         REQUIRE(taskData.XML == TData.XML);             // Check the XML string.
         REQUIRE(taskData.ExecutablePath == TData.ExecutablePath);   // Check the executable path string.
-    
+
         REQUIRE(taskData.State == AddressBook::Loaded);   // Check the task state.
-        
+
         //REQUIRE(taskData.DeviceTypes.size() == TData.DeviceTypes.size());
         REQUIRE(taskData.DeviceTypes.size() == 5);      // with 5 device types,
         REQUIRE(taskData.MessageTypes.size() == 3);     // with 3 message types,
         REQUIRE(taskData.AttributeTypes.size() == 1);   // and 1 attribute type.
-    
+
         REQUIRE(taskData.DeviceCount == TData.DeviceCount);    // Expecting 10000 devices
         REQUIRE(taskData.DeviceCountLd == TData.DeviceCount);  // With all loaded.
-    
+
         REQUIRE(taskData.ExternalCount == 1);           // Expecting 1 external device
         REQUIRE(taskData.ExternalCountLd == 1);         // With 1 loaded.
-    
+
         REQUIRE(taskData.SupervisorCount == 1);         // Should have one supervisors.
-    
-    
+
+
     }
     //==========================================================================
-    
-    
+
+
     //==========================================================================
     // Search for devices
     //==========================================================================
@@ -710,12 +710,12 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
     {
         std::string DName = "C_75,199";                  // Name of a device we are going to search for
         AddressBook::SymAddr_t DNameAddr = 0x4BC6;    // and its address
-    
-        std::string DAddrName = "C_1,119";               // and its name    
+
+        std::string DAddrName = "C_1,119";               // and its name
         AddressBook::SymAddr_t DAddr = 0x0176;        // Address to search for
-        
+
         const AddressBook::Record_t * DeviceRecord;     // pointer to a const-qualified Device record
-        
+
         // Find device by name
         int a = AddrBook.FindDevice(tName, DName, DeviceRecord);
         REQUIRE(a == 0);                                // Found the device?
@@ -725,7 +725,7 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
             REQUIRE(DNameAddr == DeviceRecord->Address);    // Check the address
             REQUIRE(taskData.DeviceTypes[DeviceRecord->DeviceType].Name == "Cell"); // Check the type
         }
-        
+
         // Find device by address
         int b = AddrBook.FindDevice(tName, DAddr, DeviceRecord);
         REQUIRE(b == 0);                                // Found the device?
@@ -736,7 +736,7 @@ TEST_CASE("AddressBook Large Plate Test", "[Simple]")
             REQUIRE(taskData.DeviceTypes[DeviceRecord->DeviceType].Name == "Cell"); // Check the type
         }
     }
-    
+
     SECTION("Integrity Check - this will take some time", "[Simple]")
     {
         int result = AddrBook.IntegTask(tName, false);

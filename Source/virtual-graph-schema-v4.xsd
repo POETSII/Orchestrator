@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  
-  
+
+
   This file is a <a href="http://relaxng.org/">RELAX NG</a> schema
   for defining POETS graph types and instances. This document
   is both the grammar specification, and the documentation of
   that specification.
-  
+
   A RELAX NG grammar uses a BNF like description to constrain
   an XML document to particular patterns, allowing you to specify
   what kinds of elements and attributes can appear within each
@@ -15,33 +15,33 @@
   no code generation is needed. There are existing tools for
   working with these grammers, which are able to take an
   XML document and check that it matches the grammar.
-  
+
   ### Changes from version 0
-  
+
   There are a few changes/additions since v0:
   - Edge properties and state are now defined on the input pin rather
     than the edge itself. This is based on looking at how Spinnaker
     does things, and some situations where some device types need
     different properties for input pins with the same device type.
-  
+
   ### Changes from version 1
-  
+
   Everything that was once a "port" is now a "pin".
-  
+
   All XML files should have a Provenance element. This is still only loosely specified though,
   and needs to be refined.
-  
+
   ### Changes from 2 -> 2.1
-  
+
   PIP-0007 integrated
-  
+
   ### Changes from 2.1 -> 2.2
-  
+
   PIP-0004 integrated
-  
+
   ### Changes from 2.2 -> 3.0
   For more information, see PIP-0017
-  
+
   Optional OnInit handler added
   <S> tag added to DevI to allow individual setting of device instance states.
   Optional Default tag has been added to Scalar, Array, Tuple, and Union
@@ -60,10 +60,10 @@
   <OnCompute> and <OnIdle> tags are to be entirely removed
     These are replaced by optional <OnHardwareIdle>, <OnDeviceIdle> and <OnThreadIdle>.
     This provides more detailed descriptions of when these handlers are executed
-  
-  
+
+
   ### Changes from 3 -> 4alpha
-  
+
   - All ordering is explicit
   - All tags must appear, even if they are empty
   - Structs are defined using C
@@ -78,7 +78,7 @@
 <!--
   This section establishes some ambient declarations
   for the grammar
-  
+
   This is used to bring in things like integers, as XML
   Schema doesn't support many primitive types.
 -->
@@ -827,10 +827,10 @@ of this edge instance.</xs:documentation>
   </xs:element>
   <!--
     TODO: improve text for v4
-    
+
     Typed Data Specifications
     =========================
-    
+
     It represents the prototype for a typed piece of data, along with
     the default values. The intent is that typed data is used for
     everything managed by P-Cores and send over the P-Core network,
@@ -838,7 +838,7 @@ of this edge instance.</xs:documentation>
     writeable and readable by high-level tools, so the structure
     needs to be explicitly defined - we can't just use raw bytes
     everywhere.
-    
+
     Typed-data is intended to be binary compatible across all native
     platforms, requiring zero marshalling. But we also need simulation
     platforms to be able to bring that raw binary data into their world
@@ -855,7 +855,7 @@ of this edge instance.</xs:documentation>
       on the RISC-V.
     - Bit-wise packing. We are likely to really care about bit-field packing
       for some messages and data structures.
-    
+
     One possibility would be to use ASN.1 to define the structures,
     as this is a well-established method for describing data-structures,
     allowing fine-grain control over formatting. However it is mainly
@@ -865,12 +865,12 @@ of this edge instance.</xs:documentation>
     toolchains and libraries that aren't available in all platforms - there
     are JavaScript ASN.1 libraries around, but they didn't look that
     robust. Haskell and Python have good libraries though.
-    
-    
+
+
     Note: this is a historical comment from older versions. This is
     what we decided on in the end, so it becomes the responsibility
     of clients to parse the C declaration.
-    
+
     > We could also embed the C declaration directly in this file,
     > then rely on the consumer to parse it out. The obvious down-side
     > is that every platform/language then needs a C structure parser,
@@ -879,20 +879,20 @@ of this edge instance.</xs:documentation>
     > The layout of bit-fields is also [implementation defined](http://en.cppreference.com/w/cpp/language/bit_field),
     > so we really can't rely on the compilers for all the different
     > CPUs and OSs doing the same thing.
-    
+
     Historical note, this approach is no longer in use:
-    
+
     > The approach taken here is to describe C structures directly
     > as part of the DOM, as everyone already has an XML parser. The
     > conversion process to a C struct or binary format is then
     > mandated by this specification.
-    
+
     In order to eliminate surprises, the approach taken is that
     the ordering given by the designer mandates the layout in
     memory. This means that the designer has to take complete
     responsibility for getting good packing, but they can also
     do weird pointer-tricks if they really want to.
-    
+
     For bit-fields, we want to allow them, but don't want
     complicated padding/alignment. I (DBT) cannot see a portable
     way of defining bit-fields that will end up the same
@@ -904,12 +904,12 @@ of this edge instance.</xs:documentation>
     control over the layout, and high-level tools can still
     extract the fields. The downside is that the bit-fields have
     to have associated accessor functions to get and set the values.
-    
+
     So for now, bit-fields are not supported.
-    
+
     Note: unions are removed as part of v4 to simplify. They may be brought
     back at some point:
-    
+
     Begin not true
     // We support unions, as space is important for both messages and
     // storage, but must also have the ability to interpret a structure
@@ -917,17 +917,17 @@ of this edge instance.</xs:documentation>
     // are tagged unions, with the tag value representing which of the
     // alternatives is active.
     End not true
-    
+
     So the rules are:
     - Every type has a size in bytes
     - The size of an integer or float is its natural size (e.g. uint32_t is 4, half is 2, uint64_t is 8)
     - All data-structures are laid out in the order specified in the C type specification
     - The size of a tuple is the sum of the size of the elements, laid out end to end
     - The size of an array is the size of the element multiplied by the array length
-    
+
     There is no boolean type, because it does not have a natural platform-portable
     size. It is suggested to use an `int8_t` for performance, or a bit-field for size.
-    
+
     Structures are specified as a list of C variable declarations. It must
     always be possible to parse a data-spec in isolation, without referring
     to any SharedCode segments or other fragments of C.
@@ -936,18 +936,18 @@ of this edge instance.</xs:documentation>
     - structs
     - fixed-size arrays
     - C or C++ style comments
-    
+
     Given a spec, it should always be compileable as C given the following
     fragment:
-    
+
     ```
     #include <stdint.h>
-    
+
     #pragma pack(1)
     struct x{
        ${THE_TYPED_DATA_SPEC_STRING}
     };
-    
+
     #include #include <type_traits>
     static_assert(std::is_pod<x>::value, "Struct is not a POD.");
     ```

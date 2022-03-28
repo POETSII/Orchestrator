@@ -24,7 +24,7 @@
                 }
                 ]]></ReadyToSend>
                 <OnInit><![CDATA[
-                    
+
                 ]]></OnInit>
                 <OnHardwareIdle/>
                 <OnDeviceIdle/>
@@ -36,7 +36,7 @@
                 </OutputPin>
                 <InputPin name="in" messageTypeId="m">
                     <OnReceive><![CDATA[
-                    
+
                     ]]></OnReceive>
                 </InputPin>
             </DeviceType>

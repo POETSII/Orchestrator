@@ -139,7 +139,7 @@ HANDLE_SUPERVISOR_FN(init)
 HANDLE_SUPERVISOR_FN(exit)
 
 int SuperDB::call_supervisor(std::string appName,
-                    std::vector<P_Pkt_t>& inputPackets, 
+                    std::vector<P_Pkt_t>& inputPackets,
                     std::vector<P_Addr_Pkt_t>& outputPackets)
 {
     FIND_SUPERVISOR;

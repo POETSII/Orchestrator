@@ -119,7 +119,7 @@ uint32_t probabilities[10];
       if(dir==4){ nx = x==0 ? w-1 : x-1; }
       }
 
-    
+
 ]]></SharedCode>
     <MessageTypes>
       <MessageType id="__print__">

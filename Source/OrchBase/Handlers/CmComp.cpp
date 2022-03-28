@@ -121,7 +121,7 @@ void CmComp::Cm_Compile(Cli::Cl_t clause)
             par->Post(802, (*graphIt)->Name(), "placed", "compiling source");
             return;
         }
-        
+
         if(!par->pComposer->isGenerated(*graphIt))
         {
             par->Post(802, (*graphIt)->Name(), "generated", "compiling source");
@@ -309,7 +309,7 @@ void CmComp::Cm_SoftswitchBufferMode(Cli::Cl_t clause, bool mode = false)
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs) == 1) return;
-    
+
     /* Set the softswitch buffering mode for each app in sequence. */
     std::set<GraphI_t*>::iterator graphIt;
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
@@ -332,7 +332,7 @@ void CmComp::Cm_SoftswitchReqIdleMode(Cli::Cl_t clause, bool mode = true)
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs) == 1) return;
-    
+
     /* Set the softswitch requestIdle mode for each app in sequence. */
     std::set<GraphI_t*>::iterator graphIt;
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
@@ -355,7 +355,7 @@ void CmComp::Cm_SoftswitchInstrMode(Cli::Cl_t clause, bool mode = false)
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs) == 1) return;
-    
+
     /* Set the instrumentation mode for each app in sequence. */
     std::set<GraphI_t*>::iterator graphIt;
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
@@ -378,7 +378,7 @@ void CmComp::Cm_SoftswitchLogHandler(Cli::Cl_t clause)
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs,1) == 1) return;
-    
+
     /* Set the mode for each app in sequence. */
     std::set<GraphI_t*>::iterator graphIt;
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
@@ -388,17 +388,17 @@ void CmComp::Cm_SoftswitchLogHandler(Cli::Cl_t clause)
             par->Post(807, "/LOGH", (*graphIt)->Name());
             return;
         }
-        
+
         // Grab the handler type and convert to lower
         std::string hName = clause.Pa_v[1].Va_v[0]; //we ignore stuff after ::
         std::transform(hName.begin(), hName.end(), hName.begin(), ::tolower);
-        
+
         if(hName == "none")
         {   // Disable the log handler
             par->pComposer->setLogHandler(*graphIt, disabled);
         }
         else if(hName == "trivial")
-        {   // Set the trivial log handler 
+        {   // Set the trivial log handler
             par->pComposer->setLogHandler(*graphIt, trivial);
         }
         else
@@ -422,7 +422,7 @@ void CmComp::Cm_SoftswitchLogLevel(Cli::Cl_t clause)
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs,1) == 1) return;
-    
+
     /* Set the level for each app in sequence. */
     std::set<GraphI_t*>::iterator graphIt;
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
@@ -432,10 +432,10 @@ void CmComp::Cm_SoftswitchLogLevel(Cli::Cl_t clause)
             par->Post(807, "/LOGL", (*graphIt)->Name());
             return;
         }
-        
+
         // Grab the specified log level, we ignore stuff after ::
         unsigned long level = atol(clause.Pa_v[1].Va_v[0].c_str());
-        
+
         par->pComposer->setLogLevel(*graphIt, level);
     }
 }
@@ -454,7 +454,7 @@ void CmComp::Cm_SoftswitchSetRTSBuffSize(Cli::Cl_t clause)
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs,1) == 1) return;
-    
+
     /* Set the mode for each app in sequence. */
     std::set<GraphI_t*>::iterator graphIt;
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
@@ -464,10 +464,10 @@ void CmComp::Cm_SoftswitchSetRTSBuffSize(Cli::Cl_t clause)
             par->Post(807, "/RTSB", (*graphIt)->Name());
             return;
         }
-        
+
         // Grab the specified buffer size, we ignore stuff after ::
         unsigned long buffSz = atol(clause.Pa_v[1].Va_v[0].c_str());
-        
+
         par->pComposer->setRTSSize(*graphIt, buffSz);
     }
 }
@@ -485,7 +485,7 @@ void CmComp::Cm_SoftswitchAddFlags(Cli::Cl_t clause)
     /* Grab the graph instances of interest. */
     std::set<GraphI_t*> graphs;
     if (par->GetGraphIs(clause, graphs,1) == 1) return;
-    
+
     /* Set the flags for each app in sequence. */
     std::set<GraphI_t*>::iterator graphIt;
     for (graphIt = graphs.begin(); graphIt != graphs.end(); graphIt++)
@@ -495,7 +495,7 @@ void CmComp::Cm_SoftswitchAddFlags(Cli::Cl_t clause)
             par->Post(807, "/ARGS", (*graphIt)->Name());
             return;
         }
-        
+
         // Grab the specified flags and populate, we ignore stuff after ::
         par->pComposer->addFlags(*graphIt, clause.Pa_v[1].Va_v[0]);
     }
@@ -542,7 +542,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="dege" ) { Cm_Degenerate(*i);    continue; }
   if (sCl=="clea" ) { Cm_Clean(*i);         continue; }
   if (sCl=="rese" ) { Cm_Reset(*i);         continue; }
-  
+
   // Softswitch control commands
   if (sCl=="buff" ) { Cm_SoftswitchBufferMode(*i, true);   continue; }
   if (sCl=="nobu" ) { Cm_SoftswitchBufferMode(*i, false);  continue; }
@@ -554,10 +554,10 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (sCl=="nore" ) { Cm_SoftswitchReqIdleMode(*i, false); continue; }
   if (sCl=="rtsb" ) { Cm_SoftswitchSetRTSBuffSize(*i);     continue; }
   if (sCl=="args" ) { Cm_SoftswitchAddFlags(*i);           continue; }
-  
+
   if (sCl=="dump" ) { Dump(0,par->fd);                     continue; }
   if (sCl=="show" ) { Show(par->fd);                       continue; }
-  
+
   par->Post(25,sCl,"compose");         // Unrecognised clause
 }
 return 0;                              // Legitimate command exit

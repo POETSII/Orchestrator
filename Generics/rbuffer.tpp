@@ -182,7 +182,7 @@ name = n;
 }
 
 //------------------------------------------------------------------------------
- 
+
 unsigned RBuffer::Put(void * _,string v)
 // Insert a data item (v) into line handle "_". This is a special case of the
 // template below, because we have to pull the string data on the heap (the

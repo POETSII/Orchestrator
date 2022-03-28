@@ -24,7 +24,7 @@
                 }
                 ]]></ReadyToSend>
                 <OnInit><![CDATA[
-                    
+
                 ]]></OnInit>
                 <OnHardwareIdle/>
                 <OnDeviceIdle/>
