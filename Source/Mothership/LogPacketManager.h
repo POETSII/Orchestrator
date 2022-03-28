@@ -20,8 +20,8 @@
 
 struct ThreadLogDatum
 {
-    unsigned packetCountReceived;
-    unsigned packetCountExpected;
+    uint8_t packetCountReceived;
+    uint8_t packetCountExpected;
     /* An array of buffers - one per packet up to a hardcoded maximum. */
     P_Log_Pkt_Pyld_t payloads[P_MAX_LOGPKT_FRAG];
 };
