@@ -81,7 +81,8 @@ void CmTest::Cm_Sleep(Cli::Cl_t cl)
 // Pass an unsigned integer, we kip for a bit. Pass something else, nothing
 // will happen (probably).
 {
-    OSFixes::sleep(str2uint(cl.Pa_v.begin()->Concatenate()));
+    if (cl.Pa_v.empty()) return;
+    OSFixes::sleep(str2uint(cl.Pa_v.begin()->Concatenate(), 0));
 }
 
 //------------------------------------------------------------------------------
