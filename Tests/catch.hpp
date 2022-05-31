@@ -7,6 +7,10 @@
  *
  *  Distributed under the Boost Software License, Version 1.0. (See accompanying
  *  file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+ *
+ *  Edited directly (I know) by MLV, see comments containing <!>. See issue at
+ *  https://github.com/catchorg/Catch2/issues/2178 and patch at
+ *  https://github.com/woodard/libabigail/commit/8ae8dcb8d5b87dafd0b9fdd716654e4bf3284c95.
  */
 #ifndef TWOBLUECUBES_SINGLE_INCLUDE_CATCH_HPP_INCLUDED
 #define TWOBLUECUBES_SINGLE_INCLUDE_CATCH_HPP_INCLUDED
@@ -6540,7 +6544,7 @@ namespace Catch {
         static bool isSet;
         static struct sigaction oldSigActions [sizeof(signalDefs)/sizeof(SignalDefs)];
         static stack_t oldSigStack;
-        static char altStackMem[SIGSTKSZ];
+        static char altStackMem[32768];  // <!> 32768 formerly SIGSTKSZ
 
         static void handleSignal( int sig ) {
             std::string name = "<unknown signal>";
@@ -6560,7 +6564,7 @@ namespace Catch {
             isSet = true;
             stack_t sigStack;
             sigStack.ss_sp = altStackMem;
-            sigStack.ss_size = SIGSTKSZ;
+            sigStack.ss_size = 32768;  // <!> 32768 formerly SIGSTKSZ
             sigStack.ss_flags = 0;
             sigaltstack(&sigStack, &oldSigStack);
             struct sigaction sa = { 0 };
@@ -6591,7 +6595,7 @@ namespace Catch {
     bool FatalConditionHandler::isSet = false;
     struct sigaction FatalConditionHandler::oldSigActions[sizeof(signalDefs)/sizeof(SignalDefs)] = {};
     stack_t FatalConditionHandler::oldSigStack = {};
-    char FatalConditionHandler::altStackMem[SIGSTKSZ] = {};
+    char FatalConditionHandler::altStackMem[32768] = {};  // <!> 32768 formerly SIGSTKSZ
 
 } // namespace Catch
 

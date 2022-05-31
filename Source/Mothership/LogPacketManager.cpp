@@ -67,11 +67,11 @@ void LogPacketManager::consume_log_packet(P_Pkt_t* packet,
        (cumulativeDatum->packetCountExpected + 1))
     {
         char message[(p_logpkt_pyld_size << P_LOG_MAX_LOGPKT_FRAG) + 1];
-        char* messageChunk = message;
 
         /* Pilfered from GMB, with a couple of renamed variables... it's all
          * going to be rewritten anyway. */
 #ifdef TRIVIAL_LOG_HANDLER
+        char* messageChunk = message;
         P_Log_Pkt_Pyld_t* pyld;
 
         // Re-assemble the full log message string
