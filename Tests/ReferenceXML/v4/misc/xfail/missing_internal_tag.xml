@@ -1,0 +1,9 @@
+<Graphs xmlns="" appname="ring_test">
+  <GraphType id="ring_test_type">
+    <MessageTypes>
+     <MessageType id="ring_propagate"></MessageType>
+    </MessageTypes>
+    <DeviceTypes>
+    </DeviceTypes>
+  </GraphType>
+</Graphs>
