@@ -119,4 +119,10 @@ for i in $ORCHROOT/Tests/ReferenceXML/v4/PEP20/tests/invalid/L0-syntax/*.xml ; d
     test_parse_failure $i
     if [ $? -ne 0 ]; then RC=1; fi
 done
+
+for i in $ORCHROOT/Tests/ReferenceXML/v4/misc/xfail/*.xml ; do
+    test_parse_failure $i
+    if [ $? -ne 0 ]; then RC=1; fi
+done
+
 exit $RC

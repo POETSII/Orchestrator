@@ -388,7 +388,7 @@ string mname = pn->FindAttr("id");
 MsgT_t * pM = new MsgT_t(pGT,mname);
 pM->Def(pn->lin);
 xnode *cc=pn->FindChild("Message");
-pM->pPropsD = _CFrag(cc);
+if (cc!=0) pM->pPropsD = _CFrag(cc);
 return pM;
 }
 
