@@ -1,0 +1,25 @@
+<Graphs xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4">
+  <GraphType id="duplicate_device_id_gt">
+    <MessageTypes>
+    </MessageTypes>
+    <DeviceTypes>
+      <DeviceType id="wibble">
+        <Properties/>
+        <State />
+        <SharedCode />
+        <ReadyToSend />
+        <OnInit />
+        <OnHardwareIdle />
+        <OnDeviceIdle />
+      </DeviceType>
+    </DeviceTypes>
+  </GraphType>
+  <GraphInstance id="duplicate_device_id_gi" graphTypeId="duplicate_device_id_gt">
+    <DeviceInstances>
+      <DevI id="dev0" type="wibble" />
+      <DevI id="dev0" type="wibble" />
+    </DeviceInstances>
+    <EdgeInstances>
+    </EdgeInstances>
+  </GraphInstance>
+</Graphs>
