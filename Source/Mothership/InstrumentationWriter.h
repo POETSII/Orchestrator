@@ -42,7 +42,7 @@ private:
     void setup_directory();
     bool fileFailureTriggered;  /* So that we only warn the first time... */
 	
-	void open_socket();
+	int open_socket();
 	int instrSocket;
 	struct addrinfo hints;
 	struct addrinfo *res;

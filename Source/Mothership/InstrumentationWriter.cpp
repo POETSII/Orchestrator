@@ -16,9 +16,9 @@ InstrumentationWriter::~InstrumentationWriter()
 	// Kill the socket	
 	if(instrSocketValid)
     {
-        close(InstrSocket);
+        close(instrSocket);
         instrSocketValid = false;
-        InstrSocket = 0;
+        instrSocket = 0;
     }
 }
 
