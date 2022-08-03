@@ -8,6 +8,58 @@ InstrumentationWriter::InstrumentationWriter(std::string directory)
     if (directory.empty()) outDirectory = DEFAULT_INSTRUMENTATION_DIRECTORY;
     else outDirectory = directory;
     setup_directory();
+	
+}
+
+InstrumentationWriter::~InstrumentationWriter()
+{
+	// Kill the socket	
+	if(instrSocketValid)
+    {
+        close(InstrSocket);
+        instrSocketValid = false;
+        InstrSocket = 0;
+    }
+}
+
+int InstrumentationWriter::open_socket()
+{
+	instrSocketValid = false;
+	
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_UNSPEC;        // Allow IPv4 or IPv6
+	hints.ai_socktype = SOCK_DGRAM;    	// Datagram socket
+	hints.ai_flags = 0;
+	hints.ai_protocol = 0;              // Any protocol
+	
+	// Static for now!
+	std::string addr = "127.0.0.1";
+    std::string port = "9000";
+	
+	// Resolve the name/address
+	int s = getaddrinfo(addr.c_str(), port.c_str(), &hints, &res);
+	
+	if (s != 0) {
+		//printf("ERROR server not found\n");
+		return -1;      // Fix the seg fault?
+	}
+	
+	for (ServAddrinfo = res; ServAddrinfo != NULL; ServAddrinfo = ServAddrinfo->ai_next) {
+		instrSocket = socket(ServAddrinfo->ai_family, ServAddrinfo->ai_socktype,
+						ServAddrinfo->ai_protocol);
+		if (instrSocket == -1)        // Oops, try the next one
+			continue;
+	}
+	
+	freeaddrinfo(res);           // Clean up res
+	
+	if (ServAddrinfo == PNULL) {           // Failed to connect to any of the options, barf
+		//printf("ERROR could not connect\n");
+		return -2;
+	}
+	
+	instrSocketValid = true;
+
 }
 
 /* Set up directory structure, in a shamelessly UNIXy way. */
@@ -134,9 +186,13 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
     cumulativeDatum->totalTime += deltaT;
     cumulativeDatum->txCount += packetDatum->txCnt;
     cumulativeDatum->rxCount += packetDatum->rxCnt;
-
+	
+	char buffer [1024];
+	int wb = 0;
+	
     /* Finally, write the data to the file. */
-    fprintf(file, "%u, %u, %f, %u, %f, %u, %u, %u, %u, %u, %u, %u, %u, ",
+    //fprintf(file, 
+	wb = sprintf(buffer, "%u, %u, %f, %u, %f, %u, %u, %u, %u, %u, %u, %u, %u, ",
             source,                      /* Hardware address */
             packetDatum->cIDX,           /* Index of the packet */
             cumulativeDatum->totalTime,  /* Total time */
@@ -157,7 +213,8 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
             packetDatum->blockCnt);      /* Number of times send has been
                                           * blocked */
 #if TinselEnablePerfCount == true
-    fprintf(file, "%u, %u, %u, %u, ",
+    //fprintf(file, 
+	wb += sprintf((buffer + wb), "%u, %u, %u, %u, ",
             packetDatum->missCount,       /* Cache miss count since last
                                            * instrumentation */
             packetDatum->hitCount,        /* Cache hit count since last
@@ -167,11 +224,23 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
             packetDatum->CPUIdleCount);   /* CPU idle count since last
                                            * instrumentation */
 #endif
-    fprintf(file, "%f, %f, %f\n",
+    //fprintf(file, 
+	wb += sprintf((buffer + wb), "%f, %f, %f\n",
             packetDatum->rxCnt/deltaT,    /* RX per second */
             packetDatum->txCnt/deltaT,    /* TX per second */
             packetDatum->supCnt/deltaT);  /* Sup TX per second */
 
+	fprintf(file, 
     fclose(file);
+	
+	//Temporary UDP sender
+	if(instrSocketValid)
+    {
+        // Punt the data over UDP
+        sendto(InstrSocket, buffer, strlen(buffer), 0,
+               ServAddrinfo->ai_addr, ServAddrinfo->ai_addrlen);
+    }
+	
+	
     return true;
 }

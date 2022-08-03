@@ -27,6 +27,7 @@ class InstrumentationWriter
 {
 public:
     InstrumentationWriter(std::string directory="");
+	~InstrumentationWriter();
     std::map<uint32_t, ThreadInstrumentationDatum> cumulativeData;
     std::string outDirectory;
 
@@ -35,6 +36,13 @@ public:
 private:
     void setup_directory();
     bool fileFailureTriggered;  /* So that we only warn the first time... */
+	
+	void open_socket();
+	int instrSocket;
+	struct addrinfo hints;
+	struct addrinfo *res;
+	struct addrinfo ServAddrinfo;
+	bool instrSocketValid;
 };
 
 #endif
