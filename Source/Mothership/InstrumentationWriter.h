@@ -13,6 +13,11 @@
 #include "InstrumentationException.h"
 #include "poets_pkt.h"
 
+// Socket includes
+#include <sys/socket.h>
+#include<sys/types.h>
+#include <netdb.h>
+
 #define DEFAULT_INSTRUMENTATION_DIRECTORY \
     dformat("%s/.orchestrator/instrumentation", getenv("HOME"))
 
