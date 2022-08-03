@@ -46,7 +46,7 @@ private:
 	int instrSocket;
 	struct addrinfo hints;
 	struct addrinfo *res;
-	struct addrinfo ServAddrinfo;
+	struct addrinfo *ServAddrinfo;
 	bool instrSocketValid;
 };
 
