@@ -230,14 +230,14 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
             packetDatum->txCnt/deltaT,    /* TX per second */
             packetDatum->supCnt/deltaT);  /* Sup TX per second */
 
-	fprintf(file, 
+	fprintf(file, "%s", buffer); 
     fclose(file);
 	
 	//Temporary UDP sender
 	if(instrSocketValid)
     {
         // Punt the data over UDP
-        sendto(InstrSocket, buffer, strlen(buffer), 0,
+        sendto(instrSocket, buffer, strlen(buffer), 0,
                ServAddrinfo->ai_addr, ServAddrinfo->ai_addrlen);
     }
 	
