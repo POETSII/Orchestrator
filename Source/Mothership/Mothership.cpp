@@ -11,6 +11,7 @@ Mothership::Mothership(int argc, char** argv):
     try
     {
         instrumentation = InstrumentationWriter();
+        instrumentation.open_socket();
     }
     catch (InstrumentationException &e)
     {

@@ -8,13 +8,16 @@ InstrumentationWriter::InstrumentationWriter(std::string directory)
     if (directory.empty()) outDirectory = DEFAULT_INSTRUMENTATION_DIRECTORY;
     else outDirectory = directory;
     setup_directory();
-	
+    instrSocketValid = false;
+    instrSocket = 0;
+    
+    //open_socket();        // Calling this here breaks stuff. Ask GMB
 }
 
 InstrumentationWriter::~InstrumentationWriter()
 {
-	// Kill the socket	
-	if(instrSocketValid)
+    // Kill the socket
+    if(instrSocketValid)
     {
         close(instrSocket);
         instrSocketValid = false;
@@ -24,41 +27,76 @@ InstrumentationWriter::~InstrumentationWriter()
 
 int InstrumentationWriter::open_socket()
 {
-	instrSocketValid = false;
-	
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;        // Allow IPv4 or IPv6
-	hints.ai_socktype = SOCK_DGRAM;    	// Datagram socket
-	hints.ai_flags = 0;
-	hints.ai_protocol = 0;              // Any protocol
-	
-	// Static for now!
-	std::string addr = "127.0.0.1";
-    std::string port = "9000";
-	
-	// Resolve the name/address
-	int s = getaddrinfo(addr.c_str(), port.c_str(), &hints, &res);
-	
-	if (s != 0) {
-		//printf("ERROR server not found\n");
-		return -1;      // Fix the seg fault?
-	}
-	
-	for (ServAddrinfo = res; ServAddrinfo != NULL; ServAddrinfo = ServAddrinfo->ai_next) {
-		instrSocket = socket(ServAddrinfo->ai_family, ServAddrinfo->ai_socktype,
-						ServAddrinfo->ai_protocol);
-		if (instrSocket == -1)        // Oops, try the next one
-			continue;
-	}
-	
-	freeaddrinfo(res);           // Clean up res
-	
-	if (ServAddrinfo == PNULL) {           // Failed to connect to any of the options, barf
-		//printf("ERROR could not connect\n");
-		return -2;
-	}
-	
-	instrSocketValid = true;
+    struct addrinfo hints;
+    struct addrinfo *res;
+
+    instrSocketValid = false;
+    
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;        // Allow IPv4 or IPv6
+    hints.ai_socktype = SOCK_DGRAM;     // Datagram socket
+    hints.ai_flags = 0;
+    hints.ai_protocol = 0;              // Any protocol
+    
+    // Static for now!
+    std::string addr = "127.0.0.1";         //**** CHANGE ME FOR ACTUAL USE ****
+    std::string port = "9000";              // I'm just not putting actual hostnames in git...
+    
+    // Resolve the name/address
+    int s = getaddrinfo(addr.c_str(), port.c_str(), &hints, &res);
+    
+    if (s != 0) {
+        //printf("ERROR server not found\n");
+        //fflush(stdout);             
+        return -1;      // Fix the seg fault?
+    }
+    
+    for (ServAddrinfo = res; ServAddrinfo != PNULL; 
+                ServAddrinfo = ServAddrinfo->ai_next) {
+        instrSocket = socket(ServAddrinfo->ai_family, ServAddrinfo->ai_socktype,
+                                ServAddrinfo->ai_protocol);
+        if (instrSocket == -1)        // Oops, try the next one
+            continue;
+
+        if (connect(instrSocket, ServAddrinfo->ai_addr,
+                    ServAddrinfo->ai_addrlen) != -1) {
+            //printf("Socket Connected");
+            //fflush(stdout);  
+            break;                  /* Success */
+        }
+        close(instrSocket);
+    }
+    
+    freeaddrinfo(res);           // Clean up res
+    
+    if (ServAddrinfo == PNULL) {           // Failed to connect to any of the options, barf
+        //printf("ERROR could not connect\n");
+        //fflush(stdout);
+        return -2;
+    }
+    
+    instrSocketValid = true;
+
+    char buffer [1024];
+    sprintf(buffer, "TestSend");
+    sendto(instrSocket, buffer, strlen(buffer), 0, ServAddrinfo->ai_addr, ServAddrinfo->ai_addrlen);
+    
+    int lp;
+    if(ServAddrinfo->ai_family == AF_INET6)  // IPv6 socket
+    {
+        struct sockaddr_in6 la;
+        socklen_t as = sizeof(la);
+        getsockname(instrSocket, (struct sockaddr *) &la, &as);
+        lp = ntohs(la.sin6_port);
+    } else {                                // IPv4 Socket
+        struct sockaddr_in la;
+        socklen_t as = sizeof(la);
+        getsockname(instrSocket, (struct sockaddr *) &la, &as);
+        lp = ntohs(la.sin_port);
+    }
+    
+    printf("SockFD: %d, Local port: %u\n",instrSocket,lp);
+    fflush(stdout);  
 
 }
 
@@ -186,13 +224,12 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
     cumulativeDatum->totalTime += deltaT;
     cumulativeDatum->txCount += packetDatum->txCnt;
     cumulativeDatum->rxCount += packetDatum->rxCnt;
-	
-	char buffer [1024];
-	int wb = 0;
-	
+    
+    char buffer [1024];
+    int wb = 0;
+    
     /* Finally, write the data to the file. */
-    //fprintf(file, 
-	wb = sprintf(buffer, "%u, %u, %f, %u, %f, %u, %u, %u, %u, %u, %u, %u, %u, ",
+    wb = sprintf(buffer, "%u, %u, %f, %u, %f, %u, %u, %u, %u, %u, %u, %u, %u, ",
             source,                      /* Hardware address */
             packetDatum->cIDX,           /* Index of the packet */
             cumulativeDatum->totalTime,  /* Total time */
@@ -213,8 +250,7 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
             packetDatum->blockCnt);      /* Number of times send has been
                                           * blocked */
 #if TinselEnablePerfCount == true
-    //fprintf(file, 
-	wb += sprintf((buffer + wb), "%u, %u, %u, %u, ",
+    wb += sprintf((buffer + wb), "%u, %u, %u, %u, ",
             packetDatum->missCount,       /* Cache miss count since last
                                            * instrumentation */
             packetDatum->hitCount,        /* Cache hit count since last
@@ -224,23 +260,35 @@ bool InstrumentationWriter::consume_instrumentation_packet(P_Pkt_t* packet)
             packetDatum->CPUIdleCount);   /* CPU idle count since last
                                            * instrumentation */
 #endif
-    //fprintf(file, 
-	wb += sprintf((buffer + wb), "%f, %f, %f\n",
+    wb += sprintf((buffer + wb), "%f, %f, %f",
             packetDatum->rxCnt/deltaT,    /* RX per second */
             packetDatum->txCnt/deltaT,    /* TX per second */
             packetDatum->supCnt/deltaT);  /* Sup TX per second */
 
-	fprintf(file, "%s", buffer); 
+    fprintf(file, "%s\n", buffer); 
     fclose(file);
-	
-	//Temporary UDP sender
-	if(instrSocketValid)
+    
+    //Temporary UDP sender
+    if(instrSocketValid)
     {
+        // Vestigeal code in case we need better error handling.
+        //int error = 0;
+        //socklen_t len = sizeof (error);
+        //int retval = getsockopt (instrSocket, SOL_SOCKET, SO_ERROR, &error, &len);
+        //if (retval != 0) {
+        //    /* there was a problem getting the error code */
+        //    int errsv = errno;
+        //    printf("error getting socket error code: %s\n", strerror(errsv));
+        //} else if (error != 0) {
+        //    /* socket has a non zero error status */
+        //    printf("socket error: %s\n", strerror(error));
+        //}
+        //fflush(stdout);  
+        
         // Punt the data over UDP
-        sendto(instrSocket, buffer, strlen(buffer), 0,
-               ServAddrinfo->ai_addr, ServAddrinfo->ai_addrlen);
+        send(instrSocket, buffer, strlen(buffer), 0);
     }
-	
-	
+    
+    
     return true;
 }

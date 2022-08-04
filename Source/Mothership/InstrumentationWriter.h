@@ -37,15 +37,13 @@ public:
     std::string outDirectory;
 
     bool consume_instrumentation_packet(P_Pkt_t*);
+    int open_socket();
 
 private:
     void setup_directory();
     bool fileFailureTriggered;  /* So that we only warn the first time... */
 	
-	int open_socket();
 	int instrSocket;
-	struct addrinfo hints;
-	struct addrinfo *res;
 	struct addrinfo *ServAddrinfo;
 	bool instrSocketValid;
 };
