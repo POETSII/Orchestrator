@@ -76,28 +76,6 @@ int InstrumentationWriter::open_socket()
     }
     
     instrSocketValid = true;
-
-    char buffer [1024];
-    sprintf(buffer, "TestSend");
-    sendto(instrSocket, buffer, strlen(buffer), 0, ServAddrinfo->ai_addr, ServAddrinfo->ai_addrlen);
-    
-    int lp;
-    if(ServAddrinfo->ai_family == AF_INET6)  // IPv6 socket
-    {
-        struct sockaddr_in6 la;
-        socklen_t as = sizeof(la);
-        getsockname(instrSocket, (struct sockaddr *) &la, &as);
-        lp = ntohs(la.sin6_port);
-    } else {                                // IPv4 Socket
-        struct sockaddr_in la;
-        socklen_t as = sizeof(la);
-        getsockname(instrSocket, (struct sockaddr *) &la, &as);
-        lp = ntohs(la.sin_port);
-    }
-    
-    printf("SockFD: %d, Local port: %u\n",instrSocket,lp);
-    fflush(stdout);  
-
 }
 
 /* Set up directory structure, in a shamelessly UNIXy way. */
