@@ -68,6 +68,11 @@ include $(shell find $(DEPENDENCY_DIR) -name "*.d" ! -name "*.temp.d")
 # objects:
 INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/Common \
+                -I$(SOURCE_DIR)/Injector \
+                -I$(SOURCE_DIR)/Launcher \
+                -I$(SOURCE_DIR)/MonServer \
+                -I$(SOURCE_DIR)/NameServer \
+                -I$(SOURCE_DIR)/NameServer/AddressBook \
                 -I$(SOURCE_DIR)/OrchBase \
                 -I$(SOURCE_DIR)/OrchBase/AppStructures \
                 -I$(SOURCE_DIR)/OrchBase/Handlers \
@@ -78,13 +83,9 @@ INCLUDE_FLAGS = -I$(GENERICS_DIR) \
                 -I$(SOURCE_DIR)/OrchBase/Placement/Constraints \
                 -I$(SOURCE_DIR)/OrchBase/Placement/Exceptions \
                 -I$(SOURCE_DIR)/OrchBase/HardwareModel \
-                -I$(SOURCE_DIR)/Launcher \
                 -I$(SOURCE_DIR)/OrchBase/XMLProcessing \
-                -I$(SOURCE_DIR)/Injector \
                 -I$(SOURCE_DIR)/Parser \
                 -I$(SOURCE_DIR)/Root \
-                -I$(SOURCE_DIR)/NameServer \
-                -I$(SOURCE_DIR)/NameServer/AddressBook \
                 -I$(SOURCE_DIR)/Softswitch/inc \
                 -I$(SOURCE_DIR)/Supervisor \
                 -I$(MPICH_INC_DIR) \
@@ -122,9 +123,10 @@ LOGSERVER_EXECUTABLE = $(EXECUTABLE_DIR)/logserver
 RTCL_EXECUTABLE = $(EXECUTABLE_DIR)/rtcl
 INJECTOR_EXECUTABLE = $(EXECUTABLE_DIR)/injector
 MOTHERSHIP_EXECUTABLE = $(EXECUTABLE_DIR)/mothership
+MONSERVER_EXECUTABLE = $(EXECUTABLE_DIR)/monserver
 
 all: orchestrate launcher root dummy logserver rtcl injector mothership \
-     composer_environment
+     monserver composer_environment
 launcher: $(LAUNCHER_EXECUTABLE)
 orchestrate: $(ORCHESTRATE_SCRIPT)
 root: $(ROOT_EXECUTABLE)
@@ -133,6 +135,7 @@ logserver: $(LOGSERVER_EXECUTABLE)
 rtcl: $(RTCL_EXECUTABLE)
 injector: $(INJECTOR_EXECUTABLE)
 mothership: $(MOTHERSHIP_EXECUTABLE)
+monserver: $(MONSERVER_EXECUTABLE)
 
 # Prerequisites (objects) for building executables are defined here:
 include Makefile.executable_prerequisites
@@ -149,7 +152,8 @@ tests: $(ALL_TESTS) $(TEST_SCRIPT)
 # Makefile.executable_prerequisites for the prerequisites of these executables
 # (obviously...)
 $(LAUNCHER_EXECUTABLE) $(ROOT_EXECUTABLE) $(DUMMY_EXECUTABLE) \
-$(LOGSERVER_EXECUTABLE) $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE):
+$(LOGSERVER_EXECUTABLE) $(RTCL_EXECUTABLE) $(INJECTOR_EXECUTABLE) \
+$(MONSERVER_EXECUTABLE):
 	@$(shell $(MKDIR) $(EXECUTABLE_DIR))
 	$(CXX) -pthread -L$(MPICH_LIB_DIR) -L/usr/lib \
         -o $@ $^ \
@@ -301,7 +305,7 @@ clean:
 
 # Non-builtin targets that do not explicitly represent files that are created.
 .PHONY: all clean debug tests orchestrate root dummy logserver rtcl injector \
-    mothership
+    mothership monserver
 
 # The "all" target should be the default.
 .DEFAULT_GOAL := all

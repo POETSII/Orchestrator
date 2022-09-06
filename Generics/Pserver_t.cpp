@@ -97,12 +97,12 @@ int Pserver_t::Send(int _socket,vector<byte> _buf)
 // This does all the heavy lifting for the send activities:
 {
 PsMessage(0,"Pserver_t::Send() Just arrived");
-char csz[4];
+uchar csz[4];
 PUT4(&csz[0],_buf.size());             // Number of bytes to send
 // Debug...
 uint32 isz=GET4(&csz[0]);
 printf("Pserver_t::Send isz = %d\n",isz);
-printf("_buf.size() = %u\n",_buf.size());
+printf("_buf.size() = %lu\n",_buf.size());
 fflush(stdout);
 //-------------
 send(_socket,&csz[0],4,0);              // Send the number of bytes to send
@@ -171,8 +171,8 @@ byte buf[BUFLEN];                      // Yuk
 bzero(buf,BUFLEN);
 pPserver->PsMessage(0,"Pserver_t ... Recv1() About to enter (connected) loop");
 while (true) {                         // Assume we're connected until broken
-  char csz[4];                         // Size of the message to follow
-  char * psz = &csz[0];
+  uchar csz[4];                         // Size of the message to follow
+  uchar * psz = &csz[0];
   if (recv(newsockfd,psz,4,0)<=0) break;   // Socket closed?
   int isz = GET4(psz);                 // Incoming message size as an integer
   pPserver->PsMessage(0,"Pserver_t ... Recv1() expecting bytes...",isz);

@@ -257,6 +257,22 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
 
 MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 
+# The Monserver component consists of:
+#
+# - The "main" file (/Source/MonServer/MonServerMain.cpp) and its dependencies
+#   in /Source/MonServer.
+#
+# - The truly common sources.
+#
+# - Some "generics" (/Generics) sources.
+MONSERVER_SOURCES = $(SOURCE_DIR)/MonServer/MonServerMain.cpp \
+                    $(SOURCE_DIR)/MonServer/MonServer.cpp \
+                    $(GENERICS_DIR)/PcsBase_t.cpp \
+                    $(GENERICS_DIR)/Pserver_t.cpp
+
+MONSERVER_SOURCES += $(TRULY_COMMON_SOURCES)
+
+
 # Convert these lists of sources into a list of objects to define a dependency
 # system for the linker.
 
@@ -288,7 +304,7 @@ $(1)_OBJECTS := $(call orch_sources_to_objects, $($(1)_SOURCES))
 endef
 
 $(foreach object_set,\
-          LAUNCHER ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP,\
+          LAUNCHER ROOT INJECTOR DUMMY LOGSERVER RTCL MOTHERSHIP MONSERVER,\
           $(eval $(call OBJECT_TEMPLATE,$(object_set))))
 
 # Define executable prerequisites. RULE_TEMPLATE defines the substitutions made
@@ -301,5 +317,5 @@ $($(1)_EXECUTABLE): $($(1)_OBJECTS)
 endef
 
 $(foreach executable_name,\
-          LAUNCHER ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP,\
+          LAUNCHER ROOT DUMMY LOGSERVER RTCL INJECTOR MOTHERSHIP MONSERVER,\
           $(eval $(call RULE_TEMPLATE,$(executable_name))))
