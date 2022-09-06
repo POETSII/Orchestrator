@@ -96,7 +96,7 @@ struct cb_struct {                     // Callback holding structure
 } cb;
 class NodeHeap;                        // Internal memory manager for nodes
 NodeHeap *         pNH;
-map<string,string> argMap;             // Preprocessor string map            
+map<string,string> argMap;             // Preprocessor string map
 
 //- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // A little foray into subclassing - not something I approve of, as a rule, but

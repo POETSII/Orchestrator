@@ -151,7 +151,7 @@ for(;;) {                              // And spin...
                                        // Lose adjacent duplicates in history
                 hist.resize(distance(hist.begin(),
                             unique(hist.begin(),hist.end())));
-                putchar('\n');         // And move to the next line 
+                putchar('\n');         // And move to the next line
                 break;
     case 0x8  :                        // Backspace
                 if (line.empty()) break;          // Nothing there

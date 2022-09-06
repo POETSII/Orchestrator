@@ -161,6 +161,11 @@ double trip = Z->Ztime(1)-ZT0;         // Round trip time
 int * pTgtR = Z->Get<int>(0,cnt);      // Unload target rank
 int TgtR;                              // Target rank
 if (pTgtR!=0) TgtR = * pTgtR;
+else                                   // Can't happen, post unrecoverable
+{
+Post(950,Sderived);
+return 0;
+}
 string TgtS = pPmap->M[TgtR];          // Target name
 const unsigned len = 20;               // Process name length
 TgtS.resize(len,' ');                  // So they line up on the console

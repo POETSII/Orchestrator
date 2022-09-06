@@ -27,7 +27,7 @@
                 <OnInit><![[CDATA[
                 ]]></OnInit>
                 <OnHardwareIdle />
-                <OnDeviceIdle />  
+                <OnDeviceIdle />
             </DeviceType>
         </DeviceTypes>
     </GraphType>

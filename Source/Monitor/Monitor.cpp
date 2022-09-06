@@ -82,7 +82,7 @@ MonitorForm = this; //ADB              // their parent? Can't we do better?
 }
 
 //------------------------------------------------------------------------------
-          
+
 void __fastcall TMonitorForm::ClearBtnClick(TObject *Sender)
 {
 Memo1->Clear();
@@ -163,7 +163,7 @@ AboutBox->ShowModal();
 }
 
 //------------------------------------------------------------------------------
- 
+
 void __fastcall TMonitorForm::LocalBtnClick(TObject *Sender)
 {
 char localname[1023];
@@ -411,5 +411,3 @@ Wcount = WizardForm->Wcount;
 }
 
 //------------------------------------------------------------------------------
-
-

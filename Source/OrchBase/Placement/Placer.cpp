@@ -840,7 +840,7 @@ void Placer::dump_edge_loading(const char* path)
             std::vector<P_mailbox*> path;
             cache->get_path(fromMailbox, toMailbox, &path);
             std::vector<P_mailbox*>::iterator mailboxIt;
-            P_mailbox* previousMailbox;
+            P_mailbox* previousMailbox = 0;  /* Initial assignment unused. */
             for (mailboxIt = path.begin(); mailboxIt != path.end();
                  mailboxIt++)
             {

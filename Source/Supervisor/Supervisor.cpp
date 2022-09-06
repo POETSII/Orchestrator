@@ -31,7 +31,7 @@ extern "C"
     int SupervisorRTCL(){return Supervisor::OnRTCL();}
 
     int SupervisorExit(){return Supervisor::OnStop();}
-    
+
     // Return the full symbolic address of the given index
     uint64_t SupervisorIdx2Addr(uint32_t idx)
     {
@@ -49,15 +49,15 @@ extern "C"
 
         return ret;
     }
-    
+
     // Return a pointer to the SupervisorDeviceInstance for the given index
     const SupervisorDeviceInstance_t* SupervisorIdx2Inst(uint32_t idx)
     {
         if(idx >= Supervisor::DeviceVector.size()) return PNULL;    // OOR
-        
+
         return &(Supervisor::DeviceVector[idx]);
     }
-    
+
     // Return the name of the given index
     std::string SupervisorIdx2Name(uint32_t idx)
     {
@@ -66,10 +66,10 @@ extern "C"
             //out of range Idx
             return "";
         }
-        
+
         return Supervisor::DeviceVector[idx].Name;
     }
-    
+
     // "return" a copy of the device vector.
     void GetSupervisorAddresses(std::vector<SupervisorDeviceInstance_t>& devV)
     {

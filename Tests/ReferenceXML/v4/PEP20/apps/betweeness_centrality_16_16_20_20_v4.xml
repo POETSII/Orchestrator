@@ -90,7 +90,7 @@
 
         unsigned pc=c2[sel];
         c2[sel]=0;
-        
+
         uint32_t m1= (l1[sel/32] &= ~(1u<<(sel%32)));
         if(!m1){
             l0 &= ~(1u<<(sel/32));
@@ -110,7 +110,7 @@
         assert(m1);
         unsigned sel=(s0<<5)|pick_bit(m1);
         assert(c2[sel]>0);
-        
+
         auto nc = --c2[sel];
         if(!nc){
             m1 &= ~(1u<<(sel%32));
@@ -197,10 +197,10 @@
         <OnReceive><![CDATA[
 		  assert(message->timestep <= graphProperties->max_steps);
           assert_ready_1k_invariants(deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep, graphProperties->max_steps+1);
-          
+
           assert(message->count > 0);
           deviceState->total_visits += message->count;
-          
+
           add_ready_1k(
             deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep,
             message->timestep, message->count
@@ -288,7 +288,7 @@
         deviceState->non_final_count+=graphProperties->initial_walks;
 
         assert_ready_1k_invariants(deviceState->walks_mask_l0, deviceState->walks_mask_l1, deviceState->walks_by_timestep, graphProperties->max_steps+1);
-        
+
         ]]></OnInit>
 
     <OnHardwareIdle />

@@ -140,7 +140,7 @@
         uint32_t ns;
       ]]></State>
       <SharedCode />
-      
+
       <InputPin name="in" messageTypeId="update">
         <Properties><![CDATA[
           float w;
@@ -229,7 +229,7 @@
         uint32_t done;
       ]]></State>
       <SharedCode />
-        
+
       <InputPin name="done" messageTypeId="finished">
         <Properties />
         <State />

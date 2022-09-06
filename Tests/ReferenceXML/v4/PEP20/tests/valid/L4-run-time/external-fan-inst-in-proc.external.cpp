@@ -29,7 +29,7 @@ void poets_in_proc_external_main(InProcessBinaryUpstreamConnection &conn, int ar
                 if(dst== makeEndpoint(ext0_address,poets_pin_index_t{0})){
                     conn.external_log(0, "Sending message from ext0 : %u.", *(uint32_t*)&payload->at(0));
                     conn.send( makeEndpoint(ext0_address, poets_pin_index_t{0}), payload );
-                
+
                 }else if(dst== makeEndpoint(ext1_address,poets_pin_index_t{0})){
                     conn.external_log(0, "Sending message from ext1 : %u.", *(uint32_t*)&payload->at(0));
                     conn.send( makeEndpoint(ext1_address, poets_pin_index_t{0}), payload );
@@ -47,7 +47,7 @@ void poets_in_proc_external_main(InProcessBinaryUpstreamConnection &conn, int ar
                 }
             }
 
-            
+
         }
     }
 }

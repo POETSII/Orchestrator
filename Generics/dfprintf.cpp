@@ -7,10 +7,10 @@ ADB 20/2/9 to make it stand-alone :
 1) Pick up std namespace to give isdigit()
 2) Local code of to_string() without the fluff
 ADB 3/11/10 :
-Changed filename to avoid name clash with BORLAND routine 
+Changed filename to avoid name clash with BORLAND routine
 ADB 8/6/17:
 Renamed to_string to Xto_string to avoid nameclash with STL
- 
+
 
 ------------------------------------------------------------------------------*/
 #include "dfprintf.h"

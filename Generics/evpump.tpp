@@ -75,7 +75,7 @@ while(!Q.empty()) {
   lpt = pE->Time();                    // Store last popped time
   pCB(par,pE);                         // Handle the event
 }
-if (sflag) return STOP_REQ;            // In case STOP_REQ was the last one 
+if (sflag) return STOP_REQ;            // In case STOP_REQ was the last one
 return STOP_NOQ;                       // Q empty
 }
 

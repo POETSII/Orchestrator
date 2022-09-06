@@ -1,6 +1,10 @@
 #include "SuperDB.h"
 
-SuperDB::SuperDB(){nextIdle = supervisors.begin();}
+SuperDB::SuperDB()
+{
+    pthread_mutex_init(&mapLock, NULL);
+    nextIdle = supervisors.begin();
+}
 
 /* Cleanup. */
 SuperDB::~SuperDB()
@@ -11,6 +15,7 @@ SuperDB::~SuperDB()
          superIt++) delete superIt->second;
     supervisors.clear();
     nextIdle = supervisors.begin();
+    pthread_mutex_destroy(&mapLock);
 }
 
 /* Gets the next supervisor in the idle rotation. Returns PNULL if there is no
@@ -18,8 +23,15 @@ SuperDB::~SuperDB()
  * locked, and that the application is running.*/
 SuperHolder* SuperDB::get_next_idle(std::string& name)
 {
+    pthread_mutex_lock(&mapLock);
+    SuperHolder* out;
+
     /* Protect against having no defined supervisors. */
-    if (supervisors.empty()) return PNULL;
+    if (supervisors.empty())
+    {
+        pthread_mutex_unlock(&mapLock);
+        return PNULL;
+    }
 
     /* Get next supervisor, ignoring supervisors with errors or supervisors
      * that have been freed. */
@@ -39,7 +51,9 @@ SuperHolder* SuperDB::get_next_idle(std::string& name)
     }
 
     name = nextIdle->first;
-    return nextIdle->second;
+    out = nextIdle->second;
+    pthread_mutex_unlock(&mapLock);
+    return out;
 }
 
 /* Retrieves a reference to the api-communications object used by the
@@ -70,8 +84,10 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
     }
 
     /* Otherwise, load up. */
+    pthread_mutex_lock(&mapLock);
     supervisors[appName] = new SuperHolder(path, appName);
     nextIdle = supervisors.begin();
+    pthread_mutex_unlock(&mapLock);
 
     /* Check for errors as per the specification... */
     if (supervisors.find(appName)->second->error)
@@ -90,8 +106,7 @@ bool SuperDB::load_supervisor(std::string appName, std::string path,
 bool SuperDB::reload_supervisor(std::string appName, std::string* errorMessage)
 {
     /* Before unloading the supervisor, get the path to the binary. */
-    std::string binPath =supervisors.find(appName)->second->path;
-
+    std::string binPath = supervisors.find(appName)->second->path;
     if (not unload_supervisor(appName)) return false;
     return load_supervisor(appName, binPath, errorMessage);
 }
@@ -103,13 +118,11 @@ bool SuperDB::unload_supervisor(std::string appName)
     /* Check whether or not a supervisor has already been loaded for this
      * application. */
     SuperIt superIt = supervisors.find(appName);
-    if (superIt == supervisors.end())
-    {
-        return false;
-    }
+    if (superIt == supervisors.end()) return false;
 
     /* Otherwise, unload away (via destructor), but let it finish what it's
      * doing. */
+    pthread_mutex_lock(&mapLock);
     pthread_mutex_t* superLock = &(superIt->second->lock);
     pthread_mutex_lock(superLock);
     SuperHolder* toDestroy = superIt->second;
@@ -117,6 +130,7 @@ bool SuperDB::unload_supervisor(std::string appName)
     nextIdle = supervisors.begin();
     pthread_mutex_unlock(superLock);
     delete toDestroy;
+    pthread_mutex_unlock(&mapLock);
     return true;
 }
 
@@ -125,7 +139,7 @@ HANDLE_SUPERVISOR_FN(init)
 HANDLE_SUPERVISOR_FN(exit)
 
 int SuperDB::call_supervisor(std::string appName,
-                    std::vector<P_Pkt_t>& inputPackets, 
+                    std::vector<P_Pkt_t>& inputPackets,
                     std::vector<P_Addr_Pkt_t>& outputPackets)
 {
     FIND_SUPERVISOR;

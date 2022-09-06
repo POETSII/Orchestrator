@@ -51,7 +51,7 @@ int            aB;                     // Address in buffer of base string
 int            aE;                     // Address in buffer of extension string
 char           RAmode;                 // Relative or absolute path?
 bool           problem;                // It's not a filename
-bool           dirty;                  // Monkey been fiddling? 
+bool           dirty;                  // Monkey been fiddling?
 Lex            Lx;                     // The input lexer
 
 static const int   X = -1;             // Cosmic error table entry

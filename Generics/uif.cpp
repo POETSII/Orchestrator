@@ -851,7 +851,7 @@ Lex::tokdat & UIF::Query(bool * pe)
 if (pe!=0) *pe = Lx.IsError(Td);
 return Td;
 }
-             
+
 //------------------------------------------------------------------------------
 
 void UIF::RCB()
@@ -1503,7 +1503,7 @@ switch (typ) {
 
 //------------------------------------------------------------------------------
 
-bool UIF::Node::IsEx()                                         
+bool UIF::Node::IsEx()
 {
 return typ == No_e_ex;
 }
@@ -1555,7 +1555,7 @@ return par;
 }
 
 //------------------------------------------------------------------------------
- 
+
 UIF::Node * & UIF::Node::R()
 // As above; node[2] is the right child.
 {

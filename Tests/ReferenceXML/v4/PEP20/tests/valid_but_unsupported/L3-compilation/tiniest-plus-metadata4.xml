@@ -2,9 +2,9 @@
 <Graphs xmlns="https://poets-project.org/schemas/virtual-graph-schema-v4" formatMinorVersion="0">
     <GraphType id="tiniest">
         <Metadata key="grarr" value="gr
-        
+
         hello!
-        
+
         rr"/>
         <Metadata key="bleb" value="grrr"/>
         <Properties/>

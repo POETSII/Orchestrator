@@ -447,7 +447,7 @@ template<typename T2> void Box_t<T2>::Box(P3_t<T2> & pt)
 // specialised template and quite honestly I couldn't be bothered to fiddle
 // with ranges and stuff. Equally, I don't want to waste a lot of time idiot-
 // proofing it - IF YOU PUT DUD DATA IN, IT'S INCREDIBLY EASY TO LOCK IT INTO A
-// SPIN LOOP 
+// SPIN LOOP
 {
 while (pt.x > xmax) pt.x -= xsize;
 while (pt.x < xmin) pt.x += xsize;

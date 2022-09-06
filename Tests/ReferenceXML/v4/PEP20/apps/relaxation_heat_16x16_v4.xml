@@ -24,7 +24,7 @@
         }
 
       #define quiet_handler_log(...) (void)0
-  
+
   int32_t abs_diff(int32_t a, int32_t b)
   {
     return (a>b) ? a-b : b-a;
@@ -34,7 +34,7 @@
   {
     return (a>b) ? a-b : b-a;
   }
-  
+
   ]]></SharedCode>
   <MessageTypes>
     <MessageType id="share">
@@ -91,7 +91,7 @@
         float nhood[4];
         uint64_t totalSent;
         int8_t dirty;
-        int8_t boundary;    
+        int8_t boundary;
       ]]></State>
       <SharedCode/>
       <InputPin name="share_in" messageTypeId="share">
@@ -123,7 +123,7 @@
           deviceState->sent=0;
       }
       if(deviceState->nextVersion == message->version){
-        deviceState->received++;        
+        deviceState->received++;
       }
 
       deviceState->dirty=true;
@@ -150,9 +150,9 @@
       <OutputPin name="share_out" messageTypeId="share">
         <OnSend><![CDATA[
 			assert(abs_diff(deviceState->currHeat,deviceState->nextHeat) > graphProperties->threshold || deviceState->currVersion != deviceState->nextVersion );
-      
+
       if( abs_diff(deviceState->currHeat,deviceState->nextHeat) > graphProperties->threshold ){
-        deviceState->currHeat=deviceState->nextHeat;      
+        deviceState->currHeat=deviceState->nextHeat;
         deviceState->nextVersion+=1;
         deviceState->sent=0;
         deviceState->received=0;
@@ -238,7 +238,7 @@
 
       unsigned index=message->index;
       assert(index<deviceProperties->degree);
-    
+
     if(deviceState->version < message->version){
       deviceState->version=message->version;
       for(unsigned i=0; i<deviceProperties->degree; i++){
@@ -268,7 +268,7 @@
       <OutputPin name="termination_out" messageTypeId="termination">
         <OnSend><![CDATA[
     assert(deviceState->dirty);
-    
+
     // TODO: this could be optimised to only send down when the total count
     // matches the sum of all cells recursively above this on the tree.
 
@@ -295,12 +295,12 @@
       *readyToSend = deviceState->dirty ? RTS_FLAG_termination_out : 0;
     ]]></ReadyToSend>
       <OnInit><![CDATA[
-    
+
       // Accept all defaults
 
       // Check the degree property doesn't exceed the array size
       assert( deviceProperties->degree <= sizeof(deviceState->count)/sizeof(deviceState->count[0]) );
-    
+
     ]]></OnInit>
       <OnHardwareIdle/>
     <OnDeviceIdle/>
@@ -411,7 +411,7 @@
 
       quiet_handler_log(5, "version=%u, count=%u (of %u), sent=%u, received=%u, totalSentHi=%u, totalSentLo=%u",
           message->version, message->count, deviceProperties->totalCells, message->sent, message->received,
-          uint32_t(message->totalSent>>32), uint32_t(message->totalSent&0xFFFFFFFFul) 
+          uint32_t(message->totalSent>>32), uint32_t(message->totalSent&0xFFFFFFFFul)
           );
 
       if(message->count==deviceProperties->totalCells && message->sent==message->received){
@@ -439,7 +439,7 @@
       message->heat=(rand(deviceState->state)>>31) ? 127 : -127;
 
       message->boundary=1;
-      
+
       deviceState->rts=0;
       ]]></OnSend>
       </OutputPin>

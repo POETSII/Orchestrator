@@ -27,7 +27,7 @@
                 <ReadyToSend />
                 <OnInit />
                 <OnHardwareIdle />
-                <OnDeviceIdle />  
+                <OnDeviceIdle />
             </DeviceType>
         </DeviceTypes>
     </GraphType>

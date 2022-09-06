@@ -161,7 +161,7 @@ string T = pathUlog + "Microlog_" + string(timeBuf);
 FILE * fp = 0;
 unsigned inc = 0;
 string tT;
-// Find file that doesn't exist (to avoid clobbering other logs.
+// Find file that doesn't exist (to avoid clobbering other logs).
 while (fp==0) {
   tT=T+"p"+uint2str(inc)+".plog";
   fp = fopen(tT.c_str(),"r");          // Keep the compiler happy

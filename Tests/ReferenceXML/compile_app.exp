@@ -13,14 +13,14 @@ send_user "Absolute xml path = $script\n"
 spawn "$HERE/../../orchestrate.sh" --no-rlwrap -n
 
 expect {
-    default { send_user "Orchestrator didn't make it to prompt.\n" ; exit 1; }   
+    default { send_user "Orchestrator didn't make it to prompt.\n" ; exit 1; }
     "POETS>"
 }
 
 send "load /app = \"$script\"\n"
 
 expect {
-    default { send_user "Timeout or unexpected outcome while loading app.\n" ; exit 1; }   
+    default { send_user "Timeout or unexpected outcome while loading app.\n" ; exit 1; }
     "unintelligible" { send_user "Command was invalid." ; exit 1; }
     "failed validation with" { send_user "The XML file could not be validated.\n"; exit 1; }
     -re ".*Application file .* loaded in .* ms."
@@ -30,7 +30,7 @@ send "tlink /app = *\n"
 send "place /tfill = *\n"
 
 expect {
-    default { send_user "Timeout or unexpected outcome while linking/placing app.\n" ; exit 1; }   
+    default { send_user "Timeout or unexpected outcome while linking/placing app.\n" ; exit 1; }
     "unintelligible" { send_user "Command was invalid." ; exit 1; }
     -re "Graph instance .+ placed successfully."
 }
@@ -38,7 +38,7 @@ expect {
 send "compose /app = *\n"
 
 expect {
-    default { send_user "Timeout or unexpected outcome while composing app.\n" ; exit 1; }   
+    default { send_user "Timeout or unexpected outcome while composing app.\n" ; exit 1; }
     "unintelligible" { send_user "Command was invalid." ; exit 1; }
     -re "Graph instance '.+' composed successfully."
 }

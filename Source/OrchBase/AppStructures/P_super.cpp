@@ -109,7 +109,7 @@ void P_super::Detach(P_board* targetBoard)
             {
                 targetBoard->sup_offv.erase(indexIterator);
                 removed = true;
-                break;
+                break;  // Iterator now invalid - start again.
             }
         }
     } while (!removed);  // Removes all instances of superIndex, if many exist.

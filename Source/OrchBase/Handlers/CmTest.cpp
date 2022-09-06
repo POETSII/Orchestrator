@@ -102,7 +102,7 @@ void CmTest::Cm_Sleep(Cli::Cl_t cl)
 // will happen (probably).
 {
     if (cl.Pa_v.empty()) return;
-    OSFixes::sleep(str2uint(cl.Pa_v.begin()->Concatenate()));
+    OSFixes::sleep(str2uint(cl.Pa_v.begin()->Concatenate(), 0));
 }
 
 //------------------------------------------------------------------------------

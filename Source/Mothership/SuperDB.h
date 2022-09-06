@@ -44,7 +44,7 @@ public:
     int call_supervisor(std::string appName, std::vector<P_Pkt_t>& inputPackets,
                     std::vector<P_Addr_Pkt_t>& outputPackets);
     int get_device_instance(std::string appName, uint32_t index,
-                                const SupervisorDeviceInstance_t*& instance);     
+                                const SupervisorDeviceInstance_t*& instance);
     SupervisorApi* get_supervisor_api(std::string appName);
     bool load_supervisor(std::string appName, std::string path,
                          std::string* errorMessage);
@@ -58,6 +58,7 @@ HANDLE_SUPERVISOR_DECL(exit)
 HANDLE_SUPERVISOR_DECL(idle)
 
 private:
+    pthread_mutex_t mapLock;
     std::map<std::string, SuperHolder*> supervisors;
     std::map<std::string, SuperHolder*>::iterator nextIdle;
 };

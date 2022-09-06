@@ -34,7 +34,7 @@ uint32_t gen_k;
             } \
             _do_handler_exit(code); \
         }
-				
+
 ]]></SharedCode>
     <MessageTypes>
       <MessageType id="share">
@@ -68,7 +68,7 @@ uint32_t distances[8];
 				void begin_round(const GP * graphProperties, const DP *deviceProperties, DS *deviceState)
 				{
 					// Start the next round
-					memset(deviceState->distances, 0xFF, sizeof(deviceState->distances)); 
+					memset(deviceState->distances, 0xFF, sizeof(deviceState->distances));
 
 					// Check if we are a source for the next round
 					int32_t id_delta=deviceProperties->id - deviceState->round_base;
@@ -147,9 +147,9 @@ uint32_t distances[8];
 				for(unsigned i=0; i<deviceState->curr_k; i++){
 					unsigned src=i+deviceState->round_base-K;
 					if( (src < num_debug_1st_round_distances) && (deviceState->round_base==K) ){
-						handler_log(4, "  distance %u <- %u = %u expected %u", deviceProperties->id, src, deviceState->distances[i], deviceProperties->debug_1st_round_distances[i]); 
+						handler_log(4, "  distance %u <- %u = %u expected %u", deviceProperties->id, src, deviceState->distances[i], deviceProperties->debug_1st_round_distances[i]);
 					}else if( (src < num_debug_2nd_round_distances) && (deviceState->round_base==2*K) ){
-						handler_log(4, "  distance %u <- %u = %u expected %u", deviceProperties->id, src, deviceState->distances[i], deviceProperties->debug_2nd_round_distances[i]); 
+						handler_log(4, "  distance %u <- %u = %u expected %u", deviceProperties->id, src, deviceState->distances[i], deviceProperties->debug_2nd_round_distances[i]);
 					}else{
 						handler_log(4, "  distance %u <- %u = %u", deviceProperties->id, src, deviceState->distances[i]);
 					}
@@ -159,7 +159,7 @@ uint32_t distances[8];
 				// Capture stats for the previous round
 				memcpy(deviceState->stats_distances, deviceState->distances, sizeof(deviceState->distances));
 				deviceState->stats_dirty=1;
-				
+
 				// This is safe to call after the last round. No-one will initiate any sharing.
 				begin_round(graphProperties, deviceProperties, deviceState);
 				]]></OnHardwareIdle>
@@ -189,7 +189,7 @@ uint32_t max_distances[8];
 					static_assert(sizeof(*message)==sizeof(*deviceState), "Layout doesn't match.");
 					static_assert(offsetof(MESSAGE_T, vertex_count) == offsetof(DEVICE_STATE_T, vertex_count), "Layout doesn't match.");
 					static_assert(offsetof(MESSAGE_T, sum_sum_distance) == offsetof(DEVICE_STATE_T, sum_sum_distance), "Layout doesn't match.");
-					
+
 					memcpy(message, deviceState, sizeof(*message));
 					memset(deviceState, 0, sizeof(*deviceState));
 					]]></OnSend>
@@ -256,7 +256,7 @@ uint32_t round_base;
 					}
 					memset(deviceState->max_distances, 0, sizeof(deviceState->max_distances));
 
-					handler_log(0, "round_base=%u, sum_sum_distance_hi=%08x:%08x, sum_max_length_hi=%08x:%08x", deviceState->round_base, uint32_t(deviceState->sum_sum_distances>>32), uint32_t(deviceState->sum_sum_distances), uint32_t(deviceState->sum_max_distances>>32), uint32_t(deviceState->sum_max_distances)); 
+					handler_log(0, "round_base=%u, sum_sum_distance_hi=%08x:%08x, sum_max_length_hi=%08x:%08x", deviceState->round_base, uint32_t(deviceState->sum_sum_distances>>32), uint32_t(deviceState->sum_sum_distances), uint32_t(deviceState->sum_max_distances>>32), uint32_t(deviceState->sum_max_distances));
 
 					deviceState->round_base += K;
 					deviceState->vertex_count=0;
