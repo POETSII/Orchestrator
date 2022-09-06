@@ -19,6 +19,7 @@ private:
 #include            "Decode.cpp"
 void                Dump(unsigned = 0,FILE * = stdout);
 void                Init(int, char**);
+unsigned            OnMoniDeviReq(PMsg_p *);
 };
 
 //==============================================================================

@@ -380,7 +380,53 @@ namespace OSFixes
     }
 #endif
 }
-/* ===========================================================================*/
 
+/* =============================================================================
+ * Stuff to make bare-metal socket programming work
+ * ===========================================================================*/
+
+namespace OSFixes
+{
+    #ifdef __BORLANDC__
+    inline void setup_sockets()
+    // Windoze needs to explicitly start sockets....
+    {
+        WSADATA wsaData;
+        if (WSAStartup(MAKEWORD(2,2),&wsaData)!=0)
+        throw(std::string("*** WSAStartup failed\n"));
+    }
+    inline void close_socket(int x){closesocket(x);}
+    #else
+    inline void setup_sockets(){}   // But Linux doesn't
+    inline void close_socket(int x){close(x);}
+    #endif
+}
+
+//------------------------------------------------------------------------------
+
+// Socket shutdown codes have the same *values* but different names. No, really.
+// linux       windoze     value    Good old us
+// SHUT_RD     SD_RECEIVE  0         SH_RECV
+// SHUT_WR     SD_SEND     1         SH_SEND
+// SHUT_RDWR   SD_BOTH     2         SH_BOTH
+// If I try to pick up the definitions under BORLAND with <winsock2.h> I get a
+// tsunami the entire universe being multiply defined. Life is too short.
+
+#ifdef __BORLANDC__
+#define SH_RECV 0
+#define SH_SEND 1
+#define SH_BOTH 2
+#else
+#include <sys/socket.h>                // Need this for the recv function
+#include <netinet/in.h>                // Need this for the sockaddr6_in struct
+#include <arpa/inet.h>                 // Need this for htons
+#include <netdb.h>                     // Need this gethostbyname
+#define SH_RECV SHUT_RD
+#define SH_SEND SHUT_WR
+#define SH_BOTH SHUT_RDWR
+#endif
+
+
+/* ===========================================================================*/
 
 #endif /* __OSFIXES__H */

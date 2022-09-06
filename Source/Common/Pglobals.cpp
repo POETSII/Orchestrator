@@ -19,6 +19,7 @@ const byte Q::PKTS    = 0x0f;
 const byte Q::DUMP    = 0x10;
 const byte Q::MSHP    = 0x11;
 const byte Q::PATH    = 0x12;
+const byte Q::MONI    = 0x13;
 // Level 1 subkeys
 const byte Q::PING    = 0x40;
 const byte Q::POST    = 0x41;
@@ -40,7 +41,7 @@ const byte Q::SPEC    = 0x50;
 const byte Q::SUPD    = 0x51;
 const byte Q::INIT    = 0x52;
 const byte Q::CNC     = 0x53;
-const byte Q::ACKt     = 0x54;
+const byte Q::ACKt    = 0x54;
 const byte Q::SUPR    = 0x55;
 // temporary use: for MPI testing ------------------------------------------
 const byte Q::M0      = 0x60;
@@ -54,6 +55,16 @@ const byte Q::FWD     = 0x82;
 const byte Q::DEFD    = 0x83;
 const byte Q::BRKN    = 0x84;
 // Level 3 subkeys
+
+// Remote monitor tags
+const byte Q::SOFT    = 0x90;
+const byte Q::MOTH    = 0x91;
+const byte Q::INJE    = 0x92;
+const byte Q::MSG     = 0x93;
+const byte Q::DEVI    = 0x94;
+const byte Q::DATA    = 0x95;
+
+//-------------------------------------------------------------------------
 
 const byte Q::NAV     = 0xff;          // Not a value
 const int  Q::NAP     = -1;            // Not a process

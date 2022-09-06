@@ -56,6 +56,7 @@ if (rec.P_class==string(csINJECTORproc))    U.Injector   = rec.P_rank;
 if (rec.P_class==string(csNAMESERVERproc))  U.NameServer = rec.P_rank;
 if (rec.P_class==string(csMONITORproc))     U.Monitor.push_back(rec.P_rank);
 if (rec.P_class==string(csMOTHERSHIPproc))  U.Mothership.push_back(rec.P_rank);
+if (rec.P_class==string(csMONSERVERproc))   U.MonServer  = rec.P_rank;
 }
 
 //------------------------------------------------------------------------------
@@ -123,6 +124,7 @@ fprintf(fp,"LogServer rank  : %2d\n",U.LogServer);
 fprintf(fp,"RTCL rank       : %2d\n",U.RTCL);
 fprintf(fp,"Injector rank   : %2d\n",U.Injector);
 fprintf(fp,"NameServer rank : %2d\n",U.NameServer);
+fprintf(fp,"MonServer rank  : %2d\n",U.MonServer);
 fprintf(fp,"Mothership ranks: ");
 WALKVECTOR(int,U.Mothership,i) fprintf(fp,"%2d ",*i);
 fprintf(fp,"\nMonitor ranks   : ");
@@ -160,6 +162,7 @@ LogServer  = Q::NAP;
 RTCL       = Q::NAP;
 Injector   = Q::NAP;
 NameServer = Q::NAP;
+MonServer  = Q::NAP;
 }
 
 //==============================================================================

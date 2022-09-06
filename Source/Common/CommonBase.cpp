@@ -208,19 +208,25 @@ return 0;
 
 unsigned CommonBase::OnTestFloo(PMsg_p * Z)
 // Got a test flood event.
+// "stopped" and "sent" are cumulative statistics, not part of the logic.
 {
+static int stopped = 0;
+static int sent    = 0;
 int c;
-unsigned lev = *(Z->Get<unsigned>(2,c));// Extract remaining level
-if (lev==0) {                           // If we're done...
-  Post(54,Sproc,uint2str(Urank));
+unsigned lev = *(Z->Get<unsigned>(2,c));  // Extract remaining level
+if (lev==0) {                             // If we're done...
+  stopped++;                              // Increment stopped counter
+  if (sent!=0) Post(54,Sproc,uint2str(Urank),uint2str(stopped),uint2str(sent));
+  stopped = sent = 0;                     // Reset stats
   return 0;
 }
 --lev;
 
-Z->Put<unsigned>(2,&lev,1);              // No, decrement the level
+Z->Put<unsigned>(2,&lev,1);               // No, decrement the level
 
-unsigned * pw = Z->Get<unsigned>(1,c); // Extract burst width
-for (unsigned i=0;i<*pw;i++) Z->Bcast(); // Send it on its way
+unsigned * pw = Z->Get<unsigned>(1,c);    // Extract burst width
+sent += (*pw);                            // Gather ye stats
+for (unsigned i=0;i<*pw;i++) Z->Bcast();  // Send it on its way
 return 0;
 }
 

@@ -135,9 +135,9 @@ void CmPlac::PlacementConstrain(Cli::Cl_t clause)
         }
 
         /* Otherwise, apply the constraint to the placer. */
-        par->pPlacer->constraints.push_back(
-            new MaxDevicesPerThread(true, 0, PNULL,
-                                    str2uint(clause.Pa_v[1].Concatenate())));
+        Constraint* pC = new MaxDevicesPerThread(true, 0, PNULL,
+            str2uint(clause.Pa_v[1].Concatenate()));
+        par->pPlacer->constraints.push_back(pC);
         par->Post(322, clause.Pa_v[1].Concatenate());
     }
 
@@ -169,9 +169,9 @@ void CmPlac::PlacementConstrain(Cli::Cl_t clause)
         }
 
         /* Otherwise, apply the constraint to the placer. */
-        par->pPlacer->constraints.push_back(
-            new MaxThreadsPerCore(true, 0, PNULL,
-                                  str2uint(clause.Pa_v[1].Concatenate())));
+        Constraint* pC =  new MaxThreadsPerCore(true, 0, PNULL,
+            str2uint(clause.Pa_v[1].Concatenate()));
+        par->pPlacer->constraints.push_back(pC);
         par->Post(323, clause.Pa_v[1].Concatenate());
     }
 

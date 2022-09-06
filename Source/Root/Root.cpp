@@ -83,6 +83,11 @@ FnMap[PMsg_p::KEY(Q::MSHP, Q::ACK, Q::RECL)] = &Root::OnMshipAck;
 FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::STOP)] = &Root::OnMshipReq;
 FnMap[PMsg_p::KEY(Q::MSHP, Q::REQ, Q::BRKN)] = &Root::OnMshipReq;
 
+// Remote monitor input
+FnMap[PMsg_p::KEY(Q::MONI, Q::INJE, Q::REQ)] = &Root::OnMoniInjeReq;
+FnMap[PMsg_p::KEY(Q::MONI, Q::DEVI, Q::REQ)] = &Root::OnMoniDeviReq;
+//FnMap[PMsg_p::KEY(Q::MONI, Q::SOFT, Q::REQ)] = &Root::OnMonSoft;
+
 // Set up exit flags
 exitOnEmpty = false;
 exitOnStop = false;
@@ -379,7 +384,7 @@ unsigned Root::OnKeyb(PMsg_p * Z)
 {
 int cnt;
 char * buf = Z->Get<char>(1,cnt);
-//printf("Rank %d : Root::OnKeyb: %d ||%s||\n",Urank,cnt,buf);    fflush(stdout);
+//printf("Rank %d : Root::OnKeyb: %d ||%s||\n",Urank,cnt,buf);  fflush(stdout);
 Cli Pc(buf);                           // Wake up the command line interpreter
 int l,c;
 Pc.Err(l,c);
@@ -399,6 +404,90 @@ Post(23,buf);                          // Copy to logfile
 unsigned ret = ProcCmnd(&Pc);          // Try and make sense of it
 Prompt();                              // Console prompt
 return ret;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned Root::OnMoniInjeReq(PMsg_p * pZ)
+// Handler for a command injected from a remote monitor
+{
+string ack_s = pZ->Zname(3);           // Pull out...
+Post(407,ack_s);                       // Log it
+OnKeyb(pZ);                            // Forward to keyboard command handler...
+pZ->L(2,Q::ACK);                       // Change it to an ACK and send it back
+pZ->Send(pPmap->U.MonServer);          // to the Monserver
+return 0;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
+// Message in from the MonServer, requesting all kinds of stuff.
+// Philosophical question: do we attempt any defense? And what to do if there's
+// a problem? My feeling is - at least to start off with - we detect everything
+// and bleat, because it'll be a bloody miracle if it all works first time.
+/* MLV/GMB will need to muck about with this
+*/
+{
+
+// TEMPORARY CODE................
+
+double T = MPI_Wtime();
+pZ->Put<double>(-3,&T);                // Timestamp: On entering Root
+                                       // Unpack stuff:
+string App_s = pZ->Zname(0);           // POETS application name
+if (App_s.empty()) Post(400);          // Check for empty?
+string Dev_s = pZ->Zname(1);           // Device name
+if (Dev_s.empty()) Post(401,App_s);    // Check for empty?
+
+int count;                             // Element counter
+
+                                       // Target: 1=softswitch, 2=mothership
+unsigned * pTgt_u = pZ->Get<unsigned>(4,count);
+unsigned Tgt_u = 2;                    // What to do if [4] isn't there?
+if (pTgt_u!=0) Tgt_u = *pTgt_u;        // Default to mothership?
+else Post(402,App_s,Dev_s);
+
+string sss = (Tgt_u==1) ? string("softswitch") : string("mothership");
+Post(403,sss,Dev_s,App_s);
+
+/*           *******************
+             *   MLV and GMB   *
+             *******************
+
+This is where MLV/GMB come in........
+For the sake of development, I'm assuming we've found the device. I don't have
+a Mothership on my desktop, so FOR THE SAKE OF DEVELOPMENT, I've hijacked a
+Dummy process. (Remember the Dummies? Damn me, but I'm far-sighted.....)
+*/
+
+int DevData[6];                        // Yay! I found the device!
+DevData[0] = 999;  // Zer box
+DevData[1] = 888;  // Zer board
+DevData[2] = 777;  // Zer mailbox
+DevData[3] = 666;  // Zer core
+DevData[4] = 555;  // Zer thread
+DevData[5] = 444;  // Zer device
+pZ->Put<int>(0,DevData,6);             // Load the (now outgoing) message
+
+bool foundb = true;                    // "Found it" flag
+pZ->Put<bool>(1,&foundb);
+                                       // Don't bother to unload the sampling
+                                       // interval 'cos Root doesn't care
+
+pZ->Mode(3);                           // Root->Mothership (whichever one)
+
+T = MPI_Wtime();                       // Timestamp: On leaving Root
+pZ->Put<double>(-30,&T);
+
+// Send it to the Mothership which is actually Dummy[0] with a short skirt on
+pZ->Send(pPmap->U.Dummy[0]);
+
+pZ->Mode(2);                            // Root->MonServer
+pZ->L(2,Q::ACK);                        // Change it to an ACK and send it back
+pZ->Send(pPmap->U.MonServer);           // to the Monserver
+
+return 0;
 }
 
 //------------------------------------------------------------------------------
@@ -620,7 +709,9 @@ fprintf(fd,"%s\n%s %s ",Q::eline.c_str(),GetDate(),GetTime());
 if (!pCmPath->lastfile.empty()) fprintf(fd,"file %s\n",
                                            pCmPath->lastfile.c_str());
 fprintf(fd,"command [%s]\nfrom ",pC->Orig.c_str());
-if (pCmCall->stack.empty()) fprintf(fd,"console\n");
+if (pCmCall->stack.empty())
+  if (pC->Cmnt.empty())fprintf(fd,"console\n");
+  else fprintf(fd,"%s\n",pC->Cmnt.c_str());
 else fprintf(fd,"batch file %s line %d\n",
                 pCmCall->stack.back().c_str(),pC->problem.lin);
 fprintf(fd,"%s\n\n",Q::eline.c_str());

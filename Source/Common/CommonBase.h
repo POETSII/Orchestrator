@@ -35,9 +35,9 @@ unsigned               OnPmap(PMsg_p *);
 unsigned               OnSystPingAck(PMsg_p *);
 unsigned               OnSystPingReq(PMsg_p *);
 unsigned               OnSystRun(PMsg_p *);
-unsigned               OnTestFloo(PMsg_p *);
 
 public:
+unsigned               OnTestFloo(PMsg_p *);
 bool                   Post(int,string=S00,string=S00,string=S00,string=S00,
                                 string=S00,string=S00,string=S00);
 bool                   Post(int,vector<string> &);

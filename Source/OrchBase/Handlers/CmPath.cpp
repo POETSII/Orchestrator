@@ -164,22 +164,24 @@ string tT;
 // Find file that doesn't exist (to avoid clobbering other logs.
 while (fp==0) {
   tT=T+"p"+uint2str(inc)+".plog";
-  if ((fp = fopen(tT.c_str(),"r"))) {
+  fp = fopen(tT.c_str(),"r");          // Keep the compiler happy
+  if (fp!=0) {
     inc++;
     fclose(fp);
     fp=0;
-    if (inc>1000) break;           // Don't get stuck forever.
+    if (inc>1000) break;               // Don't get stuck forever.
   }
   else break;
 }
 // Try to open it (mode change). The path might not exist? (inc>1000)
-if (!(fp = fopen(tT.c_str(),"w"))) {
-  OuMode = Ou_Stdo;                // Cockup
+fp = fopen(tT.c_str(),"w");
+if (!fp) {
+  OuMode = Ou_Stdo;                    // Cockup
   par->Post(246,tT);
   return stdout;
 }
-lastfile = tT;                     // Save last file generated
-return fp;                         // It's all good to go
+lastfile = tT;                         // Save last file generated
+return fp;                             // It's all good to go
 }
 
 //------------------------------------------------------------------------------

@@ -39,6 +39,7 @@ virtual ~               Msg_p(void);
 void                    Clear();
 void                    Dump(FILE * = stdout);
 template <class T> void Dump(FILE * = stdout);
+void                    FDump(string=string());
 template <class T> T *  Get(int,int &);
 void                    Get(int,string &);  // SAME ADR SPC AS CHAR
 template <class T> void Get(int,vector<T> &);
@@ -64,6 +65,7 @@ void                    SubKey(byte * sk);
 int                     Src();
 void                    Src(int);
 byte *                  Stream();
+vector<byte>            Stream_v();
 void                    Tag(int);
 int                     Tag();
 int                     Tgt();

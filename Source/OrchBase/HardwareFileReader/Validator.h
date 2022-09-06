@@ -7,6 +7,7 @@
 
 #include "dfprintf.h"
 #include "flat.h"
+#include "iso646.h"
 #include "uif.h"
 
 /* Used for error messages. */

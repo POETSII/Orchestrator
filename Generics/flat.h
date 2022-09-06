@@ -75,6 +75,7 @@ typedef unsigned char byte;
 //inline void * operator new(size_t, void * p) {return p;}
 template<class T> pair<bool,T> Get(vector<T> &,unsigned,T);
 
+vector<byte> A2V(byte *,unsigned);
 int          cmp_noc(const string &,const string &);
 int          cmp_noc(const string &,const char *);
 uint32       GET4(uchar *);

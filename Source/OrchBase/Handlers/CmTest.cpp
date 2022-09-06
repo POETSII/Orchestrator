@@ -77,10 +77,31 @@ void CmTest::Cm_Echo(Cli::Cl_t cl)
 
 //------------------------------------------------------------------------------
 
+void CmTest::Cm_Flood(Cli::Cl_t cl)
+// This initiates a message storm in the MPI universe, very quickly breaking
+// the comms infrastructure
+{
+
+cl.Dump();
+unsigned level = str2uint(cl.GetP(),1);   // Age to die
+unsigned copies = str2uint(cl.GetP(1),1); // How many times each one goes out
+
+PMsg_p Z;                                 // Carrier for the glad tidings
+Z.Put<unsigned>(2,&level);
+Z.Put<unsigned>(1,&copies);
+Z.Key(Q::TEST,Q::FLOO);
+
+par->OnTestFloo(&Z);                      // And away we go
+
+}
+
+//------------------------------------------------------------------------------
+
 void CmTest::Cm_Sleep(Cli::Cl_t cl)
 // Pass an unsigned integer, we kip for a bit. Pass something else, nothing
 // will happen (probably).
 {
+    if (cl.Pa_v.empty()) return;
     OSFixes::sleep(str2uint(cl.Pa_v.begin()->Concatenate()));
 }
 
@@ -114,9 +135,10 @@ unsigned CmTest::operator()(Cli * pC)
 if (pC==0) return 0;                   // Paranoia
 WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   string sCl = (*i).Cl;                // Pull out clause name
-  if (strcmp(sCl.c_str(),"badp")==0) {Cm_BadPacket(); continue;}
-  if (strcmp(sCl.c_str(),"echo")==0) {Cm_Echo(*i); continue;}
-  if (strcmp(sCl.c_str(),"slee")==0) {Cm_Sleep(*i); continue;}
+  if (strcmp(sCl.c_str(),"badp")==0) { Cm_BadPacket(); continue; }
+  if (strcmp(sCl.c_str(),"echo")==0) { Cm_Echo(*i);    continue; }
+  if (strcmp(sCl.c_str(),"floo")==0) { Cm_Flood(*i);   continue; }
+  if (strcmp(sCl.c_str(),"slee")==0) { Cm_Sleep(*i);   continue; }
   par->Post(25,sCl,"test");           // Unrecognised clause
 }
 return 0;                              // Legitimate command exit

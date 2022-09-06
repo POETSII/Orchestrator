@@ -52,6 +52,9 @@ HardwareAddressInt HardwareAddress::get_hardware_address()
     returnValue += mailboxComponent << offset;
     offset += format->get_mailbox_word_length();
     returnValue += boardComponent << offset;
+// ADB: Can you not use #defines for these and stop the compiler having
+// hysterics?
+/* MLV: Can you be more specific? */
     if (!IGNORE_BOX_ADDRESS_COMPONENT)
     {
         offset += format->get_board_word_length();

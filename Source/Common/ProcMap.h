@@ -55,6 +55,7 @@ struct U_t {                           // Special ranks
   int         NameServer;
   vector<int> Monitor;
   vector<int> Mothership;
+  int         MonServer;
 } U;
 map<int,string> M;                     // Names of special ranks
 

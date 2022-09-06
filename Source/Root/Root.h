@@ -47,6 +47,8 @@ void                        OnIdle();
 unsigned                    OnInje(PMsg_p *);
 unsigned                    OnKeyb(PMsg_p *);
 unsigned                    OnLogP(PMsg_p *);
+unsigned                    OnMoniInjeReq(PMsg_p *);
+unsigned                    OnMoniDeviReq(PMsg_p *);
 unsigned                    OnMshipAck(PMsg_p *);
 unsigned                    OnMshipReq(PMsg_p *);
 unsigned                    OnPmap(PMsg_p *);

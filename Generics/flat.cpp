@@ -13,6 +13,17 @@ void ignore_rc(int rc){if(rc)(void)0;}
 
 //------------------------------------------------------------------------------
 
+vector<byte> A2V(byte * buf,unsigned len)
+// Turns an array of bytes into a vector
+// OK, OK, I know you can do it far more easily in C11.
+{
+vector<byte> ans;
+for (unsigned i=0;i<len;i++) ans.push_back(buf[i]);
+return ans;
+}
+
+//------------------------------------------------------------------------------
+
 int cmp_noc(const string &s1,const string &s2)
 // I can't believe I have to write this myself.....
 // Actually, I didn't, I pinched it from Stroustrup p591.

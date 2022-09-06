@@ -6,6 +6,7 @@
 #include "PlaceArgs.h"
 #include "dprintf.h"
 #include "flat.h"
+#include "iso646.h"
 
 /* Gets the value of a boolean argument. Throws an InvalidArgumentException
  * if the argument is not set, does not exist, or is not a boolean argument. */

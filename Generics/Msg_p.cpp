@@ -1,5 +1,6 @@
 
 #include "Msg_p.hpp"
+#include "flat.h"
 #include "macros.h"
 #include <stdio.h>
 
@@ -194,6 +195,29 @@ for (int i=1;i<typecount;i++) fprintf(fp,"%2d <-> %-20s\n",i,t2imap[i]);
 
 fprintf(fp,"Msg_p---------------------------------------------\n\n");
 fflush(fp);
+}
+
+//------------------------------------------------------------------------------
+
+void Msg_p::FDump(string suffix)
+// Created because I wanted to Dump a Msg_p from inside a Windoze program.
+// Cprintf() would have meant a lot of typing, and anyway that's Windoze-
+// specific.
+// FDump() is a simple wrapper round Dump() that shoves the output into a
+// unbique process-local file, for you to stare at later at your leasure.
+// You can make the thing MACHINE unique by supplying a unique PROCESS suffix
+// string.
+// Also note the open mode is "a", so you should never lose any information. It
+// may just appear in a strange place.
+{
+string fname = UniS("Msg_p_Dump_");    // Unique local filename
+fname += ("_" + suffix + ".txt");
+FILE * fp = fopen(fname.c_str(),"a");  // Open it?
+if (fp==0) return;                     // There's nothing else we can do
+fprintf(fp,"Msg_p::FDump() file %s\n",fname.c_str());
+fprintf(fp,"%s %s\n",GetDate(),GetTime());
+Dump(fp);                              // Fill it
+fclose(fp);
 }
 
 //------------------------------------------------------------------------------
@@ -451,6 +475,8 @@ byte * Msg_p::Stream()
 // Routine to take all the byte vector fragments in the data structure and
 // bolt them together to form a single byte stream that can be piped through MPI
 // Nothing in this routine needs/knows about any typing.
+// This routine returns a pointer into an internal byte vector constaining the
+// streamed data. If you want the data to persist, use Stream_v().
 {
 if (!vm.empty()) return &vm[0];
 //printf("About to write (placeholder)0<int> = %d\n",0);
@@ -502,6 +528,17 @@ return &vm[0];
 }
 
 //------------------------------------------------------------------------------
+
+vector<byte> Msg_p::Stream_v()
+// Copies out a persistent version of the streamed object.
+{
+vm.clear();
+Stream();                              // Do the heavy lifting (define vm)
+return vm;                             // *Copy* it out
+}
+
+//------------------------------------------------------------------------------
+
 
 void Msg_p::SubKey(byte * sk)
 {

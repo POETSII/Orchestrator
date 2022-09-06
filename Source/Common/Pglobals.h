@@ -100,6 +100,11 @@ PATH |-    |-    |-    | (0:string)Output path base
 PKTS |-    |-    |-    | (0:vector<pair<uint32_t, P_Pkt_t> >)Packets
 DUMP |-    |-    |-    | (0:string)Path to write the dump to
 
+Remote monitor
+--------------
+These are many, varied, and far too complex to enumerate here. Refer to the
+documentation.
+
 */
 
 
@@ -129,6 +134,7 @@ static const byte PKTS;
 static const byte DUMP;
 static const byte MSHP;
 static const byte PATH;
+static const byte MONI;
 // Level 1 subkeys
 static const byte PING;
 static const byte POST;
@@ -165,6 +171,16 @@ static const byte DEFD;
 static const byte BRKN;
 // Level 3 subkeys
 
+// Remote monitor tags
+static const byte SOFT;
+static const byte MOTH;
+static const byte INJE;
+static const byte MSG;
+static const byte DEVI;
+static const byte DATA;
+
+//--------------------------------------------------------------------------
+
 static const byte NAV;                 // Not a value
 static const int  NAP;                 // Not a process
 
@@ -180,7 +196,8 @@ static const byte ROOT;
 #define csNAMESERVERproc "NameServer:CommonBase"
 #define csMONITORproc    "Monitor:CommonBase"
 #define csMOTHERSHIPproc "Mothership:CommonBase"
-#define csMPITESTproc    "MPITest:CommonBase"
+//#define csMPITESTproc    "MPITest:CommonBase"
+#define csMONSERVERproc  "MonServer:CommonBase"
 
 // tag defined as a directive because MPI libraries are c-based, have no concept
 // of const, and thus calls to them would whinge with a const-qualified argument
