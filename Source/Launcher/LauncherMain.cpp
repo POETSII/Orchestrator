@@ -142,6 +142,18 @@ void BuildCommand(bool useMotherships, std::string internalPath,
                                  << " ";
     *(hydraProcesses.back()) << localBinDir << "/" << execLogserver;
 
+    /* Monserver */
+    hydraProcesses.push_back(new std::stringstream);
+    orderedHosts.push_back(ourHostname);
+    *(hydraProcesses.back()) << "-n 1 ";
+    if (gdbProcs[execMonserver]) *(hydraProcesses.back()) << execGdb << " ";
+    if (valgrindProcs[execMonserver])
+        *(hydraProcesses.back()) << execValgrind
+                                 << " "
+                                 << custValgrindFlags
+                                 << " ";
+    *(hydraProcesses.back()) << localBinDir << "/" << execMonserver;
+
     /* Clock - optionally disabled. */
     if (USE_CLOCK)
     {

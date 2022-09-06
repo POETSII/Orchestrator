@@ -32,6 +32,7 @@ namespace Launcher
     const char* execClock = "rtcl";
     const char* execLogserver = "logserver";
     const char* execMothership = "mothership";
+    const char* execMonserver = "monserver";
     const char* execRoot = "root";
 
     const char* execGdb = "/usr/bin/gdb";
