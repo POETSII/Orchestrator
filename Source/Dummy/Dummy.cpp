@@ -109,7 +109,6 @@ DZ.Put<int>(99,&skt);                  // Remote monitor socket
 DZ.Put<void *>(98,&pV);                // Remote monitor child window
 
 //DZ.FDump("Dummy_OnMoniDeviReq");
-RandInt RNG;
 string sig = "0uidfb";                                 DZ.Put(0,&sig);
 string Su = "Collatz conjecture (unsigned)";           DZ.Put(1,&Su);
 string Si = "Some bunch of random integers";           DZ.Put(2,&Si);
@@ -130,14 +129,14 @@ for (unsigned u=0;u<Wcount;u++) {      // Build and send some dummy data
   DZ.Put<bool>(5,&Db);
   T = MPI_Wtime();                     // Timestamp: On leaving Mothership
   DZ.Put<double>(-40,&T);
-  DZ.Send(pPmap->U.MonServer);        // To the MonServer with it all!
+  DZ.Send(pPmap->U.MonServer);         // To the MonServer with it all!
                                        // Let us update:
   Du = ((Du%2)==0) ? Du/2 : (3*Du)+1;
-  Di =  RNG.draw();
+  Di = rand();
   _=Dd; Dd = Dd+Dd_; Dd_=_;
   int Df_=(int)(Df/2.0); Df = ((Df_%2)==0) ? Df/2.0 : (3.0*Df)+1.0;
-  Db = ~Db;
-  Sleep(Int);                          // Wait for it....
+  Db = !Db;
+  OSFixes::sleep(Int);                 // Wait for it....
 }
 
 
