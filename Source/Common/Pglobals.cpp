@@ -43,6 +43,7 @@ const byte Q::INIT    = 0x52;
 const byte Q::CNC     = 0x53;
 const byte Q::ACKt    = 0x54;
 const byte Q::SUPR    = 0x55;
+const byte Q::SPY     = 0x56;
 // temporary use: for MPI testing ------------------------------------------
 const byte Q::M0      = 0x60;
 const byte Q::M1      = 0x61;

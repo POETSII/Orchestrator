@@ -267,6 +267,7 @@ MOTHERSHIP_SOURCES += $(TRULY_COMMON_SOURCES)
 # - Some "generics" (/Generics) sources.
 MONSERVER_SOURCES = $(SOURCE_DIR)/MonServer/MonServerMain.cpp \
                     $(SOURCE_DIR)/MonServer/MonServer.cpp \
+                    $(SOURCE_DIR)/MonServer/MonServerSpy.cpp \
                     $(GENERICS_DIR)/PcsBase_t.cpp \
                     $(GENERICS_DIR)/Pserver_t.cpp
 

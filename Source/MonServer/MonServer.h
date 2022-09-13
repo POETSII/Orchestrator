@@ -2,6 +2,7 @@
 #define __MonServerH__H
 
 #include "CommonBase.h"
+#include "MonServerSpy.h"
 #include "Pserver_t.h"
 #include "OSFixes.hpp"
 
@@ -18,6 +19,7 @@ typedef unsigned    (MonServer::*pMeth)(PMsg_p *);
 map<unsigned,pMeth> FnMap;
 
 Pserver_t           Server;
+int                 Send(int, PMsg_p *);
 private:
 #include            "Decode.cpp"
 void                Dump(unsigned = 0,FILE * = stdout);
@@ -27,7 +29,9 @@ unsigned            OnMoniInjeReq (PMsg_p *);
 unsigned            OnMoniInjeAck (PMsg_p *);
 unsigned            OnMoniMothData(PMsg_p *);
 unsigned            OnMoniSoftData(PMsg_p *);
+unsigned            OnMoniSpy(PMsg_p *);
 
+MonServerSpy        Spy;
 };
 
 //==============================================================================

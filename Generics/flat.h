@@ -90,6 +90,7 @@ string       toupper(const string &);
 bool         file_exists(const char *);
 bool         file_readable(const char *);
 char *       GetDate();
+char *       GetISO8601Seconds();
 char *       GetTime();
 long         Time2long(const string &);
 //int          max(int,int);

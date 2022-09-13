@@ -53,6 +53,7 @@ FnMap[PMsg_p::KEY(Q::MONI,Q::INJE,Q::REQ )] = &MonServer::OnMoniInjeReq;
 FnMap[PMsg_p::KEY(Q::MONI,Q::INJE,Q::ACK )] = &MonServer::OnMoniInjeAck;
 FnMap[PMsg_p::KEY(Q::MONI,Q::MOTH,Q::DATA)] = &MonServer::OnMoniMothData;
 FnMap[PMsg_p::KEY(Q::MONI,Q::SOFT,Q::DATA)] = &MonServer::OnMoniSoftData;
+FnMap[PMsg_p::KEY(Q::MONI,Q::SPY         )] = &MonServer::OnMoniSpy;
 MPISpinner();                          // Spin on MPI messages; exit only on DIE
 //printf("********* MonServer rank %d on the way out\n",Urank); fflush(stdout);
 }
@@ -95,7 +96,7 @@ else {
   return 0;
 }
 
-Server.Send(skt,pZ->Stream_v());
+Send(skt,pZ);
 return 0;
 }
 
@@ -130,7 +131,7 @@ MonServer * pMonServer = (MonServer *)pV;// The monitor pointer at last
 double T = MPI_Wtime();
 pZ->Put<double>(-20,&T);                // Timestamp: Leaving MonServer
 //pZ->FDump("MonServer_OnMoniDeviReq");                             // Send ACK back to remote monitor
-pMonServer->Server.Send(skt,pZ->Stream_v());
+pMonServer->Send(skt,pZ);
 return 0;
 }
 
@@ -149,7 +150,7 @@ else {
   return 0;
 }
 pZ->Mode(2);
-Server.Send(skt,pZ->Stream_v());
+Send(skt,pZ);
 return 0;
 }
 
@@ -187,7 +188,7 @@ double T = MPI_Wtime();
 pZ->Put<double>(-20,&T);                // Timestamp on leaving MonServer
                             // Send ACK back to remote monitor
 //pZ->FDump("MonServer_OnMoniInjeReq");
-pMonServer->Server.Send(skt,pZ->Stream_v());
+pMonServer->Send(skt,pZ);
 return 0;
 }
 
@@ -211,7 +212,7 @@ pZ->Mode(4);
 T = MPI_Wtime();
 pZ->Put<double>(-20,&T);                // Timestamp on leaving MonServer
 //pZ->FDump("MonServer_OnMoniMothData");
-Server.Send(skt,pZ->Stream_v());
+Send(skt,pZ);
 return 0;
 }
 
@@ -237,8 +238,31 @@ pZ->Mode(4);
 T = MPI_Wtime();
 pZ->Put<double>(-20,&T);                // Timestamp on leaving MonServer
 //pZ->FDump("MonServer_OnMoniSoftData");
-Server.Send(skt,pZ->Stream_v());
+Send(skt,pZ);
 return 0;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned MonServer::OnMoniSpy(PMsg_p * pZ)
+// Enable or disable the spy.
+{
+Spy.Toggle();
+string spyDirToSet = "";
+pZ->Get(0, spyDirToSet);
+Post(81, Spy.IsEnabled() ? "enabled" : "disabled");  // Spy state change.
+if (Spy.SetSpyDir(spyDirToSet)) Post(82, spyDirToSet);  // Path change, if any.
+return 0;
+}
+
+//------------------------------------------------------------------------------
+
+int MonServer::Send(int socket, PMsg_p * pZ)
+// Streams a PMsg_p over a socket, and writes it out with the Spy if set up to
+// do so.
+{
+Spy(pZ);
+return Server.Send(socket,pZ->Stream_v());
 }
 
 //==============================================================================

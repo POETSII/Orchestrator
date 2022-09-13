@@ -657,6 +657,17 @@ return out;
 
 //------------------------------------------------------------------------------
 
+char * GetISO8601Seconds()
+{
+time_t timeNtv;
+time(&timeNtv);
+static char timeBuf[sizeof "YYYY-MM-DDTHH-MM-SS"];
+strftime(timeBuf, sizeof timeBuf, "%Y-%m-%dT%H-%M-%S", localtime(&timeNtv));
+return timeBuf;
+}
+
+//------------------------------------------------------------------------------
+
 char * GetTime()
 // Stroustrup p905; Schildt p176
 // There seems to be no way to get absolute time to a precision of ms, even

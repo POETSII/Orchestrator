@@ -158,6 +158,7 @@ static const byte INIT;
 static const byte CNC;
 static const byte ACK;
 static const byte SUPR;
+static const byte SPY;
 // temporary use: for MPI testing ------------------------------------------
 static const byte M0;
 static const byte M1;
