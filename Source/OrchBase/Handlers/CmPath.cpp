@@ -30,6 +30,7 @@ pathBatc.clear();
 pathBina.clear();
 pathEngi.clear();
 pathLog .clear();
+pathMonS.clear();
 pathMout.clear();
 pathMshp.clear();
 pathPlac.clear();
@@ -213,6 +214,7 @@ pathBatc = pR->pOC->Batch();
 pathBina = pR->pOC->Binaries();
 pathEngi = pR->pOC->Engine();
 pathLog  = pR->pOC->Log();
+pathMonS = pR->pOC->MonserverSpy();
 pathMout = pR->pOC->RemoteOut();
 pathMshp = pR->pOC->RemoteMshp();
 pathPlac = pR->pOC->Place();
@@ -234,6 +236,7 @@ fprintf(fp,"Batch files            : %s\n",pathBatc.empty()?"---":pathBatc.c_str
 fprintf(fp,"Final binaries         : %s\n",pathBina.empty()?"---":pathBina.c_str());
 fprintf(fp,"Engine definitions     : %s\n",pathEngi.empty()?"---":pathEngi.c_str());
 fprintf(fp,"Log files              : %s\n",pathLog .empty()?"---":pathLog .c_str());
+fprintf(fp,"Monserver Spy output   : %s\n",pathMonS.empty()?"---":pathMonS.c_str());
 fprintf(fp,"Remote app output      : %s\n",pathMout.empty()?"---":pathMout.c_str());
 fprintf(fp,"Remote mothership files: %s\n",pathMshp.empty()?"---":pathMshp.c_str());
 fprintf(fp,"Placement control      : %s\n",pathPlac.empty()?"---":pathPlac.c_str());
@@ -314,6 +317,11 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   }
   if (sCl=="rese") {
     Reset();
+    continue;
+  }
+  if (sCl=="mons") {
+    if (Cm_Path(OK,pathMonS,sPa,pR->pOC->MonserverSpy(),true))
+        par->Post(239,sCl);
     continue;
   }
   if (sCl=="mout") {

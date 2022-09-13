@@ -9,9 +9,9 @@
 [Orchestrator_header]
 // All pretty arbitrary; just copied in and stored
 name        = OrchestratorConfiguration
-author      = "MLV and GMB"
-date        = "2021-01-17"
-version     = "0.0.6"
+author      = "MLV"
+date        = "2022-09-12"
+version     = "1.0.0"
 
 // All these may be overridden by the console "path" command
 [default_paths]
@@ -26,6 +26,9 @@ log = "../Output/POETS.log"
 ulog = "../Output/Microlog/"
 // Placement control and output
 place = "../Output/Placement/"
+// Output directory for the MonServerSpy. Must not be empty if the Spy is
+// used (otherwise MonServer will post angrily).
+monserver_spy = "../Output/MonServer/"
 // Location for files transferred to Motherships. Relative to home.
 remote_mship = ".orchestrator/app_binaries/"
 // Location for user output directories to be created by Motherships. Relative

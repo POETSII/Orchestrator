@@ -673,6 +673,7 @@ if (scmnd=="dump") code=(*pCmDump)(pC);// Dump
 if (scmnd=="exit") code=CmExit(pC);    // Exit
 if (scmnd=="init") code=(*pCmInit)(pC);// Initialise
 if (scmnd=="load") code=(*pCmLoad)(pC);// Load
+if (scmnd=="moni") code=(*pCmMoni)(pC);// Monitor
 if (scmnd=="path") code=(*pCmPath)(pC);// Path
 if (scmnd=="plac") code=(*pCmPlac)(pC);// Place
 if (scmnd=="reca") code=(*pCmReca)(pC);// Recall

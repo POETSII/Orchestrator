@@ -66,6 +66,7 @@ WALKVECTOR(UIF::Node *,sects,i) {      // Walk the sections
       if ((*k)->str=="engine"       ) default_paths.engine        = s;
       if ((*k)->str=="place"        ) default_paths.place         = s;
       if ((*k)->str=="log"          ) default_paths.log           = s;
+      if ((*k)->str=="monserver_spy") default_paths.monserver_spy = s;
       if ((*k)->str=="ulog"         ) default_paths.ulog          = s;
       if ((*k)->str=="trace"        ) default_paths.trace         = s;
       if ((*k)->str=="binaries"     ) default_paths.binaries      = s;
@@ -118,21 +119,22 @@ void OrchConfig::Force2Linux()
 // linux does, so for the sake of world peace, we simply force all the paths
 // to linux-speak here
 {
-FileName::Force1Linux(default_paths.apps        );
-FileName::Force1Linux(default_paths.engine      );
-FileName::Force1Linux(default_paths.place       );
-FileName::Force1Linux(default_paths.log         );
-FileName::Force1Linux(default_paths.ulog        );
-FileName::Force1Linux(default_paths.trace       );
-FileName::Force1Linux(default_paths.binaries    );
-FileName::Force1Linux(default_paths.stage       );
-FileName::Force1Linux(default_paths.batch       );
-FileName::Force1Linux(default_paths.supervisors );
+FileName::Force1Linux(default_paths.apps         );
+FileName::Force1Linux(default_paths.engine       );
+FileName::Force1Linux(default_paths.place        );
+FileName::Force1Linux(default_paths.log          );
+FileName::Force1Linux(default_paths.monserver_spy);
+FileName::Force1Linux(default_paths.ulog         );
+FileName::Force1Linux(default_paths.trace        );
+FileName::Force1Linux(default_paths.binaries     );
+FileName::Force1Linux(default_paths.stage        );
+FileName::Force1Linux(default_paths.batch        );
+FileName::Force1Linux(default_paths.supervisors  );
 
-FileName::Force1Linux(setup_files.messages      );
-FileName::Force1Linux(setup_files.grammar       );
-FileName::Force1Linux(setup_files.hardware      );
-FileName::Force1Linux(setup_files.placement     );
+FileName::Force1Linux(setup_files.messages       );
+FileName::Force1Linux(setup_files.grammar        );
+FileName::Force1Linux(setup_files.hardware       );
+FileName::Force1Linux(setup_files.placement      );
 }
 
 //------------------------------------------------------------------------------
@@ -163,6 +165,7 @@ default_paths.apps.clear();
 default_paths.engine.clear();
 default_paths.place.clear();
 default_paths.log.clear();
+default_paths.monserver_spy.clear();
 default_paths.ulog.clear();
 default_paths.trace.clear();
 default_paths.binaries.clear();
@@ -184,35 +187,36 @@ void OrchConfig::Show(FILE * fp)
 {
 fprintf(fp,"\nOrchConfig::+++++++++++++++++++++++++++++++++++++++++++++++++\n");
 
-fprintf(fp,"ecnt        = %u\n",ecnt);
-fprintf(fp,"file        = %s\n",file.c_str());
+fprintf(fp,"ecnt          = %u\n",ecnt);
+fprintf(fp,"file          = %s\n",file.c_str());
 
 fprintf(fp,"\nOrchestrator_header:\n");
-fprintf(fp,"name        = %s\n",Orchestrator_header.name.c_str());
-fprintf(fp,"author      = %s\n",Orchestrator_header.author.c_str());
-fprintf(fp,"date        = %s\n",Orchestrator_header.date.c_str());
-fprintf(fp,"version     = %s\n",Orchestrator_header.version.c_str());
+fprintf(fp,"name          = %s\n",Orchestrator_header.name.c_str());
+fprintf(fp,"author        = %s\n",Orchestrator_header.author.c_str());
+fprintf(fp,"date          = %s\n",Orchestrator_header.date.c_str());
+fprintf(fp,"version       = %s\n",Orchestrator_header.version.c_str());
 
 fprintf(fp,"\ndefault_paths:\n");
-fprintf(fp,"apps        = %s\n",default_paths.apps.c_str());
-fprintf(fp,"engine      = %s\n",default_paths.engine.c_str());
-fprintf(fp,"place       = %s\n",default_paths.place.c_str());
-fprintf(fp,"log         = %s\n",default_paths.log.c_str());
-fprintf(fp,"ulog        = %s\n",default_paths.ulog.c_str());
-fprintf(fp,"trace       = %s\n",default_paths.trace.c_str());
-fprintf(fp,"binaries    = %s\n",default_paths.binaries.c_str());
-fprintf(fp,"stage       = %s\n",default_paths.stage.c_str());
-fprintf(fp,"batch       = %s\n",default_paths.batch.c_str());
-fprintf(fp,"supervisors = %s\n",default_paths.supervisors.c_str());
+fprintf(fp,"apps          = %s\n",default_paths.apps.c_str());
+fprintf(fp,"engine        = %s\n",default_paths.engine.c_str());
+fprintf(fp,"place         = %s\n",default_paths.place.c_str());
+fprintf(fp,"log           = %s\n",default_paths.log.c_str());
+fprintf(fp,"monserver_spy = %s\n",default_paths.monserver_spy.c_str());
+fprintf(fp,"ulog          = %s\n",default_paths.ulog.c_str());
+fprintf(fp,"trace         = %s\n",default_paths.trace.c_str());
+fprintf(fp,"binaries      = %s\n",default_paths.binaries.c_str());
+fprintf(fp,"stage         = %s\n",default_paths.stage.c_str());
+fprintf(fp,"batch         = %s\n",default_paths.batch.c_str());
+fprintf(fp,"supervisors   = %s\n",default_paths.supervisors.c_str());
 
 fprintf(fp,"\nsetup_files:\n");
-fprintf(fp,"messages    = %s\n",setup_files.messages.c_str());
-fprintf(fp,"grammar     = %s\n",setup_files.grammar.c_str());
-fprintf(fp,"hardware    = %s\n",setup_files.hardware.c_str());
-fprintf(fp,"placement   = %s\n",setup_files.placement.c_str());
+fprintf(fp,"messages      = %s\n",setup_files.messages.c_str());
+fprintf(fp,"grammar       = %s\n",setup_files.grammar.c_str());
+fprintf(fp,"hardware      = %s\n",setup_files.hardware.c_str());
+fprintf(fp,"placement     = %s\n",setup_files.placement.c_str());
 
 fprintf(fp,"\nflags:\n");
-fprintf(fp,"build       = %s\n",flags.build.c_str());
+fprintf(fp,"build         = %s\n",flags.build.c_str());
 
 fprintf(fp,"\nOrchConfig::Show---------------------------------------------\n");
 

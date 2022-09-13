@@ -24,6 +24,7 @@ class P_super;
 #include "CmInit.h"
 #include "CmInje.h"
 #include "CmLoad.h"
+#include "CmMoni.h"
 #include "CmName.h"
 #include "CmPath.h"
 #include "CmPlac.h"
@@ -97,14 +98,15 @@ CmExec *               pCmExec;
 CmInit *               pCmInit;
 CmInje *               pCmInje;
 CmLoad *               pCmLoad;
+CmMoni *               pCmMoni;
 CmName *               pCmName;
 CmPath *               pCmPath;
 CmPlac *               pCmPlac;
-CmReca  *              pCmReca;
+CmReca *               pCmReca;
 CmRTCL *               pCmRTCL;
 CmRun  *               pCmRun;
 CmShow *               pCmShow;
-CmStop  *              pCmStop;
+CmStop *               pCmStop;
 CmSyst *               pCmSyst;
 CmTest *               pCmTest;
 CmTlin *               pCmTlin;
