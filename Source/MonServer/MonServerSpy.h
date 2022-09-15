@@ -40,12 +40,13 @@
  *
  * Each message will have a corresponding file:
  *
- *    <DATETIME>_index_<INDEX>.txt
+ *    <DATETIME>_index_<INDEX>.uif
  *
  * where <DATETIME> is the same as the above, and <INDEX> is the index of the
  * message as stored in the table described above. Note that <DATETIME> is NOT
- * when the message is spied upon! This file contains a human-readable dump of
- * the data contained in the message, and is bespoke for each key permutation.
+ * when the message is spied upon! This UIF file (ASCII-encoded) contains a
+ * human-readable dump of the data contained in the message, and is bespoke for
+ * each key permutation.
  */
 
 #include <string>

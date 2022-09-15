@@ -34,28 +34,28 @@ void MonServerSpy::DumpCommonBits(FILE* out, PMsg_p* message)
     int count;
 
     /* Timestamps */
-    fprintf(out, "Timestamps:\n");
+    fprintf(out, "[timestamps]\n");
     int timeStampIndexes[] = {-1, -2, -3, -4, -10, -20, -30, -40};
     int timeStampIndexLen = 8;
     for (int index = 0; index < timeStampIndexLen; index++)
     {
         double* doubleData = message->Get<double>(
             timeStampIndexes[index], count);
-        fprintf(out, "  %d: %s\n", timeStampIndexes[index],
-                count == 0 ? "undefined" : dbl2str(*doubleData).c_str());
+        fprintf(out, "%d=%s\n", timeStampIndexes[index],
+                count == 0 ? "\"undefined\"" : dbl2str(*doubleData).c_str());
     }
 
     /* Addresses (housekeeping fields) */
-    fprintf(out, "\nHousekeeping:\n");
+    fprintf(out, "\n[housekeeping]\n");
     for (int index = 98; index < 100; index++)
     {
         void** housekeepingData = message->Get<void*>(index, count);
-        if (count == 0) fprintf(out, "  %d: undefined\n", index);
-        else fprintf(out, "  %d: %p\n", index, *housekeepingData);
+        if (count == 0) fprintf(out, "%d=\"undefined\"\n", index);
+        else fprintf(out, "%d=%p\n", index, *housekeepingData);
     }
 
     /* Cleanup */
-    fprintf(out, "\n\n");
+    fprintf(out, "\n");
 }
 
 void MonServerSpy::DumpDataBits(FILE* out, PMsg_p* message)
@@ -70,17 +70,17 @@ void MonServerSpy::DumpDataBits(FILE* out, PMsg_p* message)
 
     /* The pattern of data is defined from the signature, so we get that
      * first... */
+    fprintf(out, "[data]\n");
     std::string signature;
     message->Get(0, signature);
-    fprintf(out, "Signature: %s\n",
-            signature == "" ? "undefined" : signature.c_str());
+    fprintf(out, "signature=\"%s\"\n",
+            signature == "" ? "\"undefined\"" : signature.c_str());
 
     /* Check for the leading zero. */
-    fprintf(out, "Leading zero: %s\n",
+    fprintf(out, "leading_zero=\"%s\"\n",
             signature[0] == '0' ? "present" : "not present");
 
     /* Now we iterate through the signature, dumping one line per character. */
-    if (signature.length() > 1) fprintf(out, "\nData contents:\n");
     for (unsigned index = 1; index < signature.length(); index++)
     {
         std::string caption;
@@ -94,36 +94,36 @@ void MonServerSpy::DumpDataBits(FILE* out, PMsg_p* message)
         {
         case 'u':
             uintData = message->Get<unsigned>(index, count);
-            if (count == 0) dataString = "(unsigned) no data found";
+            if (count == 0) dataString = "\"(unsigned) no data found\"";
             else dataString = uint2str(*uintData);
             break;
         case 'i':
             intData = message->Get<int>(index, count);
-            if (count == 0) dataString = "(integer) no data found";
+            if (count == 0) dataString = "\"(integer) no data found\"";
             else dataString = int2str(*intData);
             break;
         case 'd':
             doubleData = message->Get<double>(index, count);
-            if (count == 0) dataString = "(double) no data found";
+            if (count == 0) dataString = "\"(double) no data found\"";
             else dataString = dbl2str(*doubleData);
             break;
         case 'f':
             floatData = message->Get<float>(index, count);
-            if (count == 0) dataString = "(float) no data found";
+            if (count == 0) dataString = "\"(float) no data found\"";
             else dataString = dbl2str(*floatData);  /* yeah yeah */
             break;
         case 'b':
             boolData = message->Get<bool>(index, count);
-            if (count == 0) dataString = "(bool) no data found";
+            if (count == 0) dataString = "\"(bool) no data found\"";
             else dataString = bool2str(*boolData);
             break;
         }
 
-        /* Write a line for this entry. */
-        fprintf(out, "  Element %u (%s): %s\n",
-                index,
-                caption == "" ? "no caption" : caption.c_str(),
-                dataString.c_str());
+        /* Write one line for this entry, and one for its caption if it has
+         * one. */
+        if (caption.length()) fprintf(out, "caption_%u=%s\n",
+                                      index, caption.c_str());
+        fprintf(out, "element_%u=%s\n", index, dataString.c_str());
     }
 }
 
@@ -134,25 +134,28 @@ void MonServerSpy::DumpMoniDeviAck(FILE* out, PMsg_p* message)
     int* intData;
     unsigned* uintData;
 
-    fprintf(out, "Dump of MONI|DEVI|ACK message.\n\n");
+    fprintf(out, "// Dump of MONI|DEVI|ACK message.\n\n");
     DumpCommonBits(out, message);
-    fprintf(out, "Application name: %s\n", message->Zname(0).c_str());
-    fprintf(out, "Device name: %s\n", message->Zname(1).c_str());
+    fprintf(out, "[names]\n");
+    fprintf(out, "app=\"%s\"\n", message->Zname(0).c_str());
+    fprintf(out, "device=\"%s\"\n", message->Zname(1).c_str());
 
+    fprintf(out, "\n[exfiltration]\n");
     uintData = message->Get<unsigned>(4, count);
-    if (count == 0) fprintf(out, "Data source: undefined\n");
-    else fprintf(out, "Data source: %u (%s)\n", *uintData,
-                 *uintData == 1 ? "softswitch" : "mothership");
+    if (count == 0) fprintf(out, "source=\"undefined\"\n");
+    else fprintf(out, "source=%s\n",
+                 *uintData == 1 ? "\"softswitch\"" : "\"mothership\"");
 
     boolData = message->Get<bool>(0, count);
-    fprintf(out, "Exfiltration control: %s\n",
-            count == 0 ? "undefined" : *boolData == true ? "start" : "stop");
+    fprintf(out, "exfiltration_idempotence=\"%s\"\n",
+            count == 0 ? "undefined" :
+            *boolData == true ? "start" : "stop");
 
     boolData = message->Get<bool>(1, count);
-    fprintf(out, "Device found? %s\n",
+    fprintf(out, "device_found=\"%s\"\n",
             count == 0 ? "undefined" : *boolData == true ? "yes" : "no");
 
-    fprintf(out, "\n\nDevice ID:\n");
+    fprintf(out, "\n[device_id]\n");
     for (int index = 0; index < 6; index++)
     {
         std::string component = "";
@@ -178,29 +181,30 @@ void MonServerSpy::DumpMoniDeviAck(FILE* out, PMsg_p* message)
             break;
         }
         intData = message->Get<int>(index, count);
-        fprintf(out, "  %s: %s\n", component.c_str(),
-                count == 0 ? "undefined" : int2str(*intData).c_str());
+        fprintf(out, "%s=%s\n", component.c_str(),
+                count == 0 ? "\"undefined\"" : int2str(*intData).c_str());
     }
 }
 
 void MonServerSpy::DumpMoniInjeAck(FILE* out, PMsg_p* message)
 {
-    fprintf(out, "Dump of MONI|INJE|ACK message.\n\n");
+    fprintf(out, "// Dump of MONI|INJE|ACK message.\n\n");
     DumpCommonBits(out, message);
-    fprintf(out, "Acknowledgement string: %s\n",
+    fprintf(out, "[misc]\n");
+    fprintf(out, "acknowledgement_string=\"%s\"\n",
             message->Zname(3).c_str());
 }
 
 void MonServerSpy::DumpMoniMothData(FILE* out, PMsg_p* message)
 {
-    fprintf(out, "Dump of MONI|MOTH|DATA message.\n\n");
+    fprintf(out, "// Dump of MONI|MOTH|DATA message.\n\n");
     DumpCommonBits(out, message);
     DumpDataBits(out, message);
 }
 
 void MonServerSpy::DumpMoniSoftData(FILE* out, PMsg_p* message)
 {
-    fprintf(out, "Dump of MONI|SOFT|DATA message.\n\n");
+    fprintf(out, "// Dump of MONI|SOFT|DATA message.\n\n");
     DumpCommonBits(out, message);
     DumpDataBits(out, message);
 }
@@ -252,8 +256,8 @@ int MonServerSpy::Spy(PMsg_p* message)
 
     /* Create a new file to mini-dump this message into. */
     FILE* miniDumpFile = fopen((spyDir + dumpMapDate +
-                                "_index_" + uint2str(dumpMapIndex)).c_str() +
-                                ".txt",
+                                "_index_" + uint2str(dumpMapIndex) +
+                                ".uif").c_str(),
                                "w");
     /* Errors! Panic! */
     if (miniDumpFile == PNULL)
