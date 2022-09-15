@@ -261,7 +261,7 @@ int MonServer::Send(int socket, PMsg_p * pZ)
 // Streams a PMsg_p over a socket, and writes it out with the Spy if set up to
 // do so.
 {
-Spy(pZ);
+if (Spy(pZ)) Post(83, Spy.GetError());
 return Server.Send(socket,pZ->Stream_v());
 }
 
