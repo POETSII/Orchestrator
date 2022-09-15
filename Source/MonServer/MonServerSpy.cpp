@@ -252,7 +252,8 @@ int MonServerSpy::Spy(PMsg_p* message)
 
     /* Create a new file to mini-dump this message into. */
     FILE* miniDumpFile = fopen((spyDir + dumpMapDate +
-                                "_index_" + uint2str(dumpMapIndex)).c_str(),
+                                "_index_" + uint2str(dumpMapIndex)).c_str() +
+                                ".txt",
                                "w");
     /* Errors! Panic! */
     if (miniDumpFile == PNULL)

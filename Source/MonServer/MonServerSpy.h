@@ -26,7 +26,27 @@
  * these writeouts occur is defined in configuration. By default, this
  * directory is defined in the `monserver_spy` field under the `default_paths`
  * heading in the Orchestrator configuration file, though this may be
- * overwritten on a per-session basis. */
+ * overwritten on a per-session basis.
+ *
+ * After some spying has been done, the file:
+ *
+ *    dumpmap_<DATETIME>.csv
+ *
+ * will be produced, where <DATETIME> is an ISO8601 datetime at second
+ * precision. This datetime is when the first message is spied upon since the
+ * directory was last set. This file holds a table of all messages that have
+ * been spied on. Each message is stored in one line with a unique index, it's
+ * key (in human-readable form), and the value in its mode field.
+ *
+ * Each message will have a corresponding file:
+ *
+ *    <DATETIME>_index_<INDEX>.txt
+ *
+ * where <DATETIME> is the same as the above, and <INDEX> is the index of the
+ * message as stored in the table described above. Note that <DATETIME> is NOT
+ * when the message is spied upon! This file contains a human-readable dump of
+ * the data contained in the message, and is bespoke for each key permutation.
+ */
 
 #include <string>
 
