@@ -414,6 +414,7 @@
 431(E) : "Error handling MONI|DEVI|REQ message in Root: Mothership logging clobber option not defined."
 432(E) : "Error handling MONI|DEVI|REQ message in Root: Graph instance ||%s::%s|| has not been placed."
 433(D) : "Debug message from MonServer: %s"
+434(E) : "Error handling MONI|DEVI|REQ message in Root: No Motherships are running."
 
 // Composing and deployment
 

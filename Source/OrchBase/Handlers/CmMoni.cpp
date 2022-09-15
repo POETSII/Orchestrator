@@ -58,9 +58,9 @@ void CmMoni::Cm_Mdr1()
     // Configuration
     unsigned unsignedData;
     unsignedData = 1000;
-    message.Put<unsigned>(1, &unsignedData, 1);  // Update interval (ms)
+    message.Put<unsigned>(0, &unsignedData, 1);  // Update interval (ms)
     unsignedData = 1;
-    message.Put<unsigned>(2, &unsignedData, 1);  // Data type (no idea)
+    message.Put<unsigned>(1, &unsignedData, 1);  // Data type (no idea)
     unsignedData = 2;
     message.Put<unsigned>(4, &unsignedData, 1);  // Data source (Mothership)
 

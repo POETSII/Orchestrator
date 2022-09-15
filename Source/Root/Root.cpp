@@ -529,7 +529,7 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
 
     // Check for missing/bad fields: exfiltration control.
     pZ->Get<bool>(0, count);
-    if (count != 0)
+    if (count == 0)
     {
         error = true;
         Post(429);
@@ -537,7 +537,7 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
 
     // Check for missing/bad fields: remote log option.
     pZ->Get<bool>(3, count);
-    if (count != 0)
+    if (count == 0)
     {
         error = true;
         Post(430);
@@ -545,7 +545,7 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
 
     // Check for missing/bad fields: remote log clobber option.
     pZ->Get<bool>(5, count);
-    if (count != 0)
+    if (count == 0)
     {
         error = true;
         Post(431);
@@ -600,12 +600,26 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
         pZ->Put<int>(0, deviceDetails, 6);
 
         // Which Mothership are we going to?
+        ProcMap::ProcMap_t* mothershipProc;
 #if SINGLE_SUPERVISOR_MODE
-        mothershipRank = loneMothership->P_rank;
+        mothershipProc = loneMothership;
 #else
-        mothershipRank =
-            P_SCMm2[thread->parent->parent->parent->parent]->P_rank;
+        mothershipProc = P_SCMm2[thread->parent->parent->parent->parent];
 #endif
+        if (mothershipProc == 0)
+        {
+            error = true;
+            Post(434);
+        }
+        else
+        {
+            mothershipRank = mothershipProc->P_rank;
+            if (mothershipRank == 0)  // Nice try!
+            {
+                error = true;
+                Post(434);
+            }
+        }
     }
 
     // Timestamp
