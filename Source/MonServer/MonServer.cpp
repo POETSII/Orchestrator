@@ -120,18 +120,16 @@ else {                                 // No
   Post(404);                           // Bleat
   return 0;                            // Absquatulate, pointlessly
 }
-void * pV;                             // Extract remote monitor object pointer
 void ** ppV = pZ->Get<void *>(99,count);
-if (ppV!=0) pV = *ppV;                 // And so on
-else {
+if (ppV==0)
+{
   Post(406);
   return 0;
 }
-MonServer * pMonServer = (MonServer *)pV;// The monitor pointer at last
+
 double T = MPI_Wtime();
 pZ->Put<double>(-20,&T);                // Timestamp: Leaving MonServer
-//pZ->FDump("MonServer_OnMoniDeviReq");                             // Send ACK back to remote monitor
-pMonServer->Send(skt,pZ);
+Send(skt,pZ);
 return 0;
 }
 
@@ -176,19 +174,16 @@ else {                                 // No
   Post(404);                           // Bleat
   return 0;                            // Absquatulate
 }
-void * pV;                             // Extract monserver object pointer
 void ** ppV = pZ->Get<void *>(99,count);
-if (ppV!=0) pV = *ppV;                 // And so on
-else {
+if (ppV==0)
+{
   Post(406);
   return 0;
 }
-MonServer * pMonServer = (MonServer *)pV;    // The MonServer pointer
+
 double T = MPI_Wtime();
 pZ->Put<double>(-20,&T);                // Timestamp on leaving MonServer
-                            // Send ACK back to remote monitor
-//pZ->FDump("MonServer_OnMoniInjeReq");
-pMonServer->Send(skt,pZ);
+Send(skt,pZ);                           // Send ACK back to remote monitor
 return 0;
 }
 
