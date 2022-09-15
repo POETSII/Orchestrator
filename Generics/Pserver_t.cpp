@@ -12,22 +12,13 @@
 
 Pserver_t::Pserver_t()
 {
-printf("********* Pserver_t constructor\n");
-fflush(stdout);
-
 OSFixes::setup_sockets();              // OSfixes: does nothing in Unix, starts
                                        // sockets in Windoze. "Why is this
                                        // necessary?" I hear you ask.
 pSkyHook = 0;                          // Callback skyhook back-pointer
-SetMCB(0);
-SetPCB(0);
-}
-
-//------------------------------------------------------------------------------
-
-Pserver_t::~Pserver_t()
-{
-printf("********* Pserver_t destructor\n");
+pMCB = DefMCB;  // Note we don't use SetMCB(0) and SetPCB(0) here because they
+pPCB = DefPCB;  // write messages. We want to give the user the chance to
+                // override these, in case they wish to run silently.
 }
 
 //------------------------------------------------------------------------------
@@ -100,10 +91,10 @@ PsMessage(0,"Pserver_t::Send() Just arrived");
 uchar csz[4];
 PUT4(&csz[0],_buf.size());             // Number of bytes to send
 // Debug...
-uint32 isz=GET4(&csz[0]);
-printf("Pserver_t::Send isz = %d\n",isz);
-printf("_buf.size() = %lu\n",_buf.size());
-fflush(stdout);
+// uint32 isz=GET4(&csz[0]);
+// printf("Pserver_t::Send isz = %d\n",isz);
+// printf("_buf.size() = %lu\n",_buf.size());
+// fflush(stdout);
 //-------------
 send(_socket,&csz[0],4,0);              // Send the number of bytes to send
 return send(_socket,&_buf[0],_buf.size(),0);     // And send them....

@@ -25,7 +25,6 @@ class Pserver_t : public PcsBase_t
 {
 public:
                Pserver_t();
-virtual ~      Pserver_t();
 void           Close();
 int            Recv(unsigned);
 int            Send(int,vector<byte>);

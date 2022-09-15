@@ -9,6 +9,10 @@
 
 //==============================================================================
 
+void MCB(void *,string){}
+
+//==============================================================================
+
 void ORecv(int socket,void * pSkyHook,vector<byte> buf,int count)
 // (Flat) callback for messages in from remote client monitors. Does 2 things:
 // (1) Mindlessly forwards the message to the root process
@@ -40,6 +44,7 @@ MonServer::MonServer(int argc,char * argv[],string d):
   CommonBase(argc,argv,d,string(__FILE__))
 {
                                        // Fire up the server
+Server.SetMCB(MCB);                    // Silence
 Server.SetSkyHook(this);               // Tell receiver function about parent
 Server.SetPCB(ORecv);                  // Attach it
 // TODO Put the listening port into the Orchestrator config system

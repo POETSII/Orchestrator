@@ -21,8 +21,8 @@ pMCB = DefMCB;
 
 PcsBase_t::~PcsBase_t()
 {
-//printf("********* PcsBase_t destructor\n");
-fflush(stdout);
+// printf("********* PcsBase_t destructor\n");
+// fflush(stdout);
 }
 
 //------------------------------------------------------------------------------
@@ -74,4 +74,3 @@ fflush(stdout);
 }
 
 //------------------------------------------------------------------------------
-
