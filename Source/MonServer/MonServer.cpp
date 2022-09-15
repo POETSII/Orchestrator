@@ -9,7 +9,13 @@
 
 //==============================================================================
 
-void MCB(void *,string){}
+void OMsg(void * pSkyHook,string msg)
+// Posts messages if in debug mode.
+{
+#if ORCHESTRATOR_DEBUG
+((MonServer *)pSkyHook)->Post(433,msg);
+#endif
+}
 
 //==============================================================================
 
@@ -44,8 +50,8 @@ MonServer::MonServer(int argc,char * argv[],string d):
   CommonBase(argc,argv,d,string(__FILE__))
 {
                                        // Fire up the server
-Server.SetMCB(MCB);                    // Silence
 Server.SetSkyHook(this);               // Tell receiver function about parent
+Server.SetMCB(OMsg);                   // This first!
 Server.SetPCB(ORecv);                  // Attach it
 // TODO Put the listening port into the Orchestrator config system
 Server.Recv(28755);                    // ...and start listening
