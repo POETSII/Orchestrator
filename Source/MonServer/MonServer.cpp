@@ -245,8 +245,8 @@ unsigned MonServer::OnMoniSpy(PMsg_p * pZ)
 Spy.Toggle();
 string spyDirToSet = "";
 pZ->Get(0, spyDirToSet);
-Post(81, Spy.IsEnabled() ? "enabled" : "disabled");  // Spy state change.
-if (Spy.SetSpyDir(spyDirToSet)) Post(82, spyDirToSet);  // Path change, if any.
+Post(420, Spy.IsEnabled() ? "enabled" : "disabled");  // Spy state change.
+if (Spy.SetSpyDir(spyDirToSet)) Post(421, spyDirToSet);  // Path change, if any.
 return 0;
 }
 
@@ -256,7 +256,7 @@ int MonServer::Send(int socket, PMsg_p * pZ)
 // Streams a PMsg_p over a socket, and writes it out with the Spy if set up to
 // do so.
 {
-if (Spy(pZ)) Post(83, Spy.GetError());
+if (Spy(pZ)) Post(422, Spy.GetError());
 return Server.Send(socket,pZ->Stream_v());
 }
 
