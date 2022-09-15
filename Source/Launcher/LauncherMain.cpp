@@ -467,10 +467,12 @@ int Launch(int argc, char** argv)
     gdbProcs["root"] = false;
     gdbProcs["rtcl"] = false;
     gdbProcs["logserver"] = false;
+    gdbProcs["monserver"] = false;
     gdbProcs["mothership"] = false;
     valgrindProcs["root"] = false;
     valgrindProcs["rtcl"] = false;
     valgrindProcs["logserver"] = false;
+    valgrindProcs["monserver"] = false;
     valgrindProcs["mothership"] = false;
 
     if (ParseArgs(argc, argv, &batchPath, &hdfPath, &useMotherships, &dryRun,
