@@ -16,7 +16,8 @@ public:
               CmMoni(OrchBase *);
 virtual ~     CmMoni();
 
-void          Cm_Inj1();
+void          Cm_Mdr1();
+void          Cm_Mir1();
 void          Cm_Spy();
 
 void          Dump(FILE * = stdout);
