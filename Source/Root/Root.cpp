@@ -463,7 +463,7 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
     int mothershipRank;  // Rank of the Mothership to send to
     HardwareAddress* hwAddr;  // Contains all the goodies
     int count;  // Used to get things from PMsg_ps.
-    unsigned* dataSource;
+    unsigned* uintData;
 
     // Check for missing/bad fields: graph instance name
     std::string delimiter = "::";
@@ -512,13 +512,13 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
     }
 
     // Check for missing/bad fields: data source.
-    dataSource = pZ->Get<unsigned>(4, count);
+    uintData = pZ->Get<unsigned>(4, count);
     if (count)
     {
-        if (*dataSource != 1 and *dataSource != 2)
+        if (*uintData != 1 and *uintData != 2)
         {
             error = true;
-            Post(428, uint2str(*dataSource));
+            Post(428, uint2str(*uintData));
         }
     }
     else
@@ -599,25 +599,31 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
         deviceDetails[5] = (int)(deviceId);  // Bet you didn't see that coming.
         pZ->Put<int>(0, deviceDetails, 6);
 
-        // Which Mothership are we going to?
-        ProcMap::ProcMap_t* mothershipProc;
-#if SINGLE_SUPERVISOR_MODE
-        mothershipProc = loneMothership;
-#else
-        mothershipProc = P_SCMm2[thread->parent->parent->parent->parent];
-#endif
-        if (mothershipProc == 0)
-        {
-            error = true;
-            Post(434);
-        }
+        // Which Mothership are we going to? Respecting the Wizard's Back
+        // Passage, of course.
+        uintData = pZ->Get<unsigned>(666, count);
+        if (count) mothershipRank = pPmap->U.Dummy[0];
         else
         {
-            mothershipRank = mothershipProc->P_rank;
-            if (mothershipRank == 0)  // Nice try!
+            ProcMap::ProcMap_t* mothershipProc;
+#if SINGLE_SUPERVISOR_MODE
+            mothershipProc = loneMothership;
+#else
+            mothershipProc = P_SCMm2[thread->parent->parent->parent->parent];
+#endif
+            if (mothershipProc == 0)
             {
                 error = true;
                 Post(434);
+            }
+            else
+            {
+                mothershipRank = mothershipProc->P_rank;
+                if (mothershipRank == 0)  // Nice try!
+                {
+                    error = true;
+                    Post(434);
+                }
             }
         }
     }
