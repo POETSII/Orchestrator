@@ -422,72 +422,205 @@ return 0;
 //------------------------------------------------------------------------------
 
 unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
-// Message in from the MonServer, requesting all kinds of stuff.
-// Philosophical question: do we attempt any defense? And what to do if there's
-// a problem? My feeling is - at least to start off with - we detect everything
-// and bleat, because it'll be a bloody miracle if it all works first time.
-/* MLV/GMB will need to muck about with this
-*/
+// Handler for monitor data requests.
+//
+// Assuming no errors, this:
+//  - Finds the hardware address and device ID for a particular device (by
+//    name) in a particular application (also by name).
+//  - Packs that information, along with a bunch of other things (see the
+//    MonServer documentation) into a MONI|DEVI|ACK message for the MonServer.
+//  - Creates an exfiltration request message (MONI|DEVI|REQ mode=3) for the
+//    Mothership that holds that device.
+//
+// Potential errors we catch:
+//  - Can't find the graph instance
+//  - Can't find the device
+//  - Device is not placed
+//  - Corrupt message (i.e. a field we expected is not defined, or has a bad
+//    value)
+//
+// In each case, we Post, and send an incomplete acknowledgment message to the
+// MonServer, claiming that we couldn't find the device. We do not send a
+// message to any Motherships.
+//
+// This function modifies the incoming message in place, for simplicity.
 {
+    // Errors errors everywhere
+    bool error = false;
 
-// TEMPORARY CODE................
+    // Timestamp
+    double timestamp = MPI_Wtime();
+    pZ->Put<double>(-3, &timestamp);
 
-double T = MPI_Wtime();
-pZ->Put<double>(-3,&T);                // Timestamp: On entering Root
-                                       // Unpack stuff:
-string App_s = pZ->Zname(0);           // POETS application name
-if (App_s.empty()) Post(400);          // Check for empty?
-string Dev_s = pZ->Zname(1);           // Device name
-if (Dev_s.empty()) Post(401,App_s);    // Check for empty?
+    // Some fields we'll need under correct operation.
+    Apps_t* application;
+    std::string appName;
+    GraphI_t* gi;
+    unsigned deviceId;  // The key from the graph, happily used here as a uuid.
+    std::string deviceName;
+    DevI_t* device;  // Once located
+    P_thread* thread;  // in hardware
+    int mothershipRank;  // Rank of the Mothership to send to
+    HardwareAddress* hwAddr;  // Contains all the goodies
+    int count;  // Used to get things from PMsg_ps.
+    unsigned* dataSource;
 
-int count;                             // Element counter
+    // Check for missing/bad fields: graph instance name
+    std::string delimiter = "::";
+    std::string compoundName = pZ->Zname(0);
+    size_t appNameEndPos = compoundName.find(delimiter);
+    appName = compoundName.substr(0, appNameEndPos);
 
-                                       // Target: 1=softswitch, 2=mothership
-unsigned * pTgt_u = pZ->Get<unsigned>(4,count);
-unsigned Tgt_u = 2;                    // What to do if [4] isn't there?
-if (pTgt_u!=0) Tgt_u = *pTgt_u;        // Default to mothership?
-else Post(402,App_s,Dev_s);
+    application = Apps_t::FindApp(appName);
+    if (application == 0)
+    {
+        error = true;
+        Post(423, appName);
+    }
+    else
+    {
+        // NB: the above check would fail if the input string contains no
+        // delimiter.
+        compoundName.erase(                          // Now the name of the
+            0, appNameEndPos + delimiter.length());  // graph.
+        gi = application->FindGrph(compoundName);
+        if (gi == 0)
+        {
+            error = true;
+            Post(424, appName, compoundName);
+        }
+    }
 
-string sss = (Tgt_u==1) ? string("softswitch") : string("mothership");
-Post(403,sss,Dev_s,App_s);
+    // Check for missing/bad fields: device name.
+    if (!error)
+    {
+        deviceName = pZ->Zname(1);
+        if (gi->Dmap.find(deviceName) == gi->Dmap.end())
+        {
+            error = true;
+            Post(425, deviceName, appName, compoundName);
+        }
+    }
 
-/*           *******************
-             *   MLV and GMB   *
-             *******************
+    // Check for missing/bad fields: update interval (we don't care about the
+    // value).
+    pZ->Get<unsigned>(0, count);
+    if (count == 0)
+    {
+        error = true;
+        Post(426);
+    }
 
-This is where MLV/GMB come in........
-For the sake of development, I'm assuming we've found the device. I don't have
-a Mothership on my desktop, so FOR THE SAKE OF DEVELOPMENT, I've hijacked a
-Dummy process. (Remember the Dummies? Damn me, but I'm far-sighted.....)
-*/
+    // Check for missing/bad fields: data source.
+    dataSource = pZ->Get<unsigned>(4, count);
+    if (count)
+    {
+        if (*dataSource != 1 and *dataSource != 2)
+        {
+            error = true;
+            Post(428, uint2str(*dataSource));
+        }
+    }
+    else
+    {
+        error = true;
+        Post(427);
+    }
 
-int DevData[6];                        // Yay! I found the device!
-DevData[0] = 999;  // Zer box
-DevData[1] = 888;  // Zer board
-DevData[2] = 777;  // Zer mailbox
-DevData[3] = 666;  // Zer core
-DevData[4] = 555;  // Zer thread
-DevData[5] = 444;  // Zer device
-pZ->Put<int>(0,DevData,6);             // Load the (now outgoing) message
+    // Check for missing/bad fields: exfiltration control.
+    pZ->Get<bool>(0, count);
+    if (count != 0)
+    {
+        error = true;
+        Post(429);
+    }
 
-bool foundb = true;                    // "Found it" flag
-pZ->Put<bool>(1,&foundb);
-                                       // Don't bother to unload the sampling
-                                       // interval 'cos Root doesn't care
+    // Check for missing/bad fields: remote log option.
+    pZ->Get<bool>(3, count);
+    if (count != 0)
+    {
+        error = true;
+        Post(430);
+    }
 
-pZ->Mode(3);                           // Root->Mothership (whichever one)
+    // Check for missing/bad fields: remote log clobber option.
+    pZ->Get<bool>(5, count);
+    if (count != 0)
+    {
+        error = true;
+        Post(431);
+    }
 
-T = MPI_Wtime();                       // Timestamp: On leaving Root
-pZ->Put<double>(-30,&T);
+    // If we're all clear, get the hardware address and device ID.
+    if (!error)
+    {
+        // We start from the device instance object.
+        deviceId = gi->Dmap[deviceName];
+        DevI_t** weird = gi->G.FindNode(deviceId);
+        if (weird == 0)  // I mean, we've already checked...
+        {
+            error = true;
+            Post(951);
+        }
+        else
+        {
+            device = *weird;
 
-// Send it to the Mothership which is actually Dummy[0] with a short skirt on
-pZ->Send(pPmap->U.Dummy[0]);
+            // Look it up in the placement map.
+            std::map<DevI_t*, P_thread*>::iterator finder;
+            finder = pPlacer->deviceToThread.find(device);
+            if (finder == pPlacer->deviceToThread.end())
+            {
+                // It's not been placed yet, not a lot we can do.
+                error = true;
+                Post(432, appName, compoundName);
+            }
+            else
+            {
+                thread = finder->second;
+                hwAddr = thread->get_hardware_address(); // At last
+            }
+        }
+    }
 
-pZ->Mode(2);                            // Root->MonServer
-pZ->L(2,Q::ACK);                        // Change it to an ACK and send it back
-pZ->Send(pPmap->U.MonServer);           // to the Monserver
+    // Prepare outbound messages.
+    bool deviceFound = !error;
+    pZ->Put<bool>(1, &deviceFound);
+    pZ->Mode(3);
+    if (!error)
+    {
+        // Device details
+        int deviceDetails[6];
+        deviceDetails[0] = (int)(hwAddr->get_box());
+        deviceDetails[1] = (int)(hwAddr->get_board());
+        deviceDetails[2] = (int)(hwAddr->get_mailbox());
+        deviceDetails[3] = (int)(hwAddr->get_core());
+        deviceDetails[4] = (int)(hwAddr->get_thread());
+        deviceDetails[5] = (int)(deviceId);  // Bet you didn't see that coming.
+        pZ->Put<int>(0, deviceDetails, 6);
 
-return 0;
+        // Which Mothership are we going to?
+#if SINGLE_SUPERVISOR_MODE
+        mothershipRank = loneMothership->P_rank;
+#else
+        mothershipRank =
+            P_SCMm2[thread->parent->parent->parent->parent]->P_rank;
+#endif
+    }
+
+    // Timestamp
+    timestamp = MPI_Wtime();
+    pZ->Put<double>(-30, &timestamp);
+
+    // Send to Mothership if no error.
+    if (!error) pZ->Send(mothershipRank);
+
+    // Reconfigure and send to MonServer as an acknowledgement.
+    pZ->Mode(2);
+    pZ->L(2, Q::ACK);
+    pZ->Send(pPmap->U.MonServer);
+
+    return 0;
 }
 
 //------------------------------------------------------------------------------
