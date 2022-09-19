@@ -208,4 +208,5 @@ void Mothership::setup_mpi_hooks()
     FnMap[PMsg_p::KEY(Q::PATH)] = &Mothership::handle_msg_path;
     FnMap[PMsg_p::KEY(Q::PKTS)] = &Mothership::handle_msg_app;
     FnMap[PMsg_p::KEY(Q::DUMP)] = &Mothership::handle_msg_cnc;
+    FnMap[PMsg_p::KEY(Q::MONI,Q::DEVI,Q::REQ)] = &Mothership::handle_msg_cnc;
 }

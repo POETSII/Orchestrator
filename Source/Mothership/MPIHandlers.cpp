@@ -72,7 +72,10 @@ unsigned Mothership::handle_msg_cnc(PMsg_p* message)
         key = "Q::CMND,Q::RUN";
     else if (message->Key() == PMsg_p::KEY(Q::CMND,Q::STOP))
         key = "Q::CMND,Q::STOP";
-    else if (message->Key() == PMsg_p::KEY(Q::DUMP)) key = "Q::DUMP";
+    else if (message->Key() == PMsg_p::KEY(Q::DUMP))
+        key = "Q::DUMP";
+    else if (message->Key() == PMsg_p::KEY(Q::MONI,Q::DEVI,Q::REQ))
+        key = "Q::MONI,Q::DEVI,Q::REQ";
     debug_post(599, 2, key.c_str(), "MPI Command-and-control");
     #endif
     threading.push_MPI_cnc_queue(*message);
@@ -598,5 +601,33 @@ unsigned Mothership::handle_msg_dump(PMsg_p* message)
     }
     Dump(0, outF);
     fclose(outF);
+    return 0;
+}
+
+
+unsigned Mothership::handle_msg_moni_devi_req(PMsg_p* message)
+{
+    /* Pull message contents. */
+    std::string ackMsg;
+    unsigned updatePeriod, dataType, source;
+    bool exfiltrationControl;
+    int hwAddr;
+    if (!decode_moni_devi_req_message(message, &ackMsg, &updatePeriod,
+                                      &dataType, &source, &exfiltrationControl,
+                                      &hwAddr))
+    {
+        debug_post(597, 3, "Q::MONI,Q::DEVI,Q::REQ",
+                   hex2str(message->Key()).c_str(), "Failed to decode.");
+        return 0;
+    }
+
+    debug_post(597, 3, "Q::MONI,Q::DEVI,Q::REQ",
+               hex2str(message->Key()).c_str(),
+               dformat("ackMsg=%s, updatePeriod=%u, dataType=%u, source=%u "
+                       "exfiltrationControl=%s, hwAddr=%d",
+                       ackMsg.c_str(), updatePeriod, dataType, source,
+                       exfiltrationControl ? "on" : "off", hwAddr).c_str());
+
+    /* <!> Consume the message here. */
     return 0;
 }

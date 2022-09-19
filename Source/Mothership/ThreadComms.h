@@ -2,9 +2,10 @@
 #define __ORCHESTRATOR_SOURCE_MOTHERSHIP_THREADCOMMS_H
 
 /* Describes how the different threads of execution in the Mothership interact,
- * and defines queue and pthread constructs for the Mothership. The
- * documentation is pretty good at describing it - you should go read it if you
- * haven't already. */
+ * and defines queue and pthread constructs for the Mothership. Note that
+ * threads spawned by the Monitor don't interact with this system, as those
+ * threads are unnamed. The documentation is pretty good at describing it - you
+ * should go read it if you haven't already. */
 
 #include <pthread.h>
 #include <queue>

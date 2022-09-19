@@ -64,6 +64,7 @@ public:
     unsigned handle_msg_path(PMsg_p* message);
     unsigned handle_msg_pkts(PMsg_p* message);
     unsigned handle_msg_dump(PMsg_p* message);
+    unsigned handle_msg_moni_devi_req(PMsg_p* message);
 
     /* Methods for handling command-and-control packets received by the
      * Mothership from the compute fabric (called by consumer threads). */
@@ -103,6 +104,11 @@ private:
                                  std::string* soPath);
     bool decode_app_spec_message(PMsg_p* message, std::string* appName,
                                  uint32_t* distCount, uint8_t* appNumber);
+    bool decode_moni_devi_req_message(PMsg_p* message, std::string* ackMsg,
+                                      unsigned* updatePeriod,
+                                      unsigned* dataType, unsigned* source,
+                                      bool* exfiltrationControl,
+                                      unsigned* hwAddr);
     bool decode_addresses_message(PMsg_p* message,
                                   std::vector<uint32_t>* addresses,
                                   unsigned index=0);

@@ -47,6 +47,25 @@ bool Mothership::decode_app_spec_message(PMsg_p* message, std::string* appName,
     return true;
 }
 
+bool Mothership::decode_moni_devi_req_message(
+    PMsg_p* message, std::string* ackMsg, unsigned* updatePeriod,
+    unsigned* dataType, unsigned* source, bool* exfiltrationControl,
+    int* hwAddr)
+{
+    *ackMsg = message->Zname(2);  /* Eh */
+    *updatePeriod = 0;
+    *dataType = 0;
+    *source = 0;
+    *exfiltrationControl = false;
+    *hwAddr = 0;
+    if(!decode_unsigned_message(message, updatePeriod, 0)) return false;
+    if(!decode_unsigned_message(message, dataType, 1)) return false;
+    if(!decode_unsigned_message(message, source, 4)) return false;
+    if(!decode_bool_message(message, exfiltrationControl, 0)) return false;
+    if(!decode_int_message(message, hwAddr, 1)) return false;
+    return true;
+}
+
 bool Mothership::decode_addresses_message(PMsg_p* message,
                                           std::vector<uint32_t>* addresses,
                                           unsigned index)

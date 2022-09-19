@@ -75,6 +75,8 @@ void* ThreadComms::mpi_cnc_resolver(void* mothershipArg)
                 mothership->handle_msg_bend_cnc(&*messageIt);
             else if (key == PMsg_p::KEY(Q::DUMP))
                 mothership->handle_msg_dump(&*messageIt);
+            else if (key == PMsg_p::KEY(Q::MONI,Q::DEVI,Q::REQ))
+                mothership->handle_msg_moni_devi_req(&*messageIt);
             else
                 mothership->Post(507, "MPICncResolver", hex2str(key));
         }
