@@ -107,15 +107,16 @@ private:
     bool decode_moni_devi_req_message(PMsg_p* message, std::string* ackMsg,
                                       unsigned* updatePeriod,
                                       unsigned* dataType, unsigned* source,
-                                      bool* exfiltrationControl,
-                                      unsigned* hwAddr);
+                                      bool* exfiltrationControl, int* hwAddr);
     bool decode_addresses_message(PMsg_p* message,
                                   std::vector<uint32_t>* addresses,
                                   unsigned index=0);
     bool decode_addressed_packets_message(PMsg_p* message,
         std::vector<P_Addr_Pkt_t>* packets, unsigned index=0);
+    bool decode_bool_message(PMsg_p* message, bool* result, unsigned index=0);
     bool decode_char_message(PMsg_p* message, unsigned char* result,
                              unsigned index=0);
+    bool decode_int_message(PMsg_p* message, int* result, unsigned index=0);
     bool decode_packets_message(PMsg_p* message,
                                 std::vector<P_Pkt_t>* packets,
                                 unsigned index=0);

@@ -108,6 +108,24 @@ bool Mothership::decode_addressed_packets_message(PMsg_p* message,
     return true;
 }
 
+bool Mothership::decode_bool_message(PMsg_p* message, bool* result,
+                                     unsigned index)
+{
+    int countBuffer;
+    bool* resultBuffer;
+
+    /* Get and check for errors. */
+    resultBuffer = message->Get<bool>(index, countBuffer);
+    if (resultBuffer == PNULL)
+    {
+        *result = 0;
+        Post(505, hex2str(message->Key()), uint2str(index));
+        return false;
+    }
+    *result = *resultBuffer;
+    return true;
+}
+
 bool Mothership::decode_char_message(PMsg_p* message, unsigned char* result,
                                      unsigned index)
 {
@@ -120,6 +138,24 @@ bool Mothership::decode_char_message(PMsg_p* message, unsigned char* result,
     {
         *result = 0;
         Post(519, hex2str(message->Key()), uint2str(index));
+        return false;
+    }
+    *result = *resultBuffer;
+    return true;
+}
+
+bool Mothership::decode_int_message(PMsg_p* message, int* result,
+                                    unsigned index)
+{
+    int countBuffer;
+    int* resultBuffer;
+
+    /* Get and check for errors. */
+    resultBuffer = message->Get<int>(index, countBuffer);
+    if (resultBuffer == PNULL)
+    {
+        *result = 0;
+        Post(505, hex2str(message->Key()), uint2str(index));
         return false;
     }
     *result = *resultBuffer;
