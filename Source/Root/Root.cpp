@@ -599,6 +599,10 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
         deviceDetails[5] = (int)(deviceId);  // Bet you didn't see that coming.
         pZ->Put<int>(0, deviceDetails, 6);
 
+        // Hardware address (needed for lookup in the Mothership)
+        int hwInt = (int)(hwAddr->as_uint());
+        pZ->Put<int>(1, &hwInt, 1);
+
         // Which Mothership are we going to? Respecting the Wizard's Back
         // Passage, of course.
         uintData = pZ->Get<unsigned>(666, count);
