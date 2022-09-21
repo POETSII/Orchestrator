@@ -142,7 +142,7 @@ void MonServerSpy::DumpMoniDeviAck(FILE* out, PMsg_p* message)
 
     boolData = message->Get<bool>(6, count);
     fprintf(out, "error=\"%s\"\n",
-            count == 0 ? "undefined" : *boolData == true ? "start" : "stop");
+            count == 0 ? "undefined" : *boolData == true ? "yes" : "no");
 
     fprintf(out, "\n[exfiltration]\n");
     uintData = message->Get<unsigned>(4, count);
