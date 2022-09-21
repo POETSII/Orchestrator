@@ -10,7 +10,6 @@ class Mothership;
 struct MonitorWorker
 {
     /* Constants */
-    std::string ackMsg;
     unsigned updatePeriod;  /* Milliseconds */
     unsigned dataType;
     unsigned source;  /* Softswitch or Mothership? */

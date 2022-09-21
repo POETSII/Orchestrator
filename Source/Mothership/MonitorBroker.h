@@ -19,12 +19,10 @@ public:
     MonitorBroker(Mothership*);
     ~MonitorBroker();
 
-    bool register_worker(int key, std::string ackMsg, unsigned updatePeriod,
-                         unsigned dataType, unsigned source, int hwAddr,
-                         PMsg_p templateMsg);
-    bool register_worker(std::string ackMsg, unsigned updatePeriod,
-                         unsigned dataType, unsigned source, int hwAddr,
-                         PMsg_p templateMsg);
+    bool register_worker(int key, unsigned updatePeriod, unsigned dataType,
+                         unsigned source, int hwAddr, PMsg_p templateMsg);
+    bool register_worker(unsigned updatePeriod, unsigned dataType,
+                         unsigned source, int hwAddr, PMsg_p templateMsg);
     bool unregister_worker(int key);
     void unregister_all();
 

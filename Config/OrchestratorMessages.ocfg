@@ -479,7 +479,7 @@
 558(U) : "GMB: Allocated but as yet unused"
 559(U) : "GMB: Allocated but as yet unused"
 560(E) : "Mothership: Failed to unregister monitor request with key '%s', as it doesn't exist. Ignoring."
-561(U) : "MLV: Allocated but as yet unused"
+561(I) : "This is where GMB steps in and solves all the world's problems!"
 562(U) : "MLV: Allocated but as yet unused"
 563(U) : "MLV: Allocated but as yet unused"
 564(U) : "MLV: Allocated but as yet unused"

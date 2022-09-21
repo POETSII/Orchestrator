@@ -637,7 +637,7 @@ unsigned Mothership::handle_msg_moni_devi_req(PMsg_p* message)
     /* Consume the message here. */
     bool error;
     if (exfiltrationControl) error = monitorBroker.register_worker(
-        ackMsg, updatePeriod, dataType, source, hwAddr, *message);
+        updatePeriod, dataType, source, hwAddr, *message);
     else
     {
         /* <!> Oh no, some unregistering? */

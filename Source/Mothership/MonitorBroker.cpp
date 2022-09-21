@@ -29,16 +29,45 @@ void* MonitorBroker::do_work(void* dataArg)
     MonitorWorker* data = reinterpret_cast<MonitorWorker*>(dataArg);
     Mothership* mship = data->mothership;
 
+    /* Set up an outgoing message, which we will prime with more data. */
+    PMsg_p message = data->templateMsg;
+    message.Src(mship->Urank);
+    message.Tgt(mship->pPmap->U.MonServer);
+    message.Key(Q::MONI, Q::DEVI, Q::DATA);
+    message.Mode(3);
+
     while (!data->hasBeenToldToStop)
     {
-        /* Set up an outgoing message, which we will prime with more data. */
-        PMsg_p message = data->templateMsg;
-        message.Src(mship->Urank);
-        message.Tgt(mship->pPmap->U.MonServer);
-        message.Key(Q::MONI, Q::DEVI, Q::DATA);
-        message.Mode(3);
+        /* Prime with more data */
+        if (data->source == 1)  /* Softswitch-level instrumentation. */
+        {
+            mship->Post(561);  /* <!> GMB jumps in here. Use the `data` and
+                                * `mship` variables, and pack the message. */
+        }
+        else  /* Mothership-level instrumentation. */
+        {
+            /* Add strings, including an output signature and data labels. */
+            std::vector<std::string> labels;
+            labels.push_back("0uuuuuuuuuuu");
+            labels.push_back("Board Temperature (maximum)");
+            labels.push_back("MPI CNC Queue (occupancy)");
+            labels.push_back("MPI Application Queue (occupancy)");
+            labels.push_back("Backend Output Queue (occupancy)");
+            labels.push_back("Backend Input Queue (occupancy)");
+            labels.push_back("Debug Input Queue (occupancy)");
+            labels.push_back("MPI CNC Queue (cumulative)");
+            labels.push_back("MPI Application Queue (cumulative)");
+            labels.push_back("Backend Output Queue (cumulative)");
+            labels.push_back("Backend Input Queue (cumulative)");
+            labels.push_back("Debug Input Queue (cumulative)");
+            for (std::vector<std::string>::size_type labelIndex = 0;
+                 labelIndex > labels.size(); labelIndex++)
+            {
+                message.Put(labelIndex, &labels[labelIndex]);
+            }
 
-        /* <!> Prime with more data */
+            // int32_t DebugLink::getBoardTemp(uint32_t boardX, uint32_t boardY)
+        }
 
         /* Out it goes! */
         mship->queue_mpi_message(&message);
@@ -66,8 +95,6 @@ void* MonitorBroker::do_work(void* dataArg)
  *  - key: (optional) key to use for the worker map. By default, the next
  *    available key will be used. Posts angrily if there's a clash.
  *
- *  - ackMsg: Message to be replayed into all outgoing packets.
- *
  *  - updatePeriod: How often to poll for information (determines sleep time in
  *    the worker thread.
  *
@@ -92,18 +119,18 @@ void* MonitorBroker::do_work(void* dataArg)
  * that out is not worth the complexity).
  *
  * Returns false if all is well, and true if there's a wobbly. */
-bool MonitorBroker::register_worker(std::string ackMsg, unsigned updatePeriod,
-                                    unsigned dataType, unsigned source,
-                                    int hwAddr, PMsg_p templateMsg)
+bool MonitorBroker::register_worker(unsigned updatePeriod, unsigned dataType,
+                                    unsigned source, int hwAddr,
+                                    PMsg_p templateMsg)
 {
     bool out;
-    out = register_worker(nextKey, ackMsg, updatePeriod, dataType, source,
-                          hwAddr, templateMsg);
+    out = register_worker(nextKey, updatePeriod, dataType, source, hwAddr,
+                          templateMsg);
     nextKey++;
     return out;
 }
 
-bool MonitorBroker::register_worker(int key, std::string ackMsg,
+bool MonitorBroker::register_worker(int key,
                                     unsigned updatePeriod, unsigned dataType,
                                     unsigned source, int hwAddr,
                                     PMsg_p templateMsg)
@@ -124,7 +151,6 @@ bool MonitorBroker::register_worker(int key, std::string ackMsg,
 
     /* Build us a structure. */
     MonitorWorker* usefulData = &workers[key];
-    usefulData->ackMsg = ackMsg;
     usefulData->updatePeriod = updatePeriod;
     usefulData->dataType = dataType;
     usefulData->source = source;
