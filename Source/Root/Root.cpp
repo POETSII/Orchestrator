@@ -642,6 +642,7 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
     // Reconfigure and send to MonServer as an acknowledgement.
     pZ->Mode(2);
     pZ->L(2, Q::ACK);
+    pZ->Put<bool>(6, &error, 1);
     pZ->Send(pPmap->U.MonServer);
 
     return 0;

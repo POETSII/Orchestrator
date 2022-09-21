@@ -138,6 +138,8 @@ if (ppV==0)
   return 0;
 }
 
+bool error = false;
+pZ->Put<bool>(6,&error);
 double T = MPI_Wtime();
 pZ->Put<double>(-20,&T);                // Timestamp: Leaving MonServer
 Send(skt,pZ);

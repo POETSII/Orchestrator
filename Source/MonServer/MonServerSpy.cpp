@@ -136,9 +136,13 @@ void MonServerSpy::DumpMoniDeviAck(FILE* out, PMsg_p* message)
 
     fprintf(out, "// Dump of MONI|DEVI|ACK message.\n\n");
     DumpCommonBits(out, message);
-    fprintf(out, "[names]\n");
+    fprintf(out, "[misc]\n");
     fprintf(out, "app=\"%s\"\n", message->Zname(0).c_str());
     fprintf(out, "device=\"%s\"\n", message->Zname(1).c_str());
+
+    boolData = message->Get<bool>(6, count);
+    fprintf(out, "error=\"%s\"\n",
+            count == 0 ? "undefined" : *boolData == true ? "start" : "stop");
 
     fprintf(out, "\n[exfiltration]\n");
     uintData = message->Get<unsigned>(4, count);
