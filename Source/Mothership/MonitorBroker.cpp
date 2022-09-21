@@ -69,6 +69,10 @@ void* MonitorBroker::do_work(void* dataArg)
             // int32_t DebugLink::getBoardTemp(uint32_t boardX, uint32_t boardY)
         }
 
+        /* Timestamp */
+        double time = MPI_Wtime();
+        message.Put<double>(-40, &time);
+
         /* Out it goes! */
         mship->queue_mpi_message(&message);
 
