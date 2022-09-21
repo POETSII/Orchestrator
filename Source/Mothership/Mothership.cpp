@@ -5,6 +5,7 @@ Mothership::Mothership(int argc, char** argv):
     CommonBase(argc, argv, std::string(csMOTHERSHIPproc),
                std::string(__FILE__)),
     backend(PNULL),
+    monitorBroker(MonitorBroker(this)),
     threading(ThreadComms(this)),
     userOutDir(".orchestrator/app_output/") /* Sensible default */
 {

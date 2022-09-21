@@ -14,6 +14,7 @@ class ThreadComms;
 #include "HostLink.h"
 #include "InstrumentationWriter.h"
 #include "LogPacketManager.h"
+#include "MonitorBroker.h"
 #include "OSFixes.hpp"
 #include "Pglobals.h"
 #include "SuperDB.h"
@@ -37,6 +38,7 @@ public:
     HostLink* backend;
     InstrumentationWriter instrumentation;
     LogPacketManager logging;
+    MonitorBroker monitorBroker;
     SuperDB superdb;
     ThreadComms threading;
 

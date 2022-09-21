@@ -247,6 +247,7 @@ MOTHERSHIP_SOURCES = $(SOURCE_DIR)/Mothership/MothershipMain.cpp \
                      $(SOURCE_DIR)/Mothership/InstrumentationWriter.cpp \
                      $(SOURCE_DIR)/Mothership/LogPacketManager.cpp \
                      $(SOURCE_DIR)/Mothership/MessageUtils.cpp \
+                     $(SOURCE_DIR)/Mothership/MonitorBroker.cpp \
                      $(SOURCE_DIR)/Mothership/MPIHandlers.cpp \
                      $(SOURCE_DIR)/Mothership/PacketHandlers.cpp \
                      $(SOURCE_DIR)/Mothership/SuperDB.cpp \

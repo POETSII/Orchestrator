@@ -52,6 +52,13 @@ unsigned Mothership::handle_msg_app(PMsg_p* message)
 
 unsigned Mothership::handle_msg_cnc(PMsg_p* message)
 {
+    /* Special case, thanks ADB. */
+    if (message->Key() == PMsg_p::KEY(Q::MONI,Q::DEVI,Q::REQ))
+    {
+        double time = MPI_Wtime();
+        message->Put<double>(-4, &time);
+    }
+
     #if ORCHESTRATOR_DEBUG
     std::string key = "Unknown";
     if (message->Key() == PMsg_p::KEY(Q::APP,Q::SPEC))
@@ -604,7 +611,6 @@ unsigned Mothership::handle_msg_dump(PMsg_p* message)
     return 0;
 }
 
-
 unsigned Mothership::handle_msg_moni_devi_req(PMsg_p* message)
 {
     /* Pull message contents. */
@@ -628,6 +634,23 @@ unsigned Mothership::handle_msg_moni_devi_req(PMsg_p* message)
                        ackMsg.c_str(), updatePeriod, dataType, source,
                        exfiltrationControl ? "on" : "off", hwAddr).c_str());
 
-    /* <!> Consume the message here. */
+    /* Consume the message here. */
+    bool error;
+    if (exfiltrationControl) error = monitorBroker.register_worker(
+        ackMsg, updatePeriod, dataType, source, hwAddr, *message);
+    else
+    {
+        /* <!> Oh no, some unregistering? */
+    }
+
+    /* Send an acknowledgement of receipt, regardless of whether or not we
+     * managed to successfully register anything. */
+    message->L(2, Q::ACK);
+    message->Tgt(pPmap->U.MonServer);
+    message->Put<bool>(6, &error);
+    double time = MPI_Wtime();
+    message->Put<double>(-40, &time);
+    queue_mpi_message(message);
+
     return 0;
 }

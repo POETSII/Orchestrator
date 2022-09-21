@@ -6,15 +6,12 @@
  * often. */
 
 #include <pthread.h>
+#include <string>
 
 class Mothership;
 
+#include "MonitorWorker.h"
 #include "Mothership.h"
-
-struct MonitorWorker
-{
-    /* <!> Hmm */
-};
 
 class MonitorBroker
 {
@@ -22,17 +19,22 @@ public:
     MonitorBroker(Mothership*);
     ~MonitorBroker();
 
-    int register(int key, std::string ackMsg, unsigned updatePeriod,
-                 unsigned dataType, unsigned source, int hwAddr);
-    int register(std::string ackMsg, unsigned updatePeriod,
-                 unsigned dataType, unsigned source, int hwAddr);
-    int unregister(int key);
-    int unregister();
+    bool register_worker(int key, std::string ackMsg, unsigned updatePeriod,
+                         unsigned dataType, unsigned source, int hwAddr,
+                         PMsg_p templateMsg);
+    bool register_worker(std::string ackMsg, unsigned updatePeriod,
+                         unsigned dataType, unsigned source, int hwAddr,
+                         PMsg_p templateMsg);
+    bool unregister_worker(int key);
+    void unregister_all();
+
+    /* Thread logic */
+    static void* do_work(void* dataArg);
 
 private:
     std::map<int, MonitorWorker> workers;
     Mothership* mothership;
     int nextKey;
-
 };
+
 #endif
