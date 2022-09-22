@@ -178,7 +178,7 @@ pZ->Send(pPmap->U.Root);               // I.e. unconditional forward to rank 0
                                        // ACKNOWLEDGMENT RETURN PATH
 pZ->Key(Q::MONI,Q::INJE,Q::ACK);       // Turn it into an acknowledgment message
 pZ->Mode(1);
-pZ->FDump("MonServer_OnMoniInjeReq");
+//pZ->FDump("MonServer_OnMoniInjeReq");
 int count;                             // Byte count
 int skt;                               // Return socket
 int * pskt = pZ->Get<int>(99,count);   // Extract socket from message
