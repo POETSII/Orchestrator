@@ -416,7 +416,9 @@
 433(D) : "Debug message from MonServer: %s"
 434(E) : "Error handling MONI|DEVI|REQ message in Root: No Motherships are running."
 435(E) : "Error handling MONI|DEVI|REQ message in Root: Request key field not defined."
-
+436(I) : "MonServer Data Tracker %s."
+437(I) : "MonServer Data Tracker output directory set to ||%s||."
+438(E) : "MonServer DataTracker encountered an error while attempting to track an outgoing data packet going to Monitor. Attempting to send the message anyway. Details: %s"
 // Composing and deployment
 
 500(F) : "Mothership: Could not create pthread %s. Exiting."

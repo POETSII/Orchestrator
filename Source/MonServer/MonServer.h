@@ -3,6 +3,7 @@
 
 #include "CommonBase.h"
 #include "MonServerSpy.h"
+#include "MonServerTracker.h"
 #include "Pserver_t.h"
 #include "OSFixes.hpp"
 
@@ -30,8 +31,10 @@ unsigned            OnMoniInjeAck (PMsg_p *);
 unsigned            OnMoniMothData(PMsg_p *);
 unsigned            OnMoniSoftData(PMsg_p *);
 unsigned            OnMoniSpy(PMsg_p *);
+unsigned            OnMoniTrac(PMsg_p *);
 
 MonServerSpy        Spy;
+MonServerTracker    Tracker;
 int                 nextRequestId;
 };
 

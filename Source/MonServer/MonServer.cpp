@@ -66,6 +66,7 @@ FnMap[PMsg_p::KEY(Q::MONI,Q::INJE,Q::ACK )] = &MonServer::OnMoniInjeAck;
 FnMap[PMsg_p::KEY(Q::MONI,Q::MOTH,Q::DATA)] = &MonServer::OnMoniMothData;
 FnMap[PMsg_p::KEY(Q::MONI,Q::SOFT,Q::DATA)] = &MonServer::OnMoniSoftData;
 FnMap[PMsg_p::KEY(Q::MONI,Q::SPY         )] = &MonServer::OnMoniSpy;
+FnMap[PMsg_p::KEY(Q::MONI,Q::TRAC        )] = &MonServer::OnMoniTrac;
 MPISpinner();                          // Spin on MPI messages; exit only on DIE
 //printf("********* MonServer rank %d on the way out\n",Urank); fflush(stdout);
 }
@@ -208,11 +209,12 @@ return 0;
 //------------------------------------------------------------------------------
 
 unsigned MonServer::OnMoniMothData(PMsg_p * pZ)
-// Forward to the remote monitor
+// Forward to the remote monitor, and track if enabled
 {
 //pZ->FDump("MonServer_OnMoniMothData");
 double T = MPI_Wtime();
 pZ->Put<double>(-2,&T);                // Timestamp on entering MonServer
+if (Tracker(pZ)) Post(438, Tracker.GetError());
 int count;                             // Pull out the target socket
 int skt = -1;
 int * pskt = pZ->Get<int>(99,count);
@@ -235,10 +237,10 @@ unsigned MonServer::OnMoniSoftData(PMsg_p * pZ)
 // Forward to the remote monitor
 {
 //pZ->FDump("MonServer_OnMoniSoftData");
-printf("MONI|SOFT|DATA\n"); fflush(stdout);
-
+//printf("MONI|SOFT|DATA\n"); fflush(stdout);
 double T = MPI_Wtime();
 pZ->Put<double>(-2,&T);                // Timestamp on entering MonServer
+if (Tracker(pZ)) Post(438, Tracker.GetError());
 int count;
 int skt = -1;
 int * pskt = pZ->Get<int>(99,count);
@@ -265,6 +267,21 @@ string spyDirToSet = "";
 pZ->Get(0, spyDirToSet);
 Post(420, Spy.IsEnabled() ? "enabled" : "disabled");  // Spy state change.
 if (Spy.SetSpyDir(spyDirToSet)) Post(421, spyDirToSet);  // Path change, if any.
+return 0;
+}
+
+//------------------------------------------------------------------------------
+
+unsigned MonServer::OnMoniTrac(PMsg_p * pZ)
+// Enable or disable the data tracker.
+{
+Tracker.Toggle();
+string trackerDirToSet = "";
+pZ->Get(0, trackerDirToSet);
+// Tracker state change.
+Post(436, Tracker.IsEnabled() ? "enabled" : "disabled");
+// Path change, if any.
+if (Tracker.SetTrackerDir(trackerDirToSet)) Post(437, trackerDirToSet);
 return 0;
 }
 
