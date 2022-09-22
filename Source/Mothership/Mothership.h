@@ -45,6 +45,9 @@ public:
     /* Root directory for supervisor output, relative to home. */
     std::string userOutDir;
 
+    /* Temperature telemetry. */
+    unsigned max_temperature();
+
     /* Methods for transitioning applications through states, triggered by
      * different Q::APP message keys. */
     void initialise_application(AppInfo*);

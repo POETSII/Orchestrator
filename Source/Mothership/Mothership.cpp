@@ -116,6 +116,48 @@ void Mothership::load_backend()
     DebugPrint("[MOTHERSHIP] Tinsel backend loaded.\n");
 }
 
+/* Gets a single temperature statistic for the compute backend. If there are
+ * multiple possible, takes the maximum of those.
+ *
+ * This is very Tinsel... so this gets the maximum temperature of all boards
+ * that this Mothership watches over. */
+unsigned Mothership::max_temperature()
+{
+    int maxTemp = 0;
+
+    /* Get the number of boxes in use. */
+    char* strX = getenv("HOSTLINK_BOXES_X");
+    char* strY = getenv("HOSTLINK_BOXES_Y");
+#if SINGLE_SUPERVISOR_MODE
+    int numBoxesX = strX ? atoi(strX) : TinselBoxMeshXLen;
+    int numBoxesY = strY ? atoi(strY) : TinselBoxMeshYLen;
+#else
+    int numBoxesX = strX ? atoi(strX) : 1;
+    int numBoxesY = strY ? atoi(strY) : 1;
+#endif
+
+    /* Compute a maximum for each board under our watchful eye. */
+    for (int boxX = 0; boxX < numBoxesX; boxX++)
+    for (int boxY = 0; boxY < numBoxesY; boxY++)
+    {
+        /* Compute boards... */
+        for (int boardX = 0; boardX < TinselMeshXLenWithinBox; boardX++)
+        for (int boardY = 0; boardY < TinselMeshYLenWithinBox; boardY++)
+        {
+            int thisBoardTemp = backend->debugLink->getBoardTemp(
+                boxX * TinselMeshXLenWithinBox + boardX,
+                boxY * TinselMeshYLenWithinBox + boardY);
+            maxTemp = thisBoardTemp > maxTemp ? thisBoardTemp : maxTemp;
+        }
+
+        /* Bridge board(s)... */
+        int bridgeBoardTemp = backend->debugLink->getBridgeTemp(boxX, boxY);
+        maxTemp = bridgeBoardTemp > maxTemp ? bridgeBoardTemp : maxTemp;
+    }
+
+    return (unsigned)maxTemp;
+}
+
 /* Posts a debugging message, if debugging is enabled. Returns as with
  * CommonBase::Post. If debugging is not enabled, always returns true and does
  * nothing of use. */

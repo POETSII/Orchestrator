@@ -90,6 +90,20 @@ public:
     void push_debug_in_queue(P_Debug_Pkt_t);
     void push_debug_in_queue(std::vector<P_Debug_Pkt_t>*);
 
+    /* Cumulative message totals for each queue */
+    unsigned cumulativeMPICnc;
+    unsigned cumulativeMPIApp;
+    unsigned cumulativeBackendOutput;
+    unsigned cumulativeBackendInput;
+    unsigned cumulativeDebugInput;
+
+    /* Current occupancy of each queue (maintained by push and pop) */
+    unsigned occupancyMPICnc;
+    unsigned occupancyMPIApp;
+    unsigned occupancyBackendOutput;
+    unsigned occupancyBackendInput;
+    unsigned occupancyDebugInput;
+
     /* Note that the backend (hostlink) is not thread safe. For example,
      * startOne uses the Tinsel messaging system, so it's possible for the MPI
      * Cnc Resolver thread to start a core, and for the acknowledgement to be

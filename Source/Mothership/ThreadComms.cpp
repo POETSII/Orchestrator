@@ -5,6 +5,18 @@ ThreadComms::ThreadComms(Mothership* mothership):
 {
     quit = false;
 
+    /* Initialise cumulative totals and occupancy. */
+    cumulativeMPICnc = 0;
+    cumulativeMPIApp = 0;
+    cumulativeBackendOutput = 0;
+    cumulativeBackendInput = 0;
+    cumulativeDebugInput = 0;
+    occupancyMPICnc = 0;
+    occupancyMPIApp = 0;
+    occupancyBackendOutput = 0;
+    occupancyBackendInput = 0;
+    occupancyDebugInput = 0;
+
     /* Initialise mutexes. */
     pthread_mutex_init(&mutex_MPI_cnc_queue, PNULL);
     pthread_mutex_init(&mutex_MPI_app_queue, PNULL);
@@ -111,6 +123,7 @@ bool ThreadComms::pop_MPI_cnc_queue(PMsg_p* message)
         returnValue = true;
         *message = MPICncQueue.front();
         MPICncQueue.pop();
+        occupancyMPICnc--;
     }
     pthread_mutex_unlock(&mutex_MPI_cnc_queue);
     return returnValue;
@@ -128,6 +141,7 @@ bool ThreadComms::pop_MPI_cnc_queue(std::vector<PMsg_p>* messages)
         returnValue = true;
         messages->push_back(MPICncQueue.front());
         MPICncQueue.pop();
+        occupancyMPICnc--;
     }
     pthread_mutex_unlock(&mutex_MPI_cnc_queue);
     return returnValue;
@@ -138,6 +152,8 @@ void ThreadComms::push_MPI_cnc_queue(PMsg_p message)
 {
     pthread_mutex_lock(&mutex_MPI_cnc_queue);
     MPICncQueue.push(message);
+    cumulativeMPICnc++;
+    occupancyMPICnc++;
     pthread_mutex_unlock(&mutex_MPI_cnc_queue);
 }
 
@@ -150,6 +166,8 @@ void ThreadComms::push_MPI_cnc_queue(std::vector<PMsg_p>* messages)
          message != messages->end(); message++)
     {
         MPICncQueue.push(*message);
+        cumulativeMPICnc++;
+        occupancyMPICnc++;
     }
     pthread_mutex_unlock(&mutex_MPI_cnc_queue);
 }
@@ -167,6 +185,7 @@ bool ThreadComms::pop_MPI_app_queue(PMsg_p* message)
         returnValue = true;
         *message = MPIAppQueue.front();
         MPIAppQueue.pop();
+        occupancyMPIApp--;
     }
     pthread_mutex_unlock(&mutex_MPI_app_queue);
     return returnValue;
@@ -184,6 +203,7 @@ bool ThreadComms::pop_MPI_app_queue(std::vector<PMsg_p>* messages)
         returnValue = true;
         messages->push_back(MPIAppQueue.front());
         MPIAppQueue.pop();
+        occupancyMPIApp--;
     }
     pthread_mutex_unlock(&mutex_MPI_app_queue);
     return returnValue;
@@ -194,6 +214,8 @@ void ThreadComms::push_MPI_app_queue(PMsg_p message)
 {
     pthread_mutex_lock(&mutex_MPI_app_queue);
     MPIAppQueue.push(message);
+    cumulativeMPICnc++;
+    occupancyMPIApp++;
     pthread_mutex_unlock(&mutex_MPI_app_queue);
 }
 
@@ -206,6 +228,8 @@ void ThreadComms::push_MPI_app_queue(std::vector<PMsg_p>* messages)
          message != messages->end(); message++)
     {
         MPIAppQueue.push(*message);
+        cumulativeMPICnc++;
+        occupancyMPIApp++;
     }
     pthread_mutex_unlock(&mutex_MPI_app_queue);
 }
@@ -224,6 +248,7 @@ bool ThreadComms::pop_backend_out_queue(P_Addr_Pkt_t* packet)
         returnValue = true;
         *packet = BackendOutputQueue.front();
         BackendOutputQueue.pop();
+        occupancyBackendOutput--;
     }
     pthread_mutex_unlock(&mutex_backend_output_queue);
     return returnValue;
@@ -243,6 +268,7 @@ bool ThreadComms::pop_backend_out_queue(
         returnValue = true;
         packets->push_back(BackendOutputQueue.front());
         BackendOutputQueue.pop();
+        occupancyBackendOutput--;
     }
     pthread_mutex_unlock(&mutex_backend_output_queue);
     return returnValue;
@@ -253,6 +279,8 @@ void ThreadComms::push_backend_out_queue(P_Addr_Pkt_t packet)
 {
     pthread_mutex_lock(&mutex_backend_output_queue);
     BackendOutputQueue.push(packet);
+    cumulativeBackendOutput++;
+    occupancyBackendOutput++;
     pthread_mutex_unlock(&mutex_backend_output_queue);
 }
 
@@ -266,6 +294,8 @@ void ThreadComms::push_backend_out_queue(
     for (packet = packets->begin(); packet != packets->end(); packet++)
     {
         BackendOutputQueue.push(*packet);
+        cumulativeBackendOutput++;
+        occupancyBackendOutput++;
     }
     pthread_mutex_unlock(&mutex_backend_output_queue);
 }
@@ -305,6 +335,7 @@ bool ThreadComms::pop_backend_in_queue(P_Pkt_t* packet)
     if (BackendInputQueue.empty()) return false;
     *packet = BackendInputQueue.front();
     BackendInputQueue.pop();
+    occupancyBackendInput--;
     return true;
 }
 
@@ -320,6 +351,7 @@ bool ThreadComms::pop_backend_in_queue(std::vector<P_Pkt_t>* packets)
         returnValue = true;
         packets->push_back(BackendInputQueue.front());
         BackendInputQueue.pop();
+        occupancyBackendInput--;
     }
     return returnValue;
 }
@@ -328,6 +360,8 @@ bool ThreadComms::pop_backend_in_queue(std::vector<P_Pkt_t>* packets)
 void ThreadComms::push_backend_in_queue(P_Pkt_t packet)
 {
     BackendInputQueue.push(packet);
+    cumulativeBackendOutput++;
+    occupancyBackendInput++;
 }
 
 /* Takes all packets and pushes them into the queue in the order in which they
@@ -338,6 +372,8 @@ void ThreadComms::push_backend_in_queue(std::vector<P_Pkt_t>* packets)
          packet != packets->end(); packet++)
     {
         BackendInputQueue.push(*packet);
+        cumulativeBackendOutput++;
+        occupancyBackendInput++;
     }
 }
 
@@ -351,6 +387,7 @@ bool ThreadComms::pop_debug_in_queue(P_Debug_Pkt_t* packet)
     if (DebugInputQueue.empty()) return false;
     *packet = DebugInputQueue.front();
     DebugInputQueue.pop();
+    occupancyDebugInput--;
     return true;
 }
 
@@ -365,6 +402,7 @@ bool ThreadComms::pop_debug_in_queue(std::vector<P_Debug_Pkt_t>* packets)
         returnValue = true;
         packets->push_back(DebugInputQueue.front());
         DebugInputQueue.pop();
+        occupancyDebugInput--;
     }
     return returnValue;
 }
@@ -373,6 +411,8 @@ bool ThreadComms::pop_debug_in_queue(std::vector<P_Debug_Pkt_t>* packets)
 void ThreadComms::push_debug_in_queue(P_Debug_Pkt_t packet)
 {
     DebugInputQueue.push(packet);
+    cumulativeDebugInput++;
+    occupancyDebugInput++;
 }
 
 /* Takes all packets and pushes them into the queue in the order in which they
@@ -383,5 +423,7 @@ void ThreadComms::push_debug_in_queue(std::vector<P_Debug_Pkt_t>* packets)
          packet != packets->end(); packet++)
     {
         DebugInputQueue.push(*packet);
+        cumulativeDebugInput++;
+        occupancyDebugInput++;
     }
 }

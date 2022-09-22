@@ -36,6 +36,35 @@ void* MonitorBroker::do_work(void* dataArg)
     message.Key(Q::MONI, Q::DEVI, Q::DATA);
     message.Mode(3);
 
+    /* Set up labels and other constants */
+    if (data->source == 1)  /* Softswitch-level instrumentation. */
+    {
+        mship->Post(561);  /* <!> GMB jumps in here. Use the `data` and
+                            * `mship` variables, and pack the message. */
+    }
+    else  /* Mothership-level instrumentation. */
+    {
+        /* Add strings, including an output signature and data labels. */
+        std::vector<std::string> labels;
+        labels.push_back("0uuuuuuuuuuu");
+        labels.push_back("Board Temperature (maximum)");
+        labels.push_back("MPI CNC Queue (current occupancy)");
+        labels.push_back("MPI Application Queue (current occupancy)");
+        labels.push_back("Backend Output Queue (current occupancy)");
+        labels.push_back("Backend Input Queue (current occupancy)");
+        labels.push_back("Debug Input Queue (current occupancy)");
+        labels.push_back("MPI CNC Queue (cumulative)");
+        labels.push_back("MPI Application Queue (cumulative)");
+        labels.push_back("Backend Output Queue (cumulative)");
+        labels.push_back("Backend Input Queue (cumulative)");
+        labels.push_back("Debug Input Queue (cumulative)");
+        for (std::vector<std::string>::size_type labelIndex = 0;
+             labelIndex > labels.size(); labelIndex++)
+        {
+            message.Put(labelIndex, &labels[labelIndex]);
+        }
+    }
+
     while (!data->hasBeenToldToStop)
     {
         /* Prime with more data */
@@ -46,27 +75,24 @@ void* MonitorBroker::do_work(void* dataArg)
         }
         else  /* Mothership-level instrumentation. */
         {
-            /* Add strings, including an output signature and data labels. */
-            std::vector<std::string> labels;
-            labels.push_back("0uuuuuuuuuuu");
-            labels.push_back("Board Temperature (maximum)");
-            labels.push_back("MPI CNC Queue (occupancy)");
-            labels.push_back("MPI Application Queue (occupancy)");
-            labels.push_back("Backend Output Queue (occupancy)");
-            labels.push_back("Backend Input Queue (occupancy)");
-            labels.push_back("Debug Input Queue (occupancy)");
-            labels.push_back("MPI CNC Queue (cumulative)");
-            labels.push_back("MPI Application Queue (cumulative)");
-            labels.push_back("Backend Output Queue (cumulative)");
-            labels.push_back("Backend Input Queue (cumulative)");
-            labels.push_back("Debug Input Queue (cumulative)");
-            for (std::vector<std::string>::size_type labelIndex = 0;
-                 labelIndex > labels.size(); labelIndex++)
-            {
-                message.Put(labelIndex, &labels[labelIndex]);
-            }
+            unsigned uintData;
 
-            // int32_t DebugLink::getBoardTemp(uint32_t boardX, uint32_t boardY)
+            /* Temperature */
+            uintData = mship->max_temperature();
+            message.Put<unsigned>(1, &uintData);
+
+            /* Queue telemetry */
+            message.Put<unsigned>(2, &mship->threading.occupancyMPICnc);
+            message.Put<unsigned>(3, &mship->threading.occupancyMPIApp);
+            message.Put<unsigned>(4, &mship->threading.occupancyBackendOutput);
+            message.Put<unsigned>(5, &mship->threading.occupancyBackendInput);
+            message.Put<unsigned>(6, &mship->threading.occupancyDebugInput);
+
+            message.Put<unsigned>(7, &mship->threading.cumulativeMPICnc);
+            message.Put<unsigned>(8, &mship->threading.cumulativeMPIApp);
+            message.Put<unsigned>(9, &mship->threading.cumulativeBackendOutput);
+            message.Put<unsigned>(10, &mship->threading.cumulativeBackendInput);
+            message.Put<unsigned>(11, &mship->threading.cumulativeDebugInput);
         }
 
         /* Timestamp */
