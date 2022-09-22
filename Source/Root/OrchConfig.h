@@ -37,6 +37,7 @@ string                   Log()         { return default_paths.log;             }
 string                   Messages()    { return setup_files.messages;          }
 string                   Name()        { return Orchestrator_header.name;      }
 string                   Place()       { return default_paths.place;           }
+string                   MonserverDat(){ return default_paths.monserver_dat;   }
 string                   MonserverSpy(){ return default_paths.monserver_spy;   }
 string                   Placement()   { return setup_files.placement;         }
 string                   RemoteMshp()  { return default_paths.remote_mship;    }
@@ -66,6 +67,7 @@ struct default_paths_t {               // Default file paths
   string engine;
   string place;
   string log;
+  string monserver_dat;
   string monserver_spy;
   string ulog;
   string trace;

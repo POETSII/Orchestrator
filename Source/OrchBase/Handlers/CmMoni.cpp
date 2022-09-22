@@ -140,6 +140,21 @@ void CmMoni::Cm_Spy()
 
 //------------------------------------------------------------------------------
 
+void CmMoni::Cm_Trac()
+// Sends a message to the MonServer, commanding it to toggle whether or not it
+// tracks and records data from incoming data packets. This also sends the path
+// for data to be written to, to the MonServer.
+{
+    PMsg_p message;
+    message.Key(Q::MONI, Q::TRAC);
+    message.Src(par->Urank);
+    message.Tgt(par->pPmap->U.MonServer);
+    message.Put(0, &par->pCmPath->pathMonD);
+    message.Send();
+}
+
+//------------------------------------------------------------------------------
+
 unsigned CmMoni::operator()(Cli * pC)
 // Handle "moni" command from the monkey.
 {
@@ -151,6 +166,7 @@ WALKVECTOR(Cli::Cl_t,pC->Cl_v,i) {     // Walk the clause list
   if (strcmp(sCl.c_str(),"mdr1")==0) { Cm_Mdr1(); continue; }
   if (strcmp(sCl.c_str(),"mir1")==0) { Cm_Mir1(); continue; }
   if (strcmp(sCl.c_str(),"spy" )==0) { Cm_Spy();  continue; }
+  if (strcmp(sCl.c_str(),"trac" )==0){ Cm_Trac(); continue; }  // Track
   par->Post(25,sCl,"moni");            // Unrecognised clause
 }
 return 0;                              // Legitimate command exit

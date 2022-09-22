@@ -19,6 +19,7 @@ virtual ~     CmMoni();
 void          Cm_Mdr1();
 void          Cm_Mir1();
 void          Cm_Spy();
+void          Cm_Trac();
 
 void          Dump(FILE * = stdout);
 void          Show(FILE * = stdout);
