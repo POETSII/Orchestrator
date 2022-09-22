@@ -9,8 +9,8 @@
  *
  * Once enabled, each incoming data packet is recorded as per the Volume VI
  * specification. Packet "sequences" are identified by a shared UUID
- * (<int>(2)). Each sequence has an ofstream associated with it, which is
- * stored in the `streams` map, using its UUID as a key.
+ * (<int>(2)). Each sequence has a file pointer associated with it, which is
+ * stored in the `files` map, using its UUID as a key.
  *
  * As with Volume VI, we assume the signature field (<std::string>(0)) remains
  * constant for a given sequence - if not, your data will become nonsensical.
@@ -19,7 +19,7 @@
  * obvious problems. Tempus fugit, my fair engineer.
  */
 
-#include <fstream>
+#include <stdio.h>
 #include <string>
 
 #include "PMsg_p.hpp"
@@ -40,7 +40,7 @@ public:
 
 private:
     std::string error;
-    std::map<int, std::ofstream> streams;
+    std::map<int, FILE*> files;
     bool isTrackerDirNew;
     bool isTrackerEnabled;
     std::string trackerDir;

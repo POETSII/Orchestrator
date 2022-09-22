@@ -13,12 +13,11 @@ MonServerTracker::MonServerTracker()
 
 MonServerTracker::~MonServerTracker()
 {
-    /* Close all streams that have successfully been opened. */
-    for (std::map<int, std::ofstream>::iterator streamIt = streams.begin();
-         streamIt != streams.end(); streamIt++)
-        if (streamIt->second.is_open()) streamIt->second.close();
+    /* Close all files that have successfully been opened. */
+    for (std::map<int, FILE*>::iterator fileIt = files.begin();
+         fileIt != files.end(); fileIt++)
+        if (fileIt->second != PNULL) fclose(fileIt->second);
 }
-
 
 /* Sets trackerDir, and returns True if the value has been changed. */
 bool MonServerTracker::SetTrackerDir(std::string trackerDirIn)
@@ -56,50 +55,51 @@ int MonServerTracker::Track(PMsg_p* message)
         return 1;
     }
 
-    /* Is this the first message of the stream? If so, we need to create an
-     * entry in streams. If not, just use the stream that exists. */
-    std::map<int, std::ofstream>::iterator streamFinder = streams.find(uuid);
-    if (streamFinder == streams.end())
+    /* Is this the first message of the sequence? If so, we need to create an
+     * entry in files. If not, just use the file that exists. */
+    std::map<int, FILE*>::iterator fileFinder = files.find(uuid);
+    FILE* out;
+    if (fileFinder != files.end()) out = fileFinder->second;
+    else
     {
         /* Open up (complaining if not). */
-        std::string logPathReq = message->Zname(3);
-        FileName::Force1Linux(logPathReq);
-        std::string baseName = FileName(logPathReq).FNBase();
-        streams[uuid].open((trackerDir + baseName).c_str(),
-                           std::ofstream::out | std::ofstream::trunc);
-        if(!streams[uuid].is_open())
+        std::string baseName = FileName(message->Zname(3)).FNBase();
+        std::string fullName = trackerDir + baseName;
+        out = fopen(fullName.c_str(), "w");
+        files[uuid] = out;  /* convenience */
+        if(out == PNULL)
         {
-            error = std::string("Could not open file: ") +
+            error = "Could not open file at \"" + baseName + "\": " +
                 OSFixes::getSysErrorString(errno);
             return 1;
         }
 
-        /* Write a header: For each element, write a label. */
+        /* Write a header: For each element, write a label, putting a timestamp
+         * label first. */
+        fprintf(out, "\"Time leaving Mothership\"");
         for (int element = 1; element < (int)numElements; element++)
         {
-            if (element != 1) streams[uuid] << " ";
             std::string label;
             message->Get(element, label);
-            if (label.empty())
-            {
-                label = "Unknown field with descriptor '" +
-                    int2str(signature[element]) + "'.";
-            }
-
-            streams[uuid] << "\"" << label << "\"";
+            if (label.empty()) label = "Unknown field with descriptor '" +
+                                   int2str(signature[element]) + "'.";
+            fprintf(out, " \"%s\"", label.c_str());
         }
-        streams[uuid] << "\n";
+        fprintf(out, "\n");
     }
+
+    /* Write the timestamp. Blindly assume that it's there. */
+    double* doubleData;
+    doubleData = message->Get<double>(-40, count);
+    fprintf(out, "%f", *doubleData);
 
     /* Now let's write some data! */
     unsigned* uintData;
     int* intData;
-    double* doubleData;
     float* floatData;
     bool* boolData;
     for (int element = 1; element < (int)numElements; element++)
     {
-        if (element != 1) streams[uuid] << " ";
         switch (signature[element])
         {
         case 'u':
@@ -110,7 +110,7 @@ int MonServerTracker::Track(PMsg_p* message)
                     int2str(element) + ".";
                 return 1;
             }
-            streams[uuid] << *uintData;
+            fprintf(out, " %u", *uintData);
             break;
         case 'i':
             intData = message->Get<int>(element, count);
@@ -120,7 +120,7 @@ int MonServerTracker::Track(PMsg_p* message)
                     int2str(element) + ".";
                 return 1;
             }
-            streams[uuid] << *intData;
+            fprintf(out, " %d", *intData);
             break;
         case 'd':
             doubleData = message->Get<double>(element, count);
@@ -130,7 +130,7 @@ int MonServerTracker::Track(PMsg_p* message)
                     int2str(element) + ".";
                 return 1;
             }
-            streams[uuid] << *doubleData;
+            fprintf(out, " %f", *doubleData);
             break;
         case 'f':
             floatData = message->Get<float>(element, count);
@@ -140,7 +140,7 @@ int MonServerTracker::Track(PMsg_p* message)
                     int2str(element) + ".";
                 return 1;
             }
-            streams[uuid] << *floatData;
+            fprintf(out, " %f", *floatData);
             break;
         case 'b':
             boolData = message->Get<bool>(element, count);
@@ -150,12 +150,12 @@ int MonServerTracker::Track(PMsg_p* message)
                     int2str(element) + ".";
                 return 1;
             }
-            streams[uuid] << *boolData;
+            fprintf(out, *boolData ? "true" : "false");
             break;
         }
     }
 
-    /* Next! */
-    streams[uuid] << "\n";
+    /* Next record! */
+    fprintf(out, "\n");
     return 0;
 }
