@@ -58,6 +58,7 @@ Server.Recv(28755);                    // ...and start listening
                                        // Load the message map
                                        // One map holds keys from both the MPI
                                        // Universe and the remote socket
+nextRequestId = 0;
 FnMap[PMsg_p::KEY(Q::MONI,Q::DEVI,Q::REQ )] = &MonServer::OnMoniDeviReq;
 FnMap[PMsg_p::KEY(Q::MONI,Q::DEVI,Q::ACK )] = &MonServer::OnMoniDeviAck;
 FnMap[PMsg_p::KEY(Q::MONI,Q::INJE,Q::REQ )] = &MonServer::OnMoniInjeReq;
@@ -117,6 +118,8 @@ unsigned MonServer::OnMoniDeviReq(PMsg_p * pZ)
 // "Start data exfiltration" command in from the Remote Monitor
 {
 pZ->Mode(2);                           // ONWARD PATH: Monserver->Root
+pZ->Put<int>(2,&nextRequestId);
+nextRequestId++;
 //pZ->FDump("MonServer_OnMoniDeviReq");
 pZ->Send(pPmap->U.Root);               // I.e. unconditional forward to rank 0
 
@@ -173,6 +176,8 @@ unsigned MonServer::OnMoniInjeReq(PMsg_p * pZ)
 // POETS command injected direct from the remote monitor
 {
 pZ->Mode(2);                           // ONWARD PATH: Monserver->Root
+pZ->Put<int>(2,&nextRequestId);
+nextRequestId++;
 //pZ->FDump("MonServer_OnMoniInjeReq");
 pZ->Send(pPmap->U.Root);               // I.e. unconditional forward to rank 0
                                        // ACKNOWLEDGMENT RETURN PATH

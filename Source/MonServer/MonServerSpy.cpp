@@ -54,6 +54,11 @@ void MonServerSpy::DumpCommonBits(FILE* out, PMsg_p* message)
         else fprintf(out, "%d=%p\n", index, *housekeepingData);
     }
 
+    /* Request chasing */
+    int intData = *message->Get<int>(2, count);
+    fprintf(out, "\n[request]\nuuid=\"%s\"\n",
+            count == 0 ? "undefined" : int2str(intData).c_str());
+
     /* Cleanup */
     fprintf(out, "\n");
 }

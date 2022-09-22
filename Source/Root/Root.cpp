@@ -551,6 +551,14 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
         Post(431);
     }
 
+    // Check for missing/bad fields: request id.
+    pZ->Get<int>(2, count);
+    if (count == 0)
+    {
+        error = true;
+        Post(435);
+    }
+
     // If we're all clear, get the hardware address and device ID.
     if (!error)
     {

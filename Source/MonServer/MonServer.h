@@ -32,6 +32,7 @@ unsigned            OnMoniSoftData(PMsg_p *);
 unsigned            OnMoniSpy(PMsg_p *);
 
 MonServerSpy        Spy;
+int                 nextRequestId;
 };
 
 //==============================================================================
