@@ -118,7 +118,7 @@ unsigned MonServer::OnMoniDeviReq(PMsg_p * pZ)
 // "Start data exfiltration" command in from the Remote Monitor
 {
 pZ->Mode(2);                           // ONWARD PATH: Monserver->Root
-pZ->Put<int>(2,&nextRequestId);
+pZ->Put<int>(-2,&nextRequestId);
 nextRequestId++;
 //pZ->FDump("MonServer_OnMoniDeviReq");
 pZ->Send(pPmap->U.Root);               // I.e. unconditional forward to rank 0
@@ -176,7 +176,7 @@ unsigned MonServer::OnMoniInjeReq(PMsg_p * pZ)
 // POETS command injected direct from the remote monitor
 {
 pZ->Mode(2);                           // ONWARD PATH: Monserver->Root
-pZ->Put<int>(2,&nextRequestId);
+pZ->Put<int>(-2,&nextRequestId);
 nextRequestId++;
 //pZ->FDump("MonServer_OnMoniInjeReq");
 pZ->Send(pPmap->U.Root);               // I.e. unconditional forward to rank 0

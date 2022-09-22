@@ -552,7 +552,7 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
     }
 
     // Check for missing/bad fields: request id.
-    pZ->Get<int>(2, count);
+    pZ->Get<int>(-2, count);
     if (count == 0)
     {
         error = true;
