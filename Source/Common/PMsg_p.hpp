@@ -10,6 +10,7 @@ class PMsg_p : public Msg_p {
 public :
               PMsg_p();
               PMsg_p(byte *,int);
+              PMsg_p(byte *);
               PMsg_p(PMsg_p &);
               PMsg_p(const PMsg_p & r);
 virtual ~     PMsg_p(void);

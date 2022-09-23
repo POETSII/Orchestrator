@@ -12,6 +12,7 @@ and when I come across a need.
 
 PMsg_p::PMsg_p():Msg_p(){}
 PMsg_p::PMsg_p(byte * pb,int l):Msg_p(pb,l){}
+PMsg_p::PMsg_p(byte * pb):Msg_p(pb){}
 PMsg_p::PMsg_p(PMsg_p & r):Msg_p(r){}
 PMsg_p::PMsg_p(const PMsg_p & r):Msg_p(const_cast<PMsg_p&>(r)){}
 PMsg_p::~PMsg_p(void){}

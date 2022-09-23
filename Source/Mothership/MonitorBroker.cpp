@@ -30,24 +30,26 @@ void* MonitorBroker::do_work(void* dataArg)
     Mothership* mship = data->mothership;
 
     /* Set up an outgoing message, which we will prime with more data. */
-    PMsg_p message = data->templateMsg;
+    PMsg_p message = PMsg_p((byte*)(&data->templateMsg[0]));
     message.Src(mship->Urank);
     message.Tgt(mship->pPmap->U.MonServer);
-    message.Key(Q::MONI, Q::DEVI, Q::DATA);
     message.Mode(3);
 
     /* Set up labels and other constants */
     if (data->source == 1)  /* Softswitch-level instrumentation. */
     {
+        message.Key(Q::MONI, Q::SOFT, Q::DATA);
         mship->Post(561);  /* <!> GMB jumps in here. Use the `data` and
                             * `mship` variables, and pack the message. */
     }
     else  /* Mothership-level instrumentation. */
     {
+        message.Key(Q::MONI, Q::MOTH, Q::DATA);
         /* Add strings, including an output signature and data labels. */
         std::vector<std::string> labels;
-        labels.push_back("0uuuuuuuuuuu");
-        labels.push_back("Board Temperature (maximum)");
+        labels.push_back("0uuuuuuuuuu");
+        //labels.push_back("0uuuuuuuuuuu");
+        //labels.push_back("Board Temperature (maximum)");
         labels.push_back("MPI CNC Queue (current occupancy)");
         labels.push_back("MPI Application Queue (current occupancy)");
         labels.push_back("Backend Output Queue (current occupancy)");
@@ -59,7 +61,7 @@ void* MonitorBroker::do_work(void* dataArg)
         labels.push_back("Backend Input Queue (cumulative)");
         labels.push_back("Debug Input Queue (cumulative)");
         for (std::vector<std::string>::size_type labelIndex = 0;
-             labelIndex > labels.size(); labelIndex++)
+             labelIndex < labels.size(); labelIndex++)
         {
             message.Put(labelIndex, &labels[labelIndex]);
         }
@@ -76,23 +78,34 @@ void* MonitorBroker::do_work(void* dataArg)
         else  /* Mothership-level instrumentation. */
         {
             unsigned uintData;
+            int index = 1;
 
-            /* Temperature */
+            /* Temperature
             uintData = mship->max_temperature();
-            message.Put<unsigned>(1, &uintData);
+            message.Put<unsigned>(index++, &uintData); */
 
             /* Queue telemetry */
-            message.Put<unsigned>(2, &mship->threading.occupancyMPICnc);
-            message.Put<unsigned>(3, &mship->threading.occupancyMPIApp);
-            message.Put<unsigned>(4, &mship->threading.occupancyBackendOutput);
-            message.Put<unsigned>(5, &mship->threading.occupancyBackendInput);
-            message.Put<unsigned>(6, &mship->threading.occupancyDebugInput);
+            message.Put<unsigned>(index++,
+                                  &mship->threading.occupancyMPICnc);
+            message.Put<unsigned>(index++,
+                                  &mship->threading.occupancyMPIApp);
+            message.Put<unsigned>(index++,
+                                  &mship->threading.occupancyBackendOutput);
+            message.Put<unsigned>(index++,
+                                  &mship->threading.occupancyBackendInput);
+            message.Put<unsigned>(index++,
+                                  &mship->threading.occupancyDebugInput);
 
-            message.Put<unsigned>(7, &mship->threading.cumulativeMPICnc);
-            message.Put<unsigned>(8, &mship->threading.cumulativeMPIApp);
-            message.Put<unsigned>(9, &mship->threading.cumulativeBackendOutput);
-            message.Put<unsigned>(10, &mship->threading.cumulativeBackendInput);
-            message.Put<unsigned>(11, &mship->threading.cumulativeDebugInput);
+            message.Put<unsigned>(index++,
+                                  &mship->threading.cumulativeMPICnc);
+            message.Put<unsigned>(index++,
+                                  &mship->threading.cumulativeMPIApp);
+            message.Put<unsigned>(index++,
+                                  &mship->threading.cumulativeBackendOutput);
+            message.Put<unsigned>(index++,
+                                  &mship->threading.cumulativeBackendInput);
+            message.Put<unsigned>(index++,
+                                  &mship->threading.cumulativeDebugInput);
         }
 
         /* Timestamp */
@@ -113,6 +126,7 @@ void* MonitorBroker::do_work(void* dataArg)
             if (remainingPeriod < pollPeriod) OSFixes::sleep(remainingPeriod);
             /* Longer sleep */
             else OSFixes::sleep(pollPeriod);
+            remainingPeriod -= pollPeriod;  /* Can be less than zero */
         }
     }
 
@@ -166,7 +180,7 @@ bool MonitorBroker::register_worker(int key,
                                     PMsg_p templateMsg)
 {
     /* Check for bad source argument. */
-    if (source != 1 or source != 2)
+    if (source != 1 and source != 2)
     {
         mothership->Post(537, uint2str(source));
         return true;
@@ -187,7 +201,7 @@ bool MonitorBroker::register_worker(int key,
     usefulData->hwAddr = hwAddr;
     usefulData->mothership = mothership;
     usefulData->hasBeenToldToStop = false;
-    usefulData->templateMsg = templateMsg;
+    usefulData->templateMsg = templateMsg.Stream_v();
 
     /* Spin off, and check for an error. We'll join up with it later. */
     int result = pthread_create(&usefulData->worker, PNULL,

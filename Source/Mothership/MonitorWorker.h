@@ -14,8 +14,8 @@ struct MonitorWorker
     unsigned dataType;
     unsigned source;  /* Softswitch or Mothership? */
     int hwAddr;
-    PMsg_p templateMsg;  /* Saves copying timestamps and housekeeping
-                          * explicitly. */
+    std::vector<byte> templateMsg;  /* Saves copying timestamps and
+                                     * housekeeping explicitly. */
 
     /* Traversal */
     Mothership* mothership;

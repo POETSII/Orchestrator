@@ -157,5 +157,6 @@ int MonServerTracker::Track(PMsg_p* message)
 
     /* Next record! */
     fprintf(out, "\n");
+    fflush(out);
     return 0;
 }

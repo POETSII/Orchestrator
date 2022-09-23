@@ -456,12 +456,12 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
     Apps_t* application;
     std::string appName;
     GraphI_t* gi;
-    unsigned deviceId;  // The key from the graph, happily used here as a uuid.
+    unsigned deviceId = 0;  // The key from the graph, happily used here as a uuid.
     std::string deviceName;
     DevI_t* device;  // Once located
     P_thread* thread;  // in hardware
-    int mothershipRank;  // Rank of the Mothership to send to
-    HardwareAddress* hwAddr;  // Contains all the goodies
+    int mothershipRank = 0;  // Rank of the Mothership to send to
+    HardwareAddress* hwAddr = PNULL;  // Contains all the goodies
     int count;  // Used to get things from PMsg_ps.
     unsigned* uintData;
 

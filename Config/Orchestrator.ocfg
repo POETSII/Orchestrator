@@ -27,7 +27,7 @@ ulog = "../Output/Microlog/"
 // Placement control and output
 place = "../Output/Placement/"
 // Output directory for data going through MonServer.
-monserver_data = "../Output/MonitorData/"
+monserver_dat = "../Output/MonitorData/"
 // Output directory for the MonServerSpy. Must not be empty if the Spy is
 // used (otherwise MonServer will post angrily).
 monserver_spy = "../Output/MonServer/"

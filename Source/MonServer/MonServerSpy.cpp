@@ -164,6 +164,7 @@ void MonServerSpy::DumpMoniDeviAck(FILE* out, PMsg_p* message)
     fprintf(out, "device_found=\"%s\"\n",
             count == 0 ? "undefined" : *boolData == true ? "yes" : "no");
 
+    intData = message->Get<int>(0, count);
     fprintf(out, "\n[device_id]\n");
     for (int index = 0; index < 6; index++)
     {
@@ -189,10 +190,12 @@ void MonServerSpy::DumpMoniDeviAck(FILE* out, PMsg_p* message)
             component = "device";
             break;
         }
-        intData = message->Get<int>(index, count);
         fprintf(out, "%s=%s\n", component.c_str(),
-                count == 0 ? "\"undefined\"" : int2str(*intData).c_str());
+                count == 0 ? "\"undefined\"" : int2str(intData[index]).c_str());
     }
+    intData = message->Get<int>(1, count);
+    fprintf(out, "hwaddr=%s\n",
+            count == 0 ? "\"undefined\"" : hex2str(*intData).c_str());
 }
 
 void MonServerSpy::DumpMoniInjeAck(FILE* out, PMsg_p* message)
@@ -308,11 +311,12 @@ int MonServerSpy::Spy(PMsg_p* message)
         error = "Message key " + uint2str(key) + " not recognised.";
         return 1;
     }
+    fclose(miniDumpFile);
 
     /* Store an entry to this message in the dumpMap. */
-    fprintf(dumpMap, (uint2str(dumpMapIndex) + "," +
-                      humanKey + "," +
-                      int2str(message->Mode()) + "\n").c_str());
+    fprintf(dumpMap, "%s",
+            (uint2str(dumpMapIndex) + "," + humanKey + "," +
+             int2str(message->Mode()) + "\n").c_str());
 
     /* What is the purpose of endless cycles if not to be part of a greater
      * endless cycle, ultimately forming endless cycles of endless cycles,

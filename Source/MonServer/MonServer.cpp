@@ -276,7 +276,7 @@ unsigned MonServer::OnMoniTrac(PMsg_p * pZ)
 // Enable or disable the data tracker.
 {
 Tracker.Toggle();
-string trackerDirToSet = "";
+string trackerDirToSet;
 pZ->Get(0, trackerDirToSet);
 // Tracker state change.
 Post(436, Tracker.IsEnabled() ? "enabled" : "disabled");
