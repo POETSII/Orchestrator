@@ -9,7 +9,7 @@
  *
  * Once enabled, each incoming data packet is recorded as per the Volume VI
  * specification. Packet "sequences" are identified by a shared UUID
- * (<int>(2)). Each sequence has a file pointer associated with it, which is
+ * (<int>(-2)). Each sequence has a file pointer associated with it, which is
  * stored in the `files` map, using its UUID as a key.
  *
  * As with Volume VI, we assume the signature field (<std::string>(0)) remains
