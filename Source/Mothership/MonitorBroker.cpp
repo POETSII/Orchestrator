@@ -77,10 +77,10 @@ void* MonitorBroker::do_work(void* dataArg)
         }
         else  /* Mothership-level instrumentation. */
         {
-            unsigned uintData;
             int index = 1;
 
             /* Temperature
+            unsigned uintData;
             uintData = mship->max_temperature();
             message.Put<unsigned>(index++, &uintData); */
 

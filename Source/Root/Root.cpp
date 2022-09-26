@@ -504,8 +504,9 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
 
     // Check for missing/bad fields: update interval (we don't care about the
     // value).
-    pZ->Get<unsigned>(0, count);
-    if (count == 0)
+    unsigned* unsignedData;
+    unsignedData = pZ->Get<unsigned>(0, count);
+    if (unsignedData == 0)
     {
         error = true;
         Post(426);
@@ -513,7 +514,7 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
 
     // Check for missing/bad fields: data source.
     uintData = pZ->Get<unsigned>(4, count);
-    if (count)
+    if (uintData)
     {
         if (*uintData != 1 and *uintData != 2)
         {
@@ -528,32 +529,34 @@ unsigned Root::OnMoniDeviReq(PMsg_p * pZ)
     }
 
     // Check for missing/bad fields: exfiltration control.
-    pZ->Get<bool>(0, count);
-    if (count == 0)
+    bool* boolData;
+    boolData = pZ->Get<bool>(0, count);
+    if (boolData == 0)
     {
         error = true;
         Post(429);
     }
 
     // Check for missing/bad fields: remote log option.
-    pZ->Get<bool>(3, count);
-    if (count == 0)
+    boolData = pZ->Get<bool>(3, count);
+    if (boolData == 0)
     {
         error = true;
         Post(430);
     }
 
     // Check for missing/bad fields: remote log clobber option.
-    pZ->Get<bool>(5, count);
-    if (count == 0)
+    boolData = pZ->Get<bool>(5, count);
+    if (boolData == 0)
     {
         error = true;
         Post(431);
     }
 
     // Check for missing/bad fields: request id.
-    pZ->Get<int>(-2, count);
-    if (count == 0)
+    int* intData;
+    intData = pZ->Get<int>(-2, count);
+    if (intData == 0)
     {
         error = true;
         Post(435);

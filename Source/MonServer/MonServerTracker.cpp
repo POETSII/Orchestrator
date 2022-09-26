@@ -38,12 +38,14 @@ int MonServerTracker::Track(PMsg_p* message)
 
     /* Grab the uuid, hollering if it's not there. */
     int count, uuid;
-    uuid = *message->Get<int>(-2, count);
-    if (count == 0)
+    int* intData;
+    intData = message->Get<int>(-2, count);
+    if (intData == 0)
     {
         error = "No UUID (int, -2) given in data packet.";
         return 1;
     }
+    uuid = *intData;
 
     /* Grab the signature, complaining if it's not there. */
     std::string signature;
@@ -95,7 +97,6 @@ int MonServerTracker::Track(PMsg_p* message)
 
     /* Now let's write some data! */
     unsigned* uintData;
-    int* intData;
     float* floatData;
     bool* boolData;
     for (int element = 1; element < (int)numElements; element++)
@@ -104,7 +105,7 @@ int MonServerTracker::Track(PMsg_p* message)
         {
         case 'u':
             uintData = message->Get<unsigned>(element, count);
-            if (count == 0)
+            if (uintData == 0)
             {
                 error = "No unsigned data found at field " +
                     int2str(element) + ".";
@@ -114,7 +115,7 @@ int MonServerTracker::Track(PMsg_p* message)
             break;
         case 'i':
             intData = message->Get<int>(element, count);
-            if (count == 0)
+            if (intData == 0)
             {
                 error = "No integer data found at field " +
                     int2str(element) + ".";
@@ -124,7 +125,7 @@ int MonServerTracker::Track(PMsg_p* message)
             break;
         case 'd':
             doubleData = message->Get<double>(element, count);
-            if (count == 0)
+            if (doubleData == 0)
             {
                 error = "No double data found at field " +
                     int2str(element) + ".";
@@ -134,7 +135,7 @@ int MonServerTracker::Track(PMsg_p* message)
             break;
         case 'f':
             floatData = message->Get<float>(element, count);
-            if (count == 0)
+            if (floatData == 0)
             {
                 error = "No float data found at field " +
                     int2str(element) + ".";
@@ -144,7 +145,7 @@ int MonServerTracker::Track(PMsg_p* message)
             break;
         case 'b':
             boolData = message->Get<bool>(element, count);
-            if (count == 0)
+            if (boolData == 0)
             {
                 error = "No boolean data found at field " +
                     int2str(element) + ".";

@@ -42,7 +42,7 @@ void MonServerSpy::DumpCommonBits(FILE* out, PMsg_p* message)
         double* doubleData = message->Get<double>(
             timeStampIndexes[index], count);
         fprintf(out, "%d=%s\n", timeStampIndexes[index],
-                count == 0 ? "\"undefined\"" : dbl2str(*doubleData).c_str());
+            doubleData == 0 ? "\"undefined\"" : dbl2str(*doubleData).c_str());
     }
 
     /* Addresses (housekeeping fields) */
@@ -50,14 +50,14 @@ void MonServerSpy::DumpCommonBits(FILE* out, PMsg_p* message)
     for (int index = 98; index < 100; index++)
     {
         void** housekeepingData = message->Get<void*>(index, count);
-        if (count == 0) fprintf(out, "%d=\"undefined\"\n", index);
+        if (housekeepingData == 0) fprintf(out, "%d=\"undefined\"\n", index);
         else fprintf(out, "%d=%p\n", index, *housekeepingData);
     }
 
     /* Request chasing */
-    int intData = *message->Get<int>(-2, count);
+    int* intData = message->Get<int>(-2, count);
     fprintf(out, "\n[request]\nuuid=\"%s\"\n",
-            count == 0 ? "undefined" : int2str(intData).c_str());
+            intData == 0 ? "undefined" : int2str(*intData).c_str());
 
     /* Cleanup */
     fprintf(out, "\n");
@@ -99,27 +99,27 @@ void MonServerSpy::DumpDataBits(FILE* out, PMsg_p* message)
         {
         case 'u':
             uintData = message->Get<unsigned>(index, count);
-            if (count == 0) dataString = "\"(unsigned) no data found\"";
+            if (uintData == 0) dataString = "\"(unsigned) no data found\"";
             else dataString = uint2str(*uintData);
             break;
         case 'i':
             intData = message->Get<int>(index, count);
-            if (count == 0) dataString = "\"(integer) no data found\"";
+            if (intData == 0) dataString = "\"(integer) no data found\"";
             else dataString = int2str(*intData);
             break;
         case 'd':
             doubleData = message->Get<double>(index, count);
-            if (count == 0) dataString = "\"(double) no data found\"";
+            if (doubleData == 0) dataString = "\"(double) no data found\"";
             else dataString = dbl2str(*doubleData);
             break;
         case 'f':
             floatData = message->Get<float>(index, count);
-            if (count == 0) dataString = "\"(float) no data found\"";
+            if (floatData == 0) dataString = "\"(float) no data found\"";
             else dataString = dbl2str(*floatData);  /* yeah yeah */
             break;
         case 'b':
             boolData = message->Get<bool>(index, count);
-            if (count == 0) dataString = "\"(bool) no data found\"";
+            if (boolData == 0) dataString = "\"(bool) no data found\"";
             else dataString = bool2str(*boolData);
             break;
         }
@@ -147,26 +147,26 @@ void MonServerSpy::DumpMoniDeviAck(FILE* out, PMsg_p* message)
 
     boolData = message->Get<bool>(6, count);
     fprintf(out, "error=\"%s\"\n",
-            count == 0 ? "undefined" : *boolData == true ? "yes" : "no");
+            boolData == 0 ? "undefined" : *boolData == true ? "yes" : "no");
 
     fprintf(out, "\n[exfiltration]\n");
     uintData = message->Get<unsigned>(4, count);
-    if (count == 0) fprintf(out, "source=\"undefined\"\n");
+    if (uintData == 0) fprintf(out, "source=\"undefined\"\n");
     else fprintf(out, "source=%s\n",
                  *uintData == 1 ? "\"softswitch\"" : "\"mothership\"");
 
     boolData = message->Get<bool>(0, count);
     fprintf(out, "exfiltration_idempotence=\"%s\"\n",
-            count == 0 ? "undefined" :
+            boolData == 0 ? "undefined" :
             *boolData == true ? "start" : "stop");
 
     boolData = message->Get<bool>(1, count);
     fprintf(out, "device_found=\"%s\"\n",
-            count == 0 ? "undefined" : *boolData == true ? "yes" : "no");
+            boolData == 0 ? "undefined" : *boolData == true ? "yes" : "no");
 
     intData = message->Get<int>(0, count);
     fprintf(out, "\n[device_id]\n");
-    for (int index = 0; index < 6; index++)
+    for (int index = 0; index < count; index++)
     {
         std::string component = "";
         switch (index)
@@ -191,11 +191,12 @@ void MonServerSpy::DumpMoniDeviAck(FILE* out, PMsg_p* message)
             break;
         }
         fprintf(out, "%s=%s\n", component.c_str(),
-                count == 0 ? "\"undefined\"" : int2str(intData[index]).c_str());
+            intData[index] == 0 ? "\"undefined\"" :
+                int2str(intData[index]).c_str());
     }
     intData = message->Get<int>(1, count);
     fprintf(out, "hwaddr=%s\n",
-            count == 0 ? "\"undefined\"" : hex2str(*intData).c_str());
+            intData == 0 ? "\"undefined\"" : hex2str(*intData).c_str());
 }
 
 void MonServerSpy::DumpMoniInjeAck(FILE* out, PMsg_p* message)
