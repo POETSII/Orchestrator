@@ -40,3 +40,17 @@ in order to use the Orchestrator.
 To test the reference XML, you'll need `expect`
 (https://core.tcl-lang.org/expect/index). Also see the `orchestrator-ci`
 repository to see how the `.ci` directory is interacted with.
+
+See `Tests/README.md` for more information on how to test the Orchestrator.
+
+Broadly speaking, if you are in the root directory (this directory), you can do
+```
+$ cd Build/gcc
+$ make
+$ make tests
+$ cd ../test_bin
+$ ./run_tests.sh
+```
+
+
+
