@@ -47,11 +47,11 @@ void MonServerSpy::DumpCommonBits(FILE* out, PMsg_p* message)
 
     /* Addresses (housekeeping fields) */
     fprintf(out, "\n[housekeeping]\n");
-    for (int index = 98; index < 100; index++)
+    for (int index = -98; index > -100; index--)
     {
-        void** housekeepingData = message->Get<void*>(index, count);
+        unsigned* housekeepingData = message->Get<unsigned>(index, count);
         if (housekeepingData == 0) fprintf(out, "%d=\"undefined\"\n", index);
-        else fprintf(out, "%d=%p\n", index, *housekeepingData);
+        else fprintf(out, "%d=%u\n", index, *housekeepingData);
     }
 
     /* Request chasing */

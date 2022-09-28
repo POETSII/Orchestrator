@@ -74,13 +74,12 @@ void CmMoni::Cm_Mdr1()
     message.Put<bool>(4, &boolData, 1);  // Monitor must append to logs.
 
     // Housekeeping fields
-    int data1 = 1;
-    int data2;
-    void* voidData1 = &data1;
-    void* voidData2 = &data2;
-    message.Put<void*>(98, &voidData1, 1);
-    message.Put<void*>(99, &voidData2, 1);
-    message.Put<int>(99, &data1, 1);
+    unsigned data1 = 101;
+    unsigned data2 = 102;
+    int data3 = 103;
+    message.Put<unsigned>(-98, &data1, 1);
+    message.Put<unsigned>(-99, &data2, 1);
+    message.Put<int>(99, &data3, 1);
 
     // Timestamp (pretending we are the monitor)
     double timestamp = MPI_Wtime();
